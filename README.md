@@ -4,15 +4,15 @@ by Marty Schoch (marty@couchbase.com)
 
 **TouchDB-Android** is the Android port of <a href="https://github.com/couchbaselabs/TouchDB-iOS">TouchDB</a> by Jens Alfke (jens@couchbase.com).  For information on the high-level goals of the project see the <a href="https://github.com/couchbaselabs/TouchDB-iOS/blob/master/README.md">iOS README</a>.  This document will limit itself to Android specific issues and deviations from the iOS version.
 
-## Current Status ##
+## Current Status
 - Ported core functionality present in TouchDB-iOS as of Dec 21
 - A few unit tests pass
 
-## Requirements ## 
+## Requirements
 - Android 2.1 or newer
 - Jackson JSON Parser/Generator
 
-## License ##
+## License
 - Apache License 2.0
 
 ## Known Issues
