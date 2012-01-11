@@ -1,0 +1,86 @@
+/**
+ * Original iOS version by  Jens Alfke
+ * Ported to Android by Marty Schoch
+ *
+ * Copyright (c) 2012 Couchbase, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
+
+package com.couchbase.touchdb;
+
+public class TDQueryOptions {
+
+    private String startKey = null;
+    private String endKey = null;
+    private int skip = 0;
+    private int limit = Integer.MAX_VALUE;
+    private boolean descending = false;
+    private boolean includeDocs = false;
+    private boolean updateSeq = false;
+
+    public String getStartKey() {
+        return startKey;
+    }
+
+    public void setStartKey(String startKey) {
+        this.startKey = startKey;
+    }
+
+    public String getEndKey() {
+        return endKey;
+    }
+
+    public void setEndKey(String endKey) {
+        this.endKey = endKey;
+    }
+
+    public int getSkip() {
+        return skip;
+    }
+
+    public void setSkip(int skip) {
+        this.skip = skip;
+    }
+
+    public int getLimit() {
+        return limit;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    public boolean isDescending() {
+        return descending;
+    }
+
+    public void setDescending(boolean descending) {
+        this.descending = descending;
+    }
+
+    public boolean isIncludeDocs() {
+        return includeDocs;
+    }
+
+    public void setIncludeDocs(boolean includeDocs) {
+        this.includeDocs = includeDocs;
+    }
+
+    public boolean isUpdateSeq() {
+        return updateSeq;
+    }
+
+    public void setUpdateSeq(boolean updateSeq) {
+        this.updateSeq = updateSeq;
+    }
+
+}
