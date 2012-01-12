@@ -554,6 +554,25 @@ public class TDDatabase extends Observable {
         return docNumericId;
     }
 
+    public byte[] encodeDocumentJSON(TDRevision rev) {
+        byte[] result = null;
+        Map<String,Object> revProperties = rev.getProperties();
+        if(revProperties == null) {
+            return result;
+        }
+        Map<String,Object> properties = new HashMap<String,Object>(revProperties);
+        properties.remove("_id");
+        properties.remove("_rev");
+        properties.remove("_attachments");
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            result = mapper.writeValueAsBytes(properties);
+        } catch (Exception e) {
+            Log.e(TDDatabase.TAG, "Error serializing properties to JSON", e);
+        }
+        return result;
+    }
+
     public long insertRevision(TDRevision rev, long docNumericID, long parentSequence, boolean current, byte[] data) {
         long rowId = 0;
         try {
@@ -565,6 +584,7 @@ public class TDDatabase extends Observable {
             args.put("deleted", rev.isDeleted());
             args.put("json", data);
             rowId = database.insert("revs", null, args);
+            rev.setSequence(rowId);
         } catch (Exception e) {
             Log.e(TDDatabase.TAG, "Error inserting revision", e);
         }
@@ -671,29 +691,10 @@ public class TDDatabase extends Observable {
 
             // Bump the revID and update the JSON:
             String newRevId = getNextRevisionId(prevRevId);
-            Map<String, Object> properties = null;
-            Map<String, Object> attachments = null;
             byte[] data = null;
             if(!rev.isDeleted()) {
-                properties = rev.getProperties();
-                if(properties == null) {
-                    // bad or missing json
-                    transactionFailed = true;
-                    endTransaction();
-                    resultStatus.setCode(TDStatus.BAD_REQUEST);
-                    return null;
-                }
-                // Remove special properties to save room; we'll reconstitute them on read.
-                properties.remove("_id");
-                properties.remove("_rev");
-                attachments = (Map<String,Object>)properties.get("_attachments");
-                if(attachments != null) {
-                    properties.remove("_attachments");
-                }
-                ObjectMapper mapper = new ObjectMapper();
-                try {
-                    data = mapper.writeValueAsBytes(properties);
-                } catch (Exception e) {
+                data = encodeDocumentJSON(rev);
+                if(data == null) {
                     // bad or missing json
                     transactionFailed = true;
                     endTransaction();
@@ -704,6 +705,7 @@ public class TDDatabase extends Observable {
 
             TDRevision result = rev.copyWithDocID(docId, newRevId);
 
+            // Now insert the rev itself:
             long newSequence = insertRevision(result, docNumericID, parentSequence, true, data);
             if(newSequence == 0) {
                 transactionFailed = true;
@@ -712,11 +714,9 @@ public class TDDatabase extends Observable {
                 return null;
             }
 
-            result.setSequence(newSequence);
-
             // Store any attachments:
             if(attachments != null) {
-                TDStatus status = processAttachmentsDict(attachments, newSequence, parentSequence);
+                TDStatus status = processAttachmentsForRevision(result, parentSequence);
                 if(!status.isSuccessful()) {
                     transactionFailed = true;
                     endTransaction();
@@ -755,7 +755,7 @@ public class TDDatabase extends Observable {
         // First look up all locally-known revisions of this document:
         String docId = rev.getDocId();
         long docNumericID = getOrInsertDocNumericID(docId);
-        TDRevisionList localRevs = getAllRevisionsOfDocumentID(docId, docNumericID);
+        TDRevisionList localRevs = getAllRevisionsOfDocumentID(docId, docNumericID, false);
         if(localRevs == null) {
             return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         }
@@ -766,15 +766,17 @@ public class TDDatabase extends Observable {
         // Walk through the remote history in chronological order, matching each revision ID to
         // a local revision. When the list diverges, start creating blank local revisions to fill
         // in the local history:
+        long sequence = 0;
         long parentSequence = 0;
 
         for(int i = revHistory.size() - 1; i >= 0; --i) {
+            parentSequence = sequence;
             String revId = revHistory.get(i);
             TDRevision localRev = localRevs.revWithDocIdAndRevId(docId, revId);
             if(localRev != null) {
                 // This revision is known locally. Remember its sequence as the parent of the next one:
-                parentSequence = localRev.getSequence();
-                assert(parentSequence > 0);
+                sequence = localRev.getSequence();
+                assert(sequence > 0);
             }
             else {
                 // This revision isn't known, so add it:
@@ -785,19 +787,9 @@ public class TDDatabase extends Observable {
                     // Hey, this is the leaf revision we're inserting:
                    newRev = rev;
                    if(!rev.isDeleted()) {
-                       Map<String,Object> revProperties = rev.getProperties();
-                       if(revProperties == null) {
+                       data = encodeDocumentJSON(rev);
+                       if(data == null) {
                            return new TDStatus(TDStatus.BAD_REQUEST);
-                       }
-                       Map<String,Object> properties = new HashMap<String,Object>(revProperties);
-                       properties.remove("_id");
-                       properties.remove("_rev");
-                       properties.remove("_attachments");
-                       ObjectMapper mapper = new ObjectMapper();
-                       try {
-                           data = mapper.writeValueAsBytes(properties);
-                       } catch (Exception e) {
-                           Log.e(TDDatabase.TAG, "Error serializing properties to JSON", e);
                        }
                    }
                    current = true;
@@ -807,15 +799,24 @@ public class TDDatabase extends Observable {
                     newRev = new TDRevision(docId, revId, false);
                 }
 
-                parentSequence = insertRevision(newRev, docNumericID, parentSequence, current, data);
+                // Insert it:
+                sequence = insertRevision(newRev, docNumericID, parentSequence, current, data);
 
-                if(parentSequence <= 0) {
+                if(sequence <= 0) {
                     return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                }
+
+                if(i == 0) {
+                    // Write any changed attachments for the new revision:
+                    TDStatus status = processAttachmentsForRevision(rev, parentSequence);
+                    if(!status.isSuccessful()) {
+                        return status;
+                    }
                 }
             }
         }
 
-        rev.setSequence(parentSequence);
+        // Notify and return:
         notifyChange(rev, source);
 
         return new TDStatus(TDStatus.CREATED);
@@ -1058,10 +1059,18 @@ public class TDDatabase extends Observable {
         return true;
     }
 
-    public TDRevisionList getAllRevisionsOfDocumentID(String docId, long docNumericID) {
+    public TDRevisionList getAllRevisionsOfDocumentID(String docId, long docNumericID, boolean onlyCurrent) {
 
-        String sql = "SELECT sequence, revid, deleted FROM revs " +
+        String sql = null;
+        if(onlyCurrent) {
+            sql = "SELECT sequence, revid, deleted FROM revs " +
+                    "WHERE doc_id=? AND current ORDER BY sequence DESC";
+        }
+        else {
+            sql = "SELECT sequence, revid, deleted FROM revs " +
                     "WHERE doc_id=? ORDER BY sequence DESC";
+        }
+
         String[] args = { Long.toString(docNumericID) };
         Cursor cursor = null;
 
@@ -1089,7 +1098,7 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public TDRevisionList getAllRevisionsOfDocumentID(String docId) {
+    public TDRevisionList getAllRevisionsOfDocumentID(String docId, boolean onlyCurrent) {
         long docNumericId = getDocNumericID(docId);
         if(docNumericId < 0) {
             return null;
@@ -1098,7 +1107,7 @@ public class TDDatabase extends Observable {
             return new TDRevisionList();
         }
         else {
-            return getAllRevisionsOfDocumentID(docId, docNumericId);
+            return getAllRevisionsOfDocumentID(docId, docNumericId, onlyCurrent);
         }
     }
 
@@ -1326,18 +1335,23 @@ public class TDDatabase extends Observable {
         }
     }
 
-    public TDStatus processAttachmentsDict(Map<String, Object> newAttachments, long newSequence, long parentSequence) {
-        assert(newSequence > 0);
+    public TDStatus processAttachmentsForRevision(TDRevision rev, long parentSequence) {
+        assert(rev != null);
+        long newSequence = rev.getSequence();
         assert(newSequence > parentSequence);
 
         // If there are no attachments in the new rev, there's nothing to do:
-        if(newAttachments.size() == 0) {
+        Map<String,Object> newAttachments = null;
+        Map<String,Object> properties = (Map<String,Object>)rev.getProperties();
+        if(properties != null) {
+            newAttachments = (Map<String,Object>)properties.get("_attachments");
+        }
+        if(newAttachments == null || newAttachments.size() == 0 || rev.isDeleted()) {
             return new TDStatus(TDStatus.OK);
         }
 
         for (String name : newAttachments.keySet()) {
 
-            @SuppressWarnings("unchecked")
             Map<String,Object> newAttach = (Map<String,Object>)newAttachments.get(name);
             String newContentBase64 = (String)newAttach.get("data");
             if(newContentBase64 != null) {
