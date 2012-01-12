@@ -132,6 +132,8 @@ public class Attachments extends AndroidTestCase {
         Set<TDBlobKey> expected2 = new HashSet<TDBlobKey>();
         expected2.add(TDBlobStore.keyForBlob(attach2));
         Assert.assertEquals(expected2, attachments.allKeys());
+
+        db.close();
     }
 
     public void testPutAttachment() {
@@ -175,6 +177,8 @@ public class Attachments extends AndroidTestCase {
         expectAttachmentDict.put("attach1", innerDict);
 
         Assert.assertEquals(expectAttachmentDict, gotAttachmentDict);
+
+        db.close();
     }
 
 }

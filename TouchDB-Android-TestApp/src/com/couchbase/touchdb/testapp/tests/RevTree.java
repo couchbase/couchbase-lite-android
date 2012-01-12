@@ -90,6 +90,8 @@ public class RevTree extends AndroidTestCase {
         // Make sure the revision with the higher revID wins the conflict:
         TDRevision current = db.getDocumentWithID(rev.getDocId());
         Assert.assertEquals(conflict, current);
+
+        db.close();
     }
 
     private static void verifyHistory(TDDatabase db, TDRevision rev, List<String> history) {
