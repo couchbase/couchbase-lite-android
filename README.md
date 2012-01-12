@@ -20,5 +20,6 @@ by Marty Schoch (marty@couchbase.com)
 - Exception Handling in the current implementation makes things less readable.  This was a deliberate decision I made to make it more of a literal port of the iOS version.  Once the majority of code is in place and working I would like to revisit this and handle exceptions in more natural Android/Java way.
 
 ## TODO
+- Validation
 - Replication (push or pull)
 - HTTP Server
