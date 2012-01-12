@@ -529,6 +529,10 @@ public class TDDatabase {
             }
         } catch (Exception e) {
             Log.e(TDDatabase.TAG, "Error getting doc numeric id", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
         }
 
         return result;
@@ -542,7 +546,7 @@ public class TDDatabase {
         return docNumericId;
     }
 
-    public long insertRevision(TDRevision rev, long docNumericID, Long parentSequence, boolean current, byte[] data) {
+    public long insertRevision(TDRevision rev, long docNumericID, long parentSequence, boolean current, byte[] data) {
         long rowId = 0;
         try {
             ContentValues args = new ContentValues();
@@ -573,7 +577,7 @@ public class TDDatabase {
 
         beginTransaction();
         Cursor cursor = null;
-        Long parentSequence = null;
+        long parentSequence = 0;
         try {
             if(prevRevId != null) {
              // Replacing: make sure given prevRevID is current & find its sequence number:
@@ -1184,16 +1188,16 @@ public class TDDatabase {
             return new TDStatus(TDStatus.NOT_FOUND);
         }
 
-        Cursor c;
+        Cursor cursor = null;
 
         String[] args = { Long.toString(toSeq), name, Long.toString(fromSeq), name };
         try {
             database.execSQL("INSERT INTO attachments (sequence, filename, key, type, length) " +
                                       "SELECT ?, ?, key, type, length FROM attachments " +
                                         "WHERE sequence=? AND filename=?", args);
-            c = database.rawQuery("SELECT changes()", null);
-            c.moveToFirst();
-            int rowsUpdated = c.getInt(0);
+            cursor = database.rawQuery("SELECT changes()", null);
+            cursor.moveToFirst();
+            int rowsUpdated = cursor.getInt(0);
             if(rowsUpdated == 0) {
                 return new TDStatus(TDStatus.NOT_FOUND);
             }
@@ -1203,6 +1207,10 @@ public class TDDatabase {
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error copying attachment", e);
             return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
         }
 
 
@@ -1213,7 +1221,7 @@ public class TDDatabase {
         assert(filename != null);
 
 
-        Cursor cursor;
+        Cursor cursor = null;
 
         String[] args = { Long.toString(sequence), filename };
         try {
@@ -1245,6 +1253,10 @@ public class TDDatabase {
         } catch (SQLException e) {
             status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
             return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
         }
 
     }
@@ -1386,7 +1398,9 @@ public class TDDatabase {
             Log.e(TDDatabase.TAG, "Error finding attachment keys in use", e);
             return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         } finally {
-            cursor.close();
+            if(cursor != null) {
+                cursor.close();
+            }
         }
     }
 }
