@@ -32,6 +32,7 @@ import com.couchbase.touchdb.TDBlobStore;
 import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDStatus;
+import com.couchbase.touchdb.support.Base64;
 
 public class Attachments extends AndroidTestCase {
 
@@ -131,6 +132,49 @@ public class Attachments extends AndroidTestCase {
         Set<TDBlobKey> expected2 = new HashSet<TDBlobKey>();
         expected2.add(TDBlobStore.keyForBlob(attach2));
         Assert.assertEquals(expected2, attachments.allKeys());
+    }
+
+    public void testPutAttachment() {
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+        TDBlobStore attachments = db.getAttachments();
+
+        byte[] attach1 = "This is the body of attach1".getBytes();
+        String base64 = Base64.encodeBytes(attach1);
+
+        Map<String,Object> attachment = new HashMap<String,Object>();
+        attachment.put("content_type", "text/plain");
+        attachment.put("data", base64);
+        Map<String,Object> attachmentDict = new HashMap<String,Object>();
+        attachmentDict.put("attach1", attachment);
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("foo", 1);
+        properties.put("bar", false);
+        properties.put("_attachments", attachmentDict);
+
+        TDStatus status = new TDStatus();
+        TDRevision rev1 = db.putRevision(new TDRevision(properties), null, status);
+
+        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        // Examine the attachment store:
+        Assert.assertEquals(1, attachments.count());
+
+        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId());
+        @SuppressWarnings("unchecked")
+        Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
+
+        Map<String,Object> innerDict = new HashMap<String,Object>();
+        innerDict.put("content_type", "text/plain");
+        innerDict.put("digest", "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
+        innerDict.put("length", 27);
+        innerDict.put("stub", true);
+
+        Map<String,Object> expectAttachmentDict = new HashMap<String,Object>();
+        expectAttachmentDict.put("attach1", innerDict);
+
+        Assert.assertEquals(expectAttachmentDict, gotAttachmentDict);
     }
 
 }
