@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
 import java.util.UUID;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -39,7 +40,7 @@ import android.util.Log;
 import com.couchbase.touchdb.support.Base64;
 import com.couchbase.touchdb.support.DirUtils;
 
-public class TDDatabase {
+public class TDDatabase extends Observable {
 
     private String path;
     private SQLiteDatabase database;
@@ -497,8 +498,15 @@ public class TDDatabase {
         return "" + ++generation + "-" + digest;
     }
 
-    public void notifyChange(TDRevision rev) {
-        //FIXME implement change notification
+    public void notifyChange(TDRevision rev, URL source) {
+        Map<String,Object> changeNotification = new HashMap<String, Object>();
+        changeNotification.put("rev", rev);
+        changeNotification.put("seq", rev.getSequence());
+        if(source != null) {
+            changeNotification.put("source", source);
+        }
+        setChanged();
+        notifyObservers(changeNotification);
     }
 
     public long insertDocumentID(String docId) {
@@ -725,7 +733,7 @@ public class TDDatabase {
             }
 
             endTransaction();
-            notifyChange(result);
+            notifyChange(result, null);
 
             return result;
 
@@ -808,7 +816,7 @@ public class TDDatabase {
         }
 
         rev.setSequence(parentSequence);
-        notifyChange(rev);
+        notifyChange(rev, source);
 
         return new TDStatus(TDStatus.CREATED);
     }
