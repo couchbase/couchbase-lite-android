@@ -17,6 +17,7 @@
 
 package com.couchbase.touchdb.testapp.tests;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import android.test.AndroidTestCase;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
+import com.couchbase.touchdb.TDQueryOptions;
 import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TDView;
@@ -91,6 +93,51 @@ public class Views extends AndroidTestCase {
         return rev;
     }
 
+    private List<TDRevision> putDocs(TDDatabase db) {
+        List<TDRevision> result = new ArrayList<TDRevision>();
+
+        Map<String,Object> dict2 = new HashMap<String,Object>();
+        dict2.put("_id", "22222");
+        dict2.put("key", "two");
+        result.add(putDoc(db, dict2));
+
+        Map<String,Object> dict4 = new HashMap<String,Object>();
+        dict4.put("_id", "44444");
+        dict4.put("key", "four");
+        result.add(putDoc(db, dict4));
+
+        Map<String,Object> dict1 = new HashMap<String,Object>();
+        dict1.put("_id", "11111");
+        dict1.put("key", "one");
+        result.add(putDoc(db, dict1));
+
+        Map<String,Object> dict3 = new HashMap<String,Object>();
+        dict3.put("_id", "33333");
+        dict3.put("key", "three");
+        result.add(putDoc(db, dict3));
+
+        Map<String,Object> dict5 = new HashMap<String,Object>();
+        dict5.put("_id", "55555");
+        dict5.put("key", "five");
+        result.add(putDoc(db, dict5));
+
+        return result;
+    }
+
+    public TDView createView(TDDatabase db) {
+        TDView view = db.getViewNamed("aview");
+        view.setMapBlock(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                Assert.assertNotNull(document.get("_id"));
+                Assert.assertNotNull(document.get("_rev"));
+                emitter.emit(document.get("key"), null);
+            }
+        }, "1");
+        return view;
+    }
+
     public void testViewIndex() {
 
         String filesDir = getContext().getFilesDir().getAbsolutePath();
@@ -111,16 +158,7 @@ public class Views extends AndroidTestCase {
         TDRevision rev3 = putDoc(db, dict3);
         putDoc(db, dictX);
 
-        TDView view = db.getViewNamed("aview");
-        view.setMapBlock(new TDViewMapBlock() {
-
-            @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
-                Assert.assertNotNull(document.get("_id"));
-                Assert.assertNotNull(document.get("_rev"));
-                emitter.emit(document.get("key"), null);
-            }
-        }, "1");
+        TDView view = createView(db);
 
         Assert.assertEquals(1, view.getViewId());
 
@@ -189,6 +227,180 @@ public class Views extends AndroidTestCase {
         view.removeIndex();
 
         db.close();
+    }
+
+    public Map<String, Object> createExpectedQueryResult(List<Object> rows, int offset) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("rows", rows);
+        result.put("total_rows", rows.size());
+        result.put("offset", offset);
+        return result;
+    }
+
+    public void testViewQuery() {
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+        putDocs(db);
+        TDView view = createView(db);
+
+        TDStatus updated = view.updateIndex();
+        Assert.assertEquals(TDStatus.OK, updated.getCode());
+
+        // Query all rows:
+        TDQueryOptions options = new TDQueryOptions();
+        TDStatus status = new TDStatus();
+        Map<String, Object> query = view.queryWithOptions(options);
+
+        List<Object> expectedRows = new ArrayList<Object>();
+
+        Map<String,Object> dict5 = new HashMap<String,Object>();
+        dict5.put("id", "55555");
+        dict5.put("key", "five");
+        expectedRows.add(dict5);
+
+        Map<String,Object> dict4 = new HashMap<String,Object>();
+        dict4.put("id", "44444");
+        dict4.put("key", "four");
+        expectedRows.add(dict4);
+
+        Map<String,Object> dict1 = new HashMap<String,Object>();
+        dict1.put("id", "11111");
+        dict1.put("key", "one");
+        expectedRows.add(dict1);
+
+        Map<String,Object> dict3 = new HashMap<String,Object>();
+        dict3.put("id", "33333");
+        dict3.put("key", "three");
+        expectedRows.add(dict3);
+
+        Map<String,Object> dict2 = new HashMap<String,Object>();
+        dict2.put("id", "22222");
+        dict2.put("key", "two");
+        expectedRows.add(dict2);
+
+        Map<String,Object> expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
+        // Start/end key query:
+        options = new TDQueryOptions();
+        options.setStartKey("a");
+        options.setEndKey("one");
+
+        status = new TDStatus();
+        query = view.queryWithOptions(options);
+
+        expectedRows = new ArrayList<Object>();
+        expectedRows.add(dict5);
+        expectedRows.add(dict4);
+        expectedRows.add(dict1);
+
+        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
+        // Start/end query without inclusive end:
+        options.setInclusiveEnd(false);
+
+        status = new TDStatus();
+        query = view.queryWithOptions(options);
+
+        expectedRows = new ArrayList<Object>();
+        expectedRows.add(dict5);
+        expectedRows.add(dict4);
+
+        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
+        // Reversed:
+        options.setDescending(true);
+        options.setStartKey("o");
+        options.setEndKey("five");
+        options.setInclusiveEnd(true);
+
+        status = new TDStatus();
+        query = view.queryWithOptions(options);
+
+        expectedRows = new ArrayList<Object>();
+        expectedRows.add(dict4);
+        expectedRows.add(dict5);
+
+        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
+        // Reversed, no inclusive end:
+        options.setInclusiveEnd(false);
+
+        status = new TDStatus();
+        query = view.queryWithOptions(options);
+
+        expectedRows = new ArrayList<Object>();
+        expectedRows.add(dict4);
+
+        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
+    }
+
+    public void testAllDocsQuery() {
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+        List<TDRevision> docs = putDocs(db);
+
+        List<Map<String,Object>> expectedRow = new ArrayList<Map<String,Object>>();
+        for (TDRevision rev : docs) {
+            Map<String,Object> value = new HashMap<String, Object>();
+            value.put("rev", rev.getRevId());
+
+            Map<String, Object> row = new HashMap<String, Object>();
+            row.put("id", rev.getDocId());
+            row.put("key", rev.getDocId());
+            row.put("value", value);
+            expectedRow.add(row);
+        }
+
+        TDQueryOptions options = new TDQueryOptions();
+        Map<String,Object> query = db.getAllDocs(options);
+
+        List<Object>expectedRows = new ArrayList<Object>();
+        expectedRows.add(expectedRow.get(2));
+        expectedRows.add(expectedRow.get(0));
+        expectedRows.add(expectedRow.get(3));
+        expectedRows.add(expectedRow.get(1));
+        expectedRows.add(expectedRow.get(4));
+
+        Map<String,Object> expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
+        // Start/end key query:
+        options = new TDQueryOptions();
+        options.setStartKey("2");
+        options.setEndKey("44444");
+
+        query = db.getAllDocs(options);
+
+        expectedRows = new ArrayList<Object>();
+        expectedRows.add(expectedRow.get(0));
+        expectedRows.add(expectedRow.get(3));
+        expectedRows.add(expectedRow.get(1));
+
+        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
+        // Start/end query without inclusive end:
+        options.setInclusiveEnd(false);
+
+        query = db.getAllDocs(options);
+
+        expectedRows = new ArrayList<Object>();
+        expectedRows.add(expectedRow.get(0));
+        expectedRows.add(expectedRow.get(3));
+
+        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
     }
 
 }

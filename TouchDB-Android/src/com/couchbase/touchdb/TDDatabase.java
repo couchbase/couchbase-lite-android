@@ -675,7 +675,7 @@ public class TDDatabase extends Observable {
                 }
 
                 String[] args = { docId };
-                cursor = database.rawQuery("SELECT sequence, deleted FROM docs WHERE docid=? and current=1 ORDER BY revid DESC LIMIT 1", args);
+                cursor = database.rawQuery("SELECT sequence, deleted FROM revs WHERE doc_id=? and current=1 ORDER BY revid DESC LIMIT 1", args);
 
                 if(cursor.moveToFirst()) {
                     boolean wasAlreadyDeleted = (cursor.getInt(1) > 0);
@@ -927,7 +927,6 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String,Object> getAllDocs(TDQueryOptions options) {
         if(options == null) {
             options = new TDQueryOptions();
@@ -938,17 +937,53 @@ public class TDDatabase extends Observable {
             updateSeq = getLastSequence();  // TODO: needs to be atomic with the following SELECT
         }
 
+        List<String> argsList = new ArrayList<String>();
         String cols = "revs.doc_id, docid, revid";
         if(options.isIncludeDocs()) {
             cols = cols + ", json, sequence";
         }
+
+        String additionalWhereClause = "";
+        Object minKey = options.getStartKey();
+        Object maxKey = options.getEndKey();
+        boolean inclusiveMin = true;
+        boolean inclusiveMax = options.isInclusiveEnd();
+        if(options.isDescending()) {
+            minKey = maxKey;
+            maxKey = options.getStartKey();
+            inclusiveMin = inclusiveMax;
+            inclusiveMax = true;
+        }
+
+        if(minKey != null) {
+            assert(minKey instanceof String);
+            if(inclusiveMin) {
+                additionalWhereClause += " AND docid >= ?";
+            } else {
+                additionalWhereClause += " AND docid > ?";
+            }
+            argsList.add((String)minKey);
+        }
+
+        if(maxKey != null) {
+            assert(maxKey instanceof String);
+            if(inclusiveMax) {
+                additionalWhereClause += " AND docid <= ?";
+            }
+            else {
+                additionalWhereClause += " AND docid < ?";
+            }
+            argsList.add((String)maxKey);
+        }
+
 
         String order = "ASC";
         if(options.isDescending()) {
             order = "DESC";
         }
 
-        String[] args = { Integer.toString(options.getLimit()), Integer.toString(options.getSkip())};
+        argsList.add(Integer.toString(options.getLimit()));
+        argsList.add(Integer.toString(options.getSkip()));
         Cursor cursor = null;
         long lastDocID = 0;
         List<Map<String,Object>> rows = null;
@@ -956,9 +991,9 @@ public class TDDatabase extends Observable {
         try {
             cursor = database.rawQuery("SELECT " + cols +
                     " FROM revs, docs " +
-                    " WHERE current=1 AND deleted=0" +
+                    " WHERE current=1 AND deleted=0 AND docs.doc_id = revs.doc_id" + additionalWhereClause +
                     " ORDER BY docid " + order +
-                    ", revid DESC LIMIT ? OFFSET ?", args);
+                    ", revid DESC LIMIT ? OFFSET ?", argsList.toArray(new String[argsList.size()]));
 
             cursor.moveToFirst();
             rows = new ArrayList<Map<String,Object>>();
@@ -986,7 +1021,9 @@ public class TDDatabase extends Observable {
                 change.put("id", docId);
                 change.put("key", docId);
                 change.put("value", valueMap);
-                change.put("doc", docContents);
+                if(docContents != null) {
+                    change.put("doc", docContents);
+                }
 
                 rows.add(change);
 
@@ -1006,7 +1043,10 @@ public class TDDatabase extends Observable {
         result.put("rows", rows);
         result.put("total_rows", totalRows);
         result.put("offset", options.getSkip());
-        result.put("update_seq", (updateSeq != 0) ? updateSeq : null);
+        if(updateSeq != 0) {
+            result.put("update_seq", updateSeq);
+        }
+
 
         return result;
     }

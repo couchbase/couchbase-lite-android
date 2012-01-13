@@ -19,27 +19,28 @@ package com.couchbase.touchdb;
 
 public class TDQueryOptions {
 
-    private String startKey = null;
-    private String endKey = null;
+    private Object startKey = null;
+    private Object endKey = null;
     private int skip = 0;
     private int limit = Integer.MAX_VALUE;
     private boolean descending = false;
     private boolean includeDocs = false;
     private boolean updateSeq = false;
+    private boolean inclusiveEnd = true;
 
-    public String getStartKey() {
+    public Object getStartKey() {
         return startKey;
     }
 
-    public void setStartKey(String startKey) {
+    public void setStartKey(Object startKey) {
         this.startKey = startKey;
     }
 
-    public String getEndKey() {
+    public Object getEndKey() {
         return endKey;
     }
 
-    public void setEndKey(String endKey) {
+    public void setEndKey(Object endKey) {
         this.endKey = endKey;
     }
 
@@ -81,6 +82,14 @@ public class TDQueryOptions {
 
     public void setUpdateSeq(boolean updateSeq) {
         this.updateSeq = updateSeq;
+    }
+
+    public boolean isInclusiveEnd() {
+        return inclusiveEnd;
+    }
+
+    public void setInclusiveEnd(boolean inclusiveEnd) {
+        this.inclusiveEnd = inclusiveEnd;
     }
 
 }

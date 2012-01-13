@@ -148,14 +148,14 @@ public class TDView {
     }
 
     public void removeIndex() {
-        if(viewId < 0) {
+        if(getViewId() < 0) {
             return;
         }
 
         try {
             db.beginTransaction();
 
-            String[] whereArgs = { Integer.toString(viewId) };
+            String[] whereArgs = { Integer.toString(getViewId()) };
             db.getDatabase().delete("maps", "view_id=?", whereArgs);
 
             ContentValues updateValues = new ContentValues();
@@ -209,7 +209,7 @@ public class TDView {
         Log.v(TDDatabase.TAG, "Re-indexing view " + name + " ...");
         assert(mapBlock != null);
 
-        if(viewId < 0) {
+        if(getViewId() < 0) {
             return new TDStatus(TDStatus.NOT_FOUND);
         }
 
@@ -226,13 +226,13 @@ public class TDView {
 
         if(lastSequence == 0) {
             // If the lastSequence has been reset to 0, make sure to remove any leftover rows:
-            String[] whereArgs = { Integer.toString(viewId) };
+            String[] whereArgs = { Integer.toString(getViewId()) };
             db.getDatabase().delete("maps", "view_id=?", whereArgs);
         }
         else {
             // Delete all obsolete map results (ones from since-replaced revisions):
             try {
-                String[] args = { Integer.toString(viewId), Long.toString(lastSequence), Long.toString(lastSequence) };
+                String[] args = { Integer.toString(getViewId()), Long.toString(lastSequence), Long.toString(lastSequence) };
                 db.getDatabase().execSQL("DELETE FROM maps WHERE view_id=? AND sequence IN ("
                                         + "SELECT parent FROM revs WHERE sequence>? "
                                         + "AND parent>0 AND parent<=?)", args);
@@ -276,7 +276,7 @@ public class TDView {
                     Log.v(TDDatabase.TAG, "    emit(" + keyJson + ", " + valueJson + ")");
 
                     ContentValues insertValues = new ContentValues();
-                    insertValues.put("view_id", viewId);
+                    insertValues.put("view_id", getViewId());
                     insertValues.put("sequence", sequence);
                     insertValues.put("key", keyJson);
                     insertValues.put("value", valueJson);
@@ -331,7 +331,7 @@ public class TDView {
             ContentValues updateValues = new ContentValues();
             updateValues.put("lastSequence", dbMaxSequence);
 
-            String[] whereArgs = { Integer.toString(viewId) };
+            String[] whereArgs = { Integer.toString(getViewId()) };
             db.getDatabase().update("views", updateValues, "view_id=?", whereArgs);
 
 
@@ -354,11 +354,11 @@ public class TDView {
 
     /*** Querying ***/
     public List<Map<String,Object>> dump() {
-        if(viewId < 0) {
+        if(getViewId() < 0) {
             return null;
         }
 
-        String[] selectArgs = { Integer.toString(viewId) };
+        String[] selectArgs = { Integer.toString(getViewId()) };
         Cursor cursor = null;
         List<Map<String, Object>> result = null;
 
@@ -407,19 +407,56 @@ public class TDView {
         if(options.isIncludeDocs()) {
             sql = sql + ", revid, json, revs.sequence";
         }
-        sql = sql + " FROM maps, revs, docs ";
-        sql = sql + "WHERE maps.view_id=? AND revs.sequence = maps.sequence AND docs.doc_id = revs.doc_id ORDER BY key";
+        sql = sql + " FROM maps, revs, docs WHERE maps.view_id=?";
+
+        List<String> argsList = new ArrayList<String>();
+        argsList.add(Integer.toString(getViewId()));
+
+        Object minKey = options.getStartKey();
+        Object maxKey = options.getEndKey();
+        boolean inclusiveMin = true;
+        boolean inclusiveMax = options.isInclusiveEnd();
+        if(options.isDescending()) {
+            minKey = maxKey;
+            maxKey = options.getStartKey();
+            inclusiveMin = inclusiveMax;
+            inclusiveMax = true;
+        }
+
+        if(minKey != null) {
+            assert(minKey instanceof String);
+            if(inclusiveMin) {
+                sql += " AND key >= ?";
+            } else {
+                sql += " AND key > ?";
+            }
+            argsList.add(toJSONString(minKey));
+        }
+
+        if(maxKey != null) {
+            assert(maxKey instanceof String);
+            if(inclusiveMax) {
+                sql += " AND key <= ?";
+            }
+            else {
+                sql += " AND key < ?";
+            }
+            argsList.add(toJSONString(maxKey));
+        }
+
+        sql = sql + " AND revs.sequence = maps.sequence AND docs.doc_id = revs.doc_id ORDER BY key";
         if(options.isDescending()) {
             sql = sql + " DESC";
         }
         sql = sql + " LIMIT ? OFFSET ?";
-        String[] args = { Integer.toString(viewId), Integer.toString(options.getLimit()), Integer.toString(options.getSkip()) };
+        argsList.add(Integer.toString(options.getLimit()));
+        argsList.add(Integer.toString(options.getSkip()));
 
         Cursor cursor = null;
 
         List<Map<String, Object>> rows;
         try {
-            cursor = db.getDatabase().rawQuery(sql, args);
+            cursor = db.getDatabase().rawQuery(sql, argsList.toArray(new String[argsList.size()]));
 
             cursor.moveToFirst();
             rows = new ArrayList<Map<String,Object>>();
@@ -437,8 +474,12 @@ public class TDView {
                 }
                 row.put("id", docId);
                 row.put("key", key);
-                row.put("value", value);
-                row.put("doc", docContents);
+                if(value != null) {
+                    row.put("value", value);
+                }
+                if(docContents != null) {
+                    row.put("doc", docContents);
+                }
                 rows.add(row);
                 cursor.moveToNext();
             }
@@ -457,7 +498,9 @@ public class TDView {
         result.put("rows", rows);
         result.put("total_rows", totalRows);
         result.put("offset", options.getSkip());
-        result.put("update_seq", ((update_seq != 0) ? update_seq : null));
+        if(update_seq != 0) {
+            result.put("update_seq", update_seq);
+        }
 
         return result;
     }
