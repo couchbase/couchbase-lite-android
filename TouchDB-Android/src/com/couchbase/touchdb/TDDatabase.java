@@ -477,7 +477,7 @@ public class TDDatabase extends Observable {
     }
 
     public long getLastSequence() {
-        String sql = "SELECT sequence FROM revs ORDER BY sequence DESC LIMIT 1";
+        String sql = "SELECT MAX(sequence) FROM revs";
         Cursor cursor = null;
         long result = 0;
         try {
@@ -636,11 +636,10 @@ public class TDDatabase extends Observable {
                     return null;
                 }
                 String[] args = {Long.toString(docNumericID), prevRevId};
-                cursor = database.rawQuery("SELECT sequence FROM revs WHERE doc_id=? AND revid=? and current=1", args);
+                cursor = database.rawQuery("SELECT sequence FROM revs WHERE doc_id=? AND revid=? and current=1 LIMIT 1", args);
 
                 if(cursor.moveToFirst()) {
                     parentSequence = cursor.getLong(0);
-                    cursor.close();
                 }
                 else {
                     // Not found: either a 404 or a 409, depending on whether there is any current revision
