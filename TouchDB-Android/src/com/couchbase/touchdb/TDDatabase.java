@@ -326,11 +326,29 @@ public class TDDatabase extends Observable {
         Map<String,Object> extra = new HashMap<String,Object>();
         extra.put("_id", docId);
         extra.put("_rev", revId);
+        if(rev.isDeleted()) {
+            extra.put("_deleted", true);
+        }
         if(attachmentsDict != null) {
             extra.put("_attachments", attachmentsDict);
         }
 
         rev.setJson(appendDictToJSON(json, extra));
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> documentPropertiesFromJSON(byte[] json, String docId, String revId, long sequence) {
+        Map<String, Object> result = null;
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            result = mapper.readValue(json, Map.class);
+            result.put("_id", docId);
+            result.put("_rev", revId);
+            result.put("_attachments", getAttachmentsDictForSequenceWithContent(sequence, false));
+        } catch (Exception e) {
+            Log.e(TDDatabase.TAG, "Error serializing properties to JSON", e);
+        }
+        return result;
     }
 
     public TDRevision getDocumentWithID(String id) {
@@ -563,6 +581,7 @@ public class TDDatabase extends Observable {
         Map<String,Object> properties = new HashMap<String,Object>(revProperties);
         properties.remove("_id");
         properties.remove("_rev");
+        properties.remove("_deleted");
         properties.remove("_attachments");
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -920,7 +939,7 @@ public class TDDatabase extends Observable {
             updateSeq = getLastSequence();  // TODO: needs to be atomic with the following SELECT
         }
 
-        String cols = "docid, revid";
+        String cols = "revs.doc_id, docid, revid";
         if(options.isIncludeDocs()) {
             cols = cols + ", json, sequence";
         }
@@ -932,6 +951,7 @@ public class TDDatabase extends Observable {
 
         String[] args = { Integer.toString(options.getLimit()), Integer.toString(options.getSkip())};
         Cursor cursor = null;
+        long lastDocID = 0;
         List<Map<String,Object>> rows = null;
 
         try {
@@ -939,26 +959,25 @@ public class TDDatabase extends Observable {
                     " FROM revs, docs " +
                     " WHERE current=1 AND deleted=0" +
                     " ORDER BY docid " + order +
-                    " LIMIT ? OFFSET ?", args);
+                    ", revid DESC LIMIT ? OFFSET ?", args);
 
             cursor.moveToFirst();
             rows = new ArrayList<Map<String,Object>>();
             while(!cursor.isAfterLast()) {
-                String docId = cursor.getString(0);
-                String revId = cursor.getString(1);
+                long docNumericID = cursor.getLong(0);
+                if(docNumericID == lastDocID) {
+                    cursor.moveToNext();
+                    continue;
+                }
+                lastDocID = docNumericID;
+
+                String docId = cursor.getString(1);
+                String revId = cursor.getString(2);
                 Map<String, Object> docContents = null;
                 if(options.isIncludeDocs()) {
-                    byte[] json = cursor.getBlob(2);
-                    ObjectMapper mapper = new ObjectMapper();
-                    try {
-                        docContents = mapper.readValue(json, Map.class);
-                        docContents.put("_id", docId);
-                        docContents.put("_rev", revId);
-                        long sequence = cursor.getLong(3);
-                        docContents.put("_attachments", getAttachmentsDictForSequenceWithContent(sequence, false));
-                    } catch (Exception e) {
-                        Log.e(TDDatabase.TAG, "Invalid JSON in the docs table", e);
-                    }
+                    byte[] json = cursor.getBlob(3);
+                    long sequence = cursor.getLong(4);
+                    docContents = documentPropertiesFromJSON(json, docId, revId, sequence);
                 }
 
                 Map<String,Object> valueMap = new HashMap<String,Object>();

@@ -216,15 +216,49 @@ public class TDView {
         db.beginTransaction();
         TDStatus result = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
 
-        long sequence = 0;
-
         long lastSequence = getLastSequenceIndexed();
+        long sequence = lastSequence;
         if(lastSequence < 0) {
             Log.e(TDDatabase.TAG, "Failed to rebuild view");
             db.getDatabase().endTransaction();
             return result;
         }
-        sequence = lastSequence;
+
+        if(lastSequence == 0) {
+            // If the lastSequence has been reset to 0, make sure to remove any leftover rows:
+            String[] whereArgs = { Integer.toString(viewId) };
+            db.getDatabase().delete("maps", "view_id=?", whereArgs);
+        }
+        else {
+            // Delete all obsolete map results (ones from since-replaced revisions):
+            try {
+                String[] args = { Integer.toString(viewId), Long.toString(lastSequence), Long.toString(lastSequence) };
+                db.getDatabase().execSQL("DELETE FROM maps WHERE view_id=? AND sequence IN ("
+                                        + "SELECT parent FROM revs WHERE sequence>? "
+                                        + "AND parent>0 AND parent<=?)", args);
+            }
+            catch(SQLException e) {
+                Log.e(TDDatabase.TAG, "Error updating index", e);
+                db.endTransaction();
+                return result;
+            }
+        }
+
+        Cursor countCursor = null;
+        int deleted = 0;
+        try {
+            countCursor = db.getDatabase().rawQuery("SELECT changes()", null);
+            countCursor.moveToFirst();
+            deleted = countCursor.getInt(0);
+        } catch(SQLException e) {
+            db.endTransaction();
+            return result;
+        } finally {
+            if(countCursor != null) {
+                countCursor.close();
+            }
+        }
+
 
         // This is the emit() block, which gets called from within the user-defined map() block
         // that's called down below.
@@ -254,63 +288,55 @@ public class TDView {
             }
         };
 
-        // If the lastSequence has been reset to 0, make sure to remove any leftover rows:
-        if(lastSequence == 0) {
-            String[] whereArgs = { Integer.toString(viewId) };
-            db.getDatabase().delete("maps", "view_id=?", whereArgs);
-        }
-
         // Now scan every revision added since the last time the view was indexed:
-        String[] selectArgs = { Long.toString(lastSequence), Long.toString(lastSequence) };
+        String[] selectArgs = { Long.toString(lastSequence) };
         Cursor cursor = null;
 
-
         try {
-            cursor = db.getDatabase().rawQuery("SELECT sequence, parent, current, deleted, json FROM revs WHERE sequence>? AND ((parent>0 AND parent<?) OR (current!=0 AND deleted=0))", selectArgs);
+            cursor = db.getDatabase().rawQuery("SELECT revs.doc_id, sequence, docid, revid, json FROM revs, docs "
+                                        + "WHERE sequence>? AND current!=0 AND deleted=0 "
+                                        + "AND revs.doc_id = docs.doc_id "
+                                        + "ORDER BY revs.doc_id, revid DESC", selectArgs);
             cursor.moveToFirst();
 
+            long lastDocID = 0;
             while(!cursor.isAfterLast()) {
-                sequence = cursor.getLong(0);
-                long parentSequence = cursor.getLong(1);
-                boolean current = (cursor.getInt(2) > 0);
-                boolean deleted = (cursor.getInt(3) > 0);
-                byte[] json = cursor.getBlob(4);
+                long docID = cursor.getLong(0);
+                if(docID != lastDocID) {
+                    // Only look at the first-iterated revision of any document, because this is the
+                    // one with the highest revid, hence the "winning" revision of a conflict.
+                    lastDocID = docID;
 
-                Log.v(TDDatabase.TAG, "Seq# " + Long.toString(sequence));
-
-                if((parentSequence != 0) && (parentSequence <= lastSequence)) {
-                    // Delete any map results emitted from now-obsolete revisions:
-                    Log.v(TDDatabase.TAG, "  delete maps for sequence=" + Long.toString(parentSequence));
-                    String[] whereArgs = { Long.toString(parentSequence), Integer.toString(viewId) };
-                    db.getDatabase().delete("maps", "sequence=? AND view_id=?", whereArgs);
-                }
-
-                if(current && !deleted) {
-                    // Call the user-defined map() to emit new key/value pairs from this revision:
-                    Log.v(TDDatabase.TAG, "  call map for sequence=" + Long.toString(sequence));
-                    ObjectMapper mapper = new ObjectMapper();
-                    Map<String, Object> properties = null;
-                    try {
-                        emitBlock.setSequence(sequence);
-                        properties = mapper.readValue(json, Map.class);
-                    } catch (Exception e) {
-                        //ignore
-                    }
+                    // Reconstitute the document as a dictionary:
+                    sequence = cursor.getLong(1);
+                    String docId = cursor.getString(2);
+                    String revId = cursor.getString(3);
+                    byte[] json = cursor.getBlob(4);
+                    Map<String, Object> properties = db.documentPropertiesFromJSON(json, docId, revId, sequence);
 
                     if(properties != null) {
+                        // Call the user-defined map() to emit new key/value pairs from this revision:
+                        Log.v(TDDatabase.TAG, "  call map for sequence=" + Long.toString(sequence));
+                        emitBlock.setSequence(sequence);
                         mapBlock.map(properties, emitBlock);
                     }
+
                 }
 
                 cursor.moveToNext();
             }
 
             // Finally, record the last revision sequence number that was indexed:
+            long dbMaxSequence = db.getLastSequence();
             ContentValues updateValues = new ContentValues();
-            updateValues.put("lastSequence", sequence);
+            updateValues.put("lastSequence", dbMaxSequence);
 
             String[] whereArgs = { Integer.toString(viewId) };
             db.getDatabase().update("views", updateValues, "view_id=?", whereArgs);
+
+
+            //FIXME actually count number added :)
+            Log.v(TDDatabase.TAG, "...Finished re-indexing view " + name + " up to sequence " + Long.toString(dbMaxSequence) + " (deleted " + deleted + " added " + "?" + ")");
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error re-indexing view", e);
             db.endTransaction();
@@ -321,7 +347,6 @@ public class TDView {
             }
         }
 
-        Log.v(TDDatabase.TAG, "...Finished re-indexing view " + name + " up to sequence " + Long.toString(sequence));
         result.setCode(TDStatus.OK);
         db.endTransaction();
         return result;
@@ -408,16 +433,7 @@ public class TDView {
                     String revId = cursor.getString(3);
                     byte[] docBytes = cursor.getBlob(4);
                     long sequence = cursor.getLong(5);
-                    ObjectMapper mapper = new ObjectMapper();
-                    try {
-                        docContents = mapper.readValue(docBytes, Map.class);
-                        docContents.put("_id", docId);
-                        docContents.put("_rev", revId);
-                        docContents.put("_attachments", db.getAttachmentsDictForSequenceWithContent(sequence, false));
-                    } catch (Exception e) {
-                        Log.w(TDDatabase.TAG, "Unable to parse document JSON in view");
-                    }
-
+                    docContents = db.documentPropertiesFromJSON(docBytes, docId, revId, sequence);
                 }
                 row.put("id", docId);
                 row.put("key", key);

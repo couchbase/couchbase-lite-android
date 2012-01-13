@@ -116,6 +116,8 @@ public class Views extends AndroidTestCase {
 
             @Override
             public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                Assert.assertNotNull(document.get("_id"));
+                Assert.assertNotNull(document.get("_rev"));
                 emitter.emit(document.get("key"), null);
             }
         }, "1");
