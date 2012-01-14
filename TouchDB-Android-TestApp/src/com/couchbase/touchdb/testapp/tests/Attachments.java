@@ -57,7 +57,7 @@ public class Attachments extends AndroidTestCase {
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         byte[] attach1 = "This is the body of attach1".getBytes();
-        boolean result = db.insertAttachmentForSequenceWithNameAndType(attach1, rev1.getSequence(), "attach", "text/plain");
+        boolean result = db.insertAttachmentForSequenceWithNameAndType(attach1, rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
         Assert.assertTrue(result);
 
         TDAttachment attachment = db.getAttachmentForSequence(rev1.getSequence(), "attach", status);
@@ -70,6 +70,7 @@ public class Attachments extends AndroidTestCase {
         innerDict.put("digest", "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
         innerDict.put("length", 27);
         innerDict.put("stub", true);
+        innerDict.put("revpos", 1);
         Map<String,Object> attachmentDict = new HashMap<String,Object>();
         attachmentDict.put("attach", innerDict);
 
@@ -102,7 +103,7 @@ public class Attachments extends AndroidTestCase {
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
-        result = db.insertAttachmentForSequenceWithNameAndType(attach2, rev3.getSequence(), "attach", "text/html");
+        result = db.insertAttachmentForSequenceWithNameAndType(attach2, rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
         Assert.assertTrue(result);
 
         // Check the 2nd revision's attachment:
@@ -172,6 +173,7 @@ public class Attachments extends AndroidTestCase {
         innerDict.put("digest", "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
         innerDict.put("length", 27);
         innerDict.put("stub", true);
+        innerDict.put("revpos", 1);
 
         Map<String,Object> expectAttachmentDict = new HashMap<String,Object>();
         expectAttachmentDict.put("attach1", innerDict);

@@ -46,7 +46,6 @@ public class TDDatabase extends Observable {
     private SQLiteDatabase database;
     private boolean open = false;
     private int transactionLevel = 0;
-    private boolean transactionFailed = false;
     public static final String TAG = "TDDatabase";
 
     private Map<String, TDView> views;
@@ -85,14 +84,15 @@ public class TDDatabase extends Observable {
             "        filename TEXT NOT NULL, " +
             "        key BLOB NOT NULL, " +
             "        type TEXT, " +
-            "        length INTEGER NOT NULL); " +
+            "        length INTEGER NOT NULL, " +
+            "        revpos INTEGER DEFAULT 0); " +
             "    CREATE INDEX attachments_by_sequence on attachments(sequence, filename); " +
             "    CREATE TABLE replicators ( " +
             "        remote TEXT NOT NULL, " +
             "        push BOOLEAN, " +
             "        last_sequence TEXT, " +
             "        UNIQUE (remote, push)); " +
-            "    PRAGMA user_version = 1";             // at the end, update user_version
+            "    PRAGMA user_version = 2";             // at the end, update user_version
 
 
     public static TDDatabase createEmptyDBAtPath(String path) {
@@ -189,6 +189,14 @@ public class TDDatabase extends Observable {
                 database.close();
                 return false;
             }
+        } else if (dbVersion < 2) {
+            // Version 2: added attachments.revpos
+            String upgradeSql = "ALTER TABLE attachments ADD COLUMN revpos INTEGER DEFAULT 0; " +
+                                "PRAGMA user_version = 2";
+            if(!initialize(upgradeSql)) {
+                database.close();
+                return false;
+            }
         }
 
         try {
@@ -248,37 +256,38 @@ public class TDDatabase extends Observable {
     }
 
 
-    public void beginTransaction() {
-        if(++transactionLevel == 1) {
-            Log.v(TAG, "Begin transaction...");
-            database.beginTransaction();
-            transactionFailed = false;
+    public boolean beginTransaction() {
+        try {
+            database.execSQL("SAVEPOINT tdb" + Integer.toString(transactionLevel + 1));
+            ++transactionLevel;
+            Log.v(TAG, "Begin transaction (level " + Integer.toString(transactionLevel) + ")...");
+        } catch (SQLException e) {
+            return false;
         }
+        return true;
     }
 
-    public void endTransaction() {
+    public boolean endTransaction(boolean commit) {
         assert(transactionLevel > 0);
-        if(--transactionLevel == 0) {
-            if(transactionFailed) {
-                Log.v(TAG, "Rolling back transaction!");
-                database.endTransaction();
-            }
-            else {
-                Log.v(TAG, "Committing transaction");
-                database.setTransactionSuccessful();
-                database.endTransaction();
-            }
 
+        if(commit) {
+            Log.v(TAG, "Committing transaction (level " + Integer.toString(transactionLevel) + ")...");
         }
-        transactionFailed = false;
-    }
-
-    public boolean isTransactionFailed() {
-        return transactionFailed;
-    }
-
-    public void setTransactionFailed(boolean transactionFailed) {
-        this.transactionFailed = transactionFailed;
+        else {
+            Log.v(TAG, "CANCEL transaction (level " + Integer.toString(transactionLevel) + ")...");
+            try {
+                database.execSQL("ROLLBACK TO tdb" + Integer.toString(transactionLevel));
+            } catch (SQLException e) {
+                return false;
+            }
+        }
+        try {
+            database.execSQL("RELEASE tdb" + Integer.toString(transactionLevel));
+        } catch (SQLException e) {
+            return false;
+        }
+        --transactionLevel;
+        return true;
     }
 
     /*** Getting Documents ***/
@@ -503,17 +512,17 @@ public class TDDatabase extends Observable {
         return createUUID();
     }
 
-    public String getNextRevisionId(String revisionId) {
-     // Revision IDs have a generation count, a hyphen, and a UUID.
+    public String generateNextRevisionID(String revisionId) {
+        // Revision IDs have a generation count, a hyphen, and a UUID.
         int generation = 0;
         if(revisionId != null) {
-            String[] parts = revisionId.split("-");
-            if(parts.length > 1) {
-                generation = Integer.parseInt(parts[0]);
+            generation = TDRevision.generationFromRevID(revisionId);
+            if(generation == 0) {
+                return null;
             }
         }
         String digest = createUUID();  //TODO: Generate canonical digest of body
-        return "" + ++generation + "-" + digest;
+        return Integer.toString(generation + 1) + "-" + digest;
     }
 
     public void notifyChange(TDRevision rev, URL source) {
@@ -598,7 +607,9 @@ public class TDDatabase extends Observable {
             ContentValues args = new ContentValues();
             args.put("doc_id", docNumericID);
             args.put("revid", rev.getRevId());
-            args.put("parent", parentSequence);
+            if(parentSequence != 0) {
+                args.put("parent", parentSequence);
+            }
             args.put("current", current);
             args.put("deleted", rev.isDeleted());
             args.put("json", data);
@@ -622,6 +633,7 @@ public class TDDatabase extends Observable {
             return null;
         }
 
+        resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
         beginTransaction();
         Cursor cursor = null;
         long parentSequence = 0;
@@ -630,9 +642,6 @@ public class TDDatabase extends Observable {
              // Replacing: make sure given prevRevID is current & find its sequence number:
                 docNumericID = getOrInsertDocNumericID(docId);
                 if(docNumericID <= 0) {
-                    transactionFailed = true;
-                    endTransaction();
-                    resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
                     return null;
                 }
                 String[] args = {Long.toString(docNumericID), prevRevId};
@@ -641,17 +650,14 @@ public class TDDatabase extends Observable {
                 if(cursor.moveToFirst()) {
                     parentSequence = cursor.getLong(0);
                 }
-                else {
+
+                if(parentSequence == 0) {
                     // Not found: either a 404 or a 409, depending on whether there is any current revision
                     if(getDocumentWithID(docId) != null) {
-                        transactionFailed = true;
-                        endTransaction();
                         resultStatus.setCode(TDStatus.CONFLICT);
                         return null;
                     }
                     else {
-                        transactionFailed = true;
-                        endTransaction();
                         resultStatus.setCode(TDStatus.NOT_FOUND);
                         return null;
                     }
@@ -660,17 +666,13 @@ public class TDDatabase extends Observable {
                 // Make replaced rev non-current:
                 ContentValues updateContent = new ContentValues();
                 updateContent.put("current", 0);
-                int rowsUpdated = database.update("revs", updateContent, "sequence=" + parentSequence, null);
-                assert(rowsUpdated == 1);
+                database.update("revs", updateContent, "sequence=" + parentSequence, null);
             }
             else if(docId != null) {
                 // Inserting first revision, with docID given: make sure docID doesn't exist,
                 // or exists but is currently deleted
                 docNumericID = getOrInsertDocNumericID(docId);
                 if(docNumericID <= 0) {
-                    transactionFailed = true;
-                    endTransaction();
-                    resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
                     return null;
                 }
 
@@ -683,13 +685,10 @@ public class TDDatabase extends Observable {
                         // Make the deleted revision no longer current:
                         ContentValues updateContent = new ContentValues();
                         updateContent.put("current", 0);
-                        int rowsUpdated = database.update("revs", updateContent, "sequence=" + cursor.getLong(0), null);
-                        assert(rowsUpdated == 1);
+                        database.update("revs", updateContent, "sequence=" + cursor.getLong(0), null);
                     }
                     else {
                         // docId already exists, current not deleted, conflict
-                        transactionFailed = true;
-                        endTransaction();
                         resultStatus.setCode(TDStatus.CONFLICT);
                         return null;
                     }
@@ -700,49 +699,40 @@ public class TDDatabase extends Observable {
                 docId = generateDocumentId();
                 docNumericID = insertDocumentID(docId);
                 if(docNumericID <= 0) {
-                    transactionFailed = true;
-                    endTransaction();
-                    resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
                     return null;
                 }
             }
 
             // Bump the revID and update the JSON:
-            String newRevId = getNextRevisionId(prevRevId);
+            String newRevId = generateNextRevisionID(prevRevId);
             byte[] data = null;
             if(!rev.isDeleted()) {
                 data = encodeDocumentJSON(rev);
                 if(data == null) {
                     // bad or missing json
-                    transactionFailed = true;
-                    endTransaction();
                     resultStatus.setCode(TDStatus.BAD_REQUEST);
                     return null;
                 }
             }
 
-            TDRevision result = rev.copyWithDocID(docId, newRevId);
+            rev = rev.copyWithDocID(docId, newRevId);
 
             // Now insert the rev itself:
-            long newSequence = insertRevision(result, docNumericID, parentSequence, true, data);
+            long newSequence = insertRevision(rev, docNumericID, parentSequence, true, data);
             if(newSequence == 0) {
-                transactionFailed = true;
-                endTransaction();
-                resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
                 return null;
             }
 
             // Store any attachments:
             if(attachments != null) {
-                TDStatus status = processAttachmentsForRevision(result, parentSequence);
+                TDStatus status = processAttachmentsForRevision(rev, parentSequence);
                 if(!status.isSuccessful()) {
-                    transactionFailed = true;
-                    endTransaction();
-                    resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                    resultStatus.setCode(status.getCode());
                     return null;
                 }
             }
 
+            // Success!
             if(deleted) {
                 resultStatus.setCode(TDStatus.OK);
             }
@@ -750,93 +740,106 @@ public class TDDatabase extends Observable {
                 resultStatus.setCode(TDStatus.CREATED);
             }
 
-            endTransaction();
-            notifyChange(result, null);
-
-            return result;
-
         } catch (SQLException e1) {
             Log.e(TDDatabase.TAG, "Error putting revision", e1);
-            transactionFailed = true;
-            endTransaction();
-            resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
             return null;
         } finally {
             if(cursor != null) {
                 cursor.close();
             }
+            endTransaction(resultStatus.isSuccessful());
         }
+
+        notifyChange(rev, null);
+        return rev;
     }
 
     public TDStatus forceInsert(TDRevision rev, List<String> revHistory, URL source) {
 
-        // First look up all locally-known revisions of this document:
-        String docId = rev.getDocId();
-        long docNumericID = getOrInsertDocNumericID(docId);
-        TDRevisionList localRevs = getAllRevisionsOfDocumentID(docId, docNumericID, false);
-        if(localRevs == null) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        int historyCount = revHistory.size();
-        assert(historyCount >= 1);
-
-        // Walk through the remote history in chronological order, matching each revision ID to
-        // a local revision. When the list diverges, start creating blank local revisions to fill
-        // in the local history:
-        long sequence = 0;
-        long parentSequence = 0;
-
-        for(int i = revHistory.size() - 1; i >= 0; --i) {
-            parentSequence = sequence;
-            String revId = revHistory.get(i);
-            TDRevision localRev = localRevs.revWithDocIdAndRevId(docId, revId);
-            if(localRev != null) {
-                // This revision is known locally. Remember its sequence as the parent of the next one:
-                sequence = localRev.getSequence();
-                assert(sequence > 0);
+        boolean success = false;
+        beginTransaction();
+        try {
+            // First look up all locally-known revisions of this document:
+            String docId = rev.getDocId();
+            long docNumericID = getOrInsertDocNumericID(docId);
+            TDRevisionList localRevs = getAllRevisionsOfDocumentID(docId, docNumericID, false);
+            if(localRevs == null) {
+                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
             }
-            else {
-                // This revision isn't known, so add it:
-                TDRevision newRev;
-                byte[] data = null;
-                boolean current = false;
-                if(i == 0) {
-                    // Hey, this is the leaf revision we're inserting:
-                   newRev = rev;
-                   if(!rev.isDeleted()) {
-                       data = encodeDocumentJSON(rev);
-                       if(data == null) {
-                           return new TDStatus(TDStatus.BAD_REQUEST);
-                       }
-                   }
-                   current = true;
+            int historyCount = revHistory.size();
+            assert(historyCount >= 1);
+
+            // Walk through the remote history in chronological order, matching each revision ID to
+            // a local revision. When the list diverges, start creating blank local revisions to fill
+            // in the local history:
+            long sequence = 0;
+            long localParentSequence = 0;
+            for(int i = revHistory.size() - 1; i >= 0; --i) {
+                String revId = revHistory.get(i);
+                TDRevision localRev = localRevs.revWithDocIdAndRevId(docId, revId);
+                if(localRev != null) {
+                    // This revision is known locally. Remember its sequence as the parent of the next one:
+                    sequence = localRev.getSequence();
+                    assert(sequence > 0);
+                    localParentSequence = sequence;
                 }
                 else {
-                    // It's an intermediate parent, so insert a stub:
-                    newRev = new TDRevision(docId, revId, false);
-                }
+                    // This revision isn't known, so add it:
+                    TDRevision newRev;
+                    byte[] data = null;
+                    boolean current = false;
+                    if(i == 0) {
+                        // Hey, this is the leaf revision we're inserting:
+                       newRev = rev;
+                       if(!rev.isDeleted()) {
+                           data = encodeDocumentJSON(rev);
+                           if(data == null) {
+                               return new TDStatus(TDStatus.BAD_REQUEST);
+                           }
+                       }
+                       current = true;
+                    }
+                    else {
+                        // It's an intermediate parent, so insert a stub:
+                        newRev = new TDRevision(docId, revId, false);
+                    }
 
-                // Insert it:
-                sequence = insertRevision(newRev, docNumericID, parentSequence, current, data);
+                    // Insert it:
+                    sequence = insertRevision(newRev, docNumericID, sequence, current, data);
 
-                if(sequence <= 0) {
-                    return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-                }
+                    if(sequence <= 0) {
+                        return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                    }
 
-                if(i == 0) {
-                    // Write any changed attachments for the new revision:
-                    TDStatus status = processAttachmentsForRevision(rev, parentSequence);
-                    if(!status.isSuccessful()) {
-                        return status;
+                    if(i == 0) {
+                        // Write any changed attachments for the new revision:
+                        TDStatus status = processAttachmentsForRevision(rev, localParentSequence);
+                        if(!status.isSuccessful()) {
+                            return status;
+                        }
                     }
                 }
             }
+
+            // Mark the latest local rev as no longer current:
+            if(localParentSequence > 0 && localParentSequence != sequence) {
+                ContentValues args = new ContentValues();
+                args.put("current", 0);
+                String[] whereArgs = { Long.toString(localParentSequence) };
+                try {
+                    database.update("revs", args, "sequence=?", whereArgs);
+                } catch (SQLException e) {
+                    return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                }
+            }
+
+            success = true;
+        } finally {
+            endTransaction(success);
         }
 
         // Notify and return:
         notifyChange(rev, source);
-
         return new TDStatus(TDStatus.CREATED);
     }
 
@@ -1229,7 +1232,7 @@ public class TDDatabase extends Observable {
     }
 
     /*** Attachments ***/
-    public boolean insertAttachmentForSequenceWithNameAndType(byte[] contents, long sequence, String name, String contentType) {
+    public boolean insertAttachmentForSequenceWithNameAndType(byte[] contents, long sequence, String name, String contentType, int revpos) {
         assert(contents != null);
         assert(sequence > 0);
         assert(name != null);
@@ -1247,6 +1250,7 @@ public class TDDatabase extends Observable {
             args.put("key", keyData);
             args.put("type", contentType);
             args.put("length", contents.length);
+            args.put("revpos", revpos);
             database.insert("attachments", null, args);
             return true;
         } catch (SQLException e) {
@@ -1267,13 +1271,16 @@ public class TDDatabase extends Observable {
 
         String[] args = { Long.toString(toSeq), name, Long.toString(fromSeq), name };
         try {
-            database.execSQL("INSERT INTO attachments (sequence, filename, key, type, length) " +
-                                      "SELECT ?, ?, key, type, length FROM attachments " +
+            database.execSQL("INSERT INTO attachments (sequence, filename, key, type, length, revpos) " +
+                                      "SELECT ?, ?, key, type, length, revpos FROM attachments " +
                                         "WHERE sequence=? AND filename=?", args);
             cursor = database.rawQuery("SELECT changes()", null);
             cursor.moveToFirst();
             int rowsUpdated = cursor.getInt(0);
             if(rowsUpdated == 0) {
+                // Oops. This means a glitch in our attachment-management or pull code,
+                // or else a bug in the upstream server.
+                Log.w(TDDatabase.TAG, "Can't find inherited attachment " + name + " from seq# " + Long.toString(fromSeq) + " to copy to " + Long.toString(toSeq));
                 return new TDStatus(TDStatus.NOT_FOUND);
             }
             else {
@@ -1343,7 +1350,7 @@ public class TDDatabase extends Observable {
 
         String args[] = { Long.toString(sequence) };
         try {
-            cursor = database.rawQuery("SELECT filename, key, type, length FROM attachments WHERE sequence=?", args);
+            cursor = database.rawQuery("SELECT filename, key, type, length, revpos FROM attachments WHERE sequence=?", args);
 
             if(!cursor.moveToFirst()) {
                 return null;
@@ -1375,6 +1382,7 @@ public class TDDatabase extends Observable {
                 attachment.put("digest", digestString);
                 attachment.put("content_type", cursor.getString(2));
                 attachment.put("length", cursor.getInt(3));
+                attachment.put("revpos", cursor.getInt(4));
 
                 result.put(cursor.getString(0), attachment);
 
@@ -1413,6 +1421,7 @@ public class TDDatabase extends Observable {
             Map<String,Object> newAttach = (Map<String,Object>)newAttachments.get(name);
             String newContentBase64 = (String)newAttach.get("data");
             if(newContentBase64 != null) {
+                // New item contains data, so insert it. First decode the data:
                 byte[] newContents;
                 try {
                     newContents = Base64.decode(newContentBase64);
@@ -1423,7 +1432,23 @@ public class TDDatabase extends Observable {
                 if(newContents == null) {
                     return new TDStatus(TDStatus.BAD_REQUEST);
                 }
-                if(!insertAttachmentForSequenceWithNameAndType(newContents, newSequence, name, (String)newAttach.get("content_type"))) {
+
+                // Now determine the revpos, i.e. generation # this was added in. Usually this is
+                // implicit, but a rev being pulled in replication will have it set already.
+                int generation = rev.getGeneration();
+                assert(generation > 0);
+                Object revposObj = newAttach.get("revpos");
+                int revpos = generation;
+                if(revposObj != null && revposObj instanceof Integer) {
+                    revpos = ((Integer)revposObj).intValue();
+                }
+
+                if(revpos > generation) {
+                    return new TDStatus(TDStatus.BAD_REQUEST);
+                }
+
+                // Finally insert the attachment:
+                if(!insertAttachmentForSequenceWithNameAndType(newContents, newSequence, name, (String)newAttach.get("content_type"), revpos)) {
                     return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
                 }
             }

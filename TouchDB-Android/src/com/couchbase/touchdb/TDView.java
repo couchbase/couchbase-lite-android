@@ -152,6 +152,7 @@ public class TDView {
             return;
         }
 
+        boolean success = false;
         try {
             db.beginTransaction();
 
@@ -162,9 +163,11 @@ public class TDView {
             updateValues.put("lastSequence", 0);
             db.getDatabase().update("views", updateValues, "view_id=?", whereArgs);
 
-            db.endTransaction();
+            success = true;
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error removing index", e);
+        } finally {
+            db.endTransaction(success);
         }
     }
 
@@ -215,88 +218,71 @@ public class TDView {
 
         db.beginTransaction();
         TDStatus result = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        Cursor cursor = null;
 
-        long lastSequence = getLastSequenceIndexed();
-        long sequence = lastSequence;
-        if(lastSequence < 0) {
-            Log.e(TDDatabase.TAG, "Failed to rebuild view");
-            db.getDatabase().endTransaction();
-            return result;
-        }
+        try {
 
-        if(lastSequence == 0) {
-            // If the lastSequence has been reset to 0, make sure to remove any leftover rows:
-            String[] whereArgs = { Integer.toString(getViewId()) };
-            db.getDatabase().delete("maps", "view_id=?", whereArgs);
-        }
-        else {
-            // Delete all obsolete map results (ones from since-replaced revisions):
-            try {
+            long lastSequence = getLastSequenceIndexed();
+            long sequence = lastSequence;
+            if(lastSequence < 0) {
+                return result;
+            }
+
+            if(lastSequence == 0) {
+                // If the lastSequence has been reset to 0, make sure to remove any leftover rows:
+                String[] whereArgs = { Integer.toString(getViewId()) };
+                db.getDatabase().delete("maps", "view_id=?", whereArgs);
+            }
+            else {
+                // Delete all obsolete map results (ones from since-replaced revisions):
                 String[] args = { Integer.toString(getViewId()), Long.toString(lastSequence), Long.toString(lastSequence) };
                 db.getDatabase().execSQL("DELETE FROM maps WHERE view_id=? AND sequence IN ("
                                         + "SELECT parent FROM revs WHERE sequence>? "
                                         + "AND parent>0 AND parent<=?)", args);
             }
-            catch(SQLException e) {
-                Log.e(TDDatabase.TAG, "Error updating index", e);
-                db.endTransaction();
-                return result;
-            }
-        }
 
-        Cursor countCursor = null;
-        int deleted = 0;
-        try {
-            countCursor = db.getDatabase().rawQuery("SELECT changes()", null);
-            countCursor.moveToFirst();
-            deleted = countCursor.getInt(0);
-        } catch(SQLException e) {
-            db.endTransaction();
-            return result;
-        } finally {
-            if(countCursor != null) {
-                countCursor.close();
-            }
-        }
+            int deleted = 0;
+            cursor = db.getDatabase().rawQuery("SELECT changes()", null);
+            cursor.moveToFirst();
+            deleted = cursor.getInt(0);
+            cursor.close();
 
+            // This is the emit() block, which gets called from within the user-defined map() block
+            // that's called down below.
+            AbstractTouchMapEmitBlock emitBlock = new AbstractTouchMapEmitBlock() {
 
-        // This is the emit() block, which gets called from within the user-defined map() block
-        // that's called down below.
-        AbstractTouchMapEmitBlock emitBlock = new AbstractTouchMapEmitBlock() {
+                @Override
+                public void emit(Object key, Object value) {
+                    if(key == null) {
+                        return;
+                    }
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        String keyJson = mapper.writeValueAsString(key);
+                        String valueJson = mapper.writeValueAsString(value);
+                        Log.v(TDDatabase.TAG, "    emit(" + keyJson + ", " + valueJson + ")");
 
-            @Override
-            public void emit(Object key, Object value) {
-                if(key == null) {
-                    return;
+                        ContentValues insertValues = new ContentValues();
+                        insertValues.put("view_id", getViewId());
+                        insertValues.put("sequence", sequence);
+                        insertValues.put("key", keyJson);
+                        insertValues.put("value", valueJson);
+                        db.getDatabase().insert("maps", null, insertValues);
+                    } catch (Exception e) {
+                        Log.e(TDDatabase.TAG, "Error emitting", e);
+                        //find a better way to propogate this back
+                    }
                 }
-                try {
-                    ObjectMapper mapper = new ObjectMapper();
-                    String keyJson = mapper.writeValueAsString(key);
-                    String valueJson = mapper.writeValueAsString(value);
-                    Log.v(TDDatabase.TAG, "    emit(" + keyJson + ", " + valueJson + ")");
+            };
 
-                    ContentValues insertValues = new ContentValues();
-                    insertValues.put("view_id", getViewId());
-                    insertValues.put("sequence", sequence);
-                    insertValues.put("key", keyJson);
-                    insertValues.put("value", valueJson);
-                    db.getDatabase().insert("maps", null, insertValues);
-                } catch (Exception e) {
-                    Log.e(TDDatabase.TAG, "Error emitting", e);
-                    //find a better way to propogate this back
-                }
-            }
-        };
+            // Now scan every revision added since the last time the view was indexed:
+            String[] selectArgs = { Long.toString(lastSequence) };
 
-        // Now scan every revision added since the last time the view was indexed:
-        String[] selectArgs = { Long.toString(lastSequence) };
-        Cursor cursor = null;
-
-        try {
             cursor = db.getDatabase().rawQuery("SELECT revs.doc_id, sequence, docid, revid, json FROM revs, docs "
-                                        + "WHERE sequence>? AND current!=0 AND deleted=0 "
-                                        + "AND revs.doc_id = docs.doc_id "
-                                        + "ORDER BY revs.doc_id, revid DESC", selectArgs);
+                    + "WHERE sequence>? AND current!=0 AND deleted=0 "
+                    + "AND revs.doc_id = docs.doc_id "
+                    + "ORDER BY revs.doc_id, revid DESC", selectArgs);
+
             cursor.moveToFirst();
 
             long lastDocID = 0;
@@ -330,25 +316,27 @@ public class TDView {
             long dbMaxSequence = db.getLastSequence();
             ContentValues updateValues = new ContentValues();
             updateValues.put("lastSequence", dbMaxSequence);
-
             String[] whereArgs = { Integer.toString(getViewId()) };
             db.getDatabase().update("views", updateValues, "view_id=?", whereArgs);
 
 
             //FIXME actually count number added :)
             Log.v(TDDatabase.TAG, "...Finished re-indexing view " + name + " up to sequence " + Long.toString(dbMaxSequence) + " (deleted " + deleted + " added " + "?" + ")");
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error re-indexing view", e);
-            db.endTransaction();
+            result.setCode(TDStatus.OK);
+
+
+        } catch(SQLException e) {
             return result;
         } finally {
             if(cursor != null) {
                 cursor.close();
             }
+            if(!result.isSuccessful()) {
+                Log.w(TDDatabase.TAG, "Failed to rebuild view " + name + ": " + result.getCode());
+            }
+            db.endTransaction(result.isSuccessful());
         }
 
-        result.setCode(TDStatus.OK);
-        db.endTransaction();
         return result;
     }
 

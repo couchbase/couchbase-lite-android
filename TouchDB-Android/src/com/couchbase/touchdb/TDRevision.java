@@ -138,4 +138,17 @@ public class TDRevision {
         return "{" + this.docId + " #" + this.revId + (deleted ? "DEL" : "") + "}";
     }
 
+    public int getGeneration() {
+        return generationFromRevID(revId);
+    }
+
+    public static int generationFromRevID(String revID) {
+        int generation = 0;
+        int dashPos = revID.indexOf("-");
+        if(dashPos > 0) {
+            generation = Integer.parseInt(revID.substring(0, dashPos));
+        }
+        return generation;
+    }
+
 }
