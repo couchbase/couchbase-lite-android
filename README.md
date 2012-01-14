@@ -9,7 +9,7 @@ by Marty Schoch (marty@couchbase.com)
 - A few unit tests pass
 
 ## Requirements
-- Android 2.1 or newer
+- Android 2.2 or newer
 - Jackson JSON Parser/Generator
 
 ## License
