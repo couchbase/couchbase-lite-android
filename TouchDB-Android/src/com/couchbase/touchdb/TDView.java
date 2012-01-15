@@ -32,15 +32,18 @@ import android.util.Log;
 
 public class TDView {
 
+    public static final int REDUCE_BATCH_SIZE = 100;
+
     private TDDatabase db;
     private String name;
     private int viewId;
     private TDViewMapBlock mapBlock;
+    private TDViewReduceBlock reduceBlock;
 
     public TDView(TDDatabase db, String name) {
         this.db = db;
         this.name = name;
-        this.viewId = -1;  // means 'unknown'
+        this.viewId = -1; // means 'unknown'
     }
 
     public TDDatabase getDb() {
@@ -56,23 +59,22 @@ public class TDView {
     }
 
     public int getViewId() {
-        if(viewId < 0) {
+        if (viewId < 0) {
             String sql = "SELECT view_id FROM views WHERE name=?";
-            String[] args = {name};
+            String[] args = { name };
             Cursor cursor = null;
             try {
                 cursor = db.getDatabase().rawQuery(sql, args);
-                if(cursor.moveToFirst()) {
+                if (cursor.moveToFirst()) {
                     viewId = cursor.getInt(0);
-                }
-                else {
+                } else {
                     viewId = 0;
                 }
             } catch (SQLException e) {
                 Log.e(TDDatabase.TAG, "Error getting view id", e);
                 viewId = 0;
             } finally {
-                if(cursor != null) {
+                if (cursor != null) {
                     cursor.close();
                 }
             }
@@ -82,44 +84,48 @@ public class TDView {
 
     public long getLastSequenceIndexed() {
         String sql = "SELECT lastSequence FROM views WHERE name=?";
-        String[] args = {name};
+        String[] args = { name };
         Cursor cursor = null;
         long result = -1;
         try {
             cursor = db.getDatabase().rawQuery(sql, args);
-            if(cursor.moveToFirst()) {
+            if (cursor.moveToFirst()) {
                 result = cursor.getLong(0);
             }
         } catch (Exception e) {
             Log.e(TDDatabase.TAG, "Error getting last sequence indexed");
         } finally {
-            if(cursor != null) {
+            if (cursor != null) {
                 cursor.close();
             }
         }
         return result;
     }
 
-    public boolean setMapBlock(TDViewMapBlock mapBlock, String version) {
-        assert(mapBlock != null);
-        assert(version != null);
+    public boolean setMapReduceBlocks(TDViewMapBlock mapBlock,
+            TDViewReduceBlock reduceBlock, String version) {
+        assert (mapBlock != null);
+        assert (version != null);
 
         this.mapBlock = mapBlock;
+        this.reduceBlock = reduceBlock;
 
-        // Update the version column in the db. This is a little weird looking because we want to
-        // avoid modifying the db if the version didn't change, and because the row might not exist yet.
+        // Update the version column in the db. This is a little weird looking
+        // because we want to
+        // avoid modifying the db if the version didn't change, and because the
+        // row might not exist yet.
         SQLiteDatabase database = db.getDatabase();
 
         // Older Android doesnt have reliable insert or ignore, will to 2 step
         // FIXME review need for change to execSQL, manual call to changes()
 
         String sql = "SELECT name, version FROM views WHERE name=?";
-        String[] args = {name};
+        String[] args = { name };
         Cursor cursor = null;
 
         try {
             cursor = db.getDatabase().rawQuery(sql, args);
-            if(!cursor.moveToFirst()) {
+            if (!cursor.moveToFirst()) {
                 // no such record, so insert
                 ContentValues insertValues = new ContentValues();
                 insertValues.put("name", name);
@@ -133,14 +139,15 @@ public class TDView {
             updateValues.put("lastSequence", 0);
 
             String[] whereArgs = { name, version };
-            int rowsAffected = database.update("views", updateValues, "name=? AND version!=?", whereArgs);
+            int rowsAffected = database.update("views", updateValues,
+                    "name=? AND version!=?", whereArgs);
 
             return (rowsAffected > 0);
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error setting map block", e);
             return false;
         } finally {
-            if(cursor != null) {
+            if (cursor != null) {
                 cursor.close();
             }
         }
@@ -148,7 +155,7 @@ public class TDView {
     }
 
     public void removeIndex() {
-        if(getViewId() < 0) {
+        if (getViewId() < 0) {
             return;
         }
 
@@ -161,7 +168,8 @@ public class TDView {
 
             ContentValues updateValues = new ContentValues();
             updateValues.put("lastSequence", 0);
-            db.getDatabase().update("views", updateValues, "view_id=?", whereArgs);
+            db.getDatabase().update("views", updateValues, "view_id=?",
+                    whereArgs);
 
             success = true;
         } catch (SQLException e) {
@@ -179,21 +187,21 @@ public class TDView {
     /*** Indexing ***/
 
     public static String toJSONString(Object object) {
-        if(object == null) {
+        if (object == null) {
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
         String result = null;
         try {
             result = mapper.writeValueAsString(object);
-        } catch(Exception e) {
-            //ignore
+        } catch (Exception e) {
+            // ignore
         }
         return result;
     }
 
     public static Object fromJSON(byte[] json) {
-        if(json == null) {
+        if (json == null) {
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
@@ -201,18 +209,19 @@ public class TDView {
         try {
             result = mapper.readValue(json, Object.class);
         } catch (Exception e) {
-            //ignore
+            // ignore
         }
         return result;
     }
 
-    //FIXME review this method may need better exception handling within transaction
+    // FIXME review this method may need better exception handling within
+    // transaction
     @SuppressWarnings("unchecked")
     public TDStatus updateIndex() {
         Log.v(TDDatabase.TAG, "Re-indexing view " + name + " ...");
-        assert(mapBlock != null);
+        assert (mapBlock != null);
 
-        if(getViewId() < 0) {
+        if (getViewId() < 0) {
             return new TDStatus(TDStatus.NOT_FOUND);
         }
 
@@ -224,21 +233,25 @@ public class TDView {
 
             long lastSequence = getLastSequenceIndexed();
             long sequence = lastSequence;
-            if(lastSequence < 0) {
+            if (lastSequence < 0) {
                 return result;
             }
 
-            if(lastSequence == 0) {
-                // If the lastSequence has been reset to 0, make sure to remove any leftover rows:
+            if (lastSequence == 0) {
+                // If the lastSequence has been reset to 0, make sure to remove
+                // any leftover rows:
                 String[] whereArgs = { Integer.toString(getViewId()) };
                 db.getDatabase().delete("maps", "view_id=?", whereArgs);
-            }
-            else {
-                // Delete all obsolete map results (ones from since-replaced revisions):
-                String[] args = { Integer.toString(getViewId()), Long.toString(lastSequence), Long.toString(lastSequence) };
-                db.getDatabase().execSQL("DELETE FROM maps WHERE view_id=? AND sequence IN ("
-                                        + "SELECT parent FROM revs WHERE sequence>? "
-                                        + "AND parent>0 AND parent<=?)", args);
+            } else {
+                // Delete all obsolete map results (ones from since-replaced
+                // revisions):
+                String[] args = { Integer.toString(getViewId()),
+                        Long.toString(lastSequence),
+                        Long.toString(lastSequence) };
+                db.getDatabase().execSQL(
+                        "DELETE FROM maps WHERE view_id=? AND sequence IN ("
+                                + "SELECT parent FROM revs WHERE sequence>? "
+                                + "AND parent>0 AND parent<=?)", args);
             }
 
             int deleted = 0;
@@ -247,20 +260,22 @@ public class TDView {
             deleted = cursor.getInt(0);
             cursor.close();
 
-            // This is the emit() block, which gets called from within the user-defined map() block
+            // This is the emit() block, which gets called from within the
+            // user-defined map() block
             // that's called down below.
             AbstractTouchMapEmitBlock emitBlock = new AbstractTouchMapEmitBlock() {
 
                 @Override
                 public void emit(Object key, Object value) {
-                    if(key == null) {
+                    if (key == null) {
                         return;
                     }
                     try {
                         ObjectMapper mapper = new ObjectMapper();
                         String keyJson = mapper.writeValueAsString(key);
                         String valueJson = mapper.writeValueAsString(value);
-                        Log.v(TDDatabase.TAG, "    emit(" + keyJson + ", " + valueJson + ")");
+                        Log.v(TDDatabase.TAG, "    emit(" + keyJson + ", "
+                                + valueJson + ")");
 
                         ContentValues insertValues = new ContentValues();
                         insertValues.put("view_id", getViewId());
@@ -270,27 +285,31 @@ public class TDView {
                         db.getDatabase().insert("maps", null, insertValues);
                     } catch (Exception e) {
                         Log.e(TDDatabase.TAG, "Error emitting", e);
-                        //find a better way to propogate this back
+                        // find a better way to propogate this back
                     }
                 }
             };
 
-            // Now scan every revision added since the last time the view was indexed:
+            // Now scan every revision added since the last time the view was
+            // indexed:
             String[] selectArgs = { Long.toString(lastSequence) };
 
-            cursor = db.getDatabase().rawQuery("SELECT revs.doc_id, sequence, docid, revid, json FROM revs, docs "
-                    + "WHERE sequence>? AND current!=0 AND deleted=0 "
-                    + "AND revs.doc_id = docs.doc_id "
-                    + "ORDER BY revs.doc_id, revid DESC", selectArgs);
+            cursor = db.getDatabase().rawQuery(
+                    "SELECT revs.doc_id, sequence, docid, revid, json FROM revs, docs "
+                            + "WHERE sequence>? AND current!=0 AND deleted=0 "
+                            + "AND revs.doc_id = docs.doc_id "
+                            + "ORDER BY revs.doc_id, revid DESC", selectArgs);
 
             cursor.moveToFirst();
 
             long lastDocID = 0;
-            while(!cursor.isAfterLast()) {
+            while (!cursor.isAfterLast()) {
                 long docID = cursor.getLong(0);
-                if(docID != lastDocID) {
-                    // Only look at the first-iterated revision of any document, because this is the
-                    // one with the highest revid, hence the "winning" revision of a conflict.
+                if (docID != lastDocID) {
+                    // Only look at the first-iterated revision of any document,
+                    // because this is the
+                    // one with the highest revid, hence the "winning" revision
+                    // of a conflict.
                     lastDocID = docID;
 
                     // Reconstitute the document as a dictionary:
@@ -298,11 +317,16 @@ public class TDView {
                     String docId = cursor.getString(2);
                     String revId = cursor.getString(3);
                     byte[] json = cursor.getBlob(4);
-                    Map<String, Object> properties = db.documentPropertiesFromJSON(json, docId, revId, sequence);
+                    Map<String, Object> properties = db
+                            .documentPropertiesFromJSON(json, docId, revId,
+                                    sequence);
 
-                    if(properties != null) {
-                        // Call the user-defined map() to emit new key/value pairs from this revision:
-                        Log.v(TDDatabase.TAG, "  call map for sequence=" + Long.toString(sequence));
+                    if (properties != null) {
+                        // Call the user-defined map() to emit new key/value
+                        // pairs from this revision:
+                        Log.v(TDDatabase.TAG,
+                                "  call map for sequence="
+                                        + Long.toString(sequence));
                         emitBlock.setSequence(sequence);
                         mapBlock.map(properties, emitBlock);
                     }
@@ -312,27 +336,30 @@ public class TDView {
                 cursor.moveToNext();
             }
 
-            // Finally, record the last revision sequence number that was indexed:
+            // Finally, record the last revision sequence number that was
+            // indexed:
             long dbMaxSequence = db.getLastSequence();
             ContentValues updateValues = new ContentValues();
             updateValues.put("lastSequence", dbMaxSequence);
             String[] whereArgs = { Integer.toString(getViewId()) };
-            db.getDatabase().update("views", updateValues, "view_id=?", whereArgs);
+            db.getDatabase().update("views", updateValues, "view_id=?",
+                    whereArgs);
 
-
-            //FIXME actually count number added :)
-            Log.v(TDDatabase.TAG, "...Finished re-indexing view " + name + " up to sequence " + Long.toString(dbMaxSequence) + " (deleted " + deleted + " added " + "?" + ")");
+            // FIXME actually count number added :)
+            Log.v(TDDatabase.TAG, "...Finished re-indexing view " + name
+                    + " up to sequence " + Long.toString(dbMaxSequence)
+                    + " (deleted " + deleted + " added " + "?" + ")");
             result.setCode(TDStatus.OK);
 
-
-        } catch(SQLException e) {
+        } catch (SQLException e) {
             return result;
         } finally {
-            if(cursor != null) {
+            if (cursor != null) {
                 cursor.close();
             }
-            if(!result.isSuccessful()) {
-                Log.w(TDDatabase.TAG, "Failed to rebuild view " + name + ": " + result.getCode());
+            if (!result.isSuccessful()) {
+                Log.w(TDDatabase.TAG, "Failed to rebuild view " + name + ": "
+                        + result.getCode());
             }
             db.endTransaction(result.isSuccessful());
         }
@@ -340,59 +367,31 @@ public class TDView {
         return result;
     }
 
-    /*** Querying ***/
-    public List<Map<String,Object>> dump() {
-        if(getViewId() < 0) {
-            return null;
-        }
-
-        String[] selectArgs = { Integer.toString(getViewId()) };
-        Cursor cursor = null;
-        List<Map<String, Object>> result = null;
-
-        try {
-            cursor = db.getDatabase().rawQuery("SELECT sequence, key, value FROM maps WHERE view_id=? ORDER BY key", selectArgs);
-
-            cursor.moveToFirst();
-            result = new ArrayList<Map<String,Object>>();
-            while(!cursor.isAfterLast()) {
-                Map<String,Object> row = new HashMap<String,Object>();
-                row.put("seq", cursor.getInt(0));
-                row.put("key", cursor.getString(1));
-                row.put("value", cursor.getString(2));
-                result.add(row);
-                cursor.moveToNext();
-            }
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error dumping view", e);
-            return null;
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String,Object> queryWithOptions(TDQueryOptions options) {
-        if(options == null) {
+    public Cursor resultSetWithOptions(TDQueryOptions options, TDStatus status) {
+        if (options == null) {
             options = new TDQueryOptions();
         }
 
+        if (!options.isGroup()) {
+            if (options.isReduce() && (reduceBlock == null)) {
+                Log.w(TDDatabase.TAG, "Cannot use reduce option in view "
+                        + name + " which has no reduce block defined");
+                status.setCode(TDStatus.BAD_REQUEST);
+                return null;
+            }
+            if (options.getGroupLevel() == 0) {
+                Log.w(TDDatabase.TAG,
+                        "Setting groupLevel without group makes no sense");
+            }
+        }
+
         TDStatus updateStatus = updateIndex();
-        if(!updateStatus.isSuccessful()) {
+        if (!updateStatus.isSuccessful()) {
             return null;
         }
 
-        long update_seq = 0;
-        if(options.isUpdateSeq()) {
-            update_seq = getLastSequenceIndexed();
-        }
-
         String sql = "SELECT key, value, docid";
-        if(options.isIncludeDocs()) {
+        if (options.isIncludeDocs()) {
             sql = sql + ", revid, json, revs.sequence";
         }
         sql = sql + " FROM maps, revs, docs WHERE maps.view_id=?";
@@ -404,16 +403,16 @@ public class TDView {
         Object maxKey = options.getEndKey();
         boolean inclusiveMin = true;
         boolean inclusiveMax = options.isInclusiveEnd();
-        if(options.isDescending()) {
+        if (options.isDescending()) {
             minKey = maxKey;
             maxKey = options.getStartKey();
             inclusiveMin = inclusiveMax;
             inclusiveMax = true;
         }
 
-        if(minKey != null) {
-            assert(minKey instanceof String);
-            if(inclusiveMin) {
+        if (minKey != null) {
+            assert (minKey instanceof String);
+            if (inclusiveMin) {
                 sql += " AND key >= ?";
             } else {
                 sql += " AND key > ?";
@@ -421,76 +420,188 @@ public class TDView {
             argsList.add(toJSONString(minKey));
         }
 
-        if(maxKey != null) {
-            assert(maxKey instanceof String);
-            if(inclusiveMax) {
+        if (maxKey != null) {
+            assert (maxKey instanceof String);
+            if (inclusiveMax) {
                 sql += " AND key <= ?";
-            }
-            else {
+            } else {
                 sql += " AND key < ?";
             }
             argsList.add(toJSONString(maxKey));
         }
 
-        sql = sql + " AND revs.sequence = maps.sequence AND docs.doc_id = revs.doc_id ORDER BY key";
-        if(options.isDescending()) {
+        sql = sql
+                + " AND revs.sequence = maps.sequence AND docs.doc_id = revs.doc_id ORDER BY key";
+        if (options.isDescending()) {
             sql = sql + " DESC";
         }
         sql = sql + " LIMIT ? OFFSET ?";
         argsList.add(Integer.toString(options.getLimit()));
         argsList.add(Integer.toString(options.getSkip()));
 
-        Cursor cursor = null;
+        Cursor cursor = db.getDatabase().rawQuery(sql,
+                argsList.toArray(new String[argsList.size()]));
+        return cursor;
+    }
 
-        List<Map<String, Object>> rows;
+    // Are key1 and key2 grouped together at this groupLevel?
+    public static boolean groupTogether(Object key1, Object key2, int groupLevel) {
+        if(groupLevel == 0 || !(key1 instanceof List) || !(key2 instanceof List)) {
+            return key1.equals(key2);
+        }
+        @SuppressWarnings("unchecked")
+        List<Object> key1List = (List<Object>)key1;
+        @SuppressWarnings("unchecked")
+        List<Object> key2List = (List<Object>)key2;
+        int end = Math.min(groupLevel, Math.min(key1List.size(), key2List.size()));
+        for(int i = 0; i < end; ++i) {
+            if(!key1List.get(i).equals(key2List.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Returns the prefix of the key to use in the result row, at this groupLevel
+    @SuppressWarnings("unchecked")
+    public static Object groupKey(Object key, int groupLevel) {
+        if(groupLevel > 0 && (key instanceof List) && (((List<Object>)key).size() > groupLevel)) {
+            return ((List<Object>)key).subList(0, groupLevel);
+        }
+        else {
+            return key;
+        }
+    }
+
+    /*** Querying ***/
+    public List<Map<String, Object>> dump() {
+        if (getViewId() < 0) {
+            return null;
+        }
+
+        String[] selectArgs = { Integer.toString(getViewId()) };
+        Cursor cursor = null;
+        List<Map<String, Object>> result = null;
+
         try {
-            cursor = db.getDatabase().rawQuery(sql, argsList.toArray(new String[argsList.size()]));
+            cursor = db
+                    .getDatabase()
+                    .rawQuery(
+                            "SELECT sequence, key, value FROM maps WHERE view_id=? ORDER BY key",
+                            selectArgs);
 
             cursor.moveToFirst();
-            rows = new ArrayList<Map<String,Object>>();
-            while(!cursor.isAfterLast()) {
-                Map<String,Object> row = new HashMap<String,Object>();
-                Object key = fromJSON(cursor.getBlob(0));
-                Object value = fromJSON(cursor.getBlob(1));
-                String docId = cursor.getString(2);
-                Map<String,Object> docContents = null;
-                if(options.isIncludeDocs()) {
-                    String revId = cursor.getString(3);
-                    byte[] docBytes = cursor.getBlob(4);
-                    long sequence = cursor.getLong(5);
-                    docContents = db.documentPropertiesFromJSON(docBytes, docId, revId, sequence);
-                }
-                row.put("id", docId);
-                row.put("key", key);
-                if(value != null) {
-                    row.put("value", value);
-                }
-                if(docContents != null) {
-                    row.put("doc", docContents);
-                }
-                rows.add(row);
+            result = new ArrayList<Map<String, Object>>();
+            while (!cursor.isAfterLast()) {
+                Map<String, Object> row = new HashMap<String, Object>();
+                row.put("seq", cursor.getInt(0));
+                row.put("key", cursor.getString(1));
+                row.put("value", cursor.getString(2));
+                result.add(row);
                 cursor.moveToNext();
             }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error dumping view", e);
+            return null;
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> queryWithOptions(TDQueryOptions options, TDStatus status) {
+        if (options == null) {
+            options = new TDQueryOptions();
+        }
+
+        Cursor cursor = null;
+        List<Map<String, Object>> rows = new ArrayList<Map<String,Object>>();
+        try {
+            cursor = resultSetWithOptions(options, status);
+            boolean reduce = options.isReduce();
+            boolean group = options.isGroup();
+            int groupLevel = options.getGroupLevel();
+            List<Object> keysToReduce = null;
+            List<Object> valuesToReduce = null;
+            Object lastKey = null;
+            if(reduce) {
+                keysToReduce = new ArrayList<Object>(REDUCE_BATCH_SIZE);
+                valuesToReduce = new ArrayList<Object>(REDUCE_BATCH_SIZE);
+            }
+
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                Object key = fromJSON(cursor.getBlob(0));
+                Object value = fromJSON(cursor.getBlob(1));
+                assert(key != null);
+                if(reduce) {
+                    // Reduced or grouped query:
+                    if(group && !groupTogether(key, lastKey, groupLevel) && (lastKey != null)) {
+                        // This pair starts a new group, so reduce & record the last one:
+                        Object reduced = reduceBlock.reduce(keysToReduce, valuesToReduce, false);
+                        Map<String,Object> row = new HashMap<String,Object>();
+                        row.put("key", groupKey(lastKey, groupLevel));
+                        row.put("value", reduced);
+                        rows.add(row);
+                        keysToReduce.clear();
+                        valuesToReduce.clear();
+                    }
+                    keysToReduce.add(key);
+                    valuesToReduce.add(value);
+                    lastKey = key;
+                } else {
+                    // Regular query:
+                    Map<String,Object> row = new HashMap<String,Object>();
+                    String docId = cursor.getString(2);
+                    Map<String,Object> docContents = null;
+                    if(options.isIncludeDocs()) {
+                        docContents = db.documentPropertiesFromJSON(cursor.getBlob(4), docId, cursor.getString(3), cursor.getLong(5));
+                    }
+                    row.put("id", docId);
+                    row.put("key", key);
+                    if(value != null) {
+                        row.put("value", value);
+                    }
+                    if(docContents != null) {
+                        row.put("doc", docContents);
+                    }
+                    rows.add(row);
+                }
+
+
+                cursor.moveToNext();
+            }
+
+            if(reduce) {
+                if(keysToReduce.size() > 0) {
+                    // Finish the last group (or the entire list, if no grouping):
+                    Object key = group ? groupKey(lastKey, groupLevel) : null;
+                    Object reduced = reduceBlock.reduce(keysToReduce, valuesToReduce, false);
+                    Map<String,Object> row = new HashMap<String,Object>();
+                    row.put("key", key);
+                    row.put("value", reduced);
+                    rows.add(row);
+                }
+                keysToReduce.clear();
+                valuesToReduce.clear();
+            }
+
+            status.setCode(TDStatus.OK);
 
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error querying view", e);
             return null;
         } finally {
-            if(cursor != null) {
+            if (cursor != null) {
                 cursor.close();
             }
         }
 
-        int totalRows = rows.size();  //??? Is this true, or does it ignore limit/offset?
-        Map<String,Object> result = new HashMap<String,Object>();
-        result.put("rows", rows);
-        result.put("total_rows", totalRows);
-        result.put("offset", options.getSkip());
-        if(update_seq != 0) {
-            result.put("update_seq", update_seq);
-        }
-
-        return result;
+        return rows;
     }
 
 }

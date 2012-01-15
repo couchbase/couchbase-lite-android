@@ -23,10 +23,13 @@ public class TDQueryOptions {
     private Object endKey = null;
     private int skip = 0;
     private int limit = Integer.MAX_VALUE;
+    int groupLevel = 0;
     private boolean descending = false;
     private boolean includeDocs = false;
     private boolean updateSeq = false;
     private boolean inclusiveEnd = true;
+    private boolean reduce = false;
+    private boolean group = false;
 
     public Object getStartKey() {
         return startKey;
@@ -90,6 +93,30 @@ public class TDQueryOptions {
 
     public void setInclusiveEnd(boolean inclusiveEnd) {
         this.inclusiveEnd = inclusiveEnd;
+    }
+
+    public int getGroupLevel() {
+        return groupLevel;
+    }
+
+    public void setGroupLevel(int groupLevel) {
+        this.groupLevel = groupLevel;
+    }
+
+    public boolean isReduce() {
+        return reduce;
+    }
+
+    public void setReduce(boolean reduce) {
+        this.reduce = reduce;
+    }
+
+    public boolean isGroup() {
+        return group;
+    }
+
+    public void setGroup(boolean group) {
+        this.group = group;
     }
 
 }

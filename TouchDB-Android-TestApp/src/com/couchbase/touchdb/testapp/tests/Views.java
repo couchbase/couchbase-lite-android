@@ -33,6 +33,7 @@ import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TDView;
 import com.couchbase.touchdb.TDViewMapBlock;
 import com.couchbase.touchdb.TDViewMapEmitBlock;
+import com.couchbase.touchdb.TDViewReduceBlock;
 
 public class Views extends AndroidTestCase {
 
@@ -50,35 +51,35 @@ public class Views extends AndroidTestCase {
         Assert.assertEquals("aview", view.getName());
         Assert.assertNull(view.getMapBlock());
 
-        boolean changed = view.setMapBlock(new TDViewMapBlock() {
+        boolean changed = view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
             public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
                 //no-op
             }
-        }, "1");
+        }, null, "1");
 
         Assert.assertTrue(changed);
         Assert.assertEquals(1, db.getAllViews().size());
         Assert.assertEquals(view, db.getAllViews().get(0));
 
-        changed = view.setMapBlock(new TDViewMapBlock() {
+        changed = view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
             public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
                 //no-op
             }
-        }, "1");
+        }, null, "1");
 
         Assert.assertFalse(changed);
 
-        changed = view.setMapBlock(new TDViewMapBlock() {
+        changed = view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
             public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
                 //no-op
             }
-        }, "2");
+        }, null, "2");
 
         Assert.assertTrue(changed);
 
@@ -126,7 +127,7 @@ public class Views extends AndroidTestCase {
 
     public TDView createView(TDDatabase db) {
         TDView view = db.getViewNamed("aview");
-        view.setMapBlock(new TDViewMapBlock() {
+        view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
             public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
@@ -134,7 +135,7 @@ public class Views extends AndroidTestCase {
                 Assert.assertNotNull(document.get("_rev"));
                 emitter.emit(document.get("key"), null);
             }
-        }, "1");
+        }, null, "1");
         return view;
     }
 
@@ -211,11 +212,7 @@ public class Views extends AndroidTestCase {
         Assert.assertEquals(6, dumpResult.get(1).get("seq"));
 
         // Now do a real query:
-        Map<String,Object> query = view.queryWithOptions(null);
-        Assert.assertEquals(3, query.get("total_rows"));
-        Assert.assertEquals(0, query.get("offset"));
-        @SuppressWarnings("unchecked")
-        List<Map<String,Object>> rows = (List<Map<String,Object>>)query.get("rows");
+        List<Map<String,Object>> rows = view.queryWithOptions(null, status);
         Assert.assertEquals(3, rows.size());
         Assert.assertEquals("one", rows.get(2).get("key"));
         Assert.assertEquals(rev1.getDocId(), rows.get(2).get("id"));
@@ -227,14 +224,6 @@ public class Views extends AndroidTestCase {
         view.removeIndex();
 
         db.close();
-    }
-
-    public Map<String, Object> createExpectedQueryResult(List<Object> rows, int offset) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        result.put("rows", rows);
-        result.put("total_rows", rows.size());
-        result.put("offset", offset);
-        return result;
     }
 
     public void testViewQuery() {
@@ -251,7 +240,7 @@ public class Views extends AndroidTestCase {
         // Query all rows:
         TDQueryOptions options = new TDQueryOptions();
         TDStatus status = new TDStatus();
-        Map<String, Object> query = view.queryWithOptions(options);
+        List<Map<String, Object>> rows = view.queryWithOptions(options, status);
 
         List<Object> expectedRows = new ArrayList<Object>();
 
@@ -280,8 +269,7 @@ public class Views extends AndroidTestCase {
         dict2.put("key", "two");
         expectedRows.add(dict2);
 
-        Map<String,Object> expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedRows, rows);
 
         // Start/end key query:
         options = new TDQueryOptions();
@@ -289,28 +277,26 @@ public class Views extends AndroidTestCase {
         options.setEndKey("one");
 
         status = new TDStatus();
-        query = view.queryWithOptions(options);
+        rows = view.queryWithOptions(options, status);
 
         expectedRows = new ArrayList<Object>();
         expectedRows.add(dict5);
         expectedRows.add(dict4);
         expectedRows.add(dict1);
 
-        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedRows, rows);
 
         // Start/end query without inclusive end:
         options.setInclusiveEnd(false);
 
         status = new TDStatus();
-        query = view.queryWithOptions(options);
+        rows = view.queryWithOptions(options, status);
 
         expectedRows = new ArrayList<Object>();
         expectedRows.add(dict5);
         expectedRows.add(dict4);
 
-        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedRows, rows);
 
         // Reversed:
         options.setDescending(true);
@@ -319,26 +305,24 @@ public class Views extends AndroidTestCase {
         options.setInclusiveEnd(true);
 
         status = new TDStatus();
-        query = view.queryWithOptions(options);
+        rows = view.queryWithOptions(options, status);
 
         expectedRows = new ArrayList<Object>();
         expectedRows.add(dict4);
         expectedRows.add(dict5);
 
-        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedRows, rows);
 
         // Reversed, no inclusive end:
         options.setInclusiveEnd(false);
 
         status = new TDStatus();
-        query = view.queryWithOptions(options);
+        rows = view.queryWithOptions(options, status);
 
         expectedRows = new ArrayList<Object>();
         expectedRows.add(dict4);
 
-        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedRows, rows);
 
     }
 
@@ -400,6 +384,289 @@ public class Views extends AndroidTestCase {
 
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
         Assert.assertEquals(expectedQueryResult, query);
+
+    }
+
+    private Map<String, Object> createExpectedQueryResult(List<Object> rows, int offset) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("rows", rows);
+        result.put("total_rows", rows.size());
+        result.put("offset", offset);
+        return result;
+    }
+
+    private static Object total(List<Object> keys, List<Object> values) {
+        double result = 0;
+        for (Object value : values) {
+            if(value instanceof Number) {
+                Number numberValue = (Number)value;
+                result += numberValue.doubleValue();
+            }
+        }
+        return result;
+    }
+
+    public void testViewReduce() {
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+
+        Map<String,Object> docProperties1 = new HashMap<String,Object>();
+        docProperties1.put("_id", "CD");
+        docProperties1.put("cost", 8.99);
+        putDoc(db, docProperties1);
+
+        Map<String,Object> docProperties2 = new HashMap<String,Object>();
+        docProperties2.put("_id", "App");
+        docProperties2.put("cost", 1.95);
+        putDoc(db, docProperties2);
+
+        Map<String,Object> docProperties3 = new HashMap<String,Object>();
+        docProperties3.put("_id", "Dessert");
+        docProperties3.put("cost", 6.50);
+        putDoc(db, docProperties3);
+
+        TDView view = db.getViewNamed("totaler");
+        view.setMapReduceBlocks(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                Assert.assertNotNull(document.get("_id"));
+                Assert.assertNotNull(document.get("_rev"));
+                Object cost = document.get("cost");
+                if(cost != null) {
+                    emitter.emit(document.get("_id"), cost);
+                }
+            }
+        }, new TDViewReduceBlock() {
+
+            @Override
+            public Object reduce(List<Object> keys, List<Object> values,
+                    boolean rereduce) {
+                return total(keys, values);
+            }
+        }, "1");
+
+        TDStatus updated = view.updateIndex();
+        Assert.assertEquals(TDStatus.OK, updated.getCode());
+
+        List<Map<String,Object>> dumpResult = view.dump();
+        Log.v(TAG, "View dump: " + dumpResult);
+        Assert.assertEquals(3, dumpResult.size());
+        Assert.assertEquals("\"App\"", dumpResult.get(0).get("key"));
+        Assert.assertEquals("1.95", dumpResult.get(0).get("value"));
+        Assert.assertEquals(2, dumpResult.get(0).get("seq"));
+        Assert.assertEquals("\"CD\"", dumpResult.get(1).get("key"));
+        Assert.assertEquals("8.99", dumpResult.get(1).get("value"));
+        Assert.assertEquals(1, dumpResult.get(1).get("seq"));
+        Assert.assertEquals("\"Dessert\"", dumpResult.get(2).get("key"));
+        Assert.assertEquals("6.5", dumpResult.get(2).get("value"));
+        Assert.assertEquals(3, dumpResult.get(2).get("seq"));
+
+        TDQueryOptions options = new TDQueryOptions();
+        options.setReduce(true);
+        TDStatus status = new TDStatus();
+        List<Map<String, Object>> reduced = view.queryWithOptions(options, status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(1, reduced.size());
+        Object value = reduced.get(0).get("value");
+        Number numberValue = (Number)value;
+        Assert.assertTrue(Math.abs(numberValue.doubleValue() - 17.44) < 0.001);
+    }
+
+    public void testViewGrouped() {
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+
+        Map<String,Object> docProperties1 = new HashMap<String,Object>();
+        docProperties1.put("_id", "1");
+        docProperties1.put("artist", "Gang Of Four");
+        docProperties1.put("album", "Entertainment!");
+        docProperties1.put("track", "Ether");
+        docProperties1.put("time", 231);
+        putDoc(db, docProperties1);
+
+        Map<String,Object> docProperties2 = new HashMap<String,Object>();
+        docProperties2.put("_id", "2");
+        docProperties2.put("artist", "Gang Of Four");
+        docProperties2.put("album", "Songs Of The Free");
+        docProperties2.put("track", "I Love A Man In Uniform");
+        docProperties2.put("time", 248);
+        putDoc(db, docProperties2);
+
+        Map<String,Object> docProperties3 = new HashMap<String,Object>();
+        docProperties3.put("_id", "3");
+        docProperties3.put("artist", "Gang Of Four");
+        docProperties3.put("album", "Entertainment!");
+        docProperties3.put("track", "Natural's Not In It");
+        docProperties3.put("time", 187);
+        putDoc(db, docProperties3);
+
+        Map<String,Object> docProperties4 = new HashMap<String,Object>();
+        docProperties4.put("_id", "4");
+        docProperties4.put("artist", "PiL");
+        docProperties4.put("album", "Metal Box");
+        docProperties4.put("track", "Memories");
+        docProperties4.put("time", 309);
+        putDoc(db, docProperties4);
+
+        Map<String,Object> docProperties5 = new HashMap<String,Object>();
+        docProperties5.put("_id", "5");
+        docProperties5.put("artist", "Gang Of Four");
+        docProperties5.put("album", "Entertainment!");
+        docProperties5.put("track", "Not Great Men");
+        docProperties5.put("time", 187);
+        putDoc(db, docProperties5);
+
+        TDView view = db.getViewNamed("grouper");
+        view.setMapReduceBlocks(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                List<Object> key = new ArrayList<Object>();
+                key.add(document.get("artist"));
+                key.add(document.get("album"));
+                key.add(document.get("track"));
+                emitter.emit(key, document.get("time"));
+            }
+        }, new TDViewReduceBlock() {
+
+            @Override
+            public Object reduce(List<Object> keys, List<Object> values,
+                    boolean rereduce) {
+                return total(keys, values);
+            }
+        }, "1");
+
+        TDQueryOptions options = new TDQueryOptions();
+        options.setReduce(true);
+        TDStatus status = new TDStatus();
+        List<Map<String, Object>> rows = view.queryWithOptions(options, status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+
+        List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
+        Map<String,Object> row1 = new HashMap<String,Object>();
+        row1.put("key", null);
+        row1.put("value", 1162.0);
+        expectedRows.add(row1);
+
+        Assert.assertEquals(expectedRows, rows);
+
+        //now group
+        options.setGroup(true);
+        status = new TDStatus();
+        rows = view.queryWithOptions(options, status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+
+        expectedRows = new ArrayList<Map<String,Object>>();
+
+        row1 = new HashMap<String,Object>();
+        List<String> key1 = new ArrayList<String>();
+        key1.add("Gang Of Four");
+        key1.add("Entertainment!");
+        key1.add("Ether");
+        row1.put("key", key1);
+        row1.put("value", 231.0);
+        expectedRows.add(row1);
+
+        Map<String,Object> row2 = new HashMap<String,Object>();
+        List<String> key2 = new ArrayList<String>();
+        key2.add("Gang Of Four");
+        key2.add("Entertainment!");
+        key2.add("Natural's Not In It");
+        row2.put("key", key2);
+        row2.put("value", 187.0);
+        expectedRows.add(row2);
+
+        Map<String,Object> row3 = new HashMap<String,Object>();
+        List<String> key3 = new ArrayList<String>();
+        key3.add("Gang Of Four");
+        key3.add("Entertainment!");
+        key3.add("Not Great Men");
+        row3.put("key", key3);
+        row3.put("value", 187.0);
+        expectedRows.add(row3);
+
+        Map<String,Object> row4 = new HashMap<String,Object>();
+        List<String> key4 = new ArrayList<String>();
+        key4.add("Gang Of Four");
+        key4.add("Songs Of The Free");
+        key4.add("I Love A Man In Uniform");
+        row4.put("key", key4);
+        row4.put("value", 248.0);
+        expectedRows.add(row4);
+
+        Map<String,Object> row5 = new HashMap<String,Object>();
+        List<String> key5 = new ArrayList<String>();
+        key5.add("PiL");
+        key5.add("Metal Box");
+        key5.add("Memories");
+        row5.put("key", key5);
+        row5.put("value", 309.0);
+        expectedRows.add(row5);
+
+        Assert.assertEquals(expectedRows, rows);
+
+        //group level 1
+        options.setGroupLevel(1);
+        status = new TDStatus();
+        rows = view.queryWithOptions(options, status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+
+        expectedRows = new ArrayList<Map<String,Object>>();
+
+        row1 = new HashMap<String,Object>();
+        key1 = new ArrayList<String>();
+        key1.add("Gang Of Four");
+        row1.put("key", key1);
+        row1.put("value", 853.0);
+        expectedRows.add(row1);
+
+        row2 = new HashMap<String,Object>();
+        key2 = new ArrayList<String>();
+        key2.add("PiL");
+        row2.put("key", key2);
+        row2.put("value", 309.0);
+        expectedRows.add(row2);
+
+        Assert.assertEquals(expectedRows, rows);
+
+        //group level 2
+        options.setGroupLevel(2);
+        status = new TDStatus();
+        rows = view.queryWithOptions(options, status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+
+        expectedRows = new ArrayList<Map<String,Object>>();
+
+        row1 = new HashMap<String,Object>();
+        key1 = new ArrayList<String>();
+        key1.add("Gang Of Four");
+        key1.add("Entertainment!");
+        row1.put("key", key1);
+        row1.put("value", 605.0);
+        expectedRows.add(row1);
+
+        row2 = new HashMap<String,Object>();
+        key2 = new ArrayList<String>();
+        key2.add("Gang Of Four");
+        key2.add("Songs Of The Free");
+        row2.put("key", key2);
+        row2.put("value", 248.0);
+        expectedRows.add(row2);
+
+        row3 = new HashMap<String,Object>();
+        key3 = new ArrayList<String>();
+        key3.add("PiL");
+        key3.add("Metal Box");
+        row3.put("key", key3);
+        row3.put("value", 309.0);
+        expectedRows.add(row3);
+
+        Assert.assertEquals(expectedRows, rows);
 
     }
 
