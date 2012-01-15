@@ -45,11 +45,14 @@ public class Views extends AndroidTestCase {
 
         TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
 
+        Assert.assertNull(db.getExistingViewNamed("aview"));
+
         TDView view = db.getViewNamed("aview");
         Assert.assertNotNull(view);
         Assert.assertEquals(db, view.getDb());
         Assert.assertEquals("aview", view.getName());
         Assert.assertNull(view.getMapBlock());
+        Assert.assertEquals(view, db.getExistingViewNamed("aview"));
 
         boolean changed = view.setMapReduceBlocks(new TDViewMapBlock() {
 

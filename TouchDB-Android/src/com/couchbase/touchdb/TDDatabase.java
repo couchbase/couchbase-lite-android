@@ -874,16 +874,42 @@ public class TDDatabase extends Observable {
 
     /*** Views ***/
 
-    public TDView getViewNamed(String name) {
+    public TDView registerView(TDView view) {
+        if(view == null) {
+            return null;
+        }
         if(views == null) {
             views = new HashMap<String,TDView>();
         }
-        TDView view = views.get(name);
-        if(view == null) {
-            view = new TDView(this, name);
-            views.put(name, view);
-        }
+        views.put(view.getName(), view);
         return view;
+    }
+
+    public TDView getViewNamed(String name) {
+        TDView view = null;
+        if(views != null) {
+            view = views.get(name);
+        }
+        if(view != null) {
+            return view;
+        }
+        return registerView(new TDView(this, name));
+    }
+
+    public TDView getExistingViewNamed(String name) {
+        TDView view = null;
+        if(views != null) {
+            view = views.get(name);
+        }
+        if(view != null) {
+            return view;
+        }
+        view = new TDView(this, name);
+        if(view.getViewId() == 0) {
+            return null;
+        }
+
+        return registerView(view);
     }
 
     public List<TDView> getAllViews() {
