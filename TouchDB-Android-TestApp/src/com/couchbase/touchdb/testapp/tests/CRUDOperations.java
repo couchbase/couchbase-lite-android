@@ -27,7 +27,9 @@ import android.util.Log;
 
 import com.couchbase.touchdb.TDBody;
 import com.couchbase.touchdb.TDDatabase;
+import com.couchbase.touchdb.TDFilterBlock;
 import com.couchbase.touchdb.TDRevision;
+import com.couchbase.touchdb.TDRevisionList;
 import com.couchbase.touchdb.TDStatus;
 
 public class CRUDOperations extends AndroidTestCase {
@@ -65,7 +67,7 @@ public class CRUDOperations extends AndroidTestCase {
 
         //now update it
         documentProperties = readRev.getProperties();
-        documentProperties.put("status", "updated");
+        documentProperties.put("status", "updated!");
         body = new TDBody(documentProperties);
         TDRevision rev2 = new TDRevision(body);
         TDRevision rev2input = rev2;
@@ -84,6 +86,32 @@ public class CRUDOperations extends AndroidTestCase {
         db.putRevision(rev2input, rev1.getRevId(), status);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
 
+        // Check the changes feed, with and without filters:
+        TDRevisionList changes = db.changesSince(0, null, null);
+        Log.v(TAG, "Changes = " + changes);
+        Assert.assertEquals(1, changes.size());
+
+        changes = db.changesSince(0, null, new TDFilterBlock() {
+
+            @Override
+            public boolean filter(TDRevision revision) {
+                return "updated!".equals(revision.getProperties().get("status"));
+            }
+
+        });
+        Assert.assertEquals(1, changes.size());
+
+        changes = db.changesSince(0, null, new TDFilterBlock() {
+
+            @Override
+            public boolean filter(TDRevision revision) {
+                return "not updated!".equals(revision.getProperties().get("status"));
+            }
+
+        });
+        Assert.assertEquals(0, changes.size());
+
+
         // Delete it:
         TDRevision revD = new TDRevision(rev2.getDocId(), null, true);
         revD = db.putRevision(revD, rev2.getRevId(), status);
@@ -96,7 +124,7 @@ public class CRUDOperations extends AndroidTestCase {
         Assert.assertNull(readRev);
 
         // Get Changes feed
-        List<TDRevision> changes = db.changesSince(0, null);
+        changes = db.changesSince(0, null, null);
         Assert.assertTrue(changes.size() == 1);
 
         // Get Revision History

@@ -839,12 +839,18 @@ public class TDDatabase extends Observable {
         return new TDStatus(TDStatus.CREATED);
     }
 
-    public TDRevisionList changesSince(int lastSeq, TDQueryOptions options) {
+    public TDRevisionList changesSince(int lastSeq, TDQueryOptions options, TDFilterBlock filter) {
         if(options == null) {
             options = new TDQueryOptions();
         }
 
-        String sql = "SELECT sequence, docid, revid, deleted FROM revs, docs "
+        boolean includeDocs = options.isIncludeDocs() || (filter != null);
+        String additionalSelectColumns =  "";
+        if(includeDocs) {
+            additionalSelectColumns = ", json";
+        }
+
+        String sql = "SELECT sequence, docid, revid, deleted" + additionalSelectColumns + " FROM revs, docs "
                         + "WHERE sequence > ? AND current=1 "
                         + "AND revs.doc_id = docs.doc_id "
                         + "ORDER BY sequence LIMIT ?";
@@ -859,7 +865,12 @@ public class TDDatabase extends Observable {
             while(!cursor.isAfterLast()) {
                 TDRevision rev = new TDRevision(cursor.getString(1), cursor.getString(2), (cursor.getInt(3) > 0));
                 rev.setSequence(cursor.getLong(0));
-                changes.add(rev);
+                if(includeDocs) {
+                    expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(4), rev, false);
+                }
+                if((filter == null) || (filter.filter(rev))) {
+                    changes.add(rev);
+                }
                 cursor.moveToNext();
             }
         } catch (SQLException e) {
