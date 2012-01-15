@@ -77,9 +77,19 @@ public class Attachments extends AndroidTestCase {
         Map<String,Object> attachmentDictForSequence = db.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), false);
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
-        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId());
+        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), false);
         @SuppressWarnings("unchecked")
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
+        Assert.assertEquals(attachmentDict, gotAttachmentDict);
+
+        // Check the attachment dict, with attachments included:
+        innerDict.remove("stub");
+        innerDict.put("data", Base64.encodeBytes(attach1));
+        attachmentDictForSequence = db.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), true);
+        Assert.assertEquals(attachmentDict, attachmentDictForSequence);
+
+        gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), true);
+        gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
         Assert.assertEquals(attachmentDict, gotAttachmentDict);
 
 
@@ -164,7 +174,7 @@ public class Attachments extends AndroidTestCase {
         // Examine the attachment store:
         Assert.assertEquals(1, attachments.count());
 
-        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId());
+        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), false);
         @SuppressWarnings("unchecked")
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
 

@@ -58,7 +58,7 @@ public class CRUDOperations extends AndroidTestCase {
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));
 
         //read it back
-        TDRevision readRev = db.getDocumentWithID(rev1.getDocId());
+        TDRevision readRev = db.getDocumentWithIDAndRev(rev1.getDocId(), null, false);
         Assert.assertNotNull(readRev);
         Map<String,Object> readRevProps = readRev.getProperties();
         Assert.assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
@@ -76,7 +76,7 @@ public class CRUDOperations extends AndroidTestCase {
         Assert.assertTrue(rev2.getRevId().startsWith("2-"));
 
         //read it back
-        readRev = db.getDocumentWithID(rev2.getDocId());
+        readRev = db.getDocumentWithIDAndRev(rev2.getDocId(), null, false);
         Assert.assertNotNull(readRev);
         Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
@@ -92,7 +92,7 @@ public class CRUDOperations extends AndroidTestCase {
         Assert.assertTrue(revD.getRevId().startsWith("3-"));
 
         // Read it back (should fail):
-        readRev = db.getDocumentWithID(revD.getDocId());
+        readRev = db.getDocumentWithIDAndRev(revD.getDocId(), null, false);
         Assert.assertNull(readRev);
 
         // Get Changes feed

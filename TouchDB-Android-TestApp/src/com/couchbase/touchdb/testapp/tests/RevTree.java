@@ -79,7 +79,7 @@ public class RevTree extends AndroidTestCase {
         verifyHistory(db, conflict, conflictHistory);
 
         // Fetch one of those phantom revisions with no body:
-        TDRevision rev2 = db.getDocumentWithIDAndRev(rev.getDocId(), "2-too");
+        TDRevision rev2 = db.getDocumentWithIDAndRev(rev.getDocId(), "2-too", false);
         Assert.assertEquals(rev.getDocId(), rev2.getDocId());
         Assert.assertEquals("2-too", rev2.getRevId());
         Assert.assertNull(rev2.getBody());
@@ -88,14 +88,14 @@ public class RevTree extends AndroidTestCase {
         Assert.assertEquals(7, db.getLastSequence());
 
         // Make sure the revision with the higher revID wins the conflict:
-        TDRevision current = db.getDocumentWithID(rev.getDocId());
+        TDRevision current = db.getDocumentWithIDAndRev(rev.getDocId(), null, false);
         Assert.assertEquals(conflict, current);
 
         db.close();
     }
 
     private static void verifyHistory(TDDatabase db, TDRevision rev, List<String> history) {
-        TDRevision gotRev = db.getDocumentWithID(rev.getDocId());
+        TDRevision gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, false);
         Assert.assertEquals(rev, gotRev);
         Assert.assertEquals(rev.getProperties(), gotRev.getProperties());
 

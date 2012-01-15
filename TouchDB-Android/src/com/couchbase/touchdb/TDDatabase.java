@@ -360,11 +360,7 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public TDRevision getDocumentWithID(String id) {
-        return getDocumentWithIDAndRev(id, null);
-    }
-
-    public TDRevision getDocumentWithIDAndRev(String id, String rev) {
+    public TDRevision getDocumentWithIDAndRev(String id, String rev, boolean withAttachments) {
         TDRevision result = null;
         String sql;
 
@@ -390,7 +386,7 @@ public class TDDatabase extends Observable {
                 byte[] json = cursor.getBlob(2);
                 result = new TDRevision(id, rev, deleted);
                 result.setSequence(cursor.getLong(3));
-                expandStoredJSONIntoRevisionWithAttachments(json, result, false);
+                expandStoredJSONIntoRevisionWithAttachments(json, result, withAttachments);
             }
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error getting document with id and rev", e);
@@ -402,7 +398,7 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public TDStatus loadRevisionBodyAndAttachments(TDRevision rev, boolean withAttachments) {
+    public TDStatus loadRevisionBody(TDRevision rev, boolean withAttachments) {
         if(rev.getBody() != null) {
             return new TDStatus(TDStatus.OK);
         }
@@ -653,7 +649,7 @@ public class TDDatabase extends Observable {
 
                 if(parentSequence == 0) {
                     // Not found: either a 404 or a 409, depending on whether there is any current revision
-                    if(getDocumentWithID(docId) != null) {
+                    if(getDocumentWithIDAndRev(docId, null, false) != null) {
                         resultStatus.setCode(TDStatus.CONFLICT);
                         return null;
                     }
@@ -1375,8 +1371,10 @@ public class TDDatabase extends Observable {
                 }
 
                 Map<String, Object> attachment = new HashMap<String, Object>();
-                attachment.put("stub", (dataBase64 != null) ? null : true);
-                if(dataBase64 != null) {
+                if(dataBase64 == null) {
+                    attachment.put("stub", true);
+                }
+                else {
                     attachment.put("data", dataBase64);
                 }
                 attachment.put("digest", digestString);
