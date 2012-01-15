@@ -49,6 +49,7 @@ public class TDDatabase extends Observable {
     public static final String TAG = "TDDatabase";
 
     private Map<String, TDView> views;
+    private Map<String, TDFilterBlock> filters;
     private TDBlobStore attachments;
 
     public static final String SCHEMA = "" +
@@ -881,6 +882,21 @@ public class TDDatabase extends Observable {
             }
         }
         return changes;
+    }
+
+    public void defineFilter(String filterName, TDFilterBlock filter) {
+        if(filters == null) {
+            filters = new HashMap<String,TDFilterBlock>();
+        }
+        filters.put(filterName, filter);
+    }
+
+    public TDFilterBlock getFilterNamed(String filterName) {
+        TDFilterBlock result = null;
+        if(filters != null) {
+            result = filters.get(filterName);
+        }
+        return result;
     }
 
     /*** Views ***/
