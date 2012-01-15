@@ -19,6 +19,10 @@ package com.couchbase.touchdb.support;
 
 import java.io.File;
 
+import android.util.Log;
+
+import com.couchbase.touchdb.TDDatabase;
+
 public class DirUtils {
 
     public static void deleteRecursive(File fileOrDirectory) {
@@ -27,6 +31,16 @@ public class DirUtils {
                 deleteRecursive(child);
 
         fileOrDirectory.delete();
+    }
+
+    public static String getDatabaseNameFromPath(String path) {
+        int lastSlashPos = path.lastIndexOf("/");
+        int extensionPos = path.lastIndexOf(".");
+        if(lastSlashPos < 0 || extensionPos < 0 || extensionPos < lastSlashPos) {
+            Log.e(TDDatabase.TAG, "Unable to determine database name from path");
+            return null;
+        }
+        return path.substring(lastSlashPos + 1, extensionPos);
     }
 
 }

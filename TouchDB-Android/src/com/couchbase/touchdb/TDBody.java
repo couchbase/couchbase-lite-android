@@ -22,10 +22,12 @@ import java.util.Map;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 
+import android.util.Log;
+
 public class TDBody {
 
     private byte[] json;
-    private Map<String, Object> properties;
+    private Object object;
     private boolean error = false;
 
     public TDBody(byte[] json) {
@@ -33,7 +35,7 @@ public class TDBody {
     }
 
     public TDBody(Map<String, Object> properties) {
-        this.properties = properties;
+        this.object = properties;
     }
 
     public static TDBody bodyWithProperties(Map<String,Object> properties) {
@@ -46,12 +48,26 @@ public class TDBody {
         return result;
     }
 
-    public byte[] getJson() {
-        if(json == null) {
+    boolean isValidJSON() {
+        // Yes, this is just like asObject except it doesn't warn.
+        if(json == null && !error) {
             ObjectMapper mapper = new ObjectMapper();
             try {
-                json = mapper.writeValueAsBytes(properties);
+                json = mapper.writeValueAsBytes(object);
             } catch (Exception e) {
+                error = true;
+            }
+        }
+        return (object != null);
+    }
+
+    public byte[] getJson() {
+        if(json == null && !error) {
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                json = mapper.writeValueAsBytes(object);
+            } catch (Exception e) {
+                Log.w(TDDatabase.TAG, "TDBody: couldn't convert JSON");
                 error = true;
             }
         }
@@ -59,6 +75,7 @@ public class TDBody {
     }
 
     public byte[] getPrettyJson() {
+        Object properties = getProperties();
         if(properties != null) {
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -71,17 +88,30 @@ public class TDBody {
         return getJson();
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> getProperties() {
-        if(properties == null) {
+    public String getJSONString() {
+        return new String(getJson());
+    }
+
+    public Object getObject() {
+        if(object == null && !error) {
             ObjectMapper mapper = new ObjectMapper();
             try {
-                properties = mapper.readValue(json, Map.class);
+                object = mapper.readValue(json, Map.class);
             } catch (Exception e) {
+                Log.w(TDDatabase.TAG, "TDBody: couldn't parse JSON: " + new String(json), e);
                 error = true;
             }
         }
-        return properties;
+        return object;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getProperties() {
+        Object object = getObject();
+        if(object instanceof Map) {
+            return (Map<String,Object>)object;
+        }
+        return null;
     }
 
     public Object getPropertyForKey(String key) {

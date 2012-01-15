@@ -136,7 +136,9 @@ public class Views extends AndroidTestCase {
             public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
                 Assert.assertNotNull(document.get("_id"));
                 Assert.assertNotNull(document.get("_rev"));
-                emitter.emit(document.get("key"), null);
+                if(document.get("key") != null) {
+                    emitter.emit(document.get("key"), null);
+                }
             }
         }, null, "1");
         return view;
@@ -398,17 +400,6 @@ public class Views extends AndroidTestCase {
         return result;
     }
 
-    private static Object total(List<Object> keys, List<Object> values) {
-        double result = 0;
-        for (Object value : values) {
-            if(value instanceof Number) {
-                Number numberValue = (Number)value;
-                result += numberValue.doubleValue();
-            }
-        }
-        return result;
-    }
-
     public void testViewReduce() {
 
         String filesDir = getContext().getFilesDir().getAbsolutePath();
@@ -447,7 +438,7 @@ public class Views extends AndroidTestCase {
             @Override
             public Object reduce(List<Object> keys, List<Object> values,
                     boolean rereduce) {
-                return total(keys, values);
+                return TDView.totalValues(values);
             }
         }, "1");
 
@@ -540,7 +531,7 @@ public class Views extends AndroidTestCase {
             @Override
             public Object reduce(List<Object> keys, List<Object> values,
                     boolean rereduce) {
-                return total(keys, values);
+                return TDView.totalValues(values);
             }
         }, "1");
 

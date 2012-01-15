@@ -23,9 +23,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
+import java.util.Set;
 import java.util.UUID;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -43,6 +45,7 @@ import com.couchbase.touchdb.support.DirUtils;
 public class TDDatabase extends Observable {
 
     private String path;
+    private String name;
     private SQLiteDatabase database;
     private boolean open = false;
     private int transactionLevel = 0;
@@ -110,7 +113,21 @@ public class TDDatabase extends Observable {
     }
 
     public TDDatabase(String path) {
+        assert(path.startsWith("/")); //path must be absolute
         this.path = path;
+        this.name = DirUtils.getDatabaseNameFromPath(path);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String toString() {
@@ -399,6 +416,11 @@ public class TDDatabase extends Observable {
         return result;
     }
 
+    public boolean existsDocumentWithIDAndRev(String docId, String revId) {
+        //OPT: Do this without loading the data
+        return getDocumentWithIDAndRev(docId, revId, false) != null;
+    }
+
     public TDStatus loadRevisionBody(TDRevision rev, boolean withAttachments) {
         if(rev.getBody() != null) {
             return new TDStatus(TDStatus.OK);
@@ -505,7 +527,7 @@ public class TDDatabase extends Observable {
         return UUID.randomUUID().toString();
     }
 
-    public String generateDocumentId() {
+    public static String generateDocumentId() {
         return createUUID();
     }
 
@@ -578,24 +600,44 @@ public class TDDatabase extends Observable {
         return docNumericId;
     }
 
+    private static final Set<String> KNOWN_SPECIAL_KEYS;
+
+    static {
+        KNOWN_SPECIAL_KEYS = new HashSet<String>();
+        KNOWN_SPECIAL_KEYS.add("_id");
+        KNOWN_SPECIAL_KEYS.add("_rev");
+        KNOWN_SPECIAL_KEYS.add("_attachments");
+        KNOWN_SPECIAL_KEYS.add("_deleted");
+    }
+
     public byte[] encodeDocumentJSON(TDRevision rev) {
-        byte[] result = null;
-        Map<String,Object> revProperties = rev.getProperties();
-        if(revProperties == null) {
-            return result;
+
+        Map<String,Object> origProps = rev.getProperties();
+        if(origProps == null) {
+            return null;
         }
-        Map<String,Object> properties = new HashMap<String,Object>(revProperties);
-        properties.remove("_id");
-        properties.remove("_rev");
-        properties.remove("_deleted");
-        properties.remove("_attachments");
+
+        // Don't allow any "_"-prefixed keys. Known ones we'll ignore, unknown ones are an error.
+        Map<String,Object> properties = new HashMap<String,Object>(origProps.size());
+        for (String key : origProps.keySet()) {
+            if(key.startsWith("_")) {
+                if(!KNOWN_SPECIAL_KEYS.contains(key)) {
+                    Log.e(TAG, "TDDatabase: Invalid top-level key '" + key + "' in document to be inserted");
+                    return null;
+                }
+            } else {
+                properties.put(key, origProps.get(key));
+            }
+        }
+
+        byte[] json = null;
         ObjectMapper mapper = new ObjectMapper();
         try {
-            result = mapper.writeValueAsBytes(properties);
+            json = mapper.writeValueAsBytes(properties);
         } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error serializing properties to JSON", e);
+            Log.e(TDDatabase.TAG, "Error serializing " + rev + " to JSON", e);
         }
-        return result;
+        return json;
     }
 
     public long insertRevision(TDRevision rev, long docNumericID, long parentSequence, boolean current, byte[] data) {
@@ -625,7 +667,7 @@ public class TDDatabase extends Observable {
         String docId = rev.getDocId();
         long docNumericID;
         boolean deleted = rev.isDeleted();
-        if((rev == null) || ((prevRevId != null) && (docId == null)) || (deleted && (prevRevId == null))) {
+        if((rev == null) || ((prevRevId != null) && (docId == null)) || (deleted && (docId == null))) {
             resultStatus.setCode(TDStatus.BAD_REQUEST);
             return null;
         }
@@ -650,7 +692,7 @@ public class TDDatabase extends Observable {
 
                 if(parentSequence == 0) {
                     // Not found: either a 404 or a 409, depending on whether there is any current revision
-                    if(getDocumentWithIDAndRev(docId, null, false) != null) {
+                    if(existsDocumentWithIDAndRev(docId, null)) {
                         resultStatus.setCode(TDStatus.CONFLICT);
                         return null;
                     }
@@ -666,6 +708,17 @@ public class TDDatabase extends Observable {
                 database.update("revs", updateContent, "sequence=" + parentSequence, null);
             }
             else if(docId != null) {
+                if(deleted) {
+                    // Didn't specify a revision to delete: 404 or a 409, depending
+                    if(existsDocumentWithIDAndRev(docId, null)) {
+                        resultStatus.setCode(TDStatus.CONFLICT);
+                        return null;
+                    }
+                    else {
+                        resultStatus.setCode(TDStatus.NOT_FOUND);
+                        return null;
+                    }
+                }
                 // Inserting first revision, with docID given: make sure docID doesn't exist,
                 // or exists but is currently deleted
                 docNumericID = getOrInsertDocNumericID(docId);
@@ -693,7 +746,7 @@ public class TDDatabase extends Observable {
             }
             else {
                 // Inserting first revision, with no docID given: generate a unique docID:
-                docId = generateDocumentId();
+                docId = TDDatabase.generateDocumentId();
                 docNumericID = insertDocumentID(docId);
                 if(docNumericID <= 0) {
                     return null;

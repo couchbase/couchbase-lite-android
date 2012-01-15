@@ -114,10 +114,18 @@ public class CRUDOperations extends AndroidTestCase {
 
         // Delete it:
         TDRevision revD = new TDRevision(rev2.getDocId(), null, true);
+        TDRevision revResult = db.putRevision(revD, null, status);
+        Assert.assertNull(revResult);
+        Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
         revD = db.putRevision(revD, rev2.getRevId(), status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals(revD.getDocId(), rev2.getDocId());
         Assert.assertTrue(revD.getRevId().startsWith("3-"));
+
+        // Delete nonexistent doc:
+        TDRevision revFake = new TDRevision("fake", null, true);
+        db.putRevision(revFake, null, status);
+        Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
 
         // Read it back (should fail):
         readRev = db.getDocumentWithIDAndRev(revD.getDocId(), null, false);

@@ -20,16 +20,17 @@ package com.couchbase.touchdb;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class TDServer {
 
-    public static final String LEGAL_CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789-";
-    public static final String DATABASE_SUFFIX = ".toydb";
+    public static final String LEGAL_CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789_$()+-/";
+    public static final String DATABASE_SUFFIX = ".touchdb";
 
     private File directory;
     private Map<String, TDDatabase> databases;
@@ -48,38 +49,51 @@ public class TDServer {
     }
 
     private String pathForName(String name) {
-        if((name == null) || (name.length() == 0) || Pattern.matches("^" + LEGAL_CHARACTERS, name)) {
+        if((name == null) || (name.length() == 0) || Pattern.matches("^" + LEGAL_CHARACTERS, name) || !Character.isLowerCase(name.charAt(0))) {
             return null;
         }
+        name = name.replace('/', ':');
         String result = directory.getPath() + File.separator + name + DATABASE_SUFFIX;
         return result;
     }
 
-    public TDDatabase getDatabaseNamed(String name) {
-        TDDatabase result = databases.get(name);
-        if(result == null) {
+    public TDDatabase getDatabaseNamed(String name, boolean create) {
+        TDDatabase db = databases.get(name);
+        if(db == null) {
             String path = pathForName(name);
             if(path == null) {
                 return null;
             }
-            result = new TDDatabase(path);
-            databases.put(name, result);
+            db = new TDDatabase(path);
+            if(!create && !db.exists()) {
+                return null;
+            }
+            db.setName(name);
+            databases.put(name, db);
         }
-        return result;
+        return db;
+    }
+
+    public TDDatabase getDatabaseNamed(String name) {
+        return getDatabaseNamed(name, true);
+    }
+
+    public TDDatabase getExistingDatabaseNamed(String name) {
+        TDDatabase db = getDatabaseNamed(name, false);
+        if((db != null) && !db.open()) {
+            return null;
+        }
+        return db;
     }
 
     public boolean deleteDatabaseNamed(String name) {
-        TDDatabase result = databases.get(name);
-        if(result != null) {
-            result.close();
-            databases.remove(name);
-        }
-        String path = pathForName(name);
-        if(path == null) {
+        TDDatabase db = databases.get(name);
+        if(db == null) {
             return false;
         }
-        File databaseFile = new File(path);
-        return databaseFile.delete();
+        db.deleteDatabase();
+        databases.remove(name);
+        return true;
     }
 
     public List<String> allDatabaseNames() {
@@ -93,8 +107,17 @@ public class TDServer {
                 return false;
             }
         });
-        List<String> result = Arrays.asList(databaseFiles);
+        List<String> result = new ArrayList<String>();
+        for (String databaseFile : databaseFiles) {
+            String trimmed = databaseFile.substring(0, databaseFile.length() - DATABASE_SUFFIX.length());
+            String replaced = trimmed.replace(':', '/');
+            result.add(replaced);
+        }
         return result;
+    }
+
+    public Set<String> allOpenDatabases() {
+        return databases.keySet();
     }
 
     public void close() {

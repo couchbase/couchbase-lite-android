@@ -39,6 +39,7 @@ public class TDView {
     private int viewId;
     private TDViewMapBlock mapBlock;
     private TDViewReduceBlock reduceBlock;
+    private static TDViewCompiler compiler;
 
     public TDView(TDDatabase db, String name) {
         this.db = db;
@@ -267,9 +268,7 @@ public class TDView {
 
                 @Override
                 public void emit(Object key, Object value) {
-                    if (key == null) {
-                        return;
-                    }
+
                     try {
                         ObjectMapper mapper = new ObjectMapper();
                         String keyJson = mapper.writeValueAsString(key);
@@ -603,6 +602,27 @@ public class TDView {
         }
 
         return rows;
+    }
+
+    public static double totalValues(List<Object>values) {
+        double total = 0;
+        for (Object object : values) {
+            if(object instanceof Number) {
+                Number number = (Number)object;
+                total += number.doubleValue();
+            } else {
+                Log.w(TDDatabase.TAG, "Warning non-numeric value found in totalValues: " + object);
+            }
+        }
+        return total;
+    }
+
+    public static TDViewCompiler getCompiler() {
+        return compiler;
+    }
+
+    public static void setCompiler(TDViewCompiler compiler) {
+        TDView.compiler = compiler;
     }
 
 }
