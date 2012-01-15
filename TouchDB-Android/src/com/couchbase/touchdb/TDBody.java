@@ -20,6 +20,7 @@ package com.couchbase.touchdb;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.ObjectWriter;
 
 public class TDBody {
 
@@ -55,6 +56,19 @@ public class TDBody {
             }
         }
         return json;
+    }
+
+    public byte[] getPrettyJson() {
+        if(properties != null) {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+            try {
+                json = writer.writeValueAsBytes(properties);
+            } catch (Exception e) {
+                error = true;
+            }
+        }
+        return getJson();
     }
 
     @SuppressWarnings("unchecked")
