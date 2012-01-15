@@ -522,9 +522,10 @@ public class TDView {
         List<Map<String, Object>> rows = new ArrayList<Map<String,Object>>();
         try {
             cursor = resultSetWithOptions(options, status);
-            boolean reduce = options.isReduce();
-            boolean group = options.isGroup();
             int groupLevel = options.getGroupLevel();
+            boolean group = options.isGroup() || (groupLevel > 0);
+            boolean reduce = options.isReduce() || group;
+
             List<Object> keysToReduce = null;
             List<Object> valuesToReduce = null;
             Object lastKey = null;
