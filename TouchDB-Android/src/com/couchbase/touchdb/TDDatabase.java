@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,10 @@ public class TDDatabase extends Observable {
     private Map<String, TDView> views;
     private Map<String, TDFilterBlock> filters;
     private TDBlobStore attachments;
+
+    public enum TDContentOptions {
+        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevsInfo, TDIncludeLocalSeq
+    }
 
     public static final String SCHEMA = "" +
             "CREATE TABLE docs ( " +
@@ -339,24 +344,79 @@ public class TDDatabase extends Observable {
 
     /** Inserts the _id, _rev and _attachments properties into the JSON data and stores it in rev.
     Rev must already have its revID and sequence properties set. */
-    public void expandStoredJSONIntoRevisionWithAttachments(byte[] json, TDRevision rev, boolean withAttachments) {
+    public Map<String,Object> extraPropertiesForRevision(TDRevision rev, EnumSet<TDContentOptions> contentOptions) {
 
         String docId = rev.getDocId();
         String revId = rev.getRevId();
         long sequenceNumber = rev.getSequence();
+        assert(revId != null);
         assert(sequenceNumber > 0);
+
+        // Get attachment metadata, and optionally the contents:
+        boolean withAttachments = contentOptions.contains(TDContentOptions.TDIncludeAttachments);
         Map<String, Object> attachmentsDict = getAttachmentsDictForSequenceWithContent(sequenceNumber, withAttachments);
 
-        Map<String,Object> extra = new HashMap<String,Object>();
-        extra.put("_id", docId);
-        extra.put("_rev", revId);
-        if(rev.isDeleted()) {
-            extra.put("_deleted", true);
-        }
-        if(attachmentsDict != null) {
-            extra.put("_attachments", attachmentsDict);
+        // Get more optional stuff to put in the properties:
+        //OPT: This probably ends up making redundant SQL queries if multiple options are enabled.
+        Long localSeq = null;
+        if(contentOptions.contains(TDContentOptions.TDIncludeLocalSeq)) {
+            localSeq = sequenceNumber;
         }
 
+        List<Object> revsInfo = null;
+        if(contentOptions.contains(TDContentOptions.TDIncludeRevsInfo)) {
+            revsInfo = new ArrayList<Object>();
+            List<TDRevision> revHistoryFull = getRevisionHistory(rev);
+            for (TDRevision historicalRev : revHistoryFull) {
+                Map<String,Object> revHistoryItem = new HashMap<String,Object>();
+                String status = "available";
+                if(historicalRev.isDeleted()) {
+                    status = "deleted";
+                }
+                // TODO: Detect missing revisions, set status="missing"
+                revHistoryItem.put("rev", historicalRev.getRevId());
+                revHistoryItem.put("status", status);
+                revsInfo.add(revHistoryItem);
+            }
+        }
+
+        List<String> conflicts = null;
+        if(contentOptions.contains(TDContentOptions.TDIncludeConflicts)) {
+            TDRevisionList revs = getAllRevisionsOfDocumentID(docId, true);
+            if(revs.size() > 1) {
+                conflicts = new ArrayList<String>();
+                for (TDRevision historicalRev : revs) {
+                    if(!historicalRev.equals(rev)) {
+                        conflicts.add(historicalRev.getRevId());
+                    }
+                }
+            }
+        }
+
+        Map<String,Object> result = new HashMap<String,Object>();
+        result.put("_id", docId);
+        result.put("_rev", revId);
+        if(rev.isDeleted()) {
+            result.put("_deleted", true);
+        }
+        if(attachmentsDict != null) {
+            result.put("_attachments", attachmentsDict);
+        }
+        if(localSeq != null) {
+            result.put("_local_seq", localSeq);
+        }
+        if(revsInfo != null) {
+            result.put("_revs_info", revsInfo);
+        }
+        if(conflicts != null) {
+            result.put("_conflicts", conflicts);
+        }
+
+        return result;
+    }
+
+    public void expandStoredJSONIntoRevisionWithAttachments(byte[] json, TDRevision rev, EnumSet<TDContentOptions> contentOptions) {
+        Map<String,Object> extra = extraPropertiesForRevision(rev, contentOptions);
         if(json != null) {
             rev.setJson(appendDictToJSON(json, extra));
         }
@@ -366,25 +426,29 @@ public class TDDatabase extends Observable {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> documentPropertiesFromJSON(byte[] json, String docId, String revId, long sequence) {
-        Map<String, Object> result = null;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            if(json != null) {
-                result = mapper.readValue(json, Map.class);
-            } else {
-                result = new HashMap<String, Object>();
-            }
-            result.put("_id", docId);
-            result.put("_rev", revId);
-            result.put("_attachments", getAttachmentsDictForSequenceWithContent(sequence, false));
-        } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error serializing properties to JSON", e);
+    public Map<String, Object> documentPropertiesFromJSON(byte[] json, String docId, String revId, long sequence, EnumSet<TDContentOptions> contentOptions) {
+
+        TDRevision rev = new TDRevision(docId, revId, false);
+        rev.setSequence(sequence);
+        Map<String,Object> extra = extraPropertiesForRevision(rev, contentOptions);
+        if(json == null) {
+            return extra;
         }
-        return result;
+
+      ObjectMapper mapper = new ObjectMapper();
+      Map<String,Object> docProperties = null;
+      try {
+          docProperties = mapper.readValue(json, Map.class);
+          docProperties.putAll(extra);
+          return docProperties;
+      } catch (Exception e) {
+          Log.e(TDDatabase.TAG, "Error serializing properties to JSON", e);
+      }
+
+      return docProperties;
     }
 
-    public TDRevision getDocumentWithIDAndRev(String id, String rev, boolean withAttachments) {
+    public TDRevision getDocumentWithIDAndRev(String id, String rev, EnumSet<TDContentOptions> contentOptions) {
         TDRevision result = null;
         String sql;
 
@@ -410,7 +474,7 @@ public class TDDatabase extends Observable {
                 byte[] json = cursor.getBlob(2);
                 result = new TDRevision(id, rev, deleted);
                 result.setSequence(cursor.getLong(3));
-                expandStoredJSONIntoRevisionWithAttachments(json, result, withAttachments);
+                expandStoredJSONIntoRevisionWithAttachments(json, result, contentOptions);
             }
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error getting document with id and rev", e);
@@ -424,10 +488,10 @@ public class TDDatabase extends Observable {
 
     public boolean existsDocumentWithIDAndRev(String docId, String revId) {
         //OPT: Do this without loading the data
-        return getDocumentWithIDAndRev(docId, revId, false) != null;
+        return getDocumentWithIDAndRev(docId, revId, EnumSet.noneOf(TDContentOptions.class)) != null;
     }
 
-    public TDStatus loadRevisionBody(TDRevision rev, boolean withAttachments) {
+    public TDStatus loadRevisionBody(TDRevision rev, EnumSet<TDContentOptions> contentOptions) {
         if(rev.getBody() != null) {
             return new TDStatus(TDStatus.OK);
         }
@@ -442,7 +506,7 @@ public class TDDatabase extends Observable {
             if(cursor.moveToFirst()) {
                 result.setCode(TDStatus.OK);
                 rev.setSequence(cursor.getLong(0));
-                expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(1), rev, withAttachments);
+                expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(1), rev, contentOptions);
             }
         } catch(SQLException e) {
             Log.e(TDDatabase.TAG, "Error loading revision body", e);
@@ -957,7 +1021,7 @@ public class TDDatabase extends Observable {
                 TDRevision rev = new TDRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
                 rev.setSequence(cursor.getLong(0));
                 if(includeDocs) {
-                    expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, false);
+                    expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, options.getContentOptions());
                 }
                 if((filter == null) || (filter.filter(rev))) {
                     changes.add(rev);
@@ -1166,7 +1230,7 @@ public class TDDatabase extends Observable {
                 if(options.isIncludeDocs() && !deleted) {
                     byte[] json = cursor.getBlob(4);
                     long sequence = cursor.getLong(5);
-                    docContents = documentPropertiesFromJSON(json, docId, revId, sequence);
+                    docContents = documentPropertiesFromJSON(json, docId, revId, sequence, options.getContentOptions());
                 }
 
                 Map<String,Object> valueMap = new HashMap<String,Object>();
@@ -1329,6 +1393,36 @@ public class TDDatabase extends Observable {
         else {
             return getAllRevisionsOfDocumentID(docId, docNumericId, onlyCurrent);
         }
+    }
+
+    public List<String> getConflictingRevisionIDsOfDocID(String docID) {
+        long docIdNumeric = getDocNumericID(docID);
+        if(docIdNumeric < 0) {
+            return null;
+        }
+
+        List<String> result = new ArrayList<String>();
+        Cursor cursor = null;
+        try {
+            String[] args = { Long.toString(docIdNumeric) };
+            cursor = database.rawQuery("SELECT revid FROM revs WHERE doc_id=? AND current " +
+                                           "ORDER BY revid DESC OFFSET 1", args);
+            cursor.moveToFirst();
+            while(!cursor.isAfterLast()) {
+                result.add(cursor.getString(0));
+                cursor.moveToNext();
+            }
+
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return result;
     }
 
     public List<TDRevision> getRevisionHistory(TDRevision rev) {

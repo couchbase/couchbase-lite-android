@@ -17,6 +17,7 @@
 
 package com.couchbase.touchdb.testapp.tests;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class CRUDOperations extends AndroidTestCase {
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));
 
         //read it back
-        TDRevision readRev = db.getDocumentWithIDAndRev(rev1.getDocId(), null, false);
+        TDRevision readRev = db.getDocumentWithIDAndRev(rev1.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertNotNull(readRev);
         Map<String,Object> readRevProps = readRev.getProperties();
         Assert.assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
@@ -78,7 +79,7 @@ public class CRUDOperations extends AndroidTestCase {
         Assert.assertTrue(rev2.getRevId().startsWith("2-"));
 
         //read it back
-        readRev = db.getDocumentWithIDAndRev(rev2.getDocId(), null, false);
+        readRev = db.getDocumentWithIDAndRev(rev2.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertNotNull(readRev);
         Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
@@ -128,7 +129,7 @@ public class CRUDOperations extends AndroidTestCase {
         Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
 
         // Read it back (should fail):
-        readRev = db.getDocumentWithIDAndRev(revD.getDocId(), null, false);
+        readRev = db.getDocumentWithIDAndRev(revD.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertNull(readRev);
 
         // Get Changes feed

@@ -1,8 +1,13 @@
 package com.couchbase.touchdb;
 
+import java.util.EnumSet;
+
+import com.couchbase.touchdb.TDDatabase.TDContentOptions;
+
 public class TDChangesOptions {
 
     private int limit = Integer.MAX_VALUE;
+    private EnumSet<TDContentOptions> contentOptions = EnumSet.noneOf(TDDatabase.TDContentOptions.class);
     private boolean includeDocs = false;
     private boolean includeConflicts = false;
     private boolean sortBySequence = true;
@@ -37,5 +42,13 @@ public class TDChangesOptions {
 
     public void setSortBySequence(boolean sortBySequence) {
         this.sortBySequence = sortBySequence;
+    }
+
+    public EnumSet<TDContentOptions> getContentOptions() {
+        return contentOptions;
+    }
+
+    public void setContentOptions(EnumSet<TDContentOptions> contentOptions) {
+        this.contentOptions = contentOptions;
     }
 }

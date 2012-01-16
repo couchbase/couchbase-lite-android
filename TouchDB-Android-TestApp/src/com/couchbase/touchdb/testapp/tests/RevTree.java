@@ -18,6 +18,7 @@
 package com.couchbase.touchdb.testapp.tests;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +92,7 @@ public class RevTree extends AndroidTestCase {
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         // Fetch one of those phantom revisions with no body:
-        TDRevision rev2 = db.getDocumentWithIDAndRev(rev.getDocId(), "2-too", false);
+        TDRevision rev2 = db.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertEquals(rev.getDocId(), rev2.getDocId());
         Assert.assertEquals("2-too", rev2.getRevId());
         //Assert.assertNull(rev2.getBody());
@@ -100,7 +101,7 @@ public class RevTree extends AndroidTestCase {
         Assert.assertEquals(8, db.getLastSequence());
 
         // Make sure the revision with the higher revID wins the conflict:
-        TDRevision current = db.getDocumentWithIDAndRev(rev.getDocId(), null, false);
+        TDRevision current = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertEquals(conflict, current);
 
         // Get the _changes feed and verify only the winner is in it:
@@ -123,7 +124,7 @@ public class RevTree extends AndroidTestCase {
     }
 
     private static void verifyHistory(TDDatabase db, TDRevision rev, List<String> history) {
-        TDRevision gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, false);
+        TDRevision gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertEquals(rev, gotRev);
         Assert.assertEquals(rev.getProperties(), gotRev.getProperties());
 

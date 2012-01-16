@@ -17,13 +17,18 @@
 
 package com.couchbase.touchdb;
 
+import java.util.EnumSet;
+
+import com.couchbase.touchdb.TDDatabase.TDContentOptions;
+
 public class TDQueryOptions {
 
     private Object startKey = null;
     private Object endKey = null;
     private int skip = 0;
     private int limit = Integer.MAX_VALUE;
-    int groupLevel = 0;
+    private int groupLevel = 0;
+    private EnumSet<TDContentOptions> contentOptions = EnumSet.noneOf(TDDatabase.TDContentOptions.class);
     private boolean descending = false;
     private boolean includeDocs = false;
     private boolean updateSeq = false;
@@ -117,6 +122,14 @@ public class TDQueryOptions {
 
     public void setGroup(boolean group) {
         this.group = group;
+    }
+
+    public EnumSet<TDContentOptions> getContentOptions() {
+        return contentOptions;
+    }
+
+    public void setContentOptions(EnumSet<TDContentOptions> contentOptions) {
+        this.contentOptions = contentOptions;
     }
 
 }

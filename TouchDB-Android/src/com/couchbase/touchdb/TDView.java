@@ -18,6 +18,7 @@
 package com.couchbase.touchdb;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -318,7 +319,7 @@ public class TDView {
                     byte[] json = cursor.getBlob(4);
                     Map<String, Object> properties = db
                             .documentPropertiesFromJSON(json, docId, revId,
-                                    sequence);
+                                    sequence, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
 
                     if (properties != null) {
                         // Call the user-defined map() to emit new key/value
@@ -552,7 +553,7 @@ public class TDView {
                     String docId = cursor.getString(2);
                     Map<String,Object> docContents = null;
                     if(options.isIncludeDocs()) {
-                        docContents = db.documentPropertiesFromJSON(cursor.getBlob(4), docId, cursor.getString(3), cursor.getLong(5));
+                        docContents = db.documentPropertiesFromJSON(cursor.getBlob(4), docId, cursor.getString(3), cursor.getLong(5), options.getContentOptions());
                     }
                     row.put("id", docId);
                     row.put("key", key);

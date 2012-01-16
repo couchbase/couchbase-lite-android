@@ -18,6 +18,7 @@
 package com.couchbase.touchdb.testapp.tests;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -38,6 +39,7 @@ public class Attachments extends AndroidTestCase {
 
     public static final String TAG = "Attachments";
 
+    @SuppressWarnings("unchecked")
     public void testAttachments() {
 
         String filesDir = getContext().getFilesDir().getAbsolutePath();
@@ -77,8 +79,7 @@ public class Attachments extends AndroidTestCase {
         Map<String,Object> attachmentDictForSequence = db.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), false);
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
-        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), false);
-        @SuppressWarnings("unchecked")
+        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
         Assert.assertEquals(attachmentDict, gotAttachmentDict);
 
@@ -88,7 +89,7 @@ public class Attachments extends AndroidTestCase {
         attachmentDictForSequence = db.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), true);
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
-        gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), true);
+        gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.of(TDDatabase.TDContentOptions.TDIncludeAttachments));
         gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
         Assert.assertEquals(attachmentDict, gotAttachmentDict);
 
@@ -174,7 +175,7 @@ public class Attachments extends AndroidTestCase {
         // Examine the attachment store:
         Assert.assertEquals(1, attachments.count());
 
-        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), false);
+        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         @SuppressWarnings("unchecked")
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
 
