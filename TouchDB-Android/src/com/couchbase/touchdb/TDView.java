@@ -371,19 +371,6 @@ public class TDView {
             options = new TDQueryOptions();
         }
 
-        if (!options.isGroup()) {
-            if (options.isReduce() && (reduceBlock == null)) {
-                Log.w(TDDatabase.TAG, "Cannot use reduce option in view "
-                        + name + " which has no reduce block defined");
-                status.setCode(TDStatus.BAD_REQUEST);
-                return null;
-            }
-            if (options.getGroupLevel() == 0) {
-                Log.w(TDDatabase.TAG,
-                        "Setting groupLevel without group makes no sense");
-            }
-        }
-
         TDStatus updateStatus = updateIndex();
         if (!updateStatus.isSuccessful()) {
             return null;
@@ -524,6 +511,12 @@ public class TDView {
             int groupLevel = options.getGroupLevel();
             boolean group = options.isGroup() || (groupLevel > 0);
             boolean reduce = options.isReduce() || group;
+
+            if(reduce && (reduceBlock == null) && !group) {
+                Log.w(TDDatabase.TAG, "Cannot use reduce option in view " + name + " which has no reduce block defined");
+                status.setCode(TDStatus.BAD_REQUEST);
+                return null;
+            }
 
             List<Object> keysToReduce = null;
             List<Object> valuesToReduce = null;

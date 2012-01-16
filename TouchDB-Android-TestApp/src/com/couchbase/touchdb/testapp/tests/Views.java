@@ -664,4 +664,75 @@ public class Views extends AndroidTestCase {
 
     }
 
+    public void testViewGroupedStrings() {
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+
+        Map<String,Object> docProperties1 = new HashMap<String,Object>();
+        docProperties1.put("name", "Alice");
+        putDoc(db, docProperties1);
+
+        Map<String,Object> docProperties2 = new HashMap<String,Object>();
+        docProperties2.put("name", "Albert");
+        putDoc(db, docProperties2);
+
+        Map<String,Object> docProperties3 = new HashMap<String,Object>();
+        docProperties3.put("name", "Naomi");
+        putDoc(db, docProperties3);
+
+        Map<String,Object> docProperties4 = new HashMap<String,Object>();
+        docProperties4.put("name", "Jens");
+        putDoc(db, docProperties4);
+
+        Map<String,Object> docProperties5 = new HashMap<String,Object>();
+        docProperties5.put("name", "Jed");
+        putDoc(db, docProperties5);
+
+        TDView view = db.getViewNamed("default/names");
+        view.setMapReduceBlocks(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                String name = (String)document.get("name");
+                if(name != null) {
+                    emitter.emit(name.substring(0, 1), 1);
+                }
+            }
+
+        }, new TDViewReduceBlock() {
+
+            @Override
+            public Object reduce(List<Object> keys, List<Object> values,
+                    boolean rereduce) {
+                return values.size();
+            }
+
+        }, "1.0");
+
+        TDQueryOptions options = new TDQueryOptions();
+        options.setGroupLevel(1);
+        TDStatus status = new TDStatus();
+        List<Map<String,Object>> rows = view.queryWithOptions(options, status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+
+        List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
+        Map<String,Object> row1 = new HashMap<String,Object>();
+        row1.put("key", "A");
+        row1.put("value", 2);
+        expectedRows.add(row1);
+        Map<String,Object> row2 = new HashMap<String,Object>();
+        row2.put("key", "J");
+        row2.put("value", 2);
+        expectedRows.add(row2);
+        Map<String,Object> row3 = new HashMap<String,Object>();
+        row3.put("key", "N");
+        row3.put("value", 1);
+        expectedRows.add(row3);
+
+        Assert.assertEquals(expectedRows, rows);
+
+    }
+
 }
