@@ -18,6 +18,8 @@
 package com.couchbase.touchdb;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -57,6 +59,22 @@ public class TDRevisionList extends ArrayList<TDRevision> {
         }
 
         return result;
+    }
+
+    public void sortBySequence() {
+        Collections.sort(this, new Comparator<TDRevision>() {
+
+            public int compare(TDRevision rev1, TDRevision rev2) {
+                return (int)(rev1.getSequence() - rev2.getSequence());
+            }
+
+        });
+    }
+
+    public void limit(int limit) {
+        if(size() > limit) {
+            removeRange(limit, size());
+        }
     }
 
 }

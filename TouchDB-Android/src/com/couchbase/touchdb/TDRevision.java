@@ -34,7 +34,10 @@ public class TDRevision {
     }
 
     public TDRevision(TDBody body) {
-        this((String)body.getPropertyForKey("_id"), null, false);
+        this((String)body.getPropertyForKey("_id"),
+                (String)body.getPropertyForKey("_rev"),
+                (((Boolean)body.getPropertyForKey("_deleted") != null)
+                        && ((Boolean)body.getPropertyForKey("_deleted") == true)));
         this.body = body;
     }
 

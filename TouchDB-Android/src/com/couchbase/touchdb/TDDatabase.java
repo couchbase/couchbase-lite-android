@@ -340,9 +340,6 @@ public class TDDatabase extends Observable {
     /** Inserts the _id, _rev and _attachments properties into the JSON data and stores it in rev.
     Rev must already have its revID and sequence properties set. */
     public void expandStoredJSONIntoRevisionWithAttachments(byte[] json, TDRevision rev, boolean withAttachments) {
-        if(json == null) {
-            return;
-        }
 
         String docId = rev.getDocId();
         String revId = rev.getRevId();
@@ -360,7 +357,12 @@ public class TDDatabase extends Observable {
             extra.put("_attachments", attachmentsDict);
         }
 
-        rev.setJson(appendDictToJSON(json, extra));
+        if(json != null) {
+            rev.setJson(appendDictToJSON(json, extra));
+        }
+        else {
+            rev.setProperties(extra);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -368,7 +370,11 @@ public class TDDatabase extends Observable {
         Map<String, Object> result = null;
         ObjectMapper mapper = new ObjectMapper();
         try {
-            result = mapper.readValue(json, Map.class);
+            if(json != null) {
+                result = mapper.readValue(json, Map.class);
+            } else {
+                result = new HashMap<String, Object>();
+            }
             result.put("_id", docId);
             result.put("_rev", revId);
             result.put("_attachments", getAttachmentsDictForSequenceWithContent(sequence, false));
@@ -608,6 +614,10 @@ public class TDDatabase extends Observable {
         KNOWN_SPECIAL_KEYS.add("_rev");
         KNOWN_SPECIAL_KEYS.add("_attachments");
         KNOWN_SPECIAL_KEYS.add("_deleted");
+        KNOWN_SPECIAL_KEYS.add("_revisions");
+        KNOWN_SPECIAL_KEYS.add("_revs_info");
+        KNOWN_SPECIAL_KEYS.add("_conflicts");
+        KNOWN_SPECIAL_KEYS.add("_deleted_conflicts");
     }
 
     public byte[] encodeDocumentJSON(TDRevision rev) {
@@ -663,7 +673,6 @@ public class TDDatabase extends Observable {
     @SuppressWarnings("unchecked")
     public TDRevision putRevision(TDRevision rev, String prevRevId, TDStatus resultStatus) {
         // prevRevId is the rev ID being replaced, or nil if an insert
-        assert(rev.getRevId() == null);
         String docId = rev.getDocId();
         long docNumericID;
         boolean deleted = rev.isDeleted();
@@ -806,6 +815,11 @@ public class TDDatabase extends Observable {
 
     public TDStatus forceInsert(TDRevision rev, List<String> revHistory, URL source) {
 
+        int historyCount = revHistory.size();
+        if(historyCount < 1 || !revHistory.get(0).equals(rev.getRevId())) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+
         boolean success = false;
         beginTransaction();
         try {
@@ -816,8 +830,6 @@ public class TDDatabase extends Observable {
             if(localRevs == null) {
                 return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
             }
-            int historyCount = revHistory.size();
-            assert(historyCount >= 1);
 
             // Walk through the remote history in chronological order, matching each revision ID to
             // a local revision. When the list diverges, start creating blank local revisions to fill
@@ -893,9 +905,24 @@ public class TDDatabase extends Observable {
         return new TDStatus(TDStatus.CREATED);
     }
 
-    public TDRevisionList changesSince(int lastSeq, TDQueryOptions options, TDFilterBlock filter) {
+    public List<String> parseCouchDBRevisionHistory(Map<String,Object> docProperties) {
+        Map<String,Object> revisions = (Map<String,Object>)docProperties.get("_revisions");
+        if(revisions == null) {
+            return null;
+        }
+        Integer start = (Integer)revisions.get("start");
+        List<String> revIDs = (List<String>)revisions.get("ids");
+        for(int i=0; i < revIDs.size(); i++) {
+            String revID = revIDs.get(i);
+            revIDs.set(i, Integer.toString(start--) + "-" + revID);
+        }
+        return revIDs;
+    }
+
+    public TDRevisionList changesSince(int lastSeq, TDChangesOptions options, TDFilterBlock filter) {
+        // http://wiki.apache.org/couchdb/HTTP_database_API#Changes
         if(options == null) {
-            options = new TDQueryOptions();
+            options = new TDChangesOptions();
         }
 
         boolean includeDocs = options.isIncludeDocs() || (filter != null);
@@ -904,11 +931,11 @@ public class TDDatabase extends Observable {
             additionalSelectColumns = ", json";
         }
 
-        String sql = "SELECT sequence, docid, revid, deleted" + additionalSelectColumns + " FROM revs, docs "
+        String sql = "SELECT sequence, revs.doc_id, docid, revid, deleted" + additionalSelectColumns + " FROM revs, docs "
                         + "WHERE sequence > ? AND current=1 "
                         + "AND revs.doc_id = docs.doc_id "
-                        + "ORDER BY sequence LIMIT ?";
-        String[] args = {Integer.toString(lastSeq), Integer.toString(options.getLimit())};
+                        + "ORDER BY revs.doc_id, revid DESC";
+        String[] args = {Integer.toString(lastSeq)};
         Cursor cursor = null;
         TDRevisionList changes = null;
 
@@ -916,11 +943,21 @@ public class TDDatabase extends Observable {
             cursor = database.rawQuery(sql, args);
             cursor.moveToFirst();
             changes = new TDRevisionList();
+            long lastDocId = 0;
             while(!cursor.isAfterLast()) {
-                TDRevision rev = new TDRevision(cursor.getString(1), cursor.getString(2), (cursor.getInt(3) > 0));
+                if(!options.isIncludeConflicts()) {
+                    // Only count the first rev for a given doc (the rest will be losing conflicts):
+                    long docNumericId = cursor.getLong(1);
+                    if(docNumericId == lastDocId) {
+                        cursor.moveToNext();
+                        continue;
+                    }
+                    lastDocId = docNumericId;
+                }
+                TDRevision rev = new TDRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
                 rev.setSequence(cursor.getLong(0));
                 if(includeDocs) {
-                    expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(4), rev, false);
+                    expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, false);
                 }
                 if((filter == null) || (filter.filter(rev))) {
                     changes.add(rev);
@@ -934,6 +971,11 @@ public class TDDatabase extends Observable {
                 cursor.close();
             }
         }
+
+        if(options.isSortBySequence()) {
+            changes.sortBySequence();
+        }
+        changes.limit(options.getLimit());
         return changes;
     }
 
@@ -1032,7 +1074,7 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public Map<String,Object> getAllDocs(TDQueryOptions options) {
+    public Map<String,Object> getDocsWithIDs(List<String> docIDs, TDQueryOptions options) {
         if(options == null) {
             options = new TDQueryOptions();
         }
@@ -1042,13 +1084,22 @@ public class TDDatabase extends Observable {
             updateSeq = getLastSequence();  // TODO: needs to be atomic with the following SELECT
         }
 
-        List<String> argsList = new ArrayList<String>();
-        String cols = "revs.doc_id, docid, revid";
+        // Generate the SELECT statement, based on the options:
+        String additionalCols = "";
         if(options.isIncludeDocs()) {
-            cols = cols + ", json, sequence";
+            additionalCols = ", json, sequence";
+        }
+        String sql = "SELECT revs.doc_id, docid, revid, deleted" + additionalCols + " FROM revs, docs WHERE";
+
+        if(docIDs != null) {
+            sql += " docid IN (" + joinQuoted(docIDs) + ")";
+        } else {
+            sql += " deleted=0";
         }
 
-        String additionalWhereClause = "";
+        sql += " AND current=1 AND docs.doc_id = revs.doc_id";
+
+        List<String> argsList = new ArrayList<String>();
         Object minKey = options.getStartKey();
         Object maxKey = options.getEndKey();
         boolean inclusiveMin = true;
@@ -1063,9 +1114,9 @@ public class TDDatabase extends Observable {
         if(minKey != null) {
             assert(minKey instanceof String);
             if(inclusiveMin) {
-                additionalWhereClause += " AND docid >= ?";
+                sql += " AND docid >= ?";
             } else {
-                additionalWhereClause += " AND docid > ?";
+                sql += " AND docid > ?";
             }
             argsList.add((String)minKey);
         }
@@ -1073,10 +1124,10 @@ public class TDDatabase extends Observable {
         if(maxKey != null) {
             assert(maxKey instanceof String);
             if(inclusiveMax) {
-                additionalWhereClause += " AND docid <= ?";
+                sql += " AND docid <= ?";
             }
             else {
-                additionalWhereClause += " AND docid < ?";
+                sql += " AND docid < ?";
             }
             argsList.add((String)maxKey);
         }
@@ -1087,6 +1138,8 @@ public class TDDatabase extends Observable {
             order = "DESC";
         }
 
+        sql += " ORDER BY docid " + order + ", revid DESC LIMIT ? OFFSET ?";
+
         argsList.add(Integer.toString(options.getLimit()));
         argsList.add(Integer.toString(options.getSkip()));
         Cursor cursor = null;
@@ -1094,11 +1147,7 @@ public class TDDatabase extends Observable {
         List<Map<String,Object>> rows = null;
 
         try {
-            cursor = database.rawQuery("SELECT " + cols +
-                    " FROM revs, docs " +
-                    " WHERE current=1 AND deleted=0 AND docs.doc_id = revs.doc_id" + additionalWhereClause +
-                    " ORDER BY docid " + order +
-                    ", revid DESC LIMIT ? OFFSET ?", argsList.toArray(new String[argsList.size()]));
+            cursor = database.rawQuery(sql, argsList.toArray(new String[argsList.size()]));
 
             cursor.moveToFirst();
             rows = new ArrayList<Map<String,Object>>();
@@ -1113,9 +1162,10 @@ public class TDDatabase extends Observable {
                 String docId = cursor.getString(1);
                 String revId = cursor.getString(2);
                 Map<String, Object> docContents = null;
-                if(options.isIncludeDocs()) {
-                    byte[] json = cursor.getBlob(3);
-                    long sequence = cursor.getLong(4);
+                boolean deleted = cursor.getInt(3) > 0;
+                if(options.isIncludeDocs() && !deleted) {
+                    byte[] json = cursor.getBlob(4);
+                    long sequence = cursor.getLong(5);
                     docContents = documentPropertiesFromJSON(json, docId, revId, sequence);
                 }
 
@@ -1128,6 +1178,9 @@ public class TDDatabase extends Observable {
                 change.put("value", valueMap);
                 if(docContents != null) {
                     change.put("doc", docContents);
+                }
+                if(deleted) {
+                    change.put("deleted", true);
                 }
 
                 rows.add(change);
@@ -1154,6 +1207,10 @@ public class TDDatabase extends Observable {
 
 
         return result;
+    }
+
+    public Map<String,Object> getAllDocs(TDQueryOptions options) {
+        return getDocsWithIDs(null, options);
     }
 
     /*** Replication ***/

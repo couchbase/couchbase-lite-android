@@ -390,6 +390,22 @@ public class Views extends AndroidTestCase {
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
         Assert.assertEquals(expectedQueryResult, query);
 
+        // Get specific documents:
+        options = new TDQueryOptions();
+        query = db.getDocsWithIDs(new ArrayList<String>(), options);
+        expectedQueryResult = createExpectedQueryResult(new ArrayList<Object>(), 0);
+        Assert.assertEquals(expectedQueryResult, query);
+
+        // Get specific documents:
+        options = new TDQueryOptions();
+        List<String> docIds = new ArrayList<String>();
+        Map<String,Object> expected2 = expectedRow.get(2);
+        docIds.add((String)expected2.get("id"));
+        query = db.getDocsWithIDs(docIds, options);
+        expectedRows = new ArrayList<Object>();
+        expectedRows.add(expected2);
+        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
+        Assert.assertEquals(expectedQueryResult, query);
     }
 
     private Map<String, Object> createExpectedQueryResult(List<Object> rows, int offset) {
