@@ -57,7 +57,7 @@ public class TDDatabase extends Observable {
     private TDBlobStore attachments;
 
     public enum TDContentOptions {
-        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevsInfo, TDIncludeLocalSeq
+        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq
     }
 
     public static final String SCHEMA = "" +
@@ -363,6 +363,11 @@ public class TDDatabase extends Observable {
             localSeq = sequenceNumber;
         }
 
+        Map<String,Object> revHistory = null;
+        if(contentOptions.contains(TDContentOptions.TDIncludeRevs)) {
+            revHistory = getRevisionHistoryDict(rev);
+        }
+
         List<Object> revsInfo = null;
         if(contentOptions.contains(TDContentOptions.TDIncludeRevsInfo)) {
             revsInfo = new ArrayList<Object>();
@@ -404,6 +409,9 @@ public class TDDatabase extends Observable {
         }
         if(localSeq != null) {
             result.put("_local_seq", localSeq);
+        }
+        if(revHistory != null) {
+            result.put("_revisions", revHistory);
         }
         if(revsInfo != null) {
             result.put("_revs_info", revsInfo);
@@ -548,7 +556,7 @@ public class TDDatabase extends Observable {
 
     public static boolean isValidDocumentId(String id) {
         // http://wiki.apache.org/couchdb/HTTP_Document_API#Documents
-        if(id != null && id.length() > 0) {
+        if(id != null && id.length() > 0 && (id.charAt(0) != '_' || id.startsWith("_design/"))) {
             return true;
         }
         return false;
@@ -734,13 +742,17 @@ public class TDDatabase extends Observable {
         return rowId;
     }
 
-    @SuppressWarnings("unchecked")
     public TDRevision putRevision(TDRevision rev, String prevRevId, TDStatus resultStatus) {
+        return putRevision(rev, prevRevId, false, resultStatus);
+    }
+
+    @SuppressWarnings("unchecked")
+    public TDRevision putRevision(TDRevision rev, String prevRevId, boolean allowConflict, TDStatus resultStatus) {
         // prevRevId is the rev ID being replaced, or nil if an insert
         String docId = rev.getDocId();
-        long docNumericID;
         boolean deleted = rev.isDeleted();
-        if((rev == null) || ((prevRevId != null) && (docId == null)) || (deleted && (docId == null))) {
+        if((rev == null) || ((prevRevId != null) && (docId == null)) || (deleted && (docId == null))
+                || ((docId != null) && !isValidDocumentId(docId))) {
             resultStatus.setCode(TDStatus.BAD_REQUEST);
             return null;
         }
@@ -748,16 +760,23 @@ public class TDDatabase extends Observable {
         resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
         beginTransaction();
         Cursor cursor = null;
+        long docNumericID = (docId != null) ? getDocNumericID(docId) : 0;
         long parentSequence = 0;
         try {
             if(prevRevId != null) {
-             // Replacing: make sure given prevRevID is current & find its sequence number:
-                docNumericID = getOrInsertDocNumericID(docId);
+                // Replacing: make sure given prevRevID is current & find its sequence number:
                 if(docNumericID <= 0) {
+                    resultStatus.setCode(TDStatus.NOT_FOUND);
                     return null;
                 }
+
                 String[] args = {Long.toString(docNumericID), prevRevId};
-                cursor = database.rawQuery("SELECT sequence FROM revs WHERE doc_id=? AND revid=? and current=1 LIMIT 1", args);
+                String additionalWhereClause = "";
+                if(!allowConflict) {
+                    additionalWhereClause = "AND current=1";
+                }
+
+                cursor = database.rawQuery("SELECT sequence FROM revs WHERE doc_id=? AND revid=? " + additionalWhereClause + " LIMIT 1", args);
 
                 if(cursor.moveToFirst()) {
                     parentSequence = cursor.getLong(0);
@@ -765,7 +784,7 @@ public class TDDatabase extends Observable {
 
                 if(parentSequence == 0) {
                     // Not found: either a 404 or a 409, depending on whether there is any current revision
-                    if(existsDocumentWithIDAndRev(docId, null)) {
+                    if(!allowConflict && existsDocumentWithIDAndRev(docId, null)) {
                         resultStatus.setCode(TDStatus.CONFLICT);
                         return null;
                     }
@@ -792,33 +811,37 @@ public class TDDatabase extends Observable {
                         return null;
                     }
                 }
-                // Inserting first revision, with docID given: make sure docID doesn't exist,
-                // or exists but is currently deleted
-                docNumericID = getOrInsertDocNumericID(docId);
+
+
                 if(docNumericID <= 0) {
-                    return null;
-                }
-
-                String[] args = { docId };
-                cursor = database.rawQuery("SELECT sequence, deleted FROM revs WHERE doc_id=? and current=1 ORDER BY revid DESC LIMIT 1", args);
-
-                if(cursor.moveToFirst()) {
-                    boolean wasAlreadyDeleted = (cursor.getInt(1) > 0);
-                    if(wasAlreadyDeleted) {
-                        // Make the deleted revision no longer current:
-                        ContentValues updateContent = new ContentValues();
-                        updateContent.put("current", 0);
-                        database.update("revs", updateContent, "sequence=" + cursor.getLong(0), null);
-                    }
-                    else {
-                        // docId already exists, current not deleted, conflict
-                        resultStatus.setCode(TDStatus.CONFLICT);
+                    // Doc doesn't exist at all; create it:
+                    docNumericID = insertDocumentID(docId);
+                    if(docNumericID <= 0) {
                         return null;
+                    }
+                } else {
+                    // Doc exists; check whether current winning revision is deleted:
+                    String[] args = { docId };
+                    cursor = database.rawQuery("SELECT sequence, deleted FROM revs WHERE doc_id=? and current=1 ORDER BY revid DESC LIMIT 1", args);
+
+                    if(cursor.moveToFirst()) {
+                        boolean wasAlreadyDeleted = (cursor.getInt(1) > 0);
+                        if(wasAlreadyDeleted) {
+                            // Make the deleted revision no longer current:
+                            ContentValues updateContent = new ContentValues();
+                            updateContent.put("current", 0);
+                            database.update("revs", updateContent, "sequence=" + cursor.getLong(0), null);
+                        }
+                        else if (!allowConflict) {
+                            // docId already exists, current not deleted, conflict
+                            resultStatus.setCode(TDStatus.CONFLICT);
+                            return null;
+                        }
                     }
                 }
             }
             else {
-                // Inserting first revision, with no docID given: generate a unique docID:
+                // Inserting first revision, with no docID given (POST): generate a unique docID:
                 docId = TDDatabase.generateDocumentId();
                 docNumericID = insertDocumentID(docId);
                 if(docNumericID <= 0) {
@@ -884,11 +907,15 @@ public class TDDatabase extends Observable {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }
 
+        String docId = rev.getDocId();
+        if(!isValidDocumentId(docId)) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+
         boolean success = false;
         beginTransaction();
         try {
             // First look up all locally-known revisions of this document:
-            String docId = rev.getDocId();
             long docNumericID = getOrInsertDocNumericID(docId);
             TDRevisionList localRevs = getAllRevisionsOfDocumentID(docId, docNumericID, false);
             if(localRevs == null) {
@@ -1482,6 +1509,77 @@ public class TDDatabase extends Observable {
         }
 
         return result;
+    }
+
+    public static int parseRevIDNumber(String rev) {
+        int result = -1;
+        int dashPos = rev.indexOf("-");
+        if(dashPos >= 0) {
+            try {
+                result = Integer.parseInt(rev.substring(0, dashPos));
+            } catch (NumberFormatException e) {
+                // ignore, let it return -1
+            }
+        }
+        return result;
+    }
+
+    public static String parseRevIDSuffix(String rev) {
+        String result = null;
+        int dashPos = rev.indexOf("-");
+        if(dashPos >= 0) {
+            result = rev.substring(dashPos + 1);
+        }
+        return result;
+    }
+
+    public static Map<String,Object> makeRevisionHistoryDict(List<TDRevision> history) {
+        if(history == null) {
+            return null;
+        }
+
+        // Try to extract descending numeric prefixes:
+        List<String> suffixes = new ArrayList<String>();
+        int start = -1;
+        int lastRevNo = -1;
+        for (TDRevision rev : history) {
+            int revNo = parseRevIDNumber(rev.getRevId());
+            String suffix = parseRevIDSuffix(rev.getRevId());
+            if(revNo > 0 && suffix.length() > 0) {
+                if(start < 0) {
+                    start = revNo;
+                }
+                else if(revNo != lastRevNo - 1) {
+                    start = -1;
+                    break;
+                }
+                lastRevNo = revNo;
+                suffixes.add(suffix);
+            }
+            else {
+                start = -1;
+                break;
+            }
+        }
+
+        Map<String,Object> result = new HashMap<String,Object>();
+        if(start == -1) {
+            // we failed to build sequence, just stuff all the revs in list
+            suffixes = new ArrayList<String>();
+            for (TDRevision rev : history) {
+                suffixes.add(rev.getRevId());
+            }
+        }
+        else {
+            result.put("start", start);
+        }
+        result.put("ids", suffixes);
+
+        return result;
+    }
+
+    public Map<String,Object> getRevisionHistoryDict(TDRevision rev) {
+        return makeRevisionHistoryDict(getRevisionHistory(rev));
     }
 
     /*** Attachments ***/
