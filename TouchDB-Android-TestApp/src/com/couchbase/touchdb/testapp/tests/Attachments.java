@@ -148,6 +148,7 @@ public class Attachments extends AndroidTestCase {
         db.close();
     }
 
+    @SuppressWarnings("unchecked")
     public void testPutAttachment() {
 
         String filesDir = getContext().getFilesDir().getAbsolutePath();
@@ -155,6 +156,7 @@ public class Attachments extends AndroidTestCase {
         TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
         TDBlobStore attachments = db.getAttachments();
 
+        // Put a revision that includes an _attachments dict:
         byte[] attach1 = "This is the body of attach1".getBytes();
         String base64 = Base64.encodeBytes(attach1);
 
@@ -162,7 +164,7 @@ public class Attachments extends AndroidTestCase {
         attachment.put("content_type", "text/plain");
         attachment.put("data", base64);
         Map<String,Object> attachmentDict = new HashMap<String,Object>();
-        attachmentDict.put("attach1", attachment);
+        attachmentDict.put("attach", attachment);
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("foo", 1);
         properties.put("bar", false);
@@ -175,8 +177,8 @@ public class Attachments extends AndroidTestCase {
         // Examine the attachment store:
         Assert.assertEquals(1, attachments.count());
 
+        // Get the revision:
         TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
-        @SuppressWarnings("unchecked")
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
 
         Map<String,Object> innerDict = new HashMap<String,Object>();
@@ -187,9 +189,52 @@ public class Attachments extends AndroidTestCase {
         innerDict.put("revpos", 1);
 
         Map<String,Object> expectAttachmentDict = new HashMap<String,Object>();
-        expectAttachmentDict.put("attach1", innerDict);
+        expectAttachmentDict.put("attach", innerDict);
 
         Assert.assertEquals(expectAttachmentDict, gotAttachmentDict);
+
+        // Update the attachment directly:
+        byte[] attachv2 = "Replaced body of attach".getBytes();
+        db.updateAttachment("attach", attachv2, "application/foo", rev1.getDocId(), null, status);
+        Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
+        db.updateAttachment("attach", attachv2, "application/foo", rev1.getDocId(), "1-bogus", status);
+        Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
+        TDRevision rev2 = db.updateAttachment("attach", attachv2, "application/foo", rev1.getDocId(), rev1.getRevId(), status);
+        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
+        Assert.assertEquals(2, rev2.getGeneration());
+
+        // Get the updated revision:
+        TDRevision gotRev2 = db.getDocumentWithIDAndRev(rev2.getDocId(), rev2.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        attachmentDict = (Map<String, Object>) gotRev2.getProperties().get("_attachments");
+
+        innerDict = new HashMap<String,Object>();
+        innerDict.put("content_type", "application/foo");
+        innerDict.put("digest", "sha1-mbT3208HI3PZgbG4zYWbDW2HsPk=");
+        innerDict.put("length", 23);
+        innerDict.put("stub", true);
+        innerDict.put("revpos", 2);
+
+        expectAttachmentDict.put("attach", innerDict);
+
+        Assert.assertEquals(expectAttachmentDict, attachmentDict);
+
+        // Delete the attachment:
+        db.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId(), status);
+        Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
+
+        db.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev", status);
+        Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
+
+        TDRevision rev3 = db.updateAttachment("attach", null, null, rev2.getDocId(), rev2.getRevId(), status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(rev2.getDocId(), rev3.getDocId());
+        Assert.assertEquals(3, rev3.getGeneration());
+
+        // Get the updated revision:
+        TDRevision gotRev3 = db.getDocumentWithIDAndRev(rev3.getDocId(), rev3.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        attachmentDict = (Map<String, Object>) gotRev3.getProperties().get("_attachments");
+        Assert.assertNull(attachmentDict);
 
         db.close();
     }

@@ -513,7 +513,7 @@ public class TDDatabase extends Observable {
         Cursor cursor = null;
         TDStatus result = new TDStatus(TDStatus.NOT_FOUND);
         try {
-            String sql = "SELECT sequence, json FROM revs, doc WHERE revid=? AND docs.docid=? AND revs.doc_id=docs.doc_id LIMIT 1";
+            String sql = "SELECT sequence, json FROM revs, docs WHERE revid=? AND docs.docid=? AND revs.doc_id=docs.doc_id LIMIT 1";
             String[] args = { rev.getRevId(), rev.getDocId()};
             cursor = database.rawQuery(sql, args);
             if(cursor.moveToFirst()) {
@@ -826,7 +826,7 @@ public class TDDatabase extends Observable {
                     }
                 } else {
                     // Doc exists; check whether current winning revision is deleted:
-                    String[] args = { docId };
+                    String[] args = { Long.toString(docNumericID) };
                     cursor = database.rawQuery("SELECT sequence, deleted FROM revs WHERE doc_id=? and current=1 ORDER BY revid DESC LIMIT 1", args);
 
                     if(cursor.moveToFirst()) {
@@ -1828,6 +1828,81 @@ public class TDDatabase extends Observable {
         }
 
         return new TDStatus(TDStatus.OK);
+    }
+
+    public TDRevision updateAttachment(String filename, byte[] body, String contentType, String docID, String oldRevID, TDStatus status) {
+        status.setCode(TDStatus.BAD_REQUEST);
+        if(filename == null || filename.length() == 0 || (body != null && contentType == null) || (oldRevID != null && docID == null) || (body != null && docID == null)) {
+            return null;
+        }
+
+        beginTransaction();
+        try {
+            TDRevision oldRev = new TDRevision(docID, oldRevID, false);
+            if(oldRevID != null) {
+                // Load existing revision if this is a replacement:
+                TDStatus loadStatus = loadRevisionBody(oldRev, EnumSet.noneOf(TDContentOptions.class));
+                status.setCode(loadStatus.getCode());
+                if(!status.isSuccessful()) {
+                    if(status.getCode() == TDStatus.NOT_FOUND && existsDocumentWithIDAndRev(docID, null)) {
+                        status.setCode(TDStatus.CONFLICT);  // if some other revision exists, it's a conflict
+                    }
+                    return null;
+                }
+
+                Map<String,Object> attachments = (Map<String, Object>) oldRev.getProperties().get("_attachments");
+                if(body == null && attachments != null && !attachments.containsKey(filename)) {
+                    status.setCode(TDStatus.NOT_FOUND);
+                    return null;
+                }
+                // Remove the _attachments stubs so putRevision: doesn't copy the rows for me
+                // OPT: Would be better if I could tell loadRevisionBody: not to add it
+                if(attachments != null) {
+                    Map<String,Object> properties = new HashMap<String,Object>(oldRev.getProperties());
+                    properties.remove("_attachments");
+                    oldRev.setBody(new TDBody(properties));
+                }
+            } else {
+                // If this creates a new doc, it needs a body:
+                oldRev.setBody(new TDBody(new HashMap<String,Object>()));
+            }
+
+            // Create a new revision:
+            TDRevision newRev = putRevision(oldRev, oldRevID, status);
+            if(newRev == null) {
+                return null;
+            }
+
+            if(oldRevID != null) {
+                // Copy all attachment rows _except_ for the one being updated:
+                String[] args = { Long.toString(newRev.getSequence()), Long.toString(oldRev.getSequence()), filename };
+                database.execSQL("INSERT INTO attachments "
+                        + "(sequence, filename, key, type, length, revpos) "
+                        + "SELECT ?, filename, key, type, length, revpos FROM attachments "
+                        + "WHERE sequence=? AND filename != ?", args);
+            }
+
+            if(body != null) {
+                // If not deleting, add a new attachment entry:
+                boolean addStatus = insertAttachmentForSequenceWithNameAndType(body, newRev.getSequence(),
+                        filename, contentType, newRev.getGeneration());
+
+                if(!addStatus) {
+                    status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                    return null;
+                }
+            }
+
+            status.setCode((body != null) ? TDStatus.CREATED : TDStatus.OK);
+            return newRev;
+
+        } catch(SQLException e) {
+            Log.e(TAG, "Error uploading attachment", e);
+            status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+            return null;
+        } finally {
+            endTransaction(status.isSuccessful());
+        }
     }
 
     public TDStatus garbageCollectAttachments() {
