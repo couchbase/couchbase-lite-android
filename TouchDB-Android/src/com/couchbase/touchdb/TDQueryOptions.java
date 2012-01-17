@@ -18,6 +18,7 @@
 package com.couchbase.touchdb;
 
 import java.util.EnumSet;
+import java.util.List;
 
 import com.couchbase.touchdb.TDDatabase.TDContentOptions;
 
@@ -25,6 +26,7 @@ public class TDQueryOptions {
 
     private Object startKey = null;
     private Object endKey = null;
+    private List<Object> keys = null;
     private int skip = 0;
     private int limit = Integer.MAX_VALUE;
     private int groupLevel = 0;
@@ -130,6 +132,14 @@ public class TDQueryOptions {
 
     public void setContentOptions(EnumSet<TDContentOptions> contentOptions) {
         this.contentOptions = contentOptions;
+    }
+
+    public List<Object> getKeys() {
+        return keys;
+    }
+
+    public void setKeys(List<Object> keys) {
+        this.keys = keys;
     }
 
 }

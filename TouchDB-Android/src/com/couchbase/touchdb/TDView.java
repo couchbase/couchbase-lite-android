@@ -386,6 +386,17 @@ public class TDView {
         List<String> argsList = new ArrayList<String>();
         argsList.add(Integer.toString(getViewId()));
 
+        if(options.getKeys() != null) {
+            sql += " AND key in (";
+            String item = "?";
+            for (Object key : options.getKeys()) {
+                sql += item;
+                item = ", ?";
+                argsList.add(toJSONString(key));
+            }
+            sql += ")";
+        }
+
         Object minKey = options.getStartKey();
         Object maxKey = options.getEndKey();
         boolean inclusiveMin = true;

@@ -329,6 +329,20 @@ public class Views extends AndroidTestCase {
 
         Assert.assertEquals(expectedRows, rows);
 
+        // Specific keys:
+        options = new TDQueryOptions();
+        List<Object> keys = new ArrayList<Object>();
+        keys.add("two");
+        keys.add("four");
+        options.setKeys(keys);
+
+        rows = view.queryWithOptions(options, status);
+
+        expectedRows = new ArrayList<Object>();
+        expectedRows.add(dict4);
+        expectedRows.add(dict2);
+
+        Assert.assertEquals(expectedRows, rows);
     }
 
     public void testAllDocsQuery() {
