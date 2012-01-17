@@ -171,6 +171,16 @@ public class TDBlobStore {
         return contents.length;
     }
 
+    public long totalDataSize() {
+        long total = 0;
+        File file = new File(path);
+        File[] contents = file.listFiles();
+        for (File attachment : contents) {
+            total += attachment.length();
+        }
+        return total;
+    }
+
     public int deleteBlobsExceptWithKeys(List<TDBlobKey> keysToKeep) {
         int numDeleted = 0;
         File file = new File(path);

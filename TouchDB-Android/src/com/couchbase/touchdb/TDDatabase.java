@@ -278,6 +278,11 @@ public class TDDatabase extends Observable {
         return ret && path.delete();
     }
 
+    public long totalDataSize() {
+        File f = new File(path);
+        long size = f.length() + attachments.totalDataSize();
+        return size;
+    }
 
     public boolean beginTransaction() {
         try {
