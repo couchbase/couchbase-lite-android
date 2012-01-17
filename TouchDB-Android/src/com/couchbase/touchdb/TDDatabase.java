@@ -902,13 +902,18 @@ public class TDDatabase extends Observable {
 
     public TDStatus forceInsert(TDRevision rev, List<String> revHistory, URL source) {
 
-        int historyCount = revHistory.size();
-        if(historyCount < 1 || !revHistory.get(0).equals(rev.getRevId())) {
+        String docId = rev.getDocId();
+        String revId = rev.getRevId();
+        if(!isValidDocumentId(docId) || (revId == null)) {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }
 
-        String docId = rev.getDocId();
-        if(!isValidDocumentId(docId)) {
+        int historyCount = revHistory.size();
+        if(historyCount == 0) {
+            revHistory = new ArrayList<String>();
+            revHistory.add(revId);
+            historyCount = 1;
+        } else if(!revHistory.get(0).equals(rev.getRevId())) {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }
 
@@ -928,7 +933,7 @@ public class TDDatabase extends Observable {
             long sequence = 0;
             long localParentSequence = 0;
             for(int i = revHistory.size() - 1; i >= 0; --i) {
-                String revId = revHistory.get(i);
+                revId = revHistory.get(i);
                 TDRevision localRev = localRevs.revWithDocIdAndRevId(docId, revId);
                 if(localRev != null) {
                     // This revision is known locally. Remember its sequence as the parent of the next one:
@@ -1001,11 +1006,13 @@ public class TDDatabase extends Observable {
         if(revisions == null) {
             return null;
         }
-        Integer start = (Integer)revisions.get("start");
         List<String> revIDs = (List<String>)revisions.get("ids");
-        for(int i=0; i < revIDs.size(); i++) {
-            String revID = revIDs.get(i);
-            revIDs.set(i, Integer.toString(start--) + "-" + revID);
+        Integer start = (Integer)revisions.get("start");
+        if(start != null) {
+            for(int i=0; i < revIDs.size(); i++) {
+                String revID = revIDs.get(i);
+                revIDs.set(i, Integer.toString(start--) + "-" + revID);
+            }
         }
         return revIDs;
     }
