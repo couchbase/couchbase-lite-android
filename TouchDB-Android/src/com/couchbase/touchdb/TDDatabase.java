@@ -901,6 +901,8 @@ public class TDDatabase extends Observable {
             endTransaction(resultStatus.isSuccessful());
         }
 
+        // Send a change notification:
+        rev.setBody(null);  // body is not up to date (no current _rev, likely no _id) so avoid confusion
         notifyChange(rev, null);
         return rev;
     }
