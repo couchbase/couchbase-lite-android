@@ -536,10 +536,12 @@ public class TDView {
                     // Reduced or grouped query:
                     if(group && !groupTogether(key, lastKey, groupLevel) && (lastKey != null)) {
                         // This pair starts a new group, so reduce & record the last one:
-                        Object reduced = reduceBlock.reduce(keysToReduce, valuesToReduce, false);
+                        Object reduced = (reduceBlock != null) ? reduceBlock.reduce(keysToReduce, valuesToReduce, false) : null;
                         Map<String,Object> row = new HashMap<String,Object>();
                         row.put("key", groupKey(lastKey, groupLevel));
-                        row.put("value", reduced);
+                        if(reduced != null) {
+                            row.put("value", reduced);
+                        }
                         rows.add(row);
                         keysToReduce.clear();
                         valuesToReduce.clear();
@@ -574,10 +576,12 @@ public class TDView {
                 if(keysToReduce.size() > 0) {
                     // Finish the last group (or the entire list, if no grouping):
                     Object key = group ? groupKey(lastKey, groupLevel) : null;
-                    Object reduced = reduceBlock.reduce(keysToReduce, valuesToReduce, false);
+                    Object reduced = (reduceBlock != null) ? reduceBlock.reduce(keysToReduce, valuesToReduce, false) : null;
                     Map<String,Object> row = new HashMap<String,Object>();
                     row.put("key", key);
-                    row.put("value", reduced);
+                    if(reduced != null) {
+                        row.put("value", reduced);
+                    }
                     rows.add(row);
                 }
                 keysToReduce.clear();
