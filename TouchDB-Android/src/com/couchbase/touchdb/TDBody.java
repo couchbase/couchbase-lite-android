@@ -75,7 +75,7 @@ public class TDBody {
     }
 
     public byte[] getPrettyJson() {
-        Object properties = getProperties();
+        Object properties = getObject();
         if(properties != null) {
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
