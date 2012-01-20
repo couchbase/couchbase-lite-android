@@ -562,10 +562,13 @@ public class TDDatabase extends Observable {
 
     public static boolean isValidDocumentId(String id) {
         // http://wiki.apache.org/couchdb/HTTP_Document_API#Documents
-        if(id != null && id.length() > 0 && (id.charAt(0) != '_' || id.startsWith("_design/"))) {
-            return true;
+        if(id == null || id.length() == 0) {
+            return false;
         }
-        return false;
+        if(id.charAt(0) == '_') {
+            return  (id.startsWith("_design/") || id.startsWith("_local/"));
+        }
+        return true;
     }
 
     public int getDocumentCount() {
@@ -1060,7 +1063,14 @@ public class TDDatabase extends Observable {
                     }
                     lastDocId = docNumericId;
                 }
-                TDRevision rev = new TDRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
+
+                String docID = cursor.getString(2);
+                if(docID.startsWith("_local/")) {
+                    cursor.moveToNext();
+                    continue;  // Local docs do not appear in the _changes feed
+                }
+
+                TDRevision rev = new TDRevision(docID, cursor.getString(3), (cursor.getInt(4) > 0));
                 rev.setSequence(cursor.getLong(0));
                 if(includeDocs) {
                     expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, options.getContentOptions());
