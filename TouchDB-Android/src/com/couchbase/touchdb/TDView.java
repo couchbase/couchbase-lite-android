@@ -35,17 +35,23 @@ public class TDView {
 
     public static final int REDUCE_BATCH_SIZE = 100;
 
+    public enum TDViewCollation {
+        TDViewCollationUnicode, TDViewCollationRaw, TDViewCollationASCII
+    }
+
     private TDDatabase db;
     private String name;
     private int viewId;
     private TDViewMapBlock mapBlock;
     private TDViewReduceBlock reduceBlock;
+    private TDViewCollation collation;
     private static TDViewCompiler compiler;
 
     public TDView(TDDatabase db, String name) {
         this.db = db;
         this.name = name;
         this.viewId = -1; // means 'unknown'
+        this.collation = TDViewCollation.TDViewCollationUnicode;
     }
 
     public TDDatabase getDb() {
@@ -58,6 +64,14 @@ public class TDView {
 
     public TDViewMapBlock getMapBlock() {
         return mapBlock;
+    }
+
+    public TDViewCollation getCollation() {
+        return collation;
+    }
+
+    public void setCollation(TDViewCollation collation) {
+        this.collation = collation;
     }
 
     public int getViewId() {
@@ -315,6 +329,10 @@ public class TDView {
                     // Reconstitute the document as a dictionary:
                     sequence = cursor.getLong(1);
                     String docId = cursor.getString(2);
+                    if(docId.startsWith("_design/")) {  // design docs don't get indexed!
+                        cursor.moveToNext();
+                        continue;
+                    }
                     String revId = cursor.getString(3);
                     byte[] json = cursor.getBlob(4);
                     Map<String, Object> properties = db
@@ -377,6 +395,16 @@ public class TDView {
             return null;
         }
 
+        // OPT: It would be faster to use separate tables for raw-or ascii-collated views so that
+        // they could be indexed with the right collation, instead of having to specify it here.
+        String collationStr = "";
+        if(collation == TDViewCollation.TDViewCollationASCII) {
+            collationStr += " COLLATE JSON_ASCII";
+        }
+        else if(collation == TDViewCollation.TDViewCollationRaw) {
+            collationStr += " COLLATE JSON_RAW";
+        }
+
         String sql = "SELECT key, value, docid";
         if (options.isIncludeDocs()) {
             sql = sql + ", revid, json, revs.sequence";
@@ -415,6 +443,7 @@ public class TDView {
             } else {
                 sql += " AND key > ?";
             }
+            sql += collationStr;
             argsList.add(toJSONString(minKey));
         }
 
@@ -425,17 +454,21 @@ public class TDView {
             } else {
                 sql += " AND key < ?";
             }
+            sql += collationStr;
             argsList.add(toJSONString(maxKey));
         }
 
         sql = sql
                 + " AND revs.sequence = maps.sequence AND docs.doc_id = revs.doc_id ORDER BY key";
+        sql += collationStr;
         if (options.isDescending()) {
             sql = sql + " DESC";
         }
         sql = sql + " LIMIT ? OFFSET ?";
         argsList.add(Integer.toString(options.getLimit()));
         argsList.add(Integer.toString(options.getSkip()));
+
+        Log.v(TDDatabase.TAG, "Query " + name + ": " + sql);
 
         Cursor cursor = db.getDatabase().rawQuery(sql,
                 argsList.toArray(new String[argsList.size()]));

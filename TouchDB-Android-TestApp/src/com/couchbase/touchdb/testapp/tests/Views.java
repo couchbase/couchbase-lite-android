@@ -31,6 +31,7 @@ import com.couchbase.touchdb.TDQueryOptions;
 import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TDView;
+import com.couchbase.touchdb.TDView.TDViewCollation;
 import com.couchbase.touchdb.TDViewMapBlock;
 import com.couchbase.touchdb.TDViewMapEmitBlock;
 import com.couchbase.touchdb.TDViewReduceBlock;
@@ -762,6 +763,177 @@ public class Views extends AndroidTestCase {
         expectedRows.add(row3);
 
         Assert.assertEquals(expectedRows, rows);
+
+    }
+
+    public void testViewCollation() {
+        List<Object> list1 = new ArrayList<Object>();
+        list1.add("a");
+
+        List<Object> list2 = new ArrayList<Object>();
+        list2.add("b");
+
+        List<Object> list3 = new ArrayList<Object>();
+        list3.add("b");
+        list3.add("c");
+
+        List<Object> list4 = new ArrayList<Object>();
+        list4.add("b");
+        list4.add("c");
+        list4.add("a");
+
+        List<Object> list5 = new ArrayList<Object>();
+        list5.add("b");
+        list5.add("d");
+
+        List<Object> list6 = new ArrayList<Object>();
+        list6.add("b");
+        list6.add("d");
+        list6.add("e");
+
+
+        // Based on CouchDB's "view_collation.js" test
+        List<Object> testKeys = new ArrayList<Object>();
+        testKeys.add(null);
+        testKeys.add(false);
+        testKeys.add(true);
+        testKeys.add(0);
+        testKeys.add(2.5);
+        testKeys.add(10);
+        testKeys.add(" ");
+        testKeys.add("_");
+        testKeys.add("~");
+        testKeys.add("a");
+        testKeys.add("A");
+        testKeys.add("aa");
+        testKeys.add("b");
+        testKeys.add("B");
+        testKeys.add("ba");
+        testKeys.add("bb");
+        testKeys.add(list1);
+        testKeys.add(list2);
+        testKeys.add(list3);
+        testKeys.add(list4);
+        testKeys.add(list5);
+        testKeys.add(list6);
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+
+        int i=0;
+        for (Object key : testKeys) {
+            Map<String,Object> docProperties = new HashMap<String,Object>();
+            docProperties.put("_id", Integer.toString(i++));
+            docProperties.put("name", key);
+            putDoc(db, docProperties);
+        }
+
+        TDView view = db.getViewNamed("default/names");
+        view.setMapReduceBlocks(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                emitter.emit(document.get("name"), null);
+            }
+
+        }, null, "1.0");
+
+        TDQueryOptions options = new TDQueryOptions();
+        TDStatus status = new TDStatus();
+        List<Map<String,Object>> rows = view.queryWithOptions(options, status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+        i = 0;
+        for (Map<String, Object> row : rows) {
+            Assert.assertEquals(testKeys.get(i++), row.get("key"));
+        }
+
+    }
+
+
+    public void testViewCollationRaw() {
+        List<Object> list1 = new ArrayList<Object>();
+        list1.add("a");
+
+        List<Object> list2 = new ArrayList<Object>();
+        list2.add("b");
+
+        List<Object> list3 = new ArrayList<Object>();
+        list3.add("b");
+        list3.add("c");
+
+        List<Object> list4 = new ArrayList<Object>();
+        list4.add("b");
+        list4.add("c");
+        list4.add("a");
+
+        List<Object> list5 = new ArrayList<Object>();
+        list5.add("b");
+        list5.add("d");
+
+        List<Object> list6 = new ArrayList<Object>();
+        list6.add("b");
+        list6.add("d");
+        list6.add("e");
+
+
+        // Based on CouchDB's "view_collation.js" test
+        List<Object> testKeys = new ArrayList<Object>();
+        testKeys.add(0);
+        testKeys.add(2.5);
+        testKeys.add(10);
+        testKeys.add(false);
+        testKeys.add(null);
+        testKeys.add(true);
+        testKeys.add(list1);
+        testKeys.add(list2);
+        testKeys.add(list3);
+        testKeys.add(list4);
+        testKeys.add(list5);
+        testKeys.add(list6);
+        testKeys.add(" ");
+        testKeys.add("A");
+        testKeys.add("B");
+        testKeys.add("_");
+        testKeys.add("a");
+        testKeys.add("aa");
+        testKeys.add("b");
+        testKeys.add("ba");
+        testKeys.add("bb");
+        testKeys.add("~");
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+
+        int i=0;
+        for (Object key : testKeys) {
+            Map<String,Object> docProperties = new HashMap<String,Object>();
+            docProperties.put("_id", Integer.toString(i++));
+            docProperties.put("name", key);
+            putDoc(db, docProperties);
+        }
+
+        TDView view = db.getViewNamed("default/names");
+        view.setMapReduceBlocks(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                emitter.emit(document.get("name"), null);
+            }
+
+        }, null, "1.0");
+
+        view.setCollation(TDViewCollation.TDViewCollationRaw);
+
+        TDQueryOptions options = new TDQueryOptions();
+        TDStatus status = new TDStatus();
+        List<Map<String,Object>> rows = view.queryWithOptions(options, status);
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+        i = 0;
+        for (Map<String, Object> row : rows) {
+            Assert.assertEquals(testKeys.get(i++), row.get("key"));
+        }
 
     }
 

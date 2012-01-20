@@ -85,9 +85,9 @@ public class TDDatabase extends Observable {
             "    CREATE TABLE maps ( " +
             "        view_id INTEGER NOT NULL REFERENCES views(view_id) ON DELETE CASCADE, " +
             "        sequence INTEGER NOT NULL REFERENCES revs(sequence) ON DELETE CASCADE, " +
-            "        key TEXT NOT NULL COLLATE UNICODE, " +
+            "        key TEXT NOT NULL COLLATE JSON, " +
             "        value TEXT); " +
-            "    CREATE INDEX maps_keys on maps(view_id, key COLLATE UNICODE); " +
+            "    CREATE INDEX maps_keys on maps(view_id, key COLLATE JSON); " +
             "    CREATE TABLE attachments ( " +
             "        sequence INTEGER NOT NULL REFERENCES revs(sequence) ON DELETE CASCADE, " +
             "        filename TEXT NOT NULL, " +
@@ -182,6 +182,7 @@ public class TDDatabase extends Observable {
 
         try {
             database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
+            TDCollateJSON.registerCustomCollators(database);
         }
         catch(SQLiteException e) {
             Log.e(TDDatabase.TAG, "Error opening", e);
