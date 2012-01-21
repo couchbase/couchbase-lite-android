@@ -76,6 +76,11 @@ public class TDDatabase extends Observable {
             "    CREATE INDEX revs_by_id ON revs(revid, doc_id); " +
             "    CREATE INDEX revs_current ON revs(doc_id, current); " +
             "    CREATE INDEX revs_parent ON revs(parent); " +
+            "    CREATE TABLE localdocs ( " +
+            "        docid TEXT UNIQUE NOT NULL, " +
+            "        revid TEXT NOT NULL, " +
+            "        json BLOB); " +
+            "    CREATE INDEX localdocs_by_docid ON localdocs(docid); " +
             "    CREATE TABLE views ( " +
             "        view_id INTEGER PRIMARY KEY, " +
             "        name TEXT UNIQUE NOT NULL," +
@@ -101,7 +106,7 @@ public class TDDatabase extends Observable {
             "        push BOOLEAN, " +
             "        last_sequence TEXT, " +
             "        UNIQUE (remote, push)); " +
-            "    PRAGMA user_version = 2";             // at the end, update user_version
+            "    PRAGMA user_version = 3";             // at the end, update user_version
 
 
     public static TDDatabase createEmptyDBAtPath(String path) {
@@ -217,6 +222,17 @@ public class TDDatabase extends Observable {
             // Version 2: added attachments.revpos
             String upgradeSql = "ALTER TABLE attachments ADD COLUMN revpos INTEGER DEFAULT 0; " +
                                 "PRAGMA user_version = 2";
+            if(!initialize(upgradeSql)) {
+                database.close();
+                return false;
+            }
+        } else if (dbVersion < 3) {
+            String upgradeSql = "CREATE TABLE localdocs ( " +
+                    "docid TEXT UNIQUE NOT NULL, " +
+                    "revid TEXT NOT NULL, " +
+                    "json BLOB); " +
+                    "CREATE INDEX localdocs_by_docid ON localdocs(docid); " +
+                    "PRAGMA user_version = 3";
             if(!initialize(upgradeSql)) {
                 database.close();
                 return false;
@@ -566,9 +582,10 @@ public class TDDatabase extends Observable {
             return false;
         }
         if(id.charAt(0) == '_') {
-            return  (id.startsWith("_design/") || id.startsWith("_local/"));
+            return  (id.startsWith("_design/"));
         }
         return true;
+        // "_local/*" is not a valid document ID. Local docs have their own API and shouldn't get here.
     }
 
     public int getDocumentCount() {
@@ -1064,13 +1081,7 @@ public class TDDatabase extends Observable {
                     lastDocId = docNumericId;
                 }
 
-                String docID = cursor.getString(2);
-                if(docID.startsWith("_local/")) {
-                    cursor.moveToNext();
-                    continue;  // Local docs do not appear in the _changes feed
-                }
-
-                TDRevision rev = new TDRevision(docID, cursor.getString(3), (cursor.getInt(4) > 0));
+                TDRevision rev = new TDRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
                 rev.setSequence(cursor.getLong(0));
                 if(includeDocs) {
                     expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, options.getContentOptions());
@@ -1959,6 +1970,122 @@ public class TDDatabase extends Observable {
             if(cursor != null) {
                 cursor.close();
             }
+        }
+    }
+
+
+    /*** Local Docs ***/
+
+    public TDRevision getLocalDocument(String docID, String revID) {
+        TDRevision result = null;
+        Cursor cursor = null;
+        try {
+            String[] args = { docID };
+            cursor = database.rawQuery("SELECT revid, json FROM localdocs WHERE docid=?", args);
+            if(cursor.moveToFirst()) {
+                String gotRevID = cursor.getString(0);
+                if(revID != null && (!revID.equals(gotRevID))) {
+                    return null;
+                }
+                byte[] json = cursor.getBlob(1);
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String,Object> properties = null;
+                try {
+                    properties = mapper.readValue(json, Map.class);
+                    properties.put("_id", docID);
+                    properties.put("_rev", gotRevID);
+                    result = new TDRevision(docID, gotRevID, false);
+                    result.setProperties(properties);
+                } catch (Exception e) {
+                    Log.w(TAG, "Error parsing local doc JSON", e);
+                    return null;
+                }
+
+            }
+            return result;
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting local document", e);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    public TDRevision putLocalRevision(TDRevision revision, String prevRevID, TDStatus status) {
+        String docID = revision.getDocId();
+        if(!docID.startsWith("_local/")) {
+            status.setCode(TDStatus.BAD_REQUEST);
+            return null;
+        }
+
+        if(!revision.isDeleted()) {
+            // PUT:
+            byte[] json = encodeDocumentJSON(revision);
+            String newRevID;
+            if(prevRevID != null) {
+                int generation = TDRevision.generationFromRevID(prevRevID);
+                if(generation == 0) {
+                    status.setCode(TDStatus.BAD_REQUEST);
+                    return null;
+                }
+                newRevID = Integer.toString(++generation) + "-local";
+                ContentValues values = new ContentValues();
+                values.put("revid", newRevID);
+                values.put("json", json);
+                String[] whereArgs = { docID, prevRevID };
+                try {
+                    int rowsUpdated = database.update("localdocs", values, "docid=? AND revid=?", whereArgs);
+                    if(rowsUpdated == 0) {
+                        status.setCode(TDStatus.CONFLICT);
+                        return null;
+                    }
+                } catch (SQLException e) {
+                    status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                    return null;
+                }
+            } else {
+                newRevID = "1-local";
+                ContentValues values = new ContentValues();
+                values.put("docid", docID);
+                values.put("revid", newRevID);
+                values.put("json", json);
+                try {
+                    database.insertWithOnConflict("localdocs", null, values, SQLiteDatabase.CONFLICT_IGNORE);
+                } catch (SQLException e) {
+                    status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                    return null;
+                }
+            }
+            status.setCode(TDStatus.CREATED);
+            return revision.copyWithDocID(docID, newRevID);
+        }
+        else {
+            // DELETE:
+            TDStatus deleteStatus = deleteLocalDocument(docID, prevRevID);
+            status.setCode(deleteStatus.getCode());
+            return (status.isSuccessful()) ? revision : null;
+        }
+    }
+
+    public TDStatus deleteLocalDocument(String docID, String revID) {
+        if(docID == null) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+        if(revID == null) {
+            // Didn't specify a revision to delete: 404 or a 409, depending
+            return (getLocalDocument(docID, null) != null) ? new TDStatus(TDStatus.CONFLICT) : new TDStatus(TDStatus.NOT_FOUND);
+        }
+        String[] whereArgs = { docID, revID };
+        try {
+            int rowsDeleted = database.delete("localdocs", "docid=? AND revid=?", whereArgs);
+            if(rowsDeleted == 0) {
+                return (getLocalDocument(docID, null) != null) ? new TDStatus(TDStatus.CONFLICT) : new TDStatus(TDStatus.NOT_FOUND);
+            }
+            return new TDStatus(TDStatus.OK);
+        } catch (SQLException e) {
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
