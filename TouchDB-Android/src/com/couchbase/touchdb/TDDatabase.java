@@ -218,7 +218,10 @@ public class TDDatabase extends Observable {
                 database.close();
                 return false;
             }
-        } else if (dbVersion < 2) {
+            dbVersion = 3;
+        }
+
+        if (dbVersion < 2) {
             // Version 2: added attachments.revpos
             String upgradeSql = "ALTER TABLE attachments ADD COLUMN revpos INTEGER DEFAULT 0; " +
                                 "PRAGMA user_version = 2";
@@ -226,7 +229,10 @@ public class TDDatabase extends Observable {
                 database.close();
                 return false;
             }
-        } else if (dbVersion < 3) {
+            dbVersion = 2;
+        }
+
+        if (dbVersion < 3) {
             String upgradeSql = "CREATE TABLE localdocs ( " +
                     "docid TEXT UNIQUE NOT NULL, " +
                     "revid TEXT NOT NULL, " +
