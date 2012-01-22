@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <ctype.h>
 
 #include "sqlite3.h"
 #include "com_couchbase_touchdb_TDCollateJSON.h"
@@ -137,29 +138,68 @@ static ValueType valueTypeOf(char c) {
 	}
 }
 
+/**
+ * Defining my own digittoint because Android ctype.h doesn't do it for me
+ */
+static int digittoint(int c) {
+	if(!isxdigit(c)) {
+		return 0;
+	}
+	if(c > 'a') {
+		return 10 + c - 'a';
+	}
+	else if(c > 'A') {
+		return 10 + c - 'A';
+	}
+	else {
+		return c - '0';
+	}
+}
+
+static char convertEscape(const char **in) {
+    char c = *++(*in);
+    switch (c) {
+        case 'u': {
+            // \u is a Unicode escape; 4 hex digits follow.
+            const char* digits = *in + 1;
+            *in += 4;
+            int uc = (digittoint(digits[0]) << 12) | (digittoint(digits[1]) << 8) |
+                     (digittoint(digits[2]) <<  4) | (digittoint(digits[3]));
+            if (uc > 127)
+                LOGW("TDCollateJSON can't correctly compare \\u%.4s", digits);
+            return (char)uc;
+        }
+        case 'b':   return '\b';
+        case 'n':   return '\n';
+        case 'r':   return '\r';
+        case 't':   return '\t';
+        default:    return c;
+    }
+}
+
 static int compareStringsASCII(const char** in1, const char** in2) {
 	const char* str1 = *in1, *str2 = *in2;
 	while (true) {
-		++str1;
-		++str2;
+		char c1 = *++str1;
+		char c2 = *++str2;
 
 		// If one string ends, the other is greater; if both end, they're equal:
-		if (*str1 == '"') {
-			if (*str2 == '"')
+		if (c1 == '"') {
+			if (c2 == '"')
 				break;
 			else
 				return -1;
-		} else if (*str2 == '"')
+		} else if (c2 == '"')
 			return 1;
 
 		// Un-escape the next character after a backslash:
-		if (*str1 == '\\')
-			++str1;
-		if (*str2 == '\\')
-			++str2;
+		if (c1 == '\\')
+			c1 = convertEscape(&str1);
+		if (c2 == '\\')
+			c2 = convertEscape(&str2);
 
 		// Compare the next characters:
-		int s = cmp(*str1, *str2);
+		int s = cmp(c1, c2);
 		if (s)
 			return s;
 	}
@@ -177,8 +217,12 @@ static jstring createJavaStringFromJSON(const char** in) {
 	const char* str;
 	for (str = start; *str != '"'; ++str) {
 		if (*str == '\\') {
-			++escapes;
 			++str;
+			if (*str == 'u') {
+				escapes += 5;  // \uxxxx adds 5 bytes
+				str += 4;
+			} else
+				escapes += 1;
 		}
 	}
 	*in = str + 1;
@@ -188,10 +232,11 @@ static jstring createJavaStringFromJSON(const char** in) {
 	length -= escapes;
 	buf = (char*) malloc(length + 1);
 	char* dst = buf;
-	for (str = start; *str != '"'; ++str) {
-		if (*str == '\\')
-			++str;
-		*dst++ = *str;
+	char c;
+	for (str = start; (c = *str) != '"'; ++str) {
+		if (c == '\\')
+			c = convertEscape(&str);
+		*dst++ = c;
 	}
 	*dst++ = 0; //null terminate
 	start = buf;
@@ -354,4 +399,18 @@ env->ReleaseStringUTFChars(string1, cstring1);
 env->ReleaseStringUTFChars(string2, cstring2);
 
 return result;
+}
+
+JNIEXPORT jchar JNICALL Java_com_couchbase_touchdb_TDCollateJSON_testEscape
+  (JNIEnv *env, jclass clazz, jstring source) {
+	jboolean isCopy;
+	const char* cstring = env->GetStringUTFChars(source, &isCopy);
+	char result = convertEscape(&cstring);
+	return result;
+}
+
+JNIEXPORT jint JNICALL Java_com_couchbase_touchdb_TDCollateJSON_testDigitToInt
+  (JNIEnv *env, jclass clazz, jint digit) {
+	int result = digittoint(digit);
+	return result;
 }

@@ -23,6 +23,22 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 JNIEXPORT jint JNICALL Java_com_couchbase_touchdb_TDCollateJSON_testCollateJSON
   (JNIEnv *, jclass, jint, jint, jstring, jint, jstring);
 
+/*
+ * Class:     com_couchbase_touchdb_TDCollateJSON
+ * Method:    testEscape
+ * Signature: (Ljava/lang/String;)C
+ */
+JNIEXPORT jchar JNICALL Java_com_couchbase_touchdb_TDCollateJSON_testEscape
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     com_couchbase_touchdb_TDCollateJSON
+ * Method:    testDigitToInt
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_com_couchbase_touchdb_TDCollateJSON_testDigitToInt
+  (JNIEnv *, jclass, jint);
+
 #ifdef __cplusplus
 }
 #endif

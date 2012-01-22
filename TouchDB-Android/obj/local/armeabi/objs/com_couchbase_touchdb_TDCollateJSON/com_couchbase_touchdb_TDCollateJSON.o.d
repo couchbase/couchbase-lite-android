@@ -22,6 +22,7 @@
  /Users/mschoch/android-ndk-r6b/platforms/android-8/arch-arm/usr/include/strings.h \
  /Users/mschoch/android-ndk-r6b/platforms/android-8/arch-arm/usr/include/memory.h \
  /Users/mschoch/android-ndk-r6b/platforms/android-8/arch-arm/usr/include/dlfcn.h \
+ /Users/mschoch/android-ndk-r6b/platforms/android-8/arch-arm/usr/include/ctype.h \
  /Users/mschoch/Documents/research/cbl/TouchDB-Android/TouchDB-Android/jni/sqlite3.h \
  /Users/mschoch/Documents/research/cbl/TouchDB-Android/TouchDB-Android/jni/com_couchbase_touchdb_TDCollateJSON.h \
  /Users/mschoch/android-ndk-r6b/platforms/android-8/arch-arm/usr/include/jni.h \
@@ -70,6 +71,8 @@
 /Users/mschoch/android-ndk-r6b/platforms/android-8/arch-arm/usr/include/memory.h:
 
 /Users/mschoch/android-ndk-r6b/platforms/android-8/arch-arm/usr/include/dlfcn.h:
+
+/Users/mschoch/android-ndk-r6b/platforms/android-8/arch-arm/usr/include/ctype.h:
 
 /Users/mschoch/Documents/research/cbl/TouchDB-Android/TouchDB-Android/jni/sqlite3.h:
 
