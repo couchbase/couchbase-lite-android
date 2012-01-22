@@ -39,6 +39,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
+import com.couchbase.touchdb.TDDatabase.TDContentOptions;
 import com.couchbase.touchdb.support.Base64;
 import com.couchbase.touchdb.support.DirUtils;
 
@@ -53,6 +54,7 @@ public class TDDatabase extends Observable {
 
     private Map<String, TDView> views;
     private Map<String, TDFilterBlock> filters;
+    private Map<String, TDValidationBlock> validations;
     private TDBlobStore attachments;
 
     public enum TDContentOptions {
@@ -883,6 +885,16 @@ public class TDDatabase extends Observable {
                     }
                 }
 
+                if(validations != null && validations.size() > 0) {
+                    // Fetch the previous revision and validate the new one against it:
+                    TDRevision prevRev = new TDRevision(docId, prevRevId, false);
+                    TDStatus status = validateRevision(rev, prevRev);
+                    if(!status.isSuccessful()) {
+                        resultStatus.setCode(status.getCode());
+                        return null;
+                    }
+                }
+
                 // Make replaced rev non-current:
                 ContentValues updateContent = new ContentValues();
                 updateContent.put("current", 0);
@@ -901,6 +913,12 @@ public class TDDatabase extends Observable {
                     }
                 }
 
+                // Inserting first revision, with docID given. First validate:
+                TDStatus status = validateRevision(rev, null);
+                if(!status.isSuccessful()) {
+                    resultStatus.setCode(status.getCode());
+                    return null;
+                }
 
                 if(docNumericID <= 0) {
                     // Doc doesn't exist at all; create it:
@@ -930,6 +948,7 @@ public class TDDatabase extends Observable {
                 }
             }
             else {
+                //FIXME: not currently doing any document validation here, email sent to Jens
                 // Inserting first revision, with no docID given (POST): generate a unique docID:
                 docId = TDDatabase.generateDocumentId();
                 docNumericID = insertDocumentID(docId);
@@ -2150,4 +2169,79 @@ public class TDDatabase extends Observable {
             return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    public void defineValidation(String name, TDValidationBlock validationBlock) {
+        if(validations == null) {
+            validations = new HashMap<String, TDValidationBlock>();
+        }
+        validations.put(name, validationBlock);
+    }
+
+    public TDValidationBlock getValidationNamed(String name) {
+        TDValidationBlock result = null;
+        if(validations != null) {
+            result = validations.get(name);
+        }
+        return result;
+    }
+
+    public TDStatus validateRevision(TDRevision newRev, TDRevision oldRev) {
+        TDStatus result = new TDStatus(TDStatus.OK);
+        if(validations == null || validations.size() == 0) {
+            return result;
+        }
+        TDValidationContextImpl context = new TDValidationContextImpl(this, oldRev);
+        for (String validationName : validations.keySet()) {
+            TDValidationBlock validation = getValidationNamed(validationName);
+            if(!validation.validate(newRev, context)) {
+                result.setCode(context.getErrorType().getCode());
+                break;
+            }
+        }
+        return result;
+    }
+}
+
+class TDValidationContextImpl implements TDValidationContext {
+
+    private TDDatabase database;
+    private TDRevision currentRevision;
+    private TDStatus errorType;
+    private String errorMessage;
+
+    public TDValidationContextImpl(TDDatabase database, TDRevision currentRevision) {
+        this.database = database;
+        this.currentRevision = currentRevision;
+        this.errorType = new TDStatus(TDStatus.FORBIDDEN);
+        this.errorMessage = "invalid document";
+    }
+
+    @Override
+    public TDRevision getCurrentRevision() {
+        if(currentRevision != null) {
+            database.loadRevisionBody(currentRevision, EnumSet.noneOf(TDContentOptions.class));
+        }
+        return currentRevision;
+    }
+
+    @Override
+    public TDStatus getErrorType() {
+        return errorType;
+    }
+
+    @Override
+    public void setErrorType(TDStatus status) {
+        this.errorType = status;
+    }
+
+    @Override
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    @Override
+    public void setErrorMessage(String message) {
+        this.errorMessage = message;
+    }
+
 }
