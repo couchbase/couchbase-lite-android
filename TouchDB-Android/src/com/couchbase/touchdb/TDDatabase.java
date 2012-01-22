@@ -1670,14 +1670,14 @@ public class TDDatabase extends Observable {
     }
 
     /*** Attachments ***/
-    public boolean insertAttachmentForSequenceWithNameAndType(byte[] contents, long sequence, String name, String contentType, int revpos) {
+    public TDStatus insertAttachmentForSequenceWithNameAndType(byte[] contents, long sequence, String name, String contentType, int revpos) {
         assert(contents != null);
         assert(sequence > 0);
         assert(name != null);
 
         TDBlobKey key = new TDBlobKey();
         if(!attachments.storeBlob(contents, key)) {
-            return false;
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         }
 
         byte[] keyData = key.getBytes();
@@ -1690,10 +1690,10 @@ public class TDDatabase extends Observable {
             args.put("length", contents.length);
             args.put("revpos", revpos);
             database.insert("attachments", null, args);
-            return true;
+            return new TDStatus(TDStatus.CREATED);
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error inserting attachment", e);
-            return false;
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -1858,6 +1858,7 @@ public class TDDatabase extends Observable {
 
         for (String name : newAttachments.keySet()) {
 
+            TDStatus status = new TDStatus();
             Map<String,Object> newAttach = (Map<String,Object>)newAttachments.get(name);
             String newContentBase64 = (String)newAttach.get("data");
             if(newContentBase64 != null) {
@@ -1888,17 +1889,15 @@ public class TDDatabase extends Observable {
                 }
 
                 // Finally insert the attachment:
-                if(!insertAttachmentForSequenceWithNameAndType(newContents, newSequence, name, (String)newAttach.get("content_type"), revpos)) {
-                    return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-                }
+                status = insertAttachmentForSequenceWithNameAndType(newContents, newSequence, name, (String)newAttach.get("content_type"), revpos);
             }
             else {
                 // It's just a stub, so copy the previous revision's attachment entry:
                 //? Should I enforce that the type and digest (if any) match?
-                TDStatus status = copyAttachmentNamedFromSequenceToSequence(name, parentSequence, newSequence);
-                if(!status.isSuccessful()) {
-                    return status;
-                }
+                status = copyAttachmentNamedFromSequenceToSequence(name, parentSequence, newSequence);
+            }
+            if(!status.isSuccessful()) {
+                return status;
             }
         }
 
@@ -1959,11 +1958,11 @@ public class TDDatabase extends Observable {
 
             if(body != null) {
                 // If not deleting, add a new attachment entry:
-                boolean addStatus = insertAttachmentForSequenceWithNameAndType(body, newRev.getSequence(),
+                TDStatus insertStatus = insertAttachmentForSequenceWithNameAndType(body, newRev.getSequence(),
                         filename, contentType, newRev.getGeneration());
+                status.setCode(insertStatus.getCode());
 
-                if(!addStatus) {
-                    status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                if(!status.isSuccessful()) {
                     return null;
                 }
             }
