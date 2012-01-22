@@ -48,6 +48,9 @@ public class Server extends AndroidTestCase {
         databaseNames.add("foo");
         Assert.assertEquals(databaseNames, server.allDatabaseNames());
 
+        db.close();
+        server.close();
+
     }
 
 }

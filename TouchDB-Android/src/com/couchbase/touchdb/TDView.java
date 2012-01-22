@@ -263,7 +263,8 @@ public class TDView {
             long lastSequence = getLastSequenceIndexed();
             long dbMaxSequence = db.getLastSequence();
             if(lastSequence == dbMaxSequence) {
-                return new TDStatus(TDStatus.NOT_MODIFIED);
+                result.setCode(TDStatus.NOT_MODIFIED);
+                return result;
             }
 
             // First remove obsolete emitted results from the 'maps' table:

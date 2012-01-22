@@ -347,6 +347,8 @@ public class Views extends AndroidTestCase {
         expectedRows.add(dict2);
 
         Assert.assertEquals(expectedRows, rows);
+
+        db.close();
     }
 
     public void testAllDocsQuery() {
@@ -424,6 +426,8 @@ public class Views extends AndroidTestCase {
         expectedRows.add(expected2);
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
         Assert.assertEquals(expectedQueryResult, query);
+
+        db.close();
     }
 
     private Map<String, Object> createExpectedQueryResult(List<Object> rows, int offset) {
@@ -501,6 +505,8 @@ public class Views extends AndroidTestCase {
         Object value = reduced.get(0).get("value");
         Number numberValue = (Number)value;
         Assert.assertTrue(Math.abs(numberValue.doubleValue() - 17.44) < 0.001);
+
+        db.close();
     }
 
     public void testViewGrouped() {
@@ -700,6 +706,7 @@ public class Views extends AndroidTestCase {
 
         Assert.assertEquals(expectedRows, rows);
 
+        db.close();
     }
 
     public void testViewGroupedStrings() {
@@ -775,6 +782,7 @@ public class Views extends AndroidTestCase {
 
         Assert.assertEquals(expectedRows, rows);
 
+        db.close();
     }
 
     public void testViewCollation() {
@@ -859,6 +867,7 @@ public class Views extends AndroidTestCase {
             Assert.assertEquals(testKeys.get(i++), row.get("key"));
         }
 
+        db.close();
     }
 
 
@@ -946,6 +955,7 @@ public class Views extends AndroidTestCase {
             Assert.assertEquals(testKeys.get(i++), row.get("key"));
         }
 
+        db.close();
     }
 
 }
