@@ -74,6 +74,10 @@ public class TDView {
         this.collation = collation;
     }
 
+    public boolean isStale() {
+        return (getLastSequenceIndexed() < db.getLastSequence());
+    }
+
     public int getViewId() {
         if (viewId < 0) {
             String sql = "SELECT view_id FROM views WHERE name=?";
@@ -252,6 +256,12 @@ public class TDView {
         try {
 
             long lastSequence = getLastSequenceIndexed();
+            long dbMaxSequence = db.getLastSequence();
+            if(lastSequence == dbMaxSequence) {
+                return new TDStatus(TDStatus.NOT_MODIFIED);
+            }
+
+            // First remove obsolete emitted results from the 'maps' table:
             long sequence = lastSequence;
             if (lastSequence < 0) {
                 return result;
@@ -360,7 +370,6 @@ public class TDView {
 
             // Finally, record the last revision sequence number that was
             // indexed:
-            long dbMaxSequence = db.getLastSequence();
             ContentValues updateValues = new ContentValues();
             updateValues.put("lastSequence", dbMaxSequence);
             String[] whereArgs = { Integer.toString(getViewId()) };
@@ -392,11 +401,6 @@ public class TDView {
     public Cursor resultSetWithOptions(TDQueryOptions options, TDStatus status) {
         if (options == null) {
             options = new TDQueryOptions();
-        }
-
-        TDStatus updateStatus = updateIndex();
-        if (!updateStatus.isSuccessful()) {
-            return null;
         }
 
         // OPT: It would be faster to use separate tables for raw-or ascii-collated views so that

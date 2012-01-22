@@ -22,6 +22,7 @@ public class TDStatus {
     public static final int UNKNOWN = -1;
     public static final int OK = 200;
     public static final int CREATED = 201;
+    public static final int NOT_MODIFIED = 304;
     public static final int BAD_REQUEST = 400;
     public static final int FORBIDDEN = 403;
     public static final int NOT_FOUND = 404;
@@ -47,7 +48,7 @@ public class TDStatus {
     }
 
     public boolean isSuccessful() {
-        return (code < 300);
+        return (code < 400);
     }
 
     @Override

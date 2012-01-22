@@ -168,6 +168,7 @@ public class Views extends AndroidTestCase {
         TDView view = createView(db);
 
         Assert.assertEquals(1, view.getViewId());
+        Assert.assertTrue(view.isStale());
 
         TDStatus updated = view.updateIndex();
         Assert.assertEquals(TDStatus.OK, updated.getCode());
@@ -183,8 +184,9 @@ public class Views extends AndroidTestCase {
         Assert.assertEquals(3, dumpResult.get(1).get("seq"));
 
         //no-op reindex
+        Assert.assertFalse(view.isStale());
         updated = view.updateIndex();
-        Assert.assertEquals(TDStatus.OK, updated.getCode());
+        Assert.assertEquals(TDStatus.NOT_MODIFIED, updated.getCode());
 
         // Now add a doc and update a doc:
         TDRevision threeUpdated = new TDRevision(rev3.getDocId(), rev3.getRevId(), false);
@@ -204,6 +206,7 @@ public class Views extends AndroidTestCase {
         Assert.assertTrue(status.isSuccessful());
 
         // Reindex again:
+        Assert.assertTrue(view.isStale());
         updated = view.updateIndex();
         Assert.assertEquals(TDStatus.OK, updated.getCode());
 
@@ -566,9 +569,13 @@ public class Views extends AndroidTestCase {
             }
         }, "1");
 
+        TDStatus status = new TDStatus();
+        status = view.updateIndex();
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+
         TDQueryOptions options = new TDQueryOptions();
         options.setReduce(true);
-        TDStatus status = new TDStatus();
+        status = new TDStatus();
         List<Map<String, Object>> rows = view.queryWithOptions(options, status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
 
@@ -742,9 +749,13 @@ public class Views extends AndroidTestCase {
 
         }, "1.0");
 
+        TDStatus status = new TDStatus();
+        status = view.updateIndex();
+        Assert.assertEquals(TDStatus.OK, status.getCode());
+
         TDQueryOptions options = new TDQueryOptions();
         options.setGroupLevel(1);
-        TDStatus status = new TDStatus();
+        status = new TDStatus();
         List<Map<String,Object>> rows = view.queryWithOptions(options, status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
 
