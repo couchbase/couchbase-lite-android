@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Set;
-import java.util.UUID;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -239,6 +238,20 @@ public class TDDatabase extends Observable {
                     "json BLOB); " +
                     "CREATE INDEX localdocs_by_docid ON localdocs(docid); " +
                     "PRAGMA user_version = 3";
+            if(!initialize(upgradeSql)) {
+                database.close();
+                return false;
+            }
+            dbVersion = 3;
+        }
+
+        if (dbVersion < 4) {
+            String upgradeSql = "CREATE TABLE info ( " +
+                    "key TEXT PRIMARY KEY, " +
+                    "value TEXT); " +
+                    "INSERT INTO INFO (key, value) VALUES ('privateUUID', '" + TDMisc.TDCreateUUID() + "'); " +
+                    "INSERT INTO INFO (key, value) VALUES ('publicUUID',  '" + TDMisc.TDCreateUUID() + "'); " +
+                    "PRAGMA user_version = 4";
             if(!initialize(upgradeSql)) {
                 database.close();
                 return false;
@@ -582,6 +595,42 @@ public class TDDatabase extends Observable {
         return result;
     }
 
+    public String privateUUID() {
+        String result = null;
+        Cursor cursor = null;
+        try {
+            cursor = database.rawQuery("SELECT value FROM info WHERE key='privateUUID'", null);
+            if(cursor.moveToFirst()) {
+                result = cursor.getString(0);
+            }
+        } catch(SQLException e) {
+            Log.e(TAG, "Error querying privateUUID", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+        return result;
+    }
+
+    public String publicUUID() {
+        String result = null;
+        Cursor cursor = null;
+        try {
+            cursor = database.rawQuery("SELECT value FROM info WHERE key='publicUUID'", null);
+            if(cursor.moveToFirst()) {
+                result = cursor.getString(0);
+            }
+        } catch(SQLException e) {
+            Log.e(TAG, "Error querying privateUUID", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+        return result;
+    }
+
     public static boolean isValidDocumentId(String id) {
         // http://wiki.apache.org/couchdb/HTTP_Document_API#Documents
         if(id == null || id.length() == 0) {
@@ -633,12 +682,8 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public static String createUUID() {
-        return UUID.randomUUID().toString();
-    }
-
     public static String generateDocumentId() {
-        return createUUID();
+        return TDMisc.TDCreateUUID();
     }
 
     public String generateNextRevisionID(String revisionId) {
@@ -650,7 +695,7 @@ public class TDDatabase extends Observable {
                 return null;
             }
         }
-        String digest = createUUID();  //TODO: Generate canonical digest of body
+        String digest = TDMisc.TDCreateUUID();  //TODO: Generate canonical digest of body
         return Integer.toString(generation + 1) + "-" + digest;
     }
 

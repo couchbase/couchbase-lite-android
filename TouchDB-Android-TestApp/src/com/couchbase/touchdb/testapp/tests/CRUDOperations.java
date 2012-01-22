@@ -43,6 +43,12 @@ public class CRUDOperations extends AndroidTestCase {
 
         TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
 
+        String privateUUID = db.privateUUID();
+        String publicUUID = db.publicUUID();
+        Log.v(TAG, "DB private UUID = '" + privateUUID + "', public UUID = '" + publicUUID + "'");
+        Assert.assertTrue(privateUUID.length() >= 20);
+        Assert.assertTrue(publicUUID.length() >= 20);
+
         //create a document
         Map<String, Object> documentProperties = new HashMap<String, Object>();
         documentProperties.put("foo", 1);
