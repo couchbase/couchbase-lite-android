@@ -819,7 +819,7 @@ public class TDDatabase extends Observable {
         return rowId;
     }
 
-    public TDRevision putRevision(TDRevision rev, String prevRevId, TDStatus resultStatus) {
+    private TDRevision putRevision(TDRevision rev, String prevRevId, TDStatus resultStatus) {
         return putRevision(rev, prevRevId, false, resultStatus);
     }
 
@@ -1942,7 +1942,7 @@ public class TDDatabase extends Observable {
             }
 
             // Create a new revision:
-            TDRevision newRev = putRevision(oldRev, oldRevID, status);
+            TDRevision newRev = putRevision(oldRev, oldRevID, false, status);
             if(newRev == null) {
                 return null;
             }

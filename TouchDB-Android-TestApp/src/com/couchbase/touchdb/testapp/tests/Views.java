@@ -93,7 +93,7 @@ public class Views extends AndroidTestCase {
     private TDRevision putDoc(TDDatabase db, Map<String,Object> props) {
         TDRevision rev = new TDRevision(props);
         TDStatus status = new TDStatus();
-        rev = db.putRevision(rev, null, status);
+        rev = db.putRevision(rev, null, false, status);
         Assert.assertTrue(status.isSuccessful());
         return rev;
     }
@@ -192,7 +192,7 @@ public class Views extends AndroidTestCase {
         newdict3.put("key", "3hree");
         threeUpdated.setProperties(newdict3);
         TDStatus status = new TDStatus();
-        rev3 = db.putRevision(threeUpdated, rev3.getRevId(), status);
+        rev3 = db.putRevision(threeUpdated, rev3.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
         Map<String,Object> dict4 = new HashMap<String,Object>();
@@ -200,7 +200,7 @@ public class Views extends AndroidTestCase {
         TDRevision rev4 = putDoc(db, dict4);
 
         TDRevision twoDeleted = new TDRevision(rev2.getDocId(), rev2.getRevId(), true);
-        db.putRevision(twoDeleted, rev2.getRevId(), status);
+        db.putRevision(twoDeleted, rev2.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
         // Reindex again:

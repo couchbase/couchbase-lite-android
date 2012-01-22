@@ -46,7 +46,7 @@ public class Changes extends AndroidTestCase {
         TDRevision rev1 = new TDRevision(body);
 
         TDStatus status = new TDStatus();
-        rev1 = db.putRevision(rev1, null, status);
+        rev1 = db.putRevision(rev1, null, false, status);
 
         Assert.assertEquals(1, changeNotifications);
 

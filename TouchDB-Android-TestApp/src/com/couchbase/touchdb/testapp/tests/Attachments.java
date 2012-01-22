@@ -54,7 +54,7 @@ public class Attachments extends AndroidTestCase {
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
-        TDRevision rev1 = db.putRevision(new TDRevision(rev1Properties), null, status);
+        TDRevision rev1 = db.putRevision(new TDRevision(rev1Properties), null, false, status);
 
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
@@ -99,7 +99,7 @@ public class Attachments extends AndroidTestCase {
         rev2Properties.put("_id", rev1.getDocId());
         rev2Properties.put("foo", 2);
         rev2Properties.put("bazz", false);
-        TDRevision rev2 = db.putRevision(new TDRevision(rev2Properties), rev1.getRevId(), status);
+        TDRevision rev2 = db.putRevision(new TDRevision(rev2Properties), rev1.getRevId(), false, status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         status = db.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
@@ -110,7 +110,7 @@ public class Attachments extends AndroidTestCase {
         rev3Properties.put("_id", rev2.getDocId());
         rev3Properties.put("foo", 2);
         rev3Properties.put("bazz", false);
-        TDRevision rev3 = db.putRevision(new TDRevision(rev3Properties), rev2.getRevId(), status);
+        TDRevision rev3 = db.putRevision(new TDRevision(rev3Properties), rev2.getRevId(), false, status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
@@ -171,7 +171,7 @@ public class Attachments extends AndroidTestCase {
         properties.put("_attachments", attachmentDict);
 
         TDStatus status = new TDStatus();
-        TDRevision rev1 = db.putRevision(new TDRevision(properties), null, status);
+        TDRevision rev1 = db.putRevision(new TDRevision(properties), null, false, status);
 
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         // Examine the attachment store:

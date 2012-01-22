@@ -59,7 +59,7 @@ public class CRUDOperations extends AndroidTestCase {
         TDRevision rev1 = new TDRevision(body);
 
         TDStatus status = new TDStatus();
-        rev1 = db.putRevision(rev1, null, status);
+        rev1 = db.putRevision(rev1, null, false, status);
 
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         Log.v(TAG, "Created " + rev1);
@@ -78,7 +78,7 @@ public class CRUDOperations extends AndroidTestCase {
         body = new TDBody(documentProperties);
         TDRevision rev2 = new TDRevision(body);
         TDRevision rev2input = rev2;
-        rev2 = db.putRevision(rev2, rev1.getRevId(), status);
+        rev2 = db.putRevision(rev2, rev1.getRevId(), false, status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         Log.v(TAG, "Updated " + rev1);
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
@@ -90,7 +90,7 @@ public class CRUDOperations extends AndroidTestCase {
         Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
         // Try to update the first rev, which should fail:
-        db.putRevision(rev2input, rev1.getRevId(), status);
+        db.putRevision(rev2input, rev1.getRevId(), false, status);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
 
         // Check the changes feed, with and without filters:
@@ -121,17 +121,17 @@ public class CRUDOperations extends AndroidTestCase {
 
         // Delete it:
         TDRevision revD = new TDRevision(rev2.getDocId(), null, true);
-        TDRevision revResult = db.putRevision(revD, null, status);
+        TDRevision revResult = db.putRevision(revD, null, false, status);
         Assert.assertNull(revResult);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
-        revD = db.putRevision(revD, rev2.getRevId(), status);
+        revD = db.putRevision(revD, rev2.getRevId(), false, status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals(revD.getDocId(), rev2.getDocId());
         Assert.assertTrue(revD.getRevId().startsWith("3-"));
 
         // Delete nonexistent doc:
         TDRevision revFake = new TDRevision("fake", null, true);
-        db.putRevision(revFake, null, status);
+        db.putRevision(revFake, null, false, status);
         Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
 
         // Read it back (should fail):
