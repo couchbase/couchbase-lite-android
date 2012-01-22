@@ -4,6 +4,9 @@ import java.util.EnumSet;
 
 import com.couchbase.touchdb.TDDatabase.TDContentOptions;
 
+/**
+ * Options for _changes feed
+ */
 public class TDChangesOptions {
 
     private int limit = Integer.MAX_VALUE;

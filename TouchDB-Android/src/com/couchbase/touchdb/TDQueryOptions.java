@@ -22,6 +22,9 @@ import java.util.List;
 
 import com.couchbase.touchdb.TDDatabase.TDContentOptions;
 
+/**
+ * Standard query options for views.
+ */
 public class TDQueryOptions {
 
     private Object startKey = null;

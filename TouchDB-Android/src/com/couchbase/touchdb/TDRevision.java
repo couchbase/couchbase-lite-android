@@ -19,6 +19,11 @@ package com.couchbase.touchdb;
 
 import java.util.Map;
 
+/**
+ * Stores information about a revision -- its docID, revID, and whether it's deleted.
+ *
+ * It can also store the sequence number and document contents (they can be added after creation).
+ */
 public class TDRevision {
 
     private String docId;
@@ -141,6 +146,10 @@ public class TDRevision {
         return "{" + this.docId + " #" + this.revId + (deleted ? "DEL" : "") + "}";
     }
 
+    /**
+     * Generation number: 1 for a new document, 2 for the 2nd revision, ...
+     * Extracted from the numeric prefix of the revID.
+     */
     public int getGeneration() {
         return generationFromRevID(revId);
     }

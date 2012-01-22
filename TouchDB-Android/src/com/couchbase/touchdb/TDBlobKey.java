@@ -19,6 +19,9 @@ package com.couchbase.touchdb;
 
 import java.util.Arrays;
 
+/**
+ * Key identifying a data blob. This happens to be a SHA-1 digest.
+ */
 public class TDBlobKey {
 
     private byte[] bytes;

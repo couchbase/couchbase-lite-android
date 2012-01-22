@@ -31,6 +31,10 @@ import java.util.Set;
 
 import android.util.Log;
 
+/**
+ * A persistent content-addressable store for arbitrary-size data blobs.
+ * Each blob is stored as a file named by its SHA-1 digest.
+ */
 public class TDBlobStore {
 
     public static String FILE_EXTENSION = ".blob";

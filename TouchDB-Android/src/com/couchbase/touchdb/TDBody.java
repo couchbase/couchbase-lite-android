@@ -24,6 +24,9 @@ import org.codehaus.jackson.map.ObjectWriter;
 
 import android.util.Log;
 
+/**
+ * A request/response/document body, stored as either JSON or a Map<String,Object>
+ */
 public class TDBody {
 
     private byte[] json;

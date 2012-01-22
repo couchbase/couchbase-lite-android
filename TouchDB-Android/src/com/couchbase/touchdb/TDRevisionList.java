@@ -23,6 +23,9 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * An ordered list of TDRevisions
+ */
 @SuppressWarnings("serial")
 public class TDRevisionList extends ArrayList<TDRevision> {
 

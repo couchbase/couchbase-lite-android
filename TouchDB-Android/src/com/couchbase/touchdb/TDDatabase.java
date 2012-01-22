@@ -42,6 +42,9 @@ import com.couchbase.touchdb.TDDatabase.TDContentOptions;
 import com.couchbase.touchdb.support.Base64;
 import com.couchbase.touchdb.support.DirUtils;
 
+/**
+ * A TouchDB database.
+ */
 public class TDDatabase extends Observable {
 
     private String path;
@@ -56,6 +59,9 @@ public class TDDatabase extends Observable {
     private Map<String, TDValidationBlock> validations;
     private TDBlobStore attachments;
 
+    /**
+     * Options for what metadata to include in document bodies
+     */
     public enum TDContentOptions {
         TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq
     }
@@ -332,6 +338,10 @@ public class TDDatabase extends Observable {
         return size;
     }
 
+    /**
+     * Begins a database transaction. Transactions can nest.
+     * Every beginTransaction() must be balanced by a later endTransaction()
+     */
     public boolean beginTransaction() {
         try {
             database.execSQL("SAVEPOINT tdb" + Integer.toString(transactionLevel + 1));
@@ -343,6 +353,11 @@ public class TDDatabase extends Observable {
         return true;
     }
 
+    /**
+     * Commits or aborts (rolls back) a transaction.
+     *
+     * @param commit If true, commits; if false, aborts and rolls back, undoing all changes made since the matching -beginTransaction call, *including* any committed nested transactions.
+     */
     public boolean endTransaction(boolean commit) {
         assert(transactionLevel > 0);
 
@@ -366,6 +381,9 @@ public class TDDatabase extends Observable {
         return true;
     }
 
+    /**
+     * Compacts the database storage by removing the bodies and attachments of obsolete revisions.
+     */
     public TDStatus compact() {
         // Can't delete any rows because that would lose revision tree history.
         // But we can remove the JSON of non-current revisions, which is most of the space.
@@ -711,6 +729,9 @@ public class TDDatabase extends Observable {
 
     /** HISTORY: **/
 
+    /**
+     * Returns all the known revisions (or all current/conflicting revisions) of a document.
+     */
     public TDRevisionList getAllRevisionsOfDocumentID(String docId, long docNumericID, boolean onlyCurrent) {
 
         String sql = null;
@@ -793,6 +814,9 @@ public class TDDatabase extends Observable {
         return result;
     }
 
+    /**
+     * Returns an array of TDRevs in reverse chronological order, starting with the given revision.
+     */
     public List<TDRevision> getRevisionHistory(TDRevision rev) {
         String docId = rev.getDocId();
         String revId = rev.getRevId();
@@ -921,6 +945,9 @@ public class TDDatabase extends Observable {
         return result;
     }
 
+    /**
+     * Returns the revision history as a _revisions dictionary, as returned by the REST API's ?revs=true option.
+     */
     public Map<String,Object> getRevisionHistoryDict(TDRevision rev) {
         return makeRevisionHistoryDict(getRevisionHistory(rev));
     }
@@ -986,6 +1013,11 @@ public class TDDatabase extends Observable {
         return changes;
     }
 
+    /**
+     * Define or clear a named filter function.
+     *
+     * These aren't used directly by TDDatabase, but they're looked up by TDRouter when a _changes request has a ?filter parameter.
+     */
     public void defineFilter(String filterName, TDFilterBlock filter) {
         if(filters == null) {
             filters = new HashMap<String,TDFilterBlock>();
@@ -1288,6 +1320,9 @@ public class TDDatabase extends Observable {
         }
     }
 
+    /**
+     * Returns the content and MIME type of an attachment
+     */
     public TDAttachment getAttachmentForSequence(long sequence, String filename, TDStatus status) {
         assert(sequence > 0);
         assert(filename != null);
@@ -1333,6 +1368,9 @@ public class TDDatabase extends Observable {
 
     }
 
+    /**
+     * Constructs an "_attachments" dictionary for a revision, to be inserted in its JSON body.
+     */
     public Map<String,Object> getAttachmentsDictForSequenceWithContent(long sequence, boolean withContent) {
         assert(sequence > 0);
 
@@ -1393,6 +1431,9 @@ public class TDDatabase extends Observable {
         }
     }
 
+    /**
+     * Given a newly-added revision, adds the necessary attachment rows to the database and stores inline attachments into the blob store.
+     */
     public TDStatus processAttachmentsForRevision(TDRevision rev, long parentSequence) {
         assert(rev != null);
         long newSequence = rev.getSequence();
@@ -1456,6 +1497,10 @@ public class TDDatabase extends Observable {
         return new TDStatus(TDStatus.OK);
     }
 
+    /**
+     * Updates or deletes an attachment, creating a new document revision in the process.
+     * Used by the PUT / DELETE methods called on attachment URLs.
+     */
     public TDRevision updateAttachment(String filename, byte[] body, String contentType, String docID, String oldRevID, TDStatus status) {
         status.setCode(TDStatus.BAD_REQUEST);
         if(filename == null || filename.length() == 0 || (body != null && contentType == null) || (oldRevID != null && docID == null) || (body != null && docID == null)) {
@@ -1531,6 +1576,9 @@ public class TDDatabase extends Observable {
         }
     }
 
+    /**
+     * Deletes obsolete attachments from the database and blob store.
+     */
     public TDStatus garbageCollectAttachments() {
         // First delete attachment rows for already-cleared revisions:
         // OPT: Could start after last sequence# we GC'd up to
@@ -1629,6 +1677,9 @@ public class TDDatabase extends Observable {
         return docNumericId;
     }
 
+    /**
+     * Parses the _revisions dict from a document into an array of revision ID strings
+     */
     public List<String> parseCouchDBRevisionHistory(Map<String,Object> docProperties) {
         Map<String,Object> revisions = (Map<String,Object>)docProperties.get("_revisions");
         if(revisions == null) {
@@ -1712,6 +1763,17 @@ public class TDDatabase extends Observable {
         return putRevision(rev, prevRevId, false, resultStatus);
     }
 
+    /**
+     * Stores a new (or initial) revision of a document.
+     *
+     * This is what's invoked by a PUT or POST. As with those, the previous revision ID must be supplied when necessary and the call will fail if it doesn't match.
+     *
+     * @param rev The revision to add. If the docID is null, a new UUID will be assigned. Its revID must be null. It must have a JSON body.
+     * @param prevRevId The ID of the revision to replace (same as the "?rev=" parameter to a PUT), or null if this is a new document.
+     * @param allowConflict If false, an error status 409 will be returned if the insertion would create a conflict, i.e. if the previous revision already has a child.
+     * @param resultStatus On return, an HTTP status code indicating success or failure.
+     * @return A new TDRevision with the docID, revID and sequence filled in (but no body).
+     */
     @SuppressWarnings("unchecked")
     public TDRevision putRevision(TDRevision rev, String prevRevId, boolean allowConflict, TDStatus resultStatus) {
         // prevRevId is the rev ID being replaced, or nil if an insert
@@ -1885,6 +1947,11 @@ public class TDDatabase extends Observable {
         return rev;
     }
 
+    /**
+     * Inserts an already-existing revision replicated from a remote database.
+     *
+     * It must already have a revision ID. This may create a conflict! The revision's history must be given; ancestor revision IDs that don't already exist locally will create phantom revisions with no content.
+     */
     public TDStatus forceInsert(TDRevision rev, List<String> revHistory, URL source) {
 
         String docId = rev.getDocId();
@@ -1988,6 +2055,9 @@ public class TDDatabase extends Observable {
 
     /** VALIDATION **/
 
+    /**
+     * Define or clear a named document validation function.
+     */
     public void defineValidation(String name, TDValidationBlock validationBlock) {
         if(validations == null) {
             validations = new HashMap<String, TDValidationBlock>();

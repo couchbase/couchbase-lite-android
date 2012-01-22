@@ -31,6 +31,9 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+/**
+ * Represents a view available in a database.
+ */
 public class TDView {
 
     public static final int REDUCE_BATCH_SIZE = 100;
@@ -74,6 +77,9 @@ public class TDView {
         this.collation = collation;
     }
 
+    /**
+     * Is the view's index currently out of date?
+     */
     public boolean isStale() {
         return (getLastSequenceIndexed() < db.getLastSequence());
     }
@@ -243,8 +249,10 @@ public class TDView {
         return result;
     }
 
-    // FIXME review this method may need better exception handling within
-    // transaction
+    /**
+     * Updates the view's index (incrementally) if necessary.
+     * @return 200 if updated, 304 if already up-to-date, else an error code
+     */
     @SuppressWarnings("unchecked")
     public TDStatus updateIndex() {
         Log.v(TDDatabase.TAG, "Re-indexing view " + name + " ...");
@@ -557,6 +565,12 @@ public class TDView {
         return result;
     }
 
+    /**
+     * Queries the view. Does NOT first update the index.
+     *
+     * @param options The options to use.
+     * @param status An array of result rows -- each is a dictionary with "key" and "value" keys, and possibly "id" and "doc".
+     */
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> queryWithOptions(TDQueryOptions options, TDStatus status) {
         if (options == null) {
@@ -660,6 +674,9 @@ public class TDView {
         return rows;
     }
 
+    /**
+     * Utility function to use in reduce blocks. Totals an array of Numbers.
+     */
     public static double totalValues(List<Object>values) {
         double total = 0;
         for (Object object : values) {

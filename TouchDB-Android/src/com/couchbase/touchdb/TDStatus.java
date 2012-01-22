@@ -17,6 +17,9 @@
 
 package com.couchbase.touchdb;
 
+/**
+ * Same interpretation as HTTP status codes, esp. 200, 201, 404, 409, 500.
+ */
 public class TDStatus {
 
     public static final int UNKNOWN = -1;
