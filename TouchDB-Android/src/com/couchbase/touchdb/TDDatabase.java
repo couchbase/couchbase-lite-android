@@ -18,7 +18,6 @@
 package com.couchbase.touchdb;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -59,6 +58,20 @@ public class TDDatabase extends Observable {
 
     public enum TDContentOptions {
         TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq
+    }
+
+    private static final Set<String> KNOWN_SPECIAL_KEYS;
+
+    static {
+        KNOWN_SPECIAL_KEYS = new HashSet<String>();
+        KNOWN_SPECIAL_KEYS.add("_id");
+        KNOWN_SPECIAL_KEYS.add("_rev");
+        KNOWN_SPECIAL_KEYS.add("_attachments");
+        KNOWN_SPECIAL_KEYS.add("_deleted");
+        KNOWN_SPECIAL_KEYS.add("_revisions");
+        KNOWN_SPECIAL_KEYS.add("_revs_info");
+        KNOWN_SPECIAL_KEYS.add("_conflicts");
+        KNOWN_SPECIAL_KEYS.add("_deleted_conflicts");
     }
 
     public static final String SCHEMA = "" +
@@ -109,6 +122,19 @@ public class TDDatabase extends Observable {
             "        UNIQUE (remote, push)); " +
             "    PRAGMA user_version = 3";             // at the end, update user_version
 
+    /*************************************************************************************************/
+    /*** TDDatabase                                                                                ***/
+    /*************************************************************************************************/
+
+    public String getAttachmentStorePath() {
+        String attachmentStorePath = path;
+        int lastDotPosition = attachmentStorePath.lastIndexOf('.');
+        if( lastDotPosition > 0 ) {
+            attachmentStorePath = attachmentStorePath.substring(0, lastDotPosition);
+        }
+        attachmentStorePath = attachmentStorePath + File.separator + "attachments";
+        return attachmentStorePath;
+    }
 
     public static TDDatabase createEmptyDBAtPath(String path) {
         File f = new File(path);
@@ -129,44 +155,12 @@ public class TDDatabase extends Observable {
         this.name = DirUtils.getDatabaseNameFromPath(path);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String toString() {
         return this.getClass().getName() + "[" + path + "]";
     }
 
     public boolean exists() {
         return new File(path).exists();
-    }
-
-    public String getAttachmentStorePath() {
-        String attachmentStorePath = path;
-        int lastDotPosition = attachmentStorePath.lastIndexOf('.');
-        if( lastDotPosition > 0 ) {
-            attachmentStorePath = attachmentStorePath.substring(0, lastDotPosition);
-        }
-        attachmentStorePath = attachmentStorePath + File.separator + "attachments";
-        return attachmentStorePath;
-    }
-
-    public TDBlobStore getAttachments() {
-        return attachments;
-    }
-
-    // Leave this package protected, so it can only be used
-    // TDView uses this accessor
-    SQLiteDatabase getDatabase() {
-        return database;
     }
 
     public boolean initialize(String statements) {
@@ -268,7 +262,6 @@ public class TDDatabase extends Observable {
             return false;
         }
 
-
         open = true;
         return true;
     }
@@ -305,27 +298,32 @@ public class TDDatabase extends Observable {
         File file = new File(path);
         File attachmentsFile = new File(getAttachmentStorePath());
 
-        try {
-            boolean deleteStatus = file.delete();
-            boolean deleteAttachmentStatus = deleteRecursive(attachmentsFile);
-            return deleteStatus && deleteAttachmentStatus;
-        } catch (FileNotFoundException e) {
-            Log.e(TDDatabase.TAG, "Attachemts store not found");
-            return false;
-        }
+        boolean deleteStatus = file.delete();
+        //recursively delete attachments path
+        boolean deleteAttachmentStatus = DirUtils.deleteRecursive(attachmentsFile);
+        return deleteStatus && deleteAttachmentStatus;
     }
 
-    private static boolean deleteRecursive(File path) throws FileNotFoundException {
-        if (!path.exists()) {
-            throw new FileNotFoundException(path.getAbsolutePath());
-        }
-        boolean ret = true;
-        if (path.isDirectory()) {
-            for (File f : path.listFiles()){
-                ret = ret && deleteRecursive(f);
-            }
-        }
-        return ret && path.delete();
+    public String getPath() {
+        return path;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    // Leave this package protected, so it can only be used
+    // TDView uses this accessor
+    SQLiteDatabase getDatabase() {
+        return database;
+    }
+
+    public TDBlobStore getAttachments() {
+        return attachments;
     }
 
     public long totalDataSize() {
@@ -368,7 +366,109 @@ public class TDDatabase extends Observable {
         return true;
     }
 
-    /*** Getting Documents ***/
+    public TDStatus compact() {
+        // Can't delete any rows because that would lose revision tree history.
+        // But we can remove the JSON of non-current revisions, which is most of the space.
+        try {
+            Log.v(TDDatabase.TAG, "Deleting JSON of old revisions...");
+            ContentValues args = new ContentValues();
+            args.put("json", (String)null);
+            database.update("revs", args, "current=0", null);
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error compacting", e);
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        Log.v(TDDatabase.TAG, "Deleting old attachments...");
+        TDStatus result = garbageCollectAttachments();
+
+        Log.v(TDDatabase.TAG, "Vacuuming SQLite database...");
+        try {
+            database.execSQL("VACUUM");
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error vacuuming database", e);
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return result;
+    }
+
+    public String privateUUID() {
+        String result = null;
+        Cursor cursor = null;
+        try {
+            cursor = database.rawQuery("SELECT value FROM info WHERE key='privateUUID'", null);
+            if(cursor.moveToFirst()) {
+                result = cursor.getString(0);
+            }
+        } catch(SQLException e) {
+            Log.e(TAG, "Error querying privateUUID", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+        return result;
+    }
+
+    public String publicUUID() {
+        String result = null;
+        Cursor cursor = null;
+        try {
+            cursor = database.rawQuery("SELECT value FROM info WHERE key='publicUUID'", null);
+            if(cursor.moveToFirst()) {
+                result = cursor.getString(0);
+            }
+        } catch(SQLException e) {
+            Log.e(TAG, "Error querying privateUUID", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+        return result;
+    }
+
+    /** GETTING DOCUMENTS: **/
+
+    public int getDocumentCount() {
+        String sql = "SELECT COUNT(DISTINCT doc_id) FROM revs WHERE current=1 AND deleted=0";
+        Cursor cursor = null;
+        int result = 0;
+        try {
+            cursor = database.rawQuery(sql, null);
+            if(cursor.moveToFirst()) {
+                result = cursor.getInt(0);
+            }
+        } catch(SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting document count", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return result;
+    }
+
+    public long getLastSequence() {
+        String sql = "SELECT MAX(sequence) FROM revs";
+        Cursor cursor = null;
+        long result = 0;
+        try {
+            cursor = database.rawQuery(sql, null);
+            if(cursor.moveToFirst()) {
+                result = cursor.getLong(0);
+            }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting last sequence", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+        return result;
+    }
 
     /** Splices the contents of an NSDictionary into JSON data (that already represents a dict), without parsing the JSON. */
     public static byte[] appendDictToJSON(byte[] json, Map<String,Object> dict) {
@@ -478,6 +578,8 @@ public class TDDatabase extends Observable {
         return result;
     }
 
+    /** Inserts the _id, _rev and _attachments properties into the JSON data and stores it in rev.
+    Rev must already have its revID and sequence properties set. */
     public void expandStoredJSONIntoRevisionWithAttachments(byte[] json, TDRevision rev, EnumSet<TDContentOptions> contentOptions) {
         Map<String,Object> extra = extraPropertiesForRevision(rev, contentOptions);
         if(json != null) {
@@ -582,160 +684,6 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public TDStatus compact() {
-        // Can't delete any rows because that would lose revision tree history.
-        // But we can remove the JSON of non-current revisions, which is most of the space.
-        try {
-            Log.v(TDDatabase.TAG, "Deleting JSON of old revisions...");
-            ContentValues args = new ContentValues();
-            args.put("json", (String)null);
-            database.update("revs", args, "current=0", null);
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error compacting", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        Log.v(TDDatabase.TAG, "Deleting old attachments...");
-        TDStatus result = garbageCollectAttachments();
-
-        Log.v(TDDatabase.TAG, "Vacuuming SQLite database...");
-        try {
-            database.execSQL("VACUUM");
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error vacuuming database", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        return result;
-    }
-
-    public String privateUUID() {
-        String result = null;
-        Cursor cursor = null;
-        try {
-            cursor = database.rawQuery("SELECT value FROM info WHERE key='privateUUID'", null);
-            if(cursor.moveToFirst()) {
-                result = cursor.getString(0);
-            }
-        } catch(SQLException e) {
-            Log.e(TAG, "Error querying privateUUID", e);
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-        return result;
-    }
-
-    public String publicUUID() {
-        String result = null;
-        Cursor cursor = null;
-        try {
-            cursor = database.rawQuery("SELECT value FROM info WHERE key='publicUUID'", null);
-            if(cursor.moveToFirst()) {
-                result = cursor.getString(0);
-            }
-        } catch(SQLException e) {
-            Log.e(TAG, "Error querying privateUUID", e);
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-        return result;
-    }
-
-    public static boolean isValidDocumentId(String id) {
-        // http://wiki.apache.org/couchdb/HTTP_Document_API#Documents
-        if(id == null || id.length() == 0) {
-            return false;
-        }
-        if(id.charAt(0) == '_') {
-            return  (id.startsWith("_design/"));
-        }
-        return true;
-        // "_local/*" is not a valid document ID. Local docs have their own API and shouldn't get here.
-    }
-
-    public int getDocumentCount() {
-        String sql = "SELECT COUNT(DISTINCT doc_id) FROM revs WHERE current=1 AND deleted=0";
-        Cursor cursor = null;
-        int result = 0;
-        try {
-            cursor = database.rawQuery(sql, null);
-            if(cursor.moveToFirst()) {
-                result = cursor.getInt(0);
-            }
-        } catch(SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting document count", e);
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-        return result;
-    }
-
-    public long getLastSequence() {
-        String sql = "SELECT MAX(sequence) FROM revs";
-        Cursor cursor = null;
-        long result = 0;
-        try {
-            cursor = database.rawQuery(sql, null);
-            if(cursor.moveToFirst()) {
-                result = cursor.getLong(0);
-            }
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting last sequence", e);
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-        return result;
-    }
-
-    public static String generateDocumentId() {
-        return TDMisc.TDCreateUUID();
-    }
-
-    public String generateNextRevisionID(String revisionId) {
-        // Revision IDs have a generation count, a hyphen, and a UUID.
-        int generation = 0;
-        if(revisionId != null) {
-            generation = TDRevision.generationFromRevID(revisionId);
-            if(generation == 0) {
-                return null;
-            }
-        }
-        String digest = TDMisc.TDCreateUUID();  //TODO: Generate canonical digest of body
-        return Integer.toString(generation + 1) + "-" + digest;
-    }
-
-    public void notifyChange(TDRevision rev, URL source) {
-        Map<String,Object> changeNotification = new HashMap<String, Object>();
-        changeNotification.put("rev", rev);
-        changeNotification.put("seq", rev.getSequence());
-        if(source != null) {
-            changeNotification.put("source", source);
-        }
-        setChanged();
-        notifyObservers(changeNotification);
-    }
-
-    public long insertDocumentID(String docId) {
-        long rowId = -1;
-        try {
-            ContentValues args = new ContentValues();
-            args.put("docid", docId);
-            rowId = database.insert("docs", null, args);
-        } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error inserting document id", e);
-        }
-        return rowId;
-    }
-
     public long getDocNumericID(String docId) {
         Cursor cursor = null;
         String[] args = { docId };
@@ -761,6 +709,918 @@ public class TDDatabase extends Observable {
         return result;
     }
 
+    /** HISTORY: **/
+
+    public TDRevisionList getAllRevisionsOfDocumentID(String docId, long docNumericID, boolean onlyCurrent) {
+
+        String sql = null;
+        if(onlyCurrent) {
+            sql = "SELECT sequence, revid, deleted FROM revs " +
+                    "WHERE doc_id=? AND current ORDER BY sequence DESC";
+        }
+        else {
+            sql = "SELECT sequence, revid, deleted FROM revs " +
+                    "WHERE doc_id=? ORDER BY sequence DESC";
+        }
+
+        String[] args = { Long.toString(docNumericID) };
+        Cursor cursor = null;
+
+        cursor = database.rawQuery(sql, args);
+
+        TDRevisionList result;
+        try {
+            cursor.moveToFirst();
+            result = new TDRevisionList();
+            while(!cursor.isAfterLast()) {
+                TDRevision rev = new TDRevision(docId, cursor.getString(1), (cursor.getInt(2) > 0));
+                rev.setSequence(cursor.getLong(0));
+                result.add(rev);
+                cursor.moveToNext();
+            }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return result;
+    }
+
+    public TDRevisionList getAllRevisionsOfDocumentID(String docId, boolean onlyCurrent) {
+        long docNumericId = getDocNumericID(docId);
+        if(docNumericId < 0) {
+            return null;
+        }
+        else if(docNumericId == 0) {
+            return new TDRevisionList();
+        }
+        else {
+            return getAllRevisionsOfDocumentID(docId, docNumericId, onlyCurrent);
+        }
+    }
+
+    public List<String> getConflictingRevisionIDsOfDocID(String docID) {
+        long docIdNumeric = getDocNumericID(docID);
+        if(docIdNumeric < 0) {
+            return null;
+        }
+
+        List<String> result = new ArrayList<String>();
+        Cursor cursor = null;
+        try {
+            String[] args = { Long.toString(docIdNumeric) };
+            cursor = database.rawQuery("SELECT revid FROM revs WHERE doc_id=? AND current " +
+                                           "ORDER BY revid DESC OFFSET 1", args);
+            cursor.moveToFirst();
+            while(!cursor.isAfterLast()) {
+                result.add(cursor.getString(0));
+                cursor.moveToNext();
+            }
+
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return result;
+    }
+
+    public List<TDRevision> getRevisionHistory(TDRevision rev) {
+        String docId = rev.getDocId();
+        String revId = rev.getRevId();
+        assert((docId != null) && (revId != null));
+
+        long docNumericId = getDocNumericID(docId);
+        if(docNumericId < 0) {
+            return null;
+        }
+        else if(docNumericId == 0) {
+            return new ArrayList<TDRevision>();
+        }
+
+        String sql = "SELECT sequence, parent, revid, deleted FROM revs " +
+                    "WHERE doc_id=? ORDER BY sequence DESC";
+        String[] args = { Long.toString(docNumericId) };
+        Cursor cursor = null;
+
+        List<TDRevision> result;
+        try {
+            cursor = database.rawQuery(sql, args);
+
+            cursor.moveToFirst();
+            long lastSequence = 0;
+            result = new ArrayList<TDRevision>();
+            while(!cursor.isAfterLast()) {
+                long sequence = cursor.getLong(0);
+                boolean matches = false;
+                if(lastSequence == 0) {
+                    matches = revId.equals(cursor.getString(2));
+                }
+                else {
+                    matches = (sequence == lastSequence);
+                }
+                if(matches) {
+                    revId = cursor.getString(2);
+                    boolean deleted = (cursor.getInt(3) > 0);
+                    TDRevision aRev = new TDRevision(docId, revId, deleted);
+                    aRev.setSequence(cursor.getLong(0));
+                    result.add(aRev);
+                    lastSequence = cursor.getLong(1);
+                    if(lastSequence == 0) {
+                        break;
+                    }
+                }
+                cursor.moveToNext();
+            }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting revision history", e);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return result;
+    }
+
+    // Splits a revision ID into its generation number and opaque suffix string
+    public static int parseRevIDNumber(String rev) {
+        int result = -1;
+        int dashPos = rev.indexOf("-");
+        if(dashPos >= 0) {
+            try {
+                result = Integer.parseInt(rev.substring(0, dashPos));
+            } catch (NumberFormatException e) {
+                // ignore, let it return -1
+            }
+        }
+        return result;
+    }
+
+    // Splits a revision ID into its generation number and opaque suffix string
+    public static String parseRevIDSuffix(String rev) {
+        String result = null;
+        int dashPos = rev.indexOf("-");
+        if(dashPos >= 0) {
+            result = rev.substring(dashPos + 1);
+        }
+        return result;
+    }
+
+    public static Map<String,Object> makeRevisionHistoryDict(List<TDRevision> history) {
+        if(history == null) {
+            return null;
+        }
+
+        // Try to extract descending numeric prefixes:
+        List<String> suffixes = new ArrayList<String>();
+        int start = -1;
+        int lastRevNo = -1;
+        for (TDRevision rev : history) {
+            int revNo = parseRevIDNumber(rev.getRevId());
+            String suffix = parseRevIDSuffix(rev.getRevId());
+            if(revNo > 0 && suffix.length() > 0) {
+                if(start < 0) {
+                    start = revNo;
+                }
+                else if(revNo != lastRevNo - 1) {
+                    start = -1;
+                    break;
+                }
+                lastRevNo = revNo;
+                suffixes.add(suffix);
+            }
+            else {
+                start = -1;
+                break;
+            }
+        }
+
+        Map<String,Object> result = new HashMap<String,Object>();
+        if(start == -1) {
+            // we failed to build sequence, just stuff all the revs in list
+            suffixes = new ArrayList<String>();
+            for (TDRevision rev : history) {
+                suffixes.add(rev.getRevId());
+            }
+        }
+        else {
+            result.put("start", start);
+        }
+        result.put("ids", suffixes);
+
+        return result;
+    }
+
+    public Map<String,Object> getRevisionHistoryDict(TDRevision rev) {
+        return makeRevisionHistoryDict(getRevisionHistory(rev));
+    }
+
+    public TDRevisionList changesSince(int lastSeq, TDChangesOptions options, TDFilterBlock filter) {
+        // http://wiki.apache.org/couchdb/HTTP_database_API#Changes
+        if(options == null) {
+            options = new TDChangesOptions();
+        }
+
+        boolean includeDocs = options.isIncludeDocs() || (filter != null);
+        String additionalSelectColumns =  "";
+        if(includeDocs) {
+            additionalSelectColumns = ", json";
+        }
+
+        String sql = "SELECT sequence, revs.doc_id, docid, revid, deleted" + additionalSelectColumns + " FROM revs, docs "
+                        + "WHERE sequence > ? AND current=1 "
+                        + "AND revs.doc_id = docs.doc_id "
+                        + "ORDER BY revs.doc_id, revid DESC";
+        String[] args = {Integer.toString(lastSeq)};
+        Cursor cursor = null;
+        TDRevisionList changes = null;
+
+        try {
+            cursor = database.rawQuery(sql, args);
+            cursor.moveToFirst();
+            changes = new TDRevisionList();
+            long lastDocId = 0;
+            while(!cursor.isAfterLast()) {
+                if(!options.isIncludeConflicts()) {
+                    // Only count the first rev for a given doc (the rest will be losing conflicts):
+                    long docNumericId = cursor.getLong(1);
+                    if(docNumericId == lastDocId) {
+                        cursor.moveToNext();
+                        continue;
+                    }
+                    lastDocId = docNumericId;
+                }
+
+                TDRevision rev = new TDRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
+                rev.setSequence(cursor.getLong(0));
+                if(includeDocs) {
+                    expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, options.getContentOptions());
+                }
+                if((filter == null) || (filter.filter(rev))) {
+                    changes.add(rev);
+                }
+                cursor.moveToNext();
+            }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error looking for changes", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+        if(options.isSortBySequence()) {
+            changes.sortBySequence();
+        }
+        changes.limit(options.getLimit());
+        return changes;
+    }
+
+    public void defineFilter(String filterName, TDFilterBlock filter) {
+        if(filters == null) {
+            filters = new HashMap<String,TDFilterBlock>();
+        }
+        filters.put(filterName, filter);
+    }
+
+    public TDFilterBlock getFilterNamed(String filterName) {
+        TDFilterBlock result = null;
+        if(filters != null) {
+            result = filters.get(filterName);
+        }
+        return result;
+    }
+
+    /** VIEWS: **/
+
+    public TDView registerView(TDView view) {
+        if(view == null) {
+            return null;
+        }
+        if(views == null) {
+            views = new HashMap<String,TDView>();
+        }
+        views.put(view.getName(), view);
+        return view;
+    }
+
+    public TDView getViewNamed(String name) {
+        TDView view = null;
+        if(views != null) {
+            view = views.get(name);
+        }
+        if(view != null) {
+            return view;
+        }
+        return registerView(new TDView(this, name));
+    }
+
+    public TDView getExistingViewNamed(String name) {
+        TDView view = null;
+        if(views != null) {
+            view = views.get(name);
+        }
+        if(view != null) {
+            return view;
+        }
+        view = new TDView(this, name);
+        if(view.getViewId() == 0) {
+            return null;
+        }
+
+        return registerView(view);
+    }
+
+    public List<TDView> getAllViews() {
+        Cursor cursor = null;
+        List<TDView> result = null;
+
+        try {
+            cursor = database.rawQuery("SELECT name FROM views", null);
+            cursor.moveToFirst();
+            result = new ArrayList<TDView>();
+            while(!cursor.isAfterLast()) {
+                result.add(getViewNamed(cursor.getString(0)));
+                cursor.moveToNext();
+            }
+        } catch (Exception e) {
+            Log.e(TDDatabase.TAG, "Error getting all views", e);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return result;
+    }
+
+    public TDStatus deleteViewNamed(String name) {
+        TDStatus result = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        try {
+            String[] whereArgs = { name };
+            int rowsAffected = database.delete("views", "name=?", whereArgs);
+            if(rowsAffected > 0) {
+                result.setCode(TDStatus.OK);
+            }
+            else {
+                result.setCode(TDStatus.NOT_FOUND);
+            }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error deleting view", e);
+        }
+        return result;
+    }
+
+    //FIX: This has a lot of code in common with -[TDView queryWithOptions:status:]. Unify the two!
+    public Map<String,Object> getDocsWithIDs(List<String> docIDs, TDQueryOptions options) {
+        if(options == null) {
+            options = new TDQueryOptions();
+        }
+
+        long updateSeq = 0;
+        if(options.isUpdateSeq()) {
+            updateSeq = getLastSequence();  // TODO: needs to be atomic with the following SELECT
+        }
+
+        // Generate the SELECT statement, based on the options:
+        String additionalCols = "";
+        if(options.isIncludeDocs()) {
+            additionalCols = ", json, sequence";
+        }
+        String sql = "SELECT revs.doc_id, docid, revid, deleted" + additionalCols + " FROM revs, docs WHERE";
+
+        if(docIDs != null) {
+            sql += " docid IN (" + joinQuoted(docIDs) + ")";
+        } else {
+            sql += " deleted=0";
+        }
+
+        sql += " AND current=1 AND docs.doc_id = revs.doc_id";
+
+        List<String> argsList = new ArrayList<String>();
+        Object minKey = options.getStartKey();
+        Object maxKey = options.getEndKey();
+        boolean inclusiveMin = true;
+        boolean inclusiveMax = options.isInclusiveEnd();
+        if(options.isDescending()) {
+            minKey = maxKey;
+            maxKey = options.getStartKey();
+            inclusiveMin = inclusiveMax;
+            inclusiveMax = true;
+        }
+
+        if(minKey != null) {
+            assert(minKey instanceof String);
+            if(inclusiveMin) {
+                sql += " AND docid >= ?";
+            } else {
+                sql += " AND docid > ?";
+            }
+            argsList.add((String)minKey);
+        }
+
+        if(maxKey != null) {
+            assert(maxKey instanceof String);
+            if(inclusiveMax) {
+                sql += " AND docid <= ?";
+            }
+            else {
+                sql += " AND docid < ?";
+            }
+            argsList.add((String)maxKey);
+        }
+
+
+        String order = "ASC";
+        if(options.isDescending()) {
+            order = "DESC";
+        }
+
+        sql += " ORDER BY docid " + order + ", revid DESC LIMIT ? OFFSET ?";
+
+        argsList.add(Integer.toString(options.getLimit()));
+        argsList.add(Integer.toString(options.getSkip()));
+        Cursor cursor = null;
+        long lastDocID = 0;
+        List<Map<String,Object>> rows = null;
+
+        try {
+            cursor = database.rawQuery(sql, argsList.toArray(new String[argsList.size()]));
+
+            cursor.moveToFirst();
+            rows = new ArrayList<Map<String,Object>>();
+            while(!cursor.isAfterLast()) {
+                long docNumericID = cursor.getLong(0);
+                if(docNumericID == lastDocID) {
+                    cursor.moveToNext();
+                    continue;
+                }
+                lastDocID = docNumericID;
+
+                String docId = cursor.getString(1);
+                String revId = cursor.getString(2);
+                Map<String, Object> docContents = null;
+                boolean deleted = cursor.getInt(3) > 0;
+                if(options.isIncludeDocs() && !deleted) {
+                    byte[] json = cursor.getBlob(4);
+                    long sequence = cursor.getLong(5);
+                    docContents = documentPropertiesFromJSON(json, docId, revId, sequence, options.getContentOptions());
+                }
+
+                Map<String,Object> valueMap = new HashMap<String,Object>();
+                valueMap.put("rev", revId);
+
+                Map<String,Object> change = new HashMap<String, Object>();
+                change.put("id", docId);
+                change.put("key", docId);
+                change.put("value", valueMap);
+                if(docContents != null) {
+                    change.put("doc", docContents);
+                }
+                if(deleted) {
+                    change.put("deleted", true);
+                }
+
+                rows.add(change);
+
+                cursor.moveToNext();
+            }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting all docs", e);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+        int totalRows = cursor.getCount();  //??? Is this true, or does it ignore limit/offset?
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("rows", rows);
+        result.put("total_rows", totalRows);
+        result.put("offset", options.getSkip());
+        if(updateSeq != 0) {
+            result.put("update_seq", updateSeq);
+        }
+
+
+        return result;
+    }
+
+    public Map<String,Object> getAllDocs(TDQueryOptions options) {
+        return getDocsWithIDs(null, options);
+    }
+
+    /*************************************************************************************************/
+    /*** TDDatabase+Attachments                                                                    ***/
+    /*************************************************************************************************/
+
+    public TDStatus insertAttachmentForSequenceWithNameAndType(byte[] contents, long sequence, String name, String contentType, int revpos) {
+        assert(contents != null);
+        assert(sequence > 0);
+        assert(name != null);
+
+        TDBlobKey key = new TDBlobKey();
+        if(!attachments.storeBlob(contents, key)) {
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        byte[] keyData = key.getBytes();
+        try {
+            ContentValues args = new ContentValues();
+            args.put("sequence", sequence);
+            args.put("filename", name);
+            args.put("key", keyData);
+            args.put("type", contentType);
+            args.put("length", contents.length);
+            args.put("revpos", revpos);
+            database.insert("attachments", null, args);
+            return new TDStatus(TDStatus.CREATED);
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error inserting attachment", e);
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public TDStatus copyAttachmentNamedFromSequenceToSequence(String name, long fromSeq, long toSeq) {
+        assert(name != null);
+        assert(toSeq > 0);
+        if(fromSeq < 0) {
+            return new TDStatus(TDStatus.NOT_FOUND);
+        }
+
+        Cursor cursor = null;
+
+        String[] args = { Long.toString(toSeq), name, Long.toString(fromSeq), name };
+        try {
+            database.execSQL("INSERT INTO attachments (sequence, filename, key, type, length, revpos) " +
+                                      "SELECT ?, ?, key, type, length, revpos FROM attachments " +
+                                        "WHERE sequence=? AND filename=?", args);
+            cursor = database.rawQuery("SELECT changes()", null);
+            cursor.moveToFirst();
+            int rowsUpdated = cursor.getInt(0);
+            if(rowsUpdated == 0) {
+                // Oops. This means a glitch in our attachment-management or pull code,
+                // or else a bug in the upstream server.
+                Log.w(TDDatabase.TAG, "Can't find inherited attachment " + name + " from seq# " + Long.toString(fromSeq) + " to copy to " + Long.toString(toSeq));
+                return new TDStatus(TDStatus.NOT_FOUND);
+            }
+            else {
+                return new TDStatus(TDStatus.OK);
+            }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error copying attachment", e);
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    public TDAttachment getAttachmentForSequence(long sequence, String filename, TDStatus status) {
+        assert(sequence > 0);
+        assert(filename != null);
+
+
+        Cursor cursor = null;
+
+        String[] args = { Long.toString(sequence), filename };
+        try {
+            cursor = database.rawQuery("SELECT key, type FROM attachments WHERE sequence=? AND filename=?", args);
+
+            if(!cursor.moveToFirst()) {
+                status.setCode(TDStatus.NOT_FOUND);
+                return null;
+            }
+
+            byte[] keyData = cursor.getBlob(0);
+            //TODO add checks on key here? (ios version)
+            TDBlobKey key = new TDBlobKey(keyData);
+            byte[] contents = attachments.blobForKey(key);
+            if(contents == null) {
+                Log.e(TDDatabase.TAG, "Failed to load attachment");
+                status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                return null;
+            }
+            else {
+                status.setCode(TDStatus.OK);
+                TDAttachment result = new TDAttachment();
+                result.setData(contents);
+                result.setContentType(cursor.getString(1));
+                return result;
+            }
+
+
+        } catch (SQLException e) {
+            status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+
+    }
+
+    public Map<String,Object> getAttachmentsDictForSequenceWithContent(long sequence, boolean withContent) {
+        assert(sequence > 0);
+
+        Cursor cursor = null;
+
+        String args[] = { Long.toString(sequence) };
+        try {
+            cursor = database.rawQuery("SELECT filename, key, type, length, revpos FROM attachments WHERE sequence=?", args);
+
+            if(!cursor.moveToFirst()) {
+                return null;
+            }
+
+            Map<String, Object> result = new HashMap<String, Object>();
+
+            while(!cursor.isAfterLast()) {
+
+                byte[] keyData = cursor.getBlob(1);
+                TDBlobKey key = new TDBlobKey(keyData);
+                String digestString = "sha1-" + Base64.encodeBytes(keyData);
+                String dataBase64 = null;
+                if(withContent) {
+                    byte[] data = attachments.blobForKey(key);
+                    if(data != null) {
+                        dataBase64 = Base64.encodeBytes(data);
+                    }
+                    else {
+                        Log.w(TDDatabase.TAG, "Error loading attachment");
+                    }
+                }
+
+                Map<String, Object> attachment = new HashMap<String, Object>();
+                if(dataBase64 == null) {
+                    attachment.put("stub", true);
+                }
+                else {
+                    attachment.put("data", dataBase64);
+                }
+                attachment.put("digest", digestString);
+                attachment.put("content_type", cursor.getString(2));
+                attachment.put("length", cursor.getInt(3));
+                attachment.put("revpos", cursor.getInt(4));
+
+                result.put(cursor.getString(0), attachment);
+
+                cursor.moveToNext();
+            }
+
+            return result;
+
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting attachments for sequence", e);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    public TDStatus processAttachmentsForRevision(TDRevision rev, long parentSequence) {
+        assert(rev != null);
+        long newSequence = rev.getSequence();
+        assert(newSequence > parentSequence);
+
+        // If there are no attachments in the new rev, there's nothing to do:
+        Map<String,Object> newAttachments = null;
+        Map<String,Object> properties = (Map<String,Object>)rev.getProperties();
+        if(properties != null) {
+            newAttachments = (Map<String,Object>)properties.get("_attachments");
+        }
+        if(newAttachments == null || newAttachments.size() == 0 || rev.isDeleted()) {
+            return new TDStatus(TDStatus.OK);
+        }
+
+        for (String name : newAttachments.keySet()) {
+
+            TDStatus status = new TDStatus();
+            Map<String,Object> newAttach = (Map<String,Object>)newAttachments.get(name);
+            String newContentBase64 = (String)newAttach.get("data");
+            if(newContentBase64 != null) {
+                // New item contains data, so insert it. First decode the data:
+                byte[] newContents;
+                try {
+                    newContents = Base64.decode(newContentBase64);
+                } catch (IOException e) {
+                    Log.e(TDDatabase.TAG, "IOExeption parsing base64", e);
+                    return new TDStatus(TDStatus.BAD_REQUEST);
+                }
+                if(newContents == null) {
+                    return new TDStatus(TDStatus.BAD_REQUEST);
+                }
+
+                // Now determine the revpos, i.e. generation # this was added in. Usually this is
+                // implicit, but a rev being pulled in replication will have it set already.
+                int generation = rev.getGeneration();
+                assert(generation > 0);
+                Object revposObj = newAttach.get("revpos");
+                int revpos = generation;
+                if(revposObj != null && revposObj instanceof Integer) {
+                    revpos = ((Integer)revposObj).intValue();
+                }
+
+                if(revpos > generation) {
+                    return new TDStatus(TDStatus.BAD_REQUEST);
+                }
+
+                // Finally insert the attachment:
+                status = insertAttachmentForSequenceWithNameAndType(newContents, newSequence, name, (String)newAttach.get("content_type"), revpos);
+            }
+            else {
+                // It's just a stub, so copy the previous revision's attachment entry:
+                //? Should I enforce that the type and digest (if any) match?
+                status = copyAttachmentNamedFromSequenceToSequence(name, parentSequence, newSequence);
+            }
+            if(!status.isSuccessful()) {
+                return status;
+            }
+        }
+
+        return new TDStatus(TDStatus.OK);
+    }
+
+    public TDRevision updateAttachment(String filename, byte[] body, String contentType, String docID, String oldRevID, TDStatus status) {
+        status.setCode(TDStatus.BAD_REQUEST);
+        if(filename == null || filename.length() == 0 || (body != null && contentType == null) || (oldRevID != null && docID == null) || (body != null && docID == null)) {
+            return null;
+        }
+
+        beginTransaction();
+        try {
+            TDRevision oldRev = new TDRevision(docID, oldRevID, false);
+            if(oldRevID != null) {
+                // Load existing revision if this is a replacement:
+                TDStatus loadStatus = loadRevisionBody(oldRev, EnumSet.noneOf(TDContentOptions.class));
+                status.setCode(loadStatus.getCode());
+                if(!status.isSuccessful()) {
+                    if(status.getCode() == TDStatus.NOT_FOUND && existsDocumentWithIDAndRev(docID, null)) {
+                        status.setCode(TDStatus.CONFLICT);  // if some other revision exists, it's a conflict
+                    }
+                    return null;
+                }
+
+                Map<String,Object> attachments = (Map<String, Object>) oldRev.getProperties().get("_attachments");
+                if(body == null && attachments != null && !attachments.containsKey(filename)) {
+                    status.setCode(TDStatus.NOT_FOUND);
+                    return null;
+                }
+                // Remove the _attachments stubs so putRevision: doesn't copy the rows for me
+                // OPT: Would be better if I could tell loadRevisionBody: not to add it
+                if(attachments != null) {
+                    Map<String,Object> properties = new HashMap<String,Object>(oldRev.getProperties());
+                    properties.remove("_attachments");
+                    oldRev.setBody(new TDBody(properties));
+                }
+            } else {
+                // If this creates a new doc, it needs a body:
+                oldRev.setBody(new TDBody(new HashMap<String,Object>()));
+            }
+
+            // Create a new revision:
+            TDRevision newRev = putRevision(oldRev, oldRevID, false, status);
+            if(newRev == null) {
+                return null;
+            }
+
+            if(oldRevID != null) {
+                // Copy all attachment rows _except_ for the one being updated:
+                String[] args = { Long.toString(newRev.getSequence()), Long.toString(oldRev.getSequence()), filename };
+                database.execSQL("INSERT INTO attachments "
+                        + "(sequence, filename, key, type, length, revpos) "
+                        + "SELECT ?, filename, key, type, length, revpos FROM attachments "
+                        + "WHERE sequence=? AND filename != ?", args);
+            }
+
+            if(body != null) {
+                // If not deleting, add a new attachment entry:
+                TDStatus insertStatus = insertAttachmentForSequenceWithNameAndType(body, newRev.getSequence(),
+                        filename, contentType, newRev.getGeneration());
+                status.setCode(insertStatus.getCode());
+
+                if(!status.isSuccessful()) {
+                    return null;
+                }
+            }
+
+            status.setCode((body != null) ? TDStatus.CREATED : TDStatus.OK);
+            return newRev;
+
+        } catch(SQLException e) {
+            Log.e(TAG, "Error uploading attachment", e);
+            status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+            return null;
+        } finally {
+            endTransaction(status.isSuccessful());
+        }
+    }
+
+    public TDStatus garbageCollectAttachments() {
+        // First delete attachment rows for already-cleared revisions:
+        // OPT: Could start after last sequence# we GC'd up to
+
+        try {
+            database.execSQL("DELETE FROM attachments WHERE sequence IN " +
+                            "(SELECT sequence from revs WHERE json IS null)");
+        }
+        catch(SQLException e) {
+            Log.e(TDDatabase.TAG, "Error deleting attachments", e);
+        }
+
+        // Now collect all remaining attachment IDs and tell the store to delete all but these:
+        Cursor cursor = null;
+        try {
+            cursor = database.rawQuery("SELECT DISTINCT key FROM attachments", null);
+
+            cursor.moveToFirst();
+            List<TDBlobKey> allKeys = new ArrayList<TDBlobKey>();
+            while(!cursor.isAfterLast()) {
+                TDBlobKey key = new TDBlobKey(cursor.getBlob(0));
+                allKeys.add(key);
+                cursor.moveToNext();
+            }
+
+            int numDeleted = attachments.deleteBlobsExceptWithKeys(allKeys);
+            if(numDeleted < 0) {
+                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            Log.v(TDDatabase.TAG, "Deleted " + numDeleted + " attachments");
+
+            return new TDStatus(TDStatus.OK);
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error finding attachment keys in use", e);
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    /*************************************************************************************************/
+    /*** TDDatabase+Insertion                                                                      ***/
+    /*************************************************************************************************/
+
+    /** DOCUMENT & REV IDS: **/
+
+    public static boolean isValidDocumentId(String id) {
+        // http://wiki.apache.org/couchdb/HTTP_Document_API#Documents
+        if(id == null || id.length() == 0) {
+            return false;
+        }
+        if(id.charAt(0) == '_') {
+            return  (id.startsWith("_design/"));
+        }
+        return true;
+        // "_local/*" is not a valid document ID. Local docs have their own API and shouldn't get here.
+    }
+
+    public static String generateDocumentId() {
+        return TDMisc.TDCreateUUID();
+    }
+
+    public String generateNextRevisionID(String revisionId) {
+        // Revision IDs have a generation count, a hyphen, and a UUID.
+        int generation = 0;
+        if(revisionId != null) {
+            generation = TDRevision.generationFromRevID(revisionId);
+            if(generation == 0) {
+                return null;
+            }
+        }
+        String digest = TDMisc.TDCreateUUID();  //TODO: Generate canonical digest of body
+        return Integer.toString(generation + 1) + "-" + digest;
+    }
+
+    public long insertDocumentID(String docId) {
+        long rowId = -1;
+        try {
+            ContentValues args = new ContentValues();
+            args.put("docid", docId);
+            rowId = database.insert("docs", null, args);
+        } catch (Exception e) {
+            Log.e(TDDatabase.TAG, "Error inserting document id", e);
+        }
+        return rowId;
+    }
+
     public long getOrInsertDocNumericID(String docId) {
         long docNumericId = getDocNumericID(docId);
         if(docNumericId == 0) {
@@ -769,19 +1629,23 @@ public class TDDatabase extends Observable {
         return docNumericId;
     }
 
-    private static final Set<String> KNOWN_SPECIAL_KEYS;
-
-    static {
-        KNOWN_SPECIAL_KEYS = new HashSet<String>();
-        KNOWN_SPECIAL_KEYS.add("_id");
-        KNOWN_SPECIAL_KEYS.add("_rev");
-        KNOWN_SPECIAL_KEYS.add("_attachments");
-        KNOWN_SPECIAL_KEYS.add("_deleted");
-        KNOWN_SPECIAL_KEYS.add("_revisions");
-        KNOWN_SPECIAL_KEYS.add("_revs_info");
-        KNOWN_SPECIAL_KEYS.add("_conflicts");
-        KNOWN_SPECIAL_KEYS.add("_deleted_conflicts");
+    public List<String> parseCouchDBRevisionHistory(Map<String,Object> docProperties) {
+        Map<String,Object> revisions = (Map<String,Object>)docProperties.get("_revisions");
+        if(revisions == null) {
+            return null;
+        }
+        List<String> revIDs = (List<String>)revisions.get("ids");
+        Integer start = (Integer)revisions.get("start");
+        if(start != null) {
+            for(int i=0; i < revIDs.size(); i++) {
+                String revID = revIDs.get(i);
+                revIDs.set(i, Integer.toString(start--) + "-" + revID);
+            }
+        }
+        return revIDs;
     }
+
+    /** INSERTION: **/
 
     public byte[] encodeDocumentJSON(TDRevision rev) {
 
@@ -811,6 +1675,17 @@ public class TDDatabase extends Observable {
             Log.e(TDDatabase.TAG, "Error serializing " + rev + " to JSON", e);
         }
         return json;
+    }
+
+    public void notifyChange(TDRevision rev, URL source) {
+        Map<String,Object> changeNotification = new HashMap<String, Object>();
+        changeNotification.put("rev", rev);
+        changeNotification.put("seq", rev.getSequence());
+        if(source != null) {
+            changeNotification.put("source", source);
+        }
+        setChanged();
+        notifyObservers(changeNotification);
     }
 
     public long insertRevision(TDRevision rev, long docNumericID, long parentSequence, boolean current, byte[] data) {
@@ -1111,318 +1986,44 @@ public class TDDatabase extends Observable {
         return new TDStatus(TDStatus.CREATED);
     }
 
-    public List<String> parseCouchDBRevisionHistory(Map<String,Object> docProperties) {
-        Map<String,Object> revisions = (Map<String,Object>)docProperties.get("_revisions");
-        if(revisions == null) {
-            return null;
+    /** VALIDATION **/
+
+    public void defineValidation(String name, TDValidationBlock validationBlock) {
+        if(validations == null) {
+            validations = new HashMap<String, TDValidationBlock>();
         }
-        List<String> revIDs = (List<String>)revisions.get("ids");
-        Integer start = (Integer)revisions.get("start");
-        if(start != null) {
-            for(int i=0; i < revIDs.size(); i++) {
-                String revID = revIDs.get(i);
-                revIDs.set(i, Integer.toString(start--) + "-" + revID);
-            }
-        }
-        return revIDs;
+        validations.put(name, validationBlock);
     }
 
-    public TDRevisionList changesSince(int lastSeq, TDChangesOptions options, TDFilterBlock filter) {
-        // http://wiki.apache.org/couchdb/HTTP_database_API#Changes
-        if(options == null) {
-            options = new TDChangesOptions();
-        }
-
-        boolean includeDocs = options.isIncludeDocs() || (filter != null);
-        String additionalSelectColumns =  "";
-        if(includeDocs) {
-            additionalSelectColumns = ", json";
-        }
-
-        String sql = "SELECT sequence, revs.doc_id, docid, revid, deleted" + additionalSelectColumns + " FROM revs, docs "
-                        + "WHERE sequence > ? AND current=1 "
-                        + "AND revs.doc_id = docs.doc_id "
-                        + "ORDER BY revs.doc_id, revid DESC";
-        String[] args = {Integer.toString(lastSeq)};
-        Cursor cursor = null;
-        TDRevisionList changes = null;
-
-        try {
-            cursor = database.rawQuery(sql, args);
-            cursor.moveToFirst();
-            changes = new TDRevisionList();
-            long lastDocId = 0;
-            while(!cursor.isAfterLast()) {
-                if(!options.isIncludeConflicts()) {
-                    // Only count the first rev for a given doc (the rest will be losing conflicts):
-                    long docNumericId = cursor.getLong(1);
-                    if(docNumericId == lastDocId) {
-                        cursor.moveToNext();
-                        continue;
-                    }
-                    lastDocId = docNumericId;
-                }
-
-                TDRevision rev = new TDRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
-                rev.setSequence(cursor.getLong(0));
-                if(includeDocs) {
-                    expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, options.getContentOptions());
-                }
-                if((filter == null) || (filter.filter(rev))) {
-                    changes.add(rev);
-                }
-                cursor.moveToNext();
-            }
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error looking for changes", e);
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-        if(options.isSortBySequence()) {
-            changes.sortBySequence();
-        }
-        changes.limit(options.getLimit());
-        return changes;
-    }
-
-    public void defineFilter(String filterName, TDFilterBlock filter) {
-        if(filters == null) {
-            filters = new HashMap<String,TDFilterBlock>();
-        }
-        filters.put(filterName, filter);
-    }
-
-    public TDFilterBlock getFilterNamed(String filterName) {
-        TDFilterBlock result = null;
-        if(filters != null) {
-            result = filters.get(filterName);
+    public TDValidationBlock getValidationNamed(String name) {
+        TDValidationBlock result = null;
+        if(validations != null) {
+            result = validations.get(name);
         }
         return result;
     }
 
-    /*** Views ***/
-
-    public TDView registerView(TDView view) {
-        if(view == null) {
-            return null;
+    public TDStatus validateRevision(TDRevision newRev, TDRevision oldRev) {
+        TDStatus result = new TDStatus(TDStatus.OK);
+        if(validations == null || validations.size() == 0) {
+            return result;
         }
-        if(views == null) {
-            views = new HashMap<String,TDView>();
-        }
-        views.put(view.getName(), view);
-        return view;
-    }
-
-    public TDView getViewNamed(String name) {
-        TDView view = null;
-        if(views != null) {
-            view = views.get(name);
-        }
-        if(view != null) {
-            return view;
-        }
-        return registerView(new TDView(this, name));
-    }
-
-    public TDView getExistingViewNamed(String name) {
-        TDView view = null;
-        if(views != null) {
-            view = views.get(name);
-        }
-        if(view != null) {
-            return view;
-        }
-        view = new TDView(this, name);
-        if(view.getViewId() == 0) {
-            return null;
-        }
-
-        return registerView(view);
-    }
-
-    public List<TDView> getAllViews() {
-        Cursor cursor = null;
-        List<TDView> result = null;
-
-        try {
-            cursor = database.rawQuery("SELECT name FROM views", null);
-            cursor.moveToFirst();
-            result = new ArrayList<TDView>();
-            while(!cursor.isAfterLast()) {
-                result.add(getViewNamed(cursor.getString(0)));
-                cursor.moveToNext();
+        TDValidationContextImpl context = new TDValidationContextImpl(this, oldRev);
+        for (String validationName : validations.keySet()) {
+            TDValidationBlock validation = getValidationNamed(validationName);
+            if(!validation.validate(newRev, context)) {
+                result.setCode(context.getErrorType().getCode());
+                break;
             }
-        } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error getting all views", e);
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-        return result;
-    }
-
-    public TDStatus deleteViewNamed(String name) {
-        TDStatus result = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-        try {
-            String[] whereArgs = { name };
-            int rowsAffected = database.delete("views", "name=?", whereArgs);
-            if(rowsAffected > 0) {
-                result.setCode(TDStatus.OK);
-            }
-            else {
-                result.setCode(TDStatus.NOT_FOUND);
-            }
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error deleting view", e);
         }
         return result;
     }
 
-    public Map<String,Object> getDocsWithIDs(List<String> docIDs, TDQueryOptions options) {
-        if(options == null) {
-            options = new TDQueryOptions();
-        }
+    /*************************************************************************************************/
+    /*** TDDatabase+Replication                                                                    ***/
+    /*************************************************************************************************/
 
-        long updateSeq = 0;
-        if(options.isUpdateSeq()) {
-            updateSeq = getLastSequence();  // TODO: needs to be atomic with the following SELECT
-        }
-
-        // Generate the SELECT statement, based on the options:
-        String additionalCols = "";
-        if(options.isIncludeDocs()) {
-            additionalCols = ", json, sequence";
-        }
-        String sql = "SELECT revs.doc_id, docid, revid, deleted" + additionalCols + " FROM revs, docs WHERE";
-
-        if(docIDs != null) {
-            sql += " docid IN (" + joinQuoted(docIDs) + ")";
-        } else {
-            sql += " deleted=0";
-        }
-
-        sql += " AND current=1 AND docs.doc_id = revs.doc_id";
-
-        List<String> argsList = new ArrayList<String>();
-        Object minKey = options.getStartKey();
-        Object maxKey = options.getEndKey();
-        boolean inclusiveMin = true;
-        boolean inclusiveMax = options.isInclusiveEnd();
-        if(options.isDescending()) {
-            minKey = maxKey;
-            maxKey = options.getStartKey();
-            inclusiveMin = inclusiveMax;
-            inclusiveMax = true;
-        }
-
-        if(minKey != null) {
-            assert(minKey instanceof String);
-            if(inclusiveMin) {
-                sql += " AND docid >= ?";
-            } else {
-                sql += " AND docid > ?";
-            }
-            argsList.add((String)minKey);
-        }
-
-        if(maxKey != null) {
-            assert(maxKey instanceof String);
-            if(inclusiveMax) {
-                sql += " AND docid <= ?";
-            }
-            else {
-                sql += " AND docid < ?";
-            }
-            argsList.add((String)maxKey);
-        }
-
-
-        String order = "ASC";
-        if(options.isDescending()) {
-            order = "DESC";
-        }
-
-        sql += " ORDER BY docid " + order + ", revid DESC LIMIT ? OFFSET ?";
-
-        argsList.add(Integer.toString(options.getLimit()));
-        argsList.add(Integer.toString(options.getSkip()));
-        Cursor cursor = null;
-        long lastDocID = 0;
-        List<Map<String,Object>> rows = null;
-
-        try {
-            cursor = database.rawQuery(sql, argsList.toArray(new String[argsList.size()]));
-
-            cursor.moveToFirst();
-            rows = new ArrayList<Map<String,Object>>();
-            while(!cursor.isAfterLast()) {
-                long docNumericID = cursor.getLong(0);
-                if(docNumericID == lastDocID) {
-                    cursor.moveToNext();
-                    continue;
-                }
-                lastDocID = docNumericID;
-
-                String docId = cursor.getString(1);
-                String revId = cursor.getString(2);
-                Map<String, Object> docContents = null;
-                boolean deleted = cursor.getInt(3) > 0;
-                if(options.isIncludeDocs() && !deleted) {
-                    byte[] json = cursor.getBlob(4);
-                    long sequence = cursor.getLong(5);
-                    docContents = documentPropertiesFromJSON(json, docId, revId, sequence, options.getContentOptions());
-                }
-
-                Map<String,Object> valueMap = new HashMap<String,Object>();
-                valueMap.put("rev", revId);
-
-                Map<String,Object> change = new HashMap<String, Object>();
-                change.put("id", docId);
-                change.put("key", docId);
-                change.put("value", valueMap);
-                if(docContents != null) {
-                    change.put("doc", docContents);
-                }
-                if(deleted) {
-                    change.put("deleted", true);
-                }
-
-                rows.add(change);
-
-                cursor.moveToNext();
-            }
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting all docs", e);
-            return null;
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-        int totalRows = cursor.getCount();  //??? Is this true, or does it ignore limit/offset?
-        Map<String, Object> result = new HashMap<String, Object>();
-        result.put("rows", rows);
-        result.put("total_rows", totalRows);
-        result.put("offset", options.getSkip());
-        if(updateSeq != 0) {
-            result.put("update_seq", updateSeq);
-        }
-
-
-        return result;
-    }
-
-    public Map<String,Object> getAllDocs(TDQueryOptions options) {
-        return getDocsWithIDs(null, options);
-    }
-
-    /*** Replication ***/
+    //TODO implement missing replication methods
 
     public static String quote(String string) {
         return string.replace("'", "''");
@@ -1488,574 +2089,9 @@ public class TDDatabase extends Observable {
         return true;
     }
 
-    public TDRevisionList getAllRevisionsOfDocumentID(String docId, long docNumericID, boolean onlyCurrent) {
-
-        String sql = null;
-        if(onlyCurrent) {
-            sql = "SELECT sequence, revid, deleted FROM revs " +
-                    "WHERE doc_id=? AND current ORDER BY sequence DESC";
-        }
-        else {
-            sql = "SELECT sequence, revid, deleted FROM revs " +
-                    "WHERE doc_id=? ORDER BY sequence DESC";
-        }
-
-        String[] args = { Long.toString(docNumericID) };
-        Cursor cursor = null;
-
-        cursor = database.rawQuery(sql, args);
-
-        TDRevisionList result;
-        try {
-            cursor.moveToFirst();
-            result = new TDRevisionList();
-            while(!cursor.isAfterLast()) {
-                TDRevision rev = new TDRevision(docId, cursor.getString(1), (cursor.getInt(2) > 0));
-                rev.setSequence(cursor.getLong(0));
-                result.add(rev);
-                cursor.moveToNext();
-            }
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
-            return null;
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-        return result;
-    }
-
-    public TDRevisionList getAllRevisionsOfDocumentID(String docId, boolean onlyCurrent) {
-        long docNumericId = getDocNumericID(docId);
-        if(docNumericId < 0) {
-            return null;
-        }
-        else if(docNumericId == 0) {
-            return new TDRevisionList();
-        }
-        else {
-            return getAllRevisionsOfDocumentID(docId, docNumericId, onlyCurrent);
-        }
-    }
-
-    public List<String> getConflictingRevisionIDsOfDocID(String docID) {
-        long docIdNumeric = getDocNumericID(docID);
-        if(docIdNumeric < 0) {
-            return null;
-        }
-
-        List<String> result = new ArrayList<String>();
-        Cursor cursor = null;
-        try {
-            String[] args = { Long.toString(docIdNumeric) };
-            cursor = database.rawQuery("SELECT revid FROM revs WHERE doc_id=? AND current " +
-                                           "ORDER BY revid DESC OFFSET 1", args);
-            cursor.moveToFirst();
-            while(!cursor.isAfterLast()) {
-                result.add(cursor.getString(0));
-                cursor.moveToNext();
-            }
-
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
-            return null;
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-        return result;
-    }
-
-    public List<TDRevision> getRevisionHistory(TDRevision rev) {
-        String docId = rev.getDocId();
-        String revId = rev.getRevId();
-        assert((docId != null) && (revId != null));
-
-        long docNumericId = getDocNumericID(docId);
-        if(docNumericId < 0) {
-            return null;
-        }
-        else if(docNumericId == 0) {
-            return new ArrayList<TDRevision>();
-        }
-
-        String sql = "SELECT sequence, parent, revid, deleted FROM revs " +
-                    "WHERE doc_id=? ORDER BY sequence DESC";
-        String[] args = { Long.toString(docNumericId) };
-        Cursor cursor = null;
-
-        List<TDRevision> result;
-        try {
-            cursor = database.rawQuery(sql, args);
-
-            cursor.moveToFirst();
-            long lastSequence = 0;
-            result = new ArrayList<TDRevision>();
-            while(!cursor.isAfterLast()) {
-                long sequence = cursor.getLong(0);
-                boolean matches = false;
-                if(lastSequence == 0) {
-                    matches = revId.equals(cursor.getString(2));
-                }
-                else {
-                    matches = (sequence == lastSequence);
-                }
-                if(matches) {
-                    revId = cursor.getString(2);
-                    boolean deleted = (cursor.getInt(3) > 0);
-                    TDRevision aRev = new TDRevision(docId, revId, deleted);
-                    aRev.setSequence(cursor.getLong(0));
-                    result.add(aRev);
-                    lastSequence = cursor.getLong(1);
-                    if(lastSequence == 0) {
-                        break;
-                    }
-                }
-                cursor.moveToNext();
-            }
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting revision history", e);
-            return null;
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-        return result;
-    }
-
-    public static int parseRevIDNumber(String rev) {
-        int result = -1;
-        int dashPos = rev.indexOf("-");
-        if(dashPos >= 0) {
-            try {
-                result = Integer.parseInt(rev.substring(0, dashPos));
-            } catch (NumberFormatException e) {
-                // ignore, let it return -1
-            }
-        }
-        return result;
-    }
-
-    public static String parseRevIDSuffix(String rev) {
-        String result = null;
-        int dashPos = rev.indexOf("-");
-        if(dashPos >= 0) {
-            result = rev.substring(dashPos + 1);
-        }
-        return result;
-    }
-
-    public static Map<String,Object> makeRevisionHistoryDict(List<TDRevision> history) {
-        if(history == null) {
-            return null;
-        }
-
-        // Try to extract descending numeric prefixes:
-        List<String> suffixes = new ArrayList<String>();
-        int start = -1;
-        int lastRevNo = -1;
-        for (TDRevision rev : history) {
-            int revNo = parseRevIDNumber(rev.getRevId());
-            String suffix = parseRevIDSuffix(rev.getRevId());
-            if(revNo > 0 && suffix.length() > 0) {
-                if(start < 0) {
-                    start = revNo;
-                }
-                else if(revNo != lastRevNo - 1) {
-                    start = -1;
-                    break;
-                }
-                lastRevNo = revNo;
-                suffixes.add(suffix);
-            }
-            else {
-                start = -1;
-                break;
-            }
-        }
-
-        Map<String,Object> result = new HashMap<String,Object>();
-        if(start == -1) {
-            // we failed to build sequence, just stuff all the revs in list
-            suffixes = new ArrayList<String>();
-            for (TDRevision rev : history) {
-                suffixes.add(rev.getRevId());
-            }
-        }
-        else {
-            result.put("start", start);
-        }
-        result.put("ids", suffixes);
-
-        return result;
-    }
-
-    public Map<String,Object> getRevisionHistoryDict(TDRevision rev) {
-        return makeRevisionHistoryDict(getRevisionHistory(rev));
-    }
-
-    /*** Attachments ***/
-    public TDStatus insertAttachmentForSequenceWithNameAndType(byte[] contents, long sequence, String name, String contentType, int revpos) {
-        assert(contents != null);
-        assert(sequence > 0);
-        assert(name != null);
-
-        TDBlobKey key = new TDBlobKey();
-        if(!attachments.storeBlob(contents, key)) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        byte[] keyData = key.getBytes();
-        try {
-            ContentValues args = new ContentValues();
-            args.put("sequence", sequence);
-            args.put("filename", name);
-            args.put("key", keyData);
-            args.put("type", contentType);
-            args.put("length", contents.length);
-            args.put("revpos", revpos);
-            database.insert("attachments", null, args);
-            return new TDStatus(TDStatus.CREATED);
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error inserting attachment", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-        }
-
-    }
-
-    public TDStatus copyAttachmentNamedFromSequenceToSequence(String name, long fromSeq, long toSeq) {
-        assert(name != null);
-        assert(toSeq > 0);
-        if(fromSeq < 0) {
-            return new TDStatus(TDStatus.NOT_FOUND);
-        }
-
-        Cursor cursor = null;
-
-        String[] args = { Long.toString(toSeq), name, Long.toString(fromSeq), name };
-        try {
-            database.execSQL("INSERT INTO attachments (sequence, filename, key, type, length, revpos) " +
-                                      "SELECT ?, ?, key, type, length, revpos FROM attachments " +
-                                        "WHERE sequence=? AND filename=?", args);
-            cursor = database.rawQuery("SELECT changes()", null);
-            cursor.moveToFirst();
-            int rowsUpdated = cursor.getInt(0);
-            if(rowsUpdated == 0) {
-                // Oops. This means a glitch in our attachment-management or pull code,
-                // or else a bug in the upstream server.
-                Log.w(TDDatabase.TAG, "Can't find inherited attachment " + name + " from seq# " + Long.toString(fromSeq) + " to copy to " + Long.toString(toSeq));
-                return new TDStatus(TDStatus.NOT_FOUND);
-            }
-            else {
-                return new TDStatus(TDStatus.OK);
-            }
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error copying attachment", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-
-    }
-
-    public TDAttachment getAttachmentForSequence(long sequence, String filename, TDStatus status) {
-        assert(sequence > 0);
-        assert(filename != null);
-
-
-        Cursor cursor = null;
-
-        String[] args = { Long.toString(sequence), filename };
-        try {
-            cursor = database.rawQuery("SELECT key, type FROM attachments WHERE sequence=? AND filename=?", args);
-
-            if(!cursor.moveToFirst()) {
-                status.setCode(TDStatus.NOT_FOUND);
-                return null;
-            }
-
-            byte[] keyData = cursor.getBlob(0);
-            //TODO add checks on key here? (ios version)
-            TDBlobKey key = new TDBlobKey(keyData);
-            byte[] contents = attachments.blobForKey(key);
-            if(contents == null) {
-                Log.e(TDDatabase.TAG, "Failed to load attachment");
-                status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
-                return null;
-            }
-            else {
-                status.setCode(TDStatus.OK);
-                TDAttachment result = new TDAttachment();
-                result.setData(contents);
-                result.setContentType(cursor.getString(1));
-                return result;
-            }
-
-
-        } catch (SQLException e) {
-            status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
-            return null;
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-
-    }
-
-    public Map<String,Object> getAttachmentsDictForSequenceWithContent(long sequence, boolean withContent) {
-        assert(sequence > 0);
-
-        Cursor cursor = null;
-
-        String args[] = { Long.toString(sequence) };
-        try {
-            cursor = database.rawQuery("SELECT filename, key, type, length, revpos FROM attachments WHERE sequence=?", args);
-
-            if(!cursor.moveToFirst()) {
-                return null;
-            }
-
-            Map<String, Object> result = new HashMap<String, Object>();
-
-            while(!cursor.isAfterLast()) {
-
-                byte[] keyData = cursor.getBlob(1);
-                TDBlobKey key = new TDBlobKey(keyData);
-                String digestString = "sha1-" + Base64.encodeBytes(keyData);
-                String dataBase64 = null;
-                if(withContent) {
-                    byte[] data = attachments.blobForKey(key);
-                    if(data != null) {
-                        dataBase64 = Base64.encodeBytes(data);
-                    }
-                    else {
-                        Log.w(TDDatabase.TAG, "Error loading attachment");
-                    }
-                }
-
-                Map<String, Object> attachment = new HashMap<String, Object>();
-                if(dataBase64 == null) {
-                    attachment.put("stub", true);
-                }
-                else {
-                    attachment.put("data", dataBase64);
-                }
-                attachment.put("digest", digestString);
-                attachment.put("content_type", cursor.getString(2));
-                attachment.put("length", cursor.getInt(3));
-                attachment.put("revpos", cursor.getInt(4));
-
-                result.put(cursor.getString(0), attachment);
-
-                cursor.moveToNext();
-            }
-
-            return result;
-
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting attachments for sequence", e);
-            return null;
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-    }
-
-    public TDStatus processAttachmentsForRevision(TDRevision rev, long parentSequence) {
-        assert(rev != null);
-        long newSequence = rev.getSequence();
-        assert(newSequence > parentSequence);
-
-        // If there are no attachments in the new rev, there's nothing to do:
-        Map<String,Object> newAttachments = null;
-        Map<String,Object> properties = (Map<String,Object>)rev.getProperties();
-        if(properties != null) {
-            newAttachments = (Map<String,Object>)properties.get("_attachments");
-        }
-        if(newAttachments == null || newAttachments.size() == 0 || rev.isDeleted()) {
-            return new TDStatus(TDStatus.OK);
-        }
-
-        for (String name : newAttachments.keySet()) {
-
-            TDStatus status = new TDStatus();
-            Map<String,Object> newAttach = (Map<String,Object>)newAttachments.get(name);
-            String newContentBase64 = (String)newAttach.get("data");
-            if(newContentBase64 != null) {
-                // New item contains data, so insert it. First decode the data:
-                byte[] newContents;
-                try {
-                    newContents = Base64.decode(newContentBase64);
-                } catch (IOException e) {
-                    Log.e(TDDatabase.TAG, "IOExeption parsing base64", e);
-                    return new TDStatus(TDStatus.BAD_REQUEST);
-                }
-                if(newContents == null) {
-                    return new TDStatus(TDStatus.BAD_REQUEST);
-                }
-
-                // Now determine the revpos, i.e. generation # this was added in. Usually this is
-                // implicit, but a rev being pulled in replication will have it set already.
-                int generation = rev.getGeneration();
-                assert(generation > 0);
-                Object revposObj = newAttach.get("revpos");
-                int revpos = generation;
-                if(revposObj != null && revposObj instanceof Integer) {
-                    revpos = ((Integer)revposObj).intValue();
-                }
-
-                if(revpos > generation) {
-                    return new TDStatus(TDStatus.BAD_REQUEST);
-                }
-
-                // Finally insert the attachment:
-                status = insertAttachmentForSequenceWithNameAndType(newContents, newSequence, name, (String)newAttach.get("content_type"), revpos);
-            }
-            else {
-                // It's just a stub, so copy the previous revision's attachment entry:
-                //? Should I enforce that the type and digest (if any) match?
-                status = copyAttachmentNamedFromSequenceToSequence(name, parentSequence, newSequence);
-            }
-            if(!status.isSuccessful()) {
-                return status;
-            }
-        }
-
-        return new TDStatus(TDStatus.OK);
-    }
-
-    public TDRevision updateAttachment(String filename, byte[] body, String contentType, String docID, String oldRevID, TDStatus status) {
-        status.setCode(TDStatus.BAD_REQUEST);
-        if(filename == null || filename.length() == 0 || (body != null && contentType == null) || (oldRevID != null && docID == null) || (body != null && docID == null)) {
-            return null;
-        }
-
-        beginTransaction();
-        try {
-            TDRevision oldRev = new TDRevision(docID, oldRevID, false);
-            if(oldRevID != null) {
-                // Load existing revision if this is a replacement:
-                TDStatus loadStatus = loadRevisionBody(oldRev, EnumSet.noneOf(TDContentOptions.class));
-                status.setCode(loadStatus.getCode());
-                if(!status.isSuccessful()) {
-                    if(status.getCode() == TDStatus.NOT_FOUND && existsDocumentWithIDAndRev(docID, null)) {
-                        status.setCode(TDStatus.CONFLICT);  // if some other revision exists, it's a conflict
-                    }
-                    return null;
-                }
-
-                Map<String,Object> attachments = (Map<String, Object>) oldRev.getProperties().get("_attachments");
-                if(body == null && attachments != null && !attachments.containsKey(filename)) {
-                    status.setCode(TDStatus.NOT_FOUND);
-                    return null;
-                }
-                // Remove the _attachments stubs so putRevision: doesn't copy the rows for me
-                // OPT: Would be better if I could tell loadRevisionBody: not to add it
-                if(attachments != null) {
-                    Map<String,Object> properties = new HashMap<String,Object>(oldRev.getProperties());
-                    properties.remove("_attachments");
-                    oldRev.setBody(new TDBody(properties));
-                }
-            } else {
-                // If this creates a new doc, it needs a body:
-                oldRev.setBody(new TDBody(new HashMap<String,Object>()));
-            }
-
-            // Create a new revision:
-            TDRevision newRev = putRevision(oldRev, oldRevID, false, status);
-            if(newRev == null) {
-                return null;
-            }
-
-            if(oldRevID != null) {
-                // Copy all attachment rows _except_ for the one being updated:
-                String[] args = { Long.toString(newRev.getSequence()), Long.toString(oldRev.getSequence()), filename };
-                database.execSQL("INSERT INTO attachments "
-                        + "(sequence, filename, key, type, length, revpos) "
-                        + "SELECT ?, filename, key, type, length, revpos FROM attachments "
-                        + "WHERE sequence=? AND filename != ?", args);
-            }
-
-            if(body != null) {
-                // If not deleting, add a new attachment entry:
-                TDStatus insertStatus = insertAttachmentForSequenceWithNameAndType(body, newRev.getSequence(),
-                        filename, contentType, newRev.getGeneration());
-                status.setCode(insertStatus.getCode());
-
-                if(!status.isSuccessful()) {
-                    return null;
-                }
-            }
-
-            status.setCode((body != null) ? TDStatus.CREATED : TDStatus.OK);
-            return newRev;
-
-        } catch(SQLException e) {
-            Log.e(TAG, "Error uploading attachment", e);
-            status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
-            return null;
-        } finally {
-            endTransaction(status.isSuccessful());
-        }
-    }
-
-    public TDStatus garbageCollectAttachments() {
-        // First delete attachment rows for already-cleared revisions:
-        // OPT: Could start after last sequence# we GC'd up to
-
-        try {
-            database.execSQL("DELETE FROM attachments WHERE sequence IN " +
-                            "(SELECT sequence from revs WHERE json IS null)");
-        }
-        catch(SQLException e) {
-            Log.e(TDDatabase.TAG, "Error deleting attachments", e);
-        }
-
-
-        // Now collect all remaining attachment IDs and tell the store to delete all but these:
-        Cursor cursor = null;
-        try {
-            cursor = database.rawQuery("SELECT DISTINCT key FROM attachments", null);
-
-            cursor.moveToFirst();
-            List<TDBlobKey> allKeys = new ArrayList<TDBlobKey>();
-            while(!cursor.isAfterLast()) {
-                TDBlobKey key = new TDBlobKey(cursor.getBlob(0));
-                allKeys.add(key);
-                cursor.moveToNext();
-            }
-
-            int numDeleted = attachments.deleteBlobsExceptWithKeys(allKeys);
-            if(numDeleted < 0) {
-                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-            }
-
-            Log.v(TDDatabase.TAG, "Deleted " + numDeleted + " attachments");
-
-            return new TDStatus(TDStatus.OK);
-        } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error finding attachment keys in use", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            if(cursor != null) {
-                cursor.close();
-            }
-        }
-    }
-
-
-    /*** Local Docs ***/
+    /*************************************************************************************************/
+    /*** TDDatabase+LocalDocs                                                                      ***/
+    /*************************************************************************************************/
 
     public TDRevision getLocalDocument(String docID, String revID) {
         TDRevision result = null;
@@ -2168,37 +2204,6 @@ public class TDDatabase extends Observable {
         } catch (SQLException e) {
             return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    public void defineValidation(String name, TDValidationBlock validationBlock) {
-        if(validations == null) {
-            validations = new HashMap<String, TDValidationBlock>();
-        }
-        validations.put(name, validationBlock);
-    }
-
-    public TDValidationBlock getValidationNamed(String name) {
-        TDValidationBlock result = null;
-        if(validations != null) {
-            result = validations.get(name);
-        }
-        return result;
-    }
-
-    public TDStatus validateRevision(TDRevision newRev, TDRevision oldRev) {
-        TDStatus result = new TDStatus(TDStatus.OK);
-        if(validations == null || validations.size() == 0) {
-            return result;
-        }
-        TDValidationContextImpl context = new TDValidationContextImpl(this, oldRev);
-        for (String validationName : validations.keySet()) {
-            TDValidationBlock validation = getValidationNamed(validationName);
-            if(!validation.validate(newRev, context)) {
-                result.setCode(context.getErrorType().getCode());
-                break;
-            }
-        }
-        return result;
     }
 }
 
