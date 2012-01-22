@@ -208,6 +208,11 @@ public class TDView {
         viewId = 0;
     }
 
+    public void databaseClosing() {
+        db = null;
+        viewId = 0;
+    }
+
     /*** Indexing ***/
 
     public static String toJSONString(Object object) {

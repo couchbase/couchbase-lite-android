@@ -272,10 +272,22 @@ public class TDDatabase extends Observable {
     }
 
     public boolean close() {
+        if(!open) {
+            return false;
+        }
+
+        if(views != null) {
+            for (TDView view : views.values()) {
+                view.databaseClosing();
+            }
+        }
+        views = null;
+
         if(database != null && database.isOpen()) {
             database.close();
         }
         open = false;
+        transactionLevel = 0;
         return true;
     }
 
