@@ -42,4 +42,9 @@ public class TDMisc {
         return buf.toString();
     }
 
+    public static int TDSequenceCompare(long a, long b) {
+        long diff = a - b;
+        return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
+    }
+
 }

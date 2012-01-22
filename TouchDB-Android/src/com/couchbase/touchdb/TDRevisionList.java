@@ -65,7 +65,7 @@ public class TDRevisionList extends ArrayList<TDRevision> {
         Collections.sort(this, new Comparator<TDRevision>() {
 
             public int compare(TDRevision rev1, TDRevision rev2) {
-                return (int)(rev1.getSequence() - rev2.getSequence());
+                return TDMisc.TDSequenceCompare(rev1.getSequence(), rev2.getSequence());
             }
 
         });
