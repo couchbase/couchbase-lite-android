@@ -39,6 +39,7 @@ import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase.TDContentOptions;
+import com.couchbase.touchdb.replicator.TDReplicator;
 import com.couchbase.touchdb.support.Base64;
 import com.couchbase.touchdb.support.DirUtils;
 
@@ -57,6 +58,7 @@ public class TDDatabase extends Observable {
     private Map<String, TDView> views;
     private Map<String, TDFilterBlock> filters;
     private Map<String, TDValidationBlock> validations;
+    private List<TDReplicator> activeReplicators;
     private TDBlobStore attachments;
 
     /**
@@ -952,7 +954,7 @@ public class TDDatabase extends Observable {
         return makeRevisionHistoryDict(getRevisionHistory(rev));
     }
 
-    public TDRevisionList changesSince(int lastSeq, TDChangesOptions options, TDFilterBlock filter) {
+    public TDRevisionList changesSince(long lastSeq, TDChangesOptions options, TDFilterBlock filter) {
         // http://wiki.apache.org/couchdb/HTTP_database_API#Changes
         if(options == null) {
             options = new TDChangesOptions();
@@ -968,7 +970,7 @@ public class TDDatabase extends Observable {
                         + "WHERE sequence > ? AND current=1 "
                         + "AND revs.doc_id = docs.doc_id "
                         + "ORDER BY revs.doc_id, revid DESC";
-        String[] args = {Integer.toString(lastSeq)};
+        String[] args = {Long.toString(lastSeq)};
         Cursor cursor = null;
         TDRevisionList changes = null;
 
@@ -2094,6 +2096,71 @@ public class TDDatabase extends Observable {
     /*************************************************************************************************/
 
     //TODO implement missing replication methods
+
+    public List<TDReplicator> getActiveReplicators() {
+        return activeReplicators;
+    }
+
+    public TDReplicator getActiveReplicator(URL remote, boolean push) {
+        if(activeReplicators != null) {
+            for (TDReplicator replicator : activeReplicators) {
+                if(replicator.getRemote().equals(remote) && replicator.isPush() == push) {
+                    return replicator;
+                }
+            }
+        }
+        return null;
+    }
+
+    public TDReplicator getReplicator(URL remote, boolean push, boolean continuous) {
+        TDReplicator result = getActiveReplicator(remote, push);
+        if(result != null) {
+            return result;
+        }
+        result = TDReplicator.init(this, remote, push, continuous);
+
+        if(activeReplicators == null) {
+            activeReplicators = new ArrayList<TDReplicator>();
+        }
+        activeReplicators.add(result);
+        return result;
+    }
+
+    public void replicatorDidStop(TDReplicator replicator) {
+        replicator.databaseClosing();  // get it to detach from me
+        if(activeReplicators != null) {
+            activeReplicators.remove(replicator);
+        }
+    }
+
+    public String lastSequenceWithRemoteURL(URL url, boolean push) {
+        Cursor cursor = null;
+        String result = null;
+        try {
+            String[] args = { url.toExternalForm(), Boolean.toString(push) };
+            cursor = database.rawQuery("SELECT last_sequence FROM replicators WHERE remote=? AND push=?", args);
+            if(cursor.moveToFirst()) {
+                result = cursor.getString(0);
+            }
+        } catch (SQLException e) {
+            Log.e(TDDatabase.TAG, "Error getting last sequence", e);
+            return null;
+        } finally {
+            if(cursor != null) {
+                cursor.close();
+            }
+        }
+        return result;
+    }
+
+    public boolean setLastSequence(String lastSequence, URL url, boolean push) {
+        ContentValues values = new ContentValues();
+        values.put("remote", url.toExternalForm());
+        values.put("push", push);
+        values.put("last_sequence", lastSequence);
+        long newId = database.insertWithOnConflict("replicators", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        return (newId == -1);
+    }
 
     public static String quote(String string) {
         return string.replace("'", "''");
