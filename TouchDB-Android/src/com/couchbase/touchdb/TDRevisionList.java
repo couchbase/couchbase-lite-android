@@ -29,6 +29,18 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class TDRevisionList extends ArrayList<TDRevision> {
 
+    public TDRevisionList() {
+        super();
+    }
+
+    /**
+     * Allow converting to TDRevisionList from List<TDRevision>
+     * @param list
+     */
+    public TDRevisionList(List<TDRevision> list) {
+        super(list);
+    }
+
     public TDRevision revWithDocIdAndRevId(String docId, String revId) {
         Iterator<TDRevision> iterator = iterator();
         while(iterator.hasNext()) {
