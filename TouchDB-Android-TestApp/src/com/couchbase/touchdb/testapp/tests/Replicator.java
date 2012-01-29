@@ -3,6 +3,7 @@ package com.couchbase.touchdb.testapp.tests;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -112,8 +113,67 @@ public class Replicator extends InstrumentationTestCase {
         server.close();
     }
 
-    public void pusherInsideThread() {
+    public void testPuller() throws Throwable {
 
+        String filesDir = getInstrumentation().getContext().getFilesDir().getAbsolutePath();
+
+        TDServer server = null;
+        try {
+            server = new TDServer(filesDir);
+        } catch (IOException e) {
+            fail("Creating server caused IOException");
+        }
+
+        //to ensure this test is easily repeatable we will explicitly remove
+        //any stale foo.touchdb
+        TDDatabase old = server.getExistingDatabaseNamed("db");
+        if(old != null) {
+            old.deleteDatabase();
+        }
+
+        final TDDatabase db = server.getDatabaseNamed("db");
+        db.open();
+
+        URL remote = new URL(REMOTE_DB_URL_STR);
+        final TDReplicator repl = db.getReplicator(remote, false, false);
+        runTestOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                // Pull them from the remote:
+                repl.start();
+                Assert.assertTrue(repl.isRunning());
+            }
+        });
+
+        Thread.sleep(30*1000);
+        String lastSequence = repl.getLastSequence();
+        Assert.assertTrue("2".equals(lastSequence) || "3".equals(lastSequence));
+        Assert.assertEquals(2, db.getDocumentCount());
+
+        final TDReplicator repl2 = db.getReplicator(remote, false, false);
+        runTestOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                // Pull them from the remote:
+                repl2.start();
+                Assert.assertTrue(repl2.isRunning());
+            }
+        });
+
+        Thread.sleep(30*1000);
+        Assert.assertEquals(3, db.getLastSequence());
+
+        TDRevision doc = db.getDocumentWithIDAndRev("doc1", null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        Assert.assertNotNull(doc);
+        Assert.assertTrue(doc.getRevId().startsWith("2-"));
+        Assert.assertEquals(1, doc.getProperties().get("foo"));
+
+        doc = db.getDocumentWithIDAndRev("doc2", null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        Assert.assertNotNull(doc);
+        Assert.assertTrue(doc.getRevId().startsWith("1-"));
+        Assert.assertEquals(true, doc.getProperties().get("fnord"));
     }
 
 }
