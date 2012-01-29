@@ -15,6 +15,7 @@ import android.util.Log;
 import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDMisc;
 import com.couchbase.touchdb.TDRevision;
+import com.couchbase.touchdb.TDRevisionList;
 import com.couchbase.touchdb.support.TDBatchProcessor;
 import com.couchbase.touchdb.support.TDBatcher;
 import com.couchbase.touchdb.support.TDRemoteRequest;
@@ -61,7 +62,7 @@ public abstract class TDReplicator extends Observable {
             @Override
             public void process(List<TDRevision> inbox) {
                 Log.v(TDDatabase.TAG, "*** " + toString() + ": BEGIN processInbox (" + inbox.size() + " sequences)");
-                processInbox(inbox);
+                processInbox(new TDRevisionList(inbox));
                 Log.v(TDDatabase.TAG, "*** " + toString() + ": END processInbox (lastSequence=" + lastSequence);
                 active = false;
             }
@@ -171,10 +172,10 @@ public abstract class TDReplicator extends Observable {
             active = true;
         }
         batcher.queueObject(rev);
-        Log.v(TDDatabase.TAG, String.format("%s: Received #%lld %s", toString(), rev.getSequence(), rev.toString()));
+        Log.v(TDDatabase.TAG, String.format("%s: Received #%d %s", toString(), rev.getSequence(), rev.toString()));
     }
 
-    public void processInbox(List<TDRevision> inbox) {
+    public void processInbox(TDRevisionList inbox) {
 
     }
 
@@ -258,7 +259,7 @@ public abstract class TDReplicator extends Observable {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
-                if(error != null) {
+                if(e != null) {
                     Log.v(TDDatabase.TAG, String.format("%s: Unable to save remote checkpoint: %s", this, e), e);
                     // TODO: If error is 401 or 403, and this is a pull, remember that remote is read-only and don't attempt to read its checkpoint next time.
                 } else {
