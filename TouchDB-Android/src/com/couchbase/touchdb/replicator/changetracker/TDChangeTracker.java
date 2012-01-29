@@ -56,6 +56,18 @@ public class TDChangeTracker implements Runnable {
         this.client = client;
     }
 
+    public void setFilterName(String filterName) {
+        this.filterName = filterName;
+    }
+
+    public void setFilterParams(Map<String, Object> filterParams) {
+        this.filterParams = filterParams;
+    }
+
+    public void setClient(TDChangeTrackerClient client) {
+        this.client = client;
+    }
+
     public String getDatabaseName() {
         String result = null;
         if (databaseURL != null) {
@@ -126,7 +138,7 @@ public class TDChangeTracker implements Runnable {
                 HttpResponse response = httpClient.execute(request);
                 StatusLine status = response.getStatusLine();
                 if(status.getStatusCode() >= 300) {
-                    Log.e(TDDatabase.TAG, "Got error " + Integer.toString(status.getStatusCode()));
+                    Log.e(TDDatabase.TAG, "Change tracker got error " + Integer.toString(status.getStatusCode()));
                     stopped();
                 }
                 HttpEntity entity = response.getEntity();
@@ -186,7 +198,7 @@ public class TDChangeTracker implements Runnable {
 
             @Override
             public void run() {
-                if(client == null) {
+                if(copy == null) {
                     Log.v(TDDatabase.TAG, "cannot notify client, client is null");
                 } else {
                     Log.v(TDDatabase.TAG, "about to notify client");
@@ -224,7 +236,15 @@ public class TDChangeTracker implements Runnable {
 
     public void stopped() {
         if (client != null) {
-            client.changeTrackerStopped(this);
+            handler.post(new Runnable() {
+
+                TDChangeTrackerClient copy = client;
+
+                @Override
+                public void run() {
+                    copy.changeTrackerStopped(TDChangeTracker.this);
+                }
+            });
         }
         client = null;
     }
