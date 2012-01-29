@@ -124,7 +124,7 @@ public class TDPusher extends TDReplicator implements Observer {
     }
 
     @Override
-    public void processInbox(final List<TDRevision> inbox) {
+    public void processInbox(final TDRevisionList inbox) {
         final long lastInboxSequence = inbox.get(inbox.size()-1).getSequence();
         // Generate a set of doc/rev IDs in the JSON format that _revs_diff wants:
         Map<String,List<String>> diffs = new HashMap<String,List<String>>();
