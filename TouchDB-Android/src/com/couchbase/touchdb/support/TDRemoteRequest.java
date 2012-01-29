@@ -20,12 +20,14 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
 
 public class TDRemoteRequest implements Runnable {
-
+    private HandlerThread handlerThread;
     private Handler handler;
     private Thread thread;
     private String method;
@@ -34,7 +36,6 @@ public class TDRemoteRequest implements Runnable {
     private TDRemoteRequestCompletionBlock onCompletion;
 
     public TDRemoteRequest(String method, URL url, Object body, TDRemoteRequestCompletionBlock onCompletion) {
-        this.handler = new Handler();
         this.method = method;
         this.url = url;
         this.body = body;
@@ -42,6 +43,13 @@ public class TDRemoteRequest implements Runnable {
     }
 
     public void start() {
+        //first start a handler thread
+        handlerThread = new HandlerThread("RemoteRequestHandlerThread");
+        handlerThread.start();
+        //Get the looper from the handlerThread
+        Looper looper = handlerThread.getLooper();
+        //Create a new handler - passing in the looper for it to use
+        handler = new Handler(looper);
         thread = new Thread(this);
         thread.start();
     }
@@ -98,6 +106,11 @@ public class TDRemoteRequest implements Runnable {
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+        } finally {
+            //Shut down the HandlerThread
+            handlerThread.quit();
+            handlerThread = null;
+            handler = null;
         }
 
     }
