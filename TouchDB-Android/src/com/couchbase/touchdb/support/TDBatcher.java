@@ -60,6 +60,9 @@ public class TDBatcher<T> {
     }
 
     public int count() {
+        if(inbox == null) {
+            return 0;
+        }
         return inbox.size();
     }
 
