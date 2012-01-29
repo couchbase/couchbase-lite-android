@@ -2137,7 +2137,7 @@ public class TDDatabase extends Observable {
         Cursor cursor = null;
         String result = null;
         try {
-            String[] args = { url.toExternalForm(), Boolean.toString(push) };
+            String[] args = { url.toExternalForm(), Integer.toString(push ? 1 : 0) };
             cursor = database.rawQuery("SELECT last_sequence FROM replicators WHERE remote=? AND push=?", args);
             if(cursor.moveToFirst()) {
                 result = cursor.getString(0);
