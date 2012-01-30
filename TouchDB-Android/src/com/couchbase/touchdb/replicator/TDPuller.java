@@ -8,7 +8,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.database.SQLException;
@@ -23,6 +25,7 @@ import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.replicator.changetracker.TDChangeTracker;
 import com.couchbase.touchdb.replicator.changetracker.TDChangeTracker.TDChangeTrackerMode;
 import com.couchbase.touchdb.replicator.changetracker.TDChangeTrackerClient;
+import com.couchbase.touchdb.support.HttpClientFactory;
 import com.couchbase.touchdb.support.TDBatchProcessor;
 import com.couchbase.touchdb.support.TDBatcher;
 import com.couchbase.touchdb.support.TDRemoteRequestCompletionBlock;
@@ -41,7 +44,11 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
     protected int httpConnectionCount;
 
     public TDPuller(TDDatabase db, URL remote, boolean continuous) {
-        super(db, remote, continuous);
+        this(db, remote, continuous, null);
+    }
+
+    public TDPuller(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFactory) {
+        super(db, remote, continuous, clientFactory);
     }
 
     public void setFilterName(String filterName) {
@@ -128,6 +135,11 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
             batcher.flush();
         }
         asyncTaskFinished(1);
+    }
+
+    @Override
+    public HttpClient getHttpClient() {
+        return new DefaultHttpClient();
     }
 
     /**

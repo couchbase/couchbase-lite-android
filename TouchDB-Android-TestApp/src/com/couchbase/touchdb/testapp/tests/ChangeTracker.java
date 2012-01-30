@@ -3,6 +3,9 @@ package com.couchbase.touchdb.testapp.tests;
 import java.net.URL;
 import java.util.Map;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
@@ -29,6 +32,11 @@ public class ChangeTracker extends InstrumentationTestCase {
             public void changeTrackerReceivedChange(Map<String, Object> change) {
                 Object seq = change.get("seq");
                 Log.v(TAG, "See change " + seq.toString());
+            }
+            
+            @Override
+            public HttpClient getHttpClient() {
+            	return new DefaultHttpClient();
             }
         };
 
@@ -62,6 +70,11 @@ public class ChangeTracker extends InstrumentationTestCase {
                 Object seq = change.get("seq");
                 Log.v(TAG, "See change " + seq.toString());
             }
+            
+            @Override
+            public HttpClient getHttpClient() {
+            	return new DefaultHttpClient();
+            }
         };
 
         final TDChangeTracker changeTracker = new TDChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
@@ -93,6 +106,11 @@ public class ChangeTracker extends InstrumentationTestCase {
             public void changeTrackerReceivedChange(Map<String, Object> change) {
                 Object seq = change.get("seq");
                 Log.v(TAG, "See change " + seq.toString());
+            }
+            
+            @Override
+            public HttpClient getHttpClient() {
+            	return new DefaultHttpClient();
             }
         };
 

@@ -39,6 +39,8 @@ import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase.TDContentOptions;
+import com.couchbase.touchdb.replicator.TDPuller;
+import com.couchbase.touchdb.replicator.TDPusher;
 import com.couchbase.touchdb.replicator.TDReplicator;
 import com.couchbase.touchdb.support.Base64;
 import com.couchbase.touchdb.support.DirUtils;
@@ -2117,7 +2119,7 @@ public class TDDatabase extends Observable {
         if(result != null) {
             return result;
         }
-        result = TDReplicator.init(this, remote, push, continuous);
+        result = push ? new TDPusher(this, remote, continuous) : new TDPuller(this, remote, continuous);
 
         if(activeReplicators == null) {
             activeReplicators = new ArrayList<TDReplicator>();

@@ -18,6 +18,7 @@ import com.couchbase.touchdb.TDFilterBlock;
 import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDRevisionList;
 import com.couchbase.touchdb.TDStatus;
+import com.couchbase.touchdb.support.HttpClientFactory;
 import com.couchbase.touchdb.support.TDRemoteRequestCompletionBlock;
 
 public class TDPusher extends TDReplicator implements Observer {
@@ -27,7 +28,11 @@ public class TDPusher extends TDReplicator implements Observer {
     private TDFilterBlock filter;
 
     public TDPusher(TDDatabase db, URL remote, boolean continuous) {
-        super(db, remote, continuous);
+        this(db, remote, continuous, null);
+    }
+    
+    public TDPusher(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFactory) {
+        super(db, remote, continuous, clientFactory);
         createTarget = false;
         observing = false;
     }

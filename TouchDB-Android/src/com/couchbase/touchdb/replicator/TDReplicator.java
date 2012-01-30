@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.os.Handler;
 import android.util.Log;
@@ -16,6 +18,7 @@ import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDMisc;
 import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDRevisionList;
+import com.couchbase.touchdb.support.HttpClientFactory;
 import com.couchbase.touchdb.support.TDBatchProcessor;
 import com.couchbase.touchdb.support.TDBatcher;
 import com.couchbase.touchdb.support.TDRemoteRequest;
@@ -40,19 +43,16 @@ public abstract class TDReplicator extends Observable {
     protected int asyncTaskCount;
     protected int changesProcessed;
     protected int changesTotal;
+    protected final HttpClientFactory clientFacotry;
 
     protected static final int PROCESSOR_DELAY = 500;
     protected static final int INBOX_CAPACITY = 100;
 
-    public static TDReplicator init(TDDatabase db, URL remote, boolean push, boolean continuous) {
-        if(push) {
-            return new TDPusher(db,remote, continuous);
-        } else {
-            return new TDPuller(db, remote, continuous);
-        }
+    public TDReplicator(TDDatabase db, URL remote, boolean continuous) {
+        this(db, remote, continuous, null);
     }
 
-    public TDReplicator(TDDatabase db, URL remote, boolean continuous) {
+    public TDReplicator(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFacotry) {
         this.handler = new Handler();
         this.db = db;
         this.remote = remote;
@@ -67,6 +67,13 @@ public abstract class TDReplicator extends Observable {
                 active = false;
             }
         });
+
+        this.clientFacotry = clientFacotry != null ? clientFacotry : new HttpClientFactory() {
+			@Override
+			public HttpClient getHttpClient() {
+				return new DefaultHttpClient();
+			}
+		};
     }
 
     public boolean isRunning() {
@@ -184,7 +191,7 @@ public abstract class TDReplicator extends Observable {
         String urlStr = remote.toExternalForm() + relativePath;
         try {
             URL url = new URL(urlStr);
-            TDRemoteRequest request = new TDRemoteRequest(method, url, body, onCompletion);
+            TDRemoteRequest request = new TDRemoteRequest(clientFacotry, method, url, body, onCompletion);
             request.start();
         } catch (MalformedURLException e) {
             Log.e(TDDatabase.TAG, "Malformed URL for async request", e);

@@ -16,7 +16,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.Handler;
@@ -30,12 +29,14 @@ public class TDRemoteRequest implements Runnable {
     private HandlerThread handlerThread;
     private Handler handler;
     private Thread thread;
+    private final HttpClientFactory clientFactory;
     private String method;
     private URL url;
     private Object body;
     private TDRemoteRequestCompletionBlock onCompletion;
 
-    public TDRemoteRequest(String method, URL url, Object body, TDRemoteRequestCompletionBlock onCompletion) {
+    public TDRemoteRequest(HttpClientFactory clientFactory, String method, URL url, Object body, TDRemoteRequestCompletionBlock onCompletion) {
+        this.clientFactory = clientFactory;
         this.method = method;
         this.url = url;
         this.body = body;
@@ -57,7 +58,7 @@ public class TDRemoteRequest implements Runnable {
     @Override
     public void run() {
         Log.v(TDDatabase.TAG, String.format("%s: %s .%s", toString(), method, url.toExternalForm()));
-        HttpClient httpClient = new DefaultHttpClient();
+        HttpClient httpClient = clientFactory.getHttpClient();
         HttpUriRequest request = null;
         if(method.equalsIgnoreCase("GET")) {
             request = new HttpGet(url.toExternalForm());
@@ -92,10 +93,14 @@ public class TDRemoteRequest implements Runnable {
             } else {
                 HttpEntity temp = response.getEntity();
                 if(temp != null) {
-                    InputStream stream = temp.getContent();
-                    ObjectMapper mapper = new ObjectMapper();
-                    Object fullBody = mapper.readValue(stream, Object.class);
-                    respondWithResult(fullBody, null);
+                	try {
+	                    InputStream stream = temp.getContent();
+	                    ObjectMapper mapper = new ObjectMapper();
+	                    Object fullBody = mapper.readValue(stream, Object.class);
+	                    respondWithResult(fullBody, null);
+                	} finally {
+                		try { temp.consumeContent(); } catch (IOException e) {}
+                	}
                 }
 
             }
