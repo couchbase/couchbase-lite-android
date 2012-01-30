@@ -17,7 +17,6 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.Handler;
@@ -118,7 +117,7 @@ public class TDChangeTracker implements Runnable {
     @Override
     public void run() {
         running = true;
-        HttpClient httpClient = new DefaultHttpClient();
+        HttpClient httpClient = client.getHttpClient();
         while (running) {
             HttpUriRequest request = new HttpGet(getChangesFeedURL().toString());
             try {
@@ -131,26 +130,29 @@ public class TDChangeTracker implements Runnable {
                 }
                 HttpEntity entity = response.getEntity();
                 if(entity != null) {
-                    InputStream stream = entity.getContent();
-                    if(mode != TDChangeTrackerMode.Continuous) {
-                        ObjectMapper mapper = new ObjectMapper();
-                        Map<String,Object> fullBody = mapper.readValue(stream, Map.class);
-                        boolean responseOK = receivedPollResponse(fullBody);
-                        if(mode == TDChangeTrackerMode.LongPoll && responseOK) {
-                            Log.v(TDDatabase.TAG, "Starting new longpoll");
-                            continue;
-                        } else {
-                            stop();
-                        }
-                    }
-                    else {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-                        String line = null;
-                        while ((line=reader.readLine()) != null) {
-                            receivedChunk(line);
-                        }
-                    }
-
+                	try {
+	                    InputStream stream = entity.getContent();
+	                    if(mode != TDChangeTrackerMode.Continuous) {
+	                        ObjectMapper mapper = new ObjectMapper();
+	                        Map<String,Object> fullBody = mapper.readValue(stream, Map.class);
+	                        boolean responseOK = receivedPollResponse(fullBody);
+	                        if(mode == TDChangeTrackerMode.LongPoll && responseOK) {
+	                            Log.v(TDDatabase.TAG, "Starting new longpoll");
+	                            continue;
+	                        } else {
+	                            stop();
+	                        }
+	                    }
+	                    else {
+	                        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+	                        String line = null;
+	                        while ((line=reader.readLine()) != null) {
+	                            receivedChunk(line);
+	                        }
+	                    }
+                	} finally {
+                		try { entity.consumeContent(); } catch (IOException e){}
+                	}
                 }
             } catch (ClientProtocolException e) {
                 Log.e(TDDatabase.TAG, "ClientProtocolException in change tracker", e);
