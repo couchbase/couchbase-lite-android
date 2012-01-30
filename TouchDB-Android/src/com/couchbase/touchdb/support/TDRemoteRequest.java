@@ -86,10 +86,14 @@ public class TDRemoteRequest implements Runnable {
             } else {
                 HttpEntity temp = response.getEntity();
                 if(temp != null) {
-                    InputStream stream = temp.getContent();
-                    ObjectMapper mapper = new ObjectMapper();
-                    Object fullBody = mapper.readValue(stream, Object.class);
-                    respondWithResult(fullBody, null);
+                	try {
+	                    InputStream stream = temp.getContent();
+	                    ObjectMapper mapper = new ObjectMapper();
+	                    Object fullBody = mapper.readValue(stream, Object.class);
+	                    respondWithResult(fullBody, null);
+                	} finally {
+                		try { temp.consumeContent(); } catch (IOException e) {}
+                	}
                 }
 
             }
