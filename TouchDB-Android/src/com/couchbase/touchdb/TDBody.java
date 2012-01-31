@@ -51,7 +51,7 @@ public class TDBody {
         return result;
     }
 
-    boolean isValidJSON() {
+    public boolean isValidJSON() {
         // Yes, this is just like asObject except it doesn't warn.
         if(json == null && !error) {
             ObjectMapper mapper = new ObjectMapper();
