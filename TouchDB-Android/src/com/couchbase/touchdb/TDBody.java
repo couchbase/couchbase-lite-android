@@ -17,6 +17,7 @@
 
 package com.couchbase.touchdb;
 
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -39,6 +40,10 @@ public class TDBody {
 
     public TDBody(Map<String, Object> properties) {
         this.object = properties;
+    }
+
+    public TDBody(List<?> array) {
+        this.object = array;
     }
 
     public static TDBody bodyWithProperties(Map<String,Object> properties) {
