@@ -21,10 +21,10 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -119,8 +119,8 @@ public class TDServer {
         return result;
     }
 
-    public Set<String> allOpenDatabases() {
-        return databases.keySet();
+    public Collection<TDDatabase> allOpenDatabases() {
+        return databases.values();
     }
 
     public void close() {
