@@ -19,4 +19,10 @@ by Marty Schoch (marty@couchbase.com)
 - Exception Handling in the current implementation makes things less readable.  This was a deliberate decision I made to make it more of a literal port of the iOS version.  Once the majority of code is in place and working I would like to revisit this and handle exceptions in more natural Android/Java way.
 
 ## TODO
-- HTTP Server
+- Finish porting all of TDRouter so that all operations are supported
+- Add support for building all projects with Ant
+
+## Running the Demo App (currently requires Eclipse)
+1.  Import all 3 projects into Eclipse (TouchDB-Android, TouchDB-Android-Listener, TouchDB-Android-TestApp)
+2.  Right-click on TouchDB-Android-TestApp select Properties, select the Android, then in the Library section press Add, select TouchDB-Android, press Add again and select TouchDB-Android-Listener, press OK
+3.  Right-click on TouchDB-Android-TestApp select Run As, select Android Application
