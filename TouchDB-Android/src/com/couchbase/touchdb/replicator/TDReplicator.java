@@ -119,16 +119,28 @@ public abstract class TDReplicator extends Observable {
         }
     }
 
+    public int getChangesProcessed() {
+        return changesProcessed;
+    }
+
     public void setChangesProcessed(int processed) {
         this.changesProcessed = processed;
         setChanged();
         notifyObservers();
     }
 
+    public int getChangesTotal() {
+        return changesTotal;
+    }
+
     public void setChangesTotal(int total) {
         this.changesTotal = total;
         setChanged();
         notifyObservers();
+    }
+
+    public String getSessionID() {
+        return sessionID;
     }
 
     public void start() {
