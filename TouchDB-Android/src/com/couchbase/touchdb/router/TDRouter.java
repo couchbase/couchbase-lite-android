@@ -3,6 +3,7 @@ package com.couchbase.touchdb.router;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -25,6 +26,9 @@ import com.couchbase.touchdb.TDQueryOptions;
 import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TouchDBVersion;
+import com.couchbase.touchdb.replicator.TDPuller;
+import com.couchbase.touchdb.replicator.TDPusher;
+import com.couchbase.touchdb.replicator.TDReplicator;
 
 
 public class TDRouter {
@@ -183,8 +187,12 @@ public class TDRouter {
     }
 
     public static List<String> splitPath(URL url) {
+        String pathString = url.getPath();
+        if(pathString.startsWith("/")) {
+            pathString = pathString.substring(1);
+        }
         List<String> result = new ArrayList<String>();
-        for (String component : url.getPath().split("/")) {
+        for (String component : pathString.split("/")) {
             result.add(URLDecoder.decode(component));
         }
         return result;
@@ -333,9 +341,21 @@ public class TDRouter {
     /*** TDRouter+Handlers                                                                         ***/
     /*************************************************************************************************/
 
+    public void setResponseLocation(URL url) {
+        String location = url.toExternalForm();
+        String query = url.getQuery();
+        if(query != null) {
+            int startOfQuery = location.indexOf(query);
+            if(startOfQuery > 0) {
+                location = location.substring(0, startOfQuery);
+            }
+        }
+        connection.getResHeader().add("Location", location);
+    }
 
     /** SERVER REQUESTS: **/
-    public TDStatus do_GETRoot(TDDatabase db, String docID, String attachmentName) {
+
+    public TDStatus do_GETRoot(TDDatabase _db, String _docID, String _attachmentName) {
         Map<String,Object> info = new HashMap<String,Object>();
         info.put("TouchDB", "Welcome");
         info.put("couchdb", "Welcome"); // for compatibility
@@ -343,4 +363,169 @@ public class TDRouter {
         connection.setResponseBody(new TDBody(info));
         return new TDStatus(TDStatus.OK);
     }
+
+    public TDStatus do_GET_all_dbs(TDDatabase _db, String _docID, String _attachmentName) {
+        List<String> dbs = server.allDatabaseNames();
+        connection.setResponseBody(new TDBody(dbs));
+        return new TDStatus(TDStatus.OK);
+    }
+
+    public TDStatus do_POST_replicate(TDDatabase _db, String _docID, String _attachmentName) {
+        // Extract the parameters from the JSON request body:
+        // http://wiki.apache.org/couchdb/Replication
+        Map<String,Object> body = getBodyAsDictionary();
+        if(body == null) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+        String source = (String)body.get("source");
+        String target = (String)body.get("target");
+        Boolean createTargetBoolean = (Boolean)body.get("create_target");
+        boolean createTarget = (createTargetBoolean != null && createTargetBoolean.booleanValue());
+        Boolean continuousBoolean = (Boolean)body.get("continuous");
+        boolean continuous = (continuousBoolean != null && continuousBoolean.booleanValue());
+        Boolean cancelBoolean = (Boolean)body.get("cancel");
+        boolean cancel = (cancelBoolean != null && cancelBoolean.booleanValue());
+
+        // Map the 'source' and 'target' JSON params to a local database and remote URL:
+        if(source == null || target == null) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+        boolean push = false;
+        TDDatabase db = server.getExistingDatabaseNamed(source);
+        String remoteStr = null;
+        if(db != null) {
+            remoteStr = target;
+            push = true;
+        } else {
+            remoteStr = source;
+            if(createTarget && !cancel) {
+                db = server.getDatabaseNamed(target);
+                if(!db.open()) {
+                    return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                }
+            } else {
+                db = server.getExistingDatabaseNamed(target);
+            }
+            if(db == null) {
+                return new TDStatus(TDStatus.NOT_FOUND);
+            }
+        }
+
+        URL remote = null;
+        try {
+            remote = new URL(remoteStr);
+        } catch (MalformedURLException e) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+        if(remote == null || !remote.getProtocol().equals("http")) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+
+        if(!cancel) {
+            // Start replication:
+            TDReplicator repl = db.getReplicator(remote, push, continuous);
+            if(repl == null) {
+                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            }
+            if(push) {
+                ((TDPusher)repl).setCreateTarget(createTarget);
+            } else {
+                TDPuller pullRepl = (TDPuller)repl;
+                String filterName = (String)body.get("filter");
+                if(filterName != null) {
+                    pullRepl.setFilterName(filterName);
+                    Map<String,Object> filterParams = (Map<String,Object>)body.get("query_params");
+                    if(filterParams != null) {
+                        pullRepl.setFilterParams(filterParams);
+                    }
+                }
+            }
+            repl.start();
+            Map<String,Object> result = new HashMap<String,Object>();
+            result.put("session_id", repl.getSessionID());
+            connection.setResponseBody(new TDBody(result));
+        } else {
+            // Cancel replication:
+            TDReplicator repl = db.getActiveReplicator(remote, push);
+            if(repl == null) {
+                return new TDStatus(TDStatus.NOT_FOUND);
+            }
+            repl.stop();
+        }
+        return new TDStatus(TDStatus.OK);
+    }
+
+    public TDStatus do_GET_uuids(TDDatabase _db, String _docID, String _attachmentName) {
+        int count = Math.min(1000, getIntQuery("count", 1));
+        List<String> uuids = new ArrayList<String>(count);
+        for(int i=0; i<count; i++) {
+            uuids.add(TDDatabase.generateDocumentId());
+        }
+        Map<String,Object> result = new HashMap<String,Object>();
+        result.put("uuids", uuids);
+        connection.setResponseBody(new TDBody(result));
+        return new TDStatus(TDStatus.OK);
+    }
+
+    public TDStatus do_GET_active_tasks(TDDatabase _db, String _docID, String _attachmentName) {
+        // http://wiki.apache.org/couchdb/HttpGetActiveTasks
+        List<Map<String,Object>> activities = new ArrayList<Map<String,Object>>();
+        for (TDDatabase db : server.allOpenDatabases()) {
+            for (TDReplicator replicator : db.getActiveReplicators()) {
+                String source = replicator.getRemote().toExternalForm();
+                String target = db.getName();
+                if(replicator.isPush()) {
+                    String tmp = source;
+                    source = target;
+                    target = tmp;
+                }
+                int processed = replicator.getChangesProcessed();
+                int total = replicator.getChangesTotal();
+                String status = String.format("Processed %d / %d changes", processed, total);
+                int progress = (total > 0) ? Math.round(100 * processed / (float)total) : 0;
+                Map<String,Object> activity = new HashMap<String,Object>();
+                activity.put("type", "Replication");
+                activity.put("task", replicator.getSessionID());
+                activity.put("source", source);
+                activity.put("target", target);
+                activity.put("status", status);
+                activity.put("progress", progress);
+                activities.add(activity);
+            }
+        }
+        connection.setResponseBody(new TDBody(activities));
+        return new TDStatus(TDStatus.OK);
+    }
+
+    /** DATABASE REQUESTS: **/
+
+    public TDStatus do_GET(TDDatabase _db, String _docID, String _attachmentName) {
+        // http://wiki.apache.org/couchdb/HTTP_database_API#Database_Information
+        TDStatus status = openDB();
+        if(!status.isSuccessful()) {
+            return status;
+        }
+        int num_docs = db.getDocumentCount();
+        long update_seq = db.getLastSequence();
+        Map<String, Object> result = new HashMap<String,Object>();
+        result.put("db_name", db.getName());
+        result.put("db_uuid", db.publicUUID());
+        result.put("doc_count", num_docs);
+        result.put("update_seq", update_seq);
+        result.put("disk_size", db.totalDataSize());
+        connection.setResponseBody(new TDBody(result));
+        return new TDStatus(TDStatus.OK);
+    }
+
+    public TDStatus do_PUT(TDDatabase _db, String _docID, String _attachmentName) {
+        if(db.exists()) {
+            return new TDStatus(TDStatus.PRECONDITION_FAILED);
+        }
+        if(!db.open()) {
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        }
+        setResponseLocation(connection.getURL());
+        return new TDStatus(TDStatus.CREATED);
+    }
+
 }
