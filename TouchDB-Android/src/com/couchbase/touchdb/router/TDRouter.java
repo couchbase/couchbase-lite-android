@@ -7,6 +7,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,7 +24,10 @@ import android.util.Log;
 import com.couchbase.touchdb.TDBody;
 import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDDatabase.TDContentOptions;
+import com.couchbase.touchdb.TDMisc;
 import com.couchbase.touchdb.TDQueryOptions;
+import com.couchbase.touchdb.TDRevision;
+import com.couchbase.touchdb.TDRevisionList;
 import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TouchDBVersion;
@@ -36,6 +41,7 @@ public class TDRouter {
     private TDDatabase db;
     private TDURLConnection connection;
     private Map<String,String> queries;
+    private boolean changesIncludesDocs = false;
 
     public static String getVersionString() {
         return TouchDBVersion.TouchDBVersionNumber;
@@ -93,13 +99,18 @@ public class TDRouter {
         return result;
     }
 
-    public Object getJSONQuery(String param) throws JsonMappingException, JsonParseException, IOException {
+    public Object getJSONQuery(String param) {
         String value = getQuery(param);
         if(value == null) {
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
-        Object result = mapper.readValue(value, Object.class);
+        Object result = null;
+        try {
+            result = mapper.readValue(value, Object.class);
+        } catch (Exception e) {
+            Log.w("Unable to parse JSON Query", e);
+        }
         return result;
     }
 
@@ -192,6 +203,10 @@ public class TDRouter {
             pathString = pathString.substring(1);
         }
         List<String> result = new ArrayList<String>();
+        //we want empty string to return empty list
+        if(pathString.length() == 0) {
+            return result;
+        }
         for (String component : pathString.split("/")) {
             result.add(URLDecoder.decode(component));
         }
@@ -222,6 +237,7 @@ public class TDRouter {
             if(dbName.startsWith("_")) {
                 message += dbName;  // special root path, like /_all_dbs
             } else {
+                message += "_Database";
                 db = server.getDatabaseNamed(dbName);
                 if(db == null) {
                     connection.setResponseCode(TDStatus.BAD_REQUEST);
@@ -234,6 +250,7 @@ public class TDRouter {
 
         String docID = null;
         if(db != null && pathLen > 1) {
+            message = message.replaceFirst("_Database", "_Document");
             // Make sure database exists, then interpret doc name:
             TDStatus status = openDB();
             if(!status.isSuccessful()) {
@@ -281,6 +298,7 @@ public class TDRouter {
 
         String attachmentName = null;
         if(docID != null && pathLen > 2) {
+            message = message.replaceFirst("_Document", "_Attachment");
             // Interpret attachment name:
             attachmentName = path.get(2);
             if(attachmentName.startsWith("_") && docID.startsWith("_design")) {
@@ -499,7 +517,7 @@ public class TDRouter {
 
     /** DATABASE REQUESTS: **/
 
-    public TDStatus do_GET(TDDatabase _db, String _docID, String _attachmentName) {
+    public TDStatus do_GET_Database(TDDatabase _db, String _docID, String _attachmentName) {
         // http://wiki.apache.org/couchdb/HTTP_database_API#Database_Information
         TDStatus status = openDB();
         if(!status.isSuccessful()) {
@@ -517,7 +535,7 @@ public class TDRouter {
         return new TDStatus(TDStatus.OK);
     }
 
-    public TDStatus do_PUT(TDDatabase _db, String _docID, String _attachmentName) {
+    public TDStatus do_PUT_Database(TDDatabase _db, String _docID, String _attachmentName) {
         if(db.exists()) {
             return new TDStatus(TDStatus.PRECONDITION_FAILED);
         }
@@ -527,5 +545,354 @@ public class TDRouter {
         setResponseLocation(connection.getURL());
         return new TDStatus(TDStatus.CREATED);
     }
+
+    public TDStatus do_DELETE_Database(TDDatabase _db, String _docID, String _attachmentName) {
+        if(getQuery("rev") != null) {
+            return new TDStatus(TDStatus.BAD_REQUEST);  // CouchDB checks for this; probably meant to be a document deletion
+        }
+        return server.deleteDatabaseNamed(db.getName()) ? new TDStatus(TDStatus.OK) : new TDStatus(TDStatus.NOT_FOUND);
+    }
+
+    public TDStatus do_POST_Database(TDDatabase _db, String _docID, String _attachmentName) {
+        TDStatus status = openDB();
+        if(!status.isSuccessful()) {
+            return status;
+        }
+        return update(db, null, getBodyAsDictionary(), false);
+    }
+
+    public TDStatus do_GET_Document_all_docs(TDDatabase _db, String _docID, String _attachmentName) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    public TDStatus do_POST_Document_all_docs(TDDatabase _db, String _docID, String _attachmentName) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    public TDStatus do_POST_Document_bulk_docs(TDDatabase _db, String _docID, String _attachmentName) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    public TDStatus do_POST_Document_revs_diff(TDDatabase _db, String _docID, String _attachmentName) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    public TDStatus do_POST_Document_compact(TDDatabase _db, String _docID, String _attachmentName) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    public TDStatus do_POST_Document_ensure_full_commit(TDDatabase _db, String _docID, String _attachmentName) {
+        return new TDStatus(TDStatus.OK);
+    }
+
+    /** CHANGES: **/
+
+    public Map<String,Object> changesDictForRevision(TDRevision rev) {
+        Map<String,Object> changesDict = new HashMap<String, Object>();
+        changesDict.put("rev", rev.getRevId());
+
+        List<Map<String,Object>> changes = new ArrayList<Map<String,Object>>();
+        changes.add(changesDict);
+
+        Map<String,Object> result = new HashMap<String,Object>();
+        result.put("seq", rev.getSequence());
+        result.put("id", rev.getDocId());
+        result.put("changes", changes);
+        if(rev.isDeleted()) {
+            result.put("deleted", true);
+        }
+        if(changesIncludesDocs) {
+            result.put("doc", rev.getProperties());
+        }
+        return result;
+    }
+
+    public Map<String,Object> responseBodyForChanges(List<TDRevision> changes, long since) {
+        List<Map<String,Object>> results = new ArrayList<Map<String,Object>>();
+        for (TDRevision rev : changes) {
+            Map<String,Object> changeDict = changesDictForRevision(rev);
+            results.add(changeDict);
+        }
+        if(changes.size() > 0) {
+            since = changes.get(changes.size() - 1).getSequence();
+        }
+        Map<String,Object> result = new HashMap<String,Object>();
+        result.put("results", results);
+        result.put("last_seq", since);
+        return result;
+    }
+
+    public Map<String, Object> responseBodyForChangesWithConflicts(List<TDRevision> changes, long since) {
+        // Assumes the changes are grouped by docID so that conflicts will be adjacent.
+        List<Map<String,Object>> entries = new ArrayList<Map<String, Object>>();
+        String lastDocID = null;
+        Map<String, Object> lastEntry = null;
+        for (TDRevision rev : changes) {
+            String docID = rev.getDocId();
+            if(docID.equals(lastDocID)) {
+                Map<String,Object> changesDict = new HashMap<String, Object>();
+                changesDict.put("rev", rev.getRevId());
+                List<Map<String,Object>> inchanges = (List<Map<String,Object>>)lastEntry.get("changes");
+                inchanges.add(changesDict);
+            } else {
+                lastEntry = changesDictForRevision(rev);
+                entries.add(lastEntry);
+                lastDocID = docID;
+            }
+        }
+        // After collecting revisions, sort by sequence:
+        Collections.sort(entries, new Comparator<Map<String,Object>>() {
+           public int compare(Map<String,Object> e1, Map<String,Object> e2) {
+               return TDMisc.TDSequenceCompare((Long)e1.get("seq"), (Long)e2.get("seq"));
+           }
+        });
+
+        Long lastSeq = (Long)entries.get(entries.size() - 1).get("seq");
+        if(lastSeq == null) {
+            lastSeq = since;
+        }
+
+        Map<String,Object> result = new HashMap<String,Object>();
+        result.put("results", entries);
+        result.put("last_seq", lastSeq);
+        return result;
+    }
+
+    //FIXME revisit how continuous changes flow
+//    public void sendContinuousChange(TDRevision rev) {
+//        Map<String,Object> changeDict = changesDictForRevision(rev);
+//        ObjectMapper mapper = new ObjectMapper();
+//        try {
+//            byte[] json = mapper.writeValueAsBytes(changeDict);
+//        } catch (Exception e) {
+//            Log.w("Unable to serialize change to JSON", e);
+//        }
+//    }
+
+    /** DOCUMENT REQUESTS: **/
+
+    public String getRevIDFromIfMatchHeader() {
+        String ifMatch = connection.getRequestProperty("If-Match");
+        if(ifMatch == null) {
+            return null;
+        }
+        // Value of If-Match is an ETag, so have to trim the quotes around it:
+        if(ifMatch.length() > 2 && ifMatch.startsWith("\"") && ifMatch.endsWith("\"")) {
+            return ifMatch.substring(1,ifMatch.length() - 2);
+        } else {
+            return null;
+        }
+    }
+
+    public String setResponseEtag(TDRevision rev) {
+        String eTag = String.format("\"%s\"", rev.getRevId());
+        connection.getResHeader().add("Etag", eTag);
+        return eTag;
+    }
+
+    public TDStatus do_GET_Document(TDDatabase _db, String docID, String _attachmentName) {
+        // http://wiki.apache.org/couchdb/HTTP_Document_API#GET
+        boolean isLocalDoc = docID.startsWith("_local");
+        EnumSet<TDContentOptions> options = getContentOptions();
+        String openRevsParam = getQuery("open_revs");
+        if(openRevsParam == null || isLocalDoc) {
+            // Regular GET:
+            String revID = getQuery("rev");  // often null
+            TDRevision rev = null;
+            if(isLocalDoc) {
+                rev = db.getLocalDocument(docID, revID);
+            } else {
+                rev = db.getDocumentWithIDAndRev(docID, revID, options);
+            }
+            if(rev == null) {
+                return new TDStatus(TDStatus.NOT_FOUND);
+            }
+            if(cacheWithEtag(rev.getRevId())) {
+                return new TDStatus(TDStatus.NOT_MODIFIED);  // set ETag and check conditional GET
+            }
+
+            connection.setResponseBody(rev.getBody());
+        } else {
+            List<Map<String,Object>> result = null;
+            if(openRevsParam.equals("all")) {
+                // Get all conflicting revisions:
+                TDRevisionList allRevs = db.getAllRevisionsOfDocumentID(docID, true);
+                result = new ArrayList<Map<String,Object>>(allRevs.size());
+                for (TDRevision rev : allRevs) {
+                    TDStatus status = db.loadRevisionBody(rev, options);
+                    if(status.isSuccessful()) {
+                        Map<String, Object> dict = new HashMap<String,Object>();
+                        dict.put("ok", rev.getProperties());
+                        result.add(dict);
+                    } else if(status.getCode() != TDStatus.INTERNAL_SERVER_ERROR) {
+                        Map<String, Object> dict = new HashMap<String,Object>();
+                        dict.put("missing", rev.getRevId());
+                        result.add(dict);
+                    } else {
+                        return status;  // internal error getting revision
+                    }
+                }
+            } else {
+                // ?open_revs=[...] returns an array of revisions of the document:
+                List<String> openRevs = (List<String>)getJSONQuery("open_revs");
+                if(openRevs == null) {
+                    return new TDStatus(TDStatus.BAD_REQUEST);
+                }
+                result = new ArrayList<Map<String,Object>>(openRevs.size());
+                for (String revID : openRevs) {
+                    TDRevision rev = db.getDocumentWithIDAndRev(docID, revID, options);
+                    if(rev != null) {
+                        Map<String, Object> dict = new HashMap<String,Object>();
+                        dict.put("ok", rev.getProperties());
+                        result.add(dict);
+                    } else {
+                        Map<String, Object> dict = new HashMap<String,Object>();
+                        dict.put("missing", revID);
+                        result.add(dict);
+                    }
+                }
+            }
+            String acceptMultipart  = getMultipartRequestType();
+            if(acceptMultipart != null) {
+                //FIXME figure out support for multipart
+                throw new UnsupportedOperationException();
+            } else {
+                connection.setResponseBody(new TDBody(result));
+            }
+        }
+        return new TDStatus(TDStatus.OK);
+    }
+
+    public TDStatus do_GET_Attachment(TDDatabase _db, String docID, String _attachmentName) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * NOTE this departs from the iOS version, returning revision, passing status back by reference
+     */
+    public TDRevision update(TDDatabase _db, String docID, TDBody body, boolean deleting, boolean allowConflict, TDStatus outStatus) {
+        boolean isLocalDoc = docID != null && docID.startsWith(("_local"));
+        String prevRevID = null;
+
+        if(!deleting) {
+            Boolean deletingBoolean = (Boolean)body.getPropertyForKey("deleted");
+            deleting = (deletingBoolean != null && deletingBoolean.booleanValue());
+            if(docID == null) {
+                if(isLocalDoc) {
+                    outStatus.setCode(TDStatus.METHOD_NOT_ALLOWED);
+                    return null;
+                }
+                // POST's doc ID may come from the _id field of the JSON body, else generate a random one.
+                docID = (String)body.getPropertyForKey("_id");
+                if(docID == null) {
+                    if(deleting) {
+                        outStatus.setCode(TDStatus.BAD_REQUEST);
+                        return null;
+                    }
+                    docID = TDDatabase.generateDocumentId();
+                }
+            }
+            // PUT's revision ID comes from the JSON body.
+            prevRevID = (String)body.getPropertyForKey("_rev");
+        } else {
+            // DELETE's revision ID comes from the ?rev= query param
+            prevRevID = getQuery("rev");
+        }
+
+        // A backup source of revision ID is an If-Match header:
+        if(prevRevID == null) {
+            prevRevID = getRevIDFromIfMatchHeader();
+        }
+
+        TDRevision rev = new TDRevision(docID, null, deleting);
+        rev.setBody(body);
+
+        TDRevision result = null;
+        TDStatus tmpStatus = new TDStatus();
+        if(isLocalDoc) {
+            result = _db.putLocalRevision(rev, prevRevID, tmpStatus);
+        } else {
+            result = _db.putRevision(rev, prevRevID, allowConflict, tmpStatus);
+        }
+        outStatus.setCode(tmpStatus.getCode());
+        return result;
+    }
+
+    public TDStatus update(TDDatabase _db, String docID, Map<String,Object> bodyDict, boolean deleting) {
+        TDBody body = new TDBody(bodyDict);
+        TDStatus status = new TDStatus();
+        TDRevision rev = update(_db, docID, body, deleting, false, status);
+
+        if(status.isSuccessful()) {
+            cacheWithEtag(rev.getRevId());  // set ETag
+            if(!deleting) {
+                URL url = connection.getURL();
+                String urlString = url.toExternalForm();
+                if(docID != null) {
+                    urlString += "/" + rev.getDocId();
+                    try {
+                        url = new URL(urlString);
+                    } catch (MalformedURLException e) {
+                        Log.w("Malformed URL", e);
+                    }
+                }
+                setResponseLocation(url);
+            }
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("ok", true);
+            result.put("id", rev.getDocId());
+            result.put("rev", rev.getRevId());
+            connection.setResponseBody(new TDBody(result));
+        }
+        return status;
+    }
+
+    public TDStatus do_PUT_Document(TDDatabase _db, String docID, String _attachmentName) {
+        Map<String,Object> bodyDict = getBodyAsDictionary();
+        if(bodyDict == null) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+
+        if(getQuery("new_edits") == null || (getQuery("new_edits") != null && (new Boolean(getQuery("new_edits"))))) {
+            // Regular PUT
+            return update(_db, docID, bodyDict, false);
+        } else {
+            // PUT with new_edits=false -- forcible insertion of existing revision:
+            TDBody body = new TDBody(bodyDict);
+            TDRevision rev = new TDRevision(body);
+            if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
+                return new TDStatus(TDStatus.BAD_REQUEST);
+            }
+            List<String> history = TDDatabase.parseCouchDBRevisionHistory(body.getProperties());
+            return db.forceInsert(rev, history, null);
+        }
+    }
+
+    public TDStatus do_DELETE_Document(TDDatabase _db, String docID, String _attachmentName) {
+        return update(_db, docID, null, true);
+    }
+
+    public TDStatus updateAttachment(String attachment, String docID, byte[] body) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    public TDStatus do_PUT_Attachment(TDDatabase _db, String docID, String _attachmentName) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    public TDStatus do_DELETE_Attachment(TDDatabase _db, String docID, String _attachmentName) {
+        //FIXME implement
+        throw new UnsupportedOperationException();
+    }
+
+    /** VIEW QUERIES: **/
 
 }
