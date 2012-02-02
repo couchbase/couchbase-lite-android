@@ -1684,7 +1684,7 @@ public class TDDatabase extends Observable {
     /**
      * Parses the _revisions dict from a document into an array of revision ID strings
      */
-    public List<String> parseCouchDBRevisionHistory(Map<String,Object> docProperties) {
+    public static List<String> parseCouchDBRevisionHistory(Map<String,Object> docProperties) {
         Map<String,Object> revisions = (Map<String,Object>)docProperties.get("_revisions");
         if(revisions == null) {
             return null;
