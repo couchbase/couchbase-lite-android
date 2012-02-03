@@ -26,11 +26,14 @@ import com.couchbase.touchdb.TDDatabase;
 public class DirUtils {
 
     public static boolean deleteRecursive(File fileOrDirectory) {
-        if (fileOrDirectory.isDirectory())
-            for (File child : fileOrDirectory.listFiles())
-                return deleteRecursive(child);
+        if (fileOrDirectory.isDirectory()) {
+            for (File child : fileOrDirectory.listFiles()) {
+                deleteRecursive(child);
+            }
+        }
 
-        return fileOrDirectory.delete();
+        boolean result = fileOrDirectory.delete();
+        return result;
     }
 
     public static String getDatabaseNameFromPath(String path) {
