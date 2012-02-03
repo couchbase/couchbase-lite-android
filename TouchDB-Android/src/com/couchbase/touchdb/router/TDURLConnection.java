@@ -111,7 +111,7 @@ public class TDURLConnection extends HttpURLConnection {
     }
 
     @Override
-    public int getResponseCode() throws IOException {
+    public int getResponseCode() {
         return responseCode;
     }
 
