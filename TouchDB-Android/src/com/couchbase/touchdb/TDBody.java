@@ -104,7 +104,9 @@ public class TDBody {
         if(object == null && !error) {
             ObjectMapper mapper = new ObjectMapper();
             try {
-                object = mapper.readValue(json, Map.class);
+                if(json != null) {
+                    object = mapper.readValue(json, Map.class);
+                }
             } catch (Exception e) {
                 Log.w(TDDatabase.TAG, "TDBody: couldn't parse JSON: " + new String(json), e);
                 error = true;
