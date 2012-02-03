@@ -14,16 +14,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.util.Log;
 
 import com.couchbase.touchdb.TDBody;
+import com.couchbase.touchdb.TDChangesOptions;
 import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDDatabase.TDContentOptions;
+import com.couchbase.touchdb.TDFilterBlock;
 import com.couchbase.touchdb.TDMisc;
 import com.couchbase.touchdb.TDQueryOptions;
 import com.couchbase.touchdb.TDRevision;
@@ -36,12 +38,17 @@ import com.couchbase.touchdb.replicator.TDPusher;
 import com.couchbase.touchdb.replicator.TDReplicator;
 
 
-public class TDRouter {
+public class TDRouter implements Observer {
     private TDServer server;
     private TDDatabase db;
     private TDURLConnection connection;
     private Map<String,String> queries;
     private boolean changesIncludesDocs = false;
+    private TDRouterCallbackBlock callbackBlock;
+    private boolean responseSent = false;
+    private boolean waiting = false;
+    private TDFilterBlock changesFilter;
+    private boolean longpoll = false;
 
     public static String getVersionString() {
         return TouchDBVersion.TouchDBVersionNumber;
@@ -50,6 +57,10 @@ public class TDRouter {
     public TDRouter(TDServer server, TDURLConnection connection) {
         this.server = server;
         this.connection = connection;
+    }
+
+    public void setCallbackBlock(TDRouterCallbackBlock callbackBlock) {
+        this.callbackBlock = callbackBlock;
     }
 
     public Map<String,String> getQueries() {
@@ -75,7 +86,9 @@ public class TDRouter {
         Map<String,String> queries = getQueries();
         if(queries != null) {
             String value = queries.get(param);
-            return URLDecoder.decode(value);
+            if(value != null) {
+                return URLDecoder.decode(value);
+            }
         }
         return null;
     }
@@ -90,7 +103,7 @@ public class TDRouter {
         String value = getQuery(param);
         if(value != null) {
             try {
-                result = Integer.parseInt(param);
+                result = Integer.parseInt(value);
             } catch (NumberFormatException e) {
                 //ignore, will return default value
             }
@@ -131,6 +144,15 @@ public class TDRouter {
         }
     }
 
+    public byte[] getBody() {
+        try {
+            byte[] bodyBytes = ((ByteArrayOutputStream)connection.getOutputStream()).toByteArray();
+            return bodyBytes;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     public EnumSet<TDContentOptions> getContentOptions() {
         EnumSet<TDContentOptions> result = EnumSet.noneOf(TDContentOptions.class);
         if(getBooleanQuery("attachments")) {
@@ -151,7 +173,7 @@ public class TDRouter {
         return result;
     }
 
-    public boolean getQueryOptions(TDQueryOptions options) throws JsonMappingException, JsonParseException, IOException {
+    public boolean getQueryOptions(TDQueryOptions options) {
         // http://wiki.apache.org/couchdb/HTTP_view_API#Querying_Options
         options.setSkip(getIntQuery("skip", options.getSkip()));
         options.setLimit(getIntQuery("limit", options.getLimit()));
@@ -211,6 +233,15 @@ public class TDRouter {
             result.add(URLDecoder.decode(component));
         }
         return result;
+    }
+
+    public void sendResponse() {
+        if(!responseSent) {
+            responseSent = true;
+            if(callbackBlock != null) {
+                callbackBlock.onResponseReady();
+            }
+        }
     }
 
     public void start() {
@@ -318,12 +349,10 @@ public class TDRouter {
                 Method m = this.getClass().getMethod("do_UNKNOWN", TDDatabase.class, String.class, String.class);
                 status = (TDStatus)m.invoke(this, db, docID, attachmentName);
             } catch (Exception e) {
-                connection.setResponseCode(TDStatus.INTERNAL_SERVER_ERROR);
-                return;
+                //default status is internal server error
             }
         } catch (Exception e) {
-            connection.setResponseCode(TDStatus.INTERNAL_SERVER_ERROR);
-            return;
+            //default status is internal server error
         }
 
         // Configure response headers:
@@ -347,11 +376,25 @@ public class TDRouter {
 
         connection.getResHeader().add("Server", String.format("TouchDB %s", getVersionString()));
 
-        //since we did everything in this thread we know the response is ready
-        connection.setResponseCode(status.getCode());
+        // If response is ready (nonzero status), tell my client about it:
+        if(status.getCode() != 0) {
+            connection.setResponseCode(status.getCode());
+            sendResponse();
+            if(callbackBlock != null && connection.getResponseBody() != null) {
+                callbackBlock.onDataAvailable(connection.getResponseBody().getJson());
+            }
+            if(callbackBlock != null && !waiting) {
+                callbackBlock.onFinish();
+            }
+        }
     }
 
-    public TDStatus do_UNKNWON(TDDatabase db, String docID, String attachmentName) {
+    public void stop() {
+        callbackBlock = null;
+        db.deleteObserver(this);
+    }
+
+    public TDStatus do_UNKNOWN(TDDatabase db, String docID, String attachmentName) {
         return new TDStatus(TDStatus.BAD_REQUEST);
     }
 
@@ -562,8 +605,16 @@ public class TDRouter {
     }
 
     public TDStatus do_GET_Document_all_docs(TDDatabase _db, String _docID, String _attachmentName) {
-        //FIXME implement
-        throw new UnsupportedOperationException();
+        TDQueryOptions options = new TDQueryOptions();
+        if(!getQueryOptions(options)) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+        Map<String,Object> result = db.getAllDocs(options);
+        if(result == null) {
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        }
+        connection.setResponseBody(new TDBody(result));
+        return new TDStatus(TDStatus.OK);
     }
 
     public TDStatus do_POST_Document_all_docs(TDDatabase _db, String _docID, String _attachmentName) {
@@ -663,16 +714,111 @@ public class TDRouter {
         return result;
     }
 
-    //FIXME revisit how continuous changes flow
-//    public void sendContinuousChange(TDRevision rev) {
-//        Map<String,Object> changeDict = changesDictForRevision(rev);
-//        ObjectMapper mapper = new ObjectMapper();
-//        try {
-//            byte[] json = mapper.writeValueAsBytes(changeDict);
-//        } catch (Exception e) {
-//            Log.w("Unable to serialize change to JSON", e);
-//        }
-//    }
+    public void sendContinuousChange(TDRevision rev) {
+        Map<String,Object> changeDict = changesDictForRevision(rev);
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String jsonString = mapper.writeValueAsString(changeDict);
+            if(callbackBlock != null) {
+                byte[] json = (jsonString + "\n").getBytes();
+                callbackBlock.onDataAvailable(json);
+            }
+        } catch (Exception e) {
+            Log.w("Unable to serialize change to JSON", e);
+        }
+    }
+
+    @Override
+    public void update(Observable observable, Object changeObject) {
+        if(observable == db) {
+            //make sure we're listening to the right events
+            Map<String,Object> changeNotification = (Map<String,Object>)changeObject;
+
+            TDRevision rev = (TDRevision)changeNotification.get("rev");
+
+            if(changesFilter != null && !changesFilter.filter(rev)) {
+                return;
+            }
+
+            if(longpoll) {
+                Log.w(TDDatabase.TAG, "TDRouter: Sending longpoll response");
+                sendResponse();
+                List<TDRevision> revs = new ArrayList<TDRevision>();
+                revs.add(rev);
+                Map<String,Object> body = responseBodyForChanges(revs, 0);
+                if(callbackBlock != null) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    byte[] data = null;
+                    try {
+                        data = mapper.writeValueAsBytes(body);
+                    } catch (Exception e) {
+                        Log.w(TDDatabase.TAG, "Error serializing JSON", e);
+                    }
+                    callbackBlock.onDataAvailable(data);
+                    callbackBlock.onFinish();
+                }
+            } else {
+                Log.w(TDDatabase.TAG, "TDRouter: Sending continous change chunk");
+                sendContinuousChange(rev);
+            }
+
+        }
+
+    }
+
+    public TDStatus do_GET_Document_changes(TDDatabase _db, String docID, String _attachmentName) {
+        // http://wiki.apache.org/couchdb/HTTP_database_API#Changes
+        TDChangesOptions options = new TDChangesOptions();
+        changesIncludesDocs = getBooleanQuery("include_docs");
+        options.setIncludeDocs(changesIncludesDocs);
+        String style = getQuery("style");
+        if(style != null && style.equals("all_docs")) {
+            options.setIncludeConflicts(true);
+        }
+        options.setContentOptions(getContentOptions());
+        options.setSortBySequence(!options.isIncludeConflicts());
+        options.setLimit(getIntQuery("limit", options.getLimit()));
+
+        int since = getIntQuery("since", 0);
+
+        String filterName = getQuery("filter");
+        if(filterName != null) {
+            changesFilter = db.getFilterNamed(filterName);
+            if(changesFilter == null) {
+                return new TDStatus(TDStatus.NOT_FOUND);
+            }
+        }
+
+        TDRevisionList changes = db.changesSince(since, options, changesFilter);
+
+        if(changes == null) {
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        String feed = getQuery("feed");
+        longpoll = "longpoll".equals(feed);
+        boolean continuous = !longpoll && "continuous".equals(feed);
+
+        if(continuous || (longpoll && changes.size() == 0)) {
+            if(continuous) {
+                connection.setResponseCode(TDStatus.OK);
+                sendResponse();
+                for (TDRevision rev : changes) {
+                    sendContinuousChange(rev);
+                }
+            }
+            db.addObserver(this);
+         // Don't close connection; more data to come
+            return new TDStatus(0);
+        } else {
+            if(options.isIncludeConflicts()) {
+                connection.setResponseBody(new TDBody(responseBodyForChangesWithConflicts(changes, since)));
+            } else {
+                connection.setResponseBody(new TDBody(responseBodyForChanges(changes, since)));
+            }
+            return new TDStatus(TDStatus.OK);
+        }
+    }
 
     /** DOCUMENT REQUESTS: **/
 
@@ -879,18 +1025,33 @@ public class TDRouter {
     }
 
     public TDStatus updateAttachment(String attachment, String docID, byte[] body) {
-        //FIXME implement
-        throw new UnsupportedOperationException();
+        TDStatus status = new TDStatus();
+        String revID = getQuery("rev");
+        if(revID == null) {
+            revID = getRevIDFromIfMatchHeader();
+        }
+        TDRevision rev = db.updateAttachment(attachment, body, connection.getRequestProperty("Content-Type"),
+                docID, revID, status);
+        if(status.isSuccessful()) {
+            Map<String, Object> resultDict = new HashMap<String, Object>();
+            resultDict.put("ok", true);
+            resultDict.put("id", rev.getDocId());
+            resultDict.put("rev", rev.getRevId());
+            connection.setResponseBody(new TDBody(resultDict));
+            cacheWithEtag(rev.getRevId());
+            if(body != null) {
+                setResponseLocation(connection.getURL());
+            }
+        }
+        return status;
     }
 
     public TDStatus do_PUT_Attachment(TDDatabase _db, String docID, String _attachmentName) {
-        //FIXME implement
-        throw new UnsupportedOperationException();
+        return updateAttachment(_attachmentName, docID, getBody());
     }
 
     public TDStatus do_DELETE_Attachment(TDDatabase _db, String docID, String _attachmentName) {
-        //FIXME implement
-        throw new UnsupportedOperationException();
+        return updateAttachment(_attachmentName, docID, null);
     }
 
     /** VIEW QUERIES: **/
