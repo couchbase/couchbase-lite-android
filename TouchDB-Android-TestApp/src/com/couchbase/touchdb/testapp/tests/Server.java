@@ -1,5 +1,6 @@
 package com.couchbase.touchdb.testapp.tests;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,16 +10,31 @@ import android.test.AndroidTestCase;
 
 import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDServer;
+import com.couchbase.touchdb.support.DirUtils;
 
 public class Server extends AndroidTestCase {
 
+    protected String getServerPath() {
+        String filesDir = getContext().getFilesDir().getAbsolutePath() + "/tests";
+        return filesDir;
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        //delete and recreate the server path
+        String serverPath = getServerPath();
+        File serverPathFile = new File(serverPath);
+        DirUtils.deleteRecursive(serverPathFile);
+        serverPathFile.mkdir();
+    }
+
     public void testServer() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
 
         TDServer server = null;
         try {
-            server = new TDServer(filesDir);
+            server = new TDServer(getServerPath());
         } catch (IOException e) {
             fail("Creating server caused IOException");
         }
@@ -33,7 +49,7 @@ public class Server extends AndroidTestCase {
         TDDatabase db = server.getDatabaseNamed("foo");
         Assert.assertNotNull(db);
         Assert.assertEquals("foo", db.getName());
-        Assert.assertTrue(db.getPath().startsWith(filesDir));
+        Assert.assertTrue(db.getPath().startsWith(getServerPath()));
         Assert.assertFalse(db.exists());
 
         Assert.assertEquals(db, server.getDatabaseNamed("foo"));
