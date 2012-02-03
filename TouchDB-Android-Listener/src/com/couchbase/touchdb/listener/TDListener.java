@@ -2,11 +2,17 @@ package com.couchbase.touchdb.listener;
 
 import java.net.URL;
 
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+
 import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.router.TDURLStreamHandlerFactor;
 
 public class TDListener implements Runnable {
 
+    private Handler handler;
+    private HandlerThread handlerThread;
     private Thread thread;
     private TDServer server;
     private TDHTTPServer httpServer;
@@ -26,16 +32,31 @@ public class TDListener implements Runnable {
 
     @Override
     public void run() {
-        httpServer.serve();
+        try {
+            httpServer.serve();
+        }
+        finally {
+            handlerThread.quit();
+            handlerThread = null;
+            handler = null;
+        }
     }
 
     public void start() {
+        handlerThread = new HandlerThread("TDListenerHandlerThread");
+        handlerThread.start();
+        Looper looper = handlerThread.getLooper();
+        handler = new Handler(looper);
         thread = new Thread(this);
         thread.start();
     }
 
     public void stop() {
         httpServer.notifyStop();
+    }
+
+    public void onServerThread(Runnable r) {
+        handler.post(r);
     }
 
 }

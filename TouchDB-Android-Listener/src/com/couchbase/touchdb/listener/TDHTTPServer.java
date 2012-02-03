@@ -39,6 +39,7 @@ public class TDHTTPServer extends Serve {
         //pass in the tdserver to the servlet
         TDHTTPServlet servlet = new TDHTTPServlet();
         servlet.setServer(server);
+        servlet.setListener(listener);
 
         this.addServlet("/", servlet);
         return super.serve();
