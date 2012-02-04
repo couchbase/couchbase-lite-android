@@ -32,6 +32,10 @@ import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDRevisionList;
 import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDStatus;
+import com.couchbase.touchdb.TDView;
+import com.couchbase.touchdb.TDView.TDViewCollation;
+import com.couchbase.touchdb.TDViewMapBlock;
+import com.couchbase.touchdb.TDViewReduceBlock;
 import com.couchbase.touchdb.TouchDBVersion;
 import com.couchbase.touchdb.replicator.TDPuller;
 import com.couchbase.touchdb.replicator.TDPusher;
@@ -130,7 +134,8 @@ public class TDRouter implements Observer {
     public boolean cacheWithEtag(String etag) {
         String eTag = String.format("\"%s\"", etag);
         connection.getResHeader().add("Etag", eTag);
-        return eTag.equals(connection.getRequestProperty("If-None-Match"));
+        String requestIfNoneMatch = connection.getRequestProperty("If-None-Match");
+        return eTag.equals(requestIfNoneMatch);
     }
 
     public Map<String,Object> getBodyAsDictionary() {
@@ -334,6 +339,7 @@ public class TDRouter implements Observer {
             attachmentName = path.get(2);
             if(attachmentName.startsWith("_") && docID.startsWith("_design")) {
                 // Design-doc attribute like _info or _view
+                message = message.replaceFirst("_Attachment", "_DesignDocument");
                 docID = docID.substring(8); // strip the "_design/" prefix
                 attachmentName = pathLen > 3 ? path.get(3) : null;
             }
@@ -1056,4 +1062,101 @@ public class TDRouter implements Observer {
 
     /** VIEW QUERIES: **/
 
+    public TDView compileView(String viewName, Map<String,Object> viewProps) {
+        String language = (String)viewProps.get("language");
+        if(language == null) {
+            language = "javascript";
+        }
+        String mapSource = (String)viewProps.get("map");
+        if(mapSource == null) {
+            return null;
+        }
+        TDViewMapBlock mapBlock = TDView.getCompiler().compileMapFunction(mapSource, language);
+        if(mapBlock == null) {
+            Log.w(TDDatabase.TAG, String.format("View %s has unknown map function: %s", viewName, mapSource));
+            return null;
+        }
+        String reduceSource = (String)viewProps.get("reduce");
+        TDViewReduceBlock reduceBlock = null;
+        if(reduceSource != null) {
+            reduceBlock = TDView.getCompiler().compileReduceFunction(reduceSource, language);
+            if(reduceBlock == null) {
+                Log.w(TDDatabase.TAG, String.format("View %s has unknown reduce function: %s", viewName, reduceBlock));
+                return null;
+            }
+        }
+
+        TDView view = db.getViewNamed(viewName);
+        view.setMapReduceBlocks(mapBlock, reduceBlock, "1");
+        String collation = (String)viewProps.get("collation");
+        if("raw".equals(collation)) {
+            view.setCollation(TDViewCollation.TDViewCollationRaw);
+        }
+        return view;
+    }
+
+    public TDStatus queryDesignDoc(String designDoc, String viewName, List<Object> keys) {
+        String tdViewName = String.format("%s/%s", designDoc, viewName);
+        TDView view = db.getExistingViewNamed(tdViewName);
+        if(view == null || view.getMapBlock() == null) {
+            // No TouchDB view is defined, or it hasn't had a map block assigned;
+            // see if there's a CouchDB view definition we can compile:
+            TDRevision rev = db.getDocumentWithIDAndRev(String.format("_design/%s", designDoc), null, EnumSet.noneOf(TDContentOptions.class));
+            if(rev == null) {
+                return new TDStatus(TDStatus.NOT_FOUND);
+            }
+            Map<String,Object> views = (Map<String,Object>)rev.getProperties().get("views");
+            Map<String,Object> viewProps = (Map<String,Object>)views.get(viewName);
+            if(viewProps == null) {
+                return new TDStatus(TDStatus.NOT_FOUND);
+            }
+            // If there is a CouchDB view, see if it can be compiled from source:
+            view = compileView(tdViewName, viewProps);
+            if(view == null) {
+                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        TDQueryOptions options = new TDQueryOptions();
+        if(!getQueryOptions(options)) {
+            return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+        if(keys != null) {
+            options.setKeys(keys);
+        }
+
+        TDStatus status = view.updateIndex();
+        if(!status.isSuccessful()) {
+            return status;
+        }
+
+        long lastSequenceIndexed = view.getLastSequenceIndexed();
+
+        // Check for conditional GET and set response Etag header:
+        if(keys == null) {
+            long eTag = options.isIncludeDocs() ? db.getLastSequence() : lastSequenceIndexed;
+            if(cacheWithEtag(String.format("%d", eTag))) {
+                return new TDStatus(TDStatus.NOT_MODIFIED);
+            }
+        }
+
+        List<Map<String,Object>> rows = view.queryWithOptions(options, status);
+        if(rows == null) {
+            return status;
+        }
+
+        Map<String,Object> responseBody = new HashMap<String,Object>();
+        responseBody.put("rows", rows);
+        responseBody.put("total_rows", rows.size());
+        responseBody.put("offset", options.getSkip());
+        if(options.isUpdateSeq()) {
+            responseBody.put("update_seq", lastSequenceIndexed);
+        }
+        connection.setResponseBody(new TDBody(responseBody));
+        return new TDStatus(TDStatus.OK);
+    }
+
+    public TDStatus do_GET_DesignDocument(TDDatabase _db, String designDocID, String viewName) {
+        return queryDesignDoc(designDocID, viewName, null);
+    }
 }
