@@ -8,6 +8,7 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ public class TDURLConnection extends HttpURLConnection {
     private boolean sentRequest = false;
     private ByteArrayOutputStream os;
     private TDBody responseBody;
+
+    private HashMap<String, List<String>> requestProperties = new HashMap<String, List<String>>();
 
     private static final String POST = "POST";
     private static final String GET = "GET";
@@ -48,6 +51,31 @@ public class TDURLConnection extends HttpURLConnection {
     public boolean usingProxy() {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public Map<String, List<String>> getRequestProperties() {
+        HashMap<String, List<String>> map = new HashMap<String, List<String>>();
+        for (String key : requestProperties.keySet()) {
+            map.put(key, Collections.unmodifiableList(requestProperties.get(key)));
+        }
+        return Collections.unmodifiableMap(map);
+    }
+
+    @Override
+    public String getRequestProperty(String field) {
+        List<String> valuesList = requestProperties.get(field);
+        if (valuesList == null) {
+            return null;
+        }
+        return valuesList.get(0);
+    }
+
+    @Override
+    public void setRequestProperty(String field, String newValue) {
+        List<String> valuesList = new ArrayList<String>();
+        valuesList.add(newValue);
+        requestProperties.put(field, valuesList);
     }
 
     @Override
