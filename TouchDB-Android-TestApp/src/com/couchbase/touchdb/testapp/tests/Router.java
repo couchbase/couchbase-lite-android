@@ -18,8 +18,12 @@ import android.test.InstrumentationTestCase;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDBody;
+import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDStatus;
+import com.couchbase.touchdb.TDView;
+import com.couchbase.touchdb.TDViewMapBlock;
+import com.couchbase.touchdb.TDViewMapEmitBlock;
 import com.couchbase.touchdb.router.TDRouter;
 import com.couchbase.touchdb.router.TDURLConnection;
 import com.couchbase.touchdb.router.TDURLStreamHandlerFactor;
@@ -62,6 +66,7 @@ public class Router extends InstrumentationTestCase {
                     conn.setRequestProperty(header, headers.get(header));
                 }
             }
+            Map<String, List<String>> allProperties = conn.getRequestProperties();
             if(bodyObj != null) {
                 conn.setDoInput(true);
                 ObjectMapper mapper = new ObjectMapper();
@@ -298,6 +303,210 @@ public class Router extends InstrumentationTestCase {
         results.remove(result1);
         expectedChanges.put("results", results);
         send(server, "GET", "/db/_changes?since=5", TDStatus.OK, expectedChanges);
+
+        server.close();
+    }
+
+    public void testLocalDocs() {
+
+        TDServer server = null;
+        try {
+            server = new TDServer(getServerPath());
+        } catch (IOException e) {
+            fail("Creating server caused IOException");
+        }
+
+        send(server, "PUT", "/db", TDStatus.CREATED, null);
+
+        // PUT a local doc:
+        Map<String,Object> doc1 = new HashMap<String,Object>();
+        doc1.put("message", "hello");
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/db/_local/doc1", doc1, TDStatus.CREATED, null);
+        String revID = (String)result.get("rev");
+        Assert.assertTrue(revID.startsWith("1-"));
+
+        // GET it:
+        doc1.put("_id", "_local/doc1");
+        doc1.put("_rev", revID);
+        result = (Map<String,Object>)send(server, "GET", "/db/_local/doc1", TDStatus.OK, doc1);
+
+        // Local doc should not appear in _changes feed:
+        Map<String,Object> expectedChanges = new HashMap<String,Object>();
+        expectedChanges.put("last_seq", 0);
+        expectedChanges.put("results", new ArrayList<Object>());
+        send(server, "GET", "/db/_changes", TDStatus.OK, expectedChanges);
+
+        server.close();
+    }
+
+    public void testAllDocs() {
+        TDServer server = null;
+        try {
+            server = new TDServer(getServerPath());
+        } catch (IOException e) {
+            fail("Creating server caused IOException");
+        }
+
+        send(server, "PUT", "/db", TDStatus.CREATED, null);
+
+        Map<String,Object> result;
+        Map<String,Object> doc1 = new HashMap<String,Object>();
+        doc1.put("message", "hello");
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, TDStatus.CREATED, null);
+        String revID = (String)result.get("rev");
+        Map<String,Object> doc3 = new HashMap<String,Object>();
+        doc3.put("message", "bonjour");
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", doc3, TDStatus.CREATED, null);
+        String revID3 = (String)result.get("rev");
+        Map<String,Object> doc2 = new HashMap<String,Object>();
+        doc2.put("message", "guten tag");
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", doc2, TDStatus.CREATED, null);
+        String revID2 = (String)result.get("rev");
+
+        // _all_docs:
+        result = (Map<String,Object>)send(server, "GET", "/db/_all_docs", TDStatus.OK, null);
+        Assert.assertEquals(3, result.get("total_rows"));
+        Assert.assertEquals(0, result.get("offset"));
+
+        Map<String,Object> value1 = new HashMap<String,Object>();
+        value1.put("rev", revID);
+        Map<String,Object> value2 = new HashMap<String,Object>();
+        value2.put("rev", revID2);
+        Map<String,Object> value3 = new HashMap<String,Object>();
+        value3.put("rev", revID3);
+
+        Map<String,Object> row1 = new HashMap<String,Object>();
+        row1.put("id", "doc1");
+        row1.put("key", "doc1");
+        row1.put("value", value1);
+        Map<String,Object> row2 = new HashMap<String,Object>();
+        row2.put("id", "doc2");
+        row2.put("key", "doc2");
+        row2.put("value", value2);
+        Map<String,Object> row3 = new HashMap<String,Object>();
+        row3.put("id", "doc3");
+        row3.put("key", "doc3");
+        row3.put("value", value3);
+
+        List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
+        expectedRows.add(row1);
+        expectedRows.add(row2);
+        expectedRows.add(row3);
+
+        List<Map<String,Object>> rows = (List<Map<String,Object>>)result.get("rows");
+        Assert.assertEquals(expectedRows, rows);
+
+        // ?include_docs:
+        result = (Map<String,Object>)send(server, "GET", "/db/_all_docs?include_docs=true", TDStatus.OK, null);
+        Assert.assertEquals(3, result.get("total_rows"));
+        Assert.assertEquals(0, result.get("offset"));
+
+        doc1.put("_id", "doc1");
+        doc1.put("_rev", revID);
+        row1.put("doc", doc1);
+
+        doc2.put("_id", "doc2");
+        doc2.put("_rev", revID2);
+        row2.put("doc", doc2);
+
+        doc3.put("_id", "doc3");
+        doc3.put("_rev", revID3);
+        row3.put("doc", doc3);
+
+        List<Map<String,Object>> expectedRowsWithDocs = new ArrayList<Map<String,Object>>();
+        expectedRowsWithDocs.add(row1);
+        expectedRowsWithDocs.add(row2);
+        expectedRowsWithDocs.add(row3);
+
+        rows = (List<Map<String,Object>>)result.get("rows");
+        Assert.assertEquals(expectedRowsWithDocs, rows);
+
+        server.close();
+    }
+
+    public void testViews() {
+
+        TDServer server = null;
+        try {
+            server = new TDServer(getServerPath());
+        } catch (IOException e) {
+            fail("Creating server caused IOException");
+        }
+
+        send(server, "PUT", "/db", TDStatus.CREATED, null);
+
+        Map<String,Object> result;
+        Map<String,Object> doc1 = new HashMap<String,Object>();
+        doc1.put("message", "hello");
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, TDStatus.CREATED, null);
+        String revID = (String)result.get("rev");
+        Map<String,Object> doc3 = new HashMap<String,Object>();
+        doc3.put("message", "bonjour");
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", doc3, TDStatus.CREATED, null);
+        String revID3 = (String)result.get("rev");
+        Map<String,Object> doc2 = new HashMap<String,Object>();
+        doc2.put("message", "guten tag");
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", doc2, TDStatus.CREATED, null);
+        String revID2 = (String)result.get("rev");
+
+        TDDatabase db = server.getDatabaseNamed("db");
+        TDView view = db.getViewNamed("design/view");
+        view.setMapReduceBlocks(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                emitter.emit(document.get("message"), null);
+            }
+        }, null, "1");
+
+        // Build up our expected result
+
+        Map<String,Object> row1 = new HashMap<String,Object>();
+        row1.put("id", "doc1");
+        row1.put("key", "hello");
+        Map<String,Object> row2 = new HashMap<String,Object>();
+        row2.put("id", "doc2");
+        row2.put("key", "guten tag");
+        Map<String,Object> row3 = new HashMap<String,Object>();
+        row3.put("id", "doc3");
+        row3.put("key", "bonjour");
+
+        List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
+        expectedRows.add(row3);
+        expectedRows.add(row2);
+        expectedRows.add(row1);
+
+        Map<String,Object> expectedResult = new HashMap<String,Object>();
+        expectedResult.put("offset", 0);
+        expectedResult.put("total_rows", 3);
+        expectedResult.put("rows", expectedRows);
+
+        // Query the view and check the result:
+        send(server, "GET", "/db/_design/design/_view/view", TDStatus.OK, expectedResult);
+
+        // Check the ETag:
+        TDURLConnection conn = sendRequest(server, "GET", "/db/_design/design/_view/view", null, null);
+        String etag = conn.getHeaderField("Etag");
+        Assert.assertEquals(String.format("\"%d\"", view.getLastSequenceIndexed()), etag);
+
+        // Try a conditional GET:
+        Map<String,String> headers = new HashMap<String,String>();
+        headers.put("If-None-Match", etag);
+        conn = sendRequest(server, "GET", "/db/_design/design/_view/view", headers, null);
+        Assert.assertEquals(TDStatus.NOT_MODIFIED, conn.getResponseCode());
+
+        // Update the database:
+        Map<String,Object> doc4 = new HashMap<String,Object>();
+        doc4.put("message", "aloha");
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc4", doc4, TDStatus.CREATED, null);
+
+        // Try a conditional GET:
+        conn = sendRequest(server, "GET", "/db/_design/design/_view/view", headers, null);
+        Assert.assertEquals(TDStatus.OK, conn.getResponseCode());
+        result = (Map<String,Object>)parseJSONResponse(conn);
+        Assert.assertEquals(4, result.get("total_rows"));
+
+        server.close();
     }
 
 }
