@@ -20,7 +20,6 @@ by Marty Schoch (marty@couchbase.com)
 
 ## TODO
 - Finish porting all of TDRouter so that all operations are supported
-- Add support for building all projects with Ant
 
 ## Running the Demo App (currently requires Eclipse)
 1.  Import all 3 projects into Eclipse (TouchDB-Android, TouchDB-Android-Listener, TouchDB-Android-TestApp)
