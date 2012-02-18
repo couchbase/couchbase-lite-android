@@ -1,13 +1,11 @@
 package com.couchbase.touchdb.listener;
 
-import java.net.URL;
-
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 
 import com.couchbase.touchdb.TDServer;
-import com.couchbase.touchdb.router.TDURLStreamHandlerFactor;
+import com.couchbase.touchdb.router.TDURLStreamHandlerFactory;
 
 public class TDListener implements Runnable {
 
@@ -19,7 +17,7 @@ public class TDListener implements Runnable {
 
     //static inializer to ensure that touchdb:// URLs are handled properly
     {
-        URL.setURLStreamHandlerFactory(new TDURLStreamHandlerFactor());
+        TDURLStreamHandlerFactory.registerSelfIgnoreError();
     }
 
     public TDListener(TDServer server, int port) {
