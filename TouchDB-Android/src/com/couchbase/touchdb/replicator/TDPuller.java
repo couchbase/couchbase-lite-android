@@ -84,16 +84,26 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     @Override
     public void stop() {
+        inExternalShutdown = true;
         if(!running) {
             return;
         }
+
         changeTracker.setClient(null);  // stop it from calling my changeTrackerStopped()
         changeTracker.stop();
         changeTracker = null;
+
+        asyncTaskFinished(1);
         super.stop();
-        if(asyncTaskCount == 0) {
-            stopped();
-        }
+    }
+
+    @Override
+    public void stopped() {
+
+        revsToInsert.flush();
+        revsToInsert.close();
+
+        super.stopped();
     }
 
     // Got a _changes feed entry from the TDChangeTracker.
@@ -134,6 +144,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         if(batcher != null) {
             batcher.flush();
         }
+
         asyncTaskFinished(1);
     }
 
@@ -185,8 +196,11 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     /**
      * Start up some HTTP GETs, within our limit on the maximum simultaneous number
+     *
+     * Needs to be synchronized because multiple RemoteRequest theads call this upon completion
+     * to keep the process moving, need to synchronize check for size with removal
      */
-    public void pullRemoteRevisions() {
+    public synchronized void pullRemoteRevisions() {
         while(httpConnectionCount < MAX_OPEN_HTTP_CONNECTIONS && revsToPull.size() > 0) {
             pullRemoteRevision(revsToPull.get(0));
             revsToPull.remove(0);
@@ -206,6 +220,12 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         // See: http://wiki.apache.org/couchdb/HTTP_Document_API#Getting_Attachments_With_a_Document
         String path = String.format("/%s?rev=%s&revs=true&attachments=true", URLEncoder.encode(rev.getDocId()), URLEncoder.encode(rev.getRevId()));
         List<String> knownRevs = knownCurrentRevIDs(rev);
+        if(knownRevs == null) {
+            //this means something is wrong, possibly the replicator has shut down
+            asyncTaskFinished(1);
+            --httpConnectionCount;
+            return;
+        }
         if(knownRevs.size() > 0) {
             path = path + String.format("&atts_since=%s", joinQuotedEscaped(knownRevs));
         }
@@ -308,9 +328,9 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
             Log.w(TDDatabase.TAG, String.format("%s: Exception inserting revisions", this), e);
         } finally {
             db.endTransaction(success);
+            asyncTaskFinished(revs.size());
         }
 
-        asyncTaskFinished(revs.size());
         changesProcessed += revs.size();
     }
 

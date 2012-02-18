@@ -406,7 +406,9 @@ public class TDView {
                 Log.w(TDDatabase.TAG, "Failed to rebuild view " + name + ": "
                         + result.getCode());
             }
-            db.endTransaction(result.isSuccessful());
+            if(db != null) {
+                db.endTransaction(result.isSuccessful());
+            }
         }
 
         return result;

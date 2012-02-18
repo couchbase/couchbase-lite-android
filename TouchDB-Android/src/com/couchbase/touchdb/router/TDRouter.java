@@ -359,6 +359,7 @@ public class TDRouter implements Observer {
             }
         } catch (Exception e) {
             //default status is internal server error
+            Log.e(TDDatabase.TAG, "Exception in TDRouter", e);
         }
 
         // Configure response headers:
@@ -397,7 +398,9 @@ public class TDRouter implements Observer {
 
     public void stop() {
         callbackBlock = null;
-        db.deleteObserver(this);
+        if(db != null) {
+            db.deleteObserver(this);
+        }
     }
 
     public TDStatus do_UNKNOWN(TDDatabase db, String docID, String attachmentName) {
@@ -806,9 +809,10 @@ public class TDRouter implements Observer {
         boolean continuous = !longpoll && "continuous".equals(feed);
 
         if(continuous || (longpoll && changes.size() == 0)) {
+            connection.setChunked(true);
+            connection.setResponseCode(TDStatus.OK);
+            sendResponse();
             if(continuous) {
-                connection.setResponseCode(TDStatus.OK);
-                sendResponse();
                 for (TDRevision rev : changes) {
                     sendContinuousChange(rev);
                 }

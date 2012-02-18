@@ -20,6 +20,8 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
@@ -35,9 +37,11 @@ public class TDChangeTracker implements Runnable {
     private TDChangeTrackerMode mode;
     private Object lastSequenceID;
 
+    private HandlerThread handlerThread;
     private Handler handler;
     private Thread thread;
     private boolean running = false;
+    private HttpUriRequest request;
 
     private String filterName;
     private Map<String, Object> filterParams;
@@ -48,7 +52,14 @@ public class TDChangeTracker implements Runnable {
 
     public TDChangeTracker(URL databaseURL, TDChangeTrackerMode mode,
             Object lastSequenceID, TDChangeTrackerClient client) {
-        this.handler = new Handler();
+        //first start a handler thread
+        String threadName = Thread.currentThread().getName();
+        handlerThread = new HandlerThread("ChangeTracker HandlerThread for " + threadName);
+        handlerThread.start();
+        //Get the looper from the handlerThread
+        Looper looper = handlerThread.getLooper();
+        //Create a new handler - passing in the looper for it to use
+        this.handler = new Handler(looper);
         this.databaseURL = databaseURL;
         this.mode = mode;
         this.lastSequenceID = lastSequenceID;
@@ -131,32 +142,33 @@ public class TDChangeTracker implements Runnable {
         running = true;
         HttpClient httpClient = client.getHttpClient();
         while (running) {
-            HttpUriRequest request = new HttpGet(getChangesFeedURL().toString());
+            request = new HttpGet(getChangesFeedURL().toString());
             try {
                 Log.v(TDDatabase.TAG, "Making request to " + getChangesFeedURL().toString());
                 HttpResponse response = httpClient.execute(request);
                 StatusLine status = response.getStatusLine();
                 if(status.getStatusCode() >= 300) {
                     Log.e(TDDatabase.TAG, "Change tracker got error " + Integer.toString(status.getStatusCode()));
-                    stopped();
+                    stop();
                 }
                 HttpEntity entity = response.getEntity();
                 if(entity != null) {
                 	try {
-	                    InputStream stream = entity.getContent();
+	                    InputStream input = entity.getContent();
 	                    if(mode != TDChangeTrackerMode.Continuous) {
 	                        ObjectMapper mapper = new ObjectMapper();
-	                        Map<String,Object> fullBody = mapper.readValue(stream, Map.class);
+	                        Map<String,Object> fullBody = mapper.readValue(input, Map.class);
 	                        boolean responseOK = receivedPollResponse(fullBody);
 	                        if(mode == TDChangeTrackerMode.LongPoll && responseOK) {
 	                            Log.v(TDDatabase.TAG, "Starting new longpoll");
 	                            continue;
 	                        } else {
+	                            Log.w(TDDatabase.TAG, "Change tracker calling stop");
 	                            stop();
 	                        }
 	                    }
 	                    else {
-	                        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+	                        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 	                        String line = null;
 	                        while ((line=reader.readLine()) != null) {
 	                            receivedChunk(line);
@@ -169,7 +181,11 @@ public class TDChangeTracker implements Runnable {
             } catch (ClientProtocolException e) {
                 Log.e(TDDatabase.TAG, "ClientProtocolException in change tracker", e);
             } catch (IOException e) {
-                Log.e(TDDatabase.TAG, "IOException in change tracker", e);
+                if(running) {
+                    //we get an exception when we're shutting down and have to
+                    //close the socket underneath our read, ignore that
+                    Log.e(TDDatabase.TAG, "IOException in change tracker", e);
+                }
             }
         }
         Log.v(TDDatabase.TAG, "Chagne tracker run loop exiting");
@@ -233,11 +249,18 @@ public class TDChangeTracker implements Runnable {
 
     public void stop() {
         running = false;
+        thread.interrupt();
+        if(request != null) {
+            request.abort();
+        }
+
         stopped();
     }
 
     public void stopped() {
-        if (client != null) {
+        Log.d(TDDatabase.TAG, "in stopped");
+        if (client != null  && handler != null) {
+            Log.d(TDDatabase.TAG, "posting stopped");
             handler.post(new Runnable() {
 
                 TDChangeTrackerClient copy = client;
@@ -245,10 +268,24 @@ public class TDChangeTracker implements Runnable {
                 @Override
                 public void run() {
                     copy.changeTrackerStopped(TDChangeTracker.this);
+
+                    //Shut down the HandlerThread
+                    handlerThread.quit();
+                    handlerThread = null;
+                    handler = null;
                 }
             });
+        } else if(handler != null) {
+            //Shut down the HandlerThread
+            handlerThread.quit();
+            handlerThread = null;
+            handler = null;
         }
         client = null;
+    }
+
+    public boolean isRunning() {
+        return running;
     }
 
 }

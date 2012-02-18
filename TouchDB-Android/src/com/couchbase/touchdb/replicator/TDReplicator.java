@@ -12,6 +12,8 @@ import org.apache.http.client.HttpResponseException;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
@@ -28,6 +30,7 @@ public abstract class TDReplicator extends Observable {
 
     private static int lastSessionID = 0;
 
+    protected HandlerThread handlerThread;
     protected Handler handler;
     protected TDDatabase db;
     protected URL remote;
@@ -45,6 +48,8 @@ public abstract class TDReplicator extends Observable {
     protected int changesTotal;
     protected final HttpClientFactory clientFacotry;
 
+    protected boolean inExternalShutdown = false;
+
     protected static final int PROCESSOR_DELAY = 500;
     protected static final int INBOX_CAPACITY = 100;
 
@@ -53,10 +58,19 @@ public abstract class TDReplicator extends Observable {
     }
 
     public TDReplicator(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFacotry) {
-        this.handler = new Handler();
+
         this.db = db;
         this.remote = remote;
         this.continuous = continuous;
+
+        //start a handler thread
+        handlerThread = new HandlerThread("ReplicatorHandlerThread for " + toString());
+        handlerThread.start();
+        //Get the looper from the handlerThread
+        Looper looper = handlerThread.getLooper();
+        //Create a new handler - passing in the looper for it to use
+        this.handler = new Handler(looper);
+
 
         batcher = new TDBatcher<TDRevision>(INBOX_CAPACITY, PROCESSOR_DELAY, new TDBatchProcessor<TDRevision>() {
             @Override
@@ -91,7 +105,8 @@ public abstract class TDReplicator extends Observable {
     }
 
     public String toString() {
-        return getClass().getName() + "[" + remote.toExternalForm() + "]";
+        String name = String.format("%s [%s]", getClass().getSimpleName(), remote != null ? remote.toExternalForm() : "");
+        return name;
     }
 
     public boolean isPush() {
@@ -162,7 +177,6 @@ public abstract class TDReplicator extends Observable {
             return;
         }
         Log.v(TDDatabase.TAG, toString() + " STOPPING...");
-        batcher.flush();
         if(asyncTaskCount == 0) {
             stopped();
         }
@@ -171,15 +185,26 @@ public abstract class TDReplicator extends Observable {
     public void stopped() {
         Log.v(TDDatabase.TAG, toString() + " STOPPED");
         running = false;
+
+        batcher.flush();
+        batcher.close();
+
+        //Shut down the HandlerThread
+        handlerThread.quit();
+        handlerThread = null;
+        handler = null;
+
         this.changesProcessed = this.changesTotal = 0;
-        db.replicatorDidStop(this);
+        if(!inExternalShutdown) {
+            db.replicatorDidStop(this);
+        }
     }
 
-    public void asyncTaskStarted() {
+    public synchronized void asyncTaskStarted() {
         ++asyncTaskCount;
     }
 
-    public void asyncTaskFinished(int numTasks) {
+    public synchronized void asyncTaskFinished(int numTasks) {
         this.asyncTaskCount -= numTasks;
         if(asyncTaskCount == 0) {
             stopped();
@@ -243,13 +268,16 @@ public abstract class TDReplicator extends Observable {
                 if(e != null && e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() != 404) {
                     error = e;
                 } else {
-                    if(e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() != 404) {
+                    if(e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() == 404) {
                         maybeCreateRemoteDB();
                     }
                     Map<String,Object> response = (Map<String,Object>)result;
                     remoteCheckpoint = response;
-                    String remoteLastSequence = (String)response.get("lastSequence");
-                    if(remoteLastSequence.equals(localLastSequence)) {
+                    String remoteLastSequence = null;
+                    if(response != null) {
+                        remoteLastSequence = (String)response.get("lastSequence");
+                    }
+                    if(remoteLastSequence != null && remoteLastSequence.equals(localLastSequence)) {
                         lastSequence = localLastSequence;
                         Log.v(TDDatabase.TAG, String.format("%s: Replicating from lastSequence=%s", this, lastSequence));
                     } else {

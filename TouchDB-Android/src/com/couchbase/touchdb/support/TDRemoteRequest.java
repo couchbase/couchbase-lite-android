@@ -89,6 +89,8 @@ public class TDRemoteRequest implements Runnable {
             StatusLine status = response.getStatusLine();
             if(status.getStatusCode() >= 300) {
                 Log.e(TDDatabase.TAG, "Got error " + Integer.toString(status.getStatusCode()));
+                Log.e(TDDatabase.TAG, "Request was for: " + request.toString());
+                Log.e(TDDatabase.TAG, "Status reason: " + status.getReasonPhrase());
                 respondWithResult(null, new HttpResponseException(status.getStatusCode(), status.getReasonPhrase()));
             } else {
                 HttpEntity temp = response.getEntity();
@@ -112,10 +114,7 @@ public class TDRemoteRequest implements Runnable {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } finally {
-            //Shut down the HandlerThread
-            handlerThread.quit();
-            handlerThread = null;
-            handler = null;
+
         }
 
     }
@@ -127,7 +126,17 @@ public class TDRemoteRequest implements Runnable {
 
             @Override
             public void run() {
-                onCompletion.onCompletion(result, error);
+                try {
+                    onCompletion.onCompletion(result, error);
+                } catch(Exception e) {
+                    // don't let this crash the thread
+                    Log.e(TDDatabase.TAG, "TDRemoteRequestCompletionBlock throw Exception", e);
+                }
+
+                //Shut down the HandlerThread
+                handlerThread.quit();
+                handlerThread = null;
+                handler = null;
             }
         });
     }

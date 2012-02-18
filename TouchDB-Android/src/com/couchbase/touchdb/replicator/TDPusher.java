@@ -30,7 +30,7 @@ public class TDPusher extends TDReplicator implements Observer {
     public TDPusher(TDDatabase db, URL remote, boolean continuous) {
         this(db, remote, continuous, null);
     }
-    
+
     public TDPusher(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFactory) {
         super(db, remote, continuous, clientFactory);
         createTarget = false;
@@ -102,6 +102,7 @@ public class TDPusher extends TDReplicator implements Observer {
 
     @Override
     public void stop() {
+        inExternalShutdown = true;
         if(observing) {
             observing = false;
             db.deleteObserver(this);
@@ -116,7 +117,7 @@ public class TDPusher extends TDReplicator implements Observer {
         if(observable == db) {
             Map<String,Object> change = (Map<String,Object>)data;
             // Skip revisions that originally came from the database I'm syncing to:
-            String source = (String)change.get("source");
+            URL source = (URL)change.get("source");
             if(source != null && source.equals(remote.toExternalForm())) {
                 return;
             }

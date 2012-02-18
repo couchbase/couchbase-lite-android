@@ -24,6 +24,7 @@ public class TDURLConnection extends HttpURLConnection {
     private boolean sentRequest = false;
     private ByteArrayOutputStream os;
     private TDBody responseBody;
+    private boolean chunked = false;
 
     private HashMap<String, List<String>> requestProperties = new HashMap<String, List<String>>();
 
@@ -198,6 +199,14 @@ public class TDURLConnection extends HttpURLConnection {
         }
         return os = new ByteArrayOutputStream();
 
+    }
+
+    public void setChunked(boolean chunked) {
+        this.chunked = chunked;
+    }
+
+    public boolean isChunked() {
+        return chunked;
     }
 
 }

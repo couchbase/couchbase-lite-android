@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -288,6 +289,15 @@ public class TDDatabase extends Observable {
         }
         views = null;
 
+        if(activeReplicators != null) {
+            Iterator<TDReplicator> iter = activeReplicators.iterator();
+            while(iter.hasNext()) {
+                TDReplicator replicator = iter.next();
+                replicator.stop();
+                iter.remove();
+            }
+        }
+
         if(database != null && database.isOpen()) {
             database.close();
         }
@@ -348,7 +358,7 @@ public class TDDatabase extends Observable {
      */
     public boolean beginTransaction() {
         try {
-            database.execSQL("SAVEPOINT tdb" + Integer.toString(transactionLevel + 1));
+            database.beginTransaction();
             ++transactionLevel;
             Log.v(TAG, "Begin transaction (level " + Integer.toString(transactionLevel) + ")...");
         } catch (SQLException e) {
@@ -367,20 +377,18 @@ public class TDDatabase extends Observable {
 
         if(commit) {
             Log.v(TAG, "Committing transaction (level " + Integer.toString(transactionLevel) + ")...");
+            database.setTransactionSuccessful();
+            database.endTransaction();
         }
         else {
             Log.v(TAG, "CANCEL transaction (level " + Integer.toString(transactionLevel) + ")...");
             try {
-                database.execSQL("ROLLBACK TO tdb" + Integer.toString(transactionLevel));
+                database.endTransaction();
             } catch (SQLException e) {
                 return false;
             }
         }
-        try {
-            database.execSQL("RELEASE tdb" + Integer.toString(transactionLevel));
-        } catch (SQLException e) {
-            return false;
-        }
+
         --transactionLevel;
         return true;
     }
@@ -2048,6 +2056,9 @@ public class TDDatabase extends Observable {
             }
 
             success = true;
+        } catch(SQLException e) {
+            endTransaction(success);
+            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         } finally {
             endTransaction(success);
         }
