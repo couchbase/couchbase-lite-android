@@ -26,7 +26,7 @@ import com.couchbase.touchdb.TDViewMapBlock;
 import com.couchbase.touchdb.TDViewMapEmitBlock;
 import com.couchbase.touchdb.router.TDRouter;
 import com.couchbase.touchdb.router.TDURLConnection;
-import com.couchbase.touchdb.router.TDURLStreamHandlerFactor;
+import com.couchbase.touchdb.router.TDURLStreamHandlerFactory;
 import com.couchbase.touchdb.support.DirUtils;
 
 public class Router extends InstrumentationTestCase {
@@ -50,7 +50,7 @@ public class Router extends InstrumentationTestCase {
 
         //for some reason a traditional static initializer causes junit to die
         if(!initializedUrlHandler) {
-            URL.setURLStreamHandlerFactory(new TDURLStreamHandlerFactor());
+            URL.setURLStreamHandlerFactory(new TDURLStreamHandlerFactory());
             initializedUrlHandler = true;
         }
     }
