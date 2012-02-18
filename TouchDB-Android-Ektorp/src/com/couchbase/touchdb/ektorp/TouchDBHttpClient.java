@@ -195,8 +195,15 @@ public class TouchDBHttpClient implements HttpClient {
 
     protected HttpResponse executeRequest(TDURLConnection conn) {
         TDRouter router = new TDRouter(server, conn);
+        TouchDBHttpResponse response;
+        try {
+            response = TouchDBHttpResponse.of(conn, router);
+        } catch (IOException e) {
+            throw Exceptions.propagate(e);
+        }
+        router.setCallbackBlock(response);
         router.start();
-        return TouchDBHttpResponse.of(conn, router);
+        return response;
     }
 
 }
