@@ -33,7 +33,7 @@ public class ChangeTracker extends InstrumentationTestCase {
                 Object seq = change.get("seq");
                 Log.v(TAG, "See change " + seq.toString());
             }
-            
+
             @Override
             public HttpClient getHttpClient() {
             	return new DefaultHttpClient();
@@ -50,7 +50,9 @@ public class ChangeTracker extends InstrumentationTestCase {
             }
         });
 
-        Thread.sleep(30*1000);
+        while(changeTracker.isRunning()) {
+            Thread.sleep(1000);
+        }
 
     }
 
@@ -70,7 +72,7 @@ public class ChangeTracker extends InstrumentationTestCase {
                 Object seq = change.get("seq");
                 Log.v(TAG, "See change " + seq.toString());
             }
-            
+
             @Override
             public HttpClient getHttpClient() {
             	return new DefaultHttpClient();
@@ -87,7 +89,7 @@ public class ChangeTracker extends InstrumentationTestCase {
             }
         });
 
-        Thread.sleep(30*1000);
+        Thread.sleep(10*1000);
 
     }
 
@@ -107,7 +109,7 @@ public class ChangeTracker extends InstrumentationTestCase {
                 Object seq = change.get("seq");
                 Log.v(TAG, "See change " + seq.toString());
             }
-            
+
             @Override
             public HttpClient getHttpClient() {
             	return new DefaultHttpClient();
@@ -124,7 +126,7 @@ public class ChangeTracker extends InstrumentationTestCase {
             }
         });
 
-        Thread.sleep(30*1000);
+        Thread.sleep(10*1000);
 
     }
 
