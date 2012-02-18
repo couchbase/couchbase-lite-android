@@ -105,7 +105,10 @@ public class Replicator extends InstrumentationTestCase {
             }
         });
 
-        Thread.sleep(30*1000);
+        while(repl.isRunning()) {
+            Log.i(TAG, "Waiting for replicator to finish");
+            Thread.sleep(1000);
+        }
         Assert.assertEquals("3", repl.getLastSequence());
 
         db.close();
@@ -146,10 +149,19 @@ public class Replicator extends InstrumentationTestCase {
             }
         });
 
-        Thread.sleep(30*1000);
+        while(repl.isRunning()) {
+            Log.i(TAG, "Waiting for replicator to finish");
+            Thread.sleep(1000);
+        }
         String lastSequence = repl.getLastSequence();
         Assert.assertTrue("2".equals(lastSequence) || "3".equals(lastSequence));
         Assert.assertEquals(2, db.getDocumentCount());
+
+
+        //wait for a short time here
+        //we want to ensure that the previous replicator has really finished
+        //writing its local state to the server
+        Thread.sleep(2*1000);
 
         final TDReplicator repl2 = db.getReplicator(remote, false, false);
         runTestOnUiThread(new Runnable() {
@@ -162,7 +174,10 @@ public class Replicator extends InstrumentationTestCase {
             }
         });
 
-        Thread.sleep(30*1000);
+        while(repl2.isRunning()) {
+            Log.i(TAG, "Waiting for replicator2 to finish");
+            Thread.sleep(1000);
+        }
         Assert.assertEquals(3, db.getLastSequence());
 
         TDRevision doc = db.getDocumentWithIDAndRev("doc1", null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
@@ -174,6 +189,10 @@ public class Replicator extends InstrumentationTestCase {
         Assert.assertNotNull(doc);
         Assert.assertTrue(doc.getRevId().startsWith("1-"));
         Assert.assertEquals(true, doc.getProperties().get("fnord"));
+
+        db.close();
+        server.deleteDatabaseNamed("db");
+        server.close();
     }
 
 }
