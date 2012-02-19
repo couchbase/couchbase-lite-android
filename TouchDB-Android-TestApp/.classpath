@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="/TouchDB-Android/libs/jackson-mapper-asl-1.9.2.jar"/>
 	<classpathentry kind="lib" path="/TouchDB-Android-Listener/libs/servlet.jar"/>
 	<classpathentry kind="lib" path="/TouchDB-Android-Listener/libs/webserver.jar"/>
+	<classpathentry kind="lib" path="/TouchDB-Android-JavaScript/libs/js.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
