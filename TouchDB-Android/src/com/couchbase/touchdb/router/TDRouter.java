@@ -55,6 +55,8 @@ public class TDRouter implements Observer {
     private boolean waiting = false;
     private TDFilterBlock changesFilter;
     private boolean longpoll = false;
+    
+    public static final String TAG = "TDRouter";
 
     public static String getVersionString() {
         return TouchDBVersion.TouchDBVersionNumber;
@@ -334,7 +336,6 @@ public class TDRouter implements Observer {
             }
         }
         
-
         String attachmentName = null;
         if(docID != null && pathLen > 2) {
             message = message.replaceFirst("_Document", "_Attachment");
@@ -346,11 +347,10 @@ public class TDRouter implements Observer {
                 docID = docID.substring(8); // strip the "_design/" prefix
                 attachmentName = pathLen > 3 ? path.get(3) : null;
             }
-            Log.d(TDDatabase.TAG, "attachment parsing: " + message);
+            Log.d(TAG, "attachment parsing: " + message);
         } else {
-            Log.d(TDDatabase.TAG, "message parsing: " + message);
+            Log.d(TAG, "message parsing: " + message);
         }
-        
 
         // Send myself a message based on the components:
         TDStatus status = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
@@ -640,9 +640,11 @@ public class TDRouter implements Observer {
 
     public TDStatus do_POST_Document_bulk_docs(TDDatabase _db, String _docID, String _attachmentName) {
     	Map<String,Object> bodyDict = getBodyAsDictionary();
+    	Log.v(TAG, "bodyDict returned " + bodyDict);
         if(bodyDict == null) {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }
+        List<Map<String,Object>> docs = (List<Map<String, Object>>) bodyDict.get("docs");
         
         //id allObj = [body objectForKey: @"all_or_nothing"];
         boolean allObj = false;
@@ -660,13 +662,14 @@ public class TDRouter implements Observer {
         boolean ok = false;
         //NSMutableArray* results = [NSMutableArray arrayWithCapacity: docs.count];
         List<Map<String,Object>> results = new ArrayList<Map<String,Object>>();
-        Set<Entry<String, Object>> bodySet = bodyDict.entrySet();
-        for (Entry<String, Object> entry : bodySet) {
-        	String docID = entry.getKey();
-        	TDRevision rev;
+        //List<TDStatus> results = new ArrayList<TDStatus>();
+        for (Map<String, Object> doc : docs) {
+        //for (Entry<String, Object> entry : bodySet) {
+        	String docID = (String) doc.get("_id");
+        	TDRevision rev = null;
             TDStatus status;
             //TDBody docBody = (TDBody) entry.getValue();
-            TDBody body = new TDBody(bodyDict);
+            TDBody body = new TDBody(doc);
             if (noNewEdits) {
             	rev = new TDRevision(body);
             	if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
@@ -676,8 +679,20 @@ public class TDRouter implements Observer {
             	status = db.forceInsert(rev, history, null);
                 Log.d("Progress:", status.toString());
             } else {
-            	status = update(_db, docID, bodyDict, false);
+            	Log.d("Update:", doc.toString());
+            	status = update(_db, docID, doc, false);
+            	if (doc.get("rev") != null) {
+                    rev = (TDRevision) doc.get("rev");
+                }
+            	Log.d("status:", status.toString());
             }
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("ok", true);
+            result.put("id", docID);
+            if (rev != null) {
+                result.put("rev", rev.getRevId());
+            }
+            results.add(result);
             
             /*if (status.isSuccessful()) {
                 //Assert(rev.getRevId());
@@ -726,6 +741,8 @@ public class TDRouter implements Observer {
 			
 		}*/
         //throw new UnsupportedOperationException();
+        Log.d("results:", results.toString());
+        connection.setResponseBody(new TDBody(results));
         return new TDStatus(TDStatus.CREATED);
     }
 
@@ -1159,7 +1176,10 @@ public class TDRouter implements Observer {
         TDBody body = new TDBody(bodyDict);
         TDStatus status = new TDStatus();
         TDRevision rev = update(_db, docID, body, deleting, false, status);
-
+        // useful for do_POST_Document_bulk_docs
+        if (bodyDict.get("rev") == null) {
+            bodyDict.put("rev", rev);
+        }
         if(status.isSuccessful()) {
             cacheWithEtag(rev.getRevId());  // set ETag
             if(!deleting) {

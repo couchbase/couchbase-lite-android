@@ -56,5 +56,10 @@ public class TDListener implements Runnable {
     public void onServerThread(Runnable r) {
         handler.post(r);
     }
+    
+    public String getStatus() {
+    	String status = this.httpServer.getServerInfo();
+		return status;
+    }
 
 }
