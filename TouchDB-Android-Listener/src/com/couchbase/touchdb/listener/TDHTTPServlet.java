@@ -28,6 +28,7 @@ public class TDHTTPServlet extends HttpServlet {
 
     private TDServer server;
     private TDListener listener;
+    public static final String TAG = "TDHTTPServlet";
 
     public void setServer(TDServer server) {
         this.server = server;
@@ -122,7 +123,7 @@ public class TDHTTPServlet extends HttpServlet {
             public void onDataAvailable(byte[] data) {
                 if(data != null) {
                     try {
-                        Log.v(TDDatabase.TAG, String.format("Asked to write: %s", new String(data)));
+                        Log.v(TAG, String.format("Asked to write: %s", new String(data)));
                         os.write(data);
                         os.flush();
                         response.flushBuffer();

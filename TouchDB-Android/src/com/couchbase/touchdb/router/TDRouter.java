@@ -23,6 +23,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import android.util.Log;
 
+import com.couchbase.touchdb.TDAttachment;
 import com.couchbase.touchdb.TDBody;
 import com.couchbase.touchdb.TDChangesOptions;
 import com.couchbase.touchdb.TDDatabase;
@@ -338,19 +339,32 @@ public class TDRouter implements Observer {
         
         String attachmentName = null;
         if(docID != null && pathLen > 2) {
-            message = message.replaceFirst("_Document", "_Attachment");
-            // Interpret attachment name:
-            attachmentName = path.get(2);
-            if(attachmentName.startsWith("_") && docID.startsWith("_design")) {
-                // Design-doc attribute like _info or _view
-                message = message.replaceFirst("_Attachment", "_DesignDocument");
-                docID = docID.substring(8); // strip the "_design/" prefix
-                attachmentName = pathLen > 3 ? path.get(3) : null;
-            }
-            Log.d(TAG, "attachment parsing: " + message);
-        } else {
-            Log.d(TAG, "message parsing: " + message);
+        	message = message.replaceFirst("_Document", "_Attachment");
+        	// Interpret attachment name:
+        	attachmentName = path.get(2);
+        	if(attachmentName.startsWith("_") && docID.startsWith("_design")) {
+        		// Design-doc attribute like _info or _view
+        		message = message.replaceFirst("_Attachment", "_DesignDocument");
+        		docID = docID.substring(8); // strip the "_design/" prefix
+        		attachmentName = pathLen > 3 ? path.get(3) : null;
+        	} else {
+        		if (pathLen > 3) {
+        			List<String> subList = path.subList(2, pathLen);
+        			StringBuilder sb = new StringBuilder();
+        			Iterator<String> iter = subList.iterator();
+        			while(iter.hasNext()) {
+        				sb.append(iter.next());
+        				if(iter.hasNext()) {
+        					//sb.append("%2F");
+        					sb.append("/");
+        				}
+        			}
+        			attachmentName = sb.toString();
+        		}
+        	}
         }
+        
+        //Log.d(TAG, "path: " + path + " message: " + message + " docID: " + docID + " attachmentName: " + attachmentName);
 
         // Send myself a message based on the components:
         TDStatus status = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
@@ -640,35 +654,28 @@ public class TDRouter implements Observer {
 
     public TDStatus do_POST_Document_bulk_docs(TDDatabase _db, String _docID, String _attachmentName) {
     	Map<String,Object> bodyDict = getBodyAsDictionary();
-    	Log.v(TAG, "bodyDict returned " + bodyDict);
+    	//Log.v(TAG, "bodyDict returned " + bodyDict);
         if(bodyDict == null) {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }
         List<Map<String,Object>> docs = (List<Map<String, Object>>) bodyDict.get("docs");
         
-        //id allObj = [body objectForKey: @"all_or_nothing"];
         boolean allObj = false;
-        //if (bodyDict.containsKey("all_or_nothing")) {
         if(getQuery("all_or_nothing") == null || (getQuery("all_or_nothing") != null && (new Boolean(getQuery("all_or_nothing"))))) {
         	allObj = true;
         }
         //   allowConflict If false, an error status 409 will be returned if the insertion would create a conflict, i.e. if the previous revision already has a child.
         boolean allOrNothing = (allObj && allObj != false);
         boolean noNewEdits = true;
-        //if (bodyDict.containsKey("new_edits")) {
         if(getQuery("new_edits") == null || (getQuery("new_edits") != null && (new Boolean(getQuery("new_edits"))))) {
         	noNewEdits = false;
         }
         boolean ok = false;
-        //NSMutableArray* results = [NSMutableArray arrayWithCapacity: docs.count];
         List<Map<String,Object>> results = new ArrayList<Map<String,Object>>();
-        //List<TDStatus> results = new ArrayList<TDStatus>();
         for (Map<String, Object> doc : docs) {
-        //for (Entry<String, Object> entry : bodySet) {
         	String docID = (String) doc.get("_id");
         	TDRevision rev = null;
             TDStatus status;
-            //TDBody docBody = (TDBody) entry.getValue();
             TDBody body = new TDBody(doc);
             if (noNewEdits) {
             	rev = new TDRevision(body);
@@ -693,54 +700,7 @@ public class TDRouter implements Observer {
                 result.put("rev", rev.getRevId());
             }
             results.add(result);
-            
-            /*if (status.isSuccessful()) {
-                //Assert(rev.getRevId());
-                
-                if (!noNewEdits) {
-                    //result = $dict({@"id", rev.docID}, {@"rev", rev.revID}, {@"ok", $true});
-                    Map<String, Object> dict = new HashMap<String,Object>();
-                    dict.put("id", rev.getDocId());
-                    dict.put("rev", rev.getRevId());
-                    dict.put("ok", rev.getProperties());
-                    results.add(dict);
-                }
-            } else if (allOrNothing) {
-                return status;  // all_or_nothing backs out if there's any error
-            } else if (status.getCode() == 403) {
-                //result = $dict({@"id", docID}, {@"error", @"validation failed"});
-                Map<String, Object> dict = new HashMap<String,Object>();
-                dict.put("id", rev.getDocId());
-                dict.put("error", "validation failed");
-                results.add(dict);
-            } else if (status.getCode() == 409) {
-                //result = $dict({@"id", docID}, {@"error", @"conflict"});
-            	Map<String, Object> dict = new HashMap<String,Object>();
-                dict.put("id", rev.getDocId());
-                dict.put("error", "conflict");
-                results.add(dict);
-            } else {
-                return status;  // abort the whole thing if something goes badly wrong
-            }*/
 		}
-        /*if(getQuery("new_edits") == null || (getQuery("new_edits") != null && (new Boolean(getQuery("new_edits"))))) {
-            // Regular PUT
-            return update(_db, docID, bodyDict, false);
-        } else {
-            // PUT with new_edits=false -- forcible insertion of existing revision:
-            TDBody body = new TDBody(bodyDict);
-            TDRevision rev = new TDRevision(body);
-            if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
-                return new TDStatus(TDStatus.BAD_REQUEST);
-            }
-            List<String> history = TDDatabase.parseCouchDBRevisionHistory(body.getProperties());
-            return db.forceInsert(rev, history, null);
-        }
-        for (Iterator iterator = bodyDict.iterator(); iterator.hasNext();) {
-			Map<String, Object> map = (Map<String, Object>) iterator.next();
-			
-		}*/
-        //throw new UnsupportedOperationException();
         Log.d("results:", results.toString());
         connection.setResponseBody(new TDBody(results));
         return new TDStatus(TDStatus.CREATED);
@@ -974,6 +934,21 @@ public class TDRouter implements Observer {
                 rev = db.getLocalDocument(docID, revID);
             } else {
                 rev = db.getDocumentWithIDAndRev(docID, revID, options);
+                // Handle ?atts_since query by stubbing out older attachments:
+                //?atts_since parameter - value is a (URL-encoded) JSON array of one or more revision IDs. 
+                // The response will include the content of only those attachments that changed since the given revision(s). 
+                //(You can ask for this either in the default JSON or as multipart/related, as previously described.)
+                List<String> attsSince = (List<String>)getJSONQuery("atts_since");
+                if (attsSince != null) {
+                	List<String> ancestorList = db.findCommonAncestorOf(rev, attsSince);
+                	if (ancestorList.size() > 0) {
+                		String ancestorID = ancestorList.get(0);
+                		if (ancestorID != null) {
+                			int generation = TDRevision.generationFromRevID(ancestorID);
+                			db.stubOutAttachmentsIn(rev, generation + 1);
+                		}
+                	}
+                }
             }
             if(rev == null) {
                 return new TDStatus(TDStatus.NOT_FOUND);
@@ -1036,88 +1011,35 @@ public class TDRouter implements Observer {
 
     public TDStatus do_GET_Attachment(TDDatabase _db, String docID, String _attachmentName) {
     	// http://wiki.apache.org/couchdb/HTTP_Document_API#GET
-        boolean isLocalDoc = docID.startsWith("_local");
-        EnumSet<TDContentOptions> options = getContentOptions();
-        String openRevsParam = getQuery("open_revs");
-        if(openRevsParam == null || isLocalDoc) {
-            // Regular GET:
-            String revID = getQuery("rev");  // often null
-            TDRevision rev = null;
-            if(isLocalDoc) {
-            	rev = db.getLocalDocument(docID, revID);
-            } else {
-            	rev = db.getDocumentWithIDAndRev(docID, revID, options);
-            	// Handle ?atts_since query by stubbing out older attachments:
-            	//?atts_since parameter - value is a (URL-encoded) JSON array of one or more revision IDs. 
-            	// The response will include the content of only those attachments that changed since the given revision(s). 
-            	//(You can ask for this either in the default JSON or as multipart/related, as previously described.)
-            	List<String> attsSince = (List<String>)getJSONQuery("atts_since");
-            	if (attsSince != null) {
-            		List<String> ancestorList = db.findCommonAncestorOf(rev, attsSince);
-                	if (ancestorList.size() > 0) {
-                		String ancestorID = ancestorList.get(0);
-                		if (ancestorID != null) {
-                			int generation = TDRevision.generationFromRevID(ancestorID);
-                			db.stubOutAttachmentsIn(rev, generation + 1);
-                		}
-                	}
-            	}
-            }
-            if(rev == null) {
-            	return new TDStatus(TDStatus.NOT_FOUND);
-            }
-            if(cacheWithEtag(rev.getRevId())) {
-            	return new TDStatus(TDStatus.NOT_MODIFIED);  // set ETag and check conditional GET
-            }
-            connection.setResponseBody(rev.getBody());
-        } else {
-            List<Map<String,Object>> result = null;
-            if(openRevsParam.equals("all")) {
-                // Get all conflicting revisions:
-                TDRevisionList allRevs = db.getAllRevisionsOfDocumentID(docID, true);
-                result = new ArrayList<Map<String,Object>>(allRevs.size());
-                for (TDRevision rev : allRevs) {
-                    TDStatus status = db.loadRevisionBody(rev, options);
-                    if(status.isSuccessful()) {
-                        Map<String, Object> dict = new HashMap<String,Object>();
-                        dict.put("ok", rev.getProperties());
-                        result.add(dict);
-                    } else if(status.getCode() != TDStatus.INTERNAL_SERVER_ERROR) {
-                        Map<String, Object> dict = new HashMap<String,Object>();
-                        dict.put("missing", rev.getRevId());
-                        result.add(dict);
-                    } else {
-                        return status;  // internal error getting revision
-                    }
-                }
-            } else {
-                // ?open_revs=[...] returns an array of revisions of the document:
-                List<String> openRevs = (List<String>)getJSONQuery("open_revs");
-                if(openRevs == null) {
-                    return new TDStatus(TDStatus.BAD_REQUEST);
-                }
-                result = new ArrayList<Map<String,Object>>(openRevs.size());
-                for (String revID : openRevs) {
-                    TDRevision rev = db.getDocumentWithIDAndRev(docID, revID, options);
-                    if(rev != null) {
-                        Map<String, Object> dict = new HashMap<String,Object>();
-                        dict.put("ok", rev.getProperties());
-                        result.add(dict);
-                    } else {
-                        Map<String, Object> dict = new HashMap<String,Object>();
-                        dict.put("missing", revID);
-                        result.add(dict);
-                    }
-                }
-            }
-            String acceptMultipart  = getMultipartRequestType();
-            if(acceptMultipart != null) {
-                //FIXME figure out support for multipart
-                throw new UnsupportedOperationException();
-            } else {
-                connection.setResponseBody(new TDBody(result));
-            }
-        }
+    	//OPT: This gets the JSON body too, which is a waste. Could add a kNoBody option?
+    	EnumSet<TDContentOptions> options = getContentOptions();
+    	String revID = getQuery("rev");  // often null
+    	TDRevision rev = db.getDocumentWithIDAndRev(docID, revID, options);
+    	if(rev == null) {
+    		return new TDStatus(TDStatus.NOT_FOUND);
+    	}
+    	if(cacheWithEtag(rev.getRevId())) {
+    		return new TDStatus(TDStatus.NOT_MODIFIED);  // set ETag and check conditional GET
+    	}
+
+    	String type = null;
+    	TDStatus status = new TDStatus();
+    	String acceptEncoding = connection.getRequestProperty("Accept-Encoding");
+    	TDAttachment contents = db.getAttachmentForSequence(rev.getSequence(), _attachmentName, status);
+    	
+    	if (contents == null) {
+    		return new TDStatus(TDStatus.NOT_FOUND);
+    	}
+    	type = contents.getContentType();
+    	if (type != null) {
+    		connection.getResHeader().add("Content-Type", type);
+    	}
+    	if (acceptEncoding != null && acceptEncoding.equals("gzip")) {
+    		connection.getResHeader().add("Content-Encoding", acceptEncoding);
+    	}
+    	TDBody body = new TDBody(contents.getData());
+    	
+    	connection.setResponseBody(body);
         return new TDStatus(TDStatus.OK);
     }
 
@@ -1176,7 +1098,7 @@ public class TDRouter implements Observer {
         TDBody body = new TDBody(bodyDict);
         TDStatus status = new TDStatus();
         TDRevision rev = update(_db, docID, body, deleting, false, status);
-        // useful for do_POST_Document_bulk_docs
+        // needed for do_POST_Document_bulk_docs
         if (bodyDict.get("rev") == null) {
             bodyDict.put("rev", rev);
         }
