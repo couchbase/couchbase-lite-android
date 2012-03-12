@@ -55,7 +55,7 @@ public class Router extends InstrumentationTestCase {
         }
     }
 
-    static TDURLConnection sendRequest(TDServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
+    protected static TDURLConnection sendRequest(TDServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
         try {
             URL url = new URL("touchdb://" + path);
             TDURLConnection conn = (TDURLConnection)url.openConnection();
@@ -85,7 +85,7 @@ public class Router extends InstrumentationTestCase {
         return null;
     }
 
-    static Object parseJSONResponse(TDURLConnection conn) {
+    protected static Object parseJSONResponse(TDURLConnection conn) {
         Object result = null;
         TDBody responseBody = conn.getResponseBody();
         if(responseBody != null) {
@@ -104,7 +104,7 @@ public class Router extends InstrumentationTestCase {
         return result;
     }
 
-    static Object sendBody(TDServer server, String method, String path, Object bodyObj, int expectedStatus, Object expectedResult) {
+    protected static Object sendBody(TDServer server, String method, String path, Object bodyObj, int expectedStatus, Object expectedResult) {
         TDURLConnection conn = sendRequest(server, method, path, null, bodyObj);
         Object result = parseJSONResponse(conn);
         Log.v(TAG, String.format("%s %s --> %d", method, path, conn.getResponseCode()));
@@ -115,7 +115,7 @@ public class Router extends InstrumentationTestCase {
         return result;
     }
 
-    static Object send(TDServer server, String method, String path, int expectedStatus, Object expectedResult) {
+    protected static Object send(TDServer server, String method, String path, int expectedStatus, Object expectedResult) {
         return sendBody(server, method, path, null, expectedStatus, expectedResult);
     }
 
