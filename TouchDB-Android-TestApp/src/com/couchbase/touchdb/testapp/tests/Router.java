@@ -509,4 +509,43 @@ public class Router extends InstrumentationTestCase {
         server.close();
     }
 
+    public void testPostBulkDocs() {
+
+        TDServer server = null;
+        try {
+            server = new TDServer(getServerPath());
+        } catch (IOException e) {
+            fail("Creating server caused IOException");
+        }
+
+        send(server, "PUT", "/db", TDStatus.CREATED, null);
+
+        Map<String,Object> bulk_doc1 = new HashMap<String,Object>();
+        bulk_doc1.put("_id", "bulk_message1");
+        bulk_doc1.put("baz", "hello");
+
+        Map<String,Object> bulk_doc2 = new HashMap<String,Object>();
+        bulk_doc2.put("_id", "bulk_message2");
+        bulk_doc2.put("baz", "hi");
+
+        List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
+        list.add(bulk_doc1);
+        list.add(bulk_doc2);
+
+        Map<String,Object> bodyObj = new HashMap<String,Object>();
+        bodyObj.put("docs", list);
+
+        List<Map<String,Object>> bulk_result  =
+                (ArrayList<Map<String,Object>>)sendBody(server, "POST", "/db/_bulk_docs", bodyObj, TDStatus.CREATED, null);
+
+        Assert.assertEquals(2, bulk_result.size());
+        Assert.assertEquals(bulk_result.get(0).get("id"),  bulk_doc1.get("_id"));
+        Assert.assertNotNull(bulk_result.get(0).get("rev"));
+        Assert.assertEquals(bulk_result.get(1).get("id"),  bulk_doc2.get("_id"));
+        Assert.assertNotNull(bulk_result.get(1).get("rev"));
+
+        server.close();
+
+    }
+
 }

@@ -825,9 +825,10 @@ public class TDDatabase extends Observable {
 
         return result;
     }
-    
-    public List<String> findCommonAncestorOf(TDRevision rev, List<String> revIDs) {
-    	//rev withRevIDs: (	)revIDs {
+
+    public String findCommonAncestorOf(TDRevision rev, List<String> revIDs) {
+        String result = null;
+
     	if (revIDs.size() == 0)
     		return null;
     	String docId = rev.getDocId();
@@ -839,24 +840,17 @@ public class TDDatabase extends Observable {
     			"WHERE doc_id=? and revid in (" + quotedRevIds + ") and revid <= ? " +
     			"ORDER BY revid DESC LIMIT 1";
     	String[] args = { Long.toString(docNumericID) };
-    	List<String> result = new ArrayList<String>();
-    	//TDRevisionList localRevs = getAllRevisionsOfDocumentID(docId, docNumericID, false);
 
     	Cursor cursor = null;
     	try {
     		cursor = database.rawQuery(sql, args);
     		cursor.moveToFirst();
-    		while(!cursor.isAfterLast()) {
-    			String revid = cursor.getString(0);
-    			//TDRevision oldRev = new TDRevision(docID, oldRevID, false);
-    			//TDRevision ancestorRev = localRevs.revWithDocIdAndRevId(docId, revid);
-    			result.add(revid);
-    			cursor.moveToNext();
+            if(!cursor.isAfterLast()) {
+                result = cursor.getString(0);
     		}
 
     	} catch (SQLException e) {
     		Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
-    		return null;
     	} finally {
     		if(cursor != null) {
     			cursor.close();
@@ -864,8 +858,6 @@ public class TDDatabase extends Observable {
     	}
 
     	return result;
-
-        //return [_fmdb stringForQuery: sql, $object(docNumericID), rev.revID];
     }
 
     /**
@@ -1486,6 +1478,48 @@ public class TDDatabase extends Observable {
     }
 
     /**
+     * Modifies a TDRevision's body by changing all attachments with revpos < minRevPos into stubs.
+     *
+     * @param rev
+     * @param minRevPos
+     */
+    public void stubOutAttachmentsIn(TDRevision rev, int minRevPos)
+    {
+        if (minRevPos <= 1) {
+            return;
+        }
+        Map<String, Object> properties = (Map<String,Object>)rev.getProperties();
+        Map<String, Object> attachments = null;
+        if(properties != null) {
+            attachments = (Map<String,Object>)properties.get("_attachments");
+        }
+        Map<String, Object> editedProperties = null;
+        Map<String, Object> editedAttachments = null;
+        for (String name : attachments.keySet()) {
+            Map<String,Object> attachment = (Map<String,Object>)attachments.get(name);
+            int revPos = (Integer) attachment.get("revpos");
+            Object stub = attachment.get("stub");
+            if (revPos > 0 && revPos < minRevPos && (stub == null)) {
+                // Strip this attachment's body. First make its dictionary mutable:
+                if (editedProperties == null) {
+                    editedProperties = new HashMap<String,Object>(properties);
+                    editedAttachments = new HashMap<String,Object>(attachments);
+                    editedProperties.put("_attachments", editedAttachments);
+                }
+                // ...then remove the 'data' and 'follows' key:
+                Map<String,Object> editedAttachment = new HashMap<String,Object>(attachment);
+                editedAttachment.remove("data");
+                editedAttachment.remove("follows");
+                editedAttachment.put("stub", true);
+                editedAttachments.put(name,editedAttachment);
+                Log.d(TDDatabase.TAG, "Stubbed out attachment" + rev + " " + name + ": revpos" + revPos + " " + minRevPos);
+            }
+        }
+        if (editedProperties != null)
+            rev.setProperties(editedProperties);
+    }
+
+    /**
      * Given a newly-added revision, adds the necessary attachment rows to the database and stores inline attachments into the blob store.
      */
     public TDStatus processAttachmentsForRevision(TDRevision rev, long parentSequence) {
@@ -1675,42 +1709,6 @@ public class TDDatabase extends Observable {
             }
         }
     }
-    
-    public void stubOutAttachmentsIn(TDRevision rev, int minRevPos)
-    {
-    	if (minRevPos <= 1)
-    		return;
-    	Map<String, Object> properties = (Map<String,Object>)rev.getProperties();
-    	Map<String, Object> attachments = null;
-    	if(properties != null) {
-    		attachments = (Map<String,Object>)properties.get("_attachments");
-    	}
-    	Map<String, Object> editedProperties = null;
-    	Map<String, Object> editedAttachments = null;
-    	for (String name : attachments.keySet()) {
-    		Map<String,Object> attachment = (Map<String,Object>)attachments.get(name);
-    		int revPos = (Integer) attachment.get("revpos");
-    		Object stub = attachment.get("stub");
-    		if (revPos > 0 && revPos < minRevPos && (stub == null)) {
-    			// Strip this attachment's body. First make its dictionary mutable:
-    			if (editedProperties == null) {
-    				editedProperties = new HashMap<String,Object>(properties);
-    				editedAttachments = new HashMap<String,Object>(attachments);
-    				editedProperties.put("_attachments", editedAttachments);
-    			}
-    			// ...then remove the 'data' and 'follows' key:
-    			Map<String,Object> editedAttachment = new HashMap<String,Object>(attachment);
-    			editedAttachment.remove("data");
-    			editedAttachment.remove("follows");
-    			editedAttachment.put("stub", true);
-    			editedAttachments.put(name,editedAttachment);
-    			Log.d(TDDatabase.TAG, "Stubbed out attachment" + rev + " " + name + ": revpos" + revPos + " " + minRevPos);
-    		}
-    	}
-    	if (editedProperties != null)
-    		rev.setProperties(editedProperties);
-    }
-
 
     /*************************************************************************************************/
     /*** TDDatabase+Insertion                                                                      ***/

@@ -14,10 +14,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Set;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -56,8 +54,6 @@ public class TDRouter implements Observer {
     private boolean waiting = false;
     private TDFilterBlock changesFilter;
     private boolean longpoll = false;
-    
-    public static final String TAG = "TDRouter";
 
     public static String getVersionString() {
         return TouchDBVersion.TouchDBVersionNumber;
@@ -336,7 +332,7 @@ public class TDRouter implements Observer {
                 }
             }
         }
-        
+
         String attachmentName = null;
         if(docID != null && pathLen > 2) {
         	message = message.replaceFirst("_Document", "_Attachment");
@@ -363,7 +359,7 @@ public class TDRouter implements Observer {
         		}
         	}
         }
-        
+
         //Log.d(TAG, "path: " + path + " message: " + message + " docID: " + docID + " attachmentName: " + attachmentName);
 
         // Send myself a message based on the components:
@@ -654,12 +650,11 @@ public class TDRouter implements Observer {
 
     public TDStatus do_POST_Document_bulk_docs(TDDatabase _db, String _docID, String _attachmentName) {
     	Map<String,Object> bodyDict = getBodyAsDictionary();
-    	//Log.v(TAG, "bodyDict returned " + bodyDict);
         if(bodyDict == null) {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }
         List<Map<String,Object>> docs = (List<Map<String, Object>>) bodyDict.get("docs");
-        
+
         boolean allObj = false;
         if(getQuery("all_or_nothing") == null || (getQuery("all_or_nothing") != null && (new Boolean(getQuery("all_or_nothing"))))) {
         	allObj = true;
@@ -675,24 +670,22 @@ public class TDRouter implements Observer {
         for (Map<String, Object> doc : docs) {
         	String docID = (String) doc.get("_id");
         	TDRevision rev = null;
-            TDStatus status;
-            TDBody body = new TDBody(doc);
+            TDStatus status = new TDStatus(TDStatus.BAD_REQUEST);
+            TDBody docBody = new TDBody(doc);
             if (noNewEdits) {
-            	rev = new TDRevision(body);
+                rev = new TDRevision(docBody);
             	if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
             		status =  new TDStatus(TDStatus.BAD_REQUEST);
+                } else {
+                    List<String> history = TDDatabase.parseCouchDBRevisionHistory(doc);
+                    status = db.forceInsert(rev, history, null);
                 }
-            	List<String> history = TDDatabase.parseCouchDBRevisionHistory(body.getProperties());
-            	status = db.forceInsert(rev, history, null);
-                Log.d("Progress:", status.toString());
             } else {
-            	Log.d("Update:", doc.toString());
-            	status = update(_db, docID, doc, false);
-            	if (doc.get("rev") != null) {
-                    rev = (TDRevision) doc.get("rev");
-                }
-            	Log.d("status:", status.toString());
+                TDStatus outStatus = new TDStatus();
+                rev = update(db, docID, docBody, false, allOrNothing, outStatus);
+                status.setCode(outStatus.getCode());
             }
+            Log.d(TDDatabase.TAG, "status: " + status.toString());
             Map<String, Object> result = new HashMap<String, Object>();
             result.put("ok", true);
             result.put("id", docID);
@@ -701,7 +694,7 @@ public class TDRouter implements Observer {
             }
             results.add(result);
 		}
-        Log.d("results:", results.toString());
+        Log.d(TDDatabase.TAG, "results: " + results.toString());
         connection.setResponseBody(new TDBody(results));
         return new TDStatus(TDStatus.CREATED);
     }
@@ -935,18 +928,15 @@ public class TDRouter implements Observer {
             } else {
                 rev = db.getDocumentWithIDAndRev(docID, revID, options);
                 // Handle ?atts_since query by stubbing out older attachments:
-                //?atts_since parameter - value is a (URL-encoded) JSON array of one or more revision IDs. 
-                // The response will include the content of only those attachments that changed since the given revision(s). 
+                //?atts_since parameter - value is a (URL-encoded) JSON array of one or more revision IDs.
+                // The response will include the content of only those attachments that changed since the given revision(s).
                 //(You can ask for this either in the default JSON or as multipart/related, as previously described.)
                 List<String> attsSince = (List<String>)getJSONQuery("atts_since");
                 if (attsSince != null) {
-                	List<String> ancestorList = db.findCommonAncestorOf(rev, attsSince);
-                	if (ancestorList.size() > 0) {
-                		String ancestorID = ancestorList.get(0);
-                		if (ancestorID != null) {
-                			int generation = TDRevision.generationFromRevID(ancestorID);
-                			db.stubOutAttachmentsIn(rev, generation + 1);
-                		}
+                    String ancestorId = db.findCommonAncestorOf(rev, attsSince);
+                    if (ancestorId != null) {
+                        int generation = TDRevision.generationFromRevID(ancestorId);
+                        db.stubOutAttachmentsIn(rev, generation + 1);
                 	}
                 }
             }
@@ -1026,7 +1016,7 @@ public class TDRouter implements Observer {
     	TDStatus status = new TDStatus();
     	String acceptEncoding = connection.getRequestProperty("Accept-Encoding");
     	TDAttachment contents = db.getAttachmentForSequence(rev.getSequence(), _attachmentName, status);
-    	
+
     	if (contents == null) {
     		return new TDStatus(TDStatus.NOT_FOUND);
     	}
@@ -1038,7 +1028,7 @@ public class TDRouter implements Observer {
     		connection.getResHeader().add("Content-Encoding", acceptEncoding);
     	}
     	TDBody body = new TDBody(contents.getData());
-    	
+
     	connection.setResponseBody(body);
         return new TDStatus(TDStatus.OK);
     }
@@ -1098,10 +1088,6 @@ public class TDRouter implements Observer {
         TDBody body = new TDBody(bodyDict);
         TDStatus status = new TDStatus();
         TDRevision rev = update(_db, docID, body, deleting, false, status);
-        // needed for do_POST_Document_bulk_docs
-        if (bodyDict.get("rev") == null) {
-            bodyDict.put("rev", rev);
-        }
         if(status.isSuccessful()) {
             cacheWithEtag(rev.getRevId());  // set ETag
             if(!deleting) {
