@@ -1001,8 +1001,8 @@ public class TDRouter implements Observer {
 
     public TDStatus do_GET_Attachment(TDDatabase _db, String docID, String _attachmentName) {
     	// http://wiki.apache.org/couchdb/HTTP_Document_API#GET
-    	//OPT: This gets the JSON body too, which is a waste. Could add a kNoBody option?
-    	EnumSet<TDContentOptions> options = getContentOptions();
+        EnumSet<TDContentOptions> options = getContentOptions();
+        options.add(TDContentOptions.TDNoBody);
     	String revID = getQuery("rev");  // often null
     	TDRevision rev = db.getDocumentWithIDAndRev(docID, revID, options);
     	if(rev == null) {

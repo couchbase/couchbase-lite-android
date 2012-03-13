@@ -68,7 +68,7 @@ public class TDDatabase extends Observable {
      * Options for what metadata to include in document bodies
      */
     public enum TDContentOptions {
-        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq
+        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq, TDNoBody
     }
 
     private static final Set<String> KNOWN_SPECIAL_KEYS;
@@ -650,13 +650,17 @@ public class TDDatabase extends Observable {
         Cursor cursor = null;
         try {
             cursor = null;
+            String cols = "revid, deleted, sequence";
+            if(!contentOptions.contains(TDContentOptions.TDNoBody)) {
+                cols += ", json";
+            }
             if(rev != null) {
-                sql = "SELECT revid, deleted, json, sequence FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id AND revid=? LIMIT 1";
+                sql = "SELECT " + cols + " FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id AND revid=? LIMIT 1";
                 String[] args = {id, rev};
                 cursor = database.rawQuery(sql, args);
             }
             else {
-                sql = "SELECT revid, deleted, json, sequence FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id and current=1 and deleted=0 ORDER BY revid DESC LIMIT 1";
+                sql = "SELECT " + cols + " FROM revs, docs WHERE docs.docid=? AND revs.doc_id=docs.doc_id and current=1 and deleted=0 ORDER BY revid DESC LIMIT 1";
                 String[] args = {id};
                 cursor = database.rawQuery(sql, args);
             }
@@ -666,10 +670,12 @@ public class TDDatabase extends Observable {
                     rev = cursor.getString(0);
                 }
                 boolean deleted = (cursor.getInt(1) > 0);
-                byte[] json = cursor.getBlob(2);
                 result = new TDRevision(id, rev, deleted);
-                result.setSequence(cursor.getLong(3));
-                expandStoredJSONIntoRevisionWithAttachments(json, result, contentOptions);
+                result.setSequence(cursor.getLong(2));
+                if(!contentOptions.contains(TDContentOptions.TDNoBody)) {
+                    byte[] json = cursor.getBlob(3);
+                    expandStoredJSONIntoRevisionWithAttachments(json, result, contentOptions);
+                }
             }
         } catch (SQLException e) {
             Log.e(TDDatabase.TAG, "Error getting document with id and rev", e);
