@@ -505,7 +505,7 @@ public class Router extends InstrumentationTestCase {
         Assert.assertEquals(TDStatus.OK, conn.getResponseCode());
         result = (Map<String,Object>)parseJSONResponse(conn);
         Assert.assertEquals(4, result.get("total_rows"));
-
+        
         server.close();
     }
 
@@ -546,6 +546,52 @@ public class Router extends InstrumentationTestCase {
 
         server.close();
 
+    }
+    
+    public void testPostKeysView() {
+
+    	TDServer server = null;
+    	try {
+    		server = new TDServer(getServerPath());
+    	} catch (IOException e) {
+    		fail("Creating server caused IOException");
+    	}
+
+    	send(server, "PUT", "/db", TDStatus.CREATED, null);
+
+    	Map<String,Object> result;
+
+    	TDDatabase db = server.getDatabaseNamed("db");
+    	TDView view = db.getViewNamed("design/view");
+    	view.setMapReduceBlocks(new TDViewMapBlock() {
+
+    		@Override
+    		public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+    			emitter.emit(document.get("message"), null);
+    		}
+    	}, null, "1");
+
+    	Map<String,Object> key_doc1 = new HashMap<String,Object>();
+    	key_doc1.put("parentId", "12345");
+    	result = (Map<String,Object>)sendBody(server, "PUT", "/db/key_doc1", key_doc1, TDStatus.CREATED, null);
+    	view = db.getViewNamed("design/view");
+    	view.setMapReduceBlocks(new TDViewMapBlock() {
+    		@Override
+    		public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+    			if (document.get("parentId").equals("12345")) {
+    				emitter.emit(document.get("parentId"), document);
+    			}
+    		}
+    	}, null, "1");
+
+    	List<Object> keys = new ArrayList<Object>();
+    	keys.add("12345");
+    	Map<String,Object> bodyObj = new HashMap<String,Object>();
+    	bodyObj.put("keys", keys);
+    	TDURLConnection conn = Router.sendRequest(server, "POST", "/db/_design/design/_view/view", null, bodyObj);
+    	result = (Map<String, Object>) Router.parseJSONResponse(conn);
+    	Assert.assertEquals(1, result.get("total_rows"));
+    	server.close();
     }
 
 }

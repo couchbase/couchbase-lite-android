@@ -1266,4 +1266,13 @@ public class TDRouter implements Observer {
     public TDStatus do_GET_DesignDocument(TDDatabase _db, String designDocID, String viewName) {
         return queryDesignDoc(designDocID, viewName, null);
     }
+    
+    public TDStatus do_POST_DesignDocument(TDDatabase _db, String designDocID, String viewName) {
+    	Map<String,Object> bodyDict = getBodyAsDictionary();
+    	if(bodyDict == null) {
+    		return new TDStatus(TDStatus.BAD_REQUEST);
+    	}
+    	List<Object> keys = (List<Object>) bodyDict.get("keys");
+    	return queryDesignDoc(designDocID, viewName, keys);
+    }
 }
