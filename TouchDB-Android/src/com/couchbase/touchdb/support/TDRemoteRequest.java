@@ -26,6 +26,9 @@ import android.util.Log;
 import com.couchbase.touchdb.TDDatabase;
 
 public class TDRemoteRequest implements Runnable {
+
+    private ObjectMapper mapper = new ObjectMapper();
+
     private HandlerThread handlerThread;
     private Handler handler;
     private Thread thread;
@@ -72,7 +75,6 @@ public class TDRemoteRequest implements Runnable {
 
         //set body if appropriate
         if(body != null && request instanceof HttpEntityEnclosingRequestBase) {
-            ObjectMapper mapper = new ObjectMapper();
             byte[] bodyBytes = null;
             try {
                 bodyBytes = mapper.writeValueAsBytes(body);
@@ -97,7 +99,6 @@ public class TDRemoteRequest implements Runnable {
                 if(temp != null) {
                 	try {
 	                    InputStream stream = temp.getContent();
-	                    ObjectMapper mapper = new ObjectMapper();
 	                    Object fullBody = mapper.readValue(stream, Object.class);
 	                    respondWithResult(fullBody, null);
                 	} finally {

@@ -51,6 +51,8 @@ import com.couchbase.touchdb.support.DirUtils;
  */
 public class TDDatabase extends Observable {
 
+    private ObjectMapper mapper = new ObjectMapper();
+
     private String path;
     private String name;
     private SQLiteDatabase database;
@@ -501,12 +503,11 @@ public class TDDatabase extends Observable {
     }
 
     /** Splices the contents of an NSDictionary into JSON data (that already represents a dict), without parsing the JSON. */
-    public static byte[] appendDictToJSON(byte[] json, Map<String,Object> dict) {
+    public  byte[] appendDictToJSON(byte[] json, Map<String,Object> dict) {
         if(dict.size() == 0) {
             return json;
         }
 
-        ObjectMapper mapper = new ObjectMapper();
         byte[] extraJSON = null;
         try {
             extraJSON = mapper.writeValueAsBytes(dict);
@@ -630,7 +631,6 @@ public class TDDatabase extends Observable {
             return extra;
         }
 
-      ObjectMapper mapper = new ObjectMapper();
       Map<String,Object> docProperties = null;
       try {
           docProperties = mapper.readValue(json, Map.class);
@@ -1813,7 +1813,6 @@ public class TDDatabase extends Observable {
         }
 
         byte[] json = null;
-        ObjectMapper mapper = new ObjectMapper();
         try {
             json = mapper.writeValueAsBytes(properties);
         } catch (Exception e) {
@@ -2337,7 +2336,6 @@ public class TDDatabase extends Observable {
                     return null;
                 }
                 byte[] json = cursor.getBlob(1);
-                ObjectMapper mapper = new ObjectMapper();
                 Map<String,Object> properties = null;
                 try {
                     properties = mapper.readValue(json, Map.class);

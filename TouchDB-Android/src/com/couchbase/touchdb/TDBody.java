@@ -30,6 +30,7 @@ import android.util.Log;
  */
 public class TDBody {
 
+    private ObjectMapper mapper = new ObjectMapper();
     private byte[] json;
     private Object object;
     private boolean error = false;
@@ -59,7 +60,6 @@ public class TDBody {
     public boolean isValidJSON() {
         // Yes, this is just like asObject except it doesn't warn.
         if(json == null && !error) {
-            ObjectMapper mapper = new ObjectMapper();
             try {
                 json = mapper.writeValueAsBytes(object);
             } catch (Exception e) {
@@ -71,7 +71,6 @@ public class TDBody {
 
     public byte[] getJson() {
         if(json == null && !error) {
-            ObjectMapper mapper = new ObjectMapper();
             try {
                 json = mapper.writeValueAsBytes(object);
             } catch (Exception e) {
@@ -85,7 +84,6 @@ public class TDBody {
     public byte[] getPrettyJson() {
         Object properties = getObject();
         if(properties != null) {
-            ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             try {
                 json = writer.writeValueAsBytes(properties);
@@ -102,7 +100,6 @@ public class TDBody {
 
     public Object getObject() {
         if(object == null && !error) {
-            ObjectMapper mapper = new ObjectMapper();
             try {
                 if(json != null) {
                     object = mapper.readValue(json, Map.class);

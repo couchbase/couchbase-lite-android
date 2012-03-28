@@ -38,6 +38,8 @@ public class TDView {
 
     public static final int REDUCE_BATCH_SIZE = 100;
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     public enum TDViewCollation {
         TDViewCollationUnicode, TDViewCollationRaw, TDViewCollationASCII
     }
@@ -221,11 +223,10 @@ public class TDView {
 
     /*** Indexing ***/
 
-    public static String toJSONString(Object object) {
+    public String toJSONString(Object object) {
         if (object == null) {
             return null;
         }
-        ObjectMapper mapper = new ObjectMapper();
         String result = null;
         try {
             result = mapper.writeValueAsString(object);
@@ -235,11 +236,10 @@ public class TDView {
         return result;
     }
 
-    public static Object fromJSON(byte[] json) {
+    public Object fromJSON(byte[] json) {
         if (json == null) {
             return null;
         }
-        ObjectMapper mapper = new ObjectMapper();
         Object result = null;
         try {
             result = mapper.readValue(json, Object.class);
@@ -313,7 +313,6 @@ public class TDView {
                 public void emit(Object key, Object value) {
 
                     try {
-                        ObjectMapper mapper = new ObjectMapper();
                         String keyJson = mapper.writeValueAsString(key);
                         String valueJson = mapper.writeValueAsString(value);
                         Log.v(TDDatabase.TAG, "    emit(" + keyJson + ", "

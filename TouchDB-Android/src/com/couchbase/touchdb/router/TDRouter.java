@@ -44,6 +44,9 @@ import com.couchbase.touchdb.replicator.TDReplicator;
 
 
 public class TDRouter implements Observer {
+
+    private ObjectMapper mapper = new ObjectMapper();
+
     private TDServer server;
     private TDDatabase db;
     private TDURLConnection connection;
@@ -122,7 +125,6 @@ public class TDRouter implements Observer {
         if(value == null) {
             return null;
         }
-        ObjectMapper mapper = new ObjectMapper();
         Object result = null;
         try {
             result = mapper.readValue(value, Object.class);
@@ -142,7 +144,6 @@ public class TDRouter implements Observer {
     public Map<String,Object> getBodyAsDictionary() {
         try {
             byte[] bodyBytes = ((ByteArrayOutputStream)connection.getOutputStream()).toByteArray();
-            ObjectMapper mapper = new ObjectMapper();
             Map<String,Object> bodyMap = mapper.readValue(bodyBytes, Map.class);
             return bodyMap;
         } catch (IOException e) {
@@ -801,7 +802,6 @@ public class TDRouter implements Observer {
 
     public void sendContinuousChange(TDRevision rev) {
         Map<String,Object> changeDict = changesDictForRevision(rev);
-        ObjectMapper mapper = new ObjectMapper();
         try {
             String jsonString = mapper.writeValueAsString(changeDict);
             if(callbackBlock != null) {
@@ -832,7 +832,6 @@ public class TDRouter implements Observer {
                 revs.add(rev);
                 Map<String,Object> body = responseBodyForChanges(revs, 0);
                 if(callbackBlock != null) {
-                    ObjectMapper mapper = new ObjectMapper();
                     byte[] data = null;
                     try {
                         data = mapper.writeValueAsBytes(body);
@@ -1279,7 +1278,7 @@ public class TDRouter implements Observer {
     public TDStatus do_GET_DesignDocument(TDDatabase _db, String designDocID, String viewName) {
         return queryDesignDoc(designDocID, viewName, null);
     }
-    
+
     public TDStatus do_POST_DesignDocument(TDDatabase _db, String designDocID, String viewName) {
     	Map<String,Object> bodyDict = getBodyAsDictionary();
     	if(bodyDict == null) {

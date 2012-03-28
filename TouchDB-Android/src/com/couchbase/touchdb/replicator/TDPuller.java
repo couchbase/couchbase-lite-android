@@ -34,6 +34,8 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     private static final int MAX_OPEN_HTTP_CONNECTIONS = 8;
 
+    private ObjectMapper mapper = new ObjectMapper();
+
     protected TDBatcher<List<Object>> revsToInsert;
     protected List<TDRevision> revsToPull;
     protected long nextFakeSequence;
@@ -338,11 +340,10 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         return db.getAllRevisionsOfDocumentID(rev.getDocId(), true).getAllRevIds();
     }
 
-    public static String joinQuotedEscaped(List<String> strings) {
+    public String joinQuotedEscaped(List<String> strings) {
         if(strings.size() == 0) {
             return "[]";
         }
-        ObjectMapper mapper = new ObjectMapper();
         byte[] json = null;
         try {
             json = mapper.writeValueAsBytes(strings);

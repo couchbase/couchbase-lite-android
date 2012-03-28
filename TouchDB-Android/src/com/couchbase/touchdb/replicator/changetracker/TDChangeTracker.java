@@ -32,6 +32,8 @@ import com.couchbase.touchdb.TDDatabase;
  */
 public class TDChangeTracker implements Runnable {
 
+    private ObjectMapper mapper = new ObjectMapper();
+
     private URL databaseURL;
     private TDChangeTrackerClient client;
     private TDChangeTrackerMode mode;
@@ -156,7 +158,6 @@ public class TDChangeTracker implements Runnable {
                 	try {
 	                    InputStream input = entity.getContent();
 	                    if(mode != TDChangeTrackerMode.Continuous) {
-	                        ObjectMapper mapper = new ObjectMapper();
 	                        Map<String,Object> fullBody = mapper.readValue(input, Map.class);
 	                        boolean responseOK = receivedPollResponse(fullBody);
 	                        if(mode == TDChangeTrackerMode.LongPoll && responseOK) {
@@ -195,7 +196,6 @@ public class TDChangeTracker implements Runnable {
         if(line.length() <= 1) {
             return;
         }
-        ObjectMapper mapper = new ObjectMapper();
         try {
             Map<String,Object> change = (Map)mapper.readValue(line, Map.class);
             receivedChange(change);
