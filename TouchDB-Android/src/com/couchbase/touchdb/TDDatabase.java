@@ -672,8 +672,11 @@ public class TDDatabase extends Observable {
                 boolean deleted = (cursor.getInt(1) > 0);
                 result = new TDRevision(id, rev, deleted);
                 result.setSequence(cursor.getLong(2));
-                if(!contentOptions.contains(TDContentOptions.TDNoBody)) {
-                    byte[] json = cursor.getBlob(3);
+                if(!contentOptions.equals(EnumSet.of(TDContentOptions.TDNoBody))) {
+                    byte[] json = null;
+                    if(!contentOptions.contains(TDContentOptions.TDNoBody)) {
+                        json = cursor.getBlob(3);
+                    }
                     expandStoredJSONIntoRevisionWithAttachments(json, result, contentOptions);
                 }
             }
@@ -688,8 +691,7 @@ public class TDDatabase extends Observable {
     }
 
     public boolean existsDocumentWithIDAndRev(String docId, String revId) {
-        //OPT: Do this without loading the data
-        return getDocumentWithIDAndRev(docId, revId, EnumSet.noneOf(TDContentOptions.class)) != null;
+        return getDocumentWithIDAndRev(docId, revId, EnumSet.of(TDContentOptions.TDNoBody)) != null;
     }
 
     public TDStatus loadRevisionBody(TDRevision rev, EnumSet<TDContentOptions> contentOptions) {
