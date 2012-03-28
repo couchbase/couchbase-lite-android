@@ -384,7 +384,7 @@ public class TDRouter implements Observer {
             connection.setResponseBody(new TDBody("{\"ok\":true}".getBytes()));
         }
 
-        if(connection.getResponseBody() != null && connection.getResponseBody() == null && connection.getResponseBody().isValidJSON()) {
+        if(connection.getResponseBody() != null && connection.getResponseBody().isValidJSON()) {
             connection.getResHeader().add("Content-Type", "application/json");
         }
 
