@@ -34,6 +34,8 @@ public class Router extends InstrumentationTestCase {
 
     public static final String TAG = "Router";
 
+    private ObjectMapper mapper = new ObjectMapper();
+
     protected String getServerPath() {
         String filesDir = getInstrumentation().getContext().getFilesDir().getAbsolutePath() + "/tests";
         return filesDir;
@@ -55,7 +57,7 @@ public class Router extends InstrumentationTestCase {
         }
     }
 
-    protected static TDURLConnection sendRequest(TDServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
+    protected TDURLConnection sendRequest(TDServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
         try {
             URL url = new URL("touchdb://" + path);
             TDURLConnection conn = (TDURLConnection)url.openConnection();
@@ -69,7 +71,6 @@ public class Router extends InstrumentationTestCase {
             Map<String, List<String>> allProperties = conn.getRequestProperties();
             if(bodyObj != null) {
                 conn.setDoInput(true);
-                ObjectMapper mapper = new ObjectMapper();
                 OutputStream os = conn.getOutputStream();
                 os.write(mapper.writeValueAsBytes(bodyObj));
             }
@@ -85,7 +86,7 @@ public class Router extends InstrumentationTestCase {
         return null;
     }
 
-    protected static Object parseJSONResponse(TDURLConnection conn) {
+    protected Object parseJSONResponse(TDURLConnection conn) {
         Object result = null;
         TDBody responseBody = conn.getResponseBody();
         if(responseBody != null) {
@@ -93,7 +94,6 @@ public class Router extends InstrumentationTestCase {
             String jsonString = null;
             if(json != null) {
                 jsonString = new String(json);
-                ObjectMapper mapper = new ObjectMapper();
                 try {
                     result = mapper.readValue(jsonString, Object.class);
                 } catch (Exception e) {
@@ -104,7 +104,7 @@ public class Router extends InstrumentationTestCase {
         return result;
     }
 
-    protected static Object sendBody(TDServer server, String method, String path, Object bodyObj, int expectedStatus, Object expectedResult) {
+    protected Object sendBody(TDServer server, String method, String path, Object bodyObj, int expectedStatus, Object expectedResult) {
         TDURLConnection conn = sendRequest(server, method, path, null, bodyObj);
         Object result = parseJSONResponse(conn);
         Log.v(TAG, String.format("%s %s --> %d", method, path, conn.getResponseCode()));
@@ -115,7 +115,7 @@ public class Router extends InstrumentationTestCase {
         return result;
     }
 
-    protected static Object send(TDServer server, String method, String path, int expectedStatus, Object expectedResult) {
+    protected Object send(TDServer server, String method, String path, int expectedStatus, Object expectedResult) {
         return sendBody(server, method, path, null, expectedStatus, expectedResult);
     }
 
@@ -515,7 +515,7 @@ public class Router extends InstrumentationTestCase {
         Assert.assertEquals(TDStatus.OK, conn.getResponseCode());
         result = (Map<String,Object>)parseJSONResponse(conn);
         Assert.assertEquals(4, result.get("total_rows"));
-        
+
         server.close();
     }
 
@@ -557,7 +557,7 @@ public class Router extends InstrumentationTestCase {
         server.close();
 
     }
-    
+
     public void testPostKeysView() {
 
     	TDServer server = null;
@@ -598,8 +598,8 @@ public class Router extends InstrumentationTestCase {
     	keys.add("12345");
     	Map<String,Object> bodyObj = new HashMap<String,Object>();
     	bodyObj.put("keys", keys);
-    	TDURLConnection conn = Router.sendRequest(server, "POST", "/db/_design/design/_view/view", null, bodyObj);
-    	result = (Map<String, Object>) Router.parseJSONResponse(conn);
+        TDURLConnection conn = sendRequest(server, "POST", "/db/_design/design/_view/view", null, bodyObj);
+        result = (Map<String, Object>) parseJSONResponse(conn);
     	Assert.assertEquals(1, result.get("total_rows"));
     	server.close();
     }
