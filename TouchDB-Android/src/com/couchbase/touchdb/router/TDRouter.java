@@ -457,6 +457,19 @@ public class TDRouter implements Observer {
         return new TDStatus(TDStatus.OK);
     }
 
+    public TDStatus do_GET_session(TDDatabase _db, String _docID, String _attachmentName) {
+        // Send back an "Admin Party"-like response
+        Map<String,Object> session= new HashMap<String,Object>();
+        Map<String,Object> userCtx = new HashMap<String,Object>();
+        String[] roles = {"_admin"};
+        session.put("ok", true);
+        userCtx.put("name", null);
+        userCtx.put("roles", roles);
+        session.put("userCtx", userCtx);
+        connection.setResponseBody(new TDBody(session));
+        return new TDStatus(TDStatus.OK);
+    }
+
     public TDStatus do_POST_replicate(TDDatabase _db, String _docID, String _attachmentName) {
         // Extract the parameters from the JSON request body:
         // http://wiki.apache.org/couchdb/Replication

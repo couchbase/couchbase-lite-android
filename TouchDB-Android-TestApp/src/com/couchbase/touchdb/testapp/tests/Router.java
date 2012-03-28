@@ -134,6 +134,16 @@ public class Router extends InstrumentationTestCase {
         responseBody.put("version", TDRouter.getVersionString());
         send(server, "GET", "/", TDStatus.OK, responseBody);
 
+        Map<String,Object> session = new HashMap<String,Object>();
+        Map<String,Object> userCtx = new HashMap<String,Object>();
+        List<String> roles = new ArrayList<String>();
+        roles.add("_admin");
+        session.put("ok", true);
+        userCtx.put("name", null);
+        userCtx.put("roles", roles);
+        session.put("userCtx", userCtx);
+        send(server, "GET", "/_session", TDStatus.OK, session);
+
         List<String> allDbs = new ArrayList<String>();
         send(server, "GET", "/_all_dbs", TDStatus.OK, allDbs);
 
