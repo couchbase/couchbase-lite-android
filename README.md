@@ -26,4 +26,4 @@ by Marty Schoch (marty@couchbase.com)
 2.  Right-click on TouchDB-Android-TestApp select Properties, select the Android, then in the Library section press Add, select TouchDB-Android, press Add again and select TouchDB-Android-Listener, press OK
 3.  Right-click on TouchDB-Android-TestApp select Run As, select Android Application
 
-NOTE: the HTTP Listener uses TDRouter to respond to requests, and TDRouter is still incomplete.  Only a small nuber of requests are currently supported.
+NOTE: the HTTP Listener uses TDRouter to respond to requests, and TDRouter is still incomplete.  Only a small number of requests are currently supported.
