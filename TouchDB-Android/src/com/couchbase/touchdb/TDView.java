@@ -623,21 +623,26 @@ public class TDView {
                     valuesToReduce.add(value);
                     lastKey = key;
                 } else {
-                    // Regular query:
-                    Map<String,Object> row = new HashMap<String,Object>();
+                	// Regular query:
+                	Map<String,Object> row = new HashMap<String,Object>();
                     String docId = cursor.getString(2);
                     Map<String,Object> docContents = null;
                     if(options.isIncludeDocs()) {
                         docContents = db.documentPropertiesFromJSON(cursor.getBlob(4), docId, cursor.getString(3), cursor.getLong(5), options.getContentOptions());
+                        
+                    
                     }
-                    row.put("id", docId);
-                    row.put("key", key);
-                    if(value != null) {
-                        row.put("value", value);
-                    }
+                    
+                    
                     if(docContents != null) {
                         row.put("doc", docContents);
                     }
+                    if(value != null) {
+                        row.put("value", value);
+                    }
+                    row.put("id", docId);
+                    row.put("key", key);
+                    
                     rows.add(row);
                 }
 
