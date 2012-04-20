@@ -1883,6 +1883,9 @@ public class TDDatabase extends Observable {
         resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
         beginTransaction();
         Cursor cursor = null;
+
+        //// PART I: In which are performed lookups and validations prior to the insert...
+
         long docNumericID = (docId != null) ? getDocNumericID(docId) : 0;
         long parentSequence = 0;
         try {
@@ -1932,8 +1935,9 @@ public class TDDatabase extends Observable {
                 updateContent.put("current", 0);
                 database.update("revs", updateContent, "sequence=" + parentSequence, null);
             }
-            else if(docId != null) {
-                if(deleted) {
+            else {
+                // Inserting first revision.
+                if(deleted && (docId != null)) {
                     // Didn't specify a revision to delete: 404 or a 409, depending
                     if(existsDocumentWithIDAndRev(docId, null)) {
                         resultStatus.setCode(TDStatus.CONFLICT);
@@ -1945,49 +1949,53 @@ public class TDDatabase extends Observable {
                     }
                 }
 
-                // Inserting first revision, with docID given. First validate:
+                // Validate:
                 TDStatus status = validateRevision(rev, null);
                 if(!status.isSuccessful()) {
                     resultStatus.setCode(status.getCode());
                     return null;
                 }
 
-                if(docNumericID <= 0) {
-                    // Doc doesn't exist at all; create it:
+                if(docId != null) {
+                    // Inserting first revision, with docID given (PUT):
+                    if(docNumericID <= 0) {
+                        // Doc doesn't exist at all; create it:
+                        docNumericID = insertDocumentID(docId);
+                        if(docNumericID <= 0) {
+                            return null;
+                        }
+                    } else {
+                        // Doc exists; check whether current winning revision is deleted:
+                        String[] args = { Long.toString(docNumericID) };
+                        cursor = database.rawQuery("SELECT sequence, deleted FROM revs WHERE doc_id=? and current=1 ORDER BY revid DESC LIMIT 1", args);
+
+                        if(cursor.moveToFirst()) {
+                            boolean wasAlreadyDeleted = (cursor.getInt(1) > 0);
+                            if(wasAlreadyDeleted) {
+                                // Make the deleted revision no longer current:
+                                ContentValues updateContent = new ContentValues();
+                                updateContent.put("current", 0);
+                                database.update("revs", updateContent, "sequence=" + cursor.getLong(0), null);
+                            }
+                            else if (!allowConflict) {
+                                // docId already exists, current not deleted, conflict
+                                resultStatus.setCode(TDStatus.CONFLICT);
+                                return null;
+                            }
+                        }
+                    }
+                }
+                else {
+                    // Inserting first revision, with no docID given (POST): generate a unique docID:
+                    docId = TDDatabase.generateDocumentId();
                     docNumericID = insertDocumentID(docId);
                     if(docNumericID <= 0) {
                         return null;
                     }
-                } else {
-                    // Doc exists; check whether current winning revision is deleted:
-                    String[] args = { Long.toString(docNumericID) };
-                    cursor = database.rawQuery("SELECT sequence, deleted FROM revs WHERE doc_id=? and current=1 ORDER BY revid DESC LIMIT 1", args);
+                }
+            }
 
-                    if(cursor.moveToFirst()) {
-                        boolean wasAlreadyDeleted = (cursor.getInt(1) > 0);
-                        if(wasAlreadyDeleted) {
-                            // Make the deleted revision no longer current:
-                            ContentValues updateContent = new ContentValues();
-                            updateContent.put("current", 0);
-                            database.update("revs", updateContent, "sequence=" + cursor.getLong(0), null);
-                        }
-                        else if (!allowConflict) {
-                            // docId already exists, current not deleted, conflict
-                            resultStatus.setCode(TDStatus.CONFLICT);
-                            return null;
-                        }
-                    }
-                }
-            }
-            else {
-                //FIXME: not currently doing any document validation here, email sent to Jens
-                // Inserting first revision, with no docID given (POST): generate a unique docID:
-                docId = TDDatabase.generateDocumentId();
-                docNumericID = insertDocumentID(docId);
-                if(docNumericID <= 0) {
-                    return null;
-                }
-            }
+            //// PART II: In which insertion occurs...
 
             // Bump the revID and update the JSON:
             String newRevId = generateNextRevisionID(prevRevId);
@@ -2036,7 +2044,7 @@ public class TDDatabase extends Observable {
             endTransaction(resultStatus.isSuccessful());
         }
 
-        // Send a change notification:
+        //// EPILOGUE: A change notification is sent...
         rev.setBody(null);  // body is not up to date (no current _rev, likely no _id) so avoid confusion
         notifyChange(rev, null);
         return rev;
