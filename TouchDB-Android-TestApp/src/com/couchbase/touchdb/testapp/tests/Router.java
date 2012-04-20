@@ -27,7 +27,7 @@ import com.couchbase.touchdb.TDViewMapEmitBlock;
 import com.couchbase.touchdb.router.TDRouter;
 import com.couchbase.touchdb.router.TDURLConnection;
 import com.couchbase.touchdb.router.TDURLStreamHandlerFactory;
-import com.couchbase.touchdb.support.DirUtils;
+import com.couchbase.touchdb.support.FileDirUtils;
 
 public class Router extends InstrumentationTestCase {
     private static boolean initializedUrlHandler = false;
@@ -47,7 +47,7 @@ public class Router extends InstrumentationTestCase {
         //delete and recreate the server path
         String serverPath = getServerPath();
         File serverPathFile = new File(serverPath);
-        DirUtils.deleteRecursive(serverPathFile);
+        FileDirUtils.deleteRecursive(serverPathFile);
         serverPathFile.mkdir();
 
         //for some reason a traditional static initializer causes junit to die

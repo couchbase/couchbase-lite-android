@@ -10,7 +10,7 @@ import android.test.AndroidTestCase;
 
 import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDServer;
-import com.couchbase.touchdb.support.DirUtils;
+import com.couchbase.touchdb.support.FileDirUtils;
 
 public class Server extends AndroidTestCase {
 
@@ -24,7 +24,7 @@ public class Server extends AndroidTestCase {
         //delete and recreate the server path
         String serverPath = getServerPath();
         File serverPathFile = new File(serverPath);
-        DirUtils.deleteRecursive(serverPathFile);
+        FileDirUtils.deleteRecursive(serverPathFile);
         serverPathFile.mkdir();
     }
 

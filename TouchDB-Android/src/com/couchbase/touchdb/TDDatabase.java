@@ -44,7 +44,7 @@ import com.couchbase.touchdb.replicator.TDPuller;
 import com.couchbase.touchdb.replicator.TDPusher;
 import com.couchbase.touchdb.replicator.TDReplicator;
 import com.couchbase.touchdb.support.Base64;
-import com.couchbase.touchdb.support.DirUtils;
+import com.couchbase.touchdb.support.FileDirUtils;
 
 /**
  * A TouchDB database.
@@ -151,11 +151,15 @@ public class TDDatabase extends Observable {
 
     public static TDDatabase createEmptyDBAtPath(String path) {
         File f = new File(path);
-        f.delete();
+        if(!f.delete()) {
+            return null;
+        }
         TDDatabase result = new TDDatabase(path);
         File af = new File(result.getAttachmentStorePath());
         //recursively delete attachments path
-        DirUtils.deleteRecursive(af);
+        if(!FileDirUtils.deleteRecursive(af)) {
+            return null;
+        }
         if(!result.open()) {
             return null;
         }
@@ -165,7 +169,7 @@ public class TDDatabase extends Observable {
     public TDDatabase(String path) {
         assert(path.startsWith("/")); //path must be absolute
         this.path = path;
-        this.name = DirUtils.getDatabaseNameFromPath(path);
+        this.name = FileDirUtils.getDatabaseNameFromPath(path);
     }
 
     public String toString() {
@@ -174,6 +178,28 @@ public class TDDatabase extends Observable {
 
     public boolean exists() {
         return new File(path).exists();
+    }
+
+    /**
+     * Replaces the database with a copy of another database.
+     *
+     * This is primarily used to install a canned database on first launch of an app, in which case you should first check .exists to avoid replacing the database if it exists already. The canned database would have been copied into your app bundle at build time.
+     *
+     * @param databasePath  Path of the database file that should replace this one.
+     * @param attachmentsPath  Path of the associated attachments directory, or nil if there are no attachments.
+     * @return  true if the database was copied, IOException if an error occurs
+     **/
+    public boolean replaceWithDatabase(String databasePath, String attachmentsPath) throws IOException {
+        String dstAttachmentsPath = this.getAttachmentStorePath();
+        File sourceFile = new File(databasePath);
+        File destFile = new File(path);
+        FileDirUtils.copyFile(sourceFile, destFile);
+        File attachmentsFile = new File(dstAttachmentsPath);
+        FileDirUtils.deleteRecursive(attachmentsFile);
+        if(attachmentsPath != null) {
+            FileDirUtils.copyFolder(new File(attachmentsPath), attachmentsFile);
+        }
+        return true;
     }
 
     public boolean initialize(String statements) {
@@ -322,7 +348,7 @@ public class TDDatabase extends Observable {
 
         boolean deleteStatus = file.delete();
         //recursively delete attachments path
-        boolean deleteAttachmentStatus = DirUtils.deleteRecursive(attachmentsFile);
+        boolean deleteAttachmentStatus = FileDirUtils.deleteRecursive(attachmentsFile);
         return deleteStatus && deleteAttachmentStatus;
     }
 
