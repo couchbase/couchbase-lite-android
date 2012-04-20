@@ -1,7 +1,10 @@
 package com.couchbase.touchdb.testapp.tests;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
+
+import junit.framework.Assert;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -127,6 +130,25 @@ public class ChangeTracker extends InstrumentationTestCase {
         });
 
         Thread.sleep(10*1000);
+
+    }
+
+    public void testChangeTrackerWithFilterURL() throws Throwable {
+
+        URL testURL = new URL("http://192.168.1.6:5984/touch_test");
+        TDChangeTracker changeTracker = new TDChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
+
+        // set filter
+        changeTracker.setFilterName("filter");
+
+        // build filter map
+        Map<String,Object> filterMap = new HashMap<String,Object>();
+        filterMap.put("param", "value");
+
+        // set filter map
+        changeTracker.setFilterParams(filterMap);
+
+        Assert.assertEquals("_changes?feed=continuous&heartbeat=300000&since=0&filter=filter&param=value", changeTracker.getChangesFeedPath());
 
     }
 

@@ -116,7 +116,7 @@ public class TDChangeTracker implements Runnable {
             path += "&filter=" + URLEncoder.encode(filterName);
             if(filterParams != null) {
                 for (String filterParamKey : filterParams.keySet()) {
-                    path += URLEncoder.encode(filterParamKey) + "=" + URLEncoder.encode(filterParams.get(filterParamKey).toString());
+                    path += "&" + URLEncoder.encode(filterParamKey) + "=" + URLEncoder.encode(filterParams.get(filterParamKey).toString());
                 }
             }
         }
