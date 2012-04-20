@@ -150,8 +150,7 @@ public class TDDatabase extends Observable {
     }
 
     public static TDDatabase createEmptyDBAtPath(String path) {
-        File f = new File(path);
-        if(!f.delete()) {
+        if(!FileDirUtils.removeItemIfExists(path)) {
             return null;
         }
         TDDatabase result = new TDDatabase(path);

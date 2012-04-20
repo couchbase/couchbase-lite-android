@@ -29,6 +29,11 @@ import com.couchbase.touchdb.TDDatabase;
 
 public class FileDirUtils {
 
+    public static boolean removeItemIfExists(String path) {
+        File f = new File(path);
+        return f.delete() || !f.exists();
+    }
+
     public static boolean deleteRecursive(File fileOrDirectory) {
         if (fileOrDirectory.isDirectory()) {
             for (File child : fileOrDirectory.listFiles()) {
@@ -36,7 +41,7 @@ public class FileDirUtils {
             }
         }
 
-        boolean result = fileOrDirectory.delete();
+        boolean result = fileOrDirectory.delete() || !fileOrDirectory.exists();
         return result;
     }
 
