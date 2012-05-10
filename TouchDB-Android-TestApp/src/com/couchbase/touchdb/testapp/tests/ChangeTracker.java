@@ -22,7 +22,7 @@ public class ChangeTracker extends InstrumentationTestCase {
 
     public void testChangeTracker() throws Throwable {
 
-        URL testURL = new URL("http://192.168.1.6:5984/touch_test");
+        URL testURL = new URL("http://mschoch.ic.ht:5984/touch_test");
 
         TDChangeTrackerClient client = new TDChangeTrackerClient() {
 
@@ -61,7 +61,7 @@ public class ChangeTracker extends InstrumentationTestCase {
 
     public void testChangeTrackerLongPoll() throws Throwable {
 
-        URL testURL = new URL("http://192.168.1.6:5984/touch_test");
+        URL testURL = new URL("http://mschoch.ic.ht:5984/touch_test");
 
         TDChangeTrackerClient client = new TDChangeTrackerClient() {
 
@@ -98,7 +98,7 @@ public class ChangeTracker extends InstrumentationTestCase {
 
     public void testChangeTrackerContinuous() throws Throwable {
 
-        URL testURL = new URL("http://192.168.1.6:5984/touch_test");
+        URL testURL = new URL("http://mschoch.ic.ht:5984/touch_test");
 
         TDChangeTrackerClient client = new TDChangeTrackerClient() {
 
@@ -135,7 +135,7 @@ public class ChangeTracker extends InstrumentationTestCase {
 
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
-        URL testURL = new URL("http://192.168.1.6:5984/touch_test");
+        URL testURL = new URL("http://mschoch.ic.ht:5984/touch_test");
         TDChangeTracker changeTracker = new TDChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
 
         // set filter

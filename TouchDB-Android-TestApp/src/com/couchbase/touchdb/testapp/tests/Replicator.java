@@ -22,7 +22,7 @@ import com.couchbase.touchdb.replicator.TDReplicator;
 public class Replicator extends InstrumentationTestCase {
 
     public static final String TAG = "Replicator";
-    public static final String REMOTE_DB_URL_STR = "http://192.168.1.6:5984/tdreplicator_test";
+    public static final String REMOTE_DB_URL_STR = "http://mschoch.ic.ht:5984/tdreplicator_test";
 
     private static void deleteRemoteDB() {
         try {
