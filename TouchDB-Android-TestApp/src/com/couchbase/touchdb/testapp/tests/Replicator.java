@@ -22,12 +22,11 @@ import com.couchbase.touchdb.replicator.TDReplicator;
 public class Replicator extends InstrumentationTestCase {
 
     public static final String TAG = "Replicator";
-    public static final String REMOTE_DB_URL_STR = "http://mschoch.ic.ht:5984/tdreplicator_test";
 
     private static void deleteRemoteDB() {
         try {
-            Log.v(TAG, String.format("Deleting %s", REMOTE_DB_URL_STR));
-            URL url = new URL(REMOTE_DB_URL_STR);
+            Log.v(TAG, String.format("Deleting %s", TestConstants.replicationURL));
+            URL url = new URL(TestConstants.replicationURL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("DELETE");
             conn.connect();
@@ -92,7 +91,7 @@ public class Replicator extends InstrumentationTestCase {
 
 
 
-        URL remote = new URL(REMOTE_DB_URL_STR);
+        URL remote = new URL(TestConstants.replicationURL);
         final TDReplicator repl = db.getReplicator(remote, true, false);
         ((TDPusher)repl).setCreateTarget(true);
         runTestOnUiThread(new Runnable() {
@@ -137,7 +136,7 @@ public class Replicator extends InstrumentationTestCase {
         final TDDatabase db = server.getDatabaseNamed("db");
         db.open();
 
-        URL remote = new URL(REMOTE_DB_URL_STR);
+        URL remote = new URL(TestConstants.replicationURL);
         final TDReplicator repl = db.getReplicator(remote, false, false);
         runTestOnUiThread(new Runnable() {
 

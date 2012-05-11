@@ -3,9 +3,13 @@
     package="com.couchbase.touchdb.testapp"
     android:versionCode="1"
     android:versionName="1.0" >
-    
+
         <instrumentation
         android:name="com.neenbedankt.android.test.InstrumentationTestRunner"
+        android:targetPackage="com.couchbase.touchdb.testapp" />
+
+        <instrumentation
+        android:name="android.test.InstrumentationTestRunner"
         android:targetPackage="com.couchbase.touchdb.testapp" />
 <uses-permission android:name="android.permission.INTERNET"/>
 
