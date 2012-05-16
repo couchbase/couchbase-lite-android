@@ -21,9 +21,7 @@ by Marty Schoch (marty@couchbase.com)
 ## TODO
 - Finish porting all of TDRouter so that all operations are supported
 
-## Running the Demo App (currently requires Eclipse)
-1.  Import all 3 projects into Eclipse (TouchDB-Android, TouchDB-Android-Listener, TouchDB-Android-TestApp)
-2.  Right-click on TouchDB-Android-TestApp select Properties, select the Android, then in the Library section press Add, select TouchDB-Android, press Add again and select TouchDB-Android-Listener, press OK
-3.  Right-click on TouchDB-Android-TestApp select Run As, select Android Application
+## Getting Started using TouchDB-Android
 
-NOTE: the HTTP Listener uses TDRouter to respond to requests, and TDRouter is still incomplete.  Only a small number of requests are currently supported.
+See the Wiki:  https://github.com/couchbaselabs/TouchDB-Android/wiki
+
