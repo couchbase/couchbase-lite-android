@@ -152,7 +152,9 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     @Override
     public HttpClient getHttpClient() {
-        return new DefaultHttpClient();
+    	HttpClient httpClient = this.clientFacotry.getHttpClient();
+    	
+        return httpClient;
     }
 
     /**
