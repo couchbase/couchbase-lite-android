@@ -38,6 +38,8 @@ public abstract class TDReplicator extends Observable {
     protected String lastSequence;
     protected boolean lastSequenceChanged;
     protected Map<String,Object> remoteCheckpoint;
+    protected boolean savingCheckpoint;
+    protected boolean overdueForSave;
     protected boolean running;
     protected boolean active;
     protected Throwable error;
@@ -295,17 +297,29 @@ public abstract class TDReplicator extends Observable {
         if(!lastSequenceChanged) {
             return;
         }
+        if (savingCheckpoint) {
+            // If a save is already in progress, don't do anything. (The completion block will trigger
+            // another save after the first one finishes.)
+            overdueForSave = true;
+            return;
+        }
+        
         lastSequenceChanged = false;
+        overdueForSave = false;
+        
         Log.v(TDDatabase.TAG, String.format("%s checkpointing sequence=%s", this, lastSequence));
         final Map<String,Object> body = new HashMap<String,Object>();
         if(remoteCheckpoint != null) {
             body.putAll(remoteCheckpoint);
         }
         body.put("lastSequence", lastSequence);
+        
+        savingCheckpoint = true;
         sendAsyncRequest("PUT", "/_local/" + remoteCheckpointDocID(), body, new TDRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
+            	savingCheckpoint = false;
                 if(e != null) {
                     Log.v(TDDatabase.TAG, String.format("%s: Unable to save remote checkpoint: %s", this, e), e);
                     // TODO: If error is 401 or 403, and this is a pull, remember that remote is read-only and don't attempt to read its checkpoint next time.
@@ -313,6 +327,9 @@ public abstract class TDReplicator extends Observable {
                     Map<String,Object> response = (Map<String,Object>)result;
                     body.put("_rev", response.get("rev"));
                     remoteCheckpoint = body;
+                }
+                if (overdueForSave) {
+                	saveLastSequence();
                 }
             }
 
