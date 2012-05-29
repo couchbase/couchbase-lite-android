@@ -45,6 +45,7 @@ import com.couchbase.touchdb.replicator.TDPusher;
 import com.couchbase.touchdb.replicator.TDReplicator;
 import com.couchbase.touchdb.support.Base64;
 import com.couchbase.touchdb.support.FileDirUtils;
+import com.couchbase.touchdb.support.HttpClientFactory;
 
 /**
  * A TouchDB database.
@@ -2242,11 +2243,17 @@ public class TDDatabase extends Observable {
     }
 
     public TDReplicator getReplicator(URL remote, boolean push, boolean continuous) {
+    	TDReplicator replicator = getReplicator(remote, null, push, continuous);
+    	
+    	return replicator;
+    }
+    
+    public TDReplicator getReplicator(URL remote, HttpClientFactory httpClientFactory, boolean push, boolean continuous) {
         TDReplicator result = getActiveReplicator(remote, push);
         if(result != null) {
             return result;
         }
-        result = push ? new TDPusher(this, remote, continuous) : new TDPuller(this, remote, continuous);
+        result = push ? new TDPusher(this, remote, continuous, httpClientFactory) : new TDPuller(this, remote, continuous, httpClientFactory);
 
         if(activeReplicators == null) {
             activeReplicators = new ArrayList<TDReplicator>();

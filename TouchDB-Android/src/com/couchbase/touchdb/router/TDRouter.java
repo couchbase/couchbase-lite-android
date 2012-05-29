@@ -719,8 +719,14 @@ public class TDRouter implements Observer {
     }
 
     public TDStatus do_POST_Document_compact(TDDatabase _db, String _docID, String _attachmentName) {
-        //FIXME implement
-        throw new UnsupportedOperationException();
+    	TDStatus status = _db.compact();
+    	if (status.getCode() < 300) {
+    		TDStatus outStatus = new TDStatus();
+    		outStatus.setCode(202);	// CouchDB returns 202 'cause it's an async operation
+    		return outStatus;	
+    	} else {
+    		return status;
+    	}
     }
 
     public TDStatus do_POST_Document_ensure_full_commit(TDDatabase _db, String _docID, String _attachmentName) {
