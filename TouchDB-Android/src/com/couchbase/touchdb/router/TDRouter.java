@@ -518,7 +518,7 @@ public class TDRouter implements Observer {
         } catch (MalformedURLException e) {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }
-        if(remote == null || !remote.getProtocol().equals("http")) {
+        if(remote == null || !remote.getProtocol().startsWith("http")) {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }
 
