@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 
+import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ektorp.http.HttpClient;
 import org.ektorp.http.HttpResponse;
@@ -118,7 +119,7 @@ public class TouchDBHttpClient implements HttpClient {
                 conn.setDoInput(true);
                 ObjectMapper mapper = new ObjectMapper();
                 OutputStream os = conn.getOutputStream();
-                os.write(mapper.writeValueAsBytes(contentStream));
+                IOUtils.copyLarge(contentStream, os);
             }
 
             return executeRequest(conn);
@@ -177,7 +178,7 @@ public class TouchDBHttpClient implements HttpClient {
                 conn.setRequestProperty("Content-Type", contentType);
                 ObjectMapper mapper = new ObjectMapper();
                 OutputStream os = conn.getOutputStream();
-                os.write(mapper.writeValueAsBytes(contentStream));
+                IOUtils.copyLarge(contentStream, os);
             }
 
             return executeRequest(conn);
