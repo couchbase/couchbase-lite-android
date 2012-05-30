@@ -71,6 +71,8 @@ public class TDRemoteRequest implements Runnable {
             request = new HttpPost(url.toExternalForm());
         }
 
+
+
         request.addHeader("Accept", "application/json");
 
         //set body if appropriate
@@ -86,6 +88,8 @@ public class TDRemoteRequest implements Runnable {
             ((HttpEntityEnclosingRequestBase)request).setEntity(entity);
         }
 
+        Object fullBody = null;
+        Throwable error = null;
         try {
             HttpResponse response = httpClient.execute(request);
             StatusLine status = response.getStatusLine();
@@ -93,31 +97,24 @@ public class TDRemoteRequest implements Runnable {
                 Log.e(TDDatabase.TAG, "Got error " + Integer.toString(status.getStatusCode()));
                 Log.e(TDDatabase.TAG, "Request was for: " + request.toString());
                 Log.e(TDDatabase.TAG, "Status reason: " + status.getReasonPhrase());
-                respondWithResult(null, new HttpResponseException(status.getStatusCode(), status.getReasonPhrase()));
+                error = new HttpResponseException(status.getStatusCode(), status.getReasonPhrase());
             } else {
                 HttpEntity temp = response.getEntity();
                 if(temp != null) {
                 	try {
 	                    InputStream stream = temp.getContent();
-	                    Object fullBody = mapper.readValue(stream, Object.class);
-	                    respondWithResult(fullBody, null);
+	                    fullBody = mapper.readValue(stream, Object.class);
                 	} finally {
                 		try { temp.consumeContent(); } catch (IOException e) {}
                 	}
                 }
-
             }
-
         } catch (ClientProtocolException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            error = e;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } finally {
-
+            error = e;
         }
-
+        respondWithResult(fullBody, error);
     }
 
     public void respondWithResult(final Object result, final Throwable error) {

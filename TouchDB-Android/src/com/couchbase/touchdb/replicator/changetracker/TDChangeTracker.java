@@ -48,6 +48,8 @@ public class TDChangeTracker implements Runnable {
     private String filterName;
     private Map<String, Object> filterParams;
 
+    private Throwable error;
+
     public enum TDChangeTrackerMode {
         OneShot, LongPoll, Continuous
     }
@@ -192,16 +194,20 @@ public class TDChangeTracker implements Runnable {
         Log.v(TDDatabase.TAG, "Chagne tracker run loop exiting");
     }
 
-    public void receivedChunk(String line) {
-        if(line.length() <= 1) {
-            return;
+    public boolean receivedChunk(String line) {
+        if(line.length() > 1) {
+            try {
+                Map<String,Object> change = (Map)mapper.readValue(line, Map.class);
+                if(!receivedChange(change)) {
+                    Log.w(TDDatabase.TAG, String.format("Received unparseable change line from server: %s", line));
+                    return false;
+                }
+            } catch (Exception e) {
+                Log.w(TDDatabase.TAG, "Exception parsing JSON in change tracker", e);
+                return false;
+            }
         }
-        try {
-            Map<String,Object> change = (Map)mapper.readValue(line, Map.class);
-            receivedChange(change);
-        } catch (Exception e) {
-            Log.w(TDDatabase.TAG, "Exception parsing JSON in change tracker", e);
-        }
+        return true;
     }
 
     public boolean receivedChange(final Map<String,Object> change) {
@@ -241,7 +247,13 @@ public class TDChangeTracker implements Runnable {
         return true;
     }
 
+    public void setUpstreamError(String message) {
+        Log.w(TDDatabase.TAG, String.format("Server error: %s", message));
+        this.error = new Throwable(message);
+    }
+
     public boolean start() {
+        this.error = null;
         thread = new Thread(this);
         thread.start();
         return true;

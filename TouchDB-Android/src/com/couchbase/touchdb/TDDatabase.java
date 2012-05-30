@@ -2234,7 +2234,7 @@ public class TDDatabase extends Observable {
     public TDReplicator getActiveReplicator(URL remote, boolean push) {
         if(activeReplicators != null) {
             for (TDReplicator replicator : activeReplicators) {
-                if(replicator.getRemote().equals(remote) && replicator.isPush() == push) {
+                if(replicator.getRemote().equals(remote) && replicator.isPush() == push  && replicator.isRunning()) {
                     return replicator;
                 }
             }
@@ -2244,10 +2244,10 @@ public class TDDatabase extends Observable {
 
     public TDReplicator getReplicator(URL remote, boolean push, boolean continuous) {
     	TDReplicator replicator = getReplicator(remote, null, push, continuous);
-    	
+
     	return replicator;
     }
-    
+
     public TDReplicator getReplicator(URL remote, HttpClientFactory httpClientFactory, boolean push, boolean continuous) {
         TDReplicator result = getActiveReplicator(remote, push);
         if(result != null) {
