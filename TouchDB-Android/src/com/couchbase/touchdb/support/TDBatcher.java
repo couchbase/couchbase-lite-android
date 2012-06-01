@@ -51,39 +51,50 @@ public class TDBatcher<T> {
     }
 
     public void processNow() {
-        if(inbox == null || inbox.size() == 0) {
-            return;
+        List<T> toProcess = null;
+        synchronized(this) {
+            if(inbox == null || inbox.size() == 0) {
+                return;
+            }
+            toProcess = inbox;
+            inbox = null;
         }
-        List<T> toProcess = inbox;
-        inbox = null;
-        processor.process(toProcess);
+        if(toProcess != null) {
+            processor.process(toProcess);
+        }
     }
 
     public void queueObject(T object) {
-        if(inbox != null && inbox.size() >= capacity) {
-            flush();
-        }
-        if(inbox == null) {
-            inbox = new ArrayList<T>();
-            if(handler != null) {
-                handler.postDelayed(processNowRunnable, 2 * 1000);
+        synchronized(this) {
+            if(inbox != null && inbox.size() >= capacity) {
+                flush();
             }
+            if(inbox == null) {
+                inbox = new ArrayList<T>();
+                if(handler != null) {
+                    handler.postDelayed(processNowRunnable, 2 * 1000);
+                }
+            }
+            inbox.add(object);
         }
-        inbox.add(object);
     }
 
     public void flush() {
-        if(inbox != null) {
-            handler.removeCallbacks(processNowRunnable);
-            processNow();
+        synchronized(this) {
+            if(inbox != null) {
+                handler.removeCallbacks(processNowRunnable);
+                processNow();
+            }
         }
     }
 
     public int count() {
-        if(inbox == null) {
-            return 0;
+        synchronized(this) {
+            if(inbox == null) {
+                return 0;
+            }
+            return inbox.size();
         }
-        return inbox.size();
     }
 
     public void close() {
