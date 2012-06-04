@@ -98,7 +98,7 @@ public class Views extends AndroidTestCase {
         return rev;
     }
 
-    private List<TDRevision> putDocs(TDDatabase db) {
+    public List<TDRevision> putDocs(TDDatabase db) {
         List<TDRevision> result = new ArrayList<TDRevision>();
 
         Map<String,Object> dict2 = new HashMap<String,Object>();
@@ -129,7 +129,7 @@ public class Views extends AndroidTestCase {
         return result;
     }
 
-    public TDView createView(TDDatabase db) {
+    public static TDView createView(TDDatabase db) {
         TDView view = db.getViewNamed("aview");
         view.setMapReduceBlocks(new TDViewMapBlock() {
 

@@ -9,6 +9,7 @@ public class TestObject extends OpenCouchDbDocument {
     private Boolean bar;
     private String baz;
     private String status;
+    private String key;
 
     public Integer getFoo() {
         return foo;
@@ -42,6 +43,14 @@ public class TestObject extends OpenCouchDbDocument {
         this.status = status;
     }
 
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public TestObject() {
 
     }
@@ -58,6 +67,22 @@ public class TestObject extends OpenCouchDbDocument {
         this.bar = bar;
         this.baz = baz;
         this.status = status;
+    }
+
+    public TestObject(String id, String key) {
+        this.setId(id);
+        this.key = key;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(o instanceof TestObject) {
+            TestObject other = (TestObject)o;
+            if(getId() != null && other.getId() != null && getId().equals(other.getId())) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
