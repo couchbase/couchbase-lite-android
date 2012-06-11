@@ -572,26 +572,29 @@ public class TDRouter implements Observer {
         // http://wiki.apache.org/couchdb/HttpGetActiveTasks
         List<Map<String,Object>> activities = new ArrayList<Map<String,Object>>();
         for (TDDatabase db : server.allOpenDatabases()) {
-            for (TDReplicator replicator : db.getActiveReplicators()) {
-                String source = replicator.getRemote().toExternalForm();
-                String target = db.getName();
-                if(replicator.isPush()) {
-                    String tmp = source;
-                    source = target;
-                    target = tmp;
+            List<TDReplicator> activeReplicators = db.getActiveReplicators();
+            if(activeReplicators != null) {
+                for (TDReplicator replicator : activeReplicators) {
+                    String source = replicator.getRemote().toExternalForm();
+                    String target = db.getName();
+                    if(replicator.isPush()) {
+                        String tmp = source;
+                        source = target;
+                        target = tmp;
+                    }
+                    int processed = replicator.getChangesProcessed();
+                    int total = replicator.getChangesTotal();
+                    String status = String.format("Processed %d / %d changes", processed, total);
+                    int progress = (total > 0) ? Math.round(100 * processed / (float)total) : 0;
+                    Map<String,Object> activity = new HashMap<String,Object>();
+                    activity.put("type", "Replication");
+                    activity.put("task", replicator.getSessionID());
+                    activity.put("source", source);
+                    activity.put("target", target);
+                    activity.put("status", status);
+                    activity.put("progress", progress);
+                    activities.add(activity);
                 }
-                int processed = replicator.getChangesProcessed();
-                int total = replicator.getChangesTotal();
-                String status = String.format("Processed %d / %d changes", processed, total);
-                int progress = (total > 0) ? Math.round(100 * processed / (float)total) : 0;
-                Map<String,Object> activity = new HashMap<String,Object>();
-                activity.put("type", "Replication");
-                activity.put("task", replicator.getSessionID());
-                activity.put("source", source);
-                activity.put("target", target);
-                activity.put("status", status);
-                activity.put("progress", progress);
-                activities.add(activity);
             }
         }
         connection.setResponseBody(new TDBody(activities));
@@ -723,7 +726,7 @@ public class TDRouter implements Observer {
     	if (status.getCode() < 300) {
     		TDStatus outStatus = new TDStatus();
     		outStatus.setCode(202);	// CouchDB returns 202 'cause it's an async operation
-    		return outStatus;	
+            return outStatus;
     	} else {
     		return status;
     	}
