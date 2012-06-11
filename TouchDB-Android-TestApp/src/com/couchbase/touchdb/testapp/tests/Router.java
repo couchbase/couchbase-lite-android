@@ -52,7 +52,7 @@ public class Router extends InstrumentationTestCase {
 
         //for some reason a traditional static initializer causes junit to die
         if(!initializedUrlHandler) {
-            URL.setURLStreamHandlerFactory(new TDURLStreamHandlerFactory());
+            TDURLStreamHandlerFactory.registerSelfIgnoreError();
             initializedUrlHandler = true;
         }
     }
