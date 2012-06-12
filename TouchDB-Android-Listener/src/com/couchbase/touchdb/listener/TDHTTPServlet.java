@@ -129,7 +129,6 @@ public class TDHTTPServlet extends HttpServlet {
                         response.flushBuffer();
                     } catch (IOException e) {
                         //dont bother logging this, it usually just means that a continuous changes listener hung up
-                        router.stop();
                     }
                 }
             }
@@ -149,6 +148,10 @@ public class TDHTTPServlet extends HttpServlet {
             doneSignal.await();
         } catch (InterruptedException e) {
             Log.e(TDDatabase.TAG, "Interrupted waiting for result", e);
+        } finally {
+            if(router != null) {
+                router.stop();
+            }
         }
 
     }
