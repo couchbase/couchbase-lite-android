@@ -82,6 +82,13 @@ public class TDPusher extends TDReplicator implements Observer {
             return;
         }
 
+        if(filterName != null) {
+            filter = db.getFilterNamed(filterName);
+        }
+        if(filterName != null && filter == null) {
+            Log.w(TDDatabase.TAG, String.format("%s: No TDFilterBlock registered for filter '%s'; ignoring", this, filterName));;
+        }
+
         // Process existing changes since the last push:
         long lastSequenceLong = 0;
         if(lastSequence != null) {

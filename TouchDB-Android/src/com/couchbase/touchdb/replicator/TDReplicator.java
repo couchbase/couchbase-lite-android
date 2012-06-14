@@ -49,6 +49,8 @@ public abstract class TDReplicator extends Observable {
     protected int changesProcessed;
     protected int changesTotal;
     protected final HttpClientFactory clientFacotry;
+    protected String filterName;
+    protected Map<String,Object> filterParams;
 
     protected boolean inExternalShutdown = false;
 
@@ -90,6 +92,14 @@ public abstract class TDReplicator extends Observable {
 				return new DefaultHttpClient();
 			}
 		};
+    }
+
+    public void setFilterName(String filterName) {
+        this.filterName = filterName;
+    }
+
+    public void setFilterParams(Map<String, Object> filterParams) {
+        this.filterParams = filterParams;
     }
 
     public boolean isRunning() {
@@ -303,17 +313,17 @@ public abstract class TDReplicator extends Observable {
             overdueForSave = true;
             return;
         }
-        
+
         lastSequenceChanged = false;
         overdueForSave = false;
-        
+
         Log.v(TDDatabase.TAG, String.format("%s checkpointing sequence=%s", this, lastSequence));
         final Map<String,Object> body = new HashMap<String,Object>();
         if(remoteCheckpoint != null) {
             body.putAll(remoteCheckpoint);
         }
         body.put("lastSequence", lastSequence);
-        
+
         savingCheckpoint = true;
         sendAsyncRequest("PUT", "/_local/" + remoteCheckpointDocID(), body, new TDRemoteRequestCompletionBlock() {
 

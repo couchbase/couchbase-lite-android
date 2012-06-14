@@ -38,7 +38,6 @@ import com.couchbase.touchdb.TDView.TDViewCollation;
 import com.couchbase.touchdb.TDViewMapBlock;
 import com.couchbase.touchdb.TDViewReduceBlock;
 import com.couchbase.touchdb.TouchDBVersion;
-import com.couchbase.touchdb.replicator.TDPuller;
 import com.couchbase.touchdb.replicator.TDPusher;
 import com.couchbase.touchdb.replicator.TDReplicator;
 
@@ -528,18 +527,18 @@ public class TDRouter implements Observer {
             if(repl == null) {
                 return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
             }
+
+            String filterName = (String)body.get("filter");
+            if(filterName != null) {
+                repl.setFilterName(filterName);
+                Map<String,Object> filterParams = (Map<String,Object>)body.get("query_params");
+                if(filterParams != null) {
+                    repl.setFilterParams(filterParams);
+                }
+            }
+
             if(push) {
                 ((TDPusher)repl).setCreateTarget(createTarget);
-            } else {
-                TDPuller pullRepl = (TDPuller)repl;
-                String filterName = (String)body.get("filter");
-                if(filterName != null) {
-                    pullRepl.setFilterName(filterName);
-                    Map<String,Object> filterParams = (Map<String,Object>)body.get("query_params");
-                    if(filterParams != null) {
-                        pullRepl.setFilterParams(filterParams);
-                    }
-                }
             }
             repl.start();
             Map<String,Object> result = new HashMap<String,Object>();
@@ -1295,5 +1294,14 @@ public class TDRouter implements Observer {
     	}
     	List<Object> keys = (List<Object>) bodyDict.get("keys");
     	return queryDesignDoc(designDocID, viewName, keys);
+    }
+
+    @Override
+    public String toString() {
+        String url = "Unknown";
+        if(connection != null && connection.getURL() != null) {
+            url = connection.getURL().toExternalForm();
+        }
+        return String.format("TDRouter [%s]", url);
     }
 }

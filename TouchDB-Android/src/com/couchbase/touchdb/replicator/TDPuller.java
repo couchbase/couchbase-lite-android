@@ -10,7 +10,6 @@ import java.util.Map;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.database.SQLException;
@@ -41,8 +40,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
     protected long nextFakeSequence;
     protected long maxInsertedFakeSequence;
     protected TDChangeTracker changeTracker;
-    protected String filterName;
-    protected Map<String,Object> filterParams;
+
     protected int httpConnectionCount;
 
     public TDPuller(TDDatabase db, URL remote, boolean continuous) {
@@ -51,14 +49,6 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     public TDPuller(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFactory) {
         super(db, remote, continuous, clientFactory);
-    }
-
-    public void setFilterName(String filterName) {
-        this.filterName = filterName;
-    }
-
-    public void setFilterParams(Map<String, Object> filterParams) {
-        this.filterParams = filterParams;
     }
 
     @Override
@@ -153,7 +143,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
     @Override
     public HttpClient getHttpClient() {
     	HttpClient httpClient = this.clientFacotry.getHttpClient();
-    	
+
         return httpClient;
     }
 
