@@ -604,4 +604,90 @@ public class Router extends InstrumentationTestCase {
     	server.close();
     }
 
+    public void testRevsDiff() {
+
+        TDServer server = null;
+        try {
+            server = new TDServer(getServerPath());
+        } catch (IOException e) {
+            fail("Creating server caused IOException");
+        }
+
+        send(server, "PUT", "/db", TDStatus.CREATED, null);
+
+        Map<String,Object> doc = new HashMap<String,Object>();
+        Map<String,Object> doc1r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc, TDStatus.CREATED, null);
+        String doc1r1ID = (String)doc1r1.get("rev");
+
+        Map<String,Object> doc2r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/22222", doc, TDStatus.CREATED, null);
+        String doc2r1ID = (String)doc2r1.get("rev");
+
+        Map<String,Object> doc3r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/33333", doc, TDStatus.CREATED, null);
+        String doc3r1ID = (String)doc3r1.get("rev");
+
+
+        Map<String, Object> doc1v2 = new HashMap<String, Object>();
+        doc1v2.put("_rev", doc1r1ID);
+        Map<String,Object> doc1r2 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc1v2, TDStatus.CREATED, null);
+        String doc1r2ID = (String)doc1r2.get("rev");
+
+        Map<String, Object> doc2v2 = new HashMap<String, Object>();
+        doc2v2.put("_rev", doc2r1ID);
+        sendBody(server, "PUT", "/db/22222", doc2v2, TDStatus.CREATED, null);
+
+        Map<String, Object> doc1v3 = new HashMap<String, Object>();
+        doc1v3.put("_rev", doc1r2ID);
+        Map<String,Object> doc1r3 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc1v3, TDStatus.CREATED, null);
+        String doc1r3ID = (String)doc1r1.get("rev");
+
+        //now build up the request
+        List<String> doc1Revs = new ArrayList<String>();
+        doc1Revs.add(doc1r2ID);
+        doc1Revs.add("3-foo");
+
+        List<String> doc2Revs = new ArrayList<String>();
+        doc2Revs.add(doc2r1ID);
+
+        List<String> doc3Revs = new ArrayList<String>();
+        doc3Revs.add("10-bar");
+
+        List<String> doc9Revs = new ArrayList<String>();
+        doc9Revs.add("6-six");
+
+        Map<String, Object> revsDiffRequest = new HashMap<String, Object>();
+        revsDiffRequest.put("11111", doc1Revs);
+        revsDiffRequest.put("22222", doc2Revs);
+        revsDiffRequest.put("33333", doc3Revs);
+        revsDiffRequest.put("99999", doc9Revs);
+
+        //now build up the expected response
+        List<String> doc1missing = new ArrayList<String>();
+        doc1missing.add("3-foo");
+
+        List<String> doc3missing = new ArrayList<String>();
+        doc3missing.add("10-bar");
+
+        List<String> doc9missing = new ArrayList<String>();
+        doc9missing.add("6-six");
+
+        Map<String, Object> doc1missingMap = new HashMap<String, Object>();
+        doc1missingMap.put("missing", doc1missing);
+
+        Map<String, Object> doc3missingMap = new HashMap<String, Object>();
+        doc3missingMap.put("missing", doc3missing);
+
+        Map<String, Object> doc9missingMap = new HashMap<String, Object>();
+        doc9missingMap.put("missing", doc9missing);
+
+        Map<String, Object> revsDiffResponse = new HashMap<String, Object>();
+        revsDiffResponse.put("11111", doc1missingMap);
+        revsDiffResponse.put("33333", doc3missingMap);
+        revsDiffResponse.put("99999", doc9missingMap);
+
+        sendBody(server, "POST", "/db/_revs_diff", revsDiffRequest, TDStatus.OK, revsDiffResponse);
+
+        server.close();
+
+    }
+
 }

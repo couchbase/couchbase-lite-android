@@ -716,8 +716,51 @@ public class TDRouter implements Observer {
     }
 
     public TDStatus do_POST_Document_revs_diff(TDDatabase _db, String _docID, String _attachmentName) {
-        //FIXME implement
-        throw new UnsupportedOperationException();
+        // http://wiki.apache.org/couchdb/HttpPostRevsDiff
+        // Collect all of the input doc/revision IDs as TDRevisions:
+        TDRevisionList revs = new TDRevisionList();
+        Map<String, Object> body = getBodyAsDictionary();
+        if(body == null) {
+            return new TDStatus(TDStatus.BAD_JSON);
+        }
+        for (String docID : body.keySet()) {
+            List<String> revIDs = (List<String>)body.get(docID);
+            for (String revID : revIDs) {
+                TDRevision rev = new TDRevision(docID, revID, false);
+                revs.add(rev);
+            }
+        }
+
+        // Look them up, removing the existing ones from revs:
+        if(!db.findMissingRevisions(revs)) {
+            return new TDStatus(TDStatus.DB_ERROR);
+        }
+
+        // Return the missing revs in a somewhat different format:
+        Map<String, Object> diffs = new HashMap<String, Object>();
+        for (TDRevision rev : revs) {
+            String docID = rev.getDocId();
+
+            List<String> missingRevs = null;
+            Map<String, Object> idObj = (Map<String, Object>)diffs.get(docID);
+            if(idObj != null) {
+                missingRevs = (List<String>)idObj.get("missing");
+            } else {
+                idObj = new HashMap<String, Object>();
+            }
+
+            if(missingRevs == null) {
+                missingRevs = new ArrayList<String>();
+                idObj.put("missing", missingRevs);
+                diffs.put(docID, idObj);
+            }
+            missingRevs.add(rev.getRevId());
+        }
+
+        // FIXME add support for possible_ancestors
+
+        connection.setResponseBody(new TDBody(diffs));
+        return new TDStatus(TDStatus.OK);
     }
 
     public TDStatus do_POST_Document_compact(TDDatabase _db, String _docID, String _attachmentName) {
