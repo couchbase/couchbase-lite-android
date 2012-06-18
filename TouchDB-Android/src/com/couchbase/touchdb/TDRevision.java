@@ -17,6 +17,7 @@
 
 package com.couchbase.touchdb;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -127,9 +128,13 @@ public class TDRevision {
         assert((docId != null) && (revId != null));
         assert((this.docId == null) || (this.docId.equals(docId)));
         TDRevision result = new TDRevision(docId, revId, deleted);
-        if(body != null) {
-            result.setBody(body);
+        Map<String, Object> properties = getProperties();
+        if(properties == null) {
+            properties = new HashMap<String, Object>();
         }
+        properties.put("_id", docId);
+        properties.put("_rev", revId);
+        result.setProperties(properties);
         return result;
     }
 

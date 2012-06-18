@@ -2071,7 +2071,6 @@ public class TDDatabase extends Observable {
         }
 
         //// EPILOGUE: A change notification is sent...
-        rev.setBody(null);  // body is not up to date (no current _rev, likely no _id) so avoid confusion
         notifyChange(rev, null);
         return rev;
     }

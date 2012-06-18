@@ -21,6 +21,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
 import junit.framework.Assert;
 import android.test.AndroidTestCase;
@@ -33,7 +35,7 @@ import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDRevisionList;
 import com.couchbase.touchdb.TDStatus;
 
-public class CRUDOperations extends AndroidTestCase {
+public class CRUDOperations extends AndroidTestCase implements Observer {
 
     public static final String TAG = "CRUDOperations";
 
@@ -42,6 +44,8 @@ public class CRUDOperations extends AndroidTestCase {
         String filesDir = getContext().getFilesDir().getAbsolutePath();
 
         TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+
+        db.addObserver(this);
 
         String privateUUID = db.privateUUID();
         String publicUUID = db.publicUUID();
@@ -163,5 +167,21 @@ public class CRUDOperations extends AndroidTestCase {
         }
 
         return result;
+    }
+
+
+    @Override
+    public void update(Observable observable, Object changeObject) {
+        if(observable instanceof TDDatabase) {
+            //make sure we're listening to the right events
+            Map<String,Object> changeNotification = (Map<String,Object>)changeObject;
+
+            TDRevision rev = (TDRevision)changeNotification.get("rev");
+            Assert.assertNotNull(rev);
+            Assert.assertNotNull(rev.getDocId());
+            Assert.assertNotNull(rev.getRevId());
+            Assert.assertEquals(rev.getDocId(), rev.getProperties().get("_id"));
+            Assert.assertEquals(rev.getRevId(), rev.getProperties().get("_rev"));
+        }
     }
 }
