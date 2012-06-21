@@ -203,7 +203,9 @@ public class TouchDBHttpClient implements HttpClient {
             throw Exceptions.propagate(e);
         }
         router.setCallbackBlock(response);
-        router.start();
+        synchronized(server) {
+            router.start();
+        }
         return response;
     }
 

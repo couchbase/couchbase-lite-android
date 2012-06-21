@@ -120,7 +120,7 @@ public class TDHTTPServlet extends HttpServlet {
             }
 
             @Override
-            public void onDataAvailable(byte[] data) {
+            public synchronized void onDataAvailable(byte[] data) {
                 if(data != null) {
                     try {
                         Log.v(TAG, String.format("Asked to write: %s", new String(data)));

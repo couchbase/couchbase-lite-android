@@ -101,9 +101,10 @@ public class TouchDBHttpResponse implements HttpResponse, TDRouterCallbackBlock 
     /** TDRouterCallbackBlock **/
 
     @Override
-    public void onDataAvailable(byte[] data) {
+    public synchronized void onDataAvailable(byte[] data) {
         try {
             os.write(data);
+            os.flush();
         } catch (IOException e) {
             Log.e(TDDatabase.TAG, "Error wrtiting data", e);
         }
