@@ -17,7 +17,6 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -25,14 +24,13 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
+import com.couchbase.touchdb.TDServer;
 
 /**
  * Reads the continuous-mode _changes feed of a database, and sends the
  * individual change entries to its client's changeTrackerReceivedChange()
  */
 public class TDChangeTracker implements Runnable {
-
-    private ObjectMapper mapper = new ObjectMapper();
 
     private URL databaseURL;
     private TDChangeTrackerClient client;
@@ -160,7 +158,7 @@ public class TDChangeTracker implements Runnable {
                 	try {
 	                    InputStream input = entity.getContent();
 	                    if(mode != TDChangeTrackerMode.Continuous) {
-	                        Map<String,Object> fullBody = mapper.readValue(input, Map.class);
+	                        Map<String,Object> fullBody = TDServer.getObjectMapper().readValue(input, Map.class);
 	                        boolean responseOK = receivedPollResponse(fullBody);
 	                        if(mode == TDChangeTrackerMode.LongPoll && responseOK) {
 	                            Log.v(TDDatabase.TAG, "Starting new longpoll");
@@ -197,7 +195,7 @@ public class TDChangeTracker implements Runnable {
     public boolean receivedChunk(String line) {
         if(line.length() > 1) {
             try {
-                Map<String,Object> change = (Map)mapper.readValue(line, Map.class);
+                Map<String,Object> change = (Map)TDServer.getObjectMapper().readValue(line, Map.class);
                 if(!receivedChange(change)) {
                     Log.w(TDDatabase.TAG, String.format("Received unparseable change line from server: %s", line));
                     return false;

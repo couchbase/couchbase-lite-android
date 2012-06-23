@@ -20,7 +20,6 @@ package com.couchbase.touchdb;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 
 import android.util.Log;
@@ -30,7 +29,6 @@ import android.util.Log;
  */
 public class TDBody {
 
-    private ObjectMapper mapper = new ObjectMapper();
     private byte[] json;
     private Object object;
     private boolean error = false;
@@ -61,7 +59,7 @@ public class TDBody {
         // Yes, this is just like asObject except it doesn't warn.
         if(json == null && !error) {
             try {
-                json = mapper.writeValueAsBytes(object);
+                json = TDServer.getObjectMapper().writeValueAsBytes(object);
             } catch (Exception e) {
                 error = true;
             }
@@ -72,7 +70,7 @@ public class TDBody {
     public byte[] getJson() {
         if(json == null && !error) {
             try {
-                json = mapper.writeValueAsBytes(object);
+                json = TDServer.getObjectMapper().writeValueAsBytes(object);
             } catch (Exception e) {
                 Log.w(TDDatabase.TAG, "TDBody: couldn't convert JSON");
                 error = true;
@@ -84,7 +82,7 @@ public class TDBody {
     public byte[] getPrettyJson() {
         Object properties = getObject();
         if(properties != null) {
-            ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+            ObjectWriter writer = TDServer.getObjectMapper().writerWithDefaultPrettyPrinter();
             try {
                 json = writer.writeValueAsBytes(properties);
             } catch (Exception e) {
@@ -102,7 +100,7 @@ public class TDBody {
         if(object == null && !error) {
             try {
                 if(json != null) {
-                    object = mapper.readValue(json, Map.class);
+                    object = TDServer.getObjectMapper().readValue(json, Map.class);
                 }
             } catch (Exception e) {
                 Log.w(TDDatabase.TAG, "TDBody: couldn't parse JSON: " + new String(json), e);

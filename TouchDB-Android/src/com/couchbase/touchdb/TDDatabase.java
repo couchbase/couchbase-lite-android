@@ -30,8 +30,6 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Set;
 
-import org.codehaus.jackson.map.ObjectMapper;
-
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -51,8 +49,6 @@ import com.couchbase.touchdb.support.HttpClientFactory;
  * A TouchDB database.
  */
 public class TDDatabase extends Observable {
-
-    private ObjectMapper mapper = new ObjectMapper();
 
     private String path;
     private String name;
@@ -536,7 +532,7 @@ public class TDDatabase extends Observable {
 
         byte[] extraJSON = null;
         try {
-            extraJSON = mapper.writeValueAsBytes(dict);
+            extraJSON = TDServer.getObjectMapper().writeValueAsBytes(dict);
         } catch (Exception e) {
             Log.e(TDDatabase.TAG, "Error convert extra JSON to bytes", e);
             return null;
@@ -659,7 +655,7 @@ public class TDDatabase extends Observable {
 
       Map<String,Object> docProperties = null;
       try {
-          docProperties = mapper.readValue(json, Map.class);
+          docProperties = TDServer.getObjectMapper().readValue(json, Map.class);
           docProperties.putAll(extra);
           return docProperties;
       } catch (Exception e) {
@@ -1842,7 +1838,7 @@ public class TDDatabase extends Observable {
 
         byte[] json = null;
         try {
-            json = mapper.writeValueAsBytes(properties);
+            json = TDServer.getObjectMapper().writeValueAsBytes(properties);
         } catch (Exception e) {
             Log.e(TDDatabase.TAG, "Error serializing " + rev + " to JSON", e);
         }
@@ -2379,7 +2375,7 @@ public class TDDatabase extends Observable {
                 byte[] json = cursor.getBlob(1);
                 Map<String,Object> properties = null;
                 try {
-                    properties = mapper.readValue(json, Map.class);
+                    properties = TDServer.getObjectMapper().readValue(json, Map.class);
                     properties.put("_id", docID);
                     properties.put("_rev", gotRevID);
                     result = new TDRevision(docID, gotRevID, false);

@@ -30,7 +30,6 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -38,10 +37,9 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
+import com.couchbase.touchdb.TDServer;
 
 public class TDRemoteRequest implements Runnable {
-
-    private ObjectMapper mapper = new ObjectMapper();
 
     private HandlerThread handlerThread;
     private Handler handler;
@@ -127,7 +125,7 @@ public class TDRemoteRequest implements Runnable {
         if(body != null && request instanceof HttpEntityEnclosingRequestBase) {
             byte[] bodyBytes = null;
             try {
-                bodyBytes = mapper.writeValueAsBytes(body);
+                bodyBytes = TDServer.getObjectMapper().writeValueAsBytes(body);
             } catch (Exception e) {
                 Log.e(TDDatabase.TAG, "Error serializing body of request", e);
             }
@@ -151,7 +149,7 @@ public class TDRemoteRequest implements Runnable {
                 if(temp != null) {
                 	try {
 	                    InputStream stream = temp.getContent();
-	                    fullBody = mapper.readValue(stream, Object.class);
+	                    fullBody = TDServer.getObjectMapper().readValue(stream, Object.class);
                 	} finally {
                 		try { temp.consumeContent(); } catch (IOException e) {}
                 	}

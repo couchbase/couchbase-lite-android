@@ -17,8 +17,6 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.codehaus.jackson.map.ObjectMapper;
-
 import android.util.Log;
 
 import com.couchbase.touchdb.TDAttachment;
@@ -43,8 +41,6 @@ import com.couchbase.touchdb.replicator.TDReplicator;
 
 
 public class TDRouter implements Observer {
-
-    private ObjectMapper mapper = new ObjectMapper();
 
     private TDServer server;
     private TDDatabase db;
@@ -126,7 +122,7 @@ public class TDRouter implements Observer {
         }
         Object result = null;
         try {
-            result = mapper.readValue(value, Object.class);
+            result = TDServer.getObjectMapper().readValue(value, Object.class);
         } catch (Exception e) {
             Log.w("Unable to parse JSON Query", e);
         }
@@ -143,7 +139,7 @@ public class TDRouter implements Observer {
     public Map<String,Object> getBodyAsDictionary() {
         try {
             byte[] bodyBytes = ((ByteArrayOutputStream)connection.getOutputStream()).toByteArray();
-            Map<String,Object> bodyMap = mapper.readValue(bodyBytes, Map.class);
+            Map<String,Object> bodyMap = TDServer.getObjectMapper().readValue(bodyBytes, Map.class);
             return bodyMap;
         } catch (IOException e) {
             return null;
@@ -854,7 +850,7 @@ public class TDRouter implements Observer {
     public void sendContinuousChange(TDRevision rev) {
         Map<String,Object> changeDict = changesDictForRevision(rev);
         try {
-            String jsonString = mapper.writeValueAsString(changeDict);
+            String jsonString = TDServer.getObjectMapper().writeValueAsString(changeDict);
             if(callbackBlock != null) {
                 byte[] json = (jsonString + "\n").getBytes();
                 callbackBlock.onDataAvailable(json);
@@ -885,7 +881,7 @@ public class TDRouter implements Observer {
                 if(callbackBlock != null) {
                     byte[] data = null;
                     try {
-                        data = mapper.writeValueAsBytes(body);
+                        data = TDServer.getObjectMapper().writeValueAsBytes(body);
                     } catch (Exception e) {
                         Log.w(TDDatabase.TAG, "Error serializing JSON", e);
                     }

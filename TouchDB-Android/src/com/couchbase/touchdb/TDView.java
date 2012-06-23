@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.map.ObjectMapper;
-
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -37,8 +35,6 @@ import android.util.Log;
 public class TDView {
 
     public static final int REDUCE_BATCH_SIZE = 100;
-
-    private final ObjectMapper mapper = new ObjectMapper();
 
     public enum TDViewCollation {
         TDViewCollationUnicode, TDViewCollationRaw, TDViewCollationASCII
@@ -229,7 +225,7 @@ public class TDView {
         }
         String result = null;
         try {
-            result = mapper.writeValueAsString(object);
+            result = TDServer.getObjectMapper().writeValueAsString(object);
         } catch (Exception e) {
             // ignore
         }
@@ -242,7 +238,7 @@ public class TDView {
         }
         Object result = null;
         try {
-            result = mapper.readValue(json, Object.class);
+            result = TDServer.getObjectMapper().readValue(json, Object.class);
         } catch (Exception e) {
             // ignore
         }
@@ -313,8 +309,8 @@ public class TDView {
                 public void emit(Object key, Object value) {
 
                     try {
-                        String keyJson = mapper.writeValueAsString(key);
-                        String valueJson = mapper.writeValueAsString(value);
+                        String keyJson = TDServer.getObjectMapper().writeValueAsString(key);
+                        String valueJson = TDServer.getObjectMapper().writeValueAsString(value);
                         Log.v(TDDatabase.TAG, "    emit(" + keyJson + ", "
                                 + valueJson + ")");
 
@@ -629,11 +625,11 @@ public class TDView {
                     Map<String,Object> docContents = null;
                     if(options.isIncludeDocs()) {
                         docContents = db.documentPropertiesFromJSON(cursor.getBlob(4), docId, cursor.getString(3), cursor.getLong(5), options.getContentOptions());
-                        
-                    
+
+
                     }
-                    
-                    
+
+
                     if(docContents != null) {
                         row.put("doc", docContents);
                     }
@@ -642,7 +638,7 @@ public class TDView {
                     }
                     row.put("id", docId);
                     row.put("key", key);
-                    
+
                     rows.add(row);
                 }
 

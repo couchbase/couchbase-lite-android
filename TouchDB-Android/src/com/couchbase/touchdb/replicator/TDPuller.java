@@ -10,7 +10,6 @@ import java.util.Map;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import android.database.SQLException;
 import android.util.Log;
@@ -20,6 +19,7 @@ import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDMisc;
 import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDRevisionList;
+import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.replicator.changetracker.TDChangeTracker;
 import com.couchbase.touchdb.replicator.changetracker.TDChangeTracker.TDChangeTrackerMode;
@@ -32,8 +32,6 @@ import com.couchbase.touchdb.support.TDRemoteRequestCompletionBlock;
 public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     private static final int MAX_OPEN_HTTP_CONNECTIONS = 8;
-
-    private ObjectMapper mapper = new ObjectMapper();
 
     protected TDBatcher<List<Object>> revsToInsert;
     protected List<TDRevision> revsToPull;
@@ -338,7 +336,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         }
         byte[] json = null;
         try {
-            json = mapper.writeValueAsBytes(strings);
+            json = TDServer.getObjectMapper().writeValueAsBytes(strings);
         } catch (Exception e) {
             Log.w(TDDatabase.TAG, "Unable to serialize json", e);
         }

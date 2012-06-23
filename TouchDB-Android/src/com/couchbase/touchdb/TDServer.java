@@ -28,16 +28,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.codehaus.jackson.map.ObjectMapper;
+
 /**
  * Manages a directory containing TDDatabases.
  */
 public class TDServer {
+
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final String LEGAL_CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789_$()+-/";
     public static final String DATABASE_SUFFIX = ".touchdb";
 
     private File directory;
     private Map<String, TDDatabase> databases;
+
+    public static ObjectMapper getObjectMapper() {
+        return mapper;
+    }
 
     public TDServer(String directoryName) throws IOException {
         this.directory = new File(directoryName);
