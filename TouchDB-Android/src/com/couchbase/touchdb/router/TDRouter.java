@@ -678,34 +678,59 @@ public class TDRouter implements Observer {
         	noNewEdits = false;
         }
         boolean ok = false;
+        db.beginTransaction();
         List<Map<String,Object>> results = new ArrayList<Map<String,Object>>();
-        for (Map<String, Object> doc : docs) {
-        	String docID = (String) doc.get("_id");
-        	TDRevision rev = null;
-            TDStatus status = new TDStatus(TDStatus.BAD_REQUEST);
-            TDBody docBody = new TDBody(doc);
-            if (noNewEdits) {
-                rev = new TDRevision(docBody);
-            	if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
-            		status =  new TDStatus(TDStatus.BAD_REQUEST);
+        try {
+            for (Map<String, Object> doc : docs) {
+                String docID = (String) doc.get("_id");
+                TDRevision rev = null;
+                TDStatus status = new TDStatus(TDStatus.BAD_REQUEST);
+                TDBody docBody = new TDBody(doc);
+                if (noNewEdits) {
+                    rev = new TDRevision(docBody);
+                    if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
+                        status =  new TDStatus(TDStatus.BAD_REQUEST);
+                    } else {
+                        List<String> history = TDDatabase.parseCouchDBRevisionHistory(doc);
+                        status = db.forceInsert(rev, history, null);
+                    }
                 } else {
-                    List<String> history = TDDatabase.parseCouchDBRevisionHistory(doc);
-                    status = db.forceInsert(rev, history, null);
+                    TDStatus outStatus = new TDStatus();
+                    rev = update(db, docID, docBody, false, allOrNothing, outStatus);
+                    status.setCode(outStatus.getCode());
                 }
-            } else {
-                TDStatus outStatus = new TDStatus();
-                rev = update(db, docID, docBody, false, allOrNothing, outStatus);
-                status.setCode(outStatus.getCode());
+                Map<String, Object> result = null;
+                if(status.isSuccessful()) {
+                    result = new HashMap<String, Object>();
+                    result.put("ok", true);
+                    result.put("id", docID);
+                    if (rev != null) {
+                        result.put("rev", rev.getRevId());
+                    }
+                } else if(allOrNothing) {
+                    return status;  // all_or_nothing backs out if there's any error
+                } else if(status.getCode() == TDStatus.FORBIDDEN) {
+                    result = new HashMap<String, Object>();
+                    result.put("error", "validation failed");
+                    result.put("id", docID);
+                } else if(status.getCode() == TDStatus.CONFLICT) {
+                    result = new HashMap<String, Object>();
+                    result.put("error", "conflict");
+                    result.put("id", docID);
+                } else {
+                    return status;  // abort the whole thing if something goes badly wrong
+                }
+                if(result != null) {
+                    results.add(result);
+                }
             }
-            Log.d(TDDatabase.TAG, "status: " + status.toString());
-            Map<String, Object> result = new HashMap<String, Object>();
-            result.put("ok", true);
-            result.put("id", docID);
-            if (rev != null) {
-                result.put("rev", rev.getRevId());
-            }
-            results.add(result);
-		}
+            Log.w(TDDatabase.TAG, String.format("%s finished inserting %d revisions in bulk", this, docs.size()));
+            ok = true;
+        } catch (Exception e) {
+            Log.w(TDDatabase.TAG, String.format("%s: Exception inserting revisions in bulk", this), e);
+        } finally {
+            db.endTransaction(ok);
+        }
         Log.d(TDDatabase.TAG, "results: " + results.toString());
         connection.setResponseBody(new TDBody(results));
         return new TDStatus(TDStatus.CREATED);
