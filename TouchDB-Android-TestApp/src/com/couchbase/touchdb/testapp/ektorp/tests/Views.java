@@ -21,6 +21,7 @@ import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDView;
 import com.couchbase.touchdb.TDViewMapBlock;
 import com.couchbase.touchdb.TDViewMapEmitBlock;
+import com.couchbase.touchdb.TDViewReduceBlock;
 import com.couchbase.touchdb.ektorp.TouchDBHttpClient;
 import com.couchbase.touchdb.router.TDURLStreamHandlerFactory;
 
@@ -34,6 +35,7 @@ public class Views extends AndroidTestCase {
     public static final String dDocName = "ddoc";
     public static final String dDocId = "_design/" + dDocName;
     public static final String viewName = "aview";
+    public static final String viewReduceName = "aviewreduce";
 
     public void putDocs(CouchDbConnector db) {
 
@@ -67,6 +69,29 @@ public class Views extends AndroidTestCase {
                 }
             }
         }, null, "1");
+        return view;
+    }
+
+    public static TDView createViewWithReduce(TDDatabase db) {
+        TDView view = db.getViewNamed(String.format("%s/%s", dDocName, viewReduceName));
+        view.setMapReduceBlocks(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                Assert.assertNotNull(document.get("_id"));
+                Assert.assertNotNull(document.get("_rev"));
+                if(document.get("key") != null) {
+                    emitter.emit(document.get("key"), 1);
+                }
+            }
+        }, new TDViewReduceBlock() {
+
+            @Override
+            public Object reduce(List<Object> keys, List<Object> values,
+                    boolean rereduce) {
+                return TDView.totalValues(values);
+            }
+        }, "1");
         return view;
     }
 
@@ -153,4 +178,30 @@ public class Views extends AndroidTestCase {
         Assert.assertEquals("one", result.getRows().get(1).getKey());
     }
 
+    public void testViewReduceQuery() throws IOException {
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+        TDServer tdserver = new TDServer(filesDir);
+
+        //ensure the test is repeatable
+        TDDatabase old = tdserver.getExistingDatabaseNamed("ektorp_views_test");
+        if(old != null) {
+            old.deleteDatabase();
+        }
+
+        HttpClient httpClient = new TouchDBHttpClient(tdserver);
+        CouchDbInstance server = new StdCouchDbInstance(httpClient);
+
+        CouchDbConnector db = server.createConnector("ektorp_views_test", true);
+        TDDatabase tdDb = tdserver.getExistingDatabaseNamed("ektorp_views_test");
+
+        putDocs(db);
+        createViewWithReduce(tdDb);
+
+        ViewQuery query = new ViewQuery().designDocId(dDocId).viewName(viewReduceName).reduce(true);
+        ViewResult result = db.queryView(query);
+
+        Assert.assertEquals(1, result.getTotalRows());
+        Assert.assertEquals(5, result.getRows().get(0).getValueAsInt());
+    }
 }

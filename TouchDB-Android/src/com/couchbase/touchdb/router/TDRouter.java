@@ -186,7 +186,9 @@ public class TDRouter implements Observer {
         if(getQuery("inclusive_end") != null) {
             options.setInclusiveEnd(getBooleanQuery("inclusive_end"));
         }
-        options.setReduce(getBooleanQuery("reduce"));
+        if(getQuery("reduce") != null) {
+            options.setReduce(getBooleanQuery("reduce"));
+        }
         options.setGroup(getBooleanQuery("group"));
         options.setContentOptions(getContentOptions());
         options.setStartKey(getJSONQuery("startkey"));
@@ -1309,6 +1311,12 @@ public class TDRouter implements Observer {
         }
 
         TDQueryOptions options = new TDQueryOptions();
+
+        //if the view contains a reduce block, it should default to reduce=true
+        if(view.getReduceBlock() != null) {
+            options.setReduce(true);
+        }
+
         if(!getQueryOptions(options)) {
             return new TDStatus(TDStatus.BAD_REQUEST);
         }

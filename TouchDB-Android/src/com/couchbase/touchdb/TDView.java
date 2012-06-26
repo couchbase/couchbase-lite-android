@@ -67,6 +67,10 @@ public class TDView {
         return mapBlock;
     }
 
+    public TDViewReduceBlock getReduceBlock() {
+        return reduceBlock;
+    }
+
     public TDViewCollation getCollation() {
         return collation;
     }
