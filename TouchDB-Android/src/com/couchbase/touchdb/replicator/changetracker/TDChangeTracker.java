@@ -11,12 +11,26 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -144,7 +158,45 @@ public class TDChangeTracker implements Runnable {
         running = true;
         HttpClient httpClient = client.getHttpClient();
         while (running) {
-            request = new HttpGet(getChangesFeedURL().toString());
+            URL url = getChangesFeedURL();
+            request = new HttpGet(url.toString());
+
+            // if the URL contains user info AND if this a DefaultHttpClient
+            // then preemptively set the auth credentials
+            if(url.getUserInfo() != null) {
+                if(url.getUserInfo().contains(":")) {
+                    String[] userInfoSplit = url.getUserInfo().split(":");
+                    final Credentials creds = new UsernamePasswordCredentials(userInfoSplit[0], userInfoSplit[1]);
+                    if(httpClient instanceof DefaultHttpClient) {
+                        DefaultHttpClient dhc = (DefaultHttpClient)httpClient;
+
+                        HttpRequestInterceptor preemptiveAuth = new HttpRequestInterceptor() {
+
+                            @Override
+                            public void process(HttpRequest request,
+                                    HttpContext context) throws HttpException,
+                                    IOException {
+                                AuthState authState = (AuthState) context.getAttribute(ClientContext.TARGET_AUTH_STATE);
+                                CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(
+                                        ClientContext.CREDS_PROVIDER);
+                                HttpHost targetHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+
+                                if (authState.getAuthScheme() == null) {
+                                    AuthScope authScope = new AuthScope(targetHost.getHostName(), targetHost.getPort());
+                                    authState.setAuthScheme(new BasicScheme());
+                                    authState.setCredentials(creds);
+                                }
+                            }
+                        };
+
+                        dhc.addRequestInterceptor(preemptiveAuth, 0);
+                    }
+                }
+                else {
+                    Log.w(TDDatabase.TAG, "Unable to parse user info, not setting credentials");
+                }
+            }
+
             try {
                 Log.v(TDDatabase.TAG, "Making request to " + getChangesFeedURL().toString());
                 HttpResponse response = httpClient.execute(request);
