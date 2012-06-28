@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
+import com.couchbase.touchdb.support.HttpClientFactory;
+
 /**
  * Manages a directory containing TDDatabases.
  */
@@ -42,6 +44,8 @@ public class TDServer {
 
     private File directory;
     private Map<String, TDDatabase> databases;
+
+    private HttpClientFactory defaultHttpClientFactory;
 
     public static ObjectMapper getObjectMapper() {
         return mapper;
@@ -138,6 +142,15 @@ public class TDServer {
             database.close();
         }
         databases.clear();
+    }
+
+    public HttpClientFactory getDefaultHttpClientFactory() {
+        return defaultHttpClientFactory;
+    }
+
+    public void setDefaultHttpClientFactory(
+            HttpClientFactory defaultHttpClientFactory) {
+        this.defaultHttpClientFactory = defaultHttpClientFactory;
     }
 
 }
