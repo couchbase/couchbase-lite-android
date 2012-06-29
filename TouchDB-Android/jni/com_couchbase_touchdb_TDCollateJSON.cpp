@@ -259,6 +259,8 @@ static int compareStringsUnicode(const char** in1, const char** in2) {
 	JNIEnv *env = getEnv();
 	int result = env->CallStaticIntMethod(TDCollateJSONClass, compareMethod,
 			str1, str2);
+	env->DeleteLocalRef(str1);
+	env->DeleteLocalRef(str2);
 	return result;
 }
 

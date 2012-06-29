@@ -129,6 +129,20 @@ public class Views extends AndroidTestCase {
         return result;
     }
 
+    public void putNDocs(TDDatabase db, int n) {
+        for(int i=0; i< n; i++) {
+            Map<String,Object> doc = new HashMap<String,Object>();
+            doc.put("_id", String.format("%d", i));
+            List<String> key = new ArrayList<String>();
+            for(int j=0; j< 256; j++) {
+                key.add("key");
+            }
+            key.add(String.format("key-%d", i));
+            doc.put("key", key);
+            putDoc(db, doc);
+        }
+    }
+
     public static TDView createView(TDDatabase db) {
         TDView view = db.getViewNamed("aview");
         view.setMapReduceBlocks(new TDViewMapBlock() {
@@ -956,6 +970,23 @@ public class Views extends AndroidTestCase {
         }
 
         db.close();
+    }
+
+    public void testLargerViewQuery() {
+
+        String filesDir = getContext().getFilesDir().getAbsolutePath();
+
+        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
+        putNDocs(db, 4);
+        TDView view = createView(db);
+
+        TDStatus updated = view.updateIndex();
+        Assert.assertEquals(TDStatus.OK, updated.getCode());
+
+        // Query all rows:
+        TDQueryOptions options = new TDQueryOptions();
+        TDStatus status = new TDStatus();
+        List<Map<String, Object>> rows = view.queryWithOptions(options, status);
     }
 
 }
