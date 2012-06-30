@@ -1,7 +1,9 @@
 package com.couchbase.touchdb.javascript;
 
+import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.script.javascript.support.NativeList;
 import org.elasticsearch.script.javascript.support.NativeMap;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -112,6 +114,9 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
         public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
             if (javaObject instanceof Map) {
                 return new NativeMap(scope, (Map) javaObject);
+            }
+            else if(javaObject instanceof List) {
+                return new NativeList(scope, (List<Object>)javaObject);
             }
 
             return super.wrapAsJavaObject(cx, scope, javaObject, staticType);
