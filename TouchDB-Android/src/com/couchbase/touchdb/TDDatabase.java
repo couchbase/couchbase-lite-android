@@ -19,6 +19,7 @@ package com.couchbase.touchdb;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -1418,8 +1419,8 @@ public class TDDatabase extends Observable {
             byte[] keyData = cursor.getBlob(0);
             //TODO add checks on key here? (ios version)
             TDBlobKey key = new TDBlobKey(keyData);
-            byte[] contents = attachments.blobForKey(key);
-            if(contents == null) {
+            InputStream contentStream = attachments.blobStreamForKey(key);
+            if(contentStream == null) {
                 Log.e(TDDatabase.TAG, "Failed to load attachment");
                 status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
                 return null;
@@ -1427,7 +1428,7 @@ public class TDDatabase extends Observable {
             else {
                 status.setCode(TDStatus.OK);
                 TDAttachment result = new TDAttachment();
-                result.setData(contents);
+                result.setContentStream(contentStream);
                 result.setContentType(cursor.getString(1));
                 return result;
             }

@@ -98,6 +98,20 @@ public class TDBlobStore {
         return result;
     }
 
+    public InputStream blobStreamForKey(TDBlobKey key) {
+        String path = pathForKey(key);
+        File file = new File(path);
+        if(file.canRead()) {
+            try {
+                return new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                Log.e(TDDatabase.TAG, "Unexpected file not found in blob store", e);
+                return null;
+            }
+        }
+        return null;
+    }
+
     public boolean storeBlob(byte[] data, TDBlobKey outKey) {
         TDBlobKey newKey = keyForBlob(data);
         outKey.setBytes(newKey.getBytes());

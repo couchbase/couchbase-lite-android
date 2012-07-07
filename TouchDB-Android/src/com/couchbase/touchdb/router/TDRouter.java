@@ -1132,9 +1132,8 @@ public class TDRouter implements Observer {
     	if (acceptEncoding != null && acceptEncoding.equals("gzip")) {
     		connection.getResHeader().add("Content-Encoding", acceptEncoding);
     	}
-    	TDBody body = new TDBody(contents.getData());
 
-    	connection.setResponseBody(body);
+        connection.setResponseInputStream(contents.getContentStream());
         return new TDStatus(TDStatus.OK);
     }
 
@@ -1248,7 +1247,7 @@ public class TDRouter implements Observer {
         if(revID == null) {
             revID = getRevIDFromIfMatchHeader();
         }
-        TDRevision rev = db.updateAttachment(attachment, body, connection.getRequestProperty("Content-Type"),
+        TDRevision rev = db.updateAttachment(attachment, body, connection.getRequestProperty("content-type"),
                 docID, revID, status);
         if(status.isSuccessful()) {
             Map<String, Object> resultDict = new HashMap<String, Object>();

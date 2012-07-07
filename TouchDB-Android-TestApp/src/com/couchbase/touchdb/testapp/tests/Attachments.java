@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Set;
 
 import junit.framework.Assert;
+
+import org.apache.commons.io.IOUtils;
+
 import android.test.AndroidTestCase;
 
 import com.couchbase.touchdb.TDAttachment;
@@ -40,7 +43,7 @@ public class Attachments extends AndroidTestCase {
     public static final String TAG = "Attachments";
 
     @SuppressWarnings("unchecked")
-    public void testAttachments() {
+    public void testAttachments() throws Exception {
 
         String filesDir = getContext().getFilesDir().getAbsolutePath();
 
@@ -65,7 +68,8 @@ public class Attachments extends AndroidTestCase {
         TDAttachment attachment = db.getAttachmentForSequence(rev1.getSequence(), "attach", status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment.getContentType());
-        Assert.assertTrue(Arrays.equals(attach1, attachment.getData()));
+        byte[] data = IOUtils.toByteArray(attachment.getContentStream());
+        Assert.assertTrue(Arrays.equals(attach1, data));
 
         Map<String,Object> innerDict = new HashMap<String,Object>();
         innerDict.put("content_type", "text/plain");
@@ -121,13 +125,15 @@ public class Attachments extends AndroidTestCase {
         TDAttachment attachment2 = db.getAttachmentForSequence(rev2.getSequence(), "attach", status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment2.getContentType());
-        Assert.assertTrue(Arrays.equals(attach1, attachment2.getData()));
+        data = IOUtils.toByteArray(attachment2.getContentStream());
+        Assert.assertTrue(Arrays.equals(attach1, data));
 
         // Check the 3rd revision's attachment:
         TDAttachment attachment3 = db.getAttachmentForSequence(rev3.getSequence(), "attach", status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals("text/html", attachment3.getContentType());
-        Assert.assertTrue(Arrays.equals(attach2, attachment3.getData()));
+        data = IOUtils.toByteArray(attachment3.getContentStream());
+        Assert.assertTrue(Arrays.equals(attach2, data));
 
         // Examine the attachment store:
         Assert.assertEquals(2, attachments.count());

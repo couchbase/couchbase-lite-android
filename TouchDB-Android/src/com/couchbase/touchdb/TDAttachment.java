@@ -17,26 +17,28 @@
 
 package com.couchbase.touchdb;
 
+import java.io.InputStream;
+
 public class TDAttachment {
 
-    private byte[] data;
+    private InputStream contentStream;
     private String contentType;
 
     public TDAttachment() {
 
     }
 
-    public TDAttachment(byte[] data, String contentType) {
-        this.data = data;
+    public TDAttachment(InputStream contentStream, String contentType) {
+        this.contentStream = contentStream;
         this.contentType = contentType;
     }
 
-    public byte[] getData() {
-        return data;
+    public InputStream getContentStream() {
+        return contentStream;
     }
 
-    public void setData(byte[] data) {
-        this.data = data;
+    public void setContentStream(InputStream contentStream) {
+        this.contentStream = contentStream;
     }
 
     public String getContentType() {
