@@ -38,6 +38,8 @@ import android.util.Log;
 public class TDBlobStore {
 
     public static String FILE_EXTENSION = ".blob";
+    public static String TMP_FILE_EXTENSION = ".blobtmp";
+    public static String TMP_FILE_PREFIX = "tmp";
 
     private String path;
 
@@ -70,8 +72,42 @@ public class TDBlobStore {
         return result;
     }
 
+    public static TDBlobKey keyForBlobFromFile(File file) {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(TDDatabase.TAG, "Error, SHA-1 digest is unavailable.");
+            return null;
+        }
+        byte[] sha1hash = new byte[40];
+
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            byte[] buffer = new byte[65536];
+            int lenRead = fis.read(buffer);
+            while(lenRead > 0) {
+                md.update(buffer, 0, lenRead);
+                lenRead = fis.read(buffer);
+            }
+            fis.close();
+        } catch (IOException e) {
+            Log.e(TDDatabase.TAG, "Error readin tmp file to compute key");
+        }
+
+        sha1hash = md.digest();
+        TDBlobKey result = new TDBlobKey(sha1hash);
+        return result;
+    }
+
     public String pathForKey(TDBlobKey key) {
         return path + File.separator + TDBlobKey.convertToHex(key.getBytes()) + FILE_EXTENSION;
+    }
+
+    public long getSizeOfBlob(TDBlobKey key) {
+        String path = pathForKey(key);
+        File file = new File(path);
+        return file.length();
     }
 
     public boolean getKeyForFilename(TDBlobKey outKey, String filename) {
@@ -110,6 +146,41 @@ public class TDBlobStore {
             }
         }
         return null;
+    }
+
+    public boolean storeBlobStream(InputStream inputStream, TDBlobKey outKey) {
+
+        File tmp = null;
+        try {
+            tmp = File.createTempFile(TMP_FILE_PREFIX, TMP_FILE_EXTENSION, new File(path));
+            FileOutputStream fos = new FileOutputStream(tmp);
+            byte[] buffer = new byte[65536];
+            int lenRead = inputStream.read(buffer);
+            while(lenRead > 0) {
+                fos.write(buffer, 0, lenRead);
+                lenRead = inputStream.read(buffer);
+            }
+            inputStream.close();
+            fos.close();
+        } catch (IOException e) {
+            Log.e(TDDatabase.TAG, "Error writing blog to tmp file", e);
+            return false;
+        }
+
+        TDBlobKey newKey = keyForBlobFromFile(tmp);
+        outKey.setBytes(newKey.getBytes());
+        String path = pathForKey(outKey);
+        File file = new File(path);
+
+        if(file.canRead()) {
+            // object with this hash already exists, we should delete tmp file and return true
+            tmp.delete();
+            return true;
+        } else {
+            // does not exist, we should rename tmp file to this name
+            tmp.renameTo(file);
+        }
+        return true;
     }
 
     public boolean storeBlob(byte[] data, TDBlobKey outKey) {

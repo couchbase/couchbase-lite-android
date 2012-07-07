@@ -1,8 +1,8 @@
 package com.couchbase.touchdb.router;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -140,18 +140,9 @@ public class TDRouter implements Observer {
 
     public Map<String,Object> getBodyAsDictionary() {
         try {
-            byte[] bodyBytes = ((ByteArrayOutputStream)connection.getOutputStream()).toByteArray();
-            Map<String,Object> bodyMap = TDServer.getObjectMapper().readValue(bodyBytes, Map.class);
+            InputStream contentStream = connection.getRequestInputStream();
+            Map<String,Object> bodyMap = TDServer.getObjectMapper().readValue(contentStream, Map.class);
             return bodyMap;
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public byte[] getBody() {
-        try {
-            byte[] bodyBytes = ((ByteArrayOutputStream)connection.getOutputStream()).toByteArray();
-            return bodyBytes;
         } catch (IOException e) {
             return null;
         }
@@ -265,6 +256,12 @@ public class TDRouter implements Observer {
         List<String> path = splitPath(connection.getURL());
         if(path == null) {
             connection.setResponseCode(TDStatus.BAD_REQUEST);
+            try {
+                connection.getResponseOutputStream().close();
+            } catch (IOException e) {
+                Log.e(TDDatabase.TAG, "Error closing empty output stream");
+            }
+            sendResponse();
             return;
         }
 
@@ -278,6 +275,12 @@ public class TDRouter implements Observer {
                 db = server.getDatabaseNamed(dbName);
                 if(db == null) {
                     connection.setResponseCode(TDStatus.BAD_REQUEST);
+                    try {
+                        connection.getResponseOutputStream().close();
+                    } catch (IOException e) {
+                        Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                    }
+                    sendResponse();
                     return;
                 }
             }
@@ -292,6 +295,12 @@ public class TDRouter implements Observer {
             TDStatus status = openDB();
             if(!status.isSuccessful()) {
                 connection.setResponseCode(status.getCode());
+                try {
+                    connection.getResponseOutputStream().close();
+                } catch (IOException e) {
+                    Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                }
+                sendResponse();
                 return;
             }
             String name = path.get(1);
@@ -299,6 +308,12 @@ public class TDRouter implements Observer {
                 // Regular document
                 if(!TDDatabase.isValidDocumentId(name)) {
                     connection.setResponseCode(TDStatus.BAD_REQUEST);
+                    try {
+                        connection.getResponseOutputStream().close();
+                    } catch (IOException e) {
+                        Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                    }
+                    sendResponse();
                     return;
                 }
                 docID = name;
@@ -306,6 +321,12 @@ public class TDRouter implements Observer {
                 // "_design/____" and "_local/____" are document names
                 if(pathLen <= 2) {
                     connection.setResponseCode(TDStatus.NOT_FOUND);
+                    try {
+                        connection.getResponseOutputStream().close();
+                    } catch (IOException e) {
+                        Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                    }
+                    sendResponse();
                     return;
                 }
                 docID = name + "/" + path.get(2);
@@ -1241,13 +1262,13 @@ public class TDRouter implements Observer {
         return update(_db, docID, null, true);
     }
 
-    public TDStatus updateAttachment(String attachment, String docID, byte[] body) {
+    public TDStatus updateAttachment(String attachment, String docID, InputStream contentStream) {
         TDStatus status = new TDStatus();
         String revID = getQuery("rev");
         if(revID == null) {
             revID = getRevIDFromIfMatchHeader();
         }
-        TDRevision rev = db.updateAttachment(attachment, body, connection.getRequestProperty("content-type"),
+        TDRevision rev = db.updateAttachment(attachment, contentStream, connection.getRequestProperty("content-type"),
                 docID, revID, status);
         if(status.isSuccessful()) {
             Map<String, Object> resultDict = new HashMap<String, Object>();
@@ -1256,7 +1277,7 @@ public class TDRouter implements Observer {
             resultDict.put("rev", rev.getRevId());
             connection.setResponseBody(new TDBody(resultDict));
             cacheWithEtag(rev.getRevId());
-            if(body != null) {
+            if(contentStream != null) {
                 setResponseLocation(connection.getURL());
             }
         }
@@ -1264,7 +1285,7 @@ public class TDRouter implements Observer {
     }
 
     public TDStatus do_PUT_Attachment(TDDatabase _db, String docID, String _attachmentName) {
-        return updateAttachment(_attachmentName, docID, getBody());
+        return updateAttachment(_attachmentName, docID, connection.getRequestInputStream());
     }
 
     public TDStatus do_DELETE_Attachment(TDDatabase _db, String docID, String _attachmentName) {

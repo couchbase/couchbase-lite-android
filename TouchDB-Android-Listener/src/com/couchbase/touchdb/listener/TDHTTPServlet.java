@@ -2,7 +2,6 @@ package com.couchbase.touchdb.listener;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.List;
@@ -70,15 +69,7 @@ public class TDHTTPServlet extends HttpServlet {
         //but its blocking on get requests otherwise
         if(is != null && is.available() > 0) {
             conn.setDoInput(true);
-            OutputStream os = conn.getOutputStream();
-            byte[] buffer = new byte[1024];
-            int lenRead = is.read(buffer, 0, 1024);
-            while(lenRead > 0) {
-                os.write(buffer, 0, lenRead);
-                lenRead = is.read(buffer, 0, 1024);
-            }
-            is.close();
-            os.close();
+            conn.setRequestInputStream(is);
         }
 
         final ServletOutputStream os = response.getOutputStream();

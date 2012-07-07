@@ -17,6 +17,7 @@
 
 package com.couchbase.touchdb.testapp.tests;
 
+import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -62,7 +63,7 @@ public class Attachments extends AndroidTestCase {
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         byte[] attach1 = "This is the body of attach1".getBytes();
-        status = db.insertAttachmentForSequenceWithNameAndType(attach1, rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
+        status = db.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         TDAttachment attachment = db.getAttachmentForSequence(rev1.getSequence(), "attach", status);
@@ -118,7 +119,7 @@ public class Attachments extends AndroidTestCase {
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
-        status = db.insertAttachmentForSequenceWithNameAndType(attach2, rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
+        status = db.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         // Check the 2nd revision's attachment:
@@ -201,11 +202,11 @@ public class Attachments extends AndroidTestCase {
 
         // Update the attachment directly:
         byte[] attachv2 = "Replaced body of attach".getBytes();
-        db.updateAttachment("attach", attachv2, "application/foo", rev1.getDocId(), null, status);
+        db.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null, status);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
-        db.updateAttachment("attach", attachv2, "application/foo", rev1.getDocId(), "1-bogus", status);
+        db.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus", status);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
-        TDRevision rev2 = db.updateAttachment("attach", attachv2, "application/foo", rev1.getDocId(), rev1.getRevId(), status);
+        TDRevision rev2 = db.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId(), status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertEquals(2, rev2.getGeneration());

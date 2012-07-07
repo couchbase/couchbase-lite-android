@@ -42,6 +42,8 @@ public class TDURLConnection extends HttpURLConnection {
     private OutputStream responseOutputStream;
     private InputStream responseInputStream;
 
+    private InputStream requestInputStream;
+
     public TDURLConnection(URL url) {
         super(url);
         responseInputStream = new PipedInputStream();
@@ -243,6 +245,14 @@ public class TDURLConnection extends HttpURLConnection {
     @Override
     public InputStream getInputStream() throws IOException {
         return responseInputStream;
+    }
+
+    public InputStream getRequestInputStream() {
+        return requestInputStream;
+    }
+
+    public void setRequestInputStream(InputStream requestInputStream) {
+        this.requestInputStream = requestInputStream;
     }
 
 }

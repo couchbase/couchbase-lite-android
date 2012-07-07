@@ -1,8 +1,8 @@
 package com.couchbase.touchdb.testapp.tests;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -71,8 +71,8 @@ public class Router extends InstrumentationTestCase {
             Map<String, List<String>> allProperties = conn.getRequestProperties();
             if(bodyObj != null) {
                 conn.setDoInput(true);
-                OutputStream os = conn.getOutputStream();
-                os.write(mapper.writeValueAsBytes(bodyObj));
+                ByteArrayInputStream bais = new ByteArrayInputStream(mapper.writeValueAsBytes(bodyObj));
+                conn.setRequestInputStream(bais);
             }
 
             TDRouter router = new TDRouter(server, conn);

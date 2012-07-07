@@ -17,6 +17,7 @@
 
 package com.couchbase.touchdb;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1334,13 +1335,12 @@ public class TDDatabase extends Observable {
     /*** TDDatabase+Attachments                                                                    ***/
     /*************************************************************************************************/
 
-    public TDStatus insertAttachmentForSequenceWithNameAndType(byte[] contents, long sequence, String name, String contentType, int revpos) {
-        assert(contents != null);
+    public TDStatus insertAttachmentForSequenceWithNameAndType(InputStream contentStream, long sequence, String name, String contentType, int revpos) {
         assert(sequence > 0);
         assert(name != null);
 
         TDBlobKey key = new TDBlobKey();
-        if(!attachments.storeBlob(contents, key)) {
+        if(!attachments.storeBlobStream(contentStream, key)) {
             return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -1351,7 +1351,7 @@ public class TDDatabase extends Observable {
             args.put("filename", name);
             args.put("key", keyData);
             args.put("type", contentType);
-            args.put("length", contents.length);
+            args.put("length", attachments.getSizeOfBlob(key));
             args.put("revpos", revpos);
             database.insert("attachments", null, args);
             return new TDStatus(TDStatus.CREATED);
@@ -1601,7 +1601,7 @@ public class TDDatabase extends Observable {
                 }
 
                 // Finally insert the attachment:
-                status = insertAttachmentForSequenceWithNameAndType(newContents, newSequence, name, (String)newAttach.get("content_type"), revpos);
+                status = insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(newContents), newSequence, name, (String)newAttach.get("content_type"), revpos);
             }
             else {
                 // It's just a stub, so copy the previous revision's attachment entry:
@@ -1620,9 +1620,9 @@ public class TDDatabase extends Observable {
      * Updates or deletes an attachment, creating a new document revision in the process.
      * Used by the PUT / DELETE methods called on attachment URLs.
      */
-    public TDRevision updateAttachment(String filename, byte[] body, String contentType, String docID, String oldRevID, TDStatus status) {
+    public TDRevision updateAttachment(String filename, InputStream contentStream, String contentType, String docID, String oldRevID, TDStatus status) {
         status.setCode(TDStatus.BAD_REQUEST);
-        if(filename == null || filename.length() == 0 || (body != null && contentType == null) || (oldRevID != null && docID == null) || (body != null && docID == null)) {
+        if(filename == null || filename.length() == 0 || (contentStream != null && contentType == null) || (oldRevID != null && docID == null) || (contentStream != null && docID == null)) {
             return null;
         }
 
@@ -1641,7 +1641,7 @@ public class TDDatabase extends Observable {
                 }
 
                 Map<String,Object> attachments = (Map<String, Object>) oldRev.getProperties().get("_attachments");
-                if(body == null && attachments != null && !attachments.containsKey(filename)) {
+                if(contentStream == null && attachments != null && !attachments.containsKey(filename)) {
                     status.setCode(TDStatus.NOT_FOUND);
                     return null;
                 }
@@ -1672,9 +1672,9 @@ public class TDDatabase extends Observable {
                         + "WHERE sequence=? AND filename != ?", args);
             }
 
-            if(body != null) {
+            if(contentStream != null) {
                 // If not deleting, add a new attachment entry:
-                TDStatus insertStatus = insertAttachmentForSequenceWithNameAndType(body, newRev.getSequence(),
+                TDStatus insertStatus = insertAttachmentForSequenceWithNameAndType(contentStream, newRev.getSequence(),
                         filename, contentType, newRev.getGeneration());
                 status.setCode(insertStatus.getCode());
 
@@ -1683,7 +1683,7 @@ public class TDDatabase extends Observable {
                 }
             }
 
-            status.setCode((body != null) ? TDStatus.CREATED : TDStatus.OK);
+            status.setCode((contentStream != null) ? TDStatus.CREATED : TDStatus.OK);
             return newRev;
 
         } catch(SQLException e) {
