@@ -2,7 +2,10 @@ package com.couchbase.touchdb.router;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
@@ -16,7 +19,10 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import android.util.Log;
+
 import com.couchbase.touchdb.TDBody;
+import com.couchbase.touchdb.TDDatabase;
 
 public class TDURLConnection extends HttpURLConnection {
 
@@ -33,8 +39,17 @@ public class TDURLConnection extends HttpURLConnection {
     private static final String PUT = "PUT";
     private static final String HEAD = "HEAD";
 
+    private OutputStream responseOutputStream;
+    private InputStream responseInputStream;
+
     public TDURLConnection(URL url) {
         super(url);
+        responseInputStream = new PipedInputStream();
+        try {
+            responseOutputStream = new PipedOutputStream((PipedInputStream)responseInputStream);
+        } catch (IOException e) {
+            Log.e(TDDatabase.TAG, "Exception creating piped output stream", e);
+        }
     }
 
     @Override
@@ -207,6 +222,27 @@ public class TDURLConnection extends HttpURLConnection {
 
     public boolean isChunked() {
         return chunked;
+    }
+
+    public void setResponseInputStream(InputStream responseInputStream) {
+        this.responseInputStream = responseInputStream;
+    }
+
+    public InputStream getResponseInputStream() {
+        return responseInputStream;
+    }
+
+    public void setResponseOutputStream(OutputStream responseOutputStream) {
+        this.responseOutputStream = responseOutputStream;
+    }
+
+    public OutputStream getResponseOutputStream() {
+        return responseOutputStream;
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException {
+        return responseInputStream;
     }
 
 }

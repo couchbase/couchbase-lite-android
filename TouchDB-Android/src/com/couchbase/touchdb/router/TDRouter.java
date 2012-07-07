@@ -1,7 +1,9 @@
 package com.couchbase.touchdb.router;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -401,13 +403,19 @@ public class TDRouter implements Observer {
         // If response is ready (nonzero status), tell my client about it:
         if(status.getCode() != 0) {
             connection.setResponseCode(status.getCode());
+
+            if(connection.getResponseBody() != null) {
+                ByteArrayInputStream bais = new ByteArrayInputStream(connection.getResponseBody().getJson());
+                connection.setResponseInputStream(bais);
+            } else {
+
+                try {
+                    connection.getResponseOutputStream().close();
+                } catch (IOException e) {
+                    Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                }
+            }
             sendResponse();
-            if(callbackBlock != null && connection.getResponseBody() != null) {
-                callbackBlock.onDataAvailable(connection.getResponseBody().getJson());
-            }
-            if(callbackBlock != null && !waiting) {
-                callbackBlock.onFinish();
-            }
         }
     }
 
@@ -880,7 +888,13 @@ public class TDRouter implements Observer {
             String jsonString = TDServer.getObjectMapper().writeValueAsString(changeDict);
             if(callbackBlock != null) {
                 byte[] json = (jsonString + "\n").getBytes();
-                callbackBlock.onDataAvailable(json);
+                OutputStream os = connection.getResponseOutputStream();
+                try {
+                    os.write(json);
+                    os.flush();
+                } catch (Exception e) {
+                    Log.e(TDDatabase.TAG, "IOException writing to internal streams", e);
+                }
             }
         } catch (Exception e) {
             Log.w("Unable to serialize change to JSON", e);
@@ -912,8 +926,13 @@ public class TDRouter implements Observer {
                     } catch (Exception e) {
                         Log.w(TDDatabase.TAG, "Error serializing JSON", e);
                     }
-                    callbackBlock.onDataAvailable(data);
-                    callbackBlock.onFinish();
+                    OutputStream os = connection.getResponseOutputStream();
+                    try {
+                        os.write(data);
+                        os.close();
+                    } catch (IOException e) {
+                        Log.e(TDDatabase.TAG, "IOException writing to internal streams", e);
+                    }
                 }
             } else {
                 Log.w(TDDatabase.TAG, "TDRouter: Sending continous change chunk");

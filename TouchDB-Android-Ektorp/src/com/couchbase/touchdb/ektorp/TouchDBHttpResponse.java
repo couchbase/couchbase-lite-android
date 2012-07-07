@@ -1,12 +1,7 @@
 package com.couchbase.touchdb.ektorp;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 
@@ -25,7 +20,6 @@ public class TouchDBHttpResponse implements HttpResponse, TDRouterCallbackBlock 
     private TDURLConnection conn;
     private TDRouter router;
     private InputStream is;
-    private OutputStream os;
     final CountDownLatch doneSignal = new CountDownLatch(1);
 
     public static TouchDBHttpResponse of(TDURLConnection conn, TDRouter router) throws IOException {
@@ -55,11 +49,7 @@ public class TouchDBHttpResponse implements HttpResponse, TDRouterCallbackBlock 
         } catch (InterruptedException e) {
             Log.e(TDDatabase.TAG, "Interupted waiting for response", e);
         }
-        if(conn.isChunked()) {
-            return is;
-        } else {
-            return new ByteArrayInputStream(((ByteArrayOutputStream)os).toByteArray());
-        }
+        return is;
     }
 
     @Override
@@ -101,38 +91,9 @@ public class TouchDBHttpResponse implements HttpResponse, TDRouterCallbackBlock 
     /** TDRouterCallbackBlock **/
 
     @Override
-    public synchronized void onDataAvailable(byte[] data) {
-        try {
-            os.write(data);
-            os.flush();
-        } catch (IOException e) {
-            Log.e(TDDatabase.TAG, "Error wrtiting data", e);
-        }
-    }
-
-    @Override
-    public void onFinish() {
-        try {
-            os.close();
-        } catch (IOException e) {
-            Log.e(TDDatabase.TAG, "Error wrtiting data", e);
-        }
-
-    }
-
-    @Override
     public void onResponseReady() {
         doneSignal.countDown();
-        if(conn.isChunked()) {
-            is = new PipedInputStream();
-            try {
-                os = new PipedOutputStream((PipedInputStream)is);
-            } catch (IOException e) {
-                Log.e(TDDatabase.TAG, "Exception creating piped output stream", e);
-            }
-        } else {
-            os = new ByteArrayOutputStream();
-        }
+        is = conn.getResponseInputStream();
     }
 
 }
