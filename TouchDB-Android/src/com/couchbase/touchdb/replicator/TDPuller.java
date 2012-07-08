@@ -31,7 +31,7 @@ import com.couchbase.touchdb.support.TDRemoteRequestCompletionBlock;
 
 public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
-    private static final int MAX_OPEN_HTTP_CONNECTIONS = 8;
+    private static final int MAX_OPEN_HTTP_CONNECTIONS = 16;
 
     protected TDBatcher<List<Object>> revsToInsert;
     protected List<TDRevision> revsToPull;
@@ -52,7 +52,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
     @Override
     public void beginReplicating() {
         if(revsToInsert == null) {
-            revsToInsert = new TDBatcher<List<Object>>(100, 250, new TDBatchProcessor<List<Object>>() {
+            revsToInsert = new TDBatcher<List<Object>>(200, 1000, new TDBatchProcessor<List<Object>>() {
                 @Override
                 public void process(List<List<Object>> inbox) {
                     insertRevisions(inbox);
@@ -60,8 +60,8 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
             });
         }
         nextFakeSequence = maxInsertedFakeSequence = 0;
-        Log.w(TDDatabase.TAG, String.format("%s starting ChangeTracker with since=%s", this, lastSequence));
-        changeTracker = new TDChangeTracker(remote, continuous ? TDChangeTrackerMode.LongPoll : TDChangeTrackerMode.OneShot, lastSequence, this);
+        Log.w(TDDatabase.TAG, this + " starting ChangeTracker with since=" + lastSequence);
+        changeTracker = new TDChangeTracker(remote, continuous ? TDChangeTrackerMode.Continuous : TDChangeTrackerMode.OneShot, lastSequence, this);
         if(filterName != null) {
             changeTracker.setFilterName(filterName);
             if(filterParams != null) {
@@ -125,7 +125,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     @Override
     public void changeTrackerStopped(TDChangeTracker tracker) {
-        Log.w(TDDatabase.TAG, String.format("%s: ChangeTracker stopped", this));
+        Log.w(TDDatabase.TAG, this + ": ChangeTracker stopped");
         //FIXME tracker doesnt have error right now
 //        if(error == null && tracker.getError() != null) {
 //            error = tracker.getError();
@@ -151,7 +151,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
     @Override
     public void processInbox(TDRevisionList inbox) {
         // Ask the local database which of the revs are not known to it:
-        Log.w(TDDatabase.TAG, String.format("%s: Looking up %s", this, inbox));
+        //Log.w(TDDatabase.TAG, String.format("%s: Looking up %s", this, inbox));
         String lastInboxSequence = ((TDPulledRevision)inbox.get(inbox.size()-1)).getRemoteSequenceID();
         int total = changesTotal - inbox.size();
         if(!db.findMissingRevisions(inbox)) {
@@ -174,12 +174,12 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
             return;
         }
 
-        Log.v(TDDatabase.TAG, String.format("%s fetching %d remote revisions...", this, inboxCount));
-        Log.v(TDDatabase.TAG, String.format("%s fetching remote revisions %s", this, inbox));
+        Log.v(TDDatabase.TAG, this + " fetching " + inboxCount + " remote revisions...");
+        //Log.v(TDDatabase.TAG, String.format("%s fetching remote revisions %s", this, inbox));
 
         // Dump the revs into the queue of revs to pull from the remote db:
         if(revsToPull == null) {
-            revsToPull = new ArrayList<TDRevision>(100);
+            revsToPull = new ArrayList<TDRevision>(200);
         }
         revsToPull.addAll(inbox);
 
@@ -210,7 +210,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         // Construct a query. We want the revision history, and the bodies of attachments that have
         // been added since the latest revisions we have locally.
         // See: http://wiki.apache.org/couchdb/HTTP_Document_API#Getting_Attachments_With_a_Document
-        String path = String.format("/%s?rev=%s&revs=true&attachments=true", URLEncoder.encode(rev.getDocId()), URLEncoder.encode(rev.getRevId()));
+        StringBuilder path = new StringBuilder("/" + URLEncoder.encode(rev.getDocId()) + "?rev=" + URLEncoder.encode(rev.getRevId()) + "&revs=true&attachments=true");
         List<String> knownRevs = knownCurrentRevIDs(rev);
         if(knownRevs == null) {
             //this means something is wrong, possibly the replicator has shut down
@@ -219,13 +219,14 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
             return;
         }
         if(knownRevs.size() > 0) {
-            path = path + String.format("&atts_since=%s", joinQuotedEscaped(knownRevs));
+            path.append("&atts_since=");
+            path.append(joinQuotedEscaped(knownRevs));
         }
 
         //create a final version of this variable for the log statement inside
         //FIXME find a way to avoid this
-        final String pathInside = path;
-        sendAsyncRequest("GET", path, null, new TDRemoteRequestCompletionBlock() {
+        final String pathInside = path.toString();
+        sendAsyncRequest("GET", pathInside, null, new TDRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
@@ -242,7 +243,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
                         revsToInsert.queueObject(toInsert);
                         asyncTaskStarted();
                     } else {
-                        Log.w(TDDatabase.TAG, String.format("%s: Missing revision history in response from %s", this, pathInside));
+                        Log.w(TDDatabase.TAG, this + ": Missing revision history in response from " + pathInside);
                         changesProcessed++;
                     }
                 } else {
@@ -266,8 +267,8 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
      * This will be called when _revsToInsert fills up:
      */
     public void insertRevisions(List<List<Object>> revs) {
-        Log.i(TDDatabase.TAG, String.format("%s inserting %d revisions...", this, revs.size()));
-        Log.v(TDDatabase.TAG, String.format("%s inserting %s", this, revs));
+        Log.i(TDDatabase.TAG, this + " inserting " + revs.size() + " revisions...");
+        //Log.v(TDDatabase.TAG, String.format("%s inserting %s", this, revs));
 
         /* Updating self.lastSequence is tricky. It needs to be the received sequence ID of the revision for which we've successfully received and inserted (or rejected) it and all previous received revisions. That way, next time we can start tracking remote changes from that sequence ID and know we haven't missed anything. */
         /* FIX: The current code below doesn't quite achieve that: it tracks the latest sequence ID we've successfully processed, but doesn't handle failures correctly across multiple calls to -insertRevisions. I think correct behavior will require keeping an NSMutableIndexSet to track the fake-sequences of all processed revisions; then we can find the first missing index in that set and not advance lastSequence past the revision with that fake-sequence. */
@@ -294,9 +295,9 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
                 TDStatus status = db.forceInsert(rev, history, remote);
                 if(!status.isSuccessful()) {
                     if(status.getCode() == TDStatus.FORBIDDEN) {
-                        Log.i(TDDatabase.TAG, String.format("%s: Remote rev failed validation: %s", this, rev));
+                        Log.i(TDDatabase.TAG, this + ": Remote rev failed validation: " + rev);
                     } else {
-                        Log.w(TDDatabase.TAG, String.format("%s failed to write %s: status=%d", this, rev, status.getCode()));
+                        Log.w(TDDatabase.TAG, this + " failed to write " + rev + ": status=" + status.getCode());
                         error = new HttpResponseException(status.getCode(), null);
                         allGood = false; // stop advancing lastGoodRev
                     }
@@ -314,10 +315,10 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
                 setLastSequence(lastGoodRev.getRemoteSequenceID());
             }
 
-            Log.w(TDDatabase.TAG, String.format("%s finished inserting %d revisions", this, revs.size()));
+            Log.w(TDDatabase.TAG, this + " finished inserting " + revs.size() + " revisions");
             success = true;
         } catch(SQLException e) {
-            Log.w(TDDatabase.TAG, String.format("%s: Exception inserting revisions", this), e);
+            Log.w(TDDatabase.TAG, this + ": Exception inserting revisions", e);
         } finally {
             db.endTransaction(success);
             asyncTaskFinished(revs.size());

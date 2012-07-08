@@ -386,7 +386,7 @@ public class TDDatabase extends Observable {
         try {
             database.beginTransaction();
             ++transactionLevel;
-            Log.v(TAG, "Begin transaction (level " + Integer.toString(transactionLevel) + ")...");
+            //Log.v(TAG, "Begin transaction (level " + Integer.toString(transactionLevel) + ")...");
         } catch (SQLException e) {
             return false;
         }
@@ -402,7 +402,7 @@ public class TDDatabase extends Observable {
         assert(transactionLevel > 0);
 
         if(commit) {
-            Log.v(TAG, "Committing transaction (level " + Integer.toString(transactionLevel) + ")...");
+            //Log.v(TAG, "Committing transaction (level " + Integer.toString(transactionLevel) + ")...");
             database.setTransactionSuccessful();
             database.endTransaction();
         }

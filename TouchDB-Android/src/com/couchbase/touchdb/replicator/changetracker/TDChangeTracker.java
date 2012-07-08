@@ -33,7 +33,6 @@ import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.util.Log;
 
@@ -51,7 +50,6 @@ public class TDChangeTracker implements Runnable {
     private TDChangeTrackerMode mode;
     private Object lastSequenceID;
 
-    private HandlerThread handlerThread;
     private Handler handler;
     private Thread thread;
     private boolean running = false;
@@ -68,12 +66,7 @@ public class TDChangeTracker implements Runnable {
 
     public TDChangeTracker(URL databaseURL, TDChangeTrackerMode mode,
             Object lastSequenceID, TDChangeTrackerClient client) {
-        //first start a handler thread
-        String threadName = Thread.currentThread().getName();
-        handlerThread = new HandlerThread("ChangeTracker HandlerThread for " + threadName);
-        handlerThread.start();
-        //Get the looper from the handlerThread
-        Looper looper = handlerThread.getLooper();
+        Looper looper = Looper.getMainLooper();
         //Create a new handler - passing in the looper for it to use
         this.handler = new Handler(looper);
         this.databaseURL = databaseURL;
@@ -275,7 +268,6 @@ public class TDChangeTracker implements Runnable {
                 if(copy == null) {
                     Log.v(TDDatabase.TAG, "cannot notify client, client is null");
                 } else {
-                    Log.v(TDDatabase.TAG, "about to notify client");
                     copy.changeTrackerReceivedChange(change);
                 }
             }
@@ -304,7 +296,7 @@ public class TDChangeTracker implements Runnable {
 
     public boolean start() {
         this.error = null;
-        thread = new Thread(this);
+        thread = new Thread(this, "ChangeTracker-" + databaseURL.toExternalForm());
         thread.start();
         return true;
     }
@@ -330,18 +322,8 @@ public class TDChangeTracker implements Runnable {
                 @Override
                 public void run() {
                     copy.changeTrackerStopped(TDChangeTracker.this);
-
-                    //Shut down the HandlerThread
-                    handlerThread.quit();
-                    handlerThread = null;
-                    handler = null;
                 }
             });
-        } else if(handler != null) {
-            //Shut down the HandlerThread
-            handlerThread.quit();
-            handlerThread = null;
-            handler = null;
         }
         client = null;
     }

@@ -12,7 +12,6 @@ import org.apache.http.client.HttpResponseException;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.util.Log;
 
@@ -30,7 +29,6 @@ public abstract class TDReplicator extends Observable {
 
     private static int lastSessionID = 0;
 
-    protected HandlerThread handlerThread;
     protected Handler handler;
     protected TDDatabase db;
     protected URL remote;
@@ -67,11 +65,7 @@ public abstract class TDReplicator extends Observable {
         this.remote = remote;
         this.continuous = continuous;
 
-        //start a handler thread
-        handlerThread = new HandlerThread("ReplicatorHandlerThread for " + toString());
-        handlerThread.start();
-        //Get the looper from the handlerThread
-        Looper looper = handlerThread.getLooper();
+        Looper looper = Looper.getMainLooper();
         //Create a new handler - passing in the looper for it to use
         this.handler = new Handler(looper);
 
@@ -117,7 +111,7 @@ public abstract class TDReplicator extends Observable {
     }
 
     public String toString() {
-        String name = String.format("%s [%s]", getClass().getSimpleName(), remote != null ? remote.toExternalForm() : "");
+        String name = getClass().getSimpleName() + "[" + (remote != null ? remote.toExternalForm() : "") + "]";
         return name;
     }
 
@@ -201,11 +195,6 @@ public abstract class TDReplicator extends Observable {
         batcher.flush();
         batcher.close();
 
-        //Shut down the HandlerThread
-        handlerThread.quit();
-        handlerThread = null;
-        handler = null;
-
         this.changesProcessed = this.changesTotal = 0;
         if(!inExternalShutdown) {
             db.replicatorDidStop(this);
@@ -228,7 +217,7 @@ public abstract class TDReplicator extends Observable {
             active = true;
         }
         batcher.queueObject(rev);
-        Log.v(TDDatabase.TAG, String.format("%s: Received #%d %s", toString(), rev.getSequence(), rev.toString()));
+        //Log.v(TDDatabase.TAG, String.format("%s: Received #%d %s", toString(), rev.getSequence(), rev.toString()));
     }
 
     public void processInbox(TDRevisionList inbox) {
@@ -236,7 +225,7 @@ public abstract class TDReplicator extends Observable {
     }
 
     public void sendAsyncRequest(String method, String relativePath, Object body, TDRemoteRequestCompletionBlock onCompletion) {
-        Log.v(TDDatabase.TAG, String.format("%s: %s .%s", toString(), method, relativePath));
+        //Log.v(TDDatabase.TAG, String.format("%s: %s .%s", toString(), method, relativePath));
         String urlStr = remote.toExternalForm() + relativePath;
         try {
             URL url = new URL(urlStr);
@@ -259,7 +248,7 @@ public abstract class TDReplicator extends Observable {
      * and the remote database's URL.
      */
     public String remoteCheckpointDocID() {
-        String input = String.format("%s\n%s\n%d", db.privateUUID(), remote.toExternalForm(), (isPush() ? 1 : 0));
+        String input = db.privateUUID() + "\n" + remote.toExternalForm() + "\n" + (isPush() ? "1" : "0");
         return TDMisc.TDHexSHA1Digest(input.getBytes());
     }
 
@@ -291,9 +280,9 @@ public abstract class TDReplicator extends Observable {
                     }
                     if(remoteLastSequence != null && remoteLastSequence.equals(localLastSequence)) {
                         lastSequence = localLastSequence;
-                        Log.v(TDDatabase.TAG, String.format("%s: Replicating from lastSequence=%s", this, lastSequence));
+                        Log.v(TDDatabase.TAG, this + ": Replicating from lastSequence=" + lastSequence);
                     } else {
-                        Log.v(TDDatabase.TAG, String.format("%s: lastSequence mismatch: I had %s, remote had %s", this, localLastSequence, remoteLastSequence));
+                        Log.v(TDDatabase.TAG, this + ": lastSequence mismatch: I had " + localLastSequence + ", remote had " + remoteLastSequence);
                     }
                     beginReplicating();
                 }
@@ -317,7 +306,7 @@ public abstract class TDReplicator extends Observable {
         lastSequenceChanged = false;
         overdueForSave = false;
 
-        Log.v(TDDatabase.TAG, String.format("%s checkpointing sequence=%s", this, lastSequence));
+        Log.v(TDDatabase.TAG, this + " checkpointing sequence=" + lastSequence);
         final Map<String,Object> body = new HashMap<String,Object>();
         if(remoteCheckpoint != null) {
             body.putAll(remoteCheckpoint);
@@ -331,7 +320,7 @@ public abstract class TDReplicator extends Observable {
             public void onCompletion(Object result, Throwable e) {
             	savingCheckpoint = false;
                 if(e != null) {
-                    Log.v(TDDatabase.TAG, String.format("%s: Unable to save remote checkpoint: %s", this, e), e);
+                    Log.v(TDDatabase.TAG, this + ": Unable to save remote checkpoint", e);
                     // TODO: If error is 401 or 403, and this is a pull, remember that remote is read-only and don't attempt to read its checkpoint next time.
                 } else {
                     Map<String,Object> response = (Map<String,Object>)result;
