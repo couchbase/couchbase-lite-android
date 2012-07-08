@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
-import android.test.AndroidTestCase;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
@@ -36,24 +35,20 @@ import com.couchbase.touchdb.TDViewMapBlock;
 import com.couchbase.touchdb.TDViewMapEmitBlock;
 import com.couchbase.touchdb.TDViewReduceBlock;
 
-public class Views extends AndroidTestCase {
+public class Views extends TouchDBTestCase {
 
     public static final String TAG = "Views";
 
     public void testViewCreation() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
+        Assert.assertNull(database.getExistingViewNamed("aview"));
 
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-
-        Assert.assertNull(db.getExistingViewNamed("aview"));
-
-        TDView view = db.getViewNamed("aview");
+        TDView view = database.getViewNamed("aview");
         Assert.assertNotNull(view);
-        Assert.assertEquals(db, view.getDb());
+        Assert.assertEquals(database, view.getDb());
         Assert.assertEquals("aview", view.getName());
         Assert.assertNull(view.getMapBlock());
-        Assert.assertEquals(view, db.getExistingViewNamed("aview"));
+        Assert.assertEquals(view, database.getExistingViewNamed("aview"));
 
         boolean changed = view.setMapReduceBlocks(new TDViewMapBlock() {
 
@@ -64,8 +59,8 @@ public class Views extends AndroidTestCase {
         }, null, "1");
 
         Assert.assertTrue(changed);
-        Assert.assertEquals(1, db.getAllViews().size());
-        Assert.assertEquals(view, db.getAllViews().get(0));
+        Assert.assertEquals(1, database.getAllViews().size());
+        Assert.assertEquals(view, database.getAllViews().get(0));
 
         changed = view.setMapReduceBlocks(new TDViewMapBlock() {
 
@@ -86,8 +81,6 @@ public class Views extends AndroidTestCase {
         }, null, "2");
 
         Assert.assertTrue(changed);
-
-        db.close();
     }
 
     private TDRevision putDoc(TDDatabase db, Map<String,Object> props) {
@@ -161,10 +154,6 @@ public class Views extends AndroidTestCase {
 
     public void testViewIndex() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-
         Map<String,Object> dict1 = new HashMap<String,Object>();
         dict1.put("key", "one");
         Map<String,Object> dict2 = new HashMap<String,Object>();
@@ -174,12 +163,12 @@ public class Views extends AndroidTestCase {
         Map<String,Object> dictX = new HashMap<String,Object>();
         dictX.put("clef", "quatre");
 
-        TDRevision rev1 = putDoc(db, dict1);
-        TDRevision rev2 = putDoc(db, dict2);
-        TDRevision rev3 = putDoc(db, dict3);
-        putDoc(db, dictX);
+        TDRevision rev1 = putDoc(database, dict1);
+        TDRevision rev2 = putDoc(database, dict2);
+        TDRevision rev3 = putDoc(database, dict3);
+        putDoc(database, dictX);
 
-        TDView view = createView(db);
+        TDView view = createView(database);
 
         Assert.assertEquals(1, view.getViewId());
         Assert.assertTrue(view.isStale());
@@ -208,15 +197,15 @@ public class Views extends AndroidTestCase {
         newdict3.put("key", "3hree");
         threeUpdated.setProperties(newdict3);
         TDStatus status = new TDStatus();
-        rev3 = db.putRevision(threeUpdated, rev3.getRevId(), false, status);
+        rev3 = database.putRevision(threeUpdated, rev3.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
         Map<String,Object> dict4 = new HashMap<String,Object>();
         dict4.put("key", "four");
-        TDRevision rev4 = putDoc(db, dict4);
+        TDRevision rev4 = putDoc(database, dict4);
 
         TDRevision twoDeleted = new TDRevision(rev2.getDocId(), rev2.getRevId(), true);
-        db.putRevision(twoDeleted, rev2.getRevId(), false, status);
+        database.putRevision(twoDeleted, rev2.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
         // Reindex again:
@@ -245,17 +234,12 @@ public class Views extends AndroidTestCase {
         Assert.assertEquals(rev4.getDocId(), rows.get(1).get("id"));
 
         view.removeIndex();
-
-        db.close();
     }
 
     public void testViewQuery() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-        putDocs(db);
-        TDView view = createView(db);
+        putDocs(database);
+        TDView view = createView(database);
 
         TDStatus updated = view.updateIndex();
         Assert.assertEquals(TDStatus.OK, updated.getCode());
@@ -361,16 +345,11 @@ public class Views extends AndroidTestCase {
         expectedRows.add(dict2);
 
         Assert.assertEquals(expectedRows, rows);
-
-        db.close();
     }
 
     public void testAllDocsQuery() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-        List<TDRevision> docs = putDocs(db);
+        List<TDRevision> docs = putDocs(database);
 
         List<Map<String,Object>> expectedRow = new ArrayList<Map<String,Object>>();
         for (TDRevision rev : docs) {
@@ -385,7 +364,7 @@ public class Views extends AndroidTestCase {
         }
 
         TDQueryOptions options = new TDQueryOptions();
-        Map<String,Object> query = db.getAllDocs(options);
+        Map<String,Object> query = database.getAllDocs(options);
 
         List<Object>expectedRows = new ArrayList<Object>();
         expectedRows.add(expectedRow.get(2));
@@ -402,7 +381,7 @@ public class Views extends AndroidTestCase {
         options.setStartKey("2");
         options.setEndKey("44444");
 
-        query = db.getAllDocs(options);
+        query = database.getAllDocs(options);
 
         expectedRows = new ArrayList<Object>();
         expectedRows.add(expectedRow.get(0));
@@ -415,7 +394,7 @@ public class Views extends AndroidTestCase {
         // Start/end query without inclusive end:
         options.setInclusiveEnd(false);
 
-        query = db.getAllDocs(options);
+        query = database.getAllDocs(options);
 
         expectedRows = new ArrayList<Object>();
         expectedRows.add(expectedRow.get(0));
@@ -426,7 +405,7 @@ public class Views extends AndroidTestCase {
 
         // Get specific documents:
         options = new TDQueryOptions();
-        query = db.getDocsWithIDs(new ArrayList<String>(), options);
+        query = database.getDocsWithIDs(new ArrayList<String>(), options);
         expectedQueryResult = createExpectedQueryResult(new ArrayList<Object>(), 0);
         Assert.assertEquals(expectedQueryResult, query);
 
@@ -435,13 +414,11 @@ public class Views extends AndroidTestCase {
         List<String> docIds = new ArrayList<String>();
         Map<String,Object> expected2 = expectedRow.get(2);
         docIds.add((String)expected2.get("id"));
-        query = db.getDocsWithIDs(docIds, options);
+        query = database.getDocsWithIDs(docIds, options);
         expectedRows = new ArrayList<Object>();
         expectedRows.add(expected2);
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
         Assert.assertEquals(expectedQueryResult, query);
-
-        db.close();
     }
 
     private Map<String, Object> createExpectedQueryResult(List<Object> rows, int offset) {
@@ -454,26 +431,22 @@ public class Views extends AndroidTestCase {
 
     public void testViewReduce() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-
         Map<String,Object> docProperties1 = new HashMap<String,Object>();
         docProperties1.put("_id", "CD");
         docProperties1.put("cost", 8.99);
-        putDoc(db, docProperties1);
+        putDoc(database, docProperties1);
 
         Map<String,Object> docProperties2 = new HashMap<String,Object>();
         docProperties2.put("_id", "App");
         docProperties2.put("cost", 1.95);
-        putDoc(db, docProperties2);
+        putDoc(database, docProperties2);
 
         Map<String,Object> docProperties3 = new HashMap<String,Object>();
         docProperties3.put("_id", "Dessert");
         docProperties3.put("cost", 6.50);
-        putDoc(db, docProperties3);
+        putDoc(database, docProperties3);
 
-        TDView view = db.getViewNamed("totaler");
+        TDView view = database.getViewNamed("totaler");
         view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
@@ -519,15 +492,9 @@ public class Views extends AndroidTestCase {
         Object value = reduced.get(0).get("value");
         Number numberValue = (Number)value;
         Assert.assertTrue(Math.abs(numberValue.doubleValue() - 17.44) < 0.001);
-
-        db.close();
     }
 
     public void testViewGrouped() {
-
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
 
         Map<String,Object> docProperties1 = new HashMap<String,Object>();
         docProperties1.put("_id", "1");
@@ -535,7 +502,7 @@ public class Views extends AndroidTestCase {
         docProperties1.put("album", "Entertainment!");
         docProperties1.put("track", "Ether");
         docProperties1.put("time", 231);
-        putDoc(db, docProperties1);
+        putDoc(database, docProperties1);
 
         Map<String,Object> docProperties2 = new HashMap<String,Object>();
         docProperties2.put("_id", "2");
@@ -543,7 +510,7 @@ public class Views extends AndroidTestCase {
         docProperties2.put("album", "Songs Of The Free");
         docProperties2.put("track", "I Love A Man In Uniform");
         docProperties2.put("time", 248);
-        putDoc(db, docProperties2);
+        putDoc(database, docProperties2);
 
         Map<String,Object> docProperties3 = new HashMap<String,Object>();
         docProperties3.put("_id", "3");
@@ -551,7 +518,7 @@ public class Views extends AndroidTestCase {
         docProperties3.put("album", "Entertainment!");
         docProperties3.put("track", "Natural's Not In It");
         docProperties3.put("time", 187);
-        putDoc(db, docProperties3);
+        putDoc(database, docProperties3);
 
         Map<String,Object> docProperties4 = new HashMap<String,Object>();
         docProperties4.put("_id", "4");
@@ -559,7 +526,7 @@ public class Views extends AndroidTestCase {
         docProperties4.put("album", "Metal Box");
         docProperties4.put("track", "Memories");
         docProperties4.put("time", 309);
-        putDoc(db, docProperties4);
+        putDoc(database, docProperties4);
 
         Map<String,Object> docProperties5 = new HashMap<String,Object>();
         docProperties5.put("_id", "5");
@@ -567,9 +534,9 @@ public class Views extends AndroidTestCase {
         docProperties5.put("album", "Entertainment!");
         docProperties5.put("track", "Not Great Men");
         docProperties5.put("time", 187);
-        putDoc(db, docProperties5);
+        putDoc(database, docProperties5);
 
-        TDView view = db.getViewNamed("grouper");
+        TDView view = database.getViewNamed("grouper");
         view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
@@ -719,37 +686,31 @@ public class Views extends AndroidTestCase {
         expectedRows.add(row3);
 
         Assert.assertEquals(expectedRows, rows);
-
-        db.close();
     }
 
     public void testViewGroupedStrings() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-
         Map<String,Object> docProperties1 = new HashMap<String,Object>();
         docProperties1.put("name", "Alice");
-        putDoc(db, docProperties1);
+        putDoc(database, docProperties1);
 
         Map<String,Object> docProperties2 = new HashMap<String,Object>();
         docProperties2.put("name", "Albert");
-        putDoc(db, docProperties2);
+        putDoc(database, docProperties2);
 
         Map<String,Object> docProperties3 = new HashMap<String,Object>();
         docProperties3.put("name", "Naomi");
-        putDoc(db, docProperties3);
+        putDoc(database, docProperties3);
 
         Map<String,Object> docProperties4 = new HashMap<String,Object>();
         docProperties4.put("name", "Jens");
-        putDoc(db, docProperties4);
+        putDoc(database, docProperties4);
 
         Map<String,Object> docProperties5 = new HashMap<String,Object>();
         docProperties5.put("name", "Jed");
-        putDoc(db, docProperties5);
+        putDoc(database, docProperties5);
 
-        TDView view = db.getViewNamed("default/names");
+        TDView view = database.getViewNamed("default/names");
         view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
@@ -795,8 +756,6 @@ public class Views extends AndroidTestCase {
         expectedRows.add(row3);
 
         Assert.assertEquals(expectedRows, rows);
-
-        db.close();
     }
 
     public void testViewCollation() {
@@ -850,19 +809,15 @@ public class Views extends AndroidTestCase {
         testKeys.add(list5);
         testKeys.add(list6);
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-
         int i=0;
         for (Object key : testKeys) {
             Map<String,Object> docProperties = new HashMap<String,Object>();
             docProperties.put("_id", Integer.toString(i++));
             docProperties.put("name", key);
-            putDoc(db, docProperties);
+            putDoc(database, docProperties);
         }
 
-        TDView view = db.getViewNamed("default/names");
+        TDView view = database.getViewNamed("default/names");
         view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
@@ -880,8 +835,6 @@ public class Views extends AndroidTestCase {
         for (Map<String, Object> row : rows) {
             Assert.assertEquals(testKeys.get(i++), row.get("key"));
         }
-
-        db.close();
     }
 
 
@@ -936,19 +889,15 @@ public class Views extends AndroidTestCase {
         testKeys.add("bb");
         testKeys.add("~");
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-
         int i=0;
         for (Object key : testKeys) {
             Map<String,Object> docProperties = new HashMap<String,Object>();
             docProperties.put("_id", Integer.toString(i++));
             docProperties.put("name", key);
-            putDoc(db, docProperties);
+            putDoc(database, docProperties);
         }
 
-        TDView view = db.getViewNamed("default/names");
+        TDView view = database.getViewNamed("default/names");
         view.setMapReduceBlocks(new TDViewMapBlock() {
 
             @Override
@@ -969,16 +918,12 @@ public class Views extends AndroidTestCase {
             Assert.assertEquals(testKeys.get(i++), row.get("key"));
         }
 
-        db.close();
+        database.close();
     }
 
     public void testLargerViewQuery() {
-
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-        putNDocs(db, 4);
-        TDView view = createView(db);
+        putNDocs(database, 4);
+        TDView view = createView(database);
 
         TDStatus updated = view.updateIndex();
         Assert.assertEquals(TDStatus.OK, updated.getCode());

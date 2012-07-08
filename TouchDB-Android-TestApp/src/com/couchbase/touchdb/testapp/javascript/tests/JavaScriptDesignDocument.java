@@ -1,27 +1,18 @@
 package com.couchbase.touchdb.testapp.javascript.tests;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TDView;
 import com.couchbase.touchdb.javascript.TDJavaScriptViewCompiler;
-import com.couchbase.touchdb.testapp.tests.Router;
+import com.couchbase.touchdb.testapp.tests.TouchDBTestCase;
 
-public class JavaScriptDesignDocument extends Router {
+public class JavaScriptDesignDocument extends TouchDBTestCase {
 
     public void testJavaScriptDesignDocument() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
 
         //register the javascript view compilter
         TDView.setCompiler(new TDJavaScriptViewCompiler());
@@ -80,17 +71,9 @@ public class JavaScriptDesignDocument extends Router {
         // Query the view and check the result:
         send(server, "GET", "/db/_design/doc/_view/test", TDStatus.OK, expectedResult);
 
-        server.close();
     }
 
     public void testRealJavaScriptDesignDocument() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
 
         //register the javascript view compilter
         TDView.setCompiler(new TDJavaScriptViewCompiler());
@@ -178,8 +161,6 @@ public class JavaScriptDesignDocument extends Router {
 
         // Query the view and check the result:
         Object res = send(server, "GET", "/rhinodb/_design/doc/_view/test", TDStatus.OK, expectedResult);
-
-        server.close();
     }
 
 }

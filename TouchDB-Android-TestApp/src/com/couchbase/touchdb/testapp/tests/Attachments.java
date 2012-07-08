@@ -29,8 +29,6 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 
-import android.test.AndroidTestCase;
-
 import com.couchbase.touchdb.TDAttachment;
 import com.couchbase.touchdb.TDBlobKey;
 import com.couchbase.touchdb.TDBlobStore;
@@ -39,17 +37,14 @@ import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.support.Base64;
 
-public class Attachments extends AndroidTestCase {
+public class Attachments extends TouchDBTestCase {
 
     public static final String TAG = "Attachments";
 
     @SuppressWarnings("unchecked")
     public void testAttachments() throws Exception {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-        TDBlobStore attachments = db.getAttachments();
+        TDBlobStore attachments = database.getAttachments();
 
         Assert.assertEquals(0, attachments.count());
         Assert.assertEquals(new HashSet<Object>(), attachments.allKeys());
@@ -58,15 +53,15 @@ public class Attachments extends AndroidTestCase {
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
-        TDRevision rev1 = db.putRevision(new TDRevision(rev1Properties), null, false, status);
+        TDRevision rev1 = database.putRevision(new TDRevision(rev1Properties), null, false, status);
 
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         byte[] attach1 = "This is the body of attach1".getBytes();
-        status = db.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
+        status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
-        TDAttachment attachment = db.getAttachmentForSequence(rev1.getSequence(), "attach", status);
+        TDAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach", status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment.getContentType());
         byte[] data = IOUtils.toByteArray(attachment.getContentStream());
@@ -81,20 +76,20 @@ public class Attachments extends AndroidTestCase {
         Map<String,Object> attachmentDict = new HashMap<String,Object>();
         attachmentDict.put("attach", innerDict);
 
-        Map<String,Object> attachmentDictForSequence = db.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), false);
+        Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), false);
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
-        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        TDRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
         Assert.assertEquals(attachmentDict, gotAttachmentDict);
 
         // Check the attachment dict, with attachments included:
         innerDict.remove("stub");
         innerDict.put("data", Base64.encodeBytes(attach1));
-        attachmentDictForSequence = db.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), true);
+        attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), true);
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
-        gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.of(TDDatabase.TDContentOptions.TDIncludeAttachments));
+        gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.of(TDDatabase.TDContentOptions.TDIncludeAttachments));
         gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
         Assert.assertEquals(attachmentDict, gotAttachmentDict);
 
@@ -104,10 +99,10 @@ public class Attachments extends AndroidTestCase {
         rev2Properties.put("_id", rev1.getDocId());
         rev2Properties.put("foo", 2);
         rev2Properties.put("bazz", false);
-        TDRevision rev2 = db.putRevision(new TDRevision(rev2Properties), rev1.getRevId(), false, status);
+        TDRevision rev2 = database.putRevision(new TDRevision(rev2Properties), rev1.getRevId(), false, status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
-        status = db.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
+        status = database.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
         Assert.assertEquals(TDStatus.OK, status.getCode());
 
         // Add a third revision of the same document:
@@ -115,22 +110,22 @@ public class Attachments extends AndroidTestCase {
         rev3Properties.put("_id", rev2.getDocId());
         rev3Properties.put("foo", 2);
         rev3Properties.put("bazz", false);
-        TDRevision rev3 = db.putRevision(new TDRevision(rev3Properties), rev2.getRevId(), false, status);
+        TDRevision rev3 = database.putRevision(new TDRevision(rev3Properties), rev2.getRevId(), false, status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
-        status = db.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
+        status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         // Check the 2nd revision's attachment:
-        TDAttachment attachment2 = db.getAttachmentForSequence(rev2.getSequence(), "attach", status);
+        TDAttachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), "attach", status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment2.getContentType());
         data = IOUtils.toByteArray(attachment2.getContentStream());
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         // Check the 3rd revision's attachment:
-        TDAttachment attachment3 = db.getAttachmentForSequence(rev3.getSequence(), "attach", status);
+        TDAttachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), "attach", status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals("text/html", attachment3.getContentType());
         data = IOUtils.toByteArray(attachment3.getContentStream());
@@ -144,24 +139,19 @@ public class Attachments extends AndroidTestCase {
 
         Assert.assertEquals(expected, attachments.allKeys());
 
-        status = db.compact();  // This clears the body of the first revision
+        status = database.compact();  // This clears the body of the first revision
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals(1, attachments.count());
 
         Set<TDBlobKey> expected2 = new HashSet<TDBlobKey>();
         expected2.add(TDBlobStore.keyForBlob(attach2));
         Assert.assertEquals(expected2, attachments.allKeys());
-
-        db.close();
     }
 
     @SuppressWarnings("unchecked")
     public void testPutAttachment() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-        TDBlobStore attachments = db.getAttachments();
+        TDBlobStore attachments = database.getAttachments();
 
         // Put a revision that includes an _attachments dict:
         byte[] attach1 = "This is the body of attach1".getBytes();
@@ -178,14 +168,14 @@ public class Attachments extends AndroidTestCase {
         properties.put("_attachments", attachmentDict);
 
         TDStatus status = new TDStatus();
-        TDRevision rev1 = db.putRevision(new TDRevision(properties), null, false, status);
+        TDRevision rev1 = database.putRevision(new TDRevision(properties), null, false, status);
 
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         // Examine the attachment store:
         Assert.assertEquals(1, attachments.count());
 
         // Get the revision:
-        TDRevision gotRev1 = db.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        TDRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
 
         Map<String,Object> innerDict = new HashMap<String,Object>();
@@ -202,17 +192,17 @@ public class Attachments extends AndroidTestCase {
 
         // Update the attachment directly:
         byte[] attachv2 = "Replaced body of attach".getBytes();
-        db.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null, status);
+        database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null, status);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
-        db.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus", status);
+        database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus", status);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
-        TDRevision rev2 = db.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId(), status);
+        TDRevision rev2 = database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId(), status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertEquals(2, rev2.getGeneration());
 
         // Get the updated revision:
-        TDRevision gotRev2 = db.getDocumentWithIDAndRev(rev2.getDocId(), rev2.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        TDRevision gotRev2 = database.getDocumentWithIDAndRev(rev2.getDocId(), rev2.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         attachmentDict = (Map<String, Object>) gotRev2.getProperties().get("_attachments");
 
         innerDict = new HashMap<String,Object>();
@@ -227,23 +217,23 @@ public class Attachments extends AndroidTestCase {
         Assert.assertEquals(expectAttachmentDict, attachmentDict);
 
         // Delete the attachment:
-        db.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId(), status);
+        database.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId(), status);
         Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
 
-        db.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev", status);
+        database.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev", status);
         Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
 
-        TDRevision rev3 = db.updateAttachment("attach", null, null, rev2.getDocId(), rev2.getRevId(), status);
+        TDRevision rev3 = database.updateAttachment("attach", null, null, rev2.getDocId(), rev2.getRevId(), status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals(rev2.getDocId(), rev3.getDocId());
         Assert.assertEquals(3, rev3.getGeneration());
 
         // Get the updated revision:
-        TDRevision gotRev3 = db.getDocumentWithIDAndRev(rev3.getDocId(), rev3.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        TDRevision gotRev3 = database.getDocumentWithIDAndRev(rev3.getDocId(), rev3.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         attachmentDict = (Map<String, Object>) gotRev3.getProperties().get("_attachments");
         Assert.assertNull(attachmentDict);
 
-        db.close();
+        database.close();
     }
 
 }

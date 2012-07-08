@@ -14,23 +14,15 @@ import org.ektorp.ViewResult;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
-import android.test.AndroidTestCase;
-
 import com.couchbase.touchdb.TDDatabase;
-import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDView;
 import com.couchbase.touchdb.TDViewMapBlock;
 import com.couchbase.touchdb.TDViewMapEmitBlock;
 import com.couchbase.touchdb.TDViewReduceBlock;
 import com.couchbase.touchdb.ektorp.TouchDBHttpClient;
-import com.couchbase.touchdb.router.TDURLStreamHandlerFactory;
+import com.couchbase.touchdb.testapp.tests.TouchDBTestCase;
 
-public class Views extends AndroidTestCase {
-
-    //static inializer to ensure that touchdb:// URLs are handled properly
-    {
-        TDURLStreamHandlerFactory.registerSelfIgnoreError();
-    }
+public class Views extends TouchDBTestCase {
 
     public static final String dDocName = "ddoc";
     public static final String dDocId = "_design/" + dDocName;
@@ -97,26 +89,16 @@ public class Views extends AndroidTestCase {
 
     public void testViewQuery() throws IOException {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-        TDServer tdserver = new TDServer(filesDir);
+        HttpClient httpClient = new TouchDBHttpClient(server);
+        CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
-        //ensure the test is repeatable
-        TDDatabase old = tdserver.getExistingDatabaseNamed("ektorp_views_test");
-        if(old != null) {
-            old.deleteDatabase();
-        }
+        CouchDbConnector dbConnector = dbInstance.createConnector(DEFAULT_TEST_DB, true);
 
-        HttpClient httpClient = new TouchDBHttpClient(tdserver);
-        CouchDbInstance server = new StdCouchDbInstance(httpClient);
-
-        CouchDbConnector db = server.createConnector("ektorp_views_test", true);
-        TDDatabase tdDb = tdserver.getExistingDatabaseNamed("ektorp_views_test");
-
-        putDocs(db);
-        createView(tdDb);
+        putDocs(dbConnector);
+        createView(database);
 
         ViewQuery query = new ViewQuery().designDocId(dDocId).viewName(viewName);
-        ViewResult result = db.queryView(query);
+        ViewResult result = dbConnector.queryView(query);
         Assert.assertEquals(5, result.getTotalRows());
         Assert.assertEquals("five", result.getRows().get(0).getKey());
         Assert.assertEquals("four", result.getRows().get(1).getKey());
@@ -126,7 +108,7 @@ public class Views extends AndroidTestCase {
 
         // Start/end key query:
         query = new ViewQuery().designDocId(dDocId).viewName(viewName).startKey("a").endKey("one");
-        result = db.queryView(query);
+        result = dbConnector.queryView(query);
         Assert.assertEquals(3, result.getTotalRows());
         Assert.assertEquals("five", result.getRows().get(0).getKey());
         Assert.assertEquals("four", result.getRows().get(1).getKey());
@@ -134,21 +116,21 @@ public class Views extends AndroidTestCase {
 
         // Start/end query without inclusive end:
         query = new ViewQuery().designDocId(dDocId).viewName(viewName).startKey("a").endKey("one").inclusiveEnd(false);
-        result = db.queryView(query);
+        result = dbConnector.queryView(query);
         Assert.assertEquals(2, result.getTotalRows());
         Assert.assertEquals("five", result.getRows().get(0).getKey());
         Assert.assertEquals("four", result.getRows().get(1).getKey());
 
         // Reversed:
         query = new ViewQuery().designDocId(dDocId).viewName(viewName).startKey("o").endKey("five").inclusiveEnd(true).descending(true);
-        result = db.queryView(query);
+        result = dbConnector.queryView(query);
         Assert.assertEquals(2, result.getTotalRows());
         Assert.assertEquals("four", result.getRows().get(0).getKey());
         Assert.assertEquals("five", result.getRows().get(1).getKey());
 
         // Reversed, no inclusive end:
         query = new ViewQuery().designDocId(dDocId).viewName(viewName).startKey("o").endKey("five").inclusiveEnd(false).descending(true);
-        result = db.queryView(query);
+        result = dbConnector.queryView(query);
         Assert.assertEquals(1, result.getTotalRows());
         Assert.assertEquals("four", result.getRows().get(0).getKey());
 
@@ -157,14 +139,14 @@ public class Views extends AndroidTestCase {
         keys.add("two");
         keys.add("four");
         query = new ViewQuery().designDocId(dDocId).viewName(viewName).keys(keys);
-        result = db.queryView(query);
+        result = dbConnector.queryView(query);
         Assert.assertEquals(2, result.getTotalRows());
         Assert.assertEquals("four", result.getRows().get(0).getKey());
         Assert.assertEquals("two", result.getRows().get(1).getKey());
 
         // Limit
         query = new ViewQuery().designDocId(dDocId).viewName(viewName).limit(3);
-        result = db.queryView(query);
+        result = dbConnector.queryView(query);
         Assert.assertEquals(3, result.getTotalRows());
         Assert.assertEquals("five", result.getRows().get(0).getKey());
         Assert.assertEquals("four", result.getRows().get(1).getKey());
@@ -172,7 +154,7 @@ public class Views extends AndroidTestCase {
 
         // Limit & Skip
         query = new ViewQuery().designDocId(dDocId).viewName(viewName).limit(2).skip(1);
-        result = db.queryView(query);
+        result = dbConnector.queryView(query);
         Assert.assertEquals(2, result.getTotalRows());
         Assert.assertEquals("four", result.getRows().get(0).getKey());
         Assert.assertEquals("one", result.getRows().get(1).getKey());
@@ -180,28 +162,60 @@ public class Views extends AndroidTestCase {
 
     public void testViewReduceQuery() throws IOException {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-        TDServer tdserver = new TDServer(filesDir);
+        HttpClient httpClient = new TouchDBHttpClient(server);
+        CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
-        //ensure the test is repeatable
-        TDDatabase old = tdserver.getExistingDatabaseNamed("ektorp_views_test");
-        if(old != null) {
-            old.deleteDatabase();
-        }
+        CouchDbConnector dbConnector = dbInstance.createConnector(DEFAULT_TEST_DB, true);
 
-        HttpClient httpClient = new TouchDBHttpClient(tdserver);
-        CouchDbInstance server = new StdCouchDbInstance(httpClient);
+        putDocs(dbConnector);
+        createViewWithReduce(database);
 
-        CouchDbConnector db = server.createConnector("ektorp_views_test", true);
-        TDDatabase tdDb = tdserver.getExistingDatabaseNamed("ektorp_views_test");
 
-        putDocs(db);
-        createViewWithReduce(tdDb);
-
-        ViewQuery query = new ViewQuery().designDocId(dDocId).viewName(viewReduceName).reduce(true);
-        ViewResult result = db.queryView(query);
+        //because this view has a reduce function it should default to reduce=true
+        ViewQuery query = new ViewQuery().designDocId(dDocId).viewName(viewReduceName);
+        ViewResult result = dbConnector.queryView(query);
 
         Assert.assertEquals(1, result.getTotalRows());
         Assert.assertEquals(5, result.getRows().get(0).getValueAsInt());
+
+        //we should still be able to override it and force reduce=false
+        query = new ViewQuery().designDocId(dDocId).viewName(viewReduceName).reduce(false);
+        result = dbConnector.queryView(query);
+
+        Assert.assertEquals(5, result.getTotalRows());
+    }
+
+    public void testViewQueryFromWeb() throws IOException {
+
+        HttpClient httpClient = new TouchDBHttpClient(server);
+        CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
+
+        CouchDbConnector couchDbConnector = dbInstance.createConnector(DEFAULT_TEST_DB, true);
+
+        String dDocName = "ddoc";
+        String viewName = "people";
+        TDView view = database.getViewNamed(String.format("%s/%s", dDocName, viewName));
+
+        view.setMapReduceBlocks(new TDViewMapBlock() {
+
+            @Override
+            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+                String type = (String)document.get("type");
+                if("person".equals(type)) {
+                    emitter.emit(null, document.get("_id"));
+                }
+            }
+        }, new TDViewReduceBlock() {
+                public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                        return null;
+                }
+        }, "1.0");
+
+        ViewQuery viewQuery = new ViewQuery().designDocId("_design/" + dDocName).viewName(viewName);
+        //viewQuery.descending(true); //use this to reverse the sorting order of the view
+        ViewResult viewResult = couchDbConnector.queryView(viewQuery);
+
+        Assert.assertEquals(0, viewResult.getTotalRows());
+
     }
 }

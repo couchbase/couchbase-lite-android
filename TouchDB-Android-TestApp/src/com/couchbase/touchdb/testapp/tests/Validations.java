@@ -4,28 +4,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.Assert;
-import android.test.AndroidTestCase;
 import android.util.Log;
 
-import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TDValidationBlock;
 import com.couchbase.touchdb.TDValidationContext;
 
-public class Validations extends AndroidTestCase {
+public class Validations extends TouchDBTestCase {
 
     public static final String TAG = "Validations";
 
     boolean validationCalled = false;
 
     public void testValidations() {
-
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-
-
 
         TDValidationBlock validationBlock = new TDValidationBlock() {
 
@@ -45,7 +37,7 @@ public class Validations extends AndroidTestCase {
             }
         };
 
-        db.defineValidation("hoopy", validationBlock);
+        database.defineValidation("hoopy", validationBlock);
 
         // POST a valid new document:
         Map<String, Object> props = new HashMap<String,Object>();
@@ -54,7 +46,7 @@ public class Validations extends AndroidTestCase {
         TDRevision rev = new TDRevision(props);
         TDStatus status = new TDStatus();
         validationCalled = false;
-        rev = db.putRevision(rev, null, false, status);
+        rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
@@ -62,7 +54,7 @@ public class Validations extends AndroidTestCase {
         props.put("head_count", 3);
         rev.setProperties(props);
         validationCalled = false;
-        rev = db.putRevision(rev, rev.getRevId(), false, status);
+        rev = database.putRevision(rev, rev.getRevId(), false, status);
         Assert.assertTrue(validationCalled);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
@@ -70,7 +62,7 @@ public class Validations extends AndroidTestCase {
         props.remove("towel");
         rev.setProperties(props);
         validationCalled = false;
-        rev = db.putRevision(rev, rev.getRevId(), false, status);
+        rev = database.putRevision(rev, rev.getRevId(), false, status);
         Assert.assertTrue(validationCalled);
         Assert.assertEquals(TDStatus.FORBIDDEN, status.getCode());
 
@@ -80,7 +72,7 @@ public class Validations extends AndroidTestCase {
         props.put("poetry", true);
         rev = new TDRevision(props);
         validationCalled = false;
-        rev = db.putRevision(rev, null, false, status);
+        rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
         Assert.assertEquals(TDStatus.FORBIDDEN, status.getCode());
 
@@ -91,7 +83,7 @@ public class Validations extends AndroidTestCase {
         props.put("towel", "terrycloth");
         rev = new TDRevision(props);
         validationCalled = false;
-        rev = db.putRevision(rev, null, false, status);
+        rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         Assert.assertEquals("ford", rev.getDocId());
@@ -100,7 +92,7 @@ public class Validations extends AndroidTestCase {
         rev = new TDRevision(rev.getDocId(), rev.getRevId(), true);
         Assert.assertTrue(rev.isDeleted());
         validationCalled = false;
-        rev = db.putRevision(rev, rev.getRevId(), false, status);
+        rev = database.putRevision(rev, rev.getRevId(), false, status);
         Assert.assertTrue(validationCalled);
         Assert.assertEquals(TDStatus.OK, status.getCode());
 
@@ -110,11 +102,9 @@ public class Validations extends AndroidTestCase {
         props.put("name","Pot of Petunias");
         rev = new TDRevision(props);
         validationCalled = false;
-        rev = db.putRevision(rev, null, false, status);
+        rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
         Assert.assertEquals(TDStatus.FORBIDDEN, status.getCode());
-
-        db.close();
     }
 
 }

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
-import android.test.AndroidTestCase;
 
 import com.couchbase.touchdb.TDChangesOptions;
 import com.couchbase.touchdb.TDDatabase;
@@ -32,15 +31,11 @@ import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDRevisionList;
 import com.couchbase.touchdb.TDStatus;
 
-public class RevTree extends AndroidTestCase {
+public class RevTree extends TouchDBTestCase {
 
     public static final String TAG = "RevTree";
 
     public void testRevTree() {
-
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
 
         TDRevision rev = new TDRevision("MyDocId", "4-foxy", false);
 
@@ -56,10 +51,10 @@ public class RevTree extends AndroidTestCase {
         revHistory.add("2-too");
         revHistory.add("1-won");
 
-        TDStatus status = db.forceInsert(rev, revHistory, null);
+        TDStatus status = database.forceInsert(rev, revHistory, null);
         Assert.assertEquals(201, status.getCode());
-        Assert.assertEquals(1, db.getDocumentCount());
-        verifyHistory(db, rev, revHistory);
+        Assert.assertEquals(1, database.getDocumentCount());
+        verifyHistory(database, rev, revHistory);
 
         TDRevision conflict = new TDRevision("MyDocId", "5-epsilon", false);
 
@@ -76,10 +71,10 @@ public class RevTree extends AndroidTestCase {
         conflictHistory.add("2-too");
         conflictHistory.add("1-won");
 
-        status = db.forceInsert(conflict, conflictHistory, null);
+        status = database.forceInsert(conflict, conflictHistory, null);
         Assert.assertEquals(201, status.getCode());
-        Assert.assertEquals(1, db.getDocumentCount());
-        verifyHistory(db, conflict, conflictHistory);
+        Assert.assertEquals(1, database.getDocumentCount());
+        verifyHistory(database, conflict, conflictHistory);
 
         // Add an unrelated document:
         TDRevision other = new TDRevision("AnotherDocID", "1-ichi", false);
@@ -88,39 +83,36 @@ public class RevTree extends AndroidTestCase {
         other.setProperties(otherProperties);
         List<String> otherHistory = new ArrayList<String>();
         otherHistory.add(other.getRevId());
-        status = db.forceInsert(other, otherHistory, null);
+        status = database.forceInsert(other, otherHistory, null);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
         // Fetch one of those phantom revisions with no body:
-        TDRevision rev2 = db.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        TDRevision rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertEquals(rev.getDocId(), rev2.getDocId());
         Assert.assertEquals("2-too", rev2.getRevId());
         //Assert.assertNull(rev2.getBody());
 
         // Make sure no duplicate rows were inserted for the common revisions:
-        Assert.assertEquals(8, db.getLastSequence());
+        Assert.assertEquals(8, database.getLastSequence());
 
         // Make sure the revision with the higher revID wins the conflict:
-        TDRevision current = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        TDRevision current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertEquals(conflict, current);
 
         // Get the _changes feed and verify only the winner is in it:
         TDChangesOptions options = new TDChangesOptions();
-        TDRevisionList changes = db.changesSince(0, options, null);
+        TDRevisionList changes = database.changesSince(0, options, null);
         TDRevisionList expectedChanges = new TDRevisionList();
         expectedChanges.add(conflict);
         expectedChanges.add(other);
         Assert.assertEquals(changes, expectedChanges);
         options.setIncludeConflicts(true);
-        changes = db.changesSince(0, options, null);
+        changes = database.changesSince(0, options, null);
         expectedChanges = new TDRevisionList();
         expectedChanges.add(rev);
         expectedChanges.add(conflict);
         expectedChanges.add(other);
         Assert.assertEquals(changes, expectedChanges);
-
-
-        db.close();
     }
 
     private static void verifyHistory(TDDatabase db, TDRevision rev, List<String> history) {

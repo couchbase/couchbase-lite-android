@@ -6,22 +6,16 @@ import java.util.Observable;
 import java.util.Observer;
 
 import junit.framework.Assert;
-import android.test.AndroidTestCase;
 
 import com.couchbase.touchdb.TDBody;
-import com.couchbase.touchdb.TDDatabase;
 import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDStatus;
 
-public class Changes extends AndroidTestCase {
+public class Changes extends TouchDBTestCase {
 
     private int changeNotifications = 0;
 
     public void testChangeNotification() {
-
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
-
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
 
         // define a listener
         Observer changeListener = new Observer() {
@@ -34,7 +28,7 @@ public class Changes extends AndroidTestCase {
         };
 
         // add listener to database
-        db.addObserver(changeListener);
+        database.addObserver(changeListener);
 
         // create a document
         Map<String, Object> documentProperties = new HashMap<String, Object>();
@@ -46,11 +40,9 @@ public class Changes extends AndroidTestCase {
         TDRevision rev1 = new TDRevision(body);
 
         TDStatus status = new TDStatus();
-        rev1 = db.putRevision(rev1, null, false, status);
+        rev1 = database.putRevision(rev1, null, false, status);
 
         Assert.assertEquals(1, changeNotifications);
-
-        db.close();
     }
 
 }

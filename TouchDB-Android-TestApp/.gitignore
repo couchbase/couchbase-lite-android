@@ -12,6 +12,9 @@
 /bin/
 /gen/
 
+# Local test configuration
+/src/com/couchbase/touchdb/testapp/tests/local-test.properties
+
 # Local configuration file (sdk path, etc)
 local.properties
 build.properties

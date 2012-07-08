@@ -25,7 +25,6 @@ import java.util.Observable;
 import java.util.Observer;
 
 import junit.framework.Assert;
-import android.test.AndroidTestCase;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDBody;
@@ -35,20 +34,16 @@ import com.couchbase.touchdb.TDRevision;
 import com.couchbase.touchdb.TDRevisionList;
 import com.couchbase.touchdb.TDStatus;
 
-public class CRUDOperations extends AndroidTestCase implements Observer {
+public class CRUDOperations extends TouchDBTestCase implements Observer {
 
     public static final String TAG = "CRUDOperations";
 
     public void testCRUDOperations() {
 
-        String filesDir = getContext().getFilesDir().getAbsolutePath();
+        database.addObserver(this);
 
-        TDDatabase db = TDDatabase.createEmptyDBAtPath(filesDir + "/touch_couch_test.sqlite3");
-
-        db.addObserver(this);
-
-        String privateUUID = db.privateUUID();
-        String publicUUID = db.publicUUID();
+        String privateUUID = database.privateUUID();
+        String publicUUID = database.publicUUID();
         Log.v(TAG, "DB private UUID = '" + privateUUID + "', public UUID = '" + publicUUID + "'");
         Assert.assertTrue(privateUUID.length() >= 20);
         Assert.assertTrue(publicUUID.length() >= 20);
@@ -63,7 +58,7 @@ public class CRUDOperations extends AndroidTestCase implements Observer {
         TDRevision rev1 = new TDRevision(body);
 
         TDStatus status = new TDStatus();
-        rev1 = db.putRevision(rev1, null, false, status);
+        rev1 = database.putRevision(rev1, null, false, status);
 
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         Log.v(TAG, "Created " + rev1);
@@ -71,7 +66,7 @@ public class CRUDOperations extends AndroidTestCase implements Observer {
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));
 
         //read it back
-        TDRevision readRev = db.getDocumentWithIDAndRev(rev1.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        TDRevision readRev = database.getDocumentWithIDAndRev(rev1.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertNotNull(readRev);
         Map<String,Object> readRevProps = readRev.getProperties();
         Assert.assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
@@ -82,27 +77,27 @@ public class CRUDOperations extends AndroidTestCase implements Observer {
         body = new TDBody(documentProperties);
         TDRevision rev2 = new TDRevision(body);
         TDRevision rev2input = rev2;
-        rev2 = db.putRevision(rev2, rev1.getRevId(), false, status);
+        rev2 = database.putRevision(rev2, rev1.getRevId(), false, status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
         Log.v(TAG, "Updated " + rev1);
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertTrue(rev2.getRevId().startsWith("2-"));
 
         //read it back
-        readRev = db.getDocumentWithIDAndRev(rev2.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        readRev = database.getDocumentWithIDAndRev(rev2.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertNotNull(readRev);
         Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
         // Try to update the first rev, which should fail:
-        db.putRevision(rev2input, rev1.getRevId(), false, status);
+        database.putRevision(rev2input, rev1.getRevId(), false, status);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
 
         // Check the changes feed, with and without filters:
-        TDRevisionList changes = db.changesSince(0, null, null);
+        TDRevisionList changes = database.changesSince(0, null, null);
         Log.v(TAG, "Changes = " + changes);
         Assert.assertEquals(1, changes.size());
 
-        changes = db.changesSince(0, null, new TDFilterBlock() {
+        changes = database.changesSince(0, null, new TDFilterBlock() {
 
             @Override
             public boolean filter(TDRevision revision) {
@@ -112,7 +107,7 @@ public class CRUDOperations extends AndroidTestCase implements Observer {
         });
         Assert.assertEquals(1, changes.size());
 
-        changes = db.changesSince(0, null, new TDFilterBlock() {
+        changes = database.changesSince(0, null, new TDFilterBlock() {
 
             @Override
             public boolean filter(TDRevision revision) {
@@ -125,50 +120,33 @@ public class CRUDOperations extends AndroidTestCase implements Observer {
 
         // Delete it:
         TDRevision revD = new TDRevision(rev2.getDocId(), null, true);
-        TDRevision revResult = db.putRevision(revD, null, false, status);
+        TDRevision revResult = database.putRevision(revD, null, false, status);
         Assert.assertNull(revResult);
         Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
-        revD = db.putRevision(revD, rev2.getRevId(), false, status);
+        revD = database.putRevision(revD, rev2.getRevId(), false, status);
         Assert.assertEquals(TDStatus.OK, status.getCode());
         Assert.assertEquals(revD.getDocId(), rev2.getDocId());
         Assert.assertTrue(revD.getRevId().startsWith("3-"));
 
         // Delete nonexistent doc:
         TDRevision revFake = new TDRevision("fake", null, true);
-        db.putRevision(revFake, null, false, status);
+        database.putRevision(revFake, null, false, status);
         Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
 
         // Read it back (should fail):
-        readRev = db.getDocumentWithIDAndRev(revD.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        readRev = database.getDocumentWithIDAndRev(revD.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
         Assert.assertNull(readRev);
 
         // Get Changes feed
-        changes = db.changesSince(0, null, null);
+        changes = database.changesSince(0, null, null);
         Assert.assertTrue(changes.size() == 1);
 
         // Get Revision History
-        List<TDRevision> history = db.getRevisionHistory(revD);
+        List<TDRevision> history = database.getRevisionHistory(revD);
         Assert.assertEquals(revD, history.get(0));
         Assert.assertEquals(rev2, history.get(1));
         Assert.assertEquals(rev1, history.get(2));
-
-        Log.v(TAG, "Tests complete, closing database");
-        db.close();
     }
-
-
-    private static Map<String,Object> userProperties(Map<String,Object> properties) {
-        Map<String,Object> result = new HashMap<String,Object>();
-
-        for (String key : properties.keySet()) {
-            if(!key.startsWith("_")) {
-                result.put(key, properties.get(key));
-            }
-        }
-
-        return result;
-    }
-
 
     @Override
     public void update(Observable observable, Object changeObject) {

@@ -9,20 +9,19 @@ import junit.framework.Assert;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import android.test.InstrumentationTestCase;
 import android.util.Log;
 
 import com.couchbase.touchdb.replicator.changetracker.TDChangeTracker;
 import com.couchbase.touchdb.replicator.changetracker.TDChangeTracker.TDChangeTrackerMode;
 import com.couchbase.touchdb.replicator.changetracker.TDChangeTrackerClient;
 
-public class ChangeTracker extends InstrumentationTestCase {
+public class ChangeTracker extends TouchDBTestCase {
 
     public static final String TAG = "ChangeTracker";
 
     public void testChangeTracker() throws Throwable {
 
-        URL testURL = new URL(TestConstants.replicationURL);
+        URL testURL = getReplicationURL();
 
         TDChangeTrackerClient client = new TDChangeTrackerClient() {
 
@@ -61,7 +60,7 @@ public class ChangeTracker extends InstrumentationTestCase {
 
     public void testChangeTrackerLongPoll() throws Throwable {
 
-        URL testURL = new URL(TestConstants.replicationURL);
+        URL testURL = getReplicationURL();
 
         TDChangeTrackerClient client = new TDChangeTrackerClient() {
 
@@ -98,7 +97,7 @@ public class ChangeTracker extends InstrumentationTestCase {
 
     public void testChangeTrackerContinuous() throws Throwable {
 
-        URL testURL = new URL(TestConstants.replicationURL);
+        URL testURL = getReplicationURL();
 
         TDChangeTrackerClient client = new TDChangeTrackerClient() {
 
@@ -135,7 +134,7 @@ public class ChangeTracker extends InstrumentationTestCase {
 
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
-        URL testURL = new URL(TestConstants.replicationURL);
+        URL testURL = getReplicationURL();
         TDChangeTracker changeTracker = new TDChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
 
         // set filter

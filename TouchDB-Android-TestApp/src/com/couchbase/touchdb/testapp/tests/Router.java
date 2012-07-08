@@ -1,133 +1,26 @@
 package com.couchbase.touchdb.testapp.tests;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
-
-import org.codehaus.jackson.map.ObjectMapper;
-
-import android.test.InstrumentationTestCase;
 import android.util.Log;
 
-import com.couchbase.touchdb.TDBody;
 import com.couchbase.touchdb.TDDatabase;
-import com.couchbase.touchdb.TDServer;
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TDView;
 import com.couchbase.touchdb.TDViewMapBlock;
 import com.couchbase.touchdb.TDViewMapEmitBlock;
 import com.couchbase.touchdb.router.TDRouter;
 import com.couchbase.touchdb.router.TDURLConnection;
-import com.couchbase.touchdb.router.TDURLStreamHandlerFactory;
-import com.couchbase.touchdb.support.FileDirUtils;
 
-public class Router extends InstrumentationTestCase {
-    private static boolean initializedUrlHandler = false;
+public class Router extends TouchDBTestCase {
 
     public static final String TAG = "Router";
 
-    private ObjectMapper mapper = new ObjectMapper();
-
-    protected String getServerPath() {
-        String filesDir = getInstrumentation().getContext().getFilesDir().getAbsolutePath() + "/tests";
-        return filesDir;
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-
-        //delete and recreate the server path
-        String serverPath = getServerPath();
-        File serverPathFile = new File(serverPath);
-        FileDirUtils.deleteRecursive(serverPathFile);
-        serverPathFile.mkdir();
-
-        //for some reason a traditional static initializer causes junit to die
-        if(!initializedUrlHandler) {
-            TDURLStreamHandlerFactory.registerSelfIgnoreError();
-            initializedUrlHandler = true;
-        }
-    }
-
-    protected TDURLConnection sendRequest(TDServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
-        try {
-            URL url = new URL("touchdb://" + path);
-            TDURLConnection conn = (TDURLConnection)url.openConnection();
-            conn.setDoOutput(true);
-            conn.setRequestMethod(method);
-            if(headers != null) {
-                for (String header : headers.keySet()) {
-                    conn.setRequestProperty(header, headers.get(header));
-                }
-            }
-            Map<String, List<String>> allProperties = conn.getRequestProperties();
-            if(bodyObj != null) {
-                conn.setDoInput(true);
-                ByteArrayInputStream bais = new ByteArrayInputStream(mapper.writeValueAsBytes(bodyObj));
-                conn.setRequestInputStream(bais);
-            }
-
-            TDRouter router = new TDRouter(server, conn);
-            router.start();
-            return conn;
-        } catch (MalformedURLException e) {
-            fail();
-        } catch(IOException e) {
-            fail();
-        }
-        return null;
-    }
-
-    protected Object parseJSONResponse(TDURLConnection conn) {
-        Object result = null;
-        TDBody responseBody = conn.getResponseBody();
-        if(responseBody != null) {
-            byte[] json = responseBody.getJson();
-            String jsonString = null;
-            if(json != null) {
-                jsonString = new String(json);
-                try {
-                    result = mapper.readValue(jsonString, Object.class);
-                } catch (Exception e) {
-                    fail();
-                }
-            }
-        }
-        return result;
-    }
-
-    protected Object sendBody(TDServer server, String method, String path, Object bodyObj, int expectedStatus, Object expectedResult) {
-        TDURLConnection conn = sendRequest(server, method, path, null, bodyObj);
-        Object result = parseJSONResponse(conn);
-        Log.v(TAG, String.format("%s %s --> %d", method, path, conn.getResponseCode()));
-        Assert.assertEquals(expectedStatus, conn.getResponseCode());
-        if(expectedResult != null) {
-            Assert.assertEquals(expectedResult, result);
-        }
-        return result;
-    }
-
-    protected Object send(TDServer server, String method, String path, int expectedStatus, Object expectedResult) {
-        return sendBody(server, method, path, null, expectedStatus, expectedResult);
-    }
-
     public void testServer() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
-
         Map<String,Object> responseBody = new HashMap<String,Object>();
         responseBody.put("TouchDB", "Welcome");
         responseBody.put("couchdb", "Welcome");
@@ -145,25 +38,16 @@ public class Router extends InstrumentationTestCase {
         send(server, "GET", "/_session", TDStatus.OK, session);
 
         List<String> allDbs = new ArrayList<String>();
+        allDbs.add("touchdb-test");
         send(server, "GET", "/_all_dbs", TDStatus.OK, allDbs);
 
         send(server, "GET", "/non-existant", TDStatus.NOT_FOUND, null);
         send(server, "GET", "/BadName", TDStatus.BAD_REQUEST, null);
         send(server, "PUT", "/", TDStatus.BAD_REQUEST, null);
         send(server, "POST", "/", TDStatus.BAD_REQUEST, null);
-
-        server.close();
     }
 
     public void testDatabase() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
-
         send(server, "PUT", "/database", TDStatus.CREATED, null);
 
         Map<String,Object> dbInfo = (Map<String,Object>)send(server, "GET", "/database", TDStatus.OK, null);
@@ -177,6 +61,7 @@ public class Router extends InstrumentationTestCase {
         List<String> allDbs = new ArrayList<String>();
         allDbs.add("database");
         allDbs.add("database2");
+        allDbs.add("touchdb-test");
         send(server, "GET", "/_all_dbs", TDStatus.OK, allDbs);
         dbInfo = (Map<String,Object>)send(server, "GET", "/database2", TDStatus.OK, null);
         Assert.assertEquals("database2", dbInfo.get("db_name"));
@@ -188,19 +73,9 @@ public class Router extends InstrumentationTestCase {
         send(server, "PUT", "/database%2Fwith%2Fslashes", TDStatus.CREATED, null);
         dbInfo = (Map<String,Object>)send(server, "GET", "/database%2Fwith%2Fslashes", TDStatus.OK, null);
         Assert.assertEquals("database/with/slashes", dbInfo.get("db_name"));
-
-        server.close();
     }
 
     public void testDocs() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
-
         send(server, "PUT", "/db", TDStatus.CREATED, null);
 
         // PUT:
@@ -313,19 +188,9 @@ public class Router extends InstrumentationTestCase {
         results.remove(result1);
         expectedChanges.put("results", results);
         send(server, "GET", "/db/_changes?since=5", TDStatus.OK, expectedChanges);
-
-        server.close();
     }
 
     public void testLocalDocs() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
-
         send(server, "PUT", "/db", TDStatus.CREATED, null);
 
         // PUT a local doc:
@@ -345,18 +210,9 @@ public class Router extends InstrumentationTestCase {
         expectedChanges.put("last_seq", 0);
         expectedChanges.put("results", new ArrayList<Object>());
         send(server, "GET", "/db/_changes", TDStatus.OK, expectedChanges);
-
-        server.close();
     }
 
     public void testAllDocs() {
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
-
         send(server, "PUT", "/db", TDStatus.CREATED, null);
 
         Map<String,Object> result;
@@ -430,19 +286,9 @@ public class Router extends InstrumentationTestCase {
 
         rows = (List<Map<String,Object>>)result.get("rows");
         Assert.assertEquals(expectedRowsWithDocs, rows);
-
-        server.close();
     }
 
     public void testViews() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
-
         send(server, "PUT", "/db", TDStatus.CREATED, null);
 
         Map<String,Object> result;
@@ -515,19 +361,9 @@ public class Router extends InstrumentationTestCase {
         Assert.assertEquals(TDStatus.OK, conn.getResponseCode());
         result = (Map<String,Object>)parseJSONResponse(conn);
         Assert.assertEquals(4, result.get("total_rows"));
-
-        server.close();
     }
 
     public void testPostBulkDocs() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
-
         send(server, "PUT", "/db", TDStatus.CREATED, null);
 
         Map<String,Object> bulk_doc1 = new HashMap<String,Object>();
@@ -553,20 +389,9 @@ public class Router extends InstrumentationTestCase {
         Assert.assertNotNull(bulk_result.get(0).get("rev"));
         Assert.assertEquals(bulk_result.get(1).get("id"),  bulk_doc2.get("_id"));
         Assert.assertNotNull(bulk_result.get(1).get("rev"));
-
-        server.close();
-
     }
 
     public void testPostKeysView() {
-
-    	TDServer server = null;
-    	try {
-    		server = new TDServer(getServerPath());
-    	} catch (IOException e) {
-    		fail("Creating server caused IOException");
-    	}
-
     	send(server, "PUT", "/db", TDStatus.CREATED, null);
 
     	Map<String,Object> result;
@@ -601,17 +426,9 @@ public class Router extends InstrumentationTestCase {
         TDURLConnection conn = sendRequest(server, "POST", "/db/_design/design/_view/view", null, bodyObj);
         result = (Map<String, Object>) parseJSONResponse(conn);
     	Assert.assertEquals(1, result.get("total_rows"));
-    	server.close();
     }
 
     public void testRevsDiff() {
-
-        TDServer server = null;
-        try {
-            server = new TDServer(getServerPath());
-        } catch (IOException e) {
-            fail("Creating server caused IOException");
-        }
 
         send(server, "PUT", "/db", TDStatus.CREATED, null);
 
@@ -685,9 +502,6 @@ public class Router extends InstrumentationTestCase {
         revsDiffResponse.put("99999", doc9missingMap);
 
         sendBody(server, "POST", "/db/_revs_diff", revsDiffRequest, TDStatus.OK, revsDiffResponse);
-
-        server.close();
-
     }
 
 }
