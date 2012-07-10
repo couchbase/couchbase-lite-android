@@ -33,7 +33,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     private static final int MAX_OPEN_HTTP_CONNECTIONS = 16;
 
-    protected TDBatcher<List<Object>> revsToInsert;
+    protected TDBatcher<List<Object>> downloadsToInsert;
     protected List<TDRevision> revsToPull;
     protected long nextFakeSequence;
     protected long maxInsertedFakeSequence;
@@ -51,8 +51,8 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     @Override
     public void beginReplicating() {
-        if(revsToInsert == null) {
-            revsToInsert = new TDBatcher<List<Object>>(200, 1000, new TDBatchProcessor<List<Object>>() {
+        if(downloadsToInsert == null) {
+            downloadsToInsert = new TDBatcher<List<Object>>(db.getHandler(), 200, 1000, new TDBatchProcessor<List<Object>>() {
                 @Override
                 public void process(List<List<Object>> inbox) {
                     insertRevisions(inbox);
@@ -61,7 +61,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         }
         nextFakeSequence = maxInsertedFakeSequence = 0;
         Log.w(TDDatabase.TAG, this + " starting ChangeTracker with since=" + lastSequence);
-        changeTracker = new TDChangeTracker(remote, continuous ? TDChangeTrackerMode.Continuous : TDChangeTrackerMode.OneShot, lastSequence, this);
+        changeTracker = new TDChangeTracker(remote, continuous ? TDChangeTrackerMode.LongPoll : TDChangeTrackerMode.OneShot, lastSequence, this);
         if(filterName != null) {
             changeTracker.setFilterName(filterName);
             if(filterParams != null) {
@@ -74,7 +74,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
     @Override
     public void stop() {
-        inExternalShutdown = true;
+
         if(!running) {
             return;
         }
@@ -83,15 +83,20 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         changeTracker.stop();
         changeTracker = null;
 
-        asyncTaskFinished(1);
+        synchronized(this) {
+            revsToPull = null;
+        }
+
         super.stop();
+
+        downloadsToInsert.flush();
     }
 
     @Override
     public void stopped() {
 
-        revsToInsert.flush();
-        revsToInsert.close();
+        downloadsToInsert.flush();
+        downloadsToInsert.close();
 
         super.stopped();
     }
@@ -184,6 +189,17 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         revsToPull.addAll(inbox);
 
         pullRemoteRevisions();
+
+        //TEST
+        //adding wait here to prevent revsToPull from getting too large
+        while(revsToPull != null && revsToPull.size() > 1000) {
+            pullRemoteRevisions();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                //wake up
+            }
+        }
     }
 
     /**
@@ -193,7 +209,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
      * to keep the process moving, need to synchronize check for size with removal
      */
     public synchronized void pullRemoteRevisions() {
-        while(httpConnectionCount < MAX_OPEN_HTTP_CONNECTIONS && revsToPull.size() > 0) {
+        while(httpConnectionCount < MAX_OPEN_HTTP_CONNECTIONS && revsToPull != null && revsToPull.size() > 0) {
             pullRemoteRevision(revsToPull.get(0));
             revsToPull.remove(0);
         }
@@ -240,7 +256,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
                         List<Object> toInsert = new ArrayList<Object>();
                         toInsert.add(rev);
                         toInsert.add(history);
-                        revsToInsert.queueObject(toInsert);
+                        downloadsToInsert.queueObject(toInsert);
                         asyncTaskStarted();
                     } else {
                         Log.w(TDDatabase.TAG, this + ": Missing revision history in response from " + pathInside);
@@ -285,6 +301,9 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         boolean allGood = true;
         TDPulledRevision lastGoodRev = null;
 
+        if(db == null) {
+            return;
+        }
         db.beginTransaction();
         boolean success = false;
         try {
@@ -328,7 +347,10 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
     }
 
     List<String> knownCurrentRevIDs(TDRevision rev) {
-        return db.getAllRevisionsOfDocumentID(rev.getDocId(), true).getAllRevIds();
+        if(db != null) {
+            return db.getAllRevisionsOfDocumentID(rev.getDocId(), true).getAllRevIds();
+        }
+        return null;
     }
 
     public String joinQuotedEscaped(List<String> strings) {

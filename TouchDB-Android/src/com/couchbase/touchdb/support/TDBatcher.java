@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
@@ -34,10 +33,8 @@ public class TDBatcher<T> {
         }
     };
 
-    public TDBatcher(int capacity, int delay, TDBatchProcessor<T> processor) {
-        Looper looper = Looper.getMainLooper();
-        //Create a new handler - passing in the looper for it to use
-        this.handler = new Handler(looper);
+    public TDBatcher(Handler handler, int capacity, int delay, TDBatchProcessor<T> processor) {
+        this.handler = handler;
         this.capacity = capacity;
         this.delay = delay;
         this.processor = processor;

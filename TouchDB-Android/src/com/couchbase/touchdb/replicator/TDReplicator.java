@@ -12,7 +12,6 @@ import org.apache.http.client.HttpResponseException;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
@@ -50,8 +49,6 @@ public abstract class TDReplicator extends Observable {
     protected String filterName;
     protected Map<String,Object> filterParams;
 
-    protected boolean inExternalShutdown = false;
-
     protected static final int PROCESSOR_DELAY = 500;
     protected static final int INBOX_CAPACITY = 100;
 
@@ -64,13 +61,10 @@ public abstract class TDReplicator extends Observable {
         this.db = db;
         this.remote = remote;
         this.continuous = continuous;
-
-        Looper looper = Looper.getMainLooper();
-        //Create a new handler - passing in the looper for it to use
-        this.handler = new Handler(looper);
+        this.handler = db.getHandler();
 
 
-        batcher = new TDBatcher<TDRevision>(INBOX_CAPACITY, PROCESSOR_DELAY, new TDBatchProcessor<TDRevision>() {
+        batcher = new TDBatcher<TDRevision>(db.getHandler(), INBOX_CAPACITY, PROCESSOR_DELAY, new TDBatchProcessor<TDRevision>() {
             @Override
             public void process(List<TDRevision> inbox) {
                 Log.v(TDDatabase.TAG, "*** " + toString() + ": BEGIN processInbox (" + inbox.size() + " sequences)");
@@ -183,6 +177,8 @@ public abstract class TDReplicator extends Observable {
             return;
         }
         Log.v(TDDatabase.TAG, toString() + " STOPPING...");
+        batcher.flush();
+        continuous = false;
         if(asyncTaskCount == 0) {
             stopped();
         }
@@ -191,14 +187,12 @@ public abstract class TDReplicator extends Observable {
     public void stopped() {
         Log.v(TDDatabase.TAG, toString() + " STOPPED");
         running = false;
-
-        batcher.flush();
-        batcher.close();
-
         this.changesProcessed = this.changesTotal = 0;
-        if(!inExternalShutdown) {
-            db.replicatorDidStop(this);
-        }
+
+        saveLastSequence();
+
+        batcher = null;
+        db = null;
     }
 
     public synchronized void asyncTaskStarted() {
@@ -229,7 +223,7 @@ public abstract class TDReplicator extends Observable {
         String urlStr = remote.toExternalForm() + relativePath;
         try {
             URL url = new URL(urlStr);
-            TDRemoteRequest request = new TDRemoteRequest(clientFacotry, method, url, body, onCompletion);
+            TDRemoteRequest request = new TDRemoteRequest(db.getHandler(), clientFacotry, method, url, body, onCompletion);
             request.start();
         } catch (MalformedURLException e) {
             Log.e(TDDatabase.TAG, "Malformed URL for async request", e);
@@ -248,6 +242,9 @@ public abstract class TDReplicator extends Observable {
      * and the remote database's URL.
      */
     public String remoteCheckpointDocID() {
+        if(db == null) {
+            return null;
+        }
         String input = db.privateUUID() + "\n" + remote.toExternalForm() + "\n" + (isPush() ? "1" : "0");
         return TDMisc.TDHexSHA1Digest(input.getBytes());
     }
@@ -313,8 +310,12 @@ public abstract class TDReplicator extends Observable {
         }
         body.put("lastSequence", lastSequence);
 
+        String remoteCheckpointDocID = remoteCheckpointDocID();
+        if(remoteCheckpointDocID == null) {
+            return;
+        }
         savingCheckpoint = true;
-        sendAsyncRequest("PUT", "/_local/" + remoteCheckpointDocID(), body, new TDRemoteRequestCompletionBlock() {
+        sendAsyncRequest("PUT", "/_local/" + remoteCheckpointDocID, body, new TDRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object result, Throwable e) {

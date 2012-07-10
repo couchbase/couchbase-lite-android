@@ -33,7 +33,6 @@ import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
@@ -49,18 +48,16 @@ public class TDRemoteRequest implements Runnable {
     private Object body;
     private TDRemoteRequestCompletionBlock onCompletion;
 
-    public TDRemoteRequest(HttpClientFactory clientFactory, String method, URL url, Object body, TDRemoteRequestCompletionBlock onCompletion) {
+    public TDRemoteRequest(Handler handler, HttpClientFactory clientFactory, String method, URL url, Object body, TDRemoteRequestCompletionBlock onCompletion) {
         this.clientFactory = clientFactory;
         this.method = method;
         this.url = url;
         this.body = body;
         this.onCompletion = onCompletion;
+        this.handler = handler;
     }
 
     public void start() {
-        Looper looper = Looper.getMainLooper();
-        //Create a new handler - passing in the looper for it to use
-        handler = new Handler(looper);
         thread = new Thread(this, "RemoteRequest-" + url.toExternalForm());
         thread.start();
     }
@@ -160,20 +157,22 @@ public class TDRemoteRequest implements Runnable {
     }
 
     public void respondWithResult(final Object result, final Throwable error) {
-        handler.post(new Runnable() {
+        if(handler != null) {
+            handler.post(new Runnable() {
 
-            TDRemoteRequestCompletionBlock copy = onCompletion;
+                TDRemoteRequestCompletionBlock copy = onCompletion;
 
-            @Override
-            public void run() {
-                try {
-                    onCompletion.onCompletion(result, error);
-                } catch(Exception e) {
-                    // don't let this crash the thread
-                    Log.e(TDDatabase.TAG, "TDRemoteRequestCompletionBlock throw Exception", e);
+                @Override
+                public void run() {
+                    try {
+                        onCompletion.onCompletion(result, error);
+                    } catch(Exception e) {
+                        // don't let this crash the thread
+                        Log.e(TDDatabase.TAG, "TDRemoteRequestCompletionBlock throw Exception", e);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
 }

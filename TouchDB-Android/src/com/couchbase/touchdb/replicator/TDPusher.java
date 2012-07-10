@@ -109,13 +109,16 @@ public class TDPusher extends TDReplicator implements Observer {
 
     @Override
     public void stop() {
-        inExternalShutdown = true;
+        stopObserving();
+        super.stop();
+    }
+
+    private void stopObserving() {
         if(observing) {
             observing = false;
             db.deleteObserver(this);
             asyncTaskFinished(1);
         }
-        super.stop();
     }
 
     @Override
