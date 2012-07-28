@@ -7,6 +7,32 @@
 #include "com_couchbase_touchdb_TDCollateJSON.h"
 #include "android/log.h"
 
+class String8 {
+
+};
+
+struct SQLiteConnection {
+    // Open flags.
+    // Must be kept in sync with the constants defined in SQLiteDatabase.java.
+    enum {
+        OPEN_READWRITE          = 0x00000000,
+        OPEN_READONLY           = 0x00000001,
+        OPEN_READ_MASK          = 0x00000001,
+        NO_LOCALIZED_COLLATORS  = 0x00000010,
+        CREATE_IF_NECESSARY     = 0x10000000,
+    };
+
+    sqlite3* const db;
+    const int openFlags;
+    const String8 path;
+    const String8 label;
+
+    volatile bool canceled;
+
+    SQLiteConnection(sqlite3* db, int openFlags, const String8& path, const String8& label) :
+        db(db), openFlags(openFlags), path(path), label(label), canceled(false) { }
+};
+
 #define LOG_TAG "TDCollateJSON"
 #define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
@@ -343,7 +369,7 @@ int TDCollateJSON(void *context, int len1, const void * chars1, int len2,
 }
 
 JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCustomCollators
-(JNIEnv *env, jclass cls, jobject sqliteDatabase) {
+(JNIEnv *env, jclass cls, jobject sqliteDatabase, jint version) {
 
 	int (*sqlite3_create_collation)(sqlite3*,const char *,int,void *,int (*)(void*, int, const void*, int, const void*)) = NULL;
 
@@ -363,14 +389,89 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 	}
 
 	// find the field holding the handl
-	jfieldID offset_db_handle = env->GetFieldID(clazz, "mNativeHandle", "I");
-	if (offset_db_handle == NULL) {
-		LOGE("Can't find SQLiteDatabase.mNativeHandle\n");
-		return;
+	sqlite3 * sqliteHandle;
+	if(version < 16) {
+		jfieldID offset_db_handle = env->GetFieldID(clazz, "mNativeHandle", "I");
+		if (offset_db_handle == NULL) {
+			LOGE("Can't find SQLiteDatabase.mNativeHandle\n");
+			return;
+		}
+		sqliteHandle = (sqlite3 *)env->GetIntField(sqliteDatabase, offset_db_handle);
+	} else {
+		jfieldID offset_tl = env->GetFieldID(clazz, "mThreadSession", "Ljava/lang/ThreadLocal;");
+		if(offset_tl == NULL) {
+			LOGE("Can't find SQLiteDatabae.mThreadSession\n");
+			return;
+		}
+		jobject tl = env->GetObjectField(sqliteDatabase, offset_tl);
+
+		jclass tl_clazz = env->FindClass("java/lang/ThreadLocal");
+		if (tl_clazz == NULL) {
+			LOGE("Can't find java/lang/ThreadLocal\n");
+			return;
+		}
+
+		jmethodID get_mid = env->GetMethodID(tl_clazz, "get", "()Ljava/lang/Object;");
+		if (get_mid == NULL) {
+		     LOGE("Can't find ThreadLocal.get\n");
+		     return;
+		}
+		jobject session = env->CallObjectMethod(tl, get_mid);
+
+		jclass sqls_clazz = env->FindClass("android/database/sqlite/SQLiteSession");
+		if (sqls_clazz == NULL) {
+			LOGE("Can't find android/database/sqlite/SQLiteSession\n");
+			return;
+		}
+
+		jfieldID offset_mConnectionPool = env->GetFieldID(sqls_clazz, "mConnectionPool", "Landroid/database/sqlite/SQLiteConnectionPool;");
+		if(offset_mConnectionPool == NULL) {
+			LOGE("Can't find SQLiteSession.mConnectionPool");
+			return;
+		}
+		jobject mcp = env->GetObjectField(session, offset_mConnectionPool);
+		if(mcp == NULL) {
+			LOGE("mConnectionPool was NULL");
+			return;
+		}
+
+		jclass sqlcp_clazz = env->FindClass("android/database/sqlite/SQLiteConnectionPool");
+		if (sqlcp_clazz == NULL) {
+			LOGE("Can't find android/database/sqlite/SQLiteConnectionPool\n");
+			return;
+		}
+
+		jfieldID offset_mMainConnection = env->GetFieldID(sqlcp_clazz, "mAvailablePrimaryConnection", "Landroid/database/sqlite/SQLiteConnection;");
+		if(offset_mMainConnection == NULL) {
+			LOGE("Can't find SQLiteConnectionPool.mAvailablePrimaryConnection");
+			return;
+		}
+
+		jobject mc = env->GetObjectField(mcp, offset_mMainConnection);
+
+		jclass sqlc_clazz = env->FindClass("android/database/sqlite/SQLiteConnection");
+		if (sqlc_clazz == NULL) {
+			LOGE("Can't find android/database/sqlite/SQLiteConnection\n");
+			return;
+		}
+
+		jfieldID offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "I");
+		if(offset_db_handle == NULL) {
+			LOGE("Can't find SQLiteConnection.mConnectionPtr");
+			return;
+		}
+
+		jint connectionPtr = env->GetIntField(mc, offset_db_handle);
+
+		SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+
+		sqliteHandle = connection->db;
 	}
 
+
+
 	// get the native handle
-	sqlite3 * sqliteHandle = (sqlite3 *)env->GetIntField(sqliteDatabase, offset_db_handle);
+
 	LOGV("SQLite3 handle is %d", sqliteHandle);
 
 	//try and install a custom collator
