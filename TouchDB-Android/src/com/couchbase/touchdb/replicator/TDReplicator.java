@@ -43,8 +43,8 @@ public abstract class TDReplicator extends Observable {
     protected String sessionID;
     protected TDBatcher<TDRevision> batcher;
     protected int asyncTaskCount;
-    protected int changesProcessed;
-    protected int changesTotal;
+    private int changesProcessed;
+    private int changesTotal;
     protected final HttpClientFactory clientFacotry;
     protected String filterName;
     protected Map<String,Object> filterParams;

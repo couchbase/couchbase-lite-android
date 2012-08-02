@@ -209,7 +209,7 @@ public class TDPusher extends TDReplicator implements Observer {
                     bulkDocsBody.put("new_edits", false);
                     Log.i(TDDatabase.TAG, String.format("%s: Sending %d revisions", this, numDocsToSend));
                     Log.v(TDDatabase.TAG, String.format("%s: Sending %s", this, inbox));
-                    changesTotal += numDocsToSend;
+                    setChangesTotal(getChangesTotal() + numDocsToSend);
                     asyncTaskStarted();
                     sendAsyncRequest("POST", "/_bulk_docs", bulkDocsBody, new TDRemoteRequestCompletionBlock() {
 
@@ -221,7 +221,7 @@ public class TDPusher extends TDReplicator implements Observer {
                                 Log.v(TDDatabase.TAG, String.format("%s: Sent %s", this, inbox));
                                 setLastSequence(String.format("%d", lastInboxSequence));
                             }
-                            changesProcessed += numDocsToSend;
+                            setChangesProcessed(getChangesProcessed() + numDocsToSend);
                             asyncTaskFinished(1);
                         }
                     });
