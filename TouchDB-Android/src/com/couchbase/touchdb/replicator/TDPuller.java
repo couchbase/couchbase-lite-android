@@ -125,7 +125,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
             rev.setSequence(++nextFakeSequence);
             addToInbox(rev);
         }
-        changesTotal+= changes.size();
+        setChangesTotal(getChangesTotal() + changes.size());
     }
 
     @Override
@@ -158,7 +158,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         // Ask the local database which of the revs are not known to it:
         //Log.w(TDDatabase.TAG, String.format("%s: Looking up %s", this, inbox));
         String lastInboxSequence = ((TDPulledRevision)inbox.get(inbox.size()-1)).getRemoteSequenceID();
-        int total = changesTotal - inbox.size();
+        int total = getChangesTotal() - inbox.size();
         if(!db.findMissingRevisions(inbox)) {
             Log.w(TDDatabase.TAG, String.format("%s failed to look up local revs", this));
             inbox = null;
@@ -168,8 +168,8 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         if(inbox != null) {
             inboxCount = inbox.size();
         }
-        if(changesTotal != total + inboxCount) {
-            changesTotal = total + inboxCount;
+        if(getChangesTotal() != total + inboxCount) {
+            setChangesTotal(total + inboxCount);
         }
 
         if(inboxCount == 0) {
@@ -260,13 +260,13 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
                         asyncTaskStarted();
                     } else {
                         Log.w(TDDatabase.TAG, this + ": Missing revision history in response from " + pathInside);
-                        changesProcessed++;
+                        setChangesProcessed(getChangesProcessed() + 1);
                     }
                 } else {
                     if(e != null) {
                         error = e;
                     }
-                    changesProcessed++;
+                    setChangesProcessed(getChangesProcessed() + 1);
                 }
 
                 // Note that we've finished this task; then start another one if there
@@ -343,7 +343,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
             asyncTaskFinished(revs.size());
         }
 
-        changesProcessed += revs.size();
+        setChangesProcessed(getChangesProcessed() + revs.size());
     }
 
     List<String> knownCurrentRevIDs(TDRevision rev) {
