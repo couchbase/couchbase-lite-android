@@ -229,7 +229,7 @@ public class TDChangeTracker implements Runnable {
                 }
             }
         }
-        Log.v(TDDatabase.TAG, "Chagne tracker run loop exiting");
+        Log.v(TDDatabase.TAG, "Change tracker run loop exiting");
     }
 
     public boolean receivedChunk(String line) {

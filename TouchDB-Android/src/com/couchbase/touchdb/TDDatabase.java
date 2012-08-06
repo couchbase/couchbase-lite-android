@@ -206,6 +206,7 @@ public class TDDatabase extends Observable {
         FileDirUtils.copyFile(sourceFile, destFile);
         File attachmentsFile = new File(dstAttachmentsPath);
         FileDirUtils.deleteRecursive(attachmentsFile);
+        attachmentsFile.mkdirs();
         if(attachmentsPath != null) {
             FileDirUtils.copyFolder(new File(attachmentsPath), attachmentsFile);
         }
