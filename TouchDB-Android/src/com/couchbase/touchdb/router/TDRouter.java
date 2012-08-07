@@ -687,8 +687,29 @@ public class TDRouter implements Observer {
     }
 
     public TDStatus do_POST_Document_all_docs(TDDatabase _db, String _docID, String _attachmentName) {
-        //FIXME implement
-        throw new UnsupportedOperationException();
+        TDQueryOptions options = new TDQueryOptions();
+        if (!getQueryOptions(options)) {
+                return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+
+        Map<String, Object> body = getBodyAsDictionary();
+        if (body == null) {
+                return new TDStatus(TDStatus.BAD_REQUEST);
+        }
+
+        Map<String, Object> result = null;
+        if (body.containsKey("keys") && body.get("keys") instanceof ArrayList) {
+                ArrayList<String> keys = (ArrayList<String>) body.get("keys");
+                result = db.getDocsWithIDs(keys, options);
+        } else {
+                result = db.getAllDocs(options);
+        }
+
+        if (result == null) {
+                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        }
+        connection.setResponseBody(new TDBody(result));
+        return new TDStatus(TDStatus.OK);
     }
 
     public TDStatus do_POST_Document_bulk_docs(TDDatabase _db, String _docID, String _attachmentName) {
