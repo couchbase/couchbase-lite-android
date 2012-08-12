@@ -197,7 +197,7 @@ public class TDChangeTracker implements Runnable {
                 if(entity != null) {
                 	try {
 	                    InputStream input = entity.getContent();
-	                    if(mode != TDChangeTrackerMode.Continuous) {
+	                    if(mode == TDChangeTrackerMode.LongPoll) {
 	                        Map<String,Object> fullBody = TDServer.getObjectMapper().readValue(input, Map.class);
 	                        boolean responseOK = receivedPollResponse(fullBody);
 	                        if(mode == TDChangeTrackerMode.LongPoll && responseOK) {
@@ -212,8 +212,18 @@ public class TDChangeTracker implements Runnable {
 	                        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 	                        String line = null;
 	                        while ((line=reader.readLine()) != null) {
+	                            //skip over lines which may be in a non-continuous response
+	                            if(line.equals("{\"results\":[") || line.equals("],")) {
+	                                continue;
+	                            }
+	                            else if(line.startsWith("\"last_seq\"") && mode == TDChangeTrackerMode.OneShot) {
+	                                Log.w(TDDatabase.TAG, "Change tracker calling stop");
+	                                stop();
+	                                break;
+	                            }
 	                            receivedChunk(line);
 	                        }
+	                        Log.v(TDDatabase.TAG, "read null from inpustream continuing");
 	                    }
                 	} finally {
                 		try { entity.consumeContent(); } catch (IOException e){}

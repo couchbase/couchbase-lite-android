@@ -6,6 +6,10 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 
 import org.ektorp.http.HttpClient;
 import org.ektorp.http.HttpResponse;
@@ -41,7 +45,7 @@ public class TouchDBHttpClient implements HttpClient {
         TDURLConnection conn = null;
         URL url = urlFromUri(uri);
         try {
-            conn = (TDURLConnection)url.openConnection();
+            conn = (TDURLConnection) url.openConnection();
             conn.setDoOutput(true);
         } catch (IOException e) {
             Exceptions.propagate(e);
@@ -93,9 +97,10 @@ public class TouchDBHttpClient implements HttpClient {
         try {
             conn.setRequestMethod("POST");
 
-            if(content != null) {
+            if (content != null) {
                 conn.setDoInput(true);
-                conn.setRequestInputStream(new ByteArrayInputStream(content.getBytes()));
+                conn.setRequestInputStream(new ByteArrayInputStream(content
+                        .getBytes()));
             }
 
             return executeRequest(conn);
@@ -110,7 +115,7 @@ public class TouchDBHttpClient implements HttpClient {
         try {
             conn.setRequestMethod("POST");
 
-            if(contentStream != null) {
+            if (contentStream != null) {
                 conn.setDoInput(true);
                 conn.setRequestInputStream(contentStream);
             }
@@ -144,9 +149,10 @@ public class TouchDBHttpClient implements HttpClient {
         try {
             conn.setRequestMethod("PUT");
 
-            if(content != null) {
+            if (content != null) {
                 conn.setDoInput(true);
-                conn.setRequestInputStream(new ByteArrayInputStream(content.getBytes()));
+                conn.setRequestInputStream(new ByteArrayInputStream(content
+                        .getBytes()));
             }
 
             return executeRequest(conn);
@@ -156,12 +162,13 @@ public class TouchDBHttpClient implements HttpClient {
     }
 
     @Override
-    public HttpResponse put(String uri, InputStream contentStream, String contentType, long contentLength) {
+    public HttpResponse put(String uri, InputStream contentStream,
+            String contentType, long contentLength) {
         TDURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("PUT");
 
-            if(contentStream != null) {
+            if (contentStream != null) {
                 conn.setDoInput(true);
                 conn.setRequestProperty("content-type", contentType);
                 conn.setRequestInputStream(contentStream);
@@ -179,7 +186,7 @@ public class TouchDBHttpClient implements HttpClient {
     }
 
     protected HttpResponse executeRequest(TDURLConnection conn) {
-        TDRouter router = new TDRouter(server, conn);
+        final TDRouter router = new TDRouter(server, conn);
         TouchDBHttpResponse response;
         try {
             response = TouchDBHttpResponse.of(conn, router);
@@ -187,8 +194,19 @@ public class TouchDBHttpClient implements HttpClient {
             throw Exceptions.propagate(e);
         }
         router.setCallbackBlock(response);
-        synchronized(server) {
-            router.start();
+        ScheduledExecutorService workExecutor = server.getWorkExecutor();
+        Future<?> routerFuture = workExecutor.submit(new Runnable() {
+            @Override
+            public void run() {
+                router.start();
+            }
+        });
+        try {
+            routerFuture.get();
+        } catch (InterruptedException e) {
+            throw Exceptions.propagate(e);
+        } catch (ExecutionException e) {
+            throw Exceptions.propagate(e);
         }
         return response;
     }
