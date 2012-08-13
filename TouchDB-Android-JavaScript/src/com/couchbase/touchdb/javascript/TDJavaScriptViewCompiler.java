@@ -21,21 +21,44 @@ import com.couchbase.touchdb.TDViewReduceBlock;
 
 public class TDJavaScriptViewCompiler implements TDViewCompiler {
 
-    @Override
-    public TDViewMapBlock compileMapFunction(String mapSource, String language) {
+	@Override
+	public TDViewMapBlock compileMapFunction(String mapSource, String language) {
         if (language.equals("javascript")) {
             return new TDViewMapBlockRhino(mapSource);
         }
         throw new IllegalArgumentException(language + " is not supported");
+	}
+
+	@Override
+	public TDViewReduceBlock compileReduceFunction(String reduceSource, String language) {
+        if (language.equals("javascript")) {
+            return new TDViewReduceBlockRhino(reduceSource);
+        }
+        throw new IllegalArgumentException(language + " is not supported");
+	}
+
+}
+
+/**
+ * Wrap Factory for Rhino Script Engine
+ */
+class CustomWrapFactory extends WrapFactory {
+
+    public CustomWrapFactory() {
+        setJavaPrimitiveWrap(false); // RingoJS does that..., claims its annoying...
     }
 
-    @Override
-    public TDViewReduceBlock compileReduceFunction(String reduceSource,
-            String language) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+    public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
+        if (javaObject instanceof Map) {
+            return new NativeMap(scope, (Map) javaObject);
+        }
+        else if(javaObject instanceof List) {
+            return new NativeList(scope, (List<Object>)javaObject);
+        }
 
+        return super.wrapAsJavaObject(cx, scope, javaObject, staticType);
+    }
 }
 
 class TDViewMapBlockRhino implements TDViewMapBlock {
@@ -56,7 +79,7 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
         }
     }
 
-    @Override
+	@Override
     public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
         Context ctx = Context.enter();
         try {
@@ -101,26 +124,49 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
         }
 
     }
+    
+}
 
-    /**
-     * Wrap Factory for Rhino Script Engine
-     */
-    public static class CustomWrapFactory extends WrapFactory {
+class TDViewReduceBlockRhino implements TDViewReduceBlock {
 
-        public CustomWrapFactory() {
-            setJavaPrimitiveWrap(false); // RingoJS does that..., claims its annoying...
-        }
+    private static WrapFactory wrapFactory = new CustomWrapFactory();
+    private Scriptable globalScope;
+    private String src;
 
-        public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
-            if (javaObject instanceof Map) {
-                return new NativeMap(scope, (Map) javaObject);
-            }
-            else if(javaObject instanceof List) {
-                return new NativeList(scope, (List<Object>)javaObject);
-            }
-
-            return super.wrapAsJavaObject(cx, scope, javaObject, staticType);
+    public TDViewReduceBlockRhino(String src) {
+        this.src = src;
+        Context ctx = Context.enter();
+        try {
+            ctx.setOptimizationLevel(-1);
+            ctx.setWrapFactory(wrapFactory);
+            globalScope = ctx.initStandardObjects(null, true);
+        } finally {
+            Context.exit();
         }
     }
 
+	@Override
+    public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+        Context ctx = Context.enter();
+        try {
+            ctx.setOptimizationLevel(-1);
+            ctx.setWrapFactory(wrapFactory);
+
+            //register the reduce function
+            String reduceSrc = "var reduce = " + src + ";";
+            ctx.evaluateString(globalScope, reduceSrc, "reduce", 1, null);
+
+            //find the reduce function and execute it
+            Function reduceFun = (Function)globalScope.get("reduce", globalScope);
+            Object[] functionArgs = { keys, values, rereduce };
+            Object result = reduceFun.call(ctx, globalScope, globalScope, functionArgs);
+
+            return result;
+
+        } finally {
+            Context.exit();
+        }
+
+    }
+    
 }
