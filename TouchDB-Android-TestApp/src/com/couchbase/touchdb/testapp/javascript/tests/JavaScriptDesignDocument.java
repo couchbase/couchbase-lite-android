@@ -1,36 +1,77 @@
 package com.couchbase.touchdb.testapp.javascript.tests;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.WrapFactory;
 
 import com.couchbase.touchdb.TDStatus;
 import com.couchbase.touchdb.TDView;
 import com.couchbase.touchdb.javascript.TDJavaScriptViewCompiler;
 import com.couchbase.touchdb.testapp.tests.TouchDBTestCase;
 
+@SuppressWarnings({ "unused", "unchecked", "rawtypes" })
 public class JavaScriptDesignDocument extends TouchDBTestCase {
 
-    public void testJavaScriptDesignDocument() {
+	// Helpers ........................................................................
 
-        //register the javascript view compilter
+    // REFACT: consider to move this up into TouchDBTestCase
+    public Object json(String jsonString) throws Exception {
+    	return mapper.readValue(jsonString, Object.class);
+    }
+    
+    Object ddocWithMap(String viewName, String mapFunction) throws Exception {
+    	// TODO: consider to assert that arguments don't contain unescaped '"'
+    	return json(
+        	"{ \"views\": { " +
+        		"\"" + viewName + "\": {" +
+        			"\"map\": \"" + mapFunction + "\"" +
+        		"}" +
+        	  "}" +
+        	"}");
+    }
+    
+	// REFACT: consider pulling up into TouchDBTestCase
+	List<Object> getView(String fullViewPath) throws Exception {
+        Map<String, Object> result = (Map<String, Object>) send(server, "GET", fullViewPath, TDStatus.OK, null);
+        return (List<Object>) result.get("rows");
+	}
+	
+	List<Object> getView(String fullViewPath, int expectedRows) throws Exception {
+		List<Object> rows = getView(fullViewPath);
+        assertEquals(expectedRows, rows.size());
+		return rows;
+	}
+	
+	// Tests ........................................................................
+	
+    @Override
+	public void setUp() throws Exception {
+    	super.setUp();
+
+        // Register the JavaScript view compiler
         TDView.setCompiler(new TDJavaScriptViewCompiler());
-
-        send(server, "PUT", "/db", TDStatus.CREATED, null);
-
+        
+        send(server, "PUT", "/rhinodb", TDStatus.CREATED, null);
+	}
+	
+	public void testJavaScriptDesignDocument() {
         // PUT:
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, TDStatus.CREATED, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/rhinodb/doc1", doc1, TDStatus.CREATED, null);
 
         Map<String,Object> doc2 = new HashMap<String,Object>();
         doc2.put("message", "guten tag");
-        Map<String,Object> result2 = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", doc2, TDStatus.CREATED, null);
+        Map<String,Object> result2 = (Map<String,Object>)sendBody(server, "PUT", "/rhinodb/doc2", doc2, TDStatus.CREATED, null);
 
         Map<String,Object> doc3 = new HashMap<String,Object>();
         doc3.put("message", "bonjour");
-        Map<String,Object> result3 = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", doc3, TDStatus.CREATED, null);
+        Map<String,Object> result3 = (Map<String,Object>)sendBody(server, "PUT", "/rhinodb/doc3", doc3, TDStatus.CREATED, null);
 
 
         Map<String,Object> ddocViewTest = new HashMap<String,Object>();
@@ -41,7 +82,7 @@ public class JavaScriptDesignDocument extends TouchDBTestCase {
 
         Map<String,Object> ddoc = new HashMap<String,Object>();
         ddoc.put("views", ddocViews);
-        Map<String,Object> ddocresult = (Map<String,Object>)sendBody(server, "PUT", "/db/_design/doc", ddoc, TDStatus.CREATED, null);
+        Map<String,Object> ddocresult = (Map<String,Object>)sendBody(server, "PUT", "/rhinodb/_design/doc", ddoc, TDStatus.CREATED, null);
 
         // Build up our expected result
 
@@ -69,17 +110,11 @@ public class JavaScriptDesignDocument extends TouchDBTestCase {
         expectedResult.put("rows", expectedRows);
 
         // Query the view and check the result:
-        send(server, "GET", "/db/_design/doc/_view/test", TDStatus.OK, expectedResult);
+        send(server, "GET", "/rhinodb/_design/doc/_view/test", TDStatus.OK, expectedResult);
 
     }
 
-    public void testRealJavaScriptDesignDocument() {
-
-        //register the javascript view compilter
-        TDView.setCompiler(new TDJavaScriptViewCompiler());
-
-        send(server, "PUT", "/rhinodb", TDStatus.CREATED, null);
-
+	public void testRealJavaScriptDesignDocument() {
         // PUT:
         Map<String,Object> doc1 = new HashMap<String,Object>();
         List<String> cat1 = new ArrayList();
@@ -162,5 +197,38 @@ public class JavaScriptDesignDocument extends TouchDBTestCase {
         // Query the view and check the result:
         Object res = send(server, "GET", "/rhinodb/_design/doc/_view/test", TDStatus.OK, expectedResult);
     }
+	public void testShouldLeaveOutDocumentsWhenMapBlockThrowsAnException() throws Exception {
+		sendBody(server, "PUT", "/rhinodb/good", json("{}"), TDStatus.CREATED, null);
+		sendBody(server, "PUT", "/rhinodb/bad", json("{}"), TDStatus.CREATED, null);
+		Object ddoc = ddocWithMap("test", "function(doc) { emit(1, doc); if (doc._id === 'bad') throw new Error('gotcha!'); }");
+        sendBody(server, "PUT", "/rhinodb/_design/doc", ddoc, TDStatus.CREATED, null);
+        
+        List<Object> rows = getView("/rhinodb/_design/doc/_view/test", 1);
+        
+        Map<String,String> resultRow = (Map<String, String>) rows.get(0);
+        assertEquals("good", resultRow.get("id"));
+        assertEquals(1.0, resultRow.get("key"));
+    }
+	
+	public void testShouldReturnEmptyViewIfJavaScriptIsErranous() throws Exception {
+		sendBody(server, "PUT", "/rhinodb/good", json("{}"), TDStatus.CREATED, null);
+		Object ddoc = ddocWithMap("test", "function(doc) { } }"); // syntax error
+        sendBody(server, "PUT", "/rhinodb/_design/doc", ddoc, TDStatus.CREATED, null);
+        
+        getView("/rhinodb/_design/doc/_view/test", 0);
+	}
+	
+	public void testShouldDiscardDocumentsIfViewThrowsEcmaError() throws Exception {
+		sendBody(server, "PUT", "/rhinodb/good", json("{}"), TDStatus.CREATED, null);
+		sendBody(server, "PUT", "/rhinodb/bad", json("{}"), TDStatus.CREATED, null);
+		Object ddoc = ddocWithMap("test", "function(doc) { emit(1, null); if (doc._id === 'bad') doc.missingKey.forEach(function(){}); }");
+        sendBody(server, "PUT", "/rhinodb/_design/doc", ddoc, TDStatus.CREATED, null);
+        
+        List<Object> rows = getView("/rhinodb/_design/doc/_view/test", 1);
+        
+        Map<String,String> resultRow = (Map<String, String>) rows.get(0);
+        assertEquals("good", resultRow.get("id"));
+	}
+
 
 }
