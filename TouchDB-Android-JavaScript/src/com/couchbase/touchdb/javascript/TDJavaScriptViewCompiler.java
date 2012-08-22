@@ -1,8 +1,10 @@
 package com.couchbase.touchdb.javascript;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.script.javascript.support.NativeList;
 import org.elasticsearch.script.javascript.support.NativeMap;
 import org.mozilla.javascript.Context;
@@ -61,6 +63,7 @@ class CustomWrapFactory extends WrapFactory {
     }
 }
 
+// REFACT: Extract superview for both the map and reduce blocks as they do pretty much the same thing
 class TDViewMapBlockRhino implements TDViewMapBlock {
 
     private static WrapFactory wrapFactory = new CustomWrapFactory();
@@ -102,21 +105,36 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
             	// Error in the JavaScript view - CouchDB swallows  the error and tries the next document
             	// REFACT: would be nice to check this in the constructor so we don't have to reparse every time
             	// should also be much faster if we can insert the map function into this objects globals
-                Log.e(TDDatabase.TAG, "Javascript syntax error in view:\n" + src);
+                Log.e(TDDatabase.TAG, "Javascript syntax error in view:\n" + src, e);
+                return;
+            }
+            
+            // Need to stringify the json tree, as the ContextWrapper is unable
+            // to correctly convert nested json to their js representation.
+            // More specifically, if a dictionary is included that contains an array as a value 
+            // that array will not be wrapped correctly but you'll get the plain 
+            // java.util.ArrayList instead - and then an error.
+            ObjectMapper mapper = new ObjectMapper();
+            String json = null;
+            try {
+            	json = mapper.writeValueAsString(document);
+			} catch (IOException e) {
+				// Can thrown different subclasses of IOException- but we really do not care,
+				// as this document was unserialized from JSON, so Jackson should be able to serialize it. 
+				Log.e(TDDatabase.TAG, "Error reserializing json from the db: " + document, e);
+				return;
+			}
+            
+            String mapInvocation = "map(" + json + ");";
+            try {
+            	ctx.evaluateString(globalScope, mapInvocation, "map invocation", 1, null);
+            }
+            catch (org.mozilla.javascript.RhinoException e) {
+            	// Error in the JavaScript view - CouchDB swallows  the error and tries the next document
+                Log.e(TDDatabase.TAG, "Error in javascript view:\n" + src + "\n with document:\n" + document, e);
                 return;
             }
 
-            //find the map function and execute it
-            Function mapFun = (Function)globalScope.get("map", globalScope);
-            Object[] functionArgs = { document };
-            try {
-            	mapFun.call(ctx, globalScope, globalScope, functionArgs);
-            } catch (org.mozilla.javascript.RhinoException e) {
-            	// Error in the JavaScript view - CouchDB swallows  the error and tries the next document
-                Log.e(TDDatabase.TAG, "Error in javascript view:\n" + src + "\n with document:\n" + document);
-                return;
-            	
-            }
             //now pull values out of the place holder and emit them
             NativeArray mapResults = (NativeArray)globalScope.get("map_results", globalScope);
             for(int i=0; i<mapResults.getLength(); i++) {
@@ -130,9 +148,6 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
                 }
 
             }
-
-
-
         } finally {
             Context.exit();
         }

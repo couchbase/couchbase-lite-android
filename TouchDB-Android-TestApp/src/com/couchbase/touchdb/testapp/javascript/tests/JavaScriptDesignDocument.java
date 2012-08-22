@@ -38,6 +38,7 @@ public class JavaScriptDesignDocument extends TouchDBTestCase {
 	// REFACT: consider pulling up into TouchDBTestCase
 	List<Object> getView(String fullViewPath) throws Exception {
         Map<String, Object> result = (Map<String, Object>) send(server, "GET", fullViewPath, TDStatus.OK, null);
+        assertEquals(0, result.get("offset"));
         return (List<Object>) result.get("rows");
 	}
 	
@@ -197,6 +198,26 @@ public class JavaScriptDesignDocument extends TouchDBTestCase {
         // Query the view and check the result:
         Object res = send(server, "GET", "/rhinodb/_design/doc/_view/test", TDStatus.OK, expectedResult);
     }
+    
+    public void testJavaScriptDesignDocumentThatDealsWithArrays() throws Exception {
+        Object json = json(
+			"{" +
+			   "\"producers\": [ \"\" ]," +
+			   "\"collection\": \"product\"" +
+			"}");
+        sendBody(server, "PUT", "/rhinodb/doc1", json, TDStatus.CREATED, null);
+        
+        Object ddoc = ddocWithMap("test", "function(doc) { if ('product' === doc.collection && doc.producers) { doc.producers.forEach(function(each) { emit(each, doc); }); } }");
+        sendBody(server, "PUT", "/rhinodb/_design/doc", ddoc, TDStatus.CREATED, null);
+        
+        List<Object> rows = getView("/rhinodb/_design/doc/_view/test", 1);
+        Map<String,Object> resultRow = (Map) rows.get(0);
+        assertEquals("doc1", resultRow.get("id"));
+        assertEquals("", resultRow.get("key"));
+        Map<String,Object> value = (Map) resultRow.get("value");
+        assertEquals("doc1", value.get("_id"));
+    }
+	
 	public void testShouldLeaveOutDocumentsWhenMapBlockThrowsAnException() throws Exception {
 		sendBody(server, "PUT", "/rhinodb/good", json("{}"), TDStatus.CREATED, null);
 		sendBody(server, "PUT", "/rhinodb/bad", json("{}"), TDStatus.CREATED, null);
@@ -229,6 +250,5 @@ public class JavaScriptDesignDocument extends TouchDBTestCase {
         Map<String,String> resultRow = (Map<String, String>) rows.get(0);
         assertEquals("good", resultRow.get("id"));
 	}
-
 
 }
