@@ -96,13 +96,27 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
 
             //register the map function
             String mapSrc = "var map = " + src + ";";
-            ctx.evaluateString(globalScope, mapSrc, "map", 1, null);
+            try {
+            	ctx.evaluateString(globalScope, mapSrc, "map", 1, null);
+            } catch(org.mozilla.javascript.EvaluatorException e) {
+            	// Error in the JavaScript view - CouchDB swallows  the error and tries the next document
+            	// REFACT: would be nice to check this in the constructor so we don't have to reparse every time
+            	// should also be much faster if we can insert the map function into this objects globals
+                Log.e(TDDatabase.TAG, "Javascript syntax error in view:\n" + src);
+                return;
+            }
 
             //find the map function and execute it
             Function mapFun = (Function)globalScope.get("map", globalScope);
             Object[] functionArgs = { document };
-            mapFun.call(ctx, globalScope, globalScope, functionArgs);
-
+            try {
+            	mapFun.call(ctx, globalScope, globalScope, functionArgs);
+            } catch (org.mozilla.javascript.RhinoException e) {
+            	// Error in the JavaScript view - CouchDB swallows  the error and tries the next document
+                Log.e(TDDatabase.TAG, "Error in javascript view:\n" + src + "\n with document:\n" + document);
+                return;
+            	
+            }
             //now pull values out of the place holder and emit them
             NativeArray mapResults = (NativeArray)globalScope.get("map_results", globalScope);
             for(int i=0; i<mapResults.getLength(); i++) {
