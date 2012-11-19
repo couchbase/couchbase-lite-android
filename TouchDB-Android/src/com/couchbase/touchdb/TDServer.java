@@ -65,7 +65,7 @@ public class TDServer {
     }
 
     private String pathForName(String name) {
-        if((name == null) || (name.length() == 0) || Pattern.matches("^" + LEGAL_CHARACTERS, name)) {
+        if((name == null) || (name.length() == 0) || Pattern.matches(LEGAL_CHARACTERS, name)) {
             return null;
         }
         name = name.replace('/', ':');
