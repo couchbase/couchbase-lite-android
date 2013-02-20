@@ -105,8 +105,8 @@ public abstract class TDReplicator extends Observable {
     }
 
     public String toString() {
-      String maskedRemoteWithoutCredentials = (remote != null ? remote.toExternalForm() : "");
-      maskedRemoteWithoutCredentials = maskedRemoteWithoutCredentials.replaceAll("://.*:.*@","://---:---@");
+        String maskedRemoteWithoutCredentials = (remote != null ? remote.toExternalForm() : "");
+        maskedRemoteWithoutCredentials = maskedRemoteWithoutCredentials.replaceAll("://.*:.*@","://---:---@");
         String name = getClass().getSimpleName() + "[" + maskedRemoteWithoutCredentials + "]";
         return name;
     }
