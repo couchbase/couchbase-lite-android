@@ -186,7 +186,9 @@ public class TDChangeTracker implements Runnable {
             }
 
             try {
-                Log.v(TDDatabase.TAG, "Making request to " + getChangesFeedURL().toString());
+                String maskedRemoteWithoutCredentials = getChangesFeedURL().toString();
+                maskedRemoteWithoutCredentials = maskedRemoteWithoutCredentials.replaceAll("://.*:.*@","://---:---@");
+                Log.v(TDDatabase.TAG, "Making request to " + maskedRemoteWithoutCredentials);
                 HttpResponse response = httpClient.execute(request);
                 StatusLine status = response.getStatusLine();
                 if(status.getStatusCode() >= 300) {
