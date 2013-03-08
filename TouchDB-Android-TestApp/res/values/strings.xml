@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="hello">Hello World, TestAppActivity!</string>
+    <string name="hello">To run the tests in Eclipse: \n\n 
+       Navigate to TouchDB-Android-TestApp -> src -> com -> couchbase.touchdb.testapp\n
+       Right-click on tests, select Run As -> Android JUnit Test\n
+       Be sure to select an emulator running Android SDK 2.2 or newer</string>
     <string name="app_name">TouchDB-Android-TestApp</string>
 
 </resources>
