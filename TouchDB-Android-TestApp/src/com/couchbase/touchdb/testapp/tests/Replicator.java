@@ -83,6 +83,7 @@ public class Replicator extends TouchDBTestCase {
     }
 
     public void testAttachmentPusher() throws Throwable {
+        boolean putInAlotOfImages = false;
 
         // clean up remote db 
         URL remote = getReplicationURL();
@@ -165,6 +166,24 @@ public class Replicator extends TouchDBTestCase {
                     "sample_attachment_image2.jpg", "image/jpeg", rev3.getGeneration());
             Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
+            if (putInAlotOfImages) {
+                int totalThreeImagesCanUpload = 1;
+                int totalFourImagesRunsOutOfMemory = 2;
+                
+                for (int i = 0; i < totalFourImagesRunsOutOfMemory; i++) {
+                    status = database.insertAttachmentForSequenceWithNameAndType(
+                            new ByteArrayInputStream(secondImageAttachment),
+                            rev3.getSequence(), "sample_attachment_image_test_out_of_memory"+i+".jpg", "image/jpeg",
+                            rev3.getGeneration());
+                    Assert.assertEquals(TDStatus.CREATED, status.getCode());
+                    int imagesSoFar = i+2;
+                    Log.e(TAG, "Attached " + imagesSoFar + "images.");
+                    if (status.getCode() != TDStatus.CREATED) {
+                        break;
+                    }
+                }
+            }
+            
         } catch (FileNotFoundException e) {
             sampleFilesExistAndWereCopied = false;
             e.printStackTrace();
