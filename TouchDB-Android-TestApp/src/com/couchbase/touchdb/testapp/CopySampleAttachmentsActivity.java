@@ -18,10 +18,9 @@ public class CopySampleAttachmentsActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        InputStream in = getResources().openRawResource(R.raw.sample_attachment_image1);
-        InputStream in2 = (InputStream) getResources().openRawResource(R.raw.sample_attachment_image2);
+        InputStream in = getResources().openRawResource(
+                R.raw.sample_attachment_image1);
         FileOutputStream out;
-        FileOutputStream out2;
         try {
             out = new FileOutputStream(getFilesDir()
                     + "/sample_attachment_image1.jpg");
@@ -32,16 +31,48 @@ public class CopySampleAttachmentsActivity extends Activity {
                 out.write(buff, 0, read);
             }
             out.close();
+            in.close();
 
-            out2 = new FileOutputStream(getFilesDir()
-                    + "/sample_attachment_image2.jpg");
-            byte[] buff2 = new byte[1024];
-            int read2 = 0;
-
-            while ((read2 = in2.read(buff2)) > 0) {
-                out2.write(buff2, 0, read2);
+            in = getResources().openRawResource(R.raw.doc);
+            out = new FileOutputStream(getFilesDir() + "/doc.json");
+            buff = new byte[1024];
+            read = 0;
+            while ((read = in.read(buff)) > 0) {
+                out.write(buff, 0, read);
             }
-            out2.close();
+            out.close();
+            in.close();
+
+            in = getResources().openRawResource(R.raw.foo);
+            out = new FileOutputStream(getFilesDir() + "/foo.txt");
+            buff = new byte[1024];
+            read = 0;
+            while ((read = in.read(buff)) > 0) {
+                out.write(buff, 0, read);
+            }
+            out.close();
+            in.close();
+
+            in = getResources().openRawResource(R.raw.bar);
+            out = new FileOutputStream(getFilesDir() + "/bar.txt");
+            buff = new byte[1024];
+            read = 0;
+            while ((read = in.read(buff)) > 0) {
+                out.write(buff, 0, read);
+            }
+            out.close();
+            in.close();
+
+            in = getResources().openRawResource(R.raw.sample_attachment_image2);
+            out = new FileOutputStream(getFilesDir()
+                    + "/sample_attachment_image2.jpg");
+            buff = new byte[1024];
+            read = 0;
+            while ((read = in.read(buff)) > 0) {
+                out.write(buff, 0, read);
+            }
+            out.close();
+            in.close();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -49,7 +80,6 @@ public class CopySampleAttachmentsActivity extends Activity {
             e.printStackTrace();
         } finally {
             IOUtils.closeQuietly(in);
-            IOUtils.closeQuietly(in2);
         }
 
         finish();

@@ -1,0 +1,14 @@
+{"body":"This is a body for a document show on the Couchdb wiki for how to do multipart upload.",
+"_attachments":{
+  "foo.txt": {
+    "follows":true,
+    "content_type":"text/plain",
+    "length":21
+    },
+  "bar.txt": {
+    "follows":true,
+    "content_type":"text/plain",
+    "length":20
+    }
+  }
+}
