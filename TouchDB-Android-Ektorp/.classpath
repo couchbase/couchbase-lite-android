@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry kind="lib" path="libs/org.ektorp-1.2.2.jar"/>
 	<classpathentry kind="lib" path="/TouchDB-Android/libs/jackson-core-asl-1.9.2.jar"/>
 	<classpathentry kind="lib" path="/TouchDB-Android/libs/jackson-mapper-asl-1.9.2.jar"/>
 	<classpathentry kind="lib" path="libs/org.ektorp.android-1.2.2.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
