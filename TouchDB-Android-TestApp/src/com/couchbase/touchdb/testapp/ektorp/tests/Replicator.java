@@ -216,7 +216,7 @@ public class Replicator extends TouchDBTestCase {
 
     }
 
-    public void testPushToLocal() throws IOException {
+    public void disabledTestPushToLocal() throws IOException {
 
         TDDatabase other = server.getExistingDatabaseNamed(DEFAULT_TEST_DB + "2");
         if(other != null) {

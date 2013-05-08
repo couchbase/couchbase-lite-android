@@ -53,7 +53,7 @@ public class Replicator extends TouchDBTestCase {
         database.putRevision(new TDRevision(documentProperties), null, false, status);
         Assert.assertEquals(TDStatus.CREATED, status.getCode());
 
-        final TDReplicator repl = database.getReplicator(remote, true, false);
+        final TDReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
         ((TDPusher)repl).setCreateTarget(true);
         runTestOnUiThread(new Runnable() {
 
@@ -79,7 +79,7 @@ public class Replicator extends TouchDBTestCase {
 
         URL remote = getReplicationURL();
 
-        final TDReplicator repl = database.getReplicator(remote, false, false);
+        final TDReplicator repl = database.getReplicator(remote, false, false, server.getWorkExecutor());
         runTestOnUiThread(new Runnable() {
 
             @Override
@@ -104,7 +104,7 @@ public class Replicator extends TouchDBTestCase {
         //writing its local state to the server
         Thread.sleep(2*1000);
 
-        final TDReplicator repl2 = database.getReplicator(remote, false, false);
+        final TDReplicator repl2 = database.getReplicator(remote, false, false, server.getWorkExecutor());
         runTestOnUiThread(new Runnable() {
 
             @Override

@@ -2,11 +2,17 @@ package com.couchbase.touchdb.support;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import android.os.Handler;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase;
+import com.couchbase.touchdb.TDRevision;
 
 /**
  * Utility that queues up objects until the queue fills up or a time interval elapses,
@@ -14,11 +20,13 @@ import com.couchbase.touchdb.TDDatabase;
  */
 public class TDBatcher<T> {
 
-    private Handler handler;
+    private ScheduledExecutorService workExecutor;
+    private ScheduledFuture<?> flushFuture;
     private int capacity;
     private int delay;
     private List<T> inbox;
     private TDBatchProcessor<T> processor;
+    private boolean shuttingDown = false;
 
     private Runnable processNowRunnable = new Runnable() {
 
@@ -33,8 +41,8 @@ public class TDBatcher<T> {
         }
     };
 
-    public TDBatcher(Handler handler, int capacity, int delay, TDBatchProcessor<T> processor) {
-        this.handler = handler;
+    public TDBatcher(ScheduledExecutorService workExecutor, int capacity, int delay, TDBatchProcessor<T> processor) {
+        this.workExecutor = workExecutor;
         this.capacity = capacity;
         this.delay = delay;
         this.processor = processor;
@@ -48,6 +56,7 @@ public class TDBatcher<T> {
             }
             toProcess = inbox;
             inbox = null;
+            flushFuture = null;
         }
         if(toProcess != null) {
             processor.process(toProcess);
@@ -61,8 +70,8 @@ public class TDBatcher<T> {
             }
             if(inbox == null) {
                 inbox = new ArrayList<T>();
-                if(handler != null) {
-                    handler.postDelayed(processNowRunnable, delay);
+                if(workExecutor != null) {
+					flushFuture = workExecutor.schedule(processNowRunnable, delay, TimeUnit.MILLISECONDS);
                 }
             }
             inbox.add(object);
@@ -72,8 +81,16 @@ public class TDBatcher<T> {
     public void flush() {
         synchronized(this) {
             if(inbox != null) {
-                handler.removeCallbacks(processNowRunnable);
-                processNow();
+                boolean didcancel = false;
+                if(flushFuture != null) {
+                    didcancel = flushFuture.cancel(false);
+                }
+                //assume if we didn't cancel it was because it was already running
+                if(didcancel) {
+                    processNow();
+                } else {
+                    Log.v(TDDatabase.TAG, "skipping process now because didcancel false");
+                }
             }
         }
     }

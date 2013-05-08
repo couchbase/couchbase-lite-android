@@ -30,15 +30,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDDatabase.TDContentOptions;
@@ -66,9 +64,6 @@ public class TDDatabase extends Observable {
     private Map<String, TDValidationBlock> validations;
     private List<TDReplicator> activeReplicators;
     private TDBlobStore attachments;
-
-    private HandlerThread handlerThread;
-    private Handler handler;
 
     /**
      * Options for what metadata to include in document bodies
@@ -173,13 +168,6 @@ public class TDDatabase extends Observable {
         assert(path.startsWith("/")); //path must be absolute
         this.path = path;
         this.name = FileDirUtils.getDatabaseNameFromPath(path);
-
-        //start a handler thead to do work for this database
-        handlerThread = new HandlerThread("HandlerThread for " + toString());
-        handlerThread.start();
-        //Get the looper from the handlerThread
-        Looper looper = handlerThread.getLooper();
-        handler = new Handler(looper);
     }
 
     public String toString() {
@@ -333,12 +321,6 @@ public class TDDatabase extends Observable {
                 replicator.databaseClosing();
             }
             activeReplicators = null;
-        }
-
-        if(handlerThread != null) {
-            handler = null;
-            handlerThread.quit();
-            handlerThread = null;
         }
 
         if(database != null && database.isOpen()) {
@@ -2255,18 +2237,18 @@ public class TDDatabase extends Observable {
         return null;
     }
 
-    public TDReplicator getReplicator(URL remote, boolean push, boolean continuous) {
-    	TDReplicator replicator = getReplicator(remote, null, push, continuous);
+    public TDReplicator getReplicator(URL remote, boolean push, boolean continuous, ScheduledExecutorService workExecutor) {
+        TDReplicator replicator = getReplicator(remote, null, push, continuous, workExecutor);
 
     	return replicator;
     }
 
-    public TDReplicator getReplicator(URL remote, HttpClientFactory httpClientFactory, boolean push, boolean continuous) {
+    public TDReplicator getReplicator(URL remote, HttpClientFactory httpClientFactory, boolean push, boolean continuous, ScheduledExecutorService workExecutor) {
         TDReplicator result = getActiveReplicator(remote, push);
         if(result != null) {
             return result;
         }
-        result = push ? new TDPusher(this, remote, continuous, httpClientFactory) : new TDPuller(this, remote, continuous, httpClientFactory);
+        result = push ? new TDPusher(this, remote, continuous, httpClientFactory, workExecutor) : new TDPuller(this, remote, continuous, httpClientFactory, workExecutor);
 
         if(activeReplicators == null) {
             activeReplicators = new ArrayList<TDReplicator>();
@@ -2484,9 +2466,6 @@ public class TDDatabase extends Observable {
         }
     }
 
-    public Handler getHandler() {
-        return handler;
-    }
 }
 
 class TDValidationContextImpl implements TDValidationContext {
