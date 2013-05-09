@@ -61,7 +61,7 @@ public class TestAppActivity extends Activity {
         instance.createConnector("tutorial", true);
 
         ReplicationCommand pull = new ReplicationCommand.Builder()
-                .source("http://192.168.1.10:5984/itdashboard").target("tutorial")
+                .source("http://10.17.44.237:5984/itdashboard").target("tutorial")
                 .continuous(false).build();
 
         instance.replicate(pull);
