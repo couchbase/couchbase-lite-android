@@ -42,7 +42,7 @@ public class Router extends TouchDBTestCase {
         send(server, "GET", "/_all_dbs", TDStatus.OK, allDbs);
 
         send(server, "GET", "/non-existant", TDStatus.NOT_FOUND, null);
-        send(server, "GET", "/BadName", TDStatus.BAD_REQUEST, null);
+        send(server, "GET", "/BadName", TDStatus.NOT_FOUND, null);
         send(server, "PUT", "/", TDStatus.BAD_REQUEST, null);
         send(server, "POST", "/", TDStatus.BAD_REQUEST, null);
     }
