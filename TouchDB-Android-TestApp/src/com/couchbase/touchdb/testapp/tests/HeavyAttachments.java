@@ -66,14 +66,14 @@ public class HeavyAttachments extends TouchDBTestCase {
   }
 
   @SuppressWarnings("unchecked")
-  public void testRetrieveHeavyAttachments() throws Exception {
+  public void disableTestRetrieveHeavyAttachments() throws Exception {
     boolean heavyAttachments = true;
     boolean pushAttachments = false;
     buildAttachments(heavyAttachments, pushAttachments);
   }
 
   @SuppressWarnings("unchecked")
-  public void testPushHeavyAttachments() throws Exception {
+  public void disableTestPushHeavyAttachments() throws Exception {
     boolean heavyAttachments = true;
     boolean pushAttachments = true;
     buildAttachments(heavyAttachments, pushAttachments);
@@ -221,7 +221,7 @@ public class HeavyAttachments extends TouchDBTestCase {
     if (pushAttachments) {
       URL remote = getReplicationURL();
       deleteRemoteDB(remote);
-      final TDReplicator repl = database.getReplicator(remote, true, false);
+      final TDReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
       ((TDPusher) repl).setCreateTarget(true);
       try {
         runTestOnUiThread(new Runnable() {
