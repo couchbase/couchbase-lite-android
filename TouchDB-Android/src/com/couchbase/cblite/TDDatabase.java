@@ -46,6 +46,7 @@ import com.couchbase.cblite.replicator.TDReplicator;
 import com.couchbase.cblite.support.Base64;
 import com.couchbase.cblite.support.FileDirUtils;
 import com.couchbase.cblite.support.HttpClientFactory;
+import com.couchbase.touchdb.TDCollateJSON;
 
 /**
  * A TouchDB database.

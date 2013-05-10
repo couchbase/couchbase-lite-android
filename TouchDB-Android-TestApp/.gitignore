@@ -13,7 +13,7 @@
 /gen/
 
 # Local test configuration
-/src/com/couchbase/touchdb/testapp/tests/local-test.properties
+/src/com/couchbase/cblite/testapp/tests/local-test.properties
 
 # Local configuration file (sdk path, etc)
 local.properties

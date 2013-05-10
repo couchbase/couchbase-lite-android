@@ -1,4 +1,4 @@
-package com.couchbase.cblite;
+package com.couchbase.touchdb;
 
 import java.text.Collator;
 

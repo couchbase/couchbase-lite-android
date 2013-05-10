@@ -7,7 +7,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import android.test.AndroidTestCase;
 import android.util.Log;
 
-import com.couchbase.cblite.TDCollateJSON;
+import com.couchbase.touchdb.TDCollateJSON;
 
 public class Collation extends AndroidTestCase {
 
