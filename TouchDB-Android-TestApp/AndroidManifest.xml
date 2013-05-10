@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.couchbase.touchdb.testapp"
+    package="com.couchbase.cblite.testapp"
     android:versionCode="1"
     android:versionName="1.0" >
 
         <instrumentation
         android:name="com.neenbedankt.android.test.InstrumentationTestRunner"
-        android:targetPackage="com.couchbase.touchdb.testapp" />
+        android:targetPackage="com.couchbase.cblite.testapp" />
 
         <instrumentation
         android:name="android.test.InstrumentationTestRunner"
-        android:targetPackage="com.couchbase.touchdb.testapp" />
+        android:targetPackage="com.couchbase.cblite.testapp" />
 <uses-permission android:name="android.permission.INTERNET"/>
 
     <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="17" />
