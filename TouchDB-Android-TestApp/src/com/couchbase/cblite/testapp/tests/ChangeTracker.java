@@ -11,11 +11,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.util.Log;
 
-import com.couchbase.cblite.replicator.changetracker.TDChangeTracker;
-import com.couchbase.cblite.replicator.changetracker.TDChangeTracker.TDChangeTrackerMode;
-import com.couchbase.cblite.replicator.changetracker.TDChangeTrackerClient;
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker;
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTrackerClient;
 
-public class ChangeTracker extends TouchDBTestCase {
+public class ChangeTracker extends CBLiteTestCase {
 
     public static final String TAG = "ChangeTracker";
 
@@ -23,10 +23,10 @@ public class ChangeTracker extends TouchDBTestCase {
 
         URL testURL = getReplicationURL();
 
-        TDChangeTrackerClient client = new TDChangeTrackerClient() {
+        CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(TDChangeTracker tracker) {
+            public void changeTrackerStopped(CBLChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -42,7 +42,7 @@ public class ChangeTracker extends TouchDBTestCase {
             }
         };
 
-        final TDChangeTracker changeTracker = new TDChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client);
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -62,10 +62,10 @@ public class ChangeTracker extends TouchDBTestCase {
 
         URL testURL = getReplicationURL();
 
-        TDChangeTrackerClient client = new TDChangeTrackerClient() {
+        CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(TDChangeTracker tracker) {
+            public void changeTrackerStopped(CBLChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -81,7 +81,7 @@ public class ChangeTracker extends TouchDBTestCase {
             }
         };
 
-        final TDChangeTracker changeTracker = new TDChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -99,10 +99,10 @@ public class ChangeTracker extends TouchDBTestCase {
 
         URL testURL = getReplicationURL();
 
-        TDChangeTrackerClient client = new TDChangeTrackerClient() {
+        CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(TDChangeTracker tracker) {
+            public void changeTrackerStopped(CBLChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -118,7 +118,7 @@ public class ChangeTracker extends TouchDBTestCase {
             }
         };
 
-        final TDChangeTracker changeTracker = new TDChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client);
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -135,7 +135,7 @@ public class ChangeTracker extends TouchDBTestCase {
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
-        TDChangeTracker changeTracker = new TDChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
+        CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
 
         // set filter
         changeTracker.setFilterName("filter");

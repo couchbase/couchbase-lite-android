@@ -6,11 +6,11 @@ import java.net.URLConnection;
 import java.net.URLStreamHandler;
 
 
-public class TDURLHandler extends URLStreamHandler {
+public class CBLURLHandler extends URLStreamHandler {
 
     @Override
     protected URLConnection openConnection(URL u) throws IOException {
-        return new TDURLConnection(u);
+        return new CBLURLConnection(u);
     }
 
 }

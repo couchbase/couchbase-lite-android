@@ -14,25 +14,25 @@ import org.apache.http.client.HttpResponseException;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDFilterBlock;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDRevisionList;
-import com.couchbase.cblite.TDStatus;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLFilterBlock;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLRevisionList;
+import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.support.HttpClientFactory;
-import com.couchbase.cblite.support.TDRemoteRequestCompletionBlock;
+import com.couchbase.cblite.support.CBLRemoteRequestCompletionBlock;
 
-public class TDPusher extends TDReplicator implements Observer {
+public class CBLPusher extends CBLReplicator implements Observer {
 
     private boolean createTarget;
     private boolean observing;
-    private TDFilterBlock filter;
+    private CBLFilterBlock filter;
 
-    public TDPusher(TDDatabase db, URL remote, boolean continuous, ScheduledExecutorService workExecutor) {
+    public CBLPusher(CBLDatabase db, URL remote, boolean continuous, ScheduledExecutorService workExecutor) {
         this(db, remote, continuous, null, workExecutor);
     }
 
-    public TDPusher(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFactory, ScheduledExecutorService workExecutor) {
+    public CBLPusher(CBLDatabase db, URL remote, boolean continuous, HttpClientFactory clientFactory, ScheduledExecutorService workExecutor) {
         super(db, remote, continuous, clientFactory, workExecutor);
         createTarget = false;
         observing = false;
@@ -42,7 +42,7 @@ public class TDPusher extends TDReplicator implements Observer {
         this.createTarget = createTarget;
     }
 
-    public void setFilter(TDFilterBlock filter) {
+    public void setFilter(CBLFilterBlock filter) {
         this.filter = filter;
     }
 
@@ -56,17 +56,17 @@ public class TDPusher extends TDReplicator implements Observer {
         if(!createTarget) {
             return;
         }
-        Log.v(TDDatabase.TAG, "Remote db might not exist; creating it...");
-        sendAsyncRequest("PUT", "", null, new TDRemoteRequestCompletionBlock() {
+        Log.v(CBLDatabase.TAG, "Remote db might not exist; creating it...");
+        sendAsyncRequest("PUT", "", null, new CBLRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
                 if(e != null && e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() != 412) {
-                    Log.e(TDDatabase.TAG, "Failed to create remote db", e);
+                    Log.e(CBLDatabase.TAG, "Failed to create remote db", e);
                     error = e;
                     stop();
                 } else {
-                    Log.v(TDDatabase.TAG, "Created remote db");
+                    Log.v(CBLDatabase.TAG, "Created remote db");
                     createTarget = false;
                     beginReplicating();
                 }
@@ -87,7 +87,7 @@ public class TDPusher extends TDReplicator implements Observer {
             filter = db.getFilterNamed(filterName);
         }
         if(filterName != null && filter == null) {
-            Log.w(TDDatabase.TAG, String.format("%s: No TDFilterBlock registered for filter '%s'; ignoring", this, filterName));;
+            Log.w(CBLDatabase.TAG, String.format("%s: No CBLFilterBlock registered for filter '%s'; ignoring", this, filterName));;
         }
 
         // Process existing changes since the last push:
@@ -95,7 +95,7 @@ public class TDPusher extends TDReplicator implements Observer {
         if(lastSequence != null) {
             lastSequenceLong = Long.parseLong(lastSequence);
         }
-        TDRevisionList changes = db.changesSince(lastSequenceLong, null, filter);
+        CBLRevisionList changes = db.changesSince(lastSequenceLong, null, filter);
         if(changes.size() > 0) {
             processInbox(changes);
         }
@@ -132,7 +132,7 @@ public class TDPusher extends TDReplicator implements Observer {
             if(source != null && source.equals(remote.toExternalForm())) {
                 return;
             }
-            TDRevision rev = (TDRevision)change.get("rev");
+            CBLRevision rev = (CBLRevision)change.get("rev");
             if(rev != null && ((filter == null) || filter.filter(rev))) {
                 addToInbox(rev);
             }
@@ -141,11 +141,11 @@ public class TDPusher extends TDReplicator implements Observer {
     }
 
     @Override
-    public void processInbox(final TDRevisionList inbox) {
+    public void processInbox(final CBLRevisionList inbox) {
         final long lastInboxSequence = inbox.get(inbox.size()-1).getSequence();
         // Generate a set of doc/rev IDs in the JSON format that _revs_diff wants:
         Map<String,List<String>> diffs = new HashMap<String,List<String>>();
-        for (TDRevision rev : inbox) {
+        for (CBLRevision rev : inbox) {
             String docID = rev.getDocId();
             List<String> revs = diffs.get(docID);
             if(revs == null) {
@@ -157,7 +157,7 @@ public class TDPusher extends TDReplicator implements Observer {
 
         // Call _revs_diff on the target db:
         asyncTaskStarted();
-        sendAsyncRequest("POST", "/_revs_diff", diffs, new TDRemoteRequestCompletionBlock() {
+        sendAsyncRequest("POST", "/_revs_diff", diffs, new CBLRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object response, Throwable e) {
@@ -169,7 +169,7 @@ public class TDPusher extends TDReplicator implements Observer {
                     // Go through the list of local changes again, selecting the ones the destination server
                     // said were missing and mapping them to a JSON dictionary in the form _bulk_docs wants:
                     List<Object> docsToSend = new ArrayList<Object>();
-                    for(TDRevision rev : inbox) {
+                    for(CBLRevision rev : inbox) {
                         Map<String,Object> properties = null;
                         Map<String,Object> resultDoc = (Map<String,Object>)results.get(rev.getDocId());
                         if(resultDoc != null) {
@@ -185,9 +185,9 @@ public class TDPusher extends TDReplicator implements Observer {
                                 } else {
                                     // OPT: Shouldn't include all attachment bodies, just ones that have changed
                                     // OPT: Should send docs with many or big attachments as multipart/related
-                                    TDStatus status = db.loadRevisionBody(rev, EnumSet.of(TDDatabase.TDContentOptions.TDIncludeAttachments));
+                                    CBLStatus status = db.loadRevisionBody(rev, EnumSet.of(CBLDatabase.TDContentOptions.TDIncludeAttachments));
                                     if(!status.isSuccessful()) {
-                                        Log.w(TDDatabase.TAG, String.format("%s: Couldn't get local contents of %s", this, rev));
+                                        Log.w(CBLDatabase.TAG, String.format("%s: Couldn't get local contents of %s", this, rev));
                                     } else {
                                         properties = new HashMap<String,Object>(rev.getProperties());
                                     }
@@ -208,18 +208,18 @@ public class TDPusher extends TDReplicator implements Observer {
                     Map<String,Object> bulkDocsBody = new HashMap<String,Object>();
                     bulkDocsBody.put("docs", docsToSend);
                     bulkDocsBody.put("new_edits", false);
-                    Log.i(TDDatabase.TAG, String.format("%s: Sending %d revisions", this, numDocsToSend));
-                    Log.v(TDDatabase.TAG, String.format("%s: Sending %s", this, inbox));
+                    Log.i(CBLDatabase.TAG, String.format("%s: Sending %d revisions", this, numDocsToSend));
+                    Log.v(CBLDatabase.TAG, String.format("%s: Sending %s", this, inbox));
                     setChangesTotal(getChangesTotal() + numDocsToSend);
                     asyncTaskStarted();
-                    sendAsyncRequest("POST", "/_bulk_docs", bulkDocsBody, new TDRemoteRequestCompletionBlock() {
+                    sendAsyncRequest("POST", "/_bulk_docs", bulkDocsBody, new CBLRemoteRequestCompletionBlock() {
 
                         @Override
                         public void onCompletion(Object result, Throwable e) {
                             if(e != null) {
                                 error = e;
                             } else {
-                                Log.v(TDDatabase.TAG, String.format("%s: Sent %s", this, inbox));
+                                Log.v(CBLDatabase.TAG, String.format("%s: Sent %s", this, inbox));
                                 setLastSequence(String.format("%d", lastInboxSequence));
                             }
                             setChangesProcessed(getChangesProcessed() + numDocsToSend);

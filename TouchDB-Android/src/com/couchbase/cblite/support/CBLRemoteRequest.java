@@ -36,21 +36,21 @@ import org.apache.http.protocol.HttpContext;
 import android.os.Handler;
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDServer;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLServer;
 
-public class TDRemoteRequest implements Runnable {
+public class CBLRemoteRequest implements Runnable {
 
     private ScheduledExecutorService workExecutor;
     private final HttpClientFactory clientFactory;
     private String method;
     private URL url;
     private Object body;
-    private TDRemoteRequestCompletionBlock onCompletion;
+    private CBLRemoteRequestCompletionBlock onCompletion;
 
-    public TDRemoteRequest(ScheduledExecutorService workExecutor,
+    public CBLRemoteRequest(ScheduledExecutorService workExecutor,
             HttpClientFactory clientFactory, String method, URL url,
-            Object body, TDRemoteRequestCompletionBlock onCompletion) {
+            Object body, CBLRemoteRequestCompletionBlock onCompletion) {
         this.clientFactory = clientFactory;
         this.method = method;
         this.url = url;
@@ -109,7 +109,7 @@ public class TDRemoteRequest implements Runnable {
                     dhc.addRequestInterceptor(preemptiveAuth, 0);
                 }
             } else {
-                Log.w(TDDatabase.TAG,
+                Log.w(CBLDatabase.TAG,
                         "Unable to parse user info, not setting credentials");
             }
         }
@@ -120,9 +120,9 @@ public class TDRemoteRequest implements Runnable {
         if (body != null && request instanceof HttpEntityEnclosingRequestBase) {
             byte[] bodyBytes = null;
             try {
-                bodyBytes = TDServer.getObjectMapper().writeValueAsBytes(body);
+                bodyBytes = CBLServer.getObjectMapper().writeValueAsBytes(body);
             } catch (Exception e) {
-                Log.e(TDDatabase.TAG, "Error serializing body of request", e);
+                Log.e(CBLDatabase.TAG, "Error serializing body of request", e);
             }
             ByteArrayEntity entity = new ByteArrayEntity(bodyBytes);
             entity.setContentType("application/json");
@@ -135,10 +135,10 @@ public class TDRemoteRequest implements Runnable {
             HttpResponse response = httpClient.execute(request);
             StatusLine status = response.getStatusLine();
             if (status.getStatusCode() >= 300) {
-                Log.e(TDDatabase.TAG,
+                Log.e(CBLDatabase.TAG,
                         "Got error " + Integer.toString(status.getStatusCode()));
-                Log.e(TDDatabase.TAG, "Request was for: " + request.toString());
-                Log.e(TDDatabase.TAG,
+                Log.e(CBLDatabase.TAG, "Request was for: " + request.toString());
+                Log.e(CBLDatabase.TAG,
                         "Status reason: " + status.getReasonPhrase());
                 error = new HttpResponseException(status.getStatusCode(),
                         status.getReasonPhrase());
@@ -147,7 +147,7 @@ public class TDRemoteRequest implements Runnable {
                 if (temp != null) {
                     try {
                         InputStream stream = temp.getContent();
-                        fullBody = TDServer.getObjectMapper().readValue(stream,
+                        fullBody = CBLServer.getObjectMapper().readValue(stream,
                                 Object.class);
                     } finally {
                         try {
@@ -158,10 +158,10 @@ public class TDRemoteRequest implements Runnable {
                 }
             }
         } catch (ClientProtocolException e) {
-            Log.e(TDDatabase.TAG, "client protocol exception", e);
+            Log.e(CBLDatabase.TAG, "client protocol exception", e);
             error = e;
         } catch (IOException e) {
-            Log.e(TDDatabase.TAG, "io exception", e);
+            Log.e(CBLDatabase.TAG, "io exception", e);
             error = e;
         }
         respondWithResult(fullBody, error);
@@ -177,14 +177,14 @@ public class TDRemoteRequest implements Runnable {
                         onCompletion.onCompletion(result, error);
                     } catch (Exception e) {
                         // don't let this crash the thread
-                        Log.e(TDDatabase.TAG,
-                                "TDRemoteRequestCompletionBlock throw Exception",
+                        Log.e(CBLDatabase.TAG,
+                                "CBLRemoteRequestCompletionBlock throw Exception",
                                 e);
                     }
                 }
             });
         } else {
-            Log.e(TDDatabase.TAG, "work executor was null!!!");
+            Log.e(CBLDatabase.TAG, "work executor was null!!!");
         }
     }
 

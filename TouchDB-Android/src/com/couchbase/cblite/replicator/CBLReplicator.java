@@ -18,22 +18,22 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import android.os.Handler;
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDMisc;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDRevisionList;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLMisc;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.support.HttpClientFactory;
-import com.couchbase.cblite.support.TDBatchProcessor;
-import com.couchbase.cblite.support.TDBatcher;
-import com.couchbase.cblite.support.TDRemoteRequest;
-import com.couchbase.cblite.support.TDRemoteRequestCompletionBlock;
+import com.couchbase.cblite.support.CBLBatchProcessor;
+import com.couchbase.cblite.support.CBLBatcher;
+import com.couchbase.cblite.support.CBLRemoteRequest;
+import com.couchbase.cblite.support.CBLRemoteRequestCompletionBlock;
 
-public abstract class TDReplicator extends Observable {
+public abstract class CBLReplicator extends Observable {
 
     private static int lastSessionID = 0;
 
     protected ScheduledExecutorService workExecutor;
-    protected TDDatabase db;
+    protected CBLDatabase db;
     protected URL remote;
     protected boolean continuous;
     protected String lastSequence;
@@ -45,7 +45,7 @@ public abstract class TDReplicator extends Observable {
     protected boolean active;
     protected Throwable error;
     protected String sessionID;
-    protected TDBatcher<TDRevision> batcher;
+    protected CBLBatcher<CBLRevision> batcher;
     protected int asyncTaskCount;
     private int changesProcessed;
     private int changesTotal;
@@ -57,11 +57,11 @@ public abstract class TDReplicator extends Observable {
     protected static final int PROCESSOR_DELAY = 500;
     protected static final int INBOX_CAPACITY = 100;
 
-    public TDReplicator(TDDatabase db, URL remote, boolean continuous, ScheduledExecutorService workExecutor) {
+    public CBLReplicator(CBLDatabase db, URL remote, boolean continuous, ScheduledExecutorService workExecutor) {
         this(db, remote, continuous, null, workExecutor);
     }
 
-    public TDReplicator(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFacotry, ScheduledExecutorService workExecutor) {
+    public CBLReplicator(CBLDatabase db, URL remote, boolean continuous, HttpClientFactory clientFacotry, ScheduledExecutorService workExecutor) {
 
         this.db = db;
         this.remote = remote;
@@ -71,12 +71,12 @@ public abstract class TDReplicator extends Observable {
         this.remoteRequestExecutor = Executors.newCachedThreadPool();
 
 
-        batcher = new TDBatcher<TDRevision>(workExecutor, INBOX_CAPACITY, PROCESSOR_DELAY, new TDBatchProcessor<TDRevision>() {
+        batcher = new CBLBatcher<CBLRevision>(workExecutor, INBOX_CAPACITY, PROCESSOR_DELAY, new CBLBatchProcessor<CBLRevision>() {
             @Override
-            public void process(List<TDRevision> inbox) {
-                Log.v(TDDatabase.TAG, "*** " + toString() + ": BEGIN processInbox (" + inbox.size() + " sequences)");
-                processInbox(new TDRevisionList(inbox));
-                Log.v(TDDatabase.TAG, "*** " + toString() + ": END processInbox (lastSequence=" + lastSequence);
+            public void process(List<CBLRevision> inbox) {
+                Log.v(CBLDatabase.TAG, "*** " + toString() + ": BEGIN processInbox (" + inbox.size() + " sequences)");
+                processInbox(new CBLRevisionList(inbox));
+                Log.v(CBLDatabase.TAG, "*** " + toString() + ": END processInbox (lastSequence=" + lastSequence);
                 active = false;
             }
         });
@@ -128,7 +128,7 @@ public abstract class TDReplicator extends Observable {
 
     public void setLastSequence(String lastSequenceIn) {
         if(!lastSequenceIn.equals(lastSequence)) {
-            Log.v(TDDatabase.TAG, toString() + ": Setting lastSequence to " + lastSequenceIn + " from( " + lastSequence + ")");
+            Log.v(CBLDatabase.TAG, toString() + ": Setting lastSequence to " + lastSequenceIn + " from( " + lastSequence + ")");
             lastSequence = lastSequenceIn;
             if(!lastSequenceChanged) {
                 lastSequenceChanged = true;
@@ -172,7 +172,7 @@ public abstract class TDReplicator extends Observable {
             return;
         }
         this.sessionID = String.format("repl%03d", ++lastSessionID);
-        Log.v(TDDatabase.TAG, toString() + " STARTING ...");
+        Log.v(CBLDatabase.TAG, toString() + " STARTING ...");
         running = true;
         lastSequence = null;
 
@@ -185,7 +185,7 @@ public abstract class TDReplicator extends Observable {
         if(!running) {
             return;
         }
-        Log.v(TDDatabase.TAG, toString() + " STOPPING...");
+        Log.v(CBLDatabase.TAG, toString() + " STOPPING...");
         batcher.flush();
         continuous = false;
         if(asyncTaskCount == 0) {
@@ -194,7 +194,7 @@ public abstract class TDReplicator extends Observable {
     }
 
     public void stopped() {
-        Log.v(TDDatabase.TAG, toString() + " STOPPED");
+        Log.v(CBLDatabase.TAG, toString() + " STOPPED");
         running = false;
         this.changesProcessed = this.changesTotal = 0;
 
@@ -217,34 +217,34 @@ public abstract class TDReplicator extends Observable {
         }
     }
 
-    public void addToInbox(TDRevision rev) {
+    public void addToInbox(CBLRevision rev) {
         if(batcher.count() == 0) {
             active = true;
         }
         batcher.queueObject(rev);
-        //Log.v(TDDatabase.TAG, String.format("%s: Received #%d %s", toString(), rev.getSequence(), rev.toString()));
+        //Log.v(CBLDatabase.TAG, String.format("%s: Received #%d %s", toString(), rev.getSequence(), rev.toString()));
     }
 
-    public void processInbox(TDRevisionList inbox) {
+    public void processInbox(CBLRevisionList inbox) {
 
     }
 
-    public void sendAsyncRequest(String method, String relativePath, Object body, TDRemoteRequestCompletionBlock onCompletion) {
-        //Log.v(TDDatabase.TAG, String.format("%s: %s .%s", toString(), method, relativePath));
+    public void sendAsyncRequest(String method, String relativePath, Object body, CBLRemoteRequestCompletionBlock onCompletion) {
+        //Log.v(CBLDatabase.TAG, String.format("%s: %s .%s", toString(), method, relativePath));
         String urlStr = remote.toExternalForm() + relativePath;
         try {
             URL url = new URL(urlStr);
-            TDRemoteRequest request = new TDRemoteRequest(workExecutor, clientFacotry, method, url, body, onCompletion);
+            CBLRemoteRequest request = new CBLRemoteRequest(workExecutor, clientFacotry, method, url, body, onCompletion);
             remoteRequestExecutor.execute(request);
         } catch (MalformedURLException e) {
-            Log.e(TDDatabase.TAG, "Malformed URL for async request", e);
+            Log.e(CBLDatabase.TAG, "Malformed URL for async request", e);
         }
     }
 
     /** CHECKPOINT STORAGE: **/
 
     public void maybeCreateRemoteDB() {
-        // TDPusher overrides this to implement the .createTarget option
+        // CBLPusher overrides this to implement the .createTarget option
     }
 
     /**
@@ -257,7 +257,7 @@ public abstract class TDReplicator extends Observable {
             return null;
         }
         String input = db.privateUUID() + "\n" + remote.toExternalForm() + "\n" + (isPush() ? "1" : "0");
-        return TDMisc.TDHexSHA1Digest(input.getBytes());
+        return CBLMisc.TDHexSHA1Digest(input.getBytes());
     }
 
     public void fetchRemoteCheckpointDoc() {
@@ -270,7 +270,7 @@ public abstract class TDReplicator extends Observable {
         }
 
         asyncTaskStarted();
-        sendAsyncRequest("GET", "/_local/" + remoteCheckpointDocID(), null, new TDRemoteRequestCompletionBlock() {
+        sendAsyncRequest("GET", "/_local/" + remoteCheckpointDocID(), null, new CBLRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
@@ -288,9 +288,9 @@ public abstract class TDReplicator extends Observable {
                     }
                     if(remoteLastSequence != null && remoteLastSequence.equals(localLastSequence)) {
                         lastSequence = localLastSequence;
-                        Log.v(TDDatabase.TAG, this + ": Replicating from lastSequence=" + lastSequence);
+                        Log.v(CBLDatabase.TAG, this + ": Replicating from lastSequence=" + lastSequence);
                     } else {
-                        Log.v(TDDatabase.TAG, this + ": lastSequence mismatch: I had " + localLastSequence + ", remote had " + remoteLastSequence);
+                        Log.v(CBLDatabase.TAG, this + ": lastSequence mismatch: I had " + localLastSequence + ", remote had " + remoteLastSequence);
                     }
                     beginReplicating();
                 }
@@ -314,7 +314,7 @@ public abstract class TDReplicator extends Observable {
         lastSequenceChanged = false;
         overdueForSave = false;
 
-        Log.v(TDDatabase.TAG, this + " checkpointing sequence=" + lastSequence);
+        Log.v(CBLDatabase.TAG, this + " checkpointing sequence=" + lastSequence);
         final Map<String,Object> body = new HashMap<String,Object>();
         if(remoteCheckpoint != null) {
             body.putAll(remoteCheckpoint);
@@ -326,13 +326,13 @@ public abstract class TDReplicator extends Observable {
             return;
         }
         savingCheckpoint = true;
-        sendAsyncRequest("PUT", "/_local/" + remoteCheckpointDocID, body, new TDRemoteRequestCompletionBlock() {
+        sendAsyncRequest("PUT", "/_local/" + remoteCheckpointDocID, body, new CBLRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
             	savingCheckpoint = false;
                 if(e != null) {
-                    Log.v(TDDatabase.TAG, this + ": Unable to save remote checkpoint", e);
+                    Log.v(CBLDatabase.TAG, this + ": Unable to save remote checkpoint", e);
                     // TODO: If error is 401 or 403, and this is a pull, remember that remote is read-only and don't attempt to read its checkpoint next time.
                 } else {
                     Map<String,Object> response = (Map<String,Object>)result;

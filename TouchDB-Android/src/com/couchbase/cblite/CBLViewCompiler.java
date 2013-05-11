@@ -3,10 +3,10 @@ package com.couchbase.cblite;
 /**
  * An external object that knows how to map source code of some sort into executable functions.
  */
-public interface TDViewCompiler {
+public interface CBLViewCompiler {
 
-    TDViewMapBlock compileMapFunction(String mapSource, String language);
+    CBLViewMapBlock compileMapFunction(String mapSource, String language);
 
-    TDViewReduceBlock compileReduceFunction(String reduceSource, String language);
+    CBLViewReduceBlock compileReduceFunction(String reduceSource, String language);
 
 }

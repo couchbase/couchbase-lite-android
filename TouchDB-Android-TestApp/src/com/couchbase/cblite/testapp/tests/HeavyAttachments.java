@@ -37,17 +37,17 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.couchbase.cblite.testapp.CopySampleAttachmentsActivity;
-import com.couchbase.cblite.TDAttachment;
-import com.couchbase.cblite.TDBlobKey;
-import com.couchbase.cblite.TDBlobStore;
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDStatus;
-import com.couchbase.cblite.replicator.TDPusher;
-import com.couchbase.cblite.replicator.TDReplicator;
+import com.couchbase.cblite.CBLAttachment;
+import com.couchbase.cblite.CBLBlobKey;
+import com.couchbase.cblite.CBLBlobStore;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.replicator.CBLPusher;
+import com.couchbase.cblite.replicator.CBLReplicator;
 import com.couchbase.cblite.support.Base64;
 
-public class HeavyAttachments extends TouchDBTestCase {
+public class HeavyAttachments extends CBLiteTestCase {
 
   public static final String TAG = "Attachments";
 
@@ -83,29 +83,29 @@ public class HeavyAttachments extends TouchDBTestCase {
   public void buildAttachments(boolean heavyAttachments, boolean pushAttachments)
       throws Exception {
 
-    TDBlobStore attachments = database.getAttachments();
+    CBLBlobStore attachments = database.getAttachments();
 
     Assert.assertEquals(0, attachments.count());
     Assert.assertEquals(new HashSet<Object>(), attachments.allKeys());
 
-    TDStatus status = new TDStatus();
+    CBLStatus status = new CBLStatus();
     Map<String, Object> rev1Properties = new HashMap<String, Object>();
     rev1Properties.put("foo", 1);
     rev1Properties.put("bar", false);
-    TDRevision rev1 = database.putRevision(new TDRevision(rev1Properties),
+    CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties),
         null, false, status);
 
-    Assert.assertEquals(TDStatus.CREATED, status.getCode());
+    Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
     byte[] attach1 = "This is the body of attach1".getBytes();
     status = database.insertAttachmentForSequenceWithNameAndType(
         new ByteArrayInputStream(attach1), rev1.getSequence(), "attach",
         "text/plain", rev1.getGeneration());
-    Assert.assertEquals(TDStatus.CREATED, status.getCode());
+    Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
-    TDAttachment attachment = database.getAttachmentForSequence(
+    CBLAttachment attachment = database.getAttachmentForSequence(
         rev1.getSequence(), "attach", status);
-    Assert.assertEquals(TDStatus.OK, status.getCode());
+    Assert.assertEquals(CBLStatus.OK, status.getCode());
     Assert.assertEquals("text/plain", attachment.getContentType());
     byte[] data = IOUtils.toByteArray(attachment.getContentStream());
     Assert.assertTrue(Arrays.equals(attach1, data));
@@ -123,8 +123,8 @@ public class HeavyAttachments extends TouchDBTestCase {
         .getAttachmentsDictForSequenceWithContent(rev1.getSequence(), false);
     Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
-    TDRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(),
-        rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+    CBLRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(),
+        rev1.getRevId(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
     Map<String, Object> gotAttachmentDict = (Map<String, Object>) gotRev1
         .getProperties().get("_attachments");
     Assert.assertEquals(attachmentDict, gotAttachmentDict);
@@ -138,7 +138,7 @@ public class HeavyAttachments extends TouchDBTestCase {
 
     gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(),
         rev1.getRevId(),
-        EnumSet.of(TDDatabase.TDContentOptions.TDIncludeAttachments));
+        EnumSet.of(CBLDatabase.TDContentOptions.TDIncludeAttachments));
     gotAttachmentDict = (Map<String, Object>) gotRev1.getProperties().get(
         "_attachments");
     Assert.assertEquals(attachmentDict, gotAttachmentDict);
@@ -148,61 +148,61 @@ public class HeavyAttachments extends TouchDBTestCase {
     rev2Properties.put("_id", rev1.getDocId());
     rev2Properties.put("foo", 2);
     rev2Properties.put("bazz", false);
-    TDRevision rev2 = database.putRevision(new TDRevision(rev2Properties),
+    CBLRevision rev2 = database.putRevision(new CBLRevision(rev2Properties),
         rev1.getRevId(), false, status);
-    Assert.assertEquals(TDStatus.CREATED, status.getCode());
+    Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
     status = database.copyAttachmentNamedFromSequenceToSequence("attach",
         rev1.getSequence(), rev2.getSequence());
-    Assert.assertEquals(TDStatus.OK, status.getCode());
+    Assert.assertEquals(CBLStatus.OK, status.getCode());
 
     // Add a third revision of the same document:
     Map<String, Object> rev3Properties = new HashMap<String, Object>();
     rev3Properties.put("_id", rev2.getDocId());
     rev3Properties.put("foo", 2);
     rev3Properties.put("bazz", false);
-    TDRevision rev3 = database.putRevision(new TDRevision(rev3Properties),
+    CBLRevision rev3 = database.putRevision(new CBLRevision(rev3Properties),
         rev2.getRevId(), false, status);
-    Assert.assertEquals(TDStatus.CREATED, status.getCode());
+    Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
     byte[] attach2 = "<html>And this is attach2</html>".getBytes();
     status = database.insertAttachmentForSequenceWithNameAndType(
         new ByteArrayInputStream(attach2), rev3.getSequence(), "attach",
         "text/html", rev2.getGeneration());
-    Assert.assertEquals(TDStatus.CREATED, status.getCode());
+    Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
     // Check the 2nd revision's attachment:
-    TDAttachment attachment2 = database.getAttachmentForSequence(
+    CBLAttachment attachment2 = database.getAttachmentForSequence(
         rev2.getSequence(), "attach", status);
-    Assert.assertEquals(TDStatus.OK, status.getCode());
+    Assert.assertEquals(CBLStatus.OK, status.getCode());
     Assert.assertEquals("text/plain", attachment2.getContentType());
     data = IOUtils.toByteArray(attachment2.getContentStream());
     Assert.assertTrue(Arrays.equals(attach1, data));
 
     // Check the 3rd revision's attachment:
-    TDAttachment attachment3 = database.getAttachmentForSequence(
+    CBLAttachment attachment3 = database.getAttachmentForSequence(
         rev3.getSequence(), "attach", status);
-    Assert.assertEquals(TDStatus.OK, status.getCode());
+    Assert.assertEquals(CBLStatus.OK, status.getCode());
     Assert.assertEquals("text/html", attachment3.getContentType());
     data = IOUtils.toByteArray(attachment3.getContentStream());
     Assert.assertTrue(Arrays.equals(attach2, data));
 
     // Examine the attachment store:
     Assert.assertEquals(2, attachments.count());
-    Set<TDBlobKey> expected = new HashSet<TDBlobKey>();
-    expected.add(TDBlobStore.keyForBlob(attach1));
-    expected.add(TDBlobStore.keyForBlob(attach2));
+    Set<CBLBlobKey> expected = new HashSet<CBLBlobKey>();
+    expected.add(CBLBlobStore.keyForBlob(attach1));
+    expected.add(CBLBlobStore.keyForBlob(attach2));
 
     Assert.assertEquals(expected, attachments.allKeys());
 
     status = database.compact(); // This clears the body of the first revision
-    Assert.assertEquals(TDStatus.OK, status.getCode());
+    Assert.assertEquals(CBLStatus.OK, status.getCode());
     Assert.assertEquals(1, attachments.count());
 
-    Set<TDBlobKey> expected2 = new HashSet<TDBlobKey>();
-    expected2.add(TDBlobStore.keyForBlob(attach2));
+    Set<CBLBlobKey> expected2 = new HashSet<CBLBlobKey>();
+    expected2.add(CBLBlobStore.keyForBlob(attach2));
     Assert.assertEquals(expected2, attachments.allKeys());
-    TDRevision lastRev = rev3;
+    CBLRevision lastRev = rev3;
 
     if (heavyAttachments) {
       int numberOfImagesOkayOn512Ram = 4;
@@ -211,9 +211,9 @@ public class HeavyAttachments extends TouchDBTestCase {
       
       lastRev = attachImages(numberOfImagesOkayOn1024Ram, rev3);
       /* query the db for that doc */
-      TDRevision largerRev = database.getDocumentWithIDAndRev(
+      CBLRevision largerRev = database.getDocumentWithIDAndRev(
           lastRev.getDocId(), lastRev.getRevId(),
-          EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+          EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
       attachmentDict = (Map<String, Object>) largerRev.getProperties().get(
           "_attachments");
       Assert.assertNotNull(attachmentDict);
@@ -221,8 +221,8 @@ public class HeavyAttachments extends TouchDBTestCase {
     if (pushAttachments) {
       URL remote = getReplicationURL();
       deleteRemoteDB(remote);
-      final TDReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
-      ((TDPusher) repl).setCreateTarget(true);
+      final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
+      ((CBLPusher) repl).setCreateTarget(true);
       try {
         runTestOnUiThread(new Runnable() {
 
@@ -257,9 +257,9 @@ public class HeavyAttachments extends TouchDBTestCase {
    * @param howMany
    *          how many images we want to add (default is two or more)
    * @param startingRev
-   *          The TDRevision we want to add to
+   *          The CBLRevision we want to add to
    */
-  public TDRevision attachImages(int howMany, TDRevision startingRev) {
+  public CBLRevision attachImages(int howMany, CBLRevision startingRev) {
     /*
      * Add two or more image attachments to the documents, these attachments are
      * copied by the CopySampleAttachmentsActivity.
@@ -280,11 +280,11 @@ public class HeavyAttachments extends TouchDBTestCase {
       if (imageAttachment.length == 0) {
         sampleFilesExistAndWereCopied = false;
       }
-      TDStatus status = database.insertAttachmentForSequenceWithNameAndType(
+      CBLStatus status = database.insertAttachmentForSequenceWithNameAndType(
           new ByteArrayInputStream(imageAttachment), startingRev.getSequence(),
           "sample_attachment_image1.jpg", "image/jpeg",
           startingRev.getGeneration());
-      Assert.assertEquals(TDStatus.CREATED, status.getCode());
+      Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
       fileStream2 = new FileInputStream(
           "/data/data/com.couchbase.cblite.testapp/files/sample_attachment_image2.jpg");
@@ -296,7 +296,7 @@ public class HeavyAttachments extends TouchDBTestCase {
           new ByteArrayInputStream(secondImageAttachment),
           startingRev.getSequence(), "sample_attachment_image2.jpg",
           "image/jpeg", startingRev.getGeneration());
-      Assert.assertEquals(TDStatus.CREATED, status.getCode());
+      Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
       int howManyMoreToAdd = howMany - 2;
       if (howManyMoreToAdd < 1) {
@@ -308,10 +308,10 @@ public class HeavyAttachments extends TouchDBTestCase {
             startingRev.getSequence(),
             "sample_attachment_image_test_out_of_memory" + i + ".jpg",
             "image/jpeg", startingRev.getGeneration());
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         int imagesSoFar = i + 2;
         Log.d(TAG, "Attached " + imagesSoFar + "images.");
-        if (status.getCode() != TDStatus.CREATED) {
+        if (status.getCode() != CBLStatus.CREATED) {
           break;
         }
       }

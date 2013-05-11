@@ -20,7 +20,7 @@ package com.couchbase.cblite;
 /**
  * Same interpretation as HTTP status codes, esp. 200, 201, 404, 409, 500.
  */
-public class TDStatus {
+public class CBLStatus {
 
     public static final int UNKNOWN = -1;
     public static final int OK = 200;
@@ -39,11 +39,11 @@ public class TDStatus {
 
     private int code;
 
-    public TDStatus() {
+    public CBLStatus() {
         this.code = UNKNOWN;
     }
 
-    public TDStatus(int code) {
+    public CBLStatus(int code) {
         this.code = code;
     }
 

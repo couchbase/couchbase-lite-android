@@ -21,50 +21,50 @@ import java.util.Observer;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDAttachment;
-import com.couchbase.cblite.TDBody;
-import com.couchbase.cblite.TDChangesOptions;
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDFilterBlock;
-import com.couchbase.cblite.TDMisc;
-import com.couchbase.cblite.TDQueryOptions;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDRevisionList;
-import com.couchbase.cblite.TDServer;
-import com.couchbase.cblite.TDStatus;
-import com.couchbase.cblite.TDView;
-import com.couchbase.cblite.TDViewMapBlock;
-import com.couchbase.cblite.TDViewReduceBlock;
-import com.couchbase.cblite.TouchDBVersion;
-import com.couchbase.cblite.TDDatabase.TDContentOptions;
-import com.couchbase.cblite.TDView.TDViewCollation;
-import com.couchbase.cblite.replicator.TDPusher;
-import com.couchbase.cblite.replicator.TDReplicator;
+import com.couchbase.cblite.CBLAttachment;
+import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.CBLChangesOptions;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLFilterBlock;
+import com.couchbase.cblite.CBLMisc;
+import com.couchbase.cblite.CBLQueryOptions;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLRevisionList;
+import com.couchbase.cblite.CBLServer;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.CBLView;
+import com.couchbase.cblite.CBLViewMapBlock;
+import com.couchbase.cblite.CBLViewReduceBlock;
+import com.couchbase.cblite.CBLiteVersion;
+import com.couchbase.cblite.CBLDatabase.TDContentOptions;
+import com.couchbase.cblite.CBLView.TDViewCollation;
+import com.couchbase.cblite.replicator.CBLPusher;
+import com.couchbase.cblite.replicator.CBLReplicator;
 
 
-public class TDRouter implements Observer {
+public class CBLRouter implements Observer {
 
-    private TDServer server;
-    private TDDatabase db;
-    private TDURLConnection connection;
+    private CBLServer server;
+    private CBLDatabase db;
+    private CBLURLConnection connection;
     private Map<String,String> queries;
     private boolean changesIncludesDocs = false;
-    private TDRouterCallbackBlock callbackBlock;
+    private CBLRouterCallbackBlock callbackBlock;
     private boolean responseSent = false;
     private boolean waiting = false;
-    private TDFilterBlock changesFilter;
+    private CBLFilterBlock changesFilter;
     private boolean longpoll = false;
 
     public static String getVersionString() {
-        return TouchDBVersion.TouchDBVersionNumber;
+        return CBLiteVersion.CBLiteVersionNumber;
     }
 
-    public TDRouter(TDServer server, TDURLConnection connection) {
+    public CBLRouter(CBLServer server, CBLURLConnection connection) {
         this.server = server;
         this.connection = connection;
     }
 
-    public void setCallbackBlock(TDRouterCallbackBlock callbackBlock) {
+    public void setCallbackBlock(CBLRouterCallbackBlock callbackBlock) {
         this.callbackBlock = callbackBlock;
     }
 
@@ -124,7 +124,7 @@ public class TDRouter implements Observer {
         }
         Object result = null;
         try {
-            result = TDServer.getObjectMapper().readValue(value, Object.class);
+            result = CBLServer.getObjectMapper().readValue(value, Object.class);
         } catch (Exception e) {
             Log.w("Unable to parse JSON Query", e);
         }
@@ -141,7 +141,7 @@ public class TDRouter implements Observer {
     public Map<String,Object> getBodyAsDictionary() {
         try {
             InputStream contentStream = connection.getRequestInputStream();
-            Map<String,Object> bodyMap = TDServer.getObjectMapper().readValue(contentStream, Map.class);
+            Map<String,Object> bodyMap = CBLServer.getObjectMapper().readValue(contentStream, Map.class);
             return bodyMap;
         } catch (IOException e) {
             return null;
@@ -168,7 +168,7 @@ public class TDRouter implements Observer {
         return result;
     }
 
-    public boolean getQueryOptions(TDQueryOptions options) {
+    public boolean getQueryOptions(CBLQueryOptions options) {
         // http://wiki.apache.org/couchdb/HTTP_view_API#Querying_Options
         options.setSkip(getIntQuery("skip", options.getSkip()));
         options.setLimit(getIntQuery("limit", options.getLimit()));
@@ -203,17 +203,17 @@ public class TDRouter implements Observer {
         return null;
     }
 
-    public TDStatus openDB() {
+    public CBLStatus openDB() {
         if(db == null) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
         if(!db.exists()) {
-            return new TDStatus(TDStatus.NOT_FOUND);
+            return new CBLStatus(CBLStatus.NOT_FOUND);
         }
         if(!db.open()) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
-        return new TDStatus(TDStatus.OK);
+        return new CBLStatus(CBLStatus.OK);
     }
 
     public static List<String> splitPath(URL url) {
@@ -255,11 +255,11 @@ public class TDRouter implements Observer {
         // First interpret the components of the request:
         List<String> path = splitPath(connection.getURL());
         if(path == null) {
-            connection.setResponseCode(TDStatus.BAD_REQUEST);
+            connection.setResponseCode(CBLStatus.BAD_REQUEST);
             try {
                 connection.getResponseOutputStream().close();
             } catch (IOException e) {
-                Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                Log.e(CBLDatabase.TAG, "Error closing empty output stream");
             }
             sendResponse();
             return;
@@ -274,11 +274,11 @@ public class TDRouter implements Observer {
                 message += "_Database";
                 db = server.getDatabaseNamed(dbName);
                 if(db == null) {
-                    connection.setResponseCode(TDStatus.BAD_REQUEST);
+                    connection.setResponseCode(CBLStatus.BAD_REQUEST);
                     try {
                         connection.getResponseOutputStream().close();
                     } catch (IOException e) {
-                        Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                        Log.e(CBLDatabase.TAG, "Error closing empty output stream");
                     }
                     sendResponse();
                     return;
@@ -292,13 +292,13 @@ public class TDRouter implements Observer {
         if(db != null && pathLen > 1) {
             message = message.replaceFirst("_Database", "_Document");
             // Make sure database exists, then interpret doc name:
-            TDStatus status = openDB();
+            CBLStatus status = openDB();
             if(!status.isSuccessful()) {
                 connection.setResponseCode(status.getCode());
                 try {
                     connection.getResponseOutputStream().close();
                 } catch (IOException e) {
-                    Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                    Log.e(CBLDatabase.TAG, "Error closing empty output stream");
                 }
                 sendResponse();
                 return;
@@ -306,12 +306,12 @@ public class TDRouter implements Observer {
             String name = path.get(1);
             if(!name.startsWith("_")) {
                 // Regular document
-                if(!TDDatabase.isValidDocumentId(name)) {
-                    connection.setResponseCode(TDStatus.BAD_REQUEST);
+                if(!CBLDatabase.isValidDocumentId(name)) {
+                    connection.setResponseCode(CBLStatus.BAD_REQUEST);
                     try {
                         connection.getResponseOutputStream().close();
                     } catch (IOException e) {
-                        Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                        Log.e(CBLDatabase.TAG, "Error closing empty output stream");
                     }
                     sendResponse();
                     return;
@@ -320,11 +320,11 @@ public class TDRouter implements Observer {
             } else if("_design".equals(name) || "_local".equals(name)) {
                 // "_design/____" and "_local/____" are document names
                 if(pathLen <= 2) {
-                    connection.setResponseCode(TDStatus.NOT_FOUND);
+                    connection.setResponseCode(CBLStatus.NOT_FOUND);
                     try {
                         connection.getResponseOutputStream().close();
                     } catch (IOException e) {
-                        Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                        Log.e(CBLDatabase.TAG, "Error closing empty output stream");
                     }
                     sendResponse();
                     return;
@@ -384,25 +384,25 @@ public class TDRouter implements Observer {
         //Log.d(TAG, "path: " + path + " message: " + message + " docID: " + docID + " attachmentName: " + attachmentName);
 
         // Send myself a message based on the components:
-        TDStatus status = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        CBLStatus status = new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         try {
-            Method m = this.getClass().getMethod(message, TDDatabase.class, String.class, String.class);
-            status = (TDStatus)m.invoke(this, db, docID, attachmentName);
+            Method m = this.getClass().getMethod(message, CBLDatabase.class, String.class, String.class);
+            status = (CBLStatus)m.invoke(this, db, docID, attachmentName);
         } catch (NoSuchMethodException msme) {
             try {
-                Method m = this.getClass().getMethod("do_UNKNOWN", TDDatabase.class, String.class, String.class);
-                status = (TDStatus)m.invoke(this, db, docID, attachmentName);
+                Method m = this.getClass().getMethod("do_UNKNOWN", CBLDatabase.class, String.class, String.class);
+                status = (CBLStatus)m.invoke(this, db, docID, attachmentName);
             } catch (Exception e) {
                 //default status is internal server error
             }
         } catch (Exception e) {
             //default status is internal server error
-            Log.e(TDDatabase.TAG, "Exception in TDRouter", e);
+            Log.e(CBLDatabase.TAG, "Exception in CBLRouter", e);
         }
 
         // Configure response headers:
         if(status.isSuccessful() && connection.getResponseBody() == null && connection.getHeaderField("Content-Type") == null) {
-            connection.setResponseBody(new TDBody("{\"ok\":true}".getBytes()));
+            connection.setResponseBody(new CBLBody("{\"ok\":true}".getBytes()));
         }
 
         if(connection.getResponseBody() != null && connection.getResponseBody().isValidJSON()) {
@@ -414,8 +414,8 @@ public class TDRouter implements Observer {
         if(accept != null && !"*/*".equals(accept)) {
             String responseType = connection.getBaseContentType();
             if(responseType != null && accept.indexOf(responseType) < 0) {
-                Log.e(TDDatabase.TAG, String.format("Error 406: Can't satisfy request Accept: %s", accept));
-                status = new TDStatus(TDStatus.NOT_ACCEPTABLE);
+                Log.e(CBLDatabase.TAG, String.format("Error 406: Can't satisfy request Accept: %s", accept));
+                status = new CBLStatus(CBLStatus.NOT_ACCEPTABLE);
             }
         }
 
@@ -433,7 +433,7 @@ public class TDRouter implements Observer {
                 try {
                     connection.getResponseOutputStream().close();
                 } catch (IOException e) {
-                    Log.e(TDDatabase.TAG, "Error closing empty output stream");
+                    Log.e(CBLDatabase.TAG, "Error closing empty output stream");
                 }
             }
             sendResponse();
@@ -447,12 +447,12 @@ public class TDRouter implements Observer {
         }
     }
 
-    public TDStatus do_UNKNOWN(TDDatabase db, String docID, String attachmentName) {
-        return new TDStatus(TDStatus.BAD_REQUEST);
+    public CBLStatus do_UNKNOWN(CBLDatabase db, String docID, String attachmentName) {
+        return new CBLStatus(CBLStatus.BAD_REQUEST);
     }
 
     /*************************************************************************************************/
-    /*** TDRouter+Handlers                                                                         ***/
+    /*** CBLRouter+Handlers                                                                         ***/
     /*************************************************************************************************/
 
     public void setResponseLocation(URL url) {
@@ -469,22 +469,22 @@ public class TDRouter implements Observer {
 
     /** SERVER REQUESTS: **/
 
-    public TDStatus do_GETRoot(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_GETRoot(CBLDatabase _db, String _docID, String _attachmentName) {
         Map<String,Object> info = new HashMap<String,Object>();
         info.put("TouchDB", "Welcome");
         info.put("couchdb", "Welcome"); // for compatibility
         info.put("version", getVersionString());
-        connection.setResponseBody(new TDBody(info));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(info));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_GET_all_dbs(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_GET_all_dbs(CBLDatabase _db, String _docID, String _attachmentName) {
         List<String> dbs = server.allDatabaseNames();
-        connection.setResponseBody(new TDBody(dbs));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(dbs));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_GET_session(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_GET_session(CBLDatabase _db, String _docID, String _attachmentName) {
         // Send back an "Admin Party"-like response
         Map<String,Object> session= new HashMap<String,Object>();
         Map<String,Object> userCtx = new HashMap<String,Object>();
@@ -493,16 +493,16 @@ public class TDRouter implements Observer {
         userCtx.put("name", null);
         userCtx.put("roles", roles);
         session.put("userCtx", userCtx);
-        connection.setResponseBody(new TDBody(session));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(session));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_POST_replicate(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_POST_replicate(CBLDatabase _db, String _docID, String _attachmentName) {
         // Extract the parameters from the JSON request body:
         // http://wiki.apache.org/couchdb/Replication
         Map<String,Object> body = getBodyAsDictionary();
         if(body == null) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
         String source = (String)body.get("source");
         String target = (String)body.get("target");
@@ -515,10 +515,10 @@ public class TDRouter implements Observer {
 
         // Map the 'source' and 'target' JSON params to a local database and remote URL:
         if(source == null || target == null) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
         boolean push = false;
-        TDDatabase db = server.getExistingDatabaseNamed(source);
+        CBLDatabase db = server.getExistingDatabaseNamed(source);
         String remoteStr = null;
         if(db != null) {
             remoteStr = target;
@@ -528,13 +528,13 @@ public class TDRouter implements Observer {
             if(createTarget && !cancel) {
                 db = server.getDatabaseNamed(target);
                 if(!db.open()) {
-                    return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                    return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
                 }
             } else {
                 db = server.getExistingDatabaseNamed(target);
             }
             if(db == null) {
-                return new TDStatus(TDStatus.NOT_FOUND);
+                return new CBLStatus(CBLStatus.NOT_FOUND);
             }
         }
 
@@ -542,17 +542,17 @@ public class TDRouter implements Observer {
         try {
             remote = new URL(remoteStr);
         } catch (MalformedURLException e) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
         if(remote == null || !remote.getProtocol().startsWith("http")) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
 
         if(!cancel) {
             // Start replication:
-            TDReplicator repl = db.getReplicator(remote, server.getDefaultHttpClientFactory(), push, continuous, server.getWorkExecutor());
+            CBLReplicator repl = db.getReplicator(remote, server.getDefaultHttpClientFactory(), push, continuous, server.getWorkExecutor());
             if(repl == null) {
-                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
             }
 
             String filterName = (String)body.get("filter");
@@ -565,42 +565,42 @@ public class TDRouter implements Observer {
             }
 
             if(push) {
-                ((TDPusher)repl).setCreateTarget(createTarget);
+                ((CBLPusher)repl).setCreateTarget(createTarget);
             }
             repl.start();
             Map<String,Object> result = new HashMap<String,Object>();
             result.put("session_id", repl.getSessionID());
-            connection.setResponseBody(new TDBody(result));
+            connection.setResponseBody(new CBLBody(result));
         } else {
             // Cancel replication:
-            TDReplicator repl = db.getActiveReplicator(remote, push);
+            CBLReplicator repl = db.getActiveReplicator(remote, push);
             if(repl == null) {
-                return new TDStatus(TDStatus.NOT_FOUND);
+                return new CBLStatus(CBLStatus.NOT_FOUND);
             }
             repl.stop();
         }
-        return new TDStatus(TDStatus.OK);
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_GET_uuids(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_GET_uuids(CBLDatabase _db, String _docID, String _attachmentName) {
         int count = Math.min(1000, getIntQuery("count", 1));
         List<String> uuids = new ArrayList<String>(count);
         for(int i=0; i<count; i++) {
-            uuids.add(TDDatabase.generateDocumentId());
+            uuids.add(CBLDatabase.generateDocumentId());
         }
         Map<String,Object> result = new HashMap<String,Object>();
         result.put("uuids", uuids);
-        connection.setResponseBody(new TDBody(result));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(result));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_GET_active_tasks(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_GET_active_tasks(CBLDatabase _db, String _docID, String _attachmentName) {
         // http://wiki.apache.org/couchdb/HttpGetActiveTasks
         List<Map<String,Object>> activities = new ArrayList<Map<String,Object>>();
-        for (TDDatabase db : server.allOpenDatabases()) {
-            List<TDReplicator> activeReplicators = db.getActiveReplicators();
+        for (CBLDatabase db : server.allOpenDatabases()) {
+            List<CBLReplicator> activeReplicators = db.getActiveReplicators();
             if(activeReplicators != null) {
-                for (TDReplicator replicator : activeReplicators) {
+                for (CBLReplicator replicator : activeReplicators) {
                     String source = replicator.getRemote().toExternalForm();
                     String target = db.getName();
                     if(replicator.isPush()) {
@@ -623,15 +623,15 @@ public class TDRouter implements Observer {
                 }
             }
         }
-        connection.setResponseBody(new TDBody(activities));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(activities));
+        return new CBLStatus(CBLStatus.OK);
     }
 
     /** DATABASE REQUESTS: **/
 
-    public TDStatus do_GET_Database(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_GET_Database(CBLDatabase _db, String _docID, String _attachmentName) {
         // http://wiki.apache.org/couchdb/HTTP_database_API#Database_Information
-        TDStatus status = openDB();
+        CBLStatus status = openDB();
         if(!status.isSuccessful()) {
             return status;
         }
@@ -643,58 +643,58 @@ public class TDRouter implements Observer {
         result.put("doc_count", num_docs);
         result.put("update_seq", update_seq);
         result.put("disk_size", db.totalDataSize());
-        connection.setResponseBody(new TDBody(result));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(result));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_PUT_Database(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_PUT_Database(CBLDatabase _db, String _docID, String _attachmentName) {
         if(db.exists()) {
-            return new TDStatus(TDStatus.PRECONDITION_FAILED);
+            return new CBLStatus(CBLStatus.PRECONDITION_FAILED);
         }
         if(!db.open()) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
         setResponseLocation(connection.getURL());
-        return new TDStatus(TDStatus.CREATED);
+        return new CBLStatus(CBLStatus.CREATED);
     }
 
-    public TDStatus do_DELETE_Database(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_DELETE_Database(CBLDatabase _db, String _docID, String _attachmentName) {
         if(getQuery("rev") != null) {
-            return new TDStatus(TDStatus.BAD_REQUEST);  // CouchDB checks for this; probably meant to be a document deletion
+            return new CBLStatus(CBLStatus.BAD_REQUEST);  // CouchDB checks for this; probably meant to be a document deletion
         }
-        return server.deleteDatabaseNamed(db.getName()) ? new TDStatus(TDStatus.OK) : new TDStatus(TDStatus.NOT_FOUND);
+        return server.deleteDatabaseNamed(db.getName()) ? new CBLStatus(CBLStatus.OK) : new CBLStatus(CBLStatus.NOT_FOUND);
     }
 
-    public TDStatus do_POST_Database(TDDatabase _db, String _docID, String _attachmentName) {
-        TDStatus status = openDB();
+    public CBLStatus do_POST_Database(CBLDatabase _db, String _docID, String _attachmentName) {
+        CBLStatus status = openDB();
         if(!status.isSuccessful()) {
             return status;
         }
         return update(db, null, getBodyAsDictionary(), false);
     }
 
-    public TDStatus do_GET_Document_all_docs(TDDatabase _db, String _docID, String _attachmentName) {
-        TDQueryOptions options = new TDQueryOptions();
+    public CBLStatus do_GET_Document_all_docs(CBLDatabase _db, String _docID, String _attachmentName) {
+        CBLQueryOptions options = new CBLQueryOptions();
         if(!getQueryOptions(options)) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
         Map<String,Object> result = db.getAllDocs(options);
         if(result == null) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
-        connection.setResponseBody(new TDBody(result));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(result));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_POST_Document_all_docs(TDDatabase _db, String _docID, String _attachmentName) {
-        TDQueryOptions options = new TDQueryOptions();
+    public CBLStatus do_POST_Document_all_docs(CBLDatabase _db, String _docID, String _attachmentName) {
+        CBLQueryOptions options = new CBLQueryOptions();
         if (!getQueryOptions(options)) {
-                return new TDStatus(TDStatus.BAD_REQUEST);
+                return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
 
         Map<String, Object> body = getBodyAsDictionary();
         if (body == null) {
-                return new TDStatus(TDStatus.BAD_REQUEST);
+                return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
 
         Map<String, Object> result = null;
@@ -706,16 +706,16 @@ public class TDRouter implements Observer {
         }
 
         if (result == null) {
-                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
-        connection.setResponseBody(new TDBody(result));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(result));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_POST_Document_bulk_docs(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_POST_Document_bulk_docs(CBLDatabase _db, String _docID, String _attachmentName) {
     	Map<String,Object> bodyDict = getBodyAsDictionary();
         if(bodyDict == null) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
         List<Map<String,Object>> docs = (List<Map<String, Object>>) bodyDict.get("docs");
 
@@ -735,19 +735,19 @@ public class TDRouter implements Observer {
         try {
             for (Map<String, Object> doc : docs) {
                 String docID = (String) doc.get("_id");
-                TDRevision rev = null;
-                TDStatus status = new TDStatus(TDStatus.BAD_REQUEST);
-                TDBody docBody = new TDBody(doc);
+                CBLRevision rev = null;
+                CBLStatus status = new CBLStatus(CBLStatus.BAD_REQUEST);
+                CBLBody docBody = new CBLBody(doc);
                 if (noNewEdits) {
-                    rev = new TDRevision(docBody);
+                    rev = new CBLRevision(docBody);
                     if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
-                        status =  new TDStatus(TDStatus.BAD_REQUEST);
+                        status =  new CBLStatus(CBLStatus.BAD_REQUEST);
                     } else {
-                        List<String> history = TDDatabase.parseCouchDBRevisionHistory(doc);
+                        List<String> history = CBLDatabase.parseCouchDBRevisionHistory(doc);
                         status = db.forceInsert(rev, history, null);
                     }
                 } else {
-                    TDStatus outStatus = new TDStatus();
+                    CBLStatus outStatus = new CBLStatus();
                     rev = update(db, docID, docBody, false, allOrNothing, outStatus);
                     status.setCode(outStatus.getCode());
                 }
@@ -761,11 +761,11 @@ public class TDRouter implements Observer {
                     }
                 } else if(allOrNothing) {
                     return status;  // all_or_nothing backs out if there's any error
-                } else if(status.getCode() == TDStatus.FORBIDDEN) {
+                } else if(status.getCode() == CBLStatus.FORBIDDEN) {
                     result = new HashMap<String, Object>();
                     result.put("error", "validation failed");
                     result.put("id", docID);
-                } else if(status.getCode() == TDStatus.CONFLICT) {
+                } else if(status.getCode() == CBLStatus.CONFLICT) {
                     result = new HashMap<String, Object>();
                     result.put("error", "conflict");
                     result.put("id", docID);
@@ -776,42 +776,42 @@ public class TDRouter implements Observer {
                     results.add(result);
                 }
             }
-            Log.w(TDDatabase.TAG, String.format("%s finished inserting %d revisions in bulk", this, docs.size()));
+            Log.w(CBLDatabase.TAG, String.format("%s finished inserting %d revisions in bulk", this, docs.size()));
             ok = true;
         } catch (Exception e) {
-            Log.w(TDDatabase.TAG, String.format("%s: Exception inserting revisions in bulk", this), e);
+            Log.w(CBLDatabase.TAG, String.format("%s: Exception inserting revisions in bulk", this), e);
         } finally {
             db.endTransaction(ok);
         }
-        Log.d(TDDatabase.TAG, "results: " + results.toString());
-        connection.setResponseBody(new TDBody(results));
-        return new TDStatus(TDStatus.CREATED);
+        Log.d(CBLDatabase.TAG, "results: " + results.toString());
+        connection.setResponseBody(new CBLBody(results));
+        return new CBLStatus(CBLStatus.CREATED);
     }
 
-    public TDStatus do_POST_Document_revs_diff(TDDatabase _db, String _docID, String _attachmentName) {
+    public CBLStatus do_POST_Document_revs_diff(CBLDatabase _db, String _docID, String _attachmentName) {
         // http://wiki.apache.org/couchdb/HttpPostRevsDiff
         // Collect all of the input doc/revision IDs as TDRevisions:
-        TDRevisionList revs = new TDRevisionList();
+        CBLRevisionList revs = new CBLRevisionList();
         Map<String, Object> body = getBodyAsDictionary();
         if(body == null) {
-            return new TDStatus(TDStatus.BAD_JSON);
+            return new CBLStatus(CBLStatus.BAD_JSON);
         }
         for (String docID : body.keySet()) {
             List<String> revIDs = (List<String>)body.get(docID);
             for (String revID : revIDs) {
-                TDRevision rev = new TDRevision(docID, revID, false);
+                CBLRevision rev = new CBLRevision(docID, revID, false);
                 revs.add(rev);
             }
         }
 
         // Look them up, removing the existing ones from revs:
         if(!db.findMissingRevisions(revs)) {
-            return new TDStatus(TDStatus.DB_ERROR);
+            return new CBLStatus(CBLStatus.DB_ERROR);
         }
 
         // Return the missing revs in a somewhat different format:
         Map<String, Object> diffs = new HashMap<String, Object>();
-        for (TDRevision rev : revs) {
+        for (CBLRevision rev : revs) {
             String docID = rev.getDocId();
 
             List<String> missingRevs = null;
@@ -832,14 +832,14 @@ public class TDRouter implements Observer {
 
         // FIXME add support for possible_ancestors
 
-        connection.setResponseBody(new TDBody(diffs));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(diffs));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_POST_Document_compact(TDDatabase _db, String _docID, String _attachmentName) {
-    	TDStatus status = _db.compact();
+    public CBLStatus do_POST_Document_compact(CBLDatabase _db, String _docID, String _attachmentName) {
+    	CBLStatus status = _db.compact();
     	if (status.getCode() < 300) {
-    		TDStatus outStatus = new TDStatus();
+    		CBLStatus outStatus = new CBLStatus();
     		outStatus.setCode(202);	// CouchDB returns 202 'cause it's an async operation
             return outStatus;
     	} else {
@@ -847,13 +847,13 @@ public class TDRouter implements Observer {
     	}
     }
 
-    public TDStatus do_POST_Document_ensure_full_commit(TDDatabase _db, String _docID, String _attachmentName) {
-        return new TDStatus(TDStatus.OK);
+    public CBLStatus do_POST_Document_ensure_full_commit(CBLDatabase _db, String _docID, String _attachmentName) {
+        return new CBLStatus(CBLStatus.OK);
     }
 
     /** CHANGES: **/
 
-    public Map<String,Object> changesDictForRevision(TDRevision rev) {
+    public Map<String,Object> changesDictForRevision(CBLRevision rev) {
         Map<String,Object> changesDict = new HashMap<String, Object>();
         changesDict.put("rev", rev.getRevId());
 
@@ -873,9 +873,9 @@ public class TDRouter implements Observer {
         return result;
     }
 
-    public Map<String,Object> responseBodyForChanges(List<TDRevision> changes, long since) {
+    public Map<String,Object> responseBodyForChanges(List<CBLRevision> changes, long since) {
         List<Map<String,Object>> results = new ArrayList<Map<String,Object>>();
-        for (TDRevision rev : changes) {
+        for (CBLRevision rev : changes) {
             Map<String,Object> changeDict = changesDictForRevision(rev);
             results.add(changeDict);
         }
@@ -888,12 +888,12 @@ public class TDRouter implements Observer {
         return result;
     }
 
-    public Map<String, Object> responseBodyForChangesWithConflicts(List<TDRevision> changes, long since) {
+    public Map<String, Object> responseBodyForChangesWithConflicts(List<CBLRevision> changes, long since) {
         // Assumes the changes are grouped by docID so that conflicts will be adjacent.
         List<Map<String,Object>> entries = new ArrayList<Map<String, Object>>();
         String lastDocID = null;
         Map<String, Object> lastEntry = null;
-        for (TDRevision rev : changes) {
+        for (CBLRevision rev : changes) {
             String docID = rev.getDocId();
             if(docID.equals(lastDocID)) {
                 Map<String,Object> changesDict = new HashMap<String, Object>();
@@ -909,7 +909,7 @@ public class TDRouter implements Observer {
         // After collecting revisions, sort by sequence:
         Collections.sort(entries, new Comparator<Map<String,Object>>() {
            public int compare(Map<String,Object> e1, Map<String,Object> e2) {
-               return TDMisc.TDSequenceCompare((Long)e1.get("seq"), (Long)e2.get("seq"));
+               return CBLMisc.TDSequenceCompare((Long)e1.get("seq"), (Long)e2.get("seq"));
            }
         });
 
@@ -924,10 +924,10 @@ public class TDRouter implements Observer {
         return result;
     }
 
-    public void sendContinuousChange(TDRevision rev) {
+    public void sendContinuousChange(CBLRevision rev) {
         Map<String,Object> changeDict = changesDictForRevision(rev);
         try {
-            String jsonString = TDServer.getObjectMapper().writeValueAsString(changeDict);
+            String jsonString = CBLServer.getObjectMapper().writeValueAsString(changeDict);
             if(callbackBlock != null) {
                 byte[] json = (jsonString + "\n").getBytes();
                 OutputStream os = connection.getResponseOutputStream();
@@ -935,7 +935,7 @@ public class TDRouter implements Observer {
                     os.write(json);
                     os.flush();
                 } catch (Exception e) {
-                    Log.e(TDDatabase.TAG, "IOException writing to internal streams", e);
+                    Log.e(CBLDatabase.TAG, "IOException writing to internal streams", e);
                 }
             }
         } catch (Exception e) {
@@ -949,35 +949,35 @@ public class TDRouter implements Observer {
             //make sure we're listening to the right events
             Map<String,Object> changeNotification = (Map<String,Object>)changeObject;
 
-            TDRevision rev = (TDRevision)changeNotification.get("rev");
+            CBLRevision rev = (CBLRevision)changeNotification.get("rev");
 
             if(changesFilter != null && !changesFilter.filter(rev)) {
                 return;
             }
 
             if(longpoll) {
-                Log.w(TDDatabase.TAG, "TDRouter: Sending longpoll response");
+                Log.w(CBLDatabase.TAG, "CBLRouter: Sending longpoll response");
                 sendResponse();
-                List<TDRevision> revs = new ArrayList<TDRevision>();
+                List<CBLRevision> revs = new ArrayList<CBLRevision>();
                 revs.add(rev);
                 Map<String,Object> body = responseBodyForChanges(revs, 0);
                 if(callbackBlock != null) {
                     byte[] data = null;
                     try {
-                        data = TDServer.getObjectMapper().writeValueAsBytes(body);
+                        data = CBLServer.getObjectMapper().writeValueAsBytes(body);
                     } catch (Exception e) {
-                        Log.w(TDDatabase.TAG, "Error serializing JSON", e);
+                        Log.w(CBLDatabase.TAG, "Error serializing JSON", e);
                     }
                     OutputStream os = connection.getResponseOutputStream();
                     try {
                         os.write(data);
                         os.close();
                     } catch (IOException e) {
-                        Log.e(TDDatabase.TAG, "IOException writing to internal streams", e);
+                        Log.e(CBLDatabase.TAG, "IOException writing to internal streams", e);
                     }
                 }
             } else {
-                Log.w(TDDatabase.TAG, "TDRouter: Sending continous change chunk");
+                Log.w(CBLDatabase.TAG, "CBLRouter: Sending continous change chunk");
                 sendContinuousChange(rev);
             }
 
@@ -985,9 +985,9 @@ public class TDRouter implements Observer {
 
     }
 
-    public TDStatus do_GET_Document_changes(TDDatabase _db, String docID, String _attachmentName) {
+    public CBLStatus do_GET_Document_changes(CBLDatabase _db, String docID, String _attachmentName) {
         // http://wiki.apache.org/couchdb/HTTP_database_API#Changes
-        TDChangesOptions options = new TDChangesOptions();
+        CBLChangesOptions options = new CBLChangesOptions();
         changesIncludesDocs = getBooleanQuery("include_docs");
         options.setIncludeDocs(changesIncludesDocs);
         String style = getQuery("style");
@@ -1004,14 +1004,14 @@ public class TDRouter implements Observer {
         if(filterName != null) {
             changesFilter = db.getFilterNamed(filterName);
             if(changesFilter == null) {
-                return new TDStatus(TDStatus.NOT_FOUND);
+                return new CBLStatus(CBLStatus.NOT_FOUND);
             }
         }
 
-        TDRevisionList changes = db.changesSince(since, options, changesFilter);
+        CBLRevisionList changes = db.changesSince(since, options, changesFilter);
 
         if(changes == null) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
 
         String feed = getQuery("feed");
@@ -1020,23 +1020,23 @@ public class TDRouter implements Observer {
 
         if(continuous || (longpoll && changes.size() == 0)) {
             connection.setChunked(true);
-            connection.setResponseCode(TDStatus.OK);
+            connection.setResponseCode(CBLStatus.OK);
             sendResponse();
             if(continuous) {
-                for (TDRevision rev : changes) {
+                for (CBLRevision rev : changes) {
                     sendContinuousChange(rev);
                 }
             }
             db.addObserver(this);
          // Don't close connection; more data to come
-            return new TDStatus(0);
+            return new CBLStatus(0);
         } else {
             if(options.isIncludeConflicts()) {
-                connection.setResponseBody(new TDBody(responseBodyForChangesWithConflicts(changes, since)));
+                connection.setResponseBody(new CBLBody(responseBodyForChangesWithConflicts(changes, since)));
             } else {
-                connection.setResponseBody(new TDBody(responseBodyForChanges(changes, since)));
+                connection.setResponseBody(new CBLBody(responseBodyForChanges(changes, since)));
             }
-            return new TDStatus(TDStatus.OK);
+            return new CBLStatus(CBLStatus.OK);
         }
     }
 
@@ -1055,13 +1055,13 @@ public class TDRouter implements Observer {
         }
     }
 
-    public String setResponseEtag(TDRevision rev) {
+    public String setResponseEtag(CBLRevision rev) {
         String eTag = String.format("\"%s\"", rev.getRevId());
         connection.getResHeader().add("Etag", eTag);
         return eTag;
     }
 
-    public TDStatus do_GET_Document(TDDatabase _db, String docID, String _attachmentName) {
+    public CBLStatus do_GET_Document(CBLDatabase _db, String docID, String _attachmentName) {
         // http://wiki.apache.org/couchdb/HTTP_Document_API#GET
         boolean isLocalDoc = docID.startsWith("_local");
         EnumSet<TDContentOptions> options = getContentOptions();
@@ -1069,7 +1069,7 @@ public class TDRouter implements Observer {
         if(openRevsParam == null || isLocalDoc) {
             // Regular GET:
             String revID = getQuery("rev");  // often null
-            TDRevision rev = null;
+            CBLRevision rev = null;
             if(isLocalDoc) {
                 rev = db.getLocalDocument(docID, revID);
             } else {
@@ -1082,16 +1082,16 @@ public class TDRouter implements Observer {
                 if (attsSince != null) {
                     String ancestorId = db.findCommonAncestorOf(rev, attsSince);
                     if (ancestorId != null) {
-                        int generation = TDRevision.generationFromRevID(ancestorId);
+                        int generation = CBLRevision.generationFromRevID(ancestorId);
                         db.stubOutAttachmentsIn(rev, generation + 1);
                 	}
                 }
             }
             if(rev == null) {
-                return new TDStatus(TDStatus.NOT_FOUND);
+                return new CBLStatus(CBLStatus.NOT_FOUND);
             }
             if(cacheWithEtag(rev.getRevId())) {
-                return new TDStatus(TDStatus.NOT_MODIFIED);  // set ETag and check conditional GET
+                return new CBLStatus(CBLStatus.NOT_MODIFIED);  // set ETag and check conditional GET
             }
 
             connection.setResponseBody(rev.getBody());
@@ -1099,15 +1099,15 @@ public class TDRouter implements Observer {
             List<Map<String,Object>> result = null;
             if(openRevsParam.equals("all")) {
                 // Get all conflicting revisions:
-                TDRevisionList allRevs = db.getAllRevisionsOfDocumentID(docID, true);
+                CBLRevisionList allRevs = db.getAllRevisionsOfDocumentID(docID, true);
                 result = new ArrayList<Map<String,Object>>(allRevs.size());
-                for (TDRevision rev : allRevs) {
-                    TDStatus status = db.loadRevisionBody(rev, options);
+                for (CBLRevision rev : allRevs) {
+                    CBLStatus status = db.loadRevisionBody(rev, options);
                     if(status.isSuccessful()) {
                         Map<String, Object> dict = new HashMap<String,Object>();
                         dict.put("ok", rev.getProperties());
                         result.add(dict);
-                    } else if(status.getCode() != TDStatus.INTERNAL_SERVER_ERROR) {
+                    } else if(status.getCode() != CBLStatus.INTERNAL_SERVER_ERROR) {
                         Map<String, Object> dict = new HashMap<String,Object>();
                         dict.put("missing", rev.getRevId());
                         result.add(dict);
@@ -1119,11 +1119,11 @@ public class TDRouter implements Observer {
                 // ?open_revs=[...] returns an array of revisions of the document:
                 List<String> openRevs = (List<String>)getJSONQuery("open_revs");
                 if(openRevs == null) {
-                    return new TDStatus(TDStatus.BAD_REQUEST);
+                    return new CBLStatus(CBLStatus.BAD_REQUEST);
                 }
                 result = new ArrayList<Map<String,Object>>(openRevs.size());
                 for (String revID : openRevs) {
-                    TDRevision rev = db.getDocumentWithIDAndRev(docID, revID, options);
+                    CBLRevision rev = db.getDocumentWithIDAndRev(docID, revID, options);
                     if(rev != null) {
                         Map<String, Object> dict = new HashMap<String,Object>();
                         dict.put("ok", rev.getProperties());
@@ -1140,32 +1140,32 @@ public class TDRouter implements Observer {
                 //FIXME figure out support for multipart
                 throw new UnsupportedOperationException();
             } else {
-                connection.setResponseBody(new TDBody(result));
+                connection.setResponseBody(new CBLBody(result));
             }
         }
-        return new TDStatus(TDStatus.OK);
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_GET_Attachment(TDDatabase _db, String docID, String _attachmentName) {
+    public CBLStatus do_GET_Attachment(CBLDatabase _db, String docID, String _attachmentName) {
     	// http://wiki.apache.org/couchdb/HTTP_Document_API#GET
         EnumSet<TDContentOptions> options = getContentOptions();
         options.add(TDContentOptions.TDNoBody);
     	String revID = getQuery("rev");  // often null
-    	TDRevision rev = db.getDocumentWithIDAndRev(docID, revID, options);
+    	CBLRevision rev = db.getDocumentWithIDAndRev(docID, revID, options);
     	if(rev == null) {
-    		return new TDStatus(TDStatus.NOT_FOUND);
+    		return new CBLStatus(CBLStatus.NOT_FOUND);
     	}
     	if(cacheWithEtag(rev.getRevId())) {
-    		return new TDStatus(TDStatus.NOT_MODIFIED);  // set ETag and check conditional GET
+    		return new CBLStatus(CBLStatus.NOT_MODIFIED);  // set ETag and check conditional GET
     	}
 
     	String type = null;
-    	TDStatus status = new TDStatus();
+    	CBLStatus status = new CBLStatus();
     	String acceptEncoding = connection.getRequestProperty("Accept-Encoding");
-    	TDAttachment contents = db.getAttachmentForSequence(rev.getSequence(), _attachmentName, status);
+    	CBLAttachment contents = db.getAttachmentForSequence(rev.getSequence(), _attachmentName, status);
 
     	if (contents == null) {
-    		return new TDStatus(TDStatus.NOT_FOUND);
+    		return new CBLStatus(CBLStatus.NOT_FOUND);
     	}
     	type = contents.getContentType();
     	if (type != null) {
@@ -1176,13 +1176,13 @@ public class TDRouter implements Observer {
     	}
 
         connection.setResponseInputStream(contents.getContentStream());
-        return new TDStatus(TDStatus.OK);
+        return new CBLStatus(CBLStatus.OK);
     }
 
     /**
      * NOTE this departs from the iOS version, returning revision, passing status back by reference
      */
-    public TDRevision update(TDDatabase _db, String docID, TDBody body, boolean deleting, boolean allowConflict, TDStatus outStatus) {
+    public CBLRevision update(CBLDatabase _db, String docID, CBLBody body, boolean deleting, boolean allowConflict, CBLStatus outStatus) {
         boolean isLocalDoc = docID != null && docID.startsWith(("_local"));
         String prevRevID = null;
 
@@ -1191,17 +1191,17 @@ public class TDRouter implements Observer {
             deleting = (deletingBoolean != null && deletingBoolean.booleanValue());
             if(docID == null) {
                 if(isLocalDoc) {
-                    outStatus.setCode(TDStatus.METHOD_NOT_ALLOWED);
+                    outStatus.setCode(CBLStatus.METHOD_NOT_ALLOWED);
                     return null;
                 }
                 // POST's doc ID may come from the _id field of the JSON body, else generate a random one.
                 docID = (String)body.getPropertyForKey("_id");
                 if(docID == null) {
                     if(deleting) {
-                        outStatus.setCode(TDStatus.BAD_REQUEST);
+                        outStatus.setCode(CBLStatus.BAD_REQUEST);
                         return null;
                     }
-                    docID = TDDatabase.generateDocumentId();
+                    docID = CBLDatabase.generateDocumentId();
                 }
             }
             // PUT's revision ID comes from the JSON body.
@@ -1216,11 +1216,11 @@ public class TDRouter implements Observer {
             prevRevID = getRevIDFromIfMatchHeader();
         }
 
-        TDRevision rev = new TDRevision(docID, null, deleting);
+        CBLRevision rev = new CBLRevision(docID, null, deleting);
         rev.setBody(body);
 
-        TDRevision result = null;
-        TDStatus tmpStatus = new TDStatus();
+        CBLRevision result = null;
+        CBLStatus tmpStatus = new CBLStatus();
         if(isLocalDoc) {
             result = _db.putLocalRevision(rev, prevRevID, tmpStatus);
         } else {
@@ -1230,10 +1230,10 @@ public class TDRouter implements Observer {
         return result;
     }
 
-    public TDStatus update(TDDatabase _db, String docID, Map<String,Object> bodyDict, boolean deleting) {
-        TDBody body = new TDBody(bodyDict);
-        TDStatus status = new TDStatus();
-        TDRevision rev = update(_db, docID, body, deleting, false, status);
+    public CBLStatus update(CBLDatabase _db, String docID, Map<String,Object> bodyDict, boolean deleting) {
+        CBLBody body = new CBLBody(bodyDict);
+        CBLStatus status = new CBLStatus();
+        CBLRevision rev = update(_db, docID, body, deleting, false, status);
         if(status.isSuccessful()) {
             cacheWithEtag(rev.getRevId());  // set ETag
             if(!deleting) {
@@ -1253,15 +1253,15 @@ public class TDRouter implements Observer {
             result.put("ok", true);
             result.put("id", rev.getDocId());
             result.put("rev", rev.getRevId());
-            connection.setResponseBody(new TDBody(result));
+            connection.setResponseBody(new CBLBody(result));
         }
         return status;
     }
 
-    public TDStatus do_PUT_Document(TDDatabase _db, String docID, String _attachmentName) {
+    public CBLStatus do_PUT_Document(CBLDatabase _db, String docID, String _attachmentName) {
         Map<String,Object> bodyDict = getBodyAsDictionary();
         if(bodyDict == null) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
 
         if(getQuery("new_edits") == null || (getQuery("new_edits") != null && (new Boolean(getQuery("new_edits"))))) {
@@ -1269,34 +1269,34 @@ public class TDRouter implements Observer {
             return update(_db, docID, bodyDict, false);
         } else {
             // PUT with new_edits=false -- forcible insertion of existing revision:
-            TDBody body = new TDBody(bodyDict);
-            TDRevision rev = new TDRevision(body);
+            CBLBody body = new CBLBody(bodyDict);
+            CBLRevision rev = new CBLRevision(body);
             if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
-                return new TDStatus(TDStatus.BAD_REQUEST);
+                return new CBLStatus(CBLStatus.BAD_REQUEST);
             }
-            List<String> history = TDDatabase.parseCouchDBRevisionHistory(body.getProperties());
+            List<String> history = CBLDatabase.parseCouchDBRevisionHistory(body.getProperties());
             return db.forceInsert(rev, history, null);
         }
     }
 
-    public TDStatus do_DELETE_Document(TDDatabase _db, String docID, String _attachmentName) {
+    public CBLStatus do_DELETE_Document(CBLDatabase _db, String docID, String _attachmentName) {
         return update(_db, docID, null, true);
     }
 
-    public TDStatus updateAttachment(String attachment, String docID, InputStream contentStream) {
-        TDStatus status = new TDStatus();
+    public CBLStatus updateAttachment(String attachment, String docID, InputStream contentStream) {
+        CBLStatus status = new CBLStatus();
         String revID = getQuery("rev");
         if(revID == null) {
             revID = getRevIDFromIfMatchHeader();
         }
-        TDRevision rev = db.updateAttachment(attachment, contentStream, connection.getRequestProperty("content-type"),
+        CBLRevision rev = db.updateAttachment(attachment, contentStream, connection.getRequestProperty("content-type"),
                 docID, revID, status);
         if(status.isSuccessful()) {
             Map<String, Object> resultDict = new HashMap<String, Object>();
             resultDict.put("ok", true);
             resultDict.put("id", rev.getDocId());
             resultDict.put("rev", rev.getRevId());
-            connection.setResponseBody(new TDBody(resultDict));
+            connection.setResponseBody(new CBLBody(resultDict));
             cacheWithEtag(rev.getRevId());
             if(contentStream != null) {
                 setResponseLocation(connection.getURL());
@@ -1305,17 +1305,17 @@ public class TDRouter implements Observer {
         return status;
     }
 
-    public TDStatus do_PUT_Attachment(TDDatabase _db, String docID, String _attachmentName) {
+    public CBLStatus do_PUT_Attachment(CBLDatabase _db, String docID, String _attachmentName) {
         return updateAttachment(_attachmentName, docID, connection.getRequestInputStream());
     }
 
-    public TDStatus do_DELETE_Attachment(TDDatabase _db, String docID, String _attachmentName) {
+    public CBLStatus do_DELETE_Attachment(CBLDatabase _db, String docID, String _attachmentName) {
         return updateAttachment(_attachmentName, docID, null);
     }
 
     /** VIEW QUERIES: **/
 
-    public TDView compileView(String viewName, Map<String,Object> viewProps) {
+    public CBLView compileView(String viewName, Map<String,Object> viewProps) {
         String language = (String)viewProps.get("language");
         if(language == null) {
             language = "javascript";
@@ -1324,22 +1324,22 @@ public class TDRouter implements Observer {
         if(mapSource == null) {
             return null;
         }
-        TDViewMapBlock mapBlock = TDView.getCompiler().compileMapFunction(mapSource, language);
+        CBLViewMapBlock mapBlock = CBLView.getCompiler().compileMapFunction(mapSource, language);
         if(mapBlock == null) {
-            Log.w(TDDatabase.TAG, String.format("View %s has unknown map function: %s", viewName, mapSource));
+            Log.w(CBLDatabase.TAG, String.format("View %s has unknown map function: %s", viewName, mapSource));
             return null;
         }
         String reduceSource = (String)viewProps.get("reduce");
-        TDViewReduceBlock reduceBlock = null;
+        CBLViewReduceBlock reduceBlock = null;
         if(reduceSource != null) {
-            reduceBlock = TDView.getCompiler().compileReduceFunction(reduceSource, language);
+            reduceBlock = CBLView.getCompiler().compileReduceFunction(reduceSource, language);
             if(reduceBlock == null) {
-                Log.w(TDDatabase.TAG, String.format("View %s has unknown reduce function: %s", viewName, reduceBlock));
+                Log.w(CBLDatabase.TAG, String.format("View %s has unknown reduce function: %s", viewName, reduceBlock));
                 return null;
             }
         }
 
-        TDView view = db.getViewNamed(viewName);
+        CBLView view = db.getViewNamed(viewName);
         view.setMapReduceBlocks(mapBlock, reduceBlock, "1");
         String collation = (String)viewProps.get("collation");
         if("raw".equals(collation)) {
@@ -1348,29 +1348,29 @@ public class TDRouter implements Observer {
         return view;
     }
 
-    public TDStatus queryDesignDoc(String designDoc, String viewName, List<Object> keys) {
+    public CBLStatus queryDesignDoc(String designDoc, String viewName, List<Object> keys) {
         String tdViewName = String.format("%s/%s", designDoc, viewName);
-        TDView view = db.getExistingViewNamed(tdViewName);
+        CBLView view = db.getExistingViewNamed(tdViewName);
         if(view == null || view.getMapBlock() == null) {
             // No TouchDB view is defined, or it hasn't had a map block assigned;
             // see if there's a CouchDB view definition we can compile:
-            TDRevision rev = db.getDocumentWithIDAndRev(String.format("_design/%s", designDoc), null, EnumSet.noneOf(TDContentOptions.class));
+            CBLRevision rev = db.getDocumentWithIDAndRev(String.format("_design/%s", designDoc), null, EnumSet.noneOf(TDContentOptions.class));
             if(rev == null) {
-                return new TDStatus(TDStatus.NOT_FOUND);
+                return new CBLStatus(CBLStatus.NOT_FOUND);
             }
             Map<String,Object> views = (Map<String,Object>)rev.getProperties().get("views");
             Map<String,Object> viewProps = (Map<String,Object>)views.get(viewName);
             if(viewProps == null) {
-                return new TDStatus(TDStatus.NOT_FOUND);
+                return new CBLStatus(CBLStatus.NOT_FOUND);
             }
             // If there is a CouchDB view, see if it can be compiled from source:
             view = compileView(tdViewName, viewProps);
             if(view == null) {
-                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
             }
         }
 
-        TDQueryOptions options = new TDQueryOptions();
+        CBLQueryOptions options = new CBLQueryOptions();
 
         //if the view contains a reduce block, it should default to reduce=true
         if(view.getReduceBlock() != null) {
@@ -1378,13 +1378,13 @@ public class TDRouter implements Observer {
         }
 
         if(!getQueryOptions(options)) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
         if(keys != null) {
             options.setKeys(keys);
         }
 
-        TDStatus status = view.updateIndex();
+        CBLStatus status = view.updateIndex();
         if(!status.isSuccessful()) {
             return status;
         }
@@ -1395,7 +1395,7 @@ public class TDRouter implements Observer {
         if(keys == null) {
             long eTag = options.isIncludeDocs() ? db.getLastSequence() : lastSequenceIndexed;
             if(cacheWithEtag(String.format("%d", eTag))) {
-                return new TDStatus(TDStatus.NOT_MODIFIED);
+                return new CBLStatus(CBLStatus.NOT_MODIFIED);
             }
         }
 
@@ -1411,18 +1411,18 @@ public class TDRouter implements Observer {
         if(options.isUpdateSeq()) {
             responseBody.put("update_seq", lastSequenceIndexed);
         }
-        connection.setResponseBody(new TDBody(responseBody));
-        return new TDStatus(TDStatus.OK);
+        connection.setResponseBody(new CBLBody(responseBody));
+        return new CBLStatus(CBLStatus.OK);
     }
 
-    public TDStatus do_GET_DesignDocument(TDDatabase _db, String designDocID, String viewName) {
+    public CBLStatus do_GET_DesignDocument(CBLDatabase _db, String designDocID, String viewName) {
         return queryDesignDoc(designDocID, viewName, null);
     }
 
-    public TDStatus do_POST_DesignDocument(TDDatabase _db, String designDocID, String viewName) {
+    public CBLStatus do_POST_DesignDocument(CBLDatabase _db, String designDocID, String viewName) {
     	Map<String,Object> bodyDict = getBodyAsDictionary();
     	if(bodyDict == null) {
-    		return new TDStatus(TDStatus.BAD_REQUEST);
+    		return new CBLStatus(CBLStatus.BAD_REQUEST);
     	}
     	List<Object> keys = (List<Object>) bodyDict.get("keys");
     	return queryDesignDoc(designDocID, viewName, keys);
@@ -1434,6 +1434,6 @@ public class TDRouter implements Observer {
         if(connection != null && connection.getURL() != null) {
             url = connection.getURL().toExternalForm();
         }
-        return String.format("TDRouter [%s]", url);
+        return String.format("CBLRouter [%s]", url);
     }
 }

@@ -8,8 +8,8 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.test.AndroidTestCase;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDRevision;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLRevision;
 
 public class Revisions extends AndroidTestCase {
 
@@ -17,47 +17,47 @@ public class Revisions extends AndroidTestCase {
         int num;
         String suffix;
 
-        num = TDDatabase.parseRevIDNumber("1-utiopturoewpt");
+        num = CBLDatabase.parseRevIDNumber("1-utiopturoewpt");
         Assert.assertEquals(1, num);
-        suffix = TDDatabase.parseRevIDSuffix("1-utiopturoewpt");
+        suffix = CBLDatabase.parseRevIDSuffix("1-utiopturoewpt");
         Assert.assertEquals("utiopturoewpt", suffix);
 
-        num = TDDatabase.parseRevIDNumber("321-fdjfdsj-e");
+        num = CBLDatabase.parseRevIDNumber("321-fdjfdsj-e");
         Assert.assertEquals(321, num);
-        suffix = TDDatabase.parseRevIDSuffix("321-fdjfdsj-e");
+        suffix = CBLDatabase.parseRevIDSuffix("321-fdjfdsj-e");
         Assert.assertEquals("fdjfdsj-e", suffix);
 
-        num = TDDatabase.parseRevIDNumber("0-fdjfdsj-e");
-        suffix = TDDatabase.parseRevIDSuffix("0-fdjfdsj-e");
+        num = CBLDatabase.parseRevIDNumber("0-fdjfdsj-e");
+        suffix = CBLDatabase.parseRevIDSuffix("0-fdjfdsj-e");
         Assert.assertTrue(num == 0 || (suffix.length() == 0));
-        num = TDDatabase.parseRevIDNumber("-4-fdjfdsj-e");
-        suffix = TDDatabase.parseRevIDSuffix("-4-fdjfdsj-e");
+        num = CBLDatabase.parseRevIDNumber("-4-fdjfdsj-e");
+        suffix = CBLDatabase.parseRevIDSuffix("-4-fdjfdsj-e");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = TDDatabase.parseRevIDNumber("5_fdjfdsj-e");
-        suffix = TDDatabase.parseRevIDSuffix("5_fdjfdsj-e");
+        num = CBLDatabase.parseRevIDNumber("5_fdjfdsj-e");
+        suffix = CBLDatabase.parseRevIDSuffix("5_fdjfdsj-e");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = TDDatabase.parseRevIDNumber(" 5-fdjfdsj-e");
-        suffix = TDDatabase.parseRevIDSuffix(" 5-fdjfdsj-e");
+        num = CBLDatabase.parseRevIDNumber(" 5-fdjfdsj-e");
+        suffix = CBLDatabase.parseRevIDSuffix(" 5-fdjfdsj-e");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = TDDatabase.parseRevIDNumber("7 -foo");
-        suffix = TDDatabase.parseRevIDSuffix("7 -foo");
+        num = CBLDatabase.parseRevIDNumber("7 -foo");
+        suffix = CBLDatabase.parseRevIDSuffix("7 -foo");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = TDDatabase.parseRevIDNumber("7-");
-        suffix = TDDatabase.parseRevIDSuffix("7-");
+        num = CBLDatabase.parseRevIDNumber("7-");
+        suffix = CBLDatabase.parseRevIDSuffix("7-");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = TDDatabase.parseRevIDNumber("7");
-        suffix = TDDatabase.parseRevIDSuffix("7");
+        num = CBLDatabase.parseRevIDNumber("7");
+        suffix = CBLDatabase.parseRevIDSuffix("7");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = TDDatabase.parseRevIDNumber("eiuwtiu");
-        suffix = TDDatabase.parseRevIDSuffix("eiuwtiu");
+        num = CBLDatabase.parseRevIDNumber("eiuwtiu");
+        suffix = CBLDatabase.parseRevIDSuffix("eiuwtiu");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = TDDatabase.parseRevIDNumber("");
-        suffix = TDDatabase.parseRevIDSuffix("");
+        num = CBLDatabase.parseRevIDNumber("");
+        suffix = CBLDatabase.parseRevIDSuffix("");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
     }
 
     public void testMakeRevisionHistoryDict() {
-        List<TDRevision> revs = new ArrayList<TDRevision>();
+        List<CBLRevision> revs = new ArrayList<CBLRevision>();
         revs.add(mkrev("4-jkl"));
         revs.add(mkrev("3-ghi"));
         revs.add(mkrev("2-def"));
@@ -70,11 +70,11 @@ public class Revisions extends AndroidTestCase {
         expectedHistoryDict.put("start", 4);
         expectedHistoryDict.put("ids", expectedSuffixes);
 
-        Map<String,Object> historyDict = TDDatabase.makeRevisionHistoryDict(revs);
+        Map<String,Object> historyDict = CBLDatabase.makeRevisionHistoryDict(revs);
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
-        revs = new ArrayList<TDRevision>();
+        revs = new ArrayList<CBLRevision>();
         revs.add(mkrev("4-jkl"));
         revs.add(mkrev("2-def"));
 
@@ -84,11 +84,11 @@ public class Revisions extends AndroidTestCase {
         expectedHistoryDict = new HashMap<String,Object>();
         expectedHistoryDict.put("ids", expectedSuffixes);
 
-        historyDict = TDDatabase.makeRevisionHistoryDict(revs);
+        historyDict = CBLDatabase.makeRevisionHistoryDict(revs);
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
-        revs = new ArrayList<TDRevision>();
+        revs = new ArrayList<CBLRevision>();
         revs.add(mkrev("12345"));
         revs.add(mkrev("6789"));
 
@@ -98,13 +98,13 @@ public class Revisions extends AndroidTestCase {
         expectedHistoryDict = new HashMap<String,Object>();
         expectedHistoryDict.put("ids", expectedSuffixes);
 
-        historyDict = TDDatabase.makeRevisionHistoryDict(revs);
+        historyDict = CBLDatabase.makeRevisionHistoryDict(revs);
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
     }
 
-    private static TDRevision mkrev(String revID) {
-        return new TDRevision("docid", revID, false);
+    private static CBLRevision mkrev(String revID) {
+        return new CBLRevision("docid", revID, false);
     }
 
 }

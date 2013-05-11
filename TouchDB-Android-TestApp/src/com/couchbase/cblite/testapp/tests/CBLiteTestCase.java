@@ -20,25 +20,25 @@ import android.test.InstrumentationTestCase;
 import android.util.Base64;
 import android.util.Log;
 
-import com.couchbase.cblite.TDBody;
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDServer;
-import com.couchbase.cblite.router.TDRouter;
-import com.couchbase.cblite.router.TDURLConnection;
-import com.couchbase.cblite.router.TDURLStreamHandlerFactory;
+import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLServer;
+import com.couchbase.cblite.router.CBLRouter;
+import com.couchbase.cblite.router.CBLURLConnection;
+import com.couchbase.cblite.router.CBLURLStreamHandlerFactory;
 import com.couchbase.cblite.support.FileDirUtils;
 
-public abstract class TouchDBTestCase extends InstrumentationTestCase {
+public abstract class CBLiteTestCase extends InstrumentationTestCase {
 
-    public static final String TAG = "TouchDBTestCase";
+    public static final String TAG = "CBLiteTestCase";
 
     private static boolean initializedUrlHandler = false;
 
     protected ObjectMapper mapper = new ObjectMapper();
 
-    protected TDServer server = null;
-    protected TDDatabase database = null;
-    protected String DEFAULT_TEST_DB = "touchdb-test";
+    protected CBLServer server = null;
+    protected CBLDatabase database = null;
+    protected String DEFAULT_TEST_DB = "cblite-test";
 
     @Override
     protected void setUp() throws Exception {
@@ -47,12 +47,12 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
 
         //for some reason a traditional static initializer causes junit to die
         if(!initializedUrlHandler) {
-            TDURLStreamHandlerFactory.registerSelfIgnoreError();
+            CBLURLStreamHandlerFactory.registerSelfIgnoreError();
             initializedUrlHandler = true;
         }
 
         loadCustomProperties();
-        startTouchDB();
+        startCBLite();
         startDatabase();
     }
 
@@ -61,19 +61,19 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
         return filesDir;
     }
 
-    protected void startTouchDB() {
+    protected void startCBLite() {
         try {
             String serverPath = getServerPath();
             File serverPathFile = new File(serverPath);
             FileDirUtils.deleteRecursive(serverPathFile);
             serverPathFile.mkdir();
-            server = new TDServer(getServerPath());
+            server = new CBLServer(getServerPath());
         } catch (IOException e) {
             fail("Creating server caused IOException");
         }
     }
 
-    protected void stopTouchDB() {
+    protected void stopCBLite() {
         if(server != null) {
             server.close();
         }
@@ -91,8 +91,8 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
         }
     }
 
-    protected TDDatabase ensureEmptyDatabase(String dbName) {
-        TDDatabase db = server.getExistingDatabaseNamed(dbName);
+    protected CBLDatabase ensureEmptyDatabase(String dbName) {
+        CBLDatabase db = server.getExistingDatabaseNamed(dbName);
         if(db != null) {
             boolean status = db.deleteDatabase();
             Assert.assertTrue(status);
@@ -103,11 +103,11 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
 
     protected void loadCustomProperties() throws IOException {
         Properties systemProperties = System.getProperties();
-        InputStream mainProperties = TouchDBTestCase.class.getResourceAsStream("test.properties");
+        InputStream mainProperties = CBLiteTestCase.class.getResourceAsStream("test.properties");
         if(mainProperties != null) {
             systemProperties.load(mainProperties);
         }
-        InputStream localProperties = TouchDBTestCase.class.getResourceAsStream("local-test.properties");
+        InputStream localProperties = CBLiteTestCase.class.getResourceAsStream("local-test.properties");
         if(localProperties != null) {
             systemProperties.load(localProperties);
         }
@@ -154,7 +154,7 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
         Log.v(TAG, "tearDown");
         super.tearDown();
         stopDatabse();
-        stopTouchDB();
+        stopCBLite();
     }
 
     protected Map<String,Object> userProperties(Map<String,Object> properties) {
@@ -190,10 +190,10 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
         }
     }
 
-    protected TDURLConnection sendRequest(TDServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
+    protected CBLURLConnection sendRequest(CBLServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
         try {
-            URL url = new URL("touchdb://" + path);
-            TDURLConnection conn = (TDURLConnection)url.openConnection();
+            URL url = new URL("cblite://" + path);
+            CBLURLConnection conn = (CBLURLConnection)url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod(method);
             if(headers != null) {
@@ -208,7 +208,7 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
                 conn.setRequestInputStream(bais);
             }
 
-            TDRouter router = new TDRouter(server, conn);
+            CBLRouter router = new CBLRouter(server, conn);
             router.start();
             return conn;
         } catch (MalformedURLException e) {
@@ -219,9 +219,9 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
         return null;
     }
 
-    protected Object parseJSONResponse(TDURLConnection conn) {
+    protected Object parseJSONResponse(CBLURLConnection conn) {
         Object result = null;
-        TDBody responseBody = conn.getResponseBody();
+        CBLBody responseBody = conn.getResponseBody();
         if(responseBody != null) {
             byte[] json = responseBody.getJson();
             String jsonString = null;
@@ -237,8 +237,8 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
         return result;
     }
 
-    protected Object sendBody(TDServer server, String method, String path, Object bodyObj, int expectedStatus, Object expectedResult) {
-        TDURLConnection conn = sendRequest(server, method, path, null, bodyObj);
+    protected Object sendBody(CBLServer server, String method, String path, Object bodyObj, int expectedStatus, Object expectedResult) {
+        CBLURLConnection conn = sendRequest(server, method, path, null, bodyObj);
         Object result = parseJSONResponse(conn);
         Log.v(TAG, String.format("%s %s --> %d", method, path, conn.getResponseCode()));
         Assert.assertEquals(expectedStatus, conn.getResponseCode());
@@ -248,7 +248,7 @@ public abstract class TouchDBTestCase extends InstrumentationTestCase {
         return result;
     }
 
-    protected Object send(TDServer server, String method, String path, int expectedStatus, Object expectedResult) {
+    protected Object send(CBLServer server, String method, String path, int expectedStatus, Object expectedResult) {
         return sendBody(server, method, path, null, expectedStatus, expectedResult);
     }
 

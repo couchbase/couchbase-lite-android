@@ -3,8 +3,8 @@ package com.couchbase.cblite;
 /**
  * Validation block, used to approve revisions being added to the database.
  */
-public interface TDValidationBlock {
+public interface CBLValidationBlock {
 
-    boolean validate(TDRevision newRevision, TDValidationContext context);
+    boolean validate(CBLRevision newRevision, CBLValidationContext context);
 
 }

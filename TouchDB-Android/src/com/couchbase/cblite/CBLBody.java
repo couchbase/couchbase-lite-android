@@ -27,31 +27,31 @@ import android.util.Log;
 /**
  * A request/response/document body, stored as either JSON or a Map<String,Object>
  */
-public class TDBody {
+public class CBLBody {
 
     private byte[] json;
     private Object object;
     private boolean error = false;
 
-    public TDBody(byte[] json) {
+    public CBLBody(byte[] json) {
         this.json = json;
     }
 
-    public TDBody(Map<String, Object> properties) {
+    public CBLBody(Map<String, Object> properties) {
         this.object = properties;
     }
 
-    public TDBody(List<?> array) {
+    public CBLBody(List<?> array) {
         this.object = array;
     }
 
-    public static TDBody bodyWithProperties(Map<String,Object> properties) {
-        TDBody result = new TDBody(properties);
+    public static CBLBody bodyWithProperties(Map<String,Object> properties) {
+        CBLBody result = new CBLBody(properties);
         return result;
     }
 
-    public static TDBody bodyWithJSON(byte[] json) {
-        TDBody result = new TDBody(json);
+    public static CBLBody bodyWithJSON(byte[] json) {
+        CBLBody result = new CBLBody(json);
         return result;
     }
 
@@ -59,7 +59,7 @@ public class TDBody {
         // Yes, this is just like asObject except it doesn't warn.
         if(json == null && !error) {
             try {
-                json = TDServer.getObjectMapper().writeValueAsBytes(object);
+                json = CBLServer.getObjectMapper().writeValueAsBytes(object);
             } catch (Exception e) {
                 error = true;
             }
@@ -70,9 +70,9 @@ public class TDBody {
     public byte[] getJson() {
         if(json == null && !error) {
             try {
-                json = TDServer.getObjectMapper().writeValueAsBytes(object);
+                json = CBLServer.getObjectMapper().writeValueAsBytes(object);
             } catch (Exception e) {
-                Log.w(TDDatabase.TAG, "TDBody: couldn't convert JSON");
+                Log.w(CBLDatabase.TAG, "CBLBody: couldn't convert JSON");
                 error = true;
             }
         }
@@ -82,7 +82,7 @@ public class TDBody {
     public byte[] getPrettyJson() {
         Object properties = getObject();
         if(properties != null) {
-            ObjectWriter writer = TDServer.getObjectMapper().writerWithDefaultPrettyPrinter();
+            ObjectWriter writer = CBLServer.getObjectMapper().writerWithDefaultPrettyPrinter();
             try {
                 json = writer.writeValueAsBytes(properties);
             } catch (Exception e) {
@@ -100,10 +100,10 @@ public class TDBody {
         if(object == null && !error) {
             try {
                 if(json != null) {
-                    object = TDServer.getObjectMapper().readValue(json, Map.class);
+                    object = CBLServer.getObjectMapper().readValue(json, Map.class);
                 }
             } catch (Exception e) {
-                Log.w(TDDatabase.TAG, "TDBody: couldn't parse JSON: " + new String(json), e);
+                Log.w(CBLDatabase.TAG, "CBLBody: couldn't parse JSON: " + new String(json), e);
                 error = true;
             }
         }

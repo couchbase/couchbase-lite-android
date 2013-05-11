@@ -6,12 +6,12 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDStatus;
-import com.couchbase.cblite.TDValidationBlock;
-import com.couchbase.cblite.TDValidationContext;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.CBLValidationBlock;
+import com.couchbase.cblite.CBLValidationContext;
 
-public class Validations extends TouchDBTestCase {
+public class Validations extends CBLiteTestCase {
 
     public static final String TAG = "Validations";
 
@@ -19,10 +19,10 @@ public class Validations extends TouchDBTestCase {
 
     public void testValidations() {
 
-        TDValidationBlock validationBlock = new TDValidationBlock() {
+        CBLValidationBlock validationBlock = new CBLValidationBlock() {
 
             @Override
-            public boolean validate(TDRevision newRevision, TDValidationContext context) {
+            public boolean validate(CBLRevision newRevision, CBLValidationContext context) {
 
                 Assert.assertNotNull(newRevision);
                 Assert.assertNotNull(context);
@@ -43,12 +43,12 @@ public class Validations extends TouchDBTestCase {
         Map<String, Object> props = new HashMap<String,Object>();
         props.put("name","Zaphod Beeblebrox");
         props.put("towel", "velvet");
-        TDRevision rev = new TDRevision(props);
-        TDStatus status = new TDStatus();
+        CBLRevision rev = new CBLRevision(props);
+        CBLStatus status = new CBLStatus();
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         // PUT a valid update:
         props.put("head_count", 3);
@@ -56,7 +56,7 @@ public class Validations extends TouchDBTestCase {
         validationCalled = false;
         rev = database.putRevision(rev, rev.getRevId(), false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         // PUT an invalid update:
         props.remove("towel");
@@ -64,47 +64,47 @@ public class Validations extends TouchDBTestCase {
         validationCalled = false;
         rev = database.putRevision(rev, rev.getRevId(), false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(TDStatus.FORBIDDEN, status.getCode());
+        Assert.assertEquals(CBLStatus.FORBIDDEN, status.getCode());
 
         // POST an invalid new document:
         props = new HashMap<String,Object>();
         props.put("name","Vogon");
         props.put("poetry", true);
-        rev = new TDRevision(props);
+        rev = new CBLRevision(props);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(TDStatus.FORBIDDEN, status.getCode());
+        Assert.assertEquals(CBLStatus.FORBIDDEN, status.getCode());
 
         // PUT a valid new document with an ID:
         props = new HashMap<String,Object>();
         props.put("_id", "ford");
         props.put("name","Ford Prefect");
         props.put("towel", "terrycloth");
-        rev = new TDRevision(props);
+        rev = new CBLRevision(props);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         Assert.assertEquals("ford", rev.getDocId());
 
         // DELETE a document:
-        rev = new TDRevision(rev.getDocId(), rev.getRevId(), true);
+        rev = new CBLRevision(rev.getDocId(), rev.getRevId(), true);
         Assert.assertTrue(rev.isDeleted());
         validationCalled = false;
         rev = database.putRevision(rev, rev.getRevId(), false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
         // PUT an invalid new document:
         props = new HashMap<String,Object>();
         props.put("_id", "petunias");
         props.put("name","Pot of Petunias");
-        rev = new TDRevision(props);
+        rev = new CBLRevision(props);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(TDStatus.FORBIDDEN, status.getCode());
+        Assert.assertEquals(CBLStatus.FORBIDDEN, status.getCode());
     }
 
 }

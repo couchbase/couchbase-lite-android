@@ -39,32 +39,32 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase.TDContentOptions;
-import com.couchbase.cblite.replicator.TDPuller;
-import com.couchbase.cblite.replicator.TDPusher;
-import com.couchbase.cblite.replicator.TDReplicator;
+import com.couchbase.cblite.CBLDatabase.TDContentOptions;
+import com.couchbase.cblite.replicator.CBLPuller;
+import com.couchbase.cblite.replicator.CBLPusher;
+import com.couchbase.cblite.replicator.CBLReplicator;
 import com.couchbase.cblite.support.Base64;
 import com.couchbase.cblite.support.FileDirUtils;
 import com.couchbase.cblite.support.HttpClientFactory;
 import com.couchbase.touchdb.TDCollateJSON;
 
 /**
- * A TouchDB database.
+ * A CBLite database.
  */
-public class TDDatabase extends Observable {
+public class CBLDatabase extends Observable {
 
     private String path;
     private String name;
     private SQLiteDatabase database;
     private boolean open = false;
     private int transactionLevel = 0;
-    public static final String TAG = "TDDatabase";
+    public static final String TAG = "CBLDatabase";
 
-    private Map<String, TDView> views;
-    private Map<String, TDFilterBlock> filters;
-    private Map<String, TDValidationBlock> validations;
-    private List<TDReplicator> activeReplicators;
-    private TDBlobStore attachments;
+    private Map<String, CBLView> views;
+    private Map<String, CBLFilterBlock> filters;
+    private Map<String, CBLValidationBlock> validations;
+    private List<CBLReplicator> activeReplicators;
+    private CBLBlobStore attachments;
 
     /**
      * Options for what metadata to include in document bodies
@@ -136,7 +136,7 @@ public class TDDatabase extends Observable {
             "    PRAGMA user_version = 3";             // at the end, update user_version
 
     /*************************************************************************************************/
-    /*** TDDatabase                                                                                ***/
+    /*** CBLDatabase                                                                                ***/
     /*************************************************************************************************/
 
     public String getAttachmentStorePath() {
@@ -149,11 +149,11 @@ public class TDDatabase extends Observable {
         return attachmentStorePath;
     }
 
-    public static TDDatabase createEmptyDBAtPath(String path) {
+    public static CBLDatabase createEmptyDBAtPath(String path) {
         if(!FileDirUtils.removeItemIfExists(path)) {
             return null;
         }
-        TDDatabase result = new TDDatabase(path);
+        CBLDatabase result = new CBLDatabase(path);
         File af = new File(result.getAttachmentStorePath());
         //recursively delete attachments path
         if(!FileDirUtils.deleteRecursive(af)) {
@@ -165,7 +165,7 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public TDDatabase(String path) {
+    public CBLDatabase(String path) {
         assert(path.startsWith("/")); //path must be absolute
         this.path = path;
         this.name = FileDirUtils.getDatabaseNameFromPath(path);
@@ -224,13 +224,13 @@ public class TDDatabase extends Observable {
             TDCollateJSON.registerCustomCollators(database);
         }
         catch(SQLiteException e) {
-            Log.e(TDDatabase.TAG, "Error opening", e);
+            Log.e(CBLDatabase.TAG, "Error opening", e);
             return false;
         }
 
         // Stuff we need to initialize every time the database opens:
         if(!initialize("PRAGMA foreign_keys = ON;")) {
-            Log.e(TDDatabase.TAG, "Error turning on foreign keys");
+            Log.e(CBLDatabase.TAG, "Error turning on foreign keys");
             return false;
         }
 
@@ -239,7 +239,7 @@ public class TDDatabase extends Observable {
 
         // Incompatible version changes increment the hundreds' place:
         if(dbVersion >= 100) {
-            Log.w(TDDatabase.TAG, "TDDatabase: Database version (" + dbVersion + ") is newer than I know how to work with");
+            Log.w(CBLDatabase.TAG, "CBLDatabase: Database version (" + dbVersion + ") is newer than I know how to work with");
             database.close();
             return false;
         }
@@ -284,8 +284,8 @@ public class TDDatabase extends Observable {
             String upgradeSql = "CREATE TABLE info ( " +
                     "key TEXT PRIMARY KEY, " +
                     "value TEXT); " +
-                    "INSERT INTO INFO (key, value) VALUES ('privateUUID', '" + TDMisc.TDCreateUUID() + "'); " +
-                    "INSERT INTO INFO (key, value) VALUES ('publicUUID',  '" + TDMisc.TDCreateUUID() + "'); " +
+                    "INSERT INTO INFO (key, value) VALUES ('privateUUID', '" + CBLMisc.TDCreateUUID() + "'); " +
+                    "INSERT INTO INFO (key, value) VALUES ('publicUUID',  '" + CBLMisc.TDCreateUUID() + "'); " +
                     "PRAGMA user_version = 4";
             if(!initialize(upgradeSql)) {
                 database.close();
@@ -294,9 +294,9 @@ public class TDDatabase extends Observable {
         }
 
         try {
-            attachments = new TDBlobStore(getAttachmentStorePath());
+            attachments = new CBLBlobStore(getAttachmentStorePath());
         } catch (IllegalArgumentException e) {
-            Log.e(TDDatabase.TAG, "Could not initialize attachment store", e);
+            Log.e(CBLDatabase.TAG, "Could not initialize attachment store", e);
             database.close();
             return false;
         }
@@ -311,14 +311,14 @@ public class TDDatabase extends Observable {
         }
 
         if(views != null) {
-            for (TDView view : views.values()) {
+            for (CBLView view : views.values()) {
                 view.databaseClosing();
             }
         }
         views = null;
 
         if(activeReplicators != null) {
-            for(TDReplicator replicator : activeReplicators) {
+            for(CBLReplicator replicator : activeReplicators) {
                 replicator.databaseClosing();
             }
             activeReplicators = null;
@@ -363,12 +363,12 @@ public class TDDatabase extends Observable {
     }
 
     // Leave this package protected, so it can only be used
-    // TDView uses this accessor
+    // CBLView uses this accessor
     SQLiteDatabase getDatabase() {
         return database;
     }
 
-    public TDBlobStore getAttachments() {
+    public CBLBlobStore getAttachments() {
         return attachments;
     }
 
@@ -422,28 +422,28 @@ public class TDDatabase extends Observable {
     /**
      * Compacts the database storage by removing the bodies and attachments of obsolete revisions.
      */
-    public TDStatus compact() {
+    public CBLStatus compact() {
         // Can't delete any rows because that would lose revision tree history.
         // But we can remove the JSON of non-current revisions, which is most of the space.
         try {
-            Log.v(TDDatabase.TAG, "Deleting JSON of old revisions...");
+            Log.v(CBLDatabase.TAG, "Deleting JSON of old revisions...");
             ContentValues args = new ContentValues();
             args.put("json", (String)null);
             database.update("revs", args, "current=0", null);
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error compacting", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            Log.e(CBLDatabase.TAG, "Error compacting", e);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
 
-        Log.v(TDDatabase.TAG, "Deleting old attachments...");
-        TDStatus result = garbageCollectAttachments();
+        Log.v(CBLDatabase.TAG, "Deleting old attachments...");
+        CBLStatus result = garbageCollectAttachments();
 
-        Log.v(TDDatabase.TAG, "Vacuuming SQLite database...");
+        Log.v(CBLDatabase.TAG, "Vacuuming SQLite database...");
         try {
             database.execSQL("VACUUM");
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error vacuuming database", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            Log.e(CBLDatabase.TAG, "Error vacuuming database", e);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
 
         return result;
@@ -497,7 +497,7 @@ public class TDDatabase extends Observable {
                 result = cursor.getInt(0);
             }
         } catch(SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting document count", e);
+            Log.e(CBLDatabase.TAG, "Error getting document count", e);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -517,7 +517,7 @@ public class TDDatabase extends Observable {
                 result = cursor.getLong(0);
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting last sequence", e);
+            Log.e(CBLDatabase.TAG, "Error getting last sequence", e);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -534,9 +534,9 @@ public class TDDatabase extends Observable {
 
         byte[] extraJSON = null;
         try {
-            extraJSON = TDServer.getObjectMapper().writeValueAsBytes(dict);
+            extraJSON = CBLServer.getObjectMapper().writeValueAsBytes(dict);
         } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error convert extra JSON to bytes", e);
+            Log.e(CBLDatabase.TAG, "Error convert extra JSON to bytes", e);
             return null;
         }
 
@@ -554,7 +554,7 @@ public class TDDatabase extends Observable {
 
     /** Inserts the _id, _rev and _attachments properties into the JSON data and stores it in rev.
     Rev must already have its revID and sequence properties set. */
-    public Map<String,Object> extraPropertiesForRevision(TDRevision rev, EnumSet<TDContentOptions> contentOptions) {
+    public Map<String,Object> extraPropertiesForRevision(CBLRevision rev, EnumSet<TDContentOptions> contentOptions) {
 
         String docId = rev.getDocId();
         String revId = rev.getRevId();
@@ -581,8 +581,8 @@ public class TDDatabase extends Observable {
         List<Object> revsInfo = null;
         if(contentOptions.contains(TDContentOptions.TDIncludeRevsInfo)) {
             revsInfo = new ArrayList<Object>();
-            List<TDRevision> revHistoryFull = getRevisionHistory(rev);
-            for (TDRevision historicalRev : revHistoryFull) {
+            List<CBLRevision> revHistoryFull = getRevisionHistory(rev);
+            for (CBLRevision historicalRev : revHistoryFull) {
                 Map<String,Object> revHistoryItem = new HashMap<String,Object>();
                 String status = "available";
                 if(historicalRev.isDeleted()) {
@@ -597,10 +597,10 @@ public class TDDatabase extends Observable {
 
         List<String> conflicts = null;
         if(contentOptions.contains(TDContentOptions.TDIncludeConflicts)) {
-            TDRevisionList revs = getAllRevisionsOfDocumentID(docId, true);
+            CBLRevisionList revs = getAllRevisionsOfDocumentID(docId, true);
             if(revs.size() > 1) {
                 conflicts = new ArrayList<String>();
-                for (TDRevision historicalRev : revs) {
+                for (CBLRevision historicalRev : revs) {
                     if(!historicalRev.equals(rev)) {
                         conflicts.add(historicalRev.getRevId());
                     }
@@ -635,7 +635,7 @@ public class TDDatabase extends Observable {
 
     /** Inserts the _id, _rev and _attachments properties into the JSON data and stores it in rev.
     Rev must already have its revID and sequence properties set. */
-    public void expandStoredJSONIntoRevisionWithAttachments(byte[] json, TDRevision rev, EnumSet<TDContentOptions> contentOptions) {
+    public void expandStoredJSONIntoRevisionWithAttachments(byte[] json, CBLRevision rev, EnumSet<TDContentOptions> contentOptions) {
         Map<String,Object> extra = extraPropertiesForRevision(rev, contentOptions);
         if(json != null) {
             rev.setJson(appendDictToJSON(json, extra));
@@ -648,7 +648,7 @@ public class TDDatabase extends Observable {
     @SuppressWarnings("unchecked")
     public Map<String, Object> documentPropertiesFromJSON(byte[] json, String docId, String revId, long sequence, EnumSet<TDContentOptions> contentOptions) {
 
-        TDRevision rev = new TDRevision(docId, revId, false);
+        CBLRevision rev = new CBLRevision(docId, revId, false);
         rev.setSequence(sequence);
         Map<String,Object> extra = extraPropertiesForRevision(rev, contentOptions);
         if(json == null) {
@@ -657,18 +657,18 @@ public class TDDatabase extends Observable {
 
       Map<String,Object> docProperties = null;
       try {
-          docProperties = TDServer.getObjectMapper().readValue(json, Map.class);
+          docProperties = CBLServer.getObjectMapper().readValue(json, Map.class);
           docProperties.putAll(extra);
           return docProperties;
       } catch (Exception e) {
-          Log.e(TDDatabase.TAG, "Error serializing properties to JSON", e);
+          Log.e(CBLDatabase.TAG, "Error serializing properties to JSON", e);
       }
 
       return docProperties;
     }
 
-    public TDRevision getDocumentWithIDAndRev(String id, String rev, EnumSet<TDContentOptions> contentOptions) {
-        TDRevision result = null;
+    public CBLRevision getDocumentWithIDAndRev(String id, String rev, EnumSet<TDContentOptions> contentOptions) {
+        CBLRevision result = null;
         String sql;
 
         Cursor cursor = null;
@@ -694,7 +694,7 @@ public class TDDatabase extends Observable {
                     rev = cursor.getString(0);
                 }
                 boolean deleted = (cursor.getInt(1) > 0);
-                result = new TDRevision(id, rev, deleted);
+                result = new CBLRevision(id, rev, deleted);
                 result.setSequence(cursor.getLong(2));
                 if(!contentOptions.equals(EnumSet.of(TDContentOptions.TDNoBody))) {
                     byte[] json = null;
@@ -705,7 +705,7 @@ public class TDDatabase extends Observable {
                 }
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting document with id and rev", e);
+            Log.e(CBLDatabase.TAG, "Error getting document with id and rev", e);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -718,26 +718,26 @@ public class TDDatabase extends Observable {
         return getDocumentWithIDAndRev(docId, revId, EnumSet.of(TDContentOptions.TDNoBody)) != null;
     }
 
-    public TDStatus loadRevisionBody(TDRevision rev, EnumSet<TDContentOptions> contentOptions) {
+    public CBLStatus loadRevisionBody(CBLRevision rev, EnumSet<TDContentOptions> contentOptions) {
         if(rev.getBody() != null) {
-            return new TDStatus(TDStatus.OK);
+            return new CBLStatus(CBLStatus.OK);
         }
         assert((rev.getDocId() != null) && (rev.getRevId() != null));
 
         Cursor cursor = null;
-        TDStatus result = new TDStatus(TDStatus.NOT_FOUND);
+        CBLStatus result = new CBLStatus(CBLStatus.NOT_FOUND);
         try {
             String sql = "SELECT sequence, json FROM revs, docs WHERE revid=? AND docs.docid=? AND revs.doc_id=docs.doc_id LIMIT 1";
             String[] args = { rev.getRevId(), rev.getDocId()};
             cursor = database.rawQuery(sql, args);
             if(cursor.moveToFirst()) {
-                result.setCode(TDStatus.OK);
+                result.setCode(CBLStatus.OK);
                 rev.setSequence(cursor.getLong(0));
                 expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(1), rev, contentOptions);
             }
         } catch(SQLException e) {
-            Log.e(TDDatabase.TAG, "Error loading revision body", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            Log.e(CBLDatabase.TAG, "Error loading revision body", e);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -761,7 +761,7 @@ public class TDDatabase extends Observable {
                 result = 0;
             }
         } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error getting doc numeric id", e);
+            Log.e(CBLDatabase.TAG, "Error getting doc numeric id", e);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -776,7 +776,7 @@ public class TDDatabase extends Observable {
     /**
      * Returns all the known revisions (or all current/conflicting revisions) of a document.
      */
-    public TDRevisionList getAllRevisionsOfDocumentID(String docId, long docNumericID, boolean onlyCurrent) {
+    public CBLRevisionList getAllRevisionsOfDocumentID(String docId, long docNumericID, boolean onlyCurrent) {
 
         String sql = null;
         if(onlyCurrent) {
@@ -793,18 +793,18 @@ public class TDDatabase extends Observable {
 
         cursor = database.rawQuery(sql, args);
 
-        TDRevisionList result;
+        CBLRevisionList result;
         try {
             cursor.moveToFirst();
-            result = new TDRevisionList();
+            result = new CBLRevisionList();
             while(!cursor.isAfterLast()) {
-                TDRevision rev = new TDRevision(docId, cursor.getString(1), (cursor.getInt(2) > 0));
+                CBLRevision rev = new CBLRevision(docId, cursor.getString(1), (cursor.getInt(2) > 0));
                 rev.setSequence(cursor.getLong(0));
                 result.add(rev);
                 cursor.moveToNext();
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
+            Log.e(CBLDatabase.TAG, "Error getting all revisions of document", e);
             return null;
         } finally {
             if(cursor != null) {
@@ -815,13 +815,13 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public TDRevisionList getAllRevisionsOfDocumentID(String docId, boolean onlyCurrent) {
+    public CBLRevisionList getAllRevisionsOfDocumentID(String docId, boolean onlyCurrent) {
         long docNumericId = getDocNumericID(docId);
         if(docNumericId < 0) {
             return null;
         }
         else if(docNumericId == 0) {
-            return new TDRevisionList();
+            return new CBLRevisionList();
         }
         else {
             return getAllRevisionsOfDocumentID(docId, docNumericId, onlyCurrent);
@@ -847,7 +847,7 @@ public class TDDatabase extends Observable {
             }
 
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
+            Log.e(CBLDatabase.TAG, "Error getting all revisions of document", e);
             return null;
         } finally {
             if(cursor != null) {
@@ -858,7 +858,7 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public String findCommonAncestorOf(TDRevision rev, List<String> revIDs) {
+    public String findCommonAncestorOf(CBLRevision rev, List<String> revIDs) {
         String result = null;
 
     	if (revIDs.size() == 0)
@@ -882,7 +882,7 @@ public class TDDatabase extends Observable {
     		}
 
     	} catch (SQLException e) {
-    		Log.e(TDDatabase.TAG, "Error getting all revisions of document", e);
+    		Log.e(CBLDatabase.TAG, "Error getting all revisions of document", e);
     	} finally {
     		if(cursor != null) {
     			cursor.close();
@@ -895,7 +895,7 @@ public class TDDatabase extends Observable {
     /**
      * Returns an array of TDRevs in reverse chronological order, starting with the given revision.
      */
-    public List<TDRevision> getRevisionHistory(TDRevision rev) {
+    public List<CBLRevision> getRevisionHistory(CBLRevision rev) {
         String docId = rev.getDocId();
         String revId = rev.getRevId();
         assert((docId != null) && (revId != null));
@@ -905,7 +905,7 @@ public class TDDatabase extends Observable {
             return null;
         }
         else if(docNumericId == 0) {
-            return new ArrayList<TDRevision>();
+            return new ArrayList<CBLRevision>();
         }
 
         String sql = "SELECT sequence, parent, revid, deleted FROM revs " +
@@ -913,13 +913,13 @@ public class TDDatabase extends Observable {
         String[] args = { Long.toString(docNumericId) };
         Cursor cursor = null;
 
-        List<TDRevision> result;
+        List<CBLRevision> result;
         try {
             cursor = database.rawQuery(sql, args);
 
             cursor.moveToFirst();
             long lastSequence = 0;
-            result = new ArrayList<TDRevision>();
+            result = new ArrayList<CBLRevision>();
             while(!cursor.isAfterLast()) {
                 long sequence = cursor.getLong(0);
                 boolean matches = false;
@@ -932,7 +932,7 @@ public class TDDatabase extends Observable {
                 if(matches) {
                     revId = cursor.getString(2);
                     boolean deleted = (cursor.getInt(3) > 0);
-                    TDRevision aRev = new TDRevision(docId, revId, deleted);
+                    CBLRevision aRev = new CBLRevision(docId, revId, deleted);
                     aRev.setSequence(cursor.getLong(0));
                     result.add(aRev);
                     lastSequence = cursor.getLong(1);
@@ -943,7 +943,7 @@ public class TDDatabase extends Observable {
                 cursor.moveToNext();
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting revision history", e);
+            Log.e(CBLDatabase.TAG, "Error getting revision history", e);
             return null;
         } finally {
             if(cursor != null) {
@@ -978,7 +978,7 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public static Map<String,Object> makeRevisionHistoryDict(List<TDRevision> history) {
+    public static Map<String,Object> makeRevisionHistoryDict(List<CBLRevision> history) {
         if(history == null) {
             return null;
         }
@@ -987,7 +987,7 @@ public class TDDatabase extends Observable {
         List<String> suffixes = new ArrayList<String>();
         int start = -1;
         int lastRevNo = -1;
-        for (TDRevision rev : history) {
+        for (CBLRevision rev : history) {
             int revNo = parseRevIDNumber(rev.getRevId());
             String suffix = parseRevIDSuffix(rev.getRevId());
             if(revNo > 0 && suffix.length() > 0) {
@@ -1011,7 +1011,7 @@ public class TDDatabase extends Observable {
         if(start == -1) {
             // we failed to build sequence, just stuff all the revs in list
             suffixes = new ArrayList<String>();
-            for (TDRevision rev : history) {
+            for (CBLRevision rev : history) {
                 suffixes.add(rev.getRevId());
             }
         }
@@ -1026,14 +1026,14 @@ public class TDDatabase extends Observable {
     /**
      * Returns the revision history as a _revisions dictionary, as returned by the REST API's ?revs=true option.
      */
-    public Map<String,Object> getRevisionHistoryDict(TDRevision rev) {
+    public Map<String,Object> getRevisionHistoryDict(CBLRevision rev) {
         return makeRevisionHistoryDict(getRevisionHistory(rev));
     }
 
-    public TDRevisionList changesSince(long lastSeq, TDChangesOptions options, TDFilterBlock filter) {
+    public CBLRevisionList changesSince(long lastSeq, CBLChangesOptions options, CBLFilterBlock filter) {
         // http://wiki.apache.org/couchdb/HTTP_database_API#Changes
         if(options == null) {
-            options = new TDChangesOptions();
+            options = new CBLChangesOptions();
         }
 
         boolean includeDocs = options.isIncludeDocs() || (filter != null);
@@ -1048,12 +1048,12 @@ public class TDDatabase extends Observable {
                         + "ORDER BY revs.doc_id, revid DESC";
         String[] args = {Long.toString(lastSeq)};
         Cursor cursor = null;
-        TDRevisionList changes = null;
+        CBLRevisionList changes = null;
 
         try {
             cursor = database.rawQuery(sql, args);
             cursor.moveToFirst();
-            changes = new TDRevisionList();
+            changes = new CBLRevisionList();
             long lastDocId = 0;
             while(!cursor.isAfterLast()) {
                 if(!options.isIncludeConflicts()) {
@@ -1066,7 +1066,7 @@ public class TDDatabase extends Observable {
                     lastDocId = docNumericId;
                 }
 
-                TDRevision rev = new TDRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
+                CBLRevision rev = new CBLRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
                 rev.setSequence(cursor.getLong(0));
                 if(includeDocs) {
                     expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, options.getContentOptions());
@@ -1077,7 +1077,7 @@ public class TDDatabase extends Observable {
                 cursor.moveToNext();
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error looking for changes", e);
+            Log.e(CBLDatabase.TAG, "Error looking for changes", e);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -1094,17 +1094,17 @@ public class TDDatabase extends Observable {
     /**
      * Define or clear a named filter function.
      *
-     * These aren't used directly by TDDatabase, but they're looked up by TDRouter when a _changes request has a ?filter parameter.
+     * These aren't used directly by CBLDatabase, but they're looked up by CBLRouter when a _changes request has a ?filter parameter.
      */
-    public void defineFilter(String filterName, TDFilterBlock filter) {
+    public void defineFilter(String filterName, CBLFilterBlock filter) {
         if(filters == null) {
-            filters = new HashMap<String,TDFilterBlock>();
+            filters = new HashMap<String,CBLFilterBlock>();
         }
         filters.put(filterName, filter);
     }
 
-    public TDFilterBlock getFilterNamed(String filterName) {
-        TDFilterBlock result = null;
+    public CBLFilterBlock getFilterNamed(String filterName) {
+        CBLFilterBlock result = null;
         if(filters != null) {
             result = filters.get(filterName);
         }
@@ -1113,37 +1113,37 @@ public class TDDatabase extends Observable {
 
     /** VIEWS: **/
 
-    public TDView registerView(TDView view) {
+    public CBLView registerView(CBLView view) {
         if(view == null) {
             return null;
         }
         if(views == null) {
-            views = new HashMap<String,TDView>();
+            views = new HashMap<String,CBLView>();
         }
         views.put(view.getName(), view);
         return view;
     }
 
-    public TDView getViewNamed(String name) {
-        TDView view = null;
+    public CBLView getViewNamed(String name) {
+        CBLView view = null;
         if(views != null) {
             view = views.get(name);
         }
         if(view != null) {
             return view;
         }
-        return registerView(new TDView(this, name));
+        return registerView(new CBLView(this, name));
     }
 
-    public TDView getExistingViewNamed(String name) {
-        TDView view = null;
+    public CBLView getExistingViewNamed(String name) {
+        CBLView view = null;
         if(views != null) {
             view = views.get(name);
         }
         if(view != null) {
             return view;
         }
-        view = new TDView(this, name);
+        view = new CBLView(this, name);
         if(view.getViewId() == 0) {
             return null;
         }
@@ -1151,20 +1151,20 @@ public class TDDatabase extends Observable {
         return registerView(view);
     }
 
-    public List<TDView> getAllViews() {
+    public List<CBLView> getAllViews() {
         Cursor cursor = null;
-        List<TDView> result = null;
+        List<CBLView> result = null;
 
         try {
             cursor = database.rawQuery("SELECT name FROM views", null);
             cursor.moveToFirst();
-            result = new ArrayList<TDView>();
+            result = new ArrayList<CBLView>();
             while(!cursor.isAfterLast()) {
                 result.add(getViewNamed(cursor.getString(0)));
                 cursor.moveToNext();
             }
         } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error getting all views", e);
+            Log.e(CBLDatabase.TAG, "Error getting all views", e);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -1174,27 +1174,27 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public TDStatus deleteViewNamed(String name) {
-        TDStatus result = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+    public CBLStatus deleteViewNamed(String name) {
+        CBLStatus result = new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         try {
             String[] whereArgs = { name };
             int rowsAffected = database.delete("views", "name=?", whereArgs);
             if(rowsAffected > 0) {
-                result.setCode(TDStatus.OK);
+                result.setCode(CBLStatus.OK);
             }
             else {
-                result.setCode(TDStatus.NOT_FOUND);
+                result.setCode(CBLStatus.NOT_FOUND);
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error deleting view", e);
+            Log.e(CBLDatabase.TAG, "Error deleting view", e);
         }
         return result;
     }
 
-    //FIX: This has a lot of code in common with -[TDView queryWithOptions:status:]. Unify the two!
-    public Map<String,Object> getDocsWithIDs(List<String> docIDs, TDQueryOptions options) {
+    //FIX: This has a lot of code in common with -[CBLView queryWithOptions:status:]. Unify the two!
+    public Map<String,Object> getDocsWithIDs(List<String> docIDs, CBLQueryOptions options) {
         if(options == null) {
-            options = new TDQueryOptions();
+            options = new CBLQueryOptions();
         }
 
         long updateSeq = 0;
@@ -1306,7 +1306,7 @@ public class TDDatabase extends Observable {
                 cursor.moveToNext();
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting all docs", e);
+            Log.e(CBLDatabase.TAG, "Error getting all docs", e);
             return null;
         } finally {
             if(cursor != null) {
@@ -1327,21 +1327,21 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public Map<String,Object> getAllDocs(TDQueryOptions options) {
+    public Map<String,Object> getAllDocs(CBLQueryOptions options) {
         return getDocsWithIDs(null, options);
     }
 
     /*************************************************************************************************/
-    /*** TDDatabase+Attachments                                                                    ***/
+    /*** CBLDatabase+Attachments                                                                    ***/
     /*************************************************************************************************/
 
-    public TDStatus insertAttachmentForSequenceWithNameAndType(InputStream contentStream, long sequence, String name, String contentType, int revpos) {
+    public CBLStatus insertAttachmentForSequenceWithNameAndType(InputStream contentStream, long sequence, String name, String contentType, int revpos) {
         assert(sequence > 0);
         assert(name != null);
 
-        TDBlobKey key = new TDBlobKey();
+        CBLBlobKey key = new CBLBlobKey();
         if(!attachments.storeBlobStream(contentStream, key)) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
 
         byte[] keyData = key.getBytes();
@@ -1354,18 +1354,18 @@ public class TDDatabase extends Observable {
             args.put("length", attachments.getSizeOfBlob(key));
             args.put("revpos", revpos);
             database.insert("attachments", null, args);
-            return new TDStatus(TDStatus.CREATED);
+            return new CBLStatus(CBLStatus.CREATED);
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error inserting attachment", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            Log.e(CBLDatabase.TAG, "Error inserting attachment", e);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    public TDStatus copyAttachmentNamedFromSequenceToSequence(String name, long fromSeq, long toSeq) {
+    public CBLStatus copyAttachmentNamedFromSequenceToSequence(String name, long fromSeq, long toSeq) {
         assert(name != null);
         assert(toSeq > 0);
         if(fromSeq < 0) {
-            return new TDStatus(TDStatus.NOT_FOUND);
+            return new CBLStatus(CBLStatus.NOT_FOUND);
         }
 
         Cursor cursor = null;
@@ -1381,15 +1381,15 @@ public class TDDatabase extends Observable {
             if(rowsUpdated == 0) {
                 // Oops. This means a glitch in our attachment-management or pull code,
                 // or else a bug in the upstream server.
-                Log.w(TDDatabase.TAG, "Can't find inherited attachment " + name + " from seq# " + Long.toString(fromSeq) + " to copy to " + Long.toString(toSeq));
-                return new TDStatus(TDStatus.NOT_FOUND);
+                Log.w(CBLDatabase.TAG, "Can't find inherited attachment " + name + " from seq# " + Long.toString(fromSeq) + " to copy to " + Long.toString(toSeq));
+                return new CBLStatus(CBLStatus.NOT_FOUND);
             }
             else {
-                return new TDStatus(TDStatus.OK);
+                return new CBLStatus(CBLStatus.OK);
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error copying attachment", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            Log.e(CBLDatabase.TAG, "Error copying attachment", e);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -1400,7 +1400,7 @@ public class TDDatabase extends Observable {
     /**
      * Returns the content and MIME type of an attachment
      */
-    public TDAttachment getAttachmentForSequence(long sequence, String filename, TDStatus status) {
+    public CBLAttachment getAttachmentForSequence(long sequence, String filename, CBLStatus status) {
         assert(sequence > 0);
         assert(filename != null);
 
@@ -1412,22 +1412,22 @@ public class TDDatabase extends Observable {
             cursor = database.rawQuery("SELECT key, type FROM attachments WHERE sequence=? AND filename=?", args);
 
             if(!cursor.moveToFirst()) {
-                status.setCode(TDStatus.NOT_FOUND);
+                status.setCode(CBLStatus.NOT_FOUND);
                 return null;
             }
 
             byte[] keyData = cursor.getBlob(0);
             //TODO add checks on key here? (ios version)
-            TDBlobKey key = new TDBlobKey(keyData);
+            CBLBlobKey key = new CBLBlobKey(keyData);
             InputStream contentStream = attachments.blobStreamForKey(key);
             if(contentStream == null) {
-                Log.e(TDDatabase.TAG, "Failed to load attachment");
-                status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                Log.e(CBLDatabase.TAG, "Failed to load attachment");
+                status.setCode(CBLStatus.INTERNAL_SERVER_ERROR);
                 return null;
             }
             else {
-                status.setCode(TDStatus.OK);
-                TDAttachment result = new TDAttachment();
+                status.setCode(CBLStatus.OK);
+                CBLAttachment result = new CBLAttachment();
                 result.setContentStream(contentStream);
                 result.setContentType(cursor.getString(1));
                 return result;
@@ -1435,7 +1435,7 @@ public class TDDatabase extends Observable {
 
 
         } catch (SQLException e) {
-            status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+            status.setCode(CBLStatus.INTERNAL_SERVER_ERROR);
             return null;
         } finally {
             if(cursor != null) {
@@ -1466,7 +1466,7 @@ public class TDDatabase extends Observable {
             while(!cursor.isAfterLast()) {
 
                 byte[] keyData = cursor.getBlob(1);
-                TDBlobKey key = new TDBlobKey(keyData);
+                CBLBlobKey key = new CBLBlobKey(keyData);
                 String digestString = "sha1-" + Base64.encodeBytes(keyData);
                 String dataBase64 = null;
                 if(withContent) {
@@ -1475,7 +1475,7 @@ public class TDDatabase extends Observable {
                         dataBase64 = Base64.encodeBytes(data);
                     }
                     else {
-                        Log.w(TDDatabase.TAG, "Error loading attachment");
+                        Log.w(CBLDatabase.TAG, "Error loading attachment");
                     }
                 }
 
@@ -1499,7 +1499,7 @@ public class TDDatabase extends Observable {
             return result;
 
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting attachments for sequence", e);
+            Log.e(CBLDatabase.TAG, "Error getting attachments for sequence", e);
             return null;
         } finally {
             if(cursor != null) {
@@ -1509,12 +1509,12 @@ public class TDDatabase extends Observable {
     }
 
     /**
-     * Modifies a TDRevision's body by changing all attachments with revpos < minRevPos into stubs.
+     * Modifies a CBLRevision's body by changing all attachments with revpos < minRevPos into stubs.
      *
      * @param rev
      * @param minRevPos
      */
-    public void stubOutAttachmentsIn(TDRevision rev, int minRevPos)
+    public void stubOutAttachmentsIn(CBLRevision rev, int minRevPos)
     {
         if (minRevPos <= 1) {
             return;
@@ -1543,7 +1543,7 @@ public class TDDatabase extends Observable {
                 editedAttachment.remove("follows");
                 editedAttachment.put("stub", true);
                 editedAttachments.put(name,editedAttachment);
-                Log.d(TDDatabase.TAG, "Stubbed out attachment" + rev + " " + name + ": revpos" + revPos + " " + minRevPos);
+                Log.d(CBLDatabase.TAG, "Stubbed out attachment" + rev + " " + name + ": revpos" + revPos + " " + minRevPos);
             }
         }
         if (editedProperties != null)
@@ -1553,7 +1553,7 @@ public class TDDatabase extends Observable {
     /**
      * Given a newly-added revision, adds the necessary attachment rows to the database and stores inline attachments into the blob store.
      */
-    public TDStatus processAttachmentsForRevision(TDRevision rev, long parentSequence) {
+    public CBLStatus processAttachmentsForRevision(CBLRevision rev, long parentSequence) {
         assert(rev != null);
         long newSequence = rev.getSequence();
         assert(newSequence > parentSequence);
@@ -1565,12 +1565,12 @@ public class TDDatabase extends Observable {
             newAttachments = (Map<String,Object>)properties.get("_attachments");
         }
         if(newAttachments == null || newAttachments.size() == 0 || rev.isDeleted()) {
-            return new TDStatus(TDStatus.OK);
+            return new CBLStatus(CBLStatus.OK);
         }
 
         for (String name : newAttachments.keySet()) {
 
-            TDStatus status = new TDStatus();
+            CBLStatus status = new CBLStatus();
             Map<String,Object> newAttach = (Map<String,Object>)newAttachments.get(name);
             String newContentBase64 = (String)newAttach.get("data");
             if(newContentBase64 != null) {
@@ -1579,11 +1579,11 @@ public class TDDatabase extends Observable {
                 try {
                     newContents = Base64.decode(newContentBase64);
                 } catch (IOException e) {
-                    Log.e(TDDatabase.TAG, "IOExeption parsing base64", e);
-                    return new TDStatus(TDStatus.BAD_REQUEST);
+                    Log.e(CBLDatabase.TAG, "IOExeption parsing base64", e);
+                    return new CBLStatus(CBLStatus.BAD_REQUEST);
                 }
                 if(newContents == null) {
-                    return new TDStatus(TDStatus.BAD_REQUEST);
+                    return new CBLStatus(CBLStatus.BAD_REQUEST);
                 }
 
                 // Now determine the revpos, i.e. generation # this was added in. Usually this is
@@ -1597,7 +1597,7 @@ public class TDDatabase extends Observable {
                 }
 
                 if(revpos > generation) {
-                    return new TDStatus(TDStatus.BAD_REQUEST);
+                    return new CBLStatus(CBLStatus.BAD_REQUEST);
                 }
 
                 // Finally insert the attachment:
@@ -1613,36 +1613,36 @@ public class TDDatabase extends Observable {
             }
         }
 
-        return new TDStatus(TDStatus.OK);
+        return new CBLStatus(CBLStatus.OK);
     }
 
     /**
      * Updates or deletes an attachment, creating a new document revision in the process.
      * Used by the PUT / DELETE methods called on attachment URLs.
      */
-    public TDRevision updateAttachment(String filename, InputStream contentStream, String contentType, String docID, String oldRevID, TDStatus status) {
-        status.setCode(TDStatus.BAD_REQUEST);
+    public CBLRevision updateAttachment(String filename, InputStream contentStream, String contentType, String docID, String oldRevID, CBLStatus status) {
+        status.setCode(CBLStatus.BAD_REQUEST);
         if(filename == null || filename.length() == 0 || (contentStream != null && contentType == null) || (oldRevID != null && docID == null) || (contentStream != null && docID == null)) {
             return null;
         }
 
         beginTransaction();
         try {
-            TDRevision oldRev = new TDRevision(docID, oldRevID, false);
+            CBLRevision oldRev = new CBLRevision(docID, oldRevID, false);
             if(oldRevID != null) {
                 // Load existing revision if this is a replacement:
-                TDStatus loadStatus = loadRevisionBody(oldRev, EnumSet.noneOf(TDContentOptions.class));
+                CBLStatus loadStatus = loadRevisionBody(oldRev, EnumSet.noneOf(TDContentOptions.class));
                 status.setCode(loadStatus.getCode());
                 if(!status.isSuccessful()) {
-                    if(status.getCode() == TDStatus.NOT_FOUND && existsDocumentWithIDAndRev(docID, null)) {
-                        status.setCode(TDStatus.CONFLICT);  // if some other revision exists, it's a conflict
+                    if(status.getCode() == CBLStatus.NOT_FOUND && existsDocumentWithIDAndRev(docID, null)) {
+                        status.setCode(CBLStatus.CONFLICT);  // if some other revision exists, it's a conflict
                     }
                     return null;
                 }
 
                 Map<String,Object> attachments = (Map<String, Object>) oldRev.getProperties().get("_attachments");
                 if(contentStream == null && attachments != null && !attachments.containsKey(filename)) {
-                    status.setCode(TDStatus.NOT_FOUND);
+                    status.setCode(CBLStatus.NOT_FOUND);
                     return null;
                 }
                 // Remove the _attachments stubs so putRevision: doesn't copy the rows for me
@@ -1650,15 +1650,15 @@ public class TDDatabase extends Observable {
                 if(attachments != null) {
                     Map<String,Object> properties = new HashMap<String,Object>(oldRev.getProperties());
                     properties.remove("_attachments");
-                    oldRev.setBody(new TDBody(properties));
+                    oldRev.setBody(new CBLBody(properties));
                 }
             } else {
                 // If this creates a new doc, it needs a body:
-                oldRev.setBody(new TDBody(new HashMap<String,Object>()));
+                oldRev.setBody(new CBLBody(new HashMap<String,Object>()));
             }
 
             // Create a new revision:
-            TDRevision newRev = putRevision(oldRev, oldRevID, false, status);
+            CBLRevision newRev = putRevision(oldRev, oldRevID, false, status);
             if(newRev == null) {
                 return null;
             }
@@ -1674,7 +1674,7 @@ public class TDDatabase extends Observable {
 
             if(contentStream != null) {
                 // If not deleting, add a new attachment entry:
-                TDStatus insertStatus = insertAttachmentForSequenceWithNameAndType(contentStream, newRev.getSequence(),
+                CBLStatus insertStatus = insertAttachmentForSequenceWithNameAndType(contentStream, newRev.getSequence(),
                         filename, contentType, newRev.getGeneration());
                 status.setCode(insertStatus.getCode());
 
@@ -1683,12 +1683,12 @@ public class TDDatabase extends Observable {
                 }
             }
 
-            status.setCode((contentStream != null) ? TDStatus.CREATED : TDStatus.OK);
+            status.setCode((contentStream != null) ? CBLStatus.CREATED : CBLStatus.OK);
             return newRev;
 
         } catch(SQLException e) {
             Log.e(TAG, "Error uploading attachment", e);
-            status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+            status.setCode(CBLStatus.INTERNAL_SERVER_ERROR);
             return null;
         } finally {
             endTransaction(status.isSuccessful());
@@ -1698,7 +1698,7 @@ public class TDDatabase extends Observable {
     /**
      * Deletes obsolete attachments from the database and blob store.
      */
-    public TDStatus garbageCollectAttachments() {
+    public CBLStatus garbageCollectAttachments() {
         // First delete attachment rows for already-cleared revisions:
         // OPT: Could start after last sequence# we GC'd up to
 
@@ -1707,7 +1707,7 @@ public class TDDatabase extends Observable {
                             "(SELECT sequence from revs WHERE json IS null)");
         }
         catch(SQLException e) {
-            Log.e(TDDatabase.TAG, "Error deleting attachments", e);
+            Log.e(CBLDatabase.TAG, "Error deleting attachments", e);
         }
 
         // Now collect all remaining attachment IDs and tell the store to delete all but these:
@@ -1716,24 +1716,24 @@ public class TDDatabase extends Observable {
             cursor = database.rawQuery("SELECT DISTINCT key FROM attachments", null);
 
             cursor.moveToFirst();
-            List<TDBlobKey> allKeys = new ArrayList<TDBlobKey>();
+            List<CBLBlobKey> allKeys = new ArrayList<CBLBlobKey>();
             while(!cursor.isAfterLast()) {
-                TDBlobKey key = new TDBlobKey(cursor.getBlob(0));
+                CBLBlobKey key = new CBLBlobKey(cursor.getBlob(0));
                 allKeys.add(key);
                 cursor.moveToNext();
             }
 
             int numDeleted = attachments.deleteBlobsExceptWithKeys(allKeys);
             if(numDeleted < 0) {
-                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
             }
 
-            Log.v(TDDatabase.TAG, "Deleted " + numDeleted + " attachments");
+            Log.v(CBLDatabase.TAG, "Deleted " + numDeleted + " attachments");
 
-            return new TDStatus(TDStatus.OK);
+            return new CBLStatus(CBLStatus.OK);
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error finding attachment keys in use", e);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            Log.e(CBLDatabase.TAG, "Error finding attachment keys in use", e);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         } finally {
             if(cursor != null) {
                 cursor.close();
@@ -1742,7 +1742,7 @@ public class TDDatabase extends Observable {
     }
 
     /*************************************************************************************************/
-    /*** TDDatabase+Insertion                                                                      ***/
+    /*** CBLDatabase+Insertion                                                                      ***/
     /*************************************************************************************************/
 
     /** DOCUMENT & REV IDS: **/
@@ -1760,19 +1760,19 @@ public class TDDatabase extends Observable {
     }
 
     public static String generateDocumentId() {
-        return TDMisc.TDCreateUUID();
+        return CBLMisc.TDCreateUUID();
     }
 
     public String generateNextRevisionID(String revisionId) {
         // Revision IDs have a generation count, a hyphen, and a UUID.
         int generation = 0;
         if(revisionId != null) {
-            generation = TDRevision.generationFromRevID(revisionId);
+            generation = CBLRevision.generationFromRevID(revisionId);
             if(generation == 0) {
                 return null;
             }
         }
-        String digest = TDMisc.TDCreateUUID();  //TODO: Generate canonical digest of body
+        String digest = CBLMisc.TDCreateUUID();  //TODO: Generate canonical digest of body
         return Integer.toString(generation + 1) + "-" + digest;
     }
 
@@ -1783,7 +1783,7 @@ public class TDDatabase extends Observable {
             args.put("docid", docId);
             rowId = database.insert("docs", null, args);
         } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error inserting document id", e);
+            Log.e(CBLDatabase.TAG, "Error inserting document id", e);
         }
         return rowId;
     }
@@ -1817,7 +1817,7 @@ public class TDDatabase extends Observable {
 
     /** INSERTION: **/
 
-    public byte[] encodeDocumentJSON(TDRevision rev) {
+    public byte[] encodeDocumentJSON(CBLRevision rev) {
 
         Map<String,Object> origProps = rev.getProperties();
         if(origProps == null) {
@@ -1829,7 +1829,7 @@ public class TDDatabase extends Observable {
         for (String key : origProps.keySet()) {
             if(key.startsWith("_")) {
                 if(!KNOWN_SPECIAL_KEYS.contains(key)) {
-                    Log.e(TAG, "TDDatabase: Invalid top-level key '" + key + "' in document to be inserted");
+                    Log.e(TAG, "CBLDatabase: Invalid top-level key '" + key + "' in document to be inserted");
                     return null;
                 }
             } else {
@@ -1839,14 +1839,14 @@ public class TDDatabase extends Observable {
 
         byte[] json = null;
         try {
-            json = TDServer.getObjectMapper().writeValueAsBytes(properties);
+            json = CBLServer.getObjectMapper().writeValueAsBytes(properties);
         } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error serializing " + rev + " to JSON", e);
+            Log.e(CBLDatabase.TAG, "Error serializing " + rev + " to JSON", e);
         }
         return json;
     }
 
-    public void notifyChange(TDRevision rev, URL source) {
+    public void notifyChange(CBLRevision rev, URL source) {
         Map<String,Object> changeNotification = new HashMap<String, Object>();
         changeNotification.put("rev", rev);
         changeNotification.put("seq", rev.getSequence());
@@ -1857,7 +1857,7 @@ public class TDDatabase extends Observable {
         notifyObservers(changeNotification);
     }
 
-    public long insertRevision(TDRevision rev, long docNumericID, long parentSequence, boolean current, byte[] data) {
+    public long insertRevision(CBLRevision rev, long docNumericID, long parentSequence, boolean current, byte[] data) {
         long rowId = 0;
         try {
             ContentValues args = new ContentValues();
@@ -1872,12 +1872,12 @@ public class TDDatabase extends Observable {
             rowId = database.insert("revs", null, args);
             rev.setSequence(rowId);
         } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error inserting revision", e);
+            Log.e(CBLDatabase.TAG, "Error inserting revision", e);
         }
         return rowId;
     }
 
-    private TDRevision putRevision(TDRevision rev, String prevRevId, TDStatus resultStatus) {
+    private CBLRevision putRevision(CBLRevision rev, String prevRevId, CBLStatus resultStatus) {
         return putRevision(rev, prevRevId, false, resultStatus);
     }
 
@@ -1890,20 +1890,20 @@ public class TDDatabase extends Observable {
      * @param prevRevId The ID of the revision to replace (same as the "?rev=" parameter to a PUT), or null if this is a new document.
      * @param allowConflict If false, an error status 409 will be returned if the insertion would create a conflict, i.e. if the previous revision already has a child.
      * @param resultStatus On return, an HTTP status code indicating success or failure.
-     * @return A new TDRevision with the docID, revID and sequence filled in (but no body).
+     * @return A new CBLRevision with the docID, revID and sequence filled in (but no body).
      */
     @SuppressWarnings("unchecked")
-    public TDRevision putRevision(TDRevision rev, String prevRevId, boolean allowConflict, TDStatus resultStatus) {
+    public CBLRevision putRevision(CBLRevision rev, String prevRevId, boolean allowConflict, CBLStatus resultStatus) {
         // prevRevId is the rev ID being replaced, or nil if an insert
         String docId = rev.getDocId();
         boolean deleted = rev.isDeleted();
         if((rev == null) || ((prevRevId != null) && (docId == null)) || (deleted && (docId == null))
                 || ((docId != null) && !isValidDocumentId(docId))) {
-            resultStatus.setCode(TDStatus.BAD_REQUEST);
+            resultStatus.setCode(CBLStatus.BAD_REQUEST);
             return null;
         }
 
-        resultStatus.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+        resultStatus.setCode(CBLStatus.INTERNAL_SERVER_ERROR);
         beginTransaction();
         Cursor cursor = null;
 
@@ -1915,7 +1915,7 @@ public class TDDatabase extends Observable {
             if(prevRevId != null) {
                 // Replacing: make sure given prevRevID is current & find its sequence number:
                 if(docNumericID <= 0) {
-                    resultStatus.setCode(TDStatus.NOT_FOUND);
+                    resultStatus.setCode(CBLStatus.NOT_FOUND);
                     return null;
                 }
 
@@ -1934,19 +1934,19 @@ public class TDDatabase extends Observable {
                 if(parentSequence == 0) {
                     // Not found: either a 404 or a 409, depending on whether there is any current revision
                     if(!allowConflict && existsDocumentWithIDAndRev(docId, null)) {
-                        resultStatus.setCode(TDStatus.CONFLICT);
+                        resultStatus.setCode(CBLStatus.CONFLICT);
                         return null;
                     }
                     else {
-                        resultStatus.setCode(TDStatus.NOT_FOUND);
+                        resultStatus.setCode(CBLStatus.NOT_FOUND);
                         return null;
                     }
                 }
 
                 if(validations != null && validations.size() > 0) {
                     // Fetch the previous revision and validate the new one against it:
-                    TDRevision prevRev = new TDRevision(docId, prevRevId, false);
-                    TDStatus status = validateRevision(rev, prevRev);
+                    CBLRevision prevRev = new CBLRevision(docId, prevRevId, false);
+                    CBLStatus status = validateRevision(rev, prevRev);
                     if(!status.isSuccessful()) {
                         resultStatus.setCode(status.getCode());
                         return null;
@@ -1963,17 +1963,17 @@ public class TDDatabase extends Observable {
                 if(deleted && (docId != null)) {
                     // Didn't specify a revision to delete: 404 or a 409, depending
                     if(existsDocumentWithIDAndRev(docId, null)) {
-                        resultStatus.setCode(TDStatus.CONFLICT);
+                        resultStatus.setCode(CBLStatus.CONFLICT);
                         return null;
                     }
                     else {
-                        resultStatus.setCode(TDStatus.NOT_FOUND);
+                        resultStatus.setCode(CBLStatus.NOT_FOUND);
                         return null;
                     }
                 }
 
                 // Validate:
-                TDStatus status = validateRevision(rev, null);
+                CBLStatus status = validateRevision(rev, null);
                 if(!status.isSuccessful()) {
                     resultStatus.setCode(status.getCode());
                     return null;
@@ -2002,7 +2002,7 @@ public class TDDatabase extends Observable {
                             }
                             else if (!allowConflict) {
                                 // docId already exists, current not deleted, conflict
-                                resultStatus.setCode(TDStatus.CONFLICT);
+                                resultStatus.setCode(CBLStatus.CONFLICT);
                                 return null;
                             }
                         }
@@ -2010,7 +2010,7 @@ public class TDDatabase extends Observable {
                 }
                 else {
                     // Inserting first revision, with no docID given (POST): generate a unique docID:
-                    docId = TDDatabase.generateDocumentId();
+                    docId = CBLDatabase.generateDocumentId();
                     docNumericID = insertDocumentID(docId);
                     if(docNumericID <= 0) {
                         return null;
@@ -2027,7 +2027,7 @@ public class TDDatabase extends Observable {
                 data = encodeDocumentJSON(rev);
                 if(data == null) {
                     // bad or missing json
-                    resultStatus.setCode(TDStatus.BAD_REQUEST);
+                    resultStatus.setCode(CBLStatus.BAD_REQUEST);
                     return null;
                 }
             }
@@ -2042,7 +2042,7 @@ public class TDDatabase extends Observable {
 
             // Store any attachments:
             if(attachments != null) {
-                TDStatus status = processAttachmentsForRevision(rev, parentSequence);
+                CBLStatus status = processAttachmentsForRevision(rev, parentSequence);
                 if(!status.isSuccessful()) {
                     resultStatus.setCode(status.getCode());
                     return null;
@@ -2051,14 +2051,14 @@ public class TDDatabase extends Observable {
 
             // Success!
             if(deleted) {
-                resultStatus.setCode(TDStatus.OK);
+                resultStatus.setCode(CBLStatus.OK);
             }
             else {
-                resultStatus.setCode(TDStatus.CREATED);
+                resultStatus.setCode(CBLStatus.CREATED);
             }
 
         } catch (SQLException e1) {
-            Log.e(TDDatabase.TAG, "Error putting revision", e1);
+            Log.e(CBLDatabase.TAG, "Error putting revision", e1);
             return null;
         } finally {
             if(cursor != null) {
@@ -2077,12 +2077,12 @@ public class TDDatabase extends Observable {
      *
      * It must already have a revision ID. This may create a conflict! The revision's history must be given; ancestor revision IDs that don't already exist locally will create phantom revisions with no content.
      */
-    public TDStatus forceInsert(TDRevision rev, List<String> revHistory, URL source) {
+    public CBLStatus forceInsert(CBLRevision rev, List<String> revHistory, URL source) {
 
         String docId = rev.getDocId();
         String revId = rev.getRevId();
         if(!isValidDocumentId(docId) || (revId == null)) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
 
         int historyCount = revHistory.size();
@@ -2091,7 +2091,7 @@ public class TDDatabase extends Observable {
             revHistory.add(revId);
             historyCount = 1;
         } else if(!revHistory.get(0).equals(rev.getRevId())) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
 
         boolean success = false;
@@ -2099,9 +2099,9 @@ public class TDDatabase extends Observable {
         try {
             // First look up all locally-known revisions of this document:
             long docNumericID = getOrInsertDocNumericID(docId);
-            TDRevisionList localRevs = getAllRevisionsOfDocumentID(docId, docNumericID, false);
+            CBLRevisionList localRevs = getAllRevisionsOfDocumentID(docId, docNumericID, false);
             if(localRevs == null) {
-                return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
             }
 
             // Walk through the remote history in chronological order, matching each revision ID to
@@ -2111,7 +2111,7 @@ public class TDDatabase extends Observable {
             long localParentSequence = 0;
             for(int i = revHistory.size() - 1; i >= 0; --i) {
                 revId = revHistory.get(i);
-                TDRevision localRev = localRevs.revWithDocIdAndRevId(docId, revId);
+                CBLRevision localRev = localRevs.revWithDocIdAndRevId(docId, revId);
                 if(localRev != null) {
                     // This revision is known locally. Remember its sequence as the parent of the next one:
                     sequence = localRev.getSequence();
@@ -2120,7 +2120,7 @@ public class TDDatabase extends Observable {
                 }
                 else {
                     // This revision isn't known, so add it:
-                    TDRevision newRev;
+                    CBLRevision newRev;
                     byte[] data = null;
                     boolean current = false;
                     if(i == 0) {
@@ -2129,26 +2129,26 @@ public class TDDatabase extends Observable {
                        if(!rev.isDeleted()) {
                            data = encodeDocumentJSON(rev);
                            if(data == null) {
-                               return new TDStatus(TDStatus.BAD_REQUEST);
+                               return new CBLStatus(CBLStatus.BAD_REQUEST);
                            }
                        }
                        current = true;
                     }
                     else {
                         // It's an intermediate parent, so insert a stub:
-                        newRev = new TDRevision(docId, revId, false);
+                        newRev = new CBLRevision(docId, revId, false);
                     }
 
                     // Insert it:
                     sequence = insertRevision(newRev, docNumericID, sequence, current, data);
 
                     if(sequence <= 0) {
-                        return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                        return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
                     }
 
                     if(i == 0) {
                         // Write any changed attachments for the new revision:
-                        TDStatus status = processAttachmentsForRevision(rev, localParentSequence);
+                        CBLStatus status = processAttachmentsForRevision(rev, localParentSequence);
                         if(!status.isSuccessful()) {
                             return status;
                         }
@@ -2164,21 +2164,21 @@ public class TDDatabase extends Observable {
                 try {
                     database.update("revs", args, "sequence=?", whereArgs);
                 } catch (SQLException e) {
-                    return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+                    return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
                 }
             }
 
             success = true;
         } catch(SQLException e) {
             endTransaction(success);
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         } finally {
             endTransaction(success);
         }
 
         // Notify and return:
         notifyChange(rev, source);
-        return new TDStatus(TDStatus.CREATED);
+        return new CBLStatus(CBLStatus.CREATED);
     }
 
     /** VALIDATION **/
@@ -2186,29 +2186,29 @@ public class TDDatabase extends Observable {
     /**
      * Define or clear a named document validation function.
      */
-    public void defineValidation(String name, TDValidationBlock validationBlock) {
+    public void defineValidation(String name, CBLValidationBlock validationBlock) {
         if(validations == null) {
-            validations = new HashMap<String, TDValidationBlock>();
+            validations = new HashMap<String, CBLValidationBlock>();
         }
         validations.put(name, validationBlock);
     }
 
-    public TDValidationBlock getValidationNamed(String name) {
-        TDValidationBlock result = null;
+    public CBLValidationBlock getValidationNamed(String name) {
+        CBLValidationBlock result = null;
         if(validations != null) {
             result = validations.get(name);
         }
         return result;
     }
 
-    public TDStatus validateRevision(TDRevision newRev, TDRevision oldRev) {
-        TDStatus result = new TDStatus(TDStatus.OK);
+    public CBLStatus validateRevision(CBLRevision newRev, CBLRevision oldRev) {
+        CBLStatus result = new CBLStatus(CBLStatus.OK);
         if(validations == null || validations.size() == 0) {
             return result;
         }
         TDValidationContextImpl context = new TDValidationContextImpl(this, oldRev);
         for (String validationName : validations.keySet()) {
-            TDValidationBlock validation = getValidationNamed(validationName);
+            CBLValidationBlock validation = getValidationNamed(validationName);
             if(!validation.validate(newRev, context)) {
                 result.setCode(context.getErrorType().getCode());
                 break;
@@ -2218,18 +2218,18 @@ public class TDDatabase extends Observable {
     }
 
     /*************************************************************************************************/
-    /*** TDDatabase+Replication                                                                    ***/
+    /*** CBLDatabase+Replication                                                                    ***/
     /*************************************************************************************************/
 
     //TODO implement missing replication methods
 
-    public List<TDReplicator> getActiveReplicators() {
+    public List<CBLReplicator> getActiveReplicators() {
         return activeReplicators;
     }
 
-    public TDReplicator getActiveReplicator(URL remote, boolean push) {
+    public CBLReplicator getActiveReplicator(URL remote, boolean push) {
         if(activeReplicators != null) {
-            for (TDReplicator replicator : activeReplicators) {
+            for (CBLReplicator replicator : activeReplicators) {
                 if(replicator.getRemote().equals(remote) && replicator.isPush() == push  && replicator.isRunning()) {
                     return replicator;
                 }
@@ -2238,21 +2238,21 @@ public class TDDatabase extends Observable {
         return null;
     }
 
-    public TDReplicator getReplicator(URL remote, boolean push, boolean continuous, ScheduledExecutorService workExecutor) {
-        TDReplicator replicator = getReplicator(remote, null, push, continuous, workExecutor);
+    public CBLReplicator getReplicator(URL remote, boolean push, boolean continuous, ScheduledExecutorService workExecutor) {
+        CBLReplicator replicator = getReplicator(remote, null, push, continuous, workExecutor);
 
     	return replicator;
     }
 
-    public TDReplicator getReplicator(URL remote, HttpClientFactory httpClientFactory, boolean push, boolean continuous, ScheduledExecutorService workExecutor) {
-        TDReplicator result = getActiveReplicator(remote, push);
+    public CBLReplicator getReplicator(URL remote, HttpClientFactory httpClientFactory, boolean push, boolean continuous, ScheduledExecutorService workExecutor) {
+        CBLReplicator result = getActiveReplicator(remote, push);
         if(result != null) {
             return result;
         }
-        result = push ? new TDPusher(this, remote, continuous, httpClientFactory, workExecutor) : new TDPuller(this, remote, continuous, httpClientFactory, workExecutor);
+        result = push ? new CBLPusher(this, remote, continuous, httpClientFactory, workExecutor) : new CBLPuller(this, remote, continuous, httpClientFactory, workExecutor);
 
         if(activeReplicators == null) {
-            activeReplicators = new ArrayList<TDReplicator>();
+            activeReplicators = new ArrayList<CBLReplicator>();
         }
         activeReplicators.add(result);
         return result;
@@ -2268,7 +2268,7 @@ public class TDDatabase extends Observable {
                 result = cursor.getString(0);
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting last sequence", e);
+            Log.e(CBLDatabase.TAG, "Error getting last sequence", e);
             return null;
         } finally {
             if(cursor != null) {
@@ -2312,7 +2312,7 @@ public class TDDatabase extends Observable {
         return result;
     }
 
-    public boolean findMissingRevisions(TDRevisionList touchRevs) {
+    public boolean findMissingRevisions(CBLRevisionList touchRevs) {
         if(touchRevs.size() == 0) {
             return true;
         }
@@ -2332,7 +2332,7 @@ public class TDDatabase extends Observable {
             cursor = database.rawQuery(sql, null);
             cursor.moveToFirst();
             while(!cursor.isAfterLast()) {
-                TDRevision rev = touchRevs.revWithDocIdAndRevId(cursor.getString(0), cursor.getString(1));
+                CBLRevision rev = touchRevs.revWithDocIdAndRevId(cursor.getString(0), cursor.getString(1));
 
                 if(rev != null) {
                     touchRevs.remove(rev);
@@ -2341,7 +2341,7 @@ public class TDDatabase extends Observable {
                 cursor.moveToNext();
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error finding missing revisions", e);
+            Log.e(CBLDatabase.TAG, "Error finding missing revisions", e);
             return false;
         } finally {
             if(cursor != null) {
@@ -2352,11 +2352,11 @@ public class TDDatabase extends Observable {
     }
 
     /*************************************************************************************************/
-    /*** TDDatabase+LocalDocs                                                                      ***/
+    /*** CBLDatabase+LocalDocs                                                                      ***/
     /*************************************************************************************************/
 
-    public TDRevision getLocalDocument(String docID, String revID) {
-        TDRevision result = null;
+    public CBLRevision getLocalDocument(String docID, String revID) {
+        CBLRevision result = null;
         Cursor cursor = null;
         try {
             String[] args = { docID };
@@ -2369,10 +2369,10 @@ public class TDDatabase extends Observable {
                 byte[] json = cursor.getBlob(1);
                 Map<String,Object> properties = null;
                 try {
-                    properties = TDServer.getObjectMapper().readValue(json, Map.class);
+                    properties = CBLServer.getObjectMapper().readValue(json, Map.class);
                     properties.put("_id", docID);
                     properties.put("_rev", gotRevID);
-                    result = new TDRevision(docID, gotRevID, false);
+                    result = new CBLRevision(docID, gotRevID, false);
                     result.setProperties(properties);
                 } catch (Exception e) {
                     Log.w(TAG, "Error parsing local doc JSON", e);
@@ -2382,7 +2382,7 @@ public class TDDatabase extends Observable {
             }
             return result;
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error getting local document", e);
+            Log.e(CBLDatabase.TAG, "Error getting local document", e);
             return null;
         } finally {
             if(cursor != null) {
@@ -2391,10 +2391,10 @@ public class TDDatabase extends Observable {
         }
     }
 
-    public TDRevision putLocalRevision(TDRevision revision, String prevRevID, TDStatus status) {
+    public CBLRevision putLocalRevision(CBLRevision revision, String prevRevID, CBLStatus status) {
         String docID = revision.getDocId();
         if(!docID.startsWith("_local/")) {
-            status.setCode(TDStatus.BAD_REQUEST);
+            status.setCode(CBLStatus.BAD_REQUEST);
             return null;
         }
 
@@ -2403,9 +2403,9 @@ public class TDDatabase extends Observable {
             byte[] json = encodeDocumentJSON(revision);
             String newRevID;
             if(prevRevID != null) {
-                int generation = TDRevision.generationFromRevID(prevRevID);
+                int generation = CBLRevision.generationFromRevID(prevRevID);
                 if(generation == 0) {
-                    status.setCode(TDStatus.BAD_REQUEST);
+                    status.setCode(CBLStatus.BAD_REQUEST);
                     return null;
                 }
                 newRevID = Integer.toString(++generation) + "-local";
@@ -2416,11 +2416,11 @@ public class TDDatabase extends Observable {
                 try {
                     int rowsUpdated = database.update("localdocs", values, "docid=? AND revid=?", whereArgs);
                     if(rowsUpdated == 0) {
-                        status.setCode(TDStatus.CONFLICT);
+                        status.setCode(CBLStatus.CONFLICT);
                         return null;
                     }
                 } catch (SQLException e) {
-                    status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                    status.setCode(CBLStatus.INTERNAL_SERVER_ERROR);
                     return null;
                 }
             } else {
@@ -2432,59 +2432,59 @@ public class TDDatabase extends Observable {
                 try {
                     database.insertWithOnConflict("localdocs", null, values, SQLiteDatabase.CONFLICT_IGNORE);
                 } catch (SQLException e) {
-                    status.setCode(TDStatus.INTERNAL_SERVER_ERROR);
+                    status.setCode(CBLStatus.INTERNAL_SERVER_ERROR);
                     return null;
                 }
             }
-            status.setCode(TDStatus.CREATED);
+            status.setCode(CBLStatus.CREATED);
             return revision.copyWithDocID(docID, newRevID);
         }
         else {
             // DELETE:
-            TDStatus deleteStatus = deleteLocalDocument(docID, prevRevID);
+            CBLStatus deleteStatus = deleteLocalDocument(docID, prevRevID);
             status.setCode(deleteStatus.getCode());
             return (status.isSuccessful()) ? revision : null;
         }
     }
 
-    public TDStatus deleteLocalDocument(String docID, String revID) {
+    public CBLStatus deleteLocalDocument(String docID, String revID) {
         if(docID == null) {
-            return new TDStatus(TDStatus.BAD_REQUEST);
+            return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
         if(revID == null) {
             // Didn't specify a revision to delete: 404 or a 409, depending
-            return (getLocalDocument(docID, null) != null) ? new TDStatus(TDStatus.CONFLICT) : new TDStatus(TDStatus.NOT_FOUND);
+            return (getLocalDocument(docID, null) != null) ? new CBLStatus(CBLStatus.CONFLICT) : new CBLStatus(CBLStatus.NOT_FOUND);
         }
         String[] whereArgs = { docID, revID };
         try {
             int rowsDeleted = database.delete("localdocs", "docid=? AND revid=?", whereArgs);
             if(rowsDeleted == 0) {
-                return (getLocalDocument(docID, null) != null) ? new TDStatus(TDStatus.CONFLICT) : new TDStatus(TDStatus.NOT_FOUND);
+                return (getLocalDocument(docID, null) != null) ? new CBLStatus(CBLStatus.CONFLICT) : new CBLStatus(CBLStatus.NOT_FOUND);
             }
-            return new TDStatus(TDStatus.OK);
+            return new CBLStatus(CBLStatus.OK);
         } catch (SQLException e) {
-            return new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+            return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
 }
 
-class TDValidationContextImpl implements TDValidationContext {
+class TDValidationContextImpl implements CBLValidationContext {
 
-    private TDDatabase database;
-    private TDRevision currentRevision;
-    private TDStatus errorType;
+    private CBLDatabase database;
+    private CBLRevision currentRevision;
+    private CBLStatus errorType;
     private String errorMessage;
 
-    public TDValidationContextImpl(TDDatabase database, TDRevision currentRevision) {
+    public TDValidationContextImpl(CBLDatabase database, CBLRevision currentRevision) {
         this.database = database;
         this.currentRevision = currentRevision;
-        this.errorType = new TDStatus(TDStatus.FORBIDDEN);
+        this.errorType = new CBLStatus(CBLStatus.FORBIDDEN);
         this.errorMessage = "invalid document";
     }
 
     @Override
-    public TDRevision getCurrentRevision() {
+    public CBLRevision getCurrentRevision() {
         if(currentRevision != null) {
             database.loadRevisionBody(currentRevision, EnumSet.noneOf(TDContentOptions.class));
         }
@@ -2492,12 +2492,12 @@ class TDValidationContextImpl implements TDValidationContext {
     }
 
     @Override
-    public TDStatus getErrorType() {
+    public CBLStatus getErrorType() {
         return errorType;
     }
 
     @Override
-    public void setErrorType(TDStatus status) {
+    public void setErrorType(CBLStatus status) {
         this.errorType = status;
     }
 

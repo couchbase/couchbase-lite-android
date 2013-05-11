@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.couchbase.cblite.support.HttpClientFactory;
 
-public interface TDChangeTrackerClient extends HttpClientFactory {
+public interface CBLChangeTrackerClient extends HttpClientFactory {
 
     void changeTrackerReceivedChange(Map<String,Object> change);
 
-    void changeTrackerStopped(TDChangeTracker tracker);
+    void changeTrackerStopped(CBLChangeTracker tracker);
 }

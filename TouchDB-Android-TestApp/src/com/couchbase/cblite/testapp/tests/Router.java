@@ -8,24 +8,24 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDStatus;
-import com.couchbase.cblite.TDView;
-import com.couchbase.cblite.TDViewMapBlock;
-import com.couchbase.cblite.TDViewMapEmitBlock;
-import com.couchbase.cblite.router.TDRouter;
-import com.couchbase.cblite.router.TDURLConnection;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.CBLView;
+import com.couchbase.cblite.CBLViewMapBlock;
+import com.couchbase.cblite.CBLViewMapEmitBlock;
+import com.couchbase.cblite.router.CBLRouter;
+import com.couchbase.cblite.router.CBLURLConnection;
 
-public class Router extends TouchDBTestCase {
+public class Router extends CBLiteTestCase {
 
     public static final String TAG = "Router";
 
     public void testServer() {
         Map<String,Object> responseBody = new HashMap<String,Object>();
-        responseBody.put("TouchDB", "Welcome");
+        responseBody.put("CBLite", "Welcome");
         responseBody.put("couchdb", "Welcome");
-        responseBody.put("version", TDRouter.getVersionString());
-        send(server, "GET", "/", TDStatus.OK, responseBody);
+        responseBody.put("version", CBLRouter.getVersionString());
+        send(server, "GET", "/", CBLStatus.OK, responseBody);
 
         Map<String,Object> session = new HashMap<String,Object>();
         Map<String,Object> userCtx = new HashMap<String,Object>();
@@ -35,78 +35,78 @@ public class Router extends TouchDBTestCase {
         userCtx.put("name", null);
         userCtx.put("roles", roles);
         session.put("userCtx", userCtx);
-        send(server, "GET", "/_session", TDStatus.OK, session);
+        send(server, "GET", "/_session", CBLStatus.OK, session);
 
         List<String> allDbs = new ArrayList<String>();
-        allDbs.add("touchdb-test");
-        send(server, "GET", "/_all_dbs", TDStatus.OK, allDbs);
+        allDbs.add("cblite-test");
+        send(server, "GET", "/_all_dbs", CBLStatus.OK, allDbs);
 
-        send(server, "GET", "/non-existant", TDStatus.NOT_FOUND, null);
-        send(server, "GET", "/BadName", TDStatus.NOT_FOUND, null);
-        send(server, "PUT", "/", TDStatus.BAD_REQUEST, null);
-        send(server, "POST", "/", TDStatus.BAD_REQUEST, null);
+        send(server, "GET", "/non-existant", CBLStatus.NOT_FOUND, null);
+        send(server, "GET", "/BadName", CBLStatus.NOT_FOUND, null);
+        send(server, "PUT", "/", CBLStatus.BAD_REQUEST, null);
+        send(server, "POST", "/", CBLStatus.BAD_REQUEST, null);
     }
 
     public void testDatabase() {
-        send(server, "PUT", "/database", TDStatus.CREATED, null);
+        send(server, "PUT", "/database", CBLStatus.CREATED, null);
 
-        Map<String,Object> dbInfo = (Map<String,Object>)send(server, "GET", "/database", TDStatus.OK, null);
+        Map<String,Object> dbInfo = (Map<String,Object>)send(server, "GET", "/database", CBLStatus.OK, null);
         Assert.assertEquals(0, dbInfo.get("doc_count"));
         Assert.assertEquals(0, dbInfo.get("update_seq"));
         Assert.assertTrue((Integer)dbInfo.get("disk_size") > 8000);
 
-        send(server, "PUT", "/database", TDStatus.PRECONDITION_FAILED, null);
-        send(server, "PUT", "/database2", TDStatus.CREATED, null);
+        send(server, "PUT", "/database", CBLStatus.PRECONDITION_FAILED, null);
+        send(server, "PUT", "/database2", CBLStatus.CREATED, null);
 
         List<String> allDbs = new ArrayList<String>();
         allDbs.add("database");
         allDbs.add("database2");
-        allDbs.add("touchdb-test");
-        send(server, "GET", "/_all_dbs", TDStatus.OK, allDbs);
-        dbInfo = (Map<String,Object>)send(server, "GET", "/database2", TDStatus.OK, null);
+        allDbs.add("cblite-test");
+        send(server, "GET", "/_all_dbs", CBLStatus.OK, allDbs);
+        dbInfo = (Map<String,Object>)send(server, "GET", "/database2", CBLStatus.OK, null);
         Assert.assertEquals("database2", dbInfo.get("db_name"));
 
-        send(server, "DELETE", "/database2", TDStatus.OK, null);
+        send(server, "DELETE", "/database2", CBLStatus.OK, null);
         allDbs.remove("database2");
-        send(server, "GET", "/_all_dbs", TDStatus.OK, allDbs);
+        send(server, "GET", "/_all_dbs", CBLStatus.OK, allDbs);
 
-        send(server, "PUT", "/database%2Fwith%2Fslashes", TDStatus.CREATED, null);
-        dbInfo = (Map<String,Object>)send(server, "GET", "/database%2Fwith%2Fslashes", TDStatus.OK, null);
+        send(server, "PUT", "/database%2Fwith%2Fslashes", CBLStatus.CREATED, null);
+        dbInfo = (Map<String,Object>)send(server, "GET", "/database%2Fwith%2Fslashes", CBLStatus.OK, null);
         Assert.assertEquals("database/with/slashes", dbInfo.get("db_name"));
     }
 
     public void testDocs() {
-        send(server, "PUT", "/db", TDStatus.CREATED, null);
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
         // PUT:
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, TDStatus.CREATED, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, CBLStatus.CREATED, null);
         String revID = (String)result.get("rev");
         Assert.assertTrue(revID.startsWith("1-"));
 
         // PUT to update:
         doc1.put("message", "goodbye");
         doc1.put("_rev", revID);
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, CBLStatus.CREATED, null);
         Log.v(TAG, String.format("PUT returned %s", result));
         revID = (String)result.get("rev");
         Assert.assertTrue(revID.startsWith("2-"));
 
         doc1.put("_id", "doc1");
         doc1.put("_rev", revID);
-        result = (Map<String,Object>)send(server, "GET", "/db/doc1", TDStatus.OK, doc1);
+        result = (Map<String,Object>)send(server, "GET", "/db/doc1", CBLStatus.OK, doc1);
 
         // Add more docs:
         Map<String,Object> docX = new HashMap<String,Object>();
         docX.put("message", "hello");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", docX, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", docX, CBLStatus.CREATED, null);
         String revID3 = (String)result.get("rev");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", docX, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", docX, CBLStatus.CREATED, null);
         String revID2 = (String)result.get("rev");
 
         // _all_docs:
-        result = (Map<String,Object>)send(server, "GET", "/db/_all_docs", TDStatus.OK, null);
+        result = (Map<String,Object>)send(server, "GET", "/db/_all_docs", CBLStatus.OK, null);
         Assert.assertEquals(3, result.get("total_rows"));
         Assert.assertEquals(0, result.get("offset"));
 
@@ -139,11 +139,11 @@ public class Router extends TouchDBTestCase {
         Assert.assertEquals(expectedRows, rows);
 
         // DELETE:
-        result = (Map<String,Object>)send(server, "DELETE", String.format("/db/doc1?rev=%s", revID), TDStatus.OK, null);
+        result = (Map<String,Object>)send(server, "DELETE", String.format("/db/doc1?rev=%s", revID), CBLStatus.OK, null);
         revID = (String)result.get("rev");
         Assert.assertTrue(revID.startsWith("3-"));
 
-        send(server, "GET", "/db/doc1", TDStatus.NOT_FOUND, null);
+        send(server, "GET", "/db/doc1", CBLStatus.NOT_FOUND, null);
 
         // _changes:
         value1.put("rev", revID);
@@ -177,60 +177,60 @@ public class Router extends TouchDBTestCase {
         expectedChanges.put("last_seq", 5);
         expectedChanges.put("results", results);
 
-        send(server, "GET", "/db/_changes", TDStatus.OK, expectedChanges);
+        send(server, "GET", "/db/_changes", CBLStatus.OK, expectedChanges);
 
         // _changes with ?since:
         results.remove(result3);
         results.remove(result2);
         expectedChanges.put("results", results);
-        send(server, "GET", "/db/_changes?since=4", TDStatus.OK, expectedChanges);
+        send(server, "GET", "/db/_changes?since=4", CBLStatus.OK, expectedChanges);
 
         results.remove(result1);
         expectedChanges.put("results", results);
-        send(server, "GET", "/db/_changes?since=5", TDStatus.OK, expectedChanges);
+        send(server, "GET", "/db/_changes?since=5", CBLStatus.OK, expectedChanges);
     }
 
     public void testLocalDocs() {
-        send(server, "PUT", "/db", TDStatus.CREATED, null);
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
         // PUT a local doc:
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/db/_local/doc1", doc1, TDStatus.CREATED, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/db/_local/doc1", doc1, CBLStatus.CREATED, null);
         String revID = (String)result.get("rev");
         Assert.assertTrue(revID.startsWith("1-"));
 
         // GET it:
         doc1.put("_id", "_local/doc1");
         doc1.put("_rev", revID);
-        result = (Map<String,Object>)send(server, "GET", "/db/_local/doc1", TDStatus.OK, doc1);
+        result = (Map<String,Object>)send(server, "GET", "/db/_local/doc1", CBLStatus.OK, doc1);
 
         // Local doc should not appear in _changes feed:
         Map<String,Object> expectedChanges = new HashMap<String,Object>();
         expectedChanges.put("last_seq", 0);
         expectedChanges.put("results", new ArrayList<Object>());
-        send(server, "GET", "/db/_changes", TDStatus.OK, expectedChanges);
+        send(server, "GET", "/db/_changes", CBLStatus.OK, expectedChanges);
     }
 
     public void testAllDocs() {
-        send(server, "PUT", "/db", TDStatus.CREATED, null);
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
         Map<String,Object> result;
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, CBLStatus.CREATED, null);
         String revID = (String)result.get("rev");
         Map<String,Object> doc3 = new HashMap<String,Object>();
         doc3.put("message", "bonjour");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", doc3, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", doc3, CBLStatus.CREATED, null);
         String revID3 = (String)result.get("rev");
         Map<String,Object> doc2 = new HashMap<String,Object>();
         doc2.put("message", "guten tag");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", doc2, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", doc2, CBLStatus.CREATED, null);
         String revID2 = (String)result.get("rev");
 
         // _all_docs:
-        result = (Map<String,Object>)send(server, "GET", "/db/_all_docs", TDStatus.OK, null);
+        result = (Map<String,Object>)send(server, "GET", "/db/_all_docs", CBLStatus.OK, null);
         Assert.assertEquals(3, result.get("total_rows"));
         Assert.assertEquals(0, result.get("offset"));
 
@@ -263,7 +263,7 @@ public class Router extends TouchDBTestCase {
         Assert.assertEquals(expectedRows, rows);
 
         // ?include_docs:
-        result = (Map<String,Object>)send(server, "GET", "/db/_all_docs?include_docs=true", TDStatus.OK, null);
+        result = (Map<String,Object>)send(server, "GET", "/db/_all_docs?include_docs=true", CBLStatus.OK, null);
         Assert.assertEquals(3, result.get("total_rows"));
         Assert.assertEquals(0, result.get("offset"));
 
@@ -289,28 +289,28 @@ public class Router extends TouchDBTestCase {
     }
 
     public void testViews() {
-        send(server, "PUT", "/db", TDStatus.CREATED, null);
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
         Map<String,Object> result;
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc1", doc1, CBLStatus.CREATED, null);
         String revID = (String)result.get("rev");
         Map<String,Object> doc3 = new HashMap<String,Object>();
         doc3.put("message", "bonjour");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", doc3, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc3", doc3, CBLStatus.CREATED, null);
         String revID3 = (String)result.get("rev");
         Map<String,Object> doc2 = new HashMap<String,Object>();
         doc2.put("message", "guten tag");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", doc2, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc2", doc2, CBLStatus.CREATED, null);
         String revID2 = (String)result.get("rev");
 
-        TDDatabase db = server.getDatabaseNamed("db");
-        TDView view = db.getViewNamed("design/view");
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+        CBLDatabase db = server.getDatabaseNamed("db");
+        CBLView view = db.getViewNamed("design/view");
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 emitter.emit(document.get("message"), null);
             }
         }, null, "1");
@@ -338,10 +338,10 @@ public class Router extends TouchDBTestCase {
         expectedResult.put("rows", expectedRows);
 
         // Query the view and check the result:
-        send(server, "GET", "/db/_design/design/_view/view", TDStatus.OK, expectedResult);
+        send(server, "GET", "/db/_design/design/_view/view", CBLStatus.OK, expectedResult);
 
         // Check the ETag:
-        TDURLConnection conn = sendRequest(server, "GET", "/db/_design/design/_view/view", null, null);
+        CBLURLConnection conn = sendRequest(server, "GET", "/db/_design/design/_view/view", null, null);
         String etag = conn.getHeaderField("Etag");
         Assert.assertEquals(String.format("\"%d\"", view.getLastSequenceIndexed()), etag);
 
@@ -349,22 +349,22 @@ public class Router extends TouchDBTestCase {
         Map<String,String> headers = new HashMap<String,String>();
         headers.put("If-None-Match", etag);
         conn = sendRequest(server, "GET", "/db/_design/design/_view/view", headers, null);
-        Assert.assertEquals(TDStatus.NOT_MODIFIED, conn.getResponseCode());
+        Assert.assertEquals(CBLStatus.NOT_MODIFIED, conn.getResponseCode());
 
         // Update the database:
         Map<String,Object> doc4 = new HashMap<String,Object>();
         doc4.put("message", "aloha");
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc4", doc4, TDStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc4", doc4, CBLStatus.CREATED, null);
 
         // Try a conditional GET:
         conn = sendRequest(server, "GET", "/db/_design/design/_view/view", headers, null);
-        Assert.assertEquals(TDStatus.OK, conn.getResponseCode());
+        Assert.assertEquals(CBLStatus.OK, conn.getResponseCode());
         result = (Map<String,Object>)parseJSONResponse(conn);
         Assert.assertEquals(4, result.get("total_rows"));
     }
 
     public void testPostBulkDocs() {
-        send(server, "PUT", "/db", TDStatus.CREATED, null);
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
         Map<String,Object> bulk_doc1 = new HashMap<String,Object>();
         bulk_doc1.put("_id", "bulk_message1");
@@ -382,7 +382,7 @@ public class Router extends TouchDBTestCase {
         bodyObj.put("docs", list);
 
         List<Map<String,Object>> bulk_result  =
-                (ArrayList<Map<String,Object>>)sendBody(server, "POST", "/db/_bulk_docs", bodyObj, TDStatus.CREATED, null);
+                (ArrayList<Map<String,Object>>)sendBody(server, "POST", "/db/_bulk_docs", bodyObj, CBLStatus.CREATED, null);
 
         Assert.assertEquals(2, bulk_result.size());
         Assert.assertEquals(bulk_result.get(0).get("id"),  bulk_doc1.get("_id"));
@@ -392,27 +392,27 @@ public class Router extends TouchDBTestCase {
     }
 
     public void testPostKeysView() {
-    	send(server, "PUT", "/db", TDStatus.CREATED, null);
+    	send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
     	Map<String,Object> result;
 
-    	TDDatabase db = server.getDatabaseNamed("db");
-    	TDView view = db.getViewNamed("design/view");
-    	view.setMapReduceBlocks(new TDViewMapBlock() {
+    	CBLDatabase db = server.getDatabaseNamed("db");
+    	CBLView view = db.getViewNamed("design/view");
+    	view.setMapReduceBlocks(new CBLViewMapBlock() {
 
     		@Override
-    		public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+    		public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
     			emitter.emit(document.get("message"), null);
     		}
     	}, null, "1");
 
     	Map<String,Object> key_doc1 = new HashMap<String,Object>();
     	key_doc1.put("parentId", "12345");
-    	result = (Map<String,Object>)sendBody(server, "PUT", "/db/key_doc1", key_doc1, TDStatus.CREATED, null);
+    	result = (Map<String,Object>)sendBody(server, "PUT", "/db/key_doc1", key_doc1, CBLStatus.CREATED, null);
     	view = db.getViewNamed("design/view");
-    	view.setMapReduceBlocks(new TDViewMapBlock() {
+    	view.setMapReduceBlocks(new CBLViewMapBlock() {
     		@Override
-    		public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+    		public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
     			if (document.get("parentId").equals("12345")) {
     				emitter.emit(document.get("parentId"), document);
     			}
@@ -423,38 +423,38 @@ public class Router extends TouchDBTestCase {
     	keys.add("12345");
     	Map<String,Object> bodyObj = new HashMap<String,Object>();
     	bodyObj.put("keys", keys);
-        TDURLConnection conn = sendRequest(server, "POST", "/db/_design/design/_view/view", null, bodyObj);
+        CBLURLConnection conn = sendRequest(server, "POST", "/db/_design/design/_view/view", null, bodyObj);
         result = (Map<String, Object>) parseJSONResponse(conn);
     	Assert.assertEquals(1, result.get("total_rows"));
     }
 
     public void testRevsDiff() {
 
-        send(server, "PUT", "/db", TDStatus.CREATED, null);
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
         Map<String,Object> doc = new HashMap<String,Object>();
-        Map<String,Object> doc1r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc, TDStatus.CREATED, null);
+        Map<String,Object> doc1r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc, CBLStatus.CREATED, null);
         String doc1r1ID = (String)doc1r1.get("rev");
 
-        Map<String,Object> doc2r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/22222", doc, TDStatus.CREATED, null);
+        Map<String,Object> doc2r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/22222", doc, CBLStatus.CREATED, null);
         String doc2r1ID = (String)doc2r1.get("rev");
 
-        Map<String,Object> doc3r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/33333", doc, TDStatus.CREATED, null);
+        Map<String,Object> doc3r1 = (Map<String,Object>)sendBody(server, "PUT", "/db/33333", doc, CBLStatus.CREATED, null);
         String doc3r1ID = (String)doc3r1.get("rev");
 
 
         Map<String, Object> doc1v2 = new HashMap<String, Object>();
         doc1v2.put("_rev", doc1r1ID);
-        Map<String,Object> doc1r2 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc1v2, TDStatus.CREATED, null);
+        Map<String,Object> doc1r2 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc1v2, CBLStatus.CREATED, null);
         String doc1r2ID = (String)doc1r2.get("rev");
 
         Map<String, Object> doc2v2 = new HashMap<String, Object>();
         doc2v2.put("_rev", doc2r1ID);
-        sendBody(server, "PUT", "/db/22222", doc2v2, TDStatus.CREATED, null);
+        sendBody(server, "PUT", "/db/22222", doc2v2, CBLStatus.CREATED, null);
 
         Map<String, Object> doc1v3 = new HashMap<String, Object>();
         doc1v3.put("_rev", doc1r2ID);
-        Map<String,Object> doc1r3 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc1v3, TDStatus.CREATED, null);
+        Map<String,Object> doc1r3 = (Map<String,Object>)sendBody(server, "PUT", "/db/11111", doc1v3, CBLStatus.CREATED, null);
         String doc1r3ID = (String)doc1r1.get("rev");
 
         //now build up the request
@@ -501,7 +501,7 @@ public class Router extends TouchDBTestCase {
         revsDiffResponse.put("33333", doc3missingMap);
         revsDiffResponse.put("99999", doc9missingMap);
 
-        sendBody(server, "POST", "/db/_revs_diff", revsDiffRequest, TDStatus.OK, revsDiffResponse);
+        sendBody(server, "POST", "/db/_revs_diff", revsDiffRequest, CBLStatus.OK, revsDiffResponse);
     }
 
 }

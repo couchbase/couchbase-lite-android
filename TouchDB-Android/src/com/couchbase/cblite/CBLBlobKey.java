@@ -22,14 +22,14 @@ import java.util.Arrays;
 /**
  * Key identifying a data blob. This happens to be a SHA-1 digest.
  */
-public class TDBlobKey {
+public class CBLBlobKey {
 
     private byte[] bytes;
 
-    public TDBlobKey() {
+    public CBLBlobKey() {
     }
 
-    public TDBlobKey(byte[] bytes) {
+    public CBLBlobKey(byte[] bytes) {
         this.bytes = bytes;
     }
 
@@ -69,10 +69,10 @@ public class TDBlobKey {
 
     @Override
     public boolean equals(Object o) {
-        if(!(o instanceof TDBlobKey)) {
+        if(!(o instanceof CBLBlobKey)) {
             return false;
         }
-        TDBlobKey oBlobKey = (TDBlobKey)o;
+        CBLBlobKey oBlobKey = (CBLBlobKey)o;
         return Arrays.equals(getBytes(), oBlobKey.getBytes());
     }
 
@@ -84,6 +84,6 @@ public class TDBlobKey {
 
     @Override
     public String toString() {
-        return TDBlobKey.convertToHex(bytes);
+        return CBLBlobKey.convertToHex(bytes);
     }
 }

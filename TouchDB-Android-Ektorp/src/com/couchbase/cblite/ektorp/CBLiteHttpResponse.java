@@ -10,23 +10,23 @@ import org.ektorp.util.Exceptions;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.router.TDRouter;
-import com.couchbase.cblite.router.TDRouterCallbackBlock;
-import com.couchbase.cblite.router.TDURLConnection;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.router.CBLRouter;
+import com.couchbase.cblite.router.CBLRouterCallbackBlock;
+import com.couchbase.cblite.router.CBLURLConnection;
 
-public class TouchDBHttpResponse implements HttpResponse, TDRouterCallbackBlock {
+public class CBLiteHttpResponse implements HttpResponse, CBLRouterCallbackBlock {
 
-    private TDURLConnection conn;
-    private TDRouter router;
+    private CBLURLConnection conn;
+    private CBLRouter router;
     private InputStream is;
     final CountDownLatch doneSignal = new CountDownLatch(1);
 
-    public static TouchDBHttpResponse of(TDURLConnection conn, TDRouter router) throws IOException {
-        return new TouchDBHttpResponse(conn, router);
+    public static CBLiteHttpResponse of(CBLURLConnection conn, CBLRouter router) throws IOException {
+        return new CBLiteHttpResponse(conn, router);
     }
 
-    private TouchDBHttpResponse(TDURLConnection conn, TDRouter router) throws IOException {
+    private CBLiteHttpResponse(CBLURLConnection conn, CBLRouter router) throws IOException {
         this.conn = conn;
         this.router = router;
     }
@@ -47,7 +47,7 @@ public class TouchDBHttpResponse implements HttpResponse, TDRouterCallbackBlock 
         try {
             doneSignal.await();
         } catch (InterruptedException e) {
-            Log.e(TDDatabase.TAG, "Interupted waiting for response", e);
+            Log.e(CBLDatabase.TAG, "Interupted waiting for response", e);
         }
         return is;
     }
@@ -88,7 +88,7 @@ public class TouchDBHttpResponse implements HttpResponse, TDRouterCallbackBlock 
         }
     }
 
-    /** TDRouterCallbackBlock **/
+    /** CBLRouterCallbackBlock **/
 
     @Override
     public void onResponseReady() {

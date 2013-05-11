@@ -21,15 +21,15 @@ import java.util.TreeMap;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDBody;
-import com.couchbase.cblite.TDDatabase;
+import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.CBLDatabase;
 
-public class TDURLConnection extends HttpURLConnection {
+public class CBLURLConnection extends HttpURLConnection {
 
     private Header resHeader;
     private boolean sentRequest = false;
     private ByteArrayOutputStream os;
-    private TDBody responseBody;
+    private CBLBody responseBody;
     private boolean chunked = false;
 
     private HashMap<String, List<String>> requestProperties = new HashMap<String, List<String>>();
@@ -44,13 +44,13 @@ public class TDURLConnection extends HttpURLConnection {
 
     private InputStream requestInputStream;
 
-    public TDURLConnection(URL url) {
+    public CBLURLConnection(URL url) {
         super(url);
         responseInputStream = new PipedInputStream();
         try {
             responseOutputStream = new PipedOutputStream((PipedInputStream)responseInputStream);
         } catch (IOException e) {
-            Log.e(TDDatabase.TAG, "Exception creating piped output stream", e);
+            Log.e(CBLDatabase.TAG, "Exception creating piped output stream", e);
         }
     }
 
@@ -165,11 +165,11 @@ public class TDURLConnection extends HttpURLConnection {
         this.responseCode = responseCode;
     }
 
-    void setResponseBody(TDBody responseBody) {
+    void setResponseBody(CBLBody responseBody) {
         this.responseBody = responseBody;
     }
 
-    public TDBody getResponseBody() {
+    public CBLBody getResponseBody() {
         return this.responseBody;
     }
 

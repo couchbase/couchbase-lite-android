@@ -32,7 +32,7 @@ import android.util.Log;
 /**
  * Represents a view available in a database.
  */
-public class TDView {
+public class CBLView {
 
     public static final int REDUCE_BATCH_SIZE = 100;
 
@@ -40,22 +40,22 @@ public class TDView {
         TDViewCollationUnicode, TDViewCollationRaw, TDViewCollationASCII
     }
 
-    private TDDatabase db;
+    private CBLDatabase db;
     private String name;
     private int viewId;
-    private TDViewMapBlock mapBlock;
-    private TDViewReduceBlock reduceBlock;
+    private CBLViewMapBlock mapBlock;
+    private CBLViewReduceBlock reduceBlock;
     private TDViewCollation collation;
-    private static TDViewCompiler compiler;
+    private static CBLViewCompiler compiler;
 
-    public TDView(TDDatabase db, String name) {
+    public CBLView(CBLDatabase db, String name) {
         this.db = db;
         this.name = name;
         this.viewId = -1; // means 'unknown'
         this.collation = TDViewCollation.TDViewCollationUnicode;
     }
 
-    public TDDatabase getDb() {
+    public CBLDatabase getDb() {
         return db;
     };
 
@@ -63,11 +63,11 @@ public class TDView {
         return name;
     }
 
-    public TDViewMapBlock getMapBlock() {
+    public CBLViewMapBlock getMapBlock() {
         return mapBlock;
     }
 
-    public TDViewReduceBlock getReduceBlock() {
+    public CBLViewReduceBlock getReduceBlock() {
         return reduceBlock;
     }
 
@@ -99,7 +99,7 @@ public class TDView {
                     viewId = 0;
                 }
             } catch (SQLException e) {
-                Log.e(TDDatabase.TAG, "Error getting view id", e);
+                Log.e(CBLDatabase.TAG, "Error getting view id", e);
                 viewId = 0;
             } finally {
                 if (cursor != null) {
@@ -121,7 +121,7 @@ public class TDView {
                 result = cursor.getLong(0);
             }
         } catch (Exception e) {
-            Log.e(TDDatabase.TAG, "Error getting last sequence indexed");
+            Log.e(CBLDatabase.TAG, "Error getting last sequence indexed");
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -130,8 +130,8 @@ public class TDView {
         return result;
     }
 
-    public boolean setMapReduceBlocks(TDViewMapBlock mapBlock,
-            TDViewReduceBlock reduceBlock, String version) {
+    public boolean setMapReduceBlocks(CBLViewMapBlock mapBlock,
+            CBLViewReduceBlock reduceBlock, String version) {
         assert (mapBlock != null);
         assert (version != null);
 
@@ -176,7 +176,7 @@ public class TDView {
 
             return (rowsAffected > 0);
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error setting map block", e);
+            Log.e(CBLDatabase.TAG, "Error setting map block", e);
             return false;
         } finally {
             if (cursor != null) {
@@ -205,7 +205,7 @@ public class TDView {
 
             success = true;
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error removing index", e);
+            Log.e(CBLDatabase.TAG, "Error removing index", e);
         } finally {
             db.endTransaction(success);
         }
@@ -229,7 +229,7 @@ public class TDView {
         }
         String result = null;
         try {
-            result = TDServer.getObjectMapper().writeValueAsString(object);
+            result = CBLServer.getObjectMapper().writeValueAsString(object);
         } catch (Exception e) {
             // ignore
         }
@@ -242,7 +242,7 @@ public class TDView {
         }
         Object result = null;
         try {
-            result = TDServer.getObjectMapper().readValue(json, Object.class);
+            result = CBLServer.getObjectMapper().readValue(json, Object.class);
         } catch (Exception e) {
             // ignore
         }
@@ -254,16 +254,16 @@ public class TDView {
      * @return 200 if updated, 304 if already up-to-date, else an error code
      */
     @SuppressWarnings("unchecked")
-    public TDStatus updateIndex() {
-        Log.v(TDDatabase.TAG, "Re-indexing view " + name + " ...");
+    public CBLStatus updateIndex() {
+        Log.v(CBLDatabase.TAG, "Re-indexing view " + name + " ...");
         assert (mapBlock != null);
 
         if (getViewId() < 0) {
-            return new TDStatus(TDStatus.NOT_FOUND);
+            return new CBLStatus(CBLStatus.NOT_FOUND);
         }
 
         db.beginTransaction();
-        TDStatus result = new TDStatus(TDStatus.INTERNAL_SERVER_ERROR);
+        CBLStatus result = new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         Cursor cursor = null;
 
         try {
@@ -271,7 +271,7 @@ public class TDView {
             long lastSequence = getLastSequenceIndexed();
             long dbMaxSequence = db.getLastSequence();
             if(lastSequence == dbMaxSequence) {
-                result.setCode(TDStatus.NOT_MODIFIED);
+                result.setCode(CBLStatus.NOT_MODIFIED);
                 return result;
             }
 
@@ -313,9 +313,9 @@ public class TDView {
                 public void emit(Object key, Object value) {
 
                     try {
-                        String keyJson = TDServer.getObjectMapper().writeValueAsString(key);
-                        String valueJson = TDServer.getObjectMapper().writeValueAsString(value);
-                        Log.v(TDDatabase.TAG, "    emit(" + keyJson + ", "
+                        String keyJson = CBLServer.getObjectMapper().writeValueAsString(key);
+                        String valueJson = CBLServer.getObjectMapper().writeValueAsString(value);
+                        Log.v(CBLDatabase.TAG, "    emit(" + keyJson + ", "
                                 + valueJson + ")");
 
                         ContentValues insertValues = new ContentValues();
@@ -325,7 +325,7 @@ public class TDView {
                         insertValues.put("value", valueJson);
                         db.getDatabase().insert("maps", null, insertValues);
                     } catch (Exception e) {
-                        Log.e(TDDatabase.TAG, "Error emitting", e);
+                        Log.e(CBLDatabase.TAG, "Error emitting", e);
                         // find a better way to propogate this back
                     }
                 }
@@ -364,12 +364,12 @@ public class TDView {
                     byte[] json = cursor.getBlob(4);
                     Map<String, Object> properties = db
                             .documentPropertiesFromJSON(json, docId, revId,
-                                    sequence, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+                                    sequence, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
 
                     if (properties != null) {
                         // Call the user-defined map() to emit new key/value
                         // pairs from this revision:
-                        Log.v(TDDatabase.TAG,
+                        Log.v(CBLDatabase.TAG,
                                 "  call map for sequence="
                                         + Long.toString(sequence));
                         emitBlock.setSequence(sequence);
@@ -390,10 +390,10 @@ public class TDView {
                     whereArgs);
 
             // FIXME actually count number added :)
-            Log.v(TDDatabase.TAG, "...Finished re-indexing view " + name
+            Log.v(CBLDatabase.TAG, "...Finished re-indexing view " + name
                     + " up to sequence " + Long.toString(dbMaxSequence)
                     + " (deleted " + deleted + " added " + "?" + ")");
-            result.setCode(TDStatus.OK);
+            result.setCode(CBLStatus.OK);
 
         } catch (SQLException e) {
             return result;
@@ -402,7 +402,7 @@ public class TDView {
                 cursor.close();
             }
             if (!result.isSuccessful()) {
-                Log.w(TDDatabase.TAG, "Failed to rebuild view " + name + ": "
+                Log.w(CBLDatabase.TAG, "Failed to rebuild view " + name + ": "
                         + result.getCode());
             }
             if(db != null) {
@@ -413,9 +413,9 @@ public class TDView {
         return result;
     }
 
-    public Cursor resultSetWithOptions(TDQueryOptions options, TDStatus status) {
+    public Cursor resultSetWithOptions(CBLQueryOptions options, CBLStatus status) {
         if (options == null) {
-            options = new TDQueryOptions();
+            options = new CBLQueryOptions();
         }
 
         // OPT: It would be faster to use separate tables for raw-or ascii-collated views so that
@@ -491,7 +491,7 @@ public class TDView {
         argsList.add(Integer.toString(options.getLimit()));
         argsList.add(Integer.toString(options.getSkip()));
 
-        Log.v(TDDatabase.TAG, "Query " + name + ": " + sql);
+        Log.v(CBLDatabase.TAG, "Query " + name + ": " + sql);
 
         Cursor cursor = db.getDatabase().rawQuery(sql,
                 argsList.toArray(new String[argsList.size()]));
@@ -555,7 +555,7 @@ public class TDView {
                 cursor.moveToNext();
             }
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error dumping view", e);
+            Log.e(CBLDatabase.TAG, "Error dumping view", e);
             return null;
         } finally {
             if (cursor != null) {
@@ -573,9 +573,9 @@ public class TDView {
      * @param status An array of result rows -- each is a dictionary with "key" and "value" keys, and possibly "id" and "doc".
      */
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> queryWithOptions(TDQueryOptions options, TDStatus status) {
+    public List<Map<String, Object>> queryWithOptions(CBLQueryOptions options, CBLStatus status) {
         if (options == null) {
-            options = new TDQueryOptions();
+            options = new CBLQueryOptions();
         }
 
         Cursor cursor = null;
@@ -587,8 +587,8 @@ public class TDView {
             boolean reduce = options.isReduce() || group;
 
             if(reduce && (reduceBlock == null) && !group) {
-                Log.w(TDDatabase.TAG, "Cannot use reduce option in view " + name + " which has no reduce block defined");
-                status.setCode(TDStatus.BAD_REQUEST);
+                Log.w(CBLDatabase.TAG, "Cannot use reduce option in view " + name + " which has no reduce block defined");
+                status.setCode(CBLStatus.BAD_REQUEST);
                 return null;
             }
 
@@ -666,10 +666,10 @@ public class TDView {
                 valuesToReduce.clear();
             }
 
-            status.setCode(TDStatus.OK);
+            status.setCode(CBLStatus.OK);
 
         } catch (SQLException e) {
-            Log.e(TDDatabase.TAG, "Error querying view", e);
+            Log.e(CBLDatabase.TAG, "Error querying view", e);
             return null;
         } finally {
             if (cursor != null) {
@@ -690,23 +690,23 @@ public class TDView {
                 Number number = (Number)object;
                 total += number.doubleValue();
             } else {
-                Log.w(TDDatabase.TAG, "Warning non-numeric value found in totalValues: " + object);
+                Log.w(CBLDatabase.TAG, "Warning non-numeric value found in totalValues: " + object);
             }
         }
         return total;
     }
 
-    public static TDViewCompiler getCompiler() {
+    public static CBLViewCompiler getCompiler() {
         return compiler;
     }
 
-    public static void setCompiler(TDViewCompiler compiler) {
-        TDView.compiler = compiler;
+    public static void setCompiler(CBLViewCompiler compiler) {
+        CBLView.compiler = compiler;
     }
 
 }
 
-abstract class AbstractTouchMapEmitBlock implements TDViewMapEmitBlock {
+abstract class AbstractTouchMapEmitBlock implements CBLViewMapEmitBlock {
 
     protected long sequence = 0;
 

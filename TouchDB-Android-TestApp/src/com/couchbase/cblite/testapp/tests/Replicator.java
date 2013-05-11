@@ -8,14 +8,14 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.TDBody;
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDStatus;
-import com.couchbase.cblite.replicator.TDPusher;
-import com.couchbase.cblite.replicator.TDReplicator;
+import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.replicator.CBLPusher;
+import com.couchbase.cblite.replicator.CBLReplicator;
 
-public class Replicator extends TouchDBTestCase {
+public class Replicator extends CBLiteTestCase {
 
     public static final String TAG = "Replicator";
 
@@ -31,30 +31,30 @@ public class Replicator extends TouchDBTestCase {
         documentProperties.put("foo", 1);
         documentProperties.put("bar", false);
 
-        TDBody body = new TDBody(documentProperties);
-        TDRevision rev1 = new TDRevision(body);
+        CBLBody body = new CBLBody(documentProperties);
+        CBLRevision rev1 = new CBLRevision(body);
 
-        TDStatus status = new TDStatus();
+        CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         documentProperties.put("_rev", rev1.getRevId());
         documentProperties.put("UPDATED", true);
 
         @SuppressWarnings("unused")
-        TDRevision rev2 = database.putRevision(new TDRevision(documentProperties), rev1.getRevId(), false, status);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        CBLRevision rev2 = database.putRevision(new CBLRevision(documentProperties), rev1.getRevId(), false, status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         documentProperties = new HashMap<String, Object>();
         documentProperties.put("_id", "doc2");
         documentProperties.put("baz", 666);
         documentProperties.put("fnord", true);
 
-        database.putRevision(new TDRevision(documentProperties), null, false, status);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        database.putRevision(new CBLRevision(documentProperties), null, false, status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
-        final TDReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
-        ((TDPusher)repl).setCreateTarget(true);
+        final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
+        ((CBLPusher)repl).setCreateTarget(true);
         runTestOnUiThread(new Runnable() {
 
             @Override
@@ -79,7 +79,7 @@ public class Replicator extends TouchDBTestCase {
 
         URL remote = getReplicationURL();
 
-        final TDReplicator repl = database.getReplicator(remote, false, false, server.getWorkExecutor());
+        final CBLReplicator repl = database.getReplicator(remote, false, false, server.getWorkExecutor());
         runTestOnUiThread(new Runnable() {
 
             @Override
@@ -104,7 +104,7 @@ public class Replicator extends TouchDBTestCase {
         //writing its local state to the server
         Thread.sleep(2*1000);
 
-        final TDReplicator repl2 = database.getReplicator(remote, false, false, server.getWorkExecutor());
+        final CBLReplicator repl2 = database.getReplicator(remote, false, false, server.getWorkExecutor());
         runTestOnUiThread(new Runnable() {
 
             @Override
@@ -121,12 +121,12 @@ public class Replicator extends TouchDBTestCase {
         }
         Assert.assertEquals(3, database.getLastSequence());
 
-        TDRevision doc = database.getDocumentWithIDAndRev("doc1", null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        CBLRevision doc = database.getDocumentWithIDAndRev("doc1", null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertNotNull(doc);
         Assert.assertTrue(doc.getRevId().startsWith("2-"));
         Assert.assertEquals(1, doc.getProperties().get("foo"));
 
-        doc = database.getDocumentWithIDAndRev("doc2", null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        doc = database.getDocumentWithIDAndRev("doc2", null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertNotNull(doc);
         Assert.assertTrue(doc.getRevId().startsWith("1-"));
         Assert.assertEquals(true, doc.getProperties().get("fnord"));

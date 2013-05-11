@@ -22,13 +22,13 @@ import java.util.Map;
 /**
  * Block container for the map callback function
  */
-public interface TDViewMapBlock {
+public interface CBLViewMapBlock {
 
     /**
      * A "map" function called when a document is to be added to a view.
      * @param document The contents of the document being analyzed.
      * @param emitter A block to be called to add a key/value pair to the view. Your block can call it zero, one or multiple times.
      */
-    void map(Map<String,Object> document, TDViewMapEmitBlock emitter);
+    void map(Map<String,Object> document, CBLViewMapEmitBlock emitter);
 
 }

@@ -2,7 +2,7 @@ package com.couchbase.cblite.testapp.tests;
 
 import junit.framework.Assert;
 
-import com.couchbase.cblite.support.TDSequenceMap;
+import com.couchbase.cblite.support.CBLSequenceMap;
 
 import android.test.AndroidTestCase;
 
@@ -10,7 +10,7 @@ public class SequenceMap extends AndroidTestCase {
 	
 	public void testSequenceMap() {
 		
-		TDSequenceMap map = new TDSequenceMap();
+		CBLSequenceMap map = new CBLSequenceMap();
 		
 		Assert.assertEquals(0, map.getCheckpointedSequence());
 		Assert.assertEquals(null, map.getCheckpointedValue());

@@ -13,14 +13,14 @@ import org.ektorp.CouchDbInstance;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
-import com.couchbase.cblite.ektorp.TouchDBHttpClient;
-import com.couchbase.cblite.testapp.tests.TouchDBTestCase;
+import com.couchbase.cblite.ektorp.CBLiteHttpClient;
+import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
 
-public class Attachments extends TouchDBTestCase {
+public class Attachments extends CBLiteTestCase {
 
     public void testAttachments() throws IOException {
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         CouchDbConnector dbConnector = dbInstance.createConnector(DEFAULT_TEST_DB, true);

@@ -25,17 +25,17 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDQueryOptions;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDStatus;
-import com.couchbase.cblite.TDView;
-import com.couchbase.cblite.TDView.TDViewCollation;
-import com.couchbase.cblite.TDViewMapBlock;
-import com.couchbase.cblite.TDViewMapEmitBlock;
-import com.couchbase.cblite.TDViewReduceBlock;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLQueryOptions;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.CBLView;
+import com.couchbase.cblite.CBLView.TDViewCollation;
+import com.couchbase.cblite.CBLViewMapBlock;
+import com.couchbase.cblite.CBLViewMapEmitBlock;
+import com.couchbase.cblite.CBLViewReduceBlock;
 
-public class Views extends TouchDBTestCase {
+public class Views extends CBLiteTestCase {
 
     public static final String TAG = "Views";
 
@@ -43,17 +43,17 @@ public class Views extends TouchDBTestCase {
 
         Assert.assertNull(database.getExistingViewNamed("aview"));
 
-        TDView view = database.getViewNamed("aview");
+        CBLView view = database.getViewNamed("aview");
         Assert.assertNotNull(view);
         Assert.assertEquals(database, view.getDb());
         Assert.assertEquals("aview", view.getName());
         Assert.assertNull(view.getMapBlock());
         Assert.assertEquals(view, database.getExistingViewNamed("aview"));
 
-        boolean changed = view.setMapReduceBlocks(new TDViewMapBlock() {
+        boolean changed = view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 //no-op
             }
         }, null, "1");
@@ -62,20 +62,20 @@ public class Views extends TouchDBTestCase {
         Assert.assertEquals(1, database.getAllViews().size());
         Assert.assertEquals(view, database.getAllViews().get(0));
 
-        changed = view.setMapReduceBlocks(new TDViewMapBlock() {
+        changed = view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 //no-op
             }
         }, null, "1");
 
         Assert.assertFalse(changed);
 
-        changed = view.setMapReduceBlocks(new TDViewMapBlock() {
+        changed = view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 //no-op
             }
         }, null, "2");
@@ -83,16 +83,16 @@ public class Views extends TouchDBTestCase {
         Assert.assertTrue(changed);
     }
 
-    private TDRevision putDoc(TDDatabase db, Map<String,Object> props) {
-        TDRevision rev = new TDRevision(props);
-        TDStatus status = new TDStatus();
+    private CBLRevision putDoc(CBLDatabase db, Map<String,Object> props) {
+        CBLRevision rev = new CBLRevision(props);
+        CBLStatus status = new CBLStatus();
         rev = db.putRevision(rev, null, false, status);
         Assert.assertTrue(status.isSuccessful());
         return rev;
     }
 
-    public List<TDRevision> putDocs(TDDatabase db) {
-        List<TDRevision> result = new ArrayList<TDRevision>();
+    public List<CBLRevision> putDocs(CBLDatabase db) {
+        List<CBLRevision> result = new ArrayList<CBLRevision>();
 
         Map<String,Object> dict2 = new HashMap<String,Object>();
         dict2.put("_id", "22222");
@@ -122,7 +122,7 @@ public class Views extends TouchDBTestCase {
         return result;
     }
 
-    public void putNDocs(TDDatabase db, int n) {
+    public void putNDocs(CBLDatabase db, int n) {
         for(int i=0; i< n; i++) {
             Map<String,Object> doc = new HashMap<String,Object>();
             doc.put("_id", String.format("%d", i));
@@ -136,12 +136,12 @@ public class Views extends TouchDBTestCase {
         }
     }
 
-    public static TDView createView(TDDatabase db) {
-        TDView view = db.getViewNamed("aview");
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+    public static CBLView createView(CBLDatabase db) {
+        CBLView view = db.getViewNamed("aview");
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 Assert.assertNotNull(document.get("_id"));
                 Assert.assertNotNull(document.get("_rev"));
                 if(document.get("key") != null) {
@@ -163,18 +163,18 @@ public class Views extends TouchDBTestCase {
         Map<String,Object> dictX = new HashMap<String,Object>();
         dictX.put("clef", "quatre");
 
-        TDRevision rev1 = putDoc(database, dict1);
-        TDRevision rev2 = putDoc(database, dict2);
-        TDRevision rev3 = putDoc(database, dict3);
+        CBLRevision rev1 = putDoc(database, dict1);
+        CBLRevision rev2 = putDoc(database, dict2);
+        CBLRevision rev3 = putDoc(database, dict3);
         putDoc(database, dictX);
 
-        TDView view = createView(database);
+        CBLView view = createView(database);
 
         Assert.assertEquals(1, view.getViewId());
         Assert.assertTrue(view.isStale());
 
-        TDStatus updated = view.updateIndex();
-        Assert.assertEquals(TDStatus.OK, updated.getCode());
+        CBLStatus updated = view.updateIndex();
+        Assert.assertEquals(CBLStatus.OK, updated.getCode());
 
         List<Map<String,Object>> dumpResult = view.dump();
         Log.v(TAG, "View dump: " + dumpResult);
@@ -189,29 +189,29 @@ public class Views extends TouchDBTestCase {
         //no-op reindex
         Assert.assertFalse(view.isStale());
         updated = view.updateIndex();
-        Assert.assertEquals(TDStatus.NOT_MODIFIED, updated.getCode());
+        Assert.assertEquals(CBLStatus.NOT_MODIFIED, updated.getCode());
 
         // Now add a doc and update a doc:
-        TDRevision threeUpdated = new TDRevision(rev3.getDocId(), rev3.getRevId(), false);
+        CBLRevision threeUpdated = new CBLRevision(rev3.getDocId(), rev3.getRevId(), false);
         Map<String,Object> newdict3 = new HashMap<String,Object>();
         newdict3.put("key", "3hree");
         threeUpdated.setProperties(newdict3);
-        TDStatus status = new TDStatus();
+        CBLStatus status = new CBLStatus();
         rev3 = database.putRevision(threeUpdated, rev3.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
         Map<String,Object> dict4 = new HashMap<String,Object>();
         dict4.put("key", "four");
-        TDRevision rev4 = putDoc(database, dict4);
+        CBLRevision rev4 = putDoc(database, dict4);
 
-        TDRevision twoDeleted = new TDRevision(rev2.getDocId(), rev2.getRevId(), true);
+        CBLRevision twoDeleted = new CBLRevision(rev2.getDocId(), rev2.getRevId(), true);
         database.putRevision(twoDeleted, rev2.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
         // Reindex again:
         Assert.assertTrue(view.isStale());
         updated = view.updateIndex();
-        Assert.assertEquals(TDStatus.OK, updated.getCode());
+        Assert.assertEquals(CBLStatus.OK, updated.getCode());
 
         dumpResult = view.dump();
         Log.v(TAG, "View dump: " + dumpResult);
@@ -239,14 +239,14 @@ public class Views extends TouchDBTestCase {
     public void testViewQuery() {
 
         putDocs(database);
-        TDView view = createView(database);
+        CBLView view = createView(database);
 
-        TDStatus updated = view.updateIndex();
-        Assert.assertEquals(TDStatus.OK, updated.getCode());
+        CBLStatus updated = view.updateIndex();
+        Assert.assertEquals(CBLStatus.OK, updated.getCode());
 
         // Query all rows:
-        TDQueryOptions options = new TDQueryOptions();
-        TDStatus status = new TDStatus();
+        CBLQueryOptions options = new CBLQueryOptions();
+        CBLStatus status = new CBLStatus();
         List<Map<String, Object>> rows = view.queryWithOptions(options, status);
 
         List<Object> expectedRows = new ArrayList<Object>();
@@ -279,11 +279,11 @@ public class Views extends TouchDBTestCase {
         Assert.assertEquals(expectedRows, rows);
 
         // Start/end key query:
-        options = new TDQueryOptions();
+        options = new CBLQueryOptions();
         options.setStartKey("a");
         options.setEndKey("one");
 
-        status = new TDStatus();
+        status = new CBLStatus();
         rows = view.queryWithOptions(options, status);
 
         expectedRows = new ArrayList<Object>();
@@ -296,7 +296,7 @@ public class Views extends TouchDBTestCase {
         // Start/end query without inclusive end:
         options.setInclusiveEnd(false);
 
-        status = new TDStatus();
+        status = new CBLStatus();
         rows = view.queryWithOptions(options, status);
 
         expectedRows = new ArrayList<Object>();
@@ -311,7 +311,7 @@ public class Views extends TouchDBTestCase {
         options.setEndKey("five");
         options.setInclusiveEnd(true);
 
-        status = new TDStatus();
+        status = new CBLStatus();
         rows = view.queryWithOptions(options, status);
 
         expectedRows = new ArrayList<Object>();
@@ -323,7 +323,7 @@ public class Views extends TouchDBTestCase {
         // Reversed, no inclusive end:
         options.setInclusiveEnd(false);
 
-        status = new TDStatus();
+        status = new CBLStatus();
         rows = view.queryWithOptions(options, status);
 
         expectedRows = new ArrayList<Object>();
@@ -332,7 +332,7 @@ public class Views extends TouchDBTestCase {
         Assert.assertEquals(expectedRows, rows);
 
         // Specific keys:
-        options = new TDQueryOptions();
+        options = new CBLQueryOptions();
         List<Object> keys = new ArrayList<Object>();
         keys.add("two");
         keys.add("four");
@@ -349,10 +349,10 @@ public class Views extends TouchDBTestCase {
 
     public void testAllDocsQuery() {
 
-        List<TDRevision> docs = putDocs(database);
+        List<CBLRevision> docs = putDocs(database);
 
         List<Map<String,Object>> expectedRow = new ArrayList<Map<String,Object>>();
-        for (TDRevision rev : docs) {
+        for (CBLRevision rev : docs) {
             Map<String,Object> value = new HashMap<String, Object>();
             value.put("rev", rev.getRevId());
 
@@ -363,7 +363,7 @@ public class Views extends TouchDBTestCase {
             expectedRow.add(row);
         }
 
-        TDQueryOptions options = new TDQueryOptions();
+        CBLQueryOptions options = new CBLQueryOptions();
         Map<String,Object> query = database.getAllDocs(options);
 
         List<Object>expectedRows = new ArrayList<Object>();
@@ -377,7 +377,7 @@ public class Views extends TouchDBTestCase {
         Assert.assertEquals(expectedQueryResult, query);
 
         // Start/end key query:
-        options = new TDQueryOptions();
+        options = new CBLQueryOptions();
         options.setStartKey("2");
         options.setEndKey("44444");
 
@@ -404,13 +404,13 @@ public class Views extends TouchDBTestCase {
         Assert.assertEquals(expectedQueryResult, query);
 
         // Get specific documents:
-        options = new TDQueryOptions();
+        options = new CBLQueryOptions();
         query = database.getDocsWithIDs(new ArrayList<String>(), options);
         expectedQueryResult = createExpectedQueryResult(new ArrayList<Object>(), 0);
         Assert.assertEquals(expectedQueryResult, query);
 
         // Get specific documents:
-        options = new TDQueryOptions();
+        options = new CBLQueryOptions();
         List<String> docIds = new ArrayList<String>();
         Map<String,Object> expected2 = expectedRow.get(2);
         docIds.add((String)expected2.get("id"));
@@ -446,11 +446,11 @@ public class Views extends TouchDBTestCase {
         docProperties3.put("cost", 6.50);
         putDoc(database, docProperties3);
 
-        TDView view = database.getViewNamed("totaler");
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+        CBLView view = database.getViewNamed("totaler");
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 Assert.assertNotNull(document.get("_id"));
                 Assert.assertNotNull(document.get("_rev"));
                 Object cost = document.get("cost");
@@ -458,17 +458,17 @@ public class Views extends TouchDBTestCase {
                     emitter.emit(document.get("_id"), cost);
                 }
             }
-        }, new TDViewReduceBlock() {
+        }, new CBLViewReduceBlock() {
 
             @Override
             public Object reduce(List<Object> keys, List<Object> values,
                     boolean rereduce) {
-                return TDView.totalValues(values);
+                return CBLView.totalValues(values);
             }
         }, "1");
 
-        TDStatus updated = view.updateIndex();
-        Assert.assertEquals(TDStatus.OK, updated.getCode());
+        CBLStatus updated = view.updateIndex();
+        Assert.assertEquals(CBLStatus.OK, updated.getCode());
 
         List<Map<String,Object>> dumpResult = view.dump();
         Log.v(TAG, "View dump: " + dumpResult);
@@ -483,11 +483,11 @@ public class Views extends TouchDBTestCase {
         Assert.assertEquals("6.5", dumpResult.get(2).get("value"));
         Assert.assertEquals(3, dumpResult.get(2).get("seq"));
 
-        TDQueryOptions options = new TDQueryOptions();
+        CBLQueryOptions options = new CBLQueryOptions();
         options.setReduce(true);
-        TDStatus status = new TDStatus();
+        CBLStatus status = new CBLStatus();
         List<Map<String, Object>> reduced = view.queryWithOptions(options, status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals(1, reduced.size());
         Object value = reduced.get(0).get("value");
         Number numberValue = (Number)value;
@@ -536,35 +536,35 @@ public class Views extends TouchDBTestCase {
         docProperties5.put("time", 187);
         putDoc(database, docProperties5);
 
-        TDView view = database.getViewNamed("grouper");
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+        CBLView view = database.getViewNamed("grouper");
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 List<Object> key = new ArrayList<Object>();
                 key.add(document.get("artist"));
                 key.add(document.get("album"));
                 key.add(document.get("track"));
                 emitter.emit(key, document.get("time"));
             }
-        }, new TDViewReduceBlock() {
+        }, new CBLViewReduceBlock() {
 
             @Override
             public Object reduce(List<Object> keys, List<Object> values,
                     boolean rereduce) {
-                return TDView.totalValues(values);
+                return CBLView.totalValues(values);
             }
         }, "1");
 
-        TDStatus status = new TDStatus();
+        CBLStatus status = new CBLStatus();
         status = view.updateIndex();
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
-        TDQueryOptions options = new TDQueryOptions();
+        CBLQueryOptions options = new CBLQueryOptions();
         options.setReduce(true);
-        status = new TDStatus();
+        status = new CBLStatus();
         List<Map<String, Object>> rows = view.queryWithOptions(options, status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
         List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
         Map<String,Object> row1 = new HashMap<String,Object>();
@@ -576,9 +576,9 @@ public class Views extends TouchDBTestCase {
 
         //now group
         options.setGroup(true);
-        status = new TDStatus();
+        status = new CBLStatus();
         rows = view.queryWithOptions(options, status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
         expectedRows = new ArrayList<Map<String,Object>>();
 
@@ -631,9 +631,9 @@ public class Views extends TouchDBTestCase {
 
         //group level 1
         options.setGroupLevel(1);
-        status = new TDStatus();
+        status = new CBLStatus();
         rows = view.queryWithOptions(options, status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
         expectedRows = new ArrayList<Map<String,Object>>();
 
@@ -655,9 +655,9 @@ public class Views extends TouchDBTestCase {
 
         //group level 2
         options.setGroupLevel(2);
-        status = new TDStatus();
+        status = new CBLStatus();
         rows = view.queryWithOptions(options, status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
         expectedRows = new ArrayList<Map<String,Object>>();
 
@@ -710,18 +710,18 @@ public class Views extends TouchDBTestCase {
         docProperties5.put("name", "Jed");
         putDoc(database, docProperties5);
 
-        TDView view = database.getViewNamed("default/names");
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+        CBLView view = database.getViewNamed("default/names");
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 String name = (String)document.get("name");
                 if(name != null) {
                     emitter.emit(name.substring(0, 1), 1);
                 }
             }
 
-        }, new TDViewReduceBlock() {
+        }, new CBLViewReduceBlock() {
 
             @Override
             public Object reduce(List<Object> keys, List<Object> values,
@@ -731,15 +731,15 @@ public class Views extends TouchDBTestCase {
 
         }, "1.0");
 
-        TDStatus status = new TDStatus();
+        CBLStatus status = new CBLStatus();
         status = view.updateIndex();
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
-        TDQueryOptions options = new TDQueryOptions();
+        CBLQueryOptions options = new CBLQueryOptions();
         options.setGroupLevel(1);
-        status = new TDStatus();
+        status = new CBLStatus();
         List<Map<String,Object>> rows = view.queryWithOptions(options, status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
         List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
         Map<String,Object> row1 = new HashMap<String,Object>();
@@ -817,20 +817,20 @@ public class Views extends TouchDBTestCase {
             putDoc(database, docProperties);
         }
 
-        TDView view = database.getViewNamed("default/names");
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+        CBLView view = database.getViewNamed("default/names");
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 emitter.emit(document.get("name"), null);
             }
 
         }, null, "1.0");
 
-        TDQueryOptions options = new TDQueryOptions();
-        TDStatus status = new TDStatus();
+        CBLQueryOptions options = new CBLQueryOptions();
+        CBLStatus status = new CBLStatus();
         List<Map<String,Object>> rows = view.queryWithOptions(options, status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
         i = 0;
         for (Map<String, Object> row : rows) {
             Assert.assertEquals(testKeys.get(i++), row.get("key"));
@@ -897,11 +897,11 @@ public class Views extends TouchDBTestCase {
             putDoc(database, docProperties);
         }
 
-        TDView view = database.getViewNamed("default/names");
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+        CBLView view = database.getViewNamed("default/names");
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 emitter.emit(document.get("name"), null);
             }
 
@@ -909,10 +909,10 @@ public class Views extends TouchDBTestCase {
 
         view.setCollation(TDViewCollation.TDViewCollationRaw);
 
-        TDQueryOptions options = new TDQueryOptions();
-        TDStatus status = new TDStatus();
+        CBLQueryOptions options = new CBLQueryOptions();
+        CBLStatus status = new CBLStatus();
         List<Map<String,Object>> rows = view.queryWithOptions(options, status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
         i = 0;
         for (Map<String, Object> row : rows) {
             Assert.assertEquals(testKeys.get(i++), row.get("key"));
@@ -923,14 +923,14 @@ public class Views extends TouchDBTestCase {
 
     public void testLargerViewQuery() {
         putNDocs(database, 4);
-        TDView view = createView(database);
+        CBLView view = createView(database);
 
-        TDStatus updated = view.updateIndex();
-        Assert.assertEquals(TDStatus.OK, updated.getCode());
+        CBLStatus updated = view.updateIndex();
+        Assert.assertEquals(CBLStatus.OK, updated.getCode());
 
         // Query all rows:
-        TDQueryOptions options = new TDQueryOptions();
-        TDStatus status = new TDStatus();
+        CBLQueryOptions options = new CBLQueryOptions();
+        CBLStatus status = new CBLStatus();
         List<Map<String, Object>> rows = view.queryWithOptions(options, status);
     }
 

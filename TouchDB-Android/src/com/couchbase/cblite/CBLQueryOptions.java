@@ -20,12 +20,12 @@ package com.couchbase.cblite;
 import java.util.EnumSet;
 import java.util.List;
 
-import com.couchbase.cblite.TDDatabase.TDContentOptions;
+import com.couchbase.cblite.CBLDatabase.TDContentOptions;
 
 /**
  * Standard query options for views.
  */
-public class TDQueryOptions {
+public class CBLQueryOptions {
 
     private Object startKey = null;
     private Object endKey = null;
@@ -33,7 +33,7 @@ public class TDQueryOptions {
     private int skip = 0;
     private int limit = Integer.MAX_VALUE;
     private int groupLevel = 0;
-    private EnumSet<TDContentOptions> contentOptions = EnumSet.noneOf(TDDatabase.TDContentOptions.class);
+    private EnumSet<TDContentOptions> contentOptions = EnumSet.noneOf(CBLDatabase.TDContentOptions.class);
     private boolean descending = false;
     private boolean includeDocs = false;
     private boolean updateSeq = false;

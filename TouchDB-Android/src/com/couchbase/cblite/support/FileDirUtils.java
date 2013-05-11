@@ -25,7 +25,7 @@ import java.nio.channels.FileChannel;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
+import com.couchbase.cblite.CBLDatabase;
 
 public class FileDirUtils {
 
@@ -49,7 +49,7 @@ public class FileDirUtils {
         int lastSlashPos = path.lastIndexOf("/");
         int extensionPos = path.lastIndexOf(".");
         if(lastSlashPos < 0 || extensionPos < 0 || extensionPos < lastSlashPos) {
-            Log.e(TDDatabase.TAG, "Unable to determine database name from path");
+            Log.e(CBLDatabase.TAG, "Unable to determine database name from path");
             return null;
         }
         return path.substring(lastSlashPos + 1, extensionPos);

@@ -1,6 +1,6 @@
 package com.couchbase.cblite.router;
 
-public interface TDRouterCallbackBlock {
+public interface CBLRouterCallbackBlock {
 
     void onResponseReady();
 

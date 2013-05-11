@@ -7,11 +7,11 @@ import java.util.Observer;
 
 import junit.framework.Assert;
 
-import com.couchbase.cblite.TDBody;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDStatus;
+import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLStatus;
 
-public class Changes extends TouchDBTestCase {
+public class Changes extends CBLiteTestCase {
 
     private int changeNotifications = 0;
 
@@ -36,10 +36,10 @@ public class Changes extends TouchDBTestCase {
         documentProperties.put("bar", false);
         documentProperties.put("baz", "touch");
 
-        TDBody body = new TDBody(documentProperties);
-        TDRevision rev1 = new TDRevision(body);
+        CBLBody body = new CBLBody(documentProperties);
+        CBLRevision rev1 = new CBLRevision(body);
 
-        TDStatus status = new TDStatus();
+        CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);
 
         Assert.assertEquals(1, changeNotifications);

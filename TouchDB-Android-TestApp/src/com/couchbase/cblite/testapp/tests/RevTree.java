@@ -25,19 +25,19 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
-import com.couchbase.cblite.TDChangesOptions;
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDRevisionList;
-import com.couchbase.cblite.TDStatus;
+import com.couchbase.cblite.CBLChangesOptions;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLRevisionList;
+import com.couchbase.cblite.CBLStatus;
 
-public class RevTree extends TouchDBTestCase {
+public class RevTree extends CBLiteTestCase {
 
     public static final String TAG = "RevTree";
 
     public void testRevTree() {
 
-        TDRevision rev = new TDRevision("MyDocId", "4-foxy", false);
+        CBLRevision rev = new CBLRevision("MyDocId", "4-foxy", false);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
@@ -51,12 +51,12 @@ public class RevTree extends TouchDBTestCase {
         revHistory.add("2-too");
         revHistory.add("1-won");
 
-        TDStatus status = database.forceInsert(rev, revHistory, null);
+        CBLStatus status = database.forceInsert(rev, revHistory, null);
         Assert.assertEquals(201, status.getCode());
         Assert.assertEquals(1, database.getDocumentCount());
         verifyHistory(database, rev, revHistory);
 
-        TDRevision conflict = new TDRevision("MyDocId", "5-epsilon", false);
+        CBLRevision conflict = new CBLRevision("MyDocId", "5-epsilon", false);
 
         Map<String, Object> conflictProperties = new HashMap<String, Object>();
         conflictProperties.put("_id", conflict.getDocId());
@@ -77,17 +77,17 @@ public class RevTree extends TouchDBTestCase {
         verifyHistory(database, conflict, conflictHistory);
 
         // Add an unrelated document:
-        TDRevision other = new TDRevision("AnotherDocID", "1-ichi", false);
+        CBLRevision other = new CBLRevision("AnotherDocID", "1-ichi", false);
         Map<String,Object> otherProperties = new HashMap<String,Object>();
         otherProperties.put("language", "jp");
         other.setProperties(otherProperties);
         List<String> otherHistory = new ArrayList<String>();
         otherHistory.add(other.getRevId());
         status = database.forceInsert(other, otherHistory, null);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         // Fetch one of those phantom revisions with no body:
-        TDRevision rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        CBLRevision rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertEquals(rev.getDocId(), rev2.getDocId());
         Assert.assertEquals("2-too", rev2.getRevId());
         //Assert.assertNull(rev2.getBody());
@@ -96,34 +96,34 @@ public class RevTree extends TouchDBTestCase {
         Assert.assertEquals(8, database.getLastSequence());
 
         // Make sure the revision with the higher revID wins the conflict:
-        TDRevision current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        CBLRevision current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertEquals(conflict, current);
 
         // Get the _changes feed and verify only the winner is in it:
-        TDChangesOptions options = new TDChangesOptions();
-        TDRevisionList changes = database.changesSince(0, options, null);
-        TDRevisionList expectedChanges = new TDRevisionList();
+        CBLChangesOptions options = new CBLChangesOptions();
+        CBLRevisionList changes = database.changesSince(0, options, null);
+        CBLRevisionList expectedChanges = new CBLRevisionList();
         expectedChanges.add(conflict);
         expectedChanges.add(other);
         Assert.assertEquals(changes, expectedChanges);
         options.setIncludeConflicts(true);
         changes = database.changesSince(0, options, null);
-        expectedChanges = new TDRevisionList();
+        expectedChanges = new CBLRevisionList();
         expectedChanges.add(rev);
         expectedChanges.add(conflict);
         expectedChanges.add(other);
         Assert.assertEquals(changes, expectedChanges);
     }
 
-    private static void verifyHistory(TDDatabase db, TDRevision rev, List<String> history) {
-        TDRevision gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+    private static void verifyHistory(CBLDatabase db, CBLRevision rev, List<String> history) {
+        CBLRevision gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertEquals(rev, gotRev);
         Assert.assertEquals(rev.getProperties(), gotRev.getProperties());
 
-        List<TDRevision> revHistory = db.getRevisionHistory(gotRev);
+        List<CBLRevision> revHistory = db.getRevisionHistory(gotRev);
         Assert.assertEquals(history.size(), revHistory.size());
         for(int i=0; i<history.size(); i++) {
-            TDRevision hrev = revHistory.get(i);
+            CBLRevision hrev = revHistory.get(i);
             Assert.assertEquals(rev.getDocId(), hrev.getDocId());
             Assert.assertEquals(history.get(i), hrev.getRevId());
             Assert.assertFalse(rev.isDeleted());

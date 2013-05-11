@@ -17,35 +17,35 @@ import org.ektorp.util.Exceptions;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDServer;
-import com.couchbase.cblite.router.TDRouter;
-import com.couchbase.cblite.router.TDURLConnection;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLServer;
+import com.couchbase.cblite.router.CBLRouter;
+import com.couchbase.cblite.router.CBLURLConnection;
 
-public class TouchDBHttpClient implements HttpClient {
+public class CBLiteHttpClient implements HttpClient {
 
-    private TDServer server;
+    private CBLServer server;
 
-    public TouchDBHttpClient(TDServer server) {
+    public CBLiteHttpClient(CBLServer server) {
         this.server = server;
     }
 
     protected URL urlFromUri(String uri) {
         URL url = null;
         try {
-            url = new URL(String.format("touchdb://%s", uri));
+            url = new URL(String.format("cblite://%s", uri));
         } catch (MalformedURLException e) {
-            Log.w(TDDatabase.TAG, "Unable to build TouchDB URL", e);
+            Log.w(CBLDatabase.TAG, "Unable to build CBLite URL", e);
             throw Exceptions.propagate(e);
         }
         return url;
     }
 
-    protected TDURLConnection connectionFromUri(String uri) {
-        TDURLConnection conn = null;
+    protected CBLURLConnection connectionFromUri(String uri) {
+        CBLURLConnection conn = null;
         URL url = urlFromUri(uri);
         try {
-            conn = (TDURLConnection) url.openConnection();
+            conn = (CBLURLConnection) url.openConnection();
             conn.setDoOutput(true);
         } catch (IOException e) {
             Exceptions.propagate(e);
@@ -55,7 +55,7 @@ public class TouchDBHttpClient implements HttpClient {
 
     @Override
     public HttpResponse delete(String uri) {
-        TDURLConnection conn = connectionFromUri(uri);
+        CBLURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("DELETE");
             return executeRequest(conn);
@@ -66,7 +66,7 @@ public class TouchDBHttpClient implements HttpClient {
 
     @Override
     public HttpResponse get(String uri) {
-        TDURLConnection conn = connectionFromUri(uri);
+        CBLURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("GET");
             return executeRequest(conn);
@@ -82,7 +82,7 @@ public class TouchDBHttpClient implements HttpClient {
 
     @Override
     public HttpResponse head(String uri) {
-        TDURLConnection conn = connectionFromUri(uri);
+        CBLURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("HEAD");
             return executeRequest(conn);
@@ -93,7 +93,7 @@ public class TouchDBHttpClient implements HttpClient {
 
     @Override
     public HttpResponse post(String uri, String content) {
-        TDURLConnection conn = connectionFromUri(uri);
+        CBLURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("POST");
 
@@ -111,7 +111,7 @@ public class TouchDBHttpClient implements HttpClient {
 
     @Override
     public HttpResponse post(String uri, InputStream contentStream) {
-        TDURLConnection conn = connectionFromUri(uri);
+        CBLURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("POST");
 
@@ -133,7 +133,7 @@ public class TouchDBHttpClient implements HttpClient {
 
     @Override
     public HttpResponse put(String uri) {
-        TDURLConnection conn = connectionFromUri(uri);
+        CBLURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("PUT");
 
@@ -145,7 +145,7 @@ public class TouchDBHttpClient implements HttpClient {
 
     @Override
     public HttpResponse put(String uri, String content) {
-        TDURLConnection conn = connectionFromUri(uri);
+        CBLURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("PUT");
 
@@ -164,7 +164,7 @@ public class TouchDBHttpClient implements HttpClient {
     @Override
     public HttpResponse put(String uri, InputStream contentStream,
             String contentType, long contentLength) {
-        TDURLConnection conn = connectionFromUri(uri);
+        CBLURLConnection conn = connectionFromUri(uri);
         try {
             conn.setRequestMethod("PUT");
 
@@ -185,11 +185,11 @@ public class TouchDBHttpClient implements HttpClient {
 
     }
 
-    protected HttpResponse executeRequest(TDURLConnection conn) {
-        final TDRouter router = new TDRouter(server, conn);
-        TouchDBHttpResponse response;
+    protected HttpResponse executeRequest(CBLURLConnection conn) {
+        final CBLRouter router = new CBLRouter(server, conn);
+        CBLiteHttpResponse response;
         try {
-            response = TouchDBHttpResponse.of(conn, router);
+            response = CBLiteHttpResponse.of(conn, router);
         } catch (IOException e) {
             throw Exceptions.propagate(e);
         }

@@ -15,53 +15,53 @@ import org.apache.http.client.HttpResponseException;
 import android.database.SQLException;
 import android.util.Log;
 
-import com.couchbase.cblite.TDBody;
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDMisc;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDRevisionList;
-import com.couchbase.cblite.TDServer;
-import com.couchbase.cblite.TDStatus;
-import com.couchbase.cblite.replicator.changetracker.TDChangeTracker;
-import com.couchbase.cblite.replicator.changetracker.TDChangeTrackerClient;
-import com.couchbase.cblite.replicator.changetracker.TDChangeTracker.TDChangeTrackerMode;
+import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLMisc;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLRevisionList;
+import com.couchbase.cblite.CBLServer;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker;
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTrackerClient;
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
 import com.couchbase.cblite.support.HttpClientFactory;
-import com.couchbase.cblite.support.TDBatchProcessor;
-import com.couchbase.cblite.support.TDBatcher;
-import com.couchbase.cblite.support.TDRemoteRequestCompletionBlock;
-import com.couchbase.cblite.support.TDSequenceMap;
+import com.couchbase.cblite.support.CBLBatchProcessor;
+import com.couchbase.cblite.support.CBLBatcher;
+import com.couchbase.cblite.support.CBLRemoteRequestCompletionBlock;
+import com.couchbase.cblite.support.CBLSequenceMap;
 
-public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
+public class CBLPuller extends CBLReplicator implements CBLChangeTrackerClient {
 
     private static final int MAX_OPEN_HTTP_CONNECTIONS = 16;
 
-    protected TDBatcher<List<Object>> downloadsToInsert;
-    protected List<TDRevision> revsToPull;
-    protected TDChangeTracker changeTracker;
-    protected TDSequenceMap pendingSequences;
+    protected CBLBatcher<List<Object>> downloadsToInsert;
+    protected List<CBLRevision> revsToPull;
+    protected CBLChangeTracker changeTracker;
+    protected CBLSequenceMap pendingSequences;
     protected volatile int httpConnectionCount;
 
-    public TDPuller(TDDatabase db, URL remote, boolean continuous, ScheduledExecutorService workExecutor) {
+    public CBLPuller(CBLDatabase db, URL remote, boolean continuous, ScheduledExecutorService workExecutor) {
         this(db, remote, continuous, null, workExecutor);
     }
 
-    public TDPuller(TDDatabase db, URL remote, boolean continuous, HttpClientFactory clientFactory, ScheduledExecutorService workExecutor) {
+    public CBLPuller(CBLDatabase db, URL remote, boolean continuous, HttpClientFactory clientFactory, ScheduledExecutorService workExecutor) {
         super(db, remote, continuous, clientFactory, workExecutor);
     }
 
     @Override
     public void beginReplicating() {
         if(downloadsToInsert == null) {
-            downloadsToInsert = new TDBatcher<List<Object>>(workExecutor, 200, 1000, new TDBatchProcessor<List<Object>>() {
+            downloadsToInsert = new CBLBatcher<List<Object>>(workExecutor, 200, 1000, new CBLBatchProcessor<List<Object>>() {
                 @Override
                 public void process(List<List<Object>> inbox) {
                     insertRevisions(inbox);
                 }
             });
         }
-        pendingSequences = new TDSequenceMap();
-        Log.w(TDDatabase.TAG, this + " starting ChangeTracker with since=" + lastSequence);
-        changeTracker = new TDChangeTracker(remote, continuous ? TDChangeTrackerMode.LongPoll : TDChangeTrackerMode.OneShot, lastSequence, this);
+        pendingSequences = new CBLSequenceMap();
+        Log.w(CBLDatabase.TAG, this + " starting ChangeTracker with since=" + lastSequence);
+        changeTracker = new CBLChangeTracker(remote, continuous ? TDChangeTrackerMode.LongPoll : TDChangeTrackerMode.OneShot, lastSequence, this);
         if(filterName != null) {
             changeTracker.setFilterName(filterName);
             if(filterParams != null) {
@@ -107,7 +107,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         super.stopped();
     }
 
-    // Got a _changes feed entry from the TDChangeTracker.
+    // Got a _changes feed entry from the CBLChangeTracker.
     @Override
     public void changeTrackerReceivedChange(Map<String, Object> change) {
         String lastSequence = change.get("seq").toString();
@@ -115,8 +115,8 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         if(docID == null) {
             return;
         }
-        if(!TDDatabase.isValidDocumentId(docID)) {
-            Log.w(TDDatabase.TAG, String.format("%s: Received invalid doc ID from _changes: %s", this, change));
+        if(!CBLDatabase.isValidDocumentId(docID)) {
+            Log.w(CBLDatabase.TAG, String.format("%s: Received invalid doc ID from _changes: %s", this, change));
             return;
         }
         boolean deleted = (change.containsKey("deleted") && ((Boolean)change.get("deleted")).equals(Boolean.TRUE));
@@ -141,8 +141,8 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
     }
 
     @Override
-    public void changeTrackerStopped(TDChangeTracker tracker) {
-        Log.w(TDDatabase.TAG, this + ": ChangeTracker stopped");
+    public void changeTrackerStopped(CBLChangeTracker tracker) {
+        Log.w(CBLDatabase.TAG, this + ": ChangeTracker stopped");
         //FIXME tracker doesnt have error right now
 //        if(error == null && tracker.getError() != null) {
 //            error = tracker.getError();
@@ -166,13 +166,13 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
      * Process a bunch of remote revisions from the _changes feed at once
      */
     @Override
-    public void processInbox(TDRevisionList inbox) {
+    public void processInbox(CBLRevisionList inbox) {
         // Ask the local database which of the revs are not known to it:
-        //Log.w(TDDatabase.TAG, String.format("%s: Looking up %s", this, inbox));
+        //Log.w(CBLDatabase.TAG, String.format("%s: Looking up %s", this, inbox));
         String lastInboxSequence = ((TDPulledRevision)inbox.get(inbox.size()-1)).getRemoteSequenceID();
         int total = getChangesTotal() - inbox.size();
         if(!db.findMissingRevisions(inbox)) {
-            Log.w(TDDatabase.TAG, String.format("%s failed to look up local revs", this));
+            Log.w(CBLDatabase.TAG, String.format("%s failed to look up local revs", this));
             inbox = null;
         }
         //introducing this to java version since inbox may now be null everywhere
@@ -186,20 +186,20 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 
         if(inboxCount == 0) {
             // Nothing to do. Just bump the lastSequence.
-            Log.w(TDDatabase.TAG, String.format("%s no new remote revisions to fetch", this));
+            Log.w(CBLDatabase.TAG, String.format("%s no new remote revisions to fetch", this));
             long seq = pendingSequences.addValue(lastInboxSequence);
             pendingSequences.removeSequence(seq);
             setLastSequence(pendingSequences.getCheckpointedValue());
             return;
         }
 
-        Log.v(TDDatabase.TAG, this + " fetching " + inboxCount + " remote revisions...");
-        //Log.v(TDDatabase.TAG, String.format("%s fetching remote revisions %s", this, inbox));
+        Log.v(CBLDatabase.TAG, this + " fetching " + inboxCount + " remote revisions...");
+        //Log.v(CBLDatabase.TAG, String.format("%s fetching remote revisions %s", this, inbox));
 
         // Dump the revs into the queue of revs to pull from the remote db:
         synchronized (this) {
 	        if(revsToPull == null) {
-	            revsToPull = new ArrayList<TDRevision>(200);
+	            revsToPull = new ArrayList<CBLRevision>(200);
 	        }
 
 	        for(int i=0; i < inbox.size(); i++) {
@@ -221,16 +221,16 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
      */
     public void pullRemoteRevisions() {
         //find the work to be done in a synchronized block
-        List<TDRevision> workToStartNow = new ArrayList<TDRevision>();
+        List<CBLRevision> workToStartNow = new ArrayList<CBLRevision>();
         synchronized (this) {
 			while(httpConnectionCount + workToStartNow.size() < MAX_OPEN_HTTP_CONNECTIONS && revsToPull != null && revsToPull.size() > 0) {
-				TDRevision work = revsToPull.remove(0);
+				CBLRevision work = revsToPull.remove(0);
 				workToStartNow.add(work);
 			}
 		}
 
         //actually run it outside the synchronized block
-        for(TDRevision work : workToStartNow) {
+        for(CBLRevision work : workToStartNow) {
             pullRemoteRevision(work);
         }
     }
@@ -239,7 +239,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
      * Fetches the contents of a revision from the remote db, including its parent revision ID.
      * The contents are stored into rev.properties.
      */
-    public void pullRemoteRevision(final TDRevision rev) {
+    public void pullRemoteRevision(final CBLRevision rev) {
         asyncTaskStarted();
         ++httpConnectionCount;
 
@@ -262,7 +262,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         //create a final version of this variable for the log statement inside
         //FIXME find a way to avoid this
         final String pathInside = path.toString();
-        sendAsyncRequest("GET", pathInside, null, new TDRemoteRequestCompletionBlock() {
+        sendAsyncRequest("GET", pathInside, null, new CBLRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
@@ -279,12 +279,12 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
                         downloadsToInsert.queueObject(toInsert);
                         asyncTaskStarted();
                     } else {
-                        Log.w(TDDatabase.TAG, this + ": Missing revision history in response from " + pathInside);
+                        Log.w(CBLDatabase.TAG, this + ": Missing revision history in response from " + pathInside);
                         setChangesProcessed(getChangesProcessed() + 1);
                     }
                 } else {
                     if(e != null) {
-                        Log.e(TDDatabase.TAG, "Error pulling remote revision", e);
+                        Log.e(CBLDatabase.TAG, "Error pulling remote revision", e);
                         error = e;
                     }
                     setChangesProcessed(getChangesProcessed() + 1);
@@ -304,17 +304,17 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
      * This will be called when _revsToInsert fills up:
      */
     public void insertRevisions(List<List<Object>> revs) {
-        Log.i(TDDatabase.TAG, this + " inserting " + revs.size() + " revisions...");
-        //Log.v(TDDatabase.TAG, String.format("%s inserting %s", this, revs));
+        Log.i(CBLDatabase.TAG, this + " inserting " + revs.size() + " revisions...");
+        //Log.v(CBLDatabase.TAG, String.format("%s inserting %s", this, revs));
 
         /* Updating self.lastSequence is tricky. It needs to be the received sequence ID of the revision for which we've successfully received and inserted (or rejected) it and all previous received revisions. That way, next time we can start tracking remote changes from that sequence ID and know we haven't missed anything. */
         /* FIX: The current code below doesn't quite achieve that: it tracks the latest sequence ID we've successfully processed, but doesn't handle failures correctly across multiple calls to -insertRevisions. I think correct behavior will require keeping an NSMutableIndexSet to track the fake-sequences of all processed revisions; then we can find the first missing index in that set and not advance lastSequence past the revision with that fake-sequence. */
         Collections.sort(revs, new Comparator<List<Object>>() {
 
             public int compare(List<Object> list1, List<Object> list2) {
-                TDRevision reva = (TDRevision)list1.get(0);
-                TDRevision revb = (TDRevision)list2.get(0);
-                return TDMisc.TDSequenceCompare(reva.getSequence(), revb.getSequence());
+                CBLRevision reva = (CBLRevision)list1.get(0);
+                CBLRevision revb = (CBLRevision)list2.get(0);
+                return CBLMisc.TDSequenceCompare(reva.getSequence(), revb.getSequence());
             }
 
         });
@@ -331,12 +331,12 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
                 long fakeSequence = rev.getSequence();
                 List<String> history = (List<String>)revAndHistory.get(1);
                 // Insert the revision:
-                TDStatus status = db.forceInsert(rev, history, remote);
+                CBLStatus status = db.forceInsert(rev, history, remote);
                 if(!status.isSuccessful()) {
-                    if(status.getCode() == TDStatus.FORBIDDEN) {
-                        Log.i(TDDatabase.TAG, this + ": Remote rev failed validation: " + rev);
+                    if(status.getCode() == CBLStatus.FORBIDDEN) {
+                        Log.i(CBLDatabase.TAG, this + ": Remote rev failed validation: " + rev);
                     } else {
-                        Log.w(TDDatabase.TAG, this + " failed to write " + rev + ": status=" + status.getCode());
+                        Log.w(CBLDatabase.TAG, this + " failed to write " + rev + ": status=" + status.getCode());
                         error = new HttpResponseException(status.getCode(), null);
                         continue;
                     }
@@ -345,13 +345,13 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
                 pendingSequences.removeSequence(fakeSequence);
             }
 
-            Log.w(TDDatabase.TAG, this + " finished inserting " + revs.size() + " revisions");
+            Log.w(CBLDatabase.TAG, this + " finished inserting " + revs.size() + " revisions");
 
             setLastSequence(pendingSequences.getCheckpointedValue());
 
             success = true;
         } catch(SQLException e) {
-            Log.w(TDDatabase.TAG, this + ": Exception inserting revisions", e);
+            Log.w(CBLDatabase.TAG, this + ": Exception inserting revisions", e);
         } finally {
             db.endTransaction(success);
             asyncTaskFinished(revs.size());
@@ -360,7 +360,7 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         setChangesProcessed(getChangesProcessed() + revs.size());
     }
 
-    List<String> knownCurrentRevIDs(TDRevision rev) {
+    List<String> knownCurrentRevIDs(CBLRevision rev) {
         if(db != null) {
             return db.getAllRevisionsOfDocumentID(rev.getDocId(), true).getAllRevIds();
         }
@@ -373,9 +373,9 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
         }
         byte[] json = null;
         try {
-            json = TDServer.getObjectMapper().writeValueAsBytes(strings);
+            json = CBLServer.getObjectMapper().writeValueAsBytes(strings);
         } catch (Exception e) {
-            Log.w(TDDatabase.TAG, "Unable to serialize json", e);
+            Log.w(CBLDatabase.TAG, "Unable to serialize json", e);
         }
         return URLEncoder.encode(new String(json));
     }
@@ -385,9 +385,9 @@ public class TDPuller extends TDReplicator implements TDChangeTrackerClient {
 /**
  * A revision received from a remote server during a pull. Tracks the opaque remote sequence ID.
  */
-class TDPulledRevision extends TDRevision {
+class TDPulledRevision extends CBLRevision {
 
-    public TDPulledRevision(TDBody body) {
+    public TDPulledRevision(CBLBody body) {
         super(body);
     }
 

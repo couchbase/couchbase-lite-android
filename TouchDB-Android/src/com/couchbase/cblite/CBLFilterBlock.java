@@ -3,8 +3,8 @@ package com.couchbase.cblite;
 /**
  * Filter block, used in changes feeds and replication.
  */
-public interface TDFilterBlock {
+public interface CBLFilterBlock {
 
-    boolean filter(TDRevision revision);
+    boolean filter(CBLRevision revision);
 
 }

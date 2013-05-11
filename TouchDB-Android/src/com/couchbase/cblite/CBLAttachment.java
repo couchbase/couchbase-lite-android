@@ -19,16 +19,16 @@ package com.couchbase.cblite;
 
 import java.io.InputStream;
 
-public class TDAttachment {
+public class CBLAttachment {
 
     private InputStream contentStream;
     private String contentType;
 
-    public TDAttachment() {
+    public CBLAttachment() {
 
     }
 
-    public TDAttachment(InputStream contentStream, String contentType) {
+    public CBLAttachment(InputStream contentStream, String contentType) {
         this.contentStream = contentStream;
         this.contentType = contentType;
     }

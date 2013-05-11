@@ -2,15 +2,15 @@ package com.couchbase.cblite;
 
 import java.util.EnumSet;
 
-import com.couchbase.cblite.TDDatabase.TDContentOptions;
+import com.couchbase.cblite.CBLDatabase.TDContentOptions;
 
 /**
  * Options for _changes feed
  */
-public class TDChangesOptions {
+public class CBLChangesOptions {
 
     private int limit = Integer.MAX_VALUE;
-    private EnumSet<TDContentOptions> contentOptions = EnumSet.noneOf(TDDatabase.TDContentOptions.class);
+    private EnumSet<TDContentOptions> contentOptions = EnumSet.noneOf(CBLDatabase.TDContentOptions.class);
     private boolean includeDocs = false;
     private boolean includeConflicts = false;
     private boolean sortBySequence = true;

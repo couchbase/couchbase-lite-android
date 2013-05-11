@@ -15,26 +15,26 @@ import org.mozilla.javascript.WrapFactory;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDViewCompiler;
-import com.couchbase.cblite.TDViewMapBlock;
-import com.couchbase.cblite.TDViewMapEmitBlock;
-import com.couchbase.cblite.TDViewReduceBlock;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLViewCompiler;
+import com.couchbase.cblite.CBLViewMapBlock;
+import com.couchbase.cblite.CBLViewMapEmitBlock;
+import com.couchbase.cblite.CBLViewReduceBlock;
 
-public class TDJavaScriptViewCompiler implements TDViewCompiler {
+public class CBLJavaScriptViewCompiler implements CBLViewCompiler {
 
 	@Override
-	public TDViewMapBlock compileMapFunction(String mapSource, String language) {
+	public CBLViewMapBlock compileMapFunction(String mapSource, String language) {
         if (language.equals("javascript")) {
-            return new TDViewMapBlockRhino(mapSource);
+            return new CBLViewMapBlockRhino(mapSource);
         }
         throw new IllegalArgumentException(language + " is not supported");
 	}
 
 	@Override
-	public TDViewReduceBlock compileReduceFunction(String reduceSource, String language) {
+	public CBLViewReduceBlock compileReduceFunction(String reduceSource, String language) {
         if (language.equals("javascript")) {
-            return new TDViewReduceBlockRhino(reduceSource);
+            return new CBLViewReduceBlockRhino(reduceSource);
         }
         throw new IllegalArgumentException(language + " is not supported");
 	}
@@ -64,13 +64,13 @@ class CustomWrapFactory extends WrapFactory {
 }
 
 // REFACT: Extract superview for both the map and reduce blocks as they do pretty much the same thing
-class TDViewMapBlockRhino implements TDViewMapBlock {
+class CBLViewMapBlockRhino implements CBLViewMapBlock {
 
     private static WrapFactory wrapFactory = new CustomWrapFactory();
     private Scriptable globalScope;
     private String src;
 
-    public TDViewMapBlockRhino(String src) {
+    public CBLViewMapBlockRhino(String src) {
         this.src = src;
         Context ctx = Context.enter();
         try {
@@ -83,7 +83,7 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
     }
 
 	@Override
-    public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+    public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
         Context ctx = Context.enter();
         try {
             ctx.setOptimizationLevel(-1);
@@ -105,7 +105,7 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
             	// Error in the JavaScript view - CouchDB swallows  the error and tries the next document
             	// REFACT: would be nice to check this in the constructor so we don't have to reparse every time
             	// should also be much faster if we can insert the map function into this objects globals
-                Log.e(TDDatabase.TAG, "Javascript syntax error in view:\n" + src, e);
+                Log.e(CBLDatabase.TAG, "Javascript syntax error in view:\n" + src, e);
                 return;
             }
             
@@ -121,7 +121,7 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
 			} catch (IOException e) {
 				// Can thrown different subclasses of IOException- but we really do not care,
 				// as this document was unserialized from JSON, so Jackson should be able to serialize it. 
-				Log.e(TDDatabase.TAG, "Error reserializing json from the db: " + document, e);
+				Log.e(CBLDatabase.TAG, "Error reserializing json from the db: " + document, e);
 				return;
 			}
             
@@ -131,7 +131,7 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
             }
             catch (org.mozilla.javascript.RhinoException e) {
             	// Error in the JavaScript view - CouchDB swallows  the error and tries the next document
-                Log.e(TDDatabase.TAG, "Error in javascript view:\n" + src + "\n with document:\n" + document, e);
+                Log.e(CBLDatabase.TAG, "Error in javascript view:\n" + src + "\n with document:\n" + document, e);
                 return;
             }
 
@@ -144,7 +144,7 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
                     Object value = mapResultItem.get(1);
                     emitter.emit(key, value);
                 } else {
-                    Log.e(TDDatabase.TAG, "Expected 2 element array with key and value");
+                    Log.e(CBLDatabase.TAG, "Expected 2 element array with key and value");
                 }
 
             }
@@ -156,13 +156,13 @@ class TDViewMapBlockRhino implements TDViewMapBlock {
     
 }
 
-class TDViewReduceBlockRhino implements TDViewReduceBlock {
+class CBLViewReduceBlockRhino implements CBLViewReduceBlock {
 
     private static WrapFactory wrapFactory = new CustomWrapFactory();
     private Scriptable globalScope;
     private String src;
 
-    public TDViewReduceBlockRhino(String src) {
+    public CBLViewReduceBlockRhino(String src) {
         this.src = src;
         Context ctx = Context.enter();
         try {

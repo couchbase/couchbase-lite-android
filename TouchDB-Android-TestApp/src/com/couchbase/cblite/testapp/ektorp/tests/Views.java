@@ -14,15 +14,15 @@ import org.ektorp.ViewResult;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDView;
-import com.couchbase.cblite.TDViewMapBlock;
-import com.couchbase.cblite.TDViewMapEmitBlock;
-import com.couchbase.cblite.TDViewReduceBlock;
-import com.couchbase.cblite.ektorp.TouchDBHttpClient;
-import com.couchbase.cblite.testapp.tests.TouchDBTestCase;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLView;
+import com.couchbase.cblite.CBLViewMapBlock;
+import com.couchbase.cblite.CBLViewMapEmitBlock;
+import com.couchbase.cblite.CBLViewReduceBlock;
+import com.couchbase.cblite.ektorp.CBLiteHttpClient;
+import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
 
-public class Views extends TouchDBTestCase {
+public class Views extends CBLiteTestCase {
 
     public static final String dDocName = "ddoc";
     public static final String dDocId = "_design/" + dDocName;
@@ -48,12 +48,12 @@ public class Views extends TouchDBTestCase {
 
     }
 
-    public static TDView createView(TDDatabase db) {
-        TDView view = db.getViewNamed(String.format("%s/%s", dDocName, viewName));
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+    public static CBLView createView(CBLDatabase db) {
+        CBLView view = db.getViewNamed(String.format("%s/%s", dDocName, viewName));
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 Assert.assertNotNull(document.get("_id"));
                 Assert.assertNotNull(document.get("_rev"));
                 if(document.get("key") != null) {
@@ -64,24 +64,24 @@ public class Views extends TouchDBTestCase {
         return view;
     }
 
-    public static TDView createViewWithReduce(TDDatabase db) {
-        TDView view = db.getViewNamed(String.format("%s/%s", dDocName, viewReduceName));
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+    public static CBLView createViewWithReduce(CBLDatabase db) {
+        CBLView view = db.getViewNamed(String.format("%s/%s", dDocName, viewReduceName));
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 Assert.assertNotNull(document.get("_id"));
                 Assert.assertNotNull(document.get("_rev"));
                 if(document.get("key") != null) {
                     emitter.emit(document.get("key"), 1);
                 }
             }
-        }, new TDViewReduceBlock() {
+        }, new CBLViewReduceBlock() {
 
             @Override
             public Object reduce(List<Object> keys, List<Object> values,
                     boolean rereduce) {
-                return TDView.totalValues(values);
+                return CBLView.totalValues(values);
             }
         }, "1");
         return view;
@@ -89,7 +89,7 @@ public class Views extends TouchDBTestCase {
 
     public void testViewQuery() throws IOException {
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         CouchDbConnector dbConnector = dbInstance.createConnector(DEFAULT_TEST_DB, true);
@@ -162,7 +162,7 @@ public class Views extends TouchDBTestCase {
 
     public void testViewReduceQuery() throws IOException {
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         CouchDbConnector dbConnector = dbInstance.createConnector(DEFAULT_TEST_DB, true);
@@ -187,25 +187,25 @@ public class Views extends TouchDBTestCase {
 
     public void testViewQueryFromWeb() throws IOException {
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         CouchDbConnector couchDbConnector = dbInstance.createConnector(DEFAULT_TEST_DB, true);
 
         String dDocName = "ddoc";
         String viewName = "people";
-        TDView view = database.getViewNamed(String.format("%s/%s", dDocName, viewName));
+        CBLView view = database.getViewNamed(String.format("%s/%s", dDocName, viewName));
 
-        view.setMapReduceBlocks(new TDViewMapBlock() {
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
 
             @Override
-            public void map(Map<String, Object> document, TDViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
                 String type = (String)document.get("type");
                 if("person".equals(type)) {
                     emitter.emit(null, document.get("_id"));
                 }
             }
-        }, new TDViewReduceBlock() {
+        }, new CBLViewReduceBlock() {
                 public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
                         return null;
                 }

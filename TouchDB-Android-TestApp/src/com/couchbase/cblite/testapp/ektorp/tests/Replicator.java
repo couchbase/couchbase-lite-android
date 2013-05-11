@@ -26,18 +26,18 @@ import org.ektorp.ReplicationStatus;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDFilterBlock;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.ektorp.TouchDBHttpClient;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLFilterBlock;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.ektorp.CBLiteHttpClient;
 import com.couchbase.cblite.support.HttpClientFactory;
-import com.couchbase.cblite.testapp.tests.TouchDBTestCase;
+import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
 
-public class Replicator extends TouchDBTestCase {
+public class Replicator extends CBLiteTestCase {
 
     public void testPush() throws IOException {
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         // create a local database
@@ -75,10 +75,10 @@ public class Replicator extends TouchDBTestCase {
     public void testFilteredPush() throws IOException {
 
         // install the filter
-        database.defineFilter("evenFoo", new TDFilterBlock() {
+        database.defineFilter("evenFoo", new CBLFilterBlock() {
 
             @Override
-            public boolean filter(TDRevision revision) {
+            public boolean filter(CBLRevision revision) {
                 Integer foo = (Integer)revision.getProperties().get("foo");
                 if(foo != null && foo.intValue() % 2 == 0) {
                     return true;
@@ -87,7 +87,7 @@ public class Replicator extends TouchDBTestCase {
             }
         });
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         // create a local database
@@ -124,7 +124,7 @@ public class Replicator extends TouchDBTestCase {
 
     public void testPull() throws IOException {
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         // create a local database
@@ -192,7 +192,7 @@ public class Replicator extends TouchDBTestCase {
             }
         });
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         // create a local database
@@ -218,12 +218,12 @@ public class Replicator extends TouchDBTestCase {
 
     public void disabledTestPushToLocal() throws IOException {
 
-        TDDatabase other = server.getExistingDatabaseNamed(DEFAULT_TEST_DB + "2");
+        CBLDatabase other = server.getExistingDatabaseNamed(DEFAULT_TEST_DB + "2");
         if(other != null) {
             other.deleteDatabase();
         }
 
-        HttpClient httpClient = new TouchDBHttpClient(server);
+        HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         // create a local database

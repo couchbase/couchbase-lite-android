@@ -17,7 +17,7 @@
 
 package com.couchbase.cblite;
 
-public interface TDViewMapEmitBlock {
+public interface CBLViewMapEmitBlock {
 
     void emit(Object key, Object value);
 

@@ -12,20 +12,20 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
 
-import com.couchbase.cblite.TDServer;
-import com.couchbase.cblite.ektorp.TouchDBHttpClient;
-import com.couchbase.cblite.listener.TDListener;
-import com.couchbase.cblite.router.TDURLStreamHandlerFactory;
+import com.couchbase.cblite.CBLServer;
+import com.couchbase.cblite.ektorp.CBLiteHttpClient;
+import com.couchbase.cblite.listener.CBLListener;
+import com.couchbase.cblite.router.CBLURLStreamHandlerFactory;
 import com.couchbase.cblite.testapp.R;
 
 public class TestAppActivity extends Activity {
 
     public static final String TAG = "TestAppActivity";
-    private TDListener listener;
-    private TDServer server;
+    private CBLListener listener;
+    private CBLServer server;
 
     {
-        TDURLStreamHandlerFactory.registerSelfIgnoreError();
+        CBLURLStreamHandlerFactory.registerSelfIgnoreError();
     }
 
     /** Called when the activity is first created. */
@@ -50,14 +50,14 @@ public class TestAppActivity extends Activity {
 
         String filesDir = getFilesDir().getAbsolutePath();
         try {
-            server = new TDServer(filesDir);
-            listener = new TDListener(server, 8888);
+            server = new CBLServer(filesDir);
+            listener = new CBLListener(server, 8888);
             listener.start();
         } catch (IOException e) {
-            Log.e(TAG, "Unable to create TDServer", e);
+            Log.e(TAG, "Unable to create CBLServer", e);
         }
 
-        TouchDBHttpClient client = new TouchDBHttpClient(server);
+        CBLiteHttpClient client = new CBLiteHttpClient(server);
         CouchDbInstance instance = new StdCouchDbInstance(client);
         instance.createConnector("tutorial", true);
 

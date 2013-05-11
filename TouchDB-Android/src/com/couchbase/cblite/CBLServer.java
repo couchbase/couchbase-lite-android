@@ -41,17 +41,17 @@ import android.util.Log;
 import com.couchbase.cblite.support.HttpClientFactory;
 
 /**
- * Manages a directory containing TDDatabases.
+ * Manages a directory containing CBLDatabases.
  */
-public class TDServer {
+public class CBLServer {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final String LEGAL_CHARACTERS = "[^a-z]{1,}[^a-z0-9_$()/+-]*$";
-    public static final String DATABASE_SUFFIX = ".touchdb";
+    public static final String DATABASE_SUFFIX = ".cblite";
 
     private File directory;
-    private Map<String, TDDatabase> databases;
+    private Map<String, CBLDatabase> databases;
 
     private HttpClientFactory defaultHttpClientFactory;
 
@@ -61,9 +61,9 @@ public class TDServer {
         return mapper;
     }
 
-    public TDServer(String directoryName) throws IOException {
+    public CBLServer(String directoryName) throws IOException {
         this.directory = new File(directoryName);
-        this.databases = new HashMap<String, TDDatabase>();
+        this.databases = new HashMap<String, CBLDatabase>();
 
         //create the directory, but don't fail if it already exists
         if(!directory.exists()) {
@@ -85,14 +85,14 @@ public class TDServer {
         return result;
     }
 
-    public TDDatabase getDatabaseNamed(String name, boolean create) {
-        TDDatabase db = databases.get(name);
+    public CBLDatabase getDatabaseNamed(String name, boolean create) {
+        CBLDatabase db = databases.get(name);
         if(db == null) {
             String path = pathForName(name);
             if(path == null) {
                 return null;
             }
-            db = new TDDatabase(path);
+            db = new CBLDatabase(path);
             if(!create && !db.exists()) {
                 return null;
             }
@@ -102,12 +102,12 @@ public class TDServer {
         return db;
     }
 
-    public TDDatabase getDatabaseNamed(String name) {
+    public CBLDatabase getDatabaseNamed(String name) {
         return getDatabaseNamed(name, true);
     }
 
-    public TDDatabase getExistingDatabaseNamed(String name) {
-        TDDatabase db = getDatabaseNamed(name, false);
+    public CBLDatabase getExistingDatabaseNamed(String name) {
+        CBLDatabase db = getDatabaseNamed(name, false);
         if((db != null) && !db.open()) {
             return null;
         }
@@ -115,7 +115,7 @@ public class TDServer {
     }
 
     public boolean deleteDatabaseNamed(String name) {
-        TDDatabase db = databases.get(name);
+        CBLDatabase db = databases.get(name);
         if(db == null) {
             return false;
         }
@@ -145,7 +145,7 @@ public class TDServer {
         return result;
     }
 
-    public Collection<TDDatabase> allOpenDatabases() {
+    public Collection<CBLDatabase> allOpenDatabases() {
         return databases.values();
     }
 
@@ -154,7 +154,7 @@ public class TDServer {
 
 			@Override
 			public void run() {
-		        for (TDDatabase database : databases.values()) {
+		        for (CBLDatabase database : databases.values()) {
 		            database.close();
 		        }
 		        databases.clear();
@@ -172,13 +172,13 @@ public class TDServer {
 
 				@Override
 				public void run() {
-					Log.v(TDDatabase.TAG, "Shutting Down");
+					Log.v(CBLDatabase.TAG, "Shutting Down");
 					workExecutor.shutdown();
 				}
 			}, 60, TimeUnit.SECONDS);
 
 		} catch (Exception e) {
-			Log.e(TDDatabase.TAG, "Exception while closing", e);
+			Log.e(CBLDatabase.TAG, "Exception while closing", e);
 		}
     }
 

@@ -16,24 +16,24 @@ import javax.servlet.http.HttpServletResponse;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDServer;
-import com.couchbase.cblite.router.TDRouter;
-import com.couchbase.cblite.router.TDRouterCallbackBlock;
-import com.couchbase.cblite.router.TDURLConnection;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLServer;
+import com.couchbase.cblite.router.CBLRouter;
+import com.couchbase.cblite.router.CBLRouterCallbackBlock;
+import com.couchbase.cblite.router.CBLURLConnection;
 
 @SuppressWarnings("serial")
-public class TDHTTPServlet extends HttpServlet {
+public class CBLHTTPServlet extends HttpServlet {
 
-    private TDServer server;
-    private TDListener listener;
-    public static final String TAG = "TDHTTPServlet";
+    private CBLServer server;
+    private CBLListener listener;
+    public static final String TAG = "CBLHTTPServlet";
 
-    public void setServer(TDServer server) {
+    public void setServer(CBLServer server) {
         this.server = server;
     }
 
-    public void setListener(TDListener listener) {
+    public void setListener(CBLListener listener) {
         this.listener = listener;
     }
 
@@ -49,8 +49,8 @@ public class TDHTTPServlet extends HttpServlet {
         if(queryString != null) {
             urlString += "?" + queryString;
         }
-        URL url = new URL("touchdb://" +  urlString);
-        final TDURLConnection conn = (TDURLConnection)url.openConnection();
+        URL url = new URL("cblite://" +  urlString);
+        final CBLURLConnection conn = (CBLURLConnection)url.openConnection();
         conn.setDoOutput(true);
 
         //set the method
@@ -74,13 +74,13 @@ public class TDHTTPServlet extends HttpServlet {
 
         final ServletOutputStream os = response.getOutputStream();
         response.setBufferSize(128);
-        Log.v(TDDatabase.TAG, String.format("Buffer size is %d", response.getBufferSize()));
+        Log.v(CBLDatabase.TAG, String.format("Buffer size is %d", response.getBufferSize()));
 
         final CountDownLatch doneSignal = new CountDownLatch(1);
 
-        final TDRouter router = new TDRouter(server, conn);
+        final CBLRouter router = new CBLRouter(server, conn);
 
-        TDRouterCallbackBlock callbackBlock = new TDRouterCallbackBlock() {
+        CBLRouterCallbackBlock callbackBlock = new CBLRouterCallbackBlock() {
 
             @Override
             public void onResponseReady() {
@@ -120,7 +120,7 @@ public class TDHTTPServlet extends HttpServlet {
             }
             os.close();
         } catch (InterruptedException e) {
-            Log.e(TDDatabase.TAG, "Interrupted waiting for result", e);
+            Log.e(CBLDatabase.TAG, "Interrupted waiting for result", e);
         } finally {
             if(router != null) {
                 router.stop();

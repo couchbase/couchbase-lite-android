@@ -4,18 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 
-import com.couchbase.cblite.TDDatabase;
+import com.couchbase.cblite.CBLDatabase;
 
 import android.util.Log;
 
-public class TDSequenceMap {
+public class CBLSequenceMap {
 	
 	private TreeSet<Long> sequences;
 	private long lastSequence;
 	private List<String> values;
 	private long firstValueSequence;
 	
-	public TDSequenceMap() {
+	public CBLSequenceMap() {
 		sequences = new TreeSet<Long>();
 		values = new ArrayList<String>(100);
 		firstValueSequence = 1;

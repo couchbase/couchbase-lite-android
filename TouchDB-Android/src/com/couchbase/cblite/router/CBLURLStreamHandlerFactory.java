@@ -5,21 +5,21 @@ import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 
 
-public class TDURLStreamHandlerFactory implements URLStreamHandlerFactory {
+public class CBLURLStreamHandlerFactory implements URLStreamHandlerFactory {
 
-    public static final String SCHEME = "touchdb";
+    public static final String SCHEME = "cblite";
 
     @Override
     public URLStreamHandler createURLStreamHandler(String protocol) {
         if(SCHEME.equals(protocol)) {
-            return new TDURLHandler();
+            return new CBLURLHandler();
         }
         return null;
     }
 
     public static void registerSelfIgnoreError() {
         try {
-            URL.setURLStreamHandlerFactory(new TDURLStreamHandlerFactory());
+            URL.setURLStreamHandlerFactory(new CBLURLStreamHandlerFactory());
         } catch (Error e) {
             //usually you should never catch an Error
             //but I can't see how to avoid this

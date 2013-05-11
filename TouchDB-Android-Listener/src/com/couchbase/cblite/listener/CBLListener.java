@@ -6,23 +6,23 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 
-import com.couchbase.cblite.TDServer;
-import com.couchbase.cblite.router.TDURLStreamHandlerFactory;
+import com.couchbase.cblite.CBLServer;
+import com.couchbase.cblite.router.CBLURLStreamHandlerFactory;
 
-public class TDListener implements Runnable {
+public class CBLListener implements Runnable {
 
     private Thread thread;
-    private TDServer server;
-    private TDHTTPServer httpServer;
+    private CBLServer server;
+    private CBLHTTPServer httpServer;
 
-    //static inializer to ensure that touchdb:// URLs are handled properly
+    //static inializer to ensure that cblite:// URLs are handled properly
     {
-        TDURLStreamHandlerFactory.registerSelfIgnoreError();
+        CBLURLStreamHandlerFactory.registerSelfIgnoreError();
     }
 
-    public TDListener(TDServer server, int port) {
+    public CBLListener(CBLServer server, int port) {
         this.server = server;
-        this.httpServer = new TDHTTPServer();
+        this.httpServer = new CBLHTTPServer();
         this.httpServer.setServer(server);
         this.httpServer.setListener(this);
         this.httpServer.setPort(port);

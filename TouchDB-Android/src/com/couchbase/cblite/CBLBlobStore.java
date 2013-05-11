@@ -35,7 +35,7 @@ import android.util.Log;
  * A persistent content-addressable store for arbitrary-size data blobs.
  * Each blob is stored as a file named by its SHA-1 digest.
  */
-public class TDBlobStore {
+public class CBLBlobStore {
 
     public static String FILE_EXTENSION = ".blob";
     public static String TMP_FILE_EXTENSION = ".blobtmp";
@@ -43,7 +43,7 @@ public class TDBlobStore {
 
     private String path;
 
-    public TDBlobStore(String path) {
+    public CBLBlobStore(String path) {
         this.path = path;
         File directory = new File(path);
         if(!directory.exists()) {
@@ -57,27 +57,27 @@ public class TDBlobStore {
         }
     }
 
-    public static TDBlobKey keyForBlob(byte[] data) {
+    public static CBLBlobKey keyForBlob(byte[] data) {
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-1");
         } catch (NoSuchAlgorithmException e) {
-            Log.e(TDDatabase.TAG, "Error, SHA-1 digest is unavailable.");
+            Log.e(CBLDatabase.TAG, "Error, SHA-1 digest is unavailable.");
             return null;
         }
         byte[] sha1hash = new byte[40];
         md.update(data, 0, data.length);
         sha1hash = md.digest();
-        TDBlobKey result = new TDBlobKey(sha1hash);
+        CBLBlobKey result = new CBLBlobKey(sha1hash);
         return result;
     }
 
-    public static TDBlobKey keyForBlobFromFile(File file) {
+    public static CBLBlobKey keyForBlobFromFile(File file) {
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-1");
         } catch (NoSuchAlgorithmException e) {
-            Log.e(TDDatabase.TAG, "Error, SHA-1 digest is unavailable.");
+            Log.e(CBLDatabase.TAG, "Error, SHA-1 digest is unavailable.");
             return null;
         }
         byte[] sha1hash = new byte[40];
@@ -92,63 +92,63 @@ public class TDBlobStore {
             }
             fis.close();
         } catch (IOException e) {
-            Log.e(TDDatabase.TAG, "Error readin tmp file to compute key");
+            Log.e(CBLDatabase.TAG, "Error readin tmp file to compute key");
         }
 
         sha1hash = md.digest();
-        TDBlobKey result = new TDBlobKey(sha1hash);
+        CBLBlobKey result = new CBLBlobKey(sha1hash);
         return result;
     }
 
-    public String pathForKey(TDBlobKey key) {
-        return path + File.separator + TDBlobKey.convertToHex(key.getBytes()) + FILE_EXTENSION;
+    public String pathForKey(CBLBlobKey key) {
+        return path + File.separator + CBLBlobKey.convertToHex(key.getBytes()) + FILE_EXTENSION;
     }
 
-    public long getSizeOfBlob(TDBlobKey key) {
+    public long getSizeOfBlob(CBLBlobKey key) {
         String path = pathForKey(key);
         File file = new File(path);
         return file.length();
     }
 
-    public boolean getKeyForFilename(TDBlobKey outKey, String filename) {
+    public boolean getKeyForFilename(CBLBlobKey outKey, String filename) {
         if(!filename.endsWith(FILE_EXTENSION)) {
             return false;
         }
         //trim off extension
         String rest = filename.substring(path.length() + 1, filename.length() - FILE_EXTENSION.length());
 
-        outKey.setBytes(TDBlobKey.convertFromHex(rest));
+        outKey.setBytes(CBLBlobKey.convertFromHex(rest));
 
         return true;
     }
 
-    public byte[] blobForKey(TDBlobKey key) {
+    public byte[] blobForKey(CBLBlobKey key) {
         String path = pathForKey(key);
         File file = new File(path);
         byte[] result = null;
         try {
             result = getBytesFromFile(file);
         } catch (IOException e) {
-            Log.e(TDDatabase.TAG, "Error reading file", e);
+            Log.e(CBLDatabase.TAG, "Error reading file", e);
         }
         return result;
     }
 
-    public InputStream blobStreamForKey(TDBlobKey key) {
+    public InputStream blobStreamForKey(CBLBlobKey key) {
         String path = pathForKey(key);
         File file = new File(path);
         if(file.canRead()) {
             try {
                 return new FileInputStream(file);
             } catch (FileNotFoundException e) {
-                Log.e(TDDatabase.TAG, "Unexpected file not found in blob store", e);
+                Log.e(CBLDatabase.TAG, "Unexpected file not found in blob store", e);
                 return null;
             }
         }
         return null;
     }
 
-    public boolean storeBlobStream(InputStream inputStream, TDBlobKey outKey) {
+    public boolean storeBlobStream(InputStream inputStream, CBLBlobKey outKey) {
 
         File tmp = null;
         try {
@@ -163,11 +163,11 @@ public class TDBlobStore {
             inputStream.close();
             fos.close();
         } catch (IOException e) {
-            Log.e(TDDatabase.TAG, "Error writing blog to tmp file", e);
+            Log.e(CBLDatabase.TAG, "Error writing blog to tmp file", e);
             return false;
         }
 
-        TDBlobKey newKey = keyForBlobFromFile(tmp);
+        CBLBlobKey newKey = keyForBlobFromFile(tmp);
         outKey.setBytes(newKey.getBytes());
         String path = pathForKey(outKey);
         File file = new File(path);
@@ -183,8 +183,8 @@ public class TDBlobStore {
         return true;
     }
 
-    public boolean storeBlob(byte[] data, TDBlobKey outKey) {
-        TDBlobKey newKey = keyForBlob(data);
+    public boolean storeBlob(byte[] data, CBLBlobKey outKey) {
+        CBLBlobKey newKey = keyForBlob(data);
         outKey.setBytes(newKey.getBytes());
         String path = pathForKey(outKey);
         File file = new File(path);
@@ -197,10 +197,10 @@ public class TDBlobStore {
             fos = new FileOutputStream(file);
             fos.write(data);
         } catch (FileNotFoundException e) {
-            Log.e(TDDatabase.TAG, "Error opening file for output", e);
+            Log.e(CBLDatabase.TAG, "Error opening file for output", e);
             return false;
         } catch(IOException ioe) {
-            Log.e(TDDatabase.TAG, "Error writing to file", ioe);
+            Log.e(CBLDatabase.TAG, "Error writing to file", ioe);
             return false;
         } finally {
             if(fos != null) {
@@ -242,12 +242,12 @@ public class TDBlobStore {
         return bytes;
     }
 
-    public Set<TDBlobKey> allKeys() {
-        Set<TDBlobKey> result = new HashSet<TDBlobKey>();
+    public Set<CBLBlobKey> allKeys() {
+        Set<CBLBlobKey> result = new HashSet<CBLBlobKey>();
         File file = new File(path);
         File[] contents = file.listFiles();
         for (File attachment : contents) {
-            TDBlobKey attachmentKey = new TDBlobKey();
+            CBLBlobKey attachmentKey = new CBLBlobKey();
             getKeyForFilename(attachmentKey, attachment.getPath());
             result.add(attachmentKey);
         }
@@ -270,12 +270,12 @@ public class TDBlobStore {
         return total;
     }
 
-    public int deleteBlobsExceptWithKeys(List<TDBlobKey> keysToKeep) {
+    public int deleteBlobsExceptWithKeys(List<CBLBlobKey> keysToKeep) {
         int numDeleted = 0;
         File file = new File(path);
         File[] contents = file.listFiles();
         for (File attachment : contents) {
-            TDBlobKey attachmentKey = new TDBlobKey();
+            CBLBlobKey attachmentKey = new CBLBlobKey();
             getKeyForFilename(attachmentKey, attachment.getPath());
             if(!keysToKeep.contains(attachmentKey)) {
                 boolean result = attachment.delete();
@@ -283,7 +283,7 @@ public class TDBlobStore {
                     ++numDeleted;
                 }
                 else {
-                    Log.e(TDDatabase.TAG, "Error deleting attachmetn");
+                    Log.e(CBLDatabase.TAG, "Error deleting attachmetn");
                 }
             }
         }

@@ -1,7 +1,7 @@
 package com.couchbase.cblite;
 
-public interface TouchDBVersion {
+public interface CBLiteVersion {
 
-    String TouchDBVersionNumber = "0.4";
+    String CBLiteVersionNumber = "0.4";
 
 }

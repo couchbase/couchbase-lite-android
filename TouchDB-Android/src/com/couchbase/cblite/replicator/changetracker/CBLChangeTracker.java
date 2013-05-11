@@ -34,17 +34,17 @@ import org.apache.http.protocol.HttpContext;
 
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDServer;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLServer;
 
 /**
  * Reads the continuous-mode _changes feed of a database, and sends the
  * individual change entries to its client's changeTrackerReceivedChange()
  */
-public class TDChangeTracker implements Runnable {
+public class CBLChangeTracker implements Runnable {
 
     private URL databaseURL;
-    private TDChangeTrackerClient client;
+    private CBLChangeTrackerClient client;
     private TDChangeTrackerMode mode;
     private Object lastSequenceID;
 
@@ -61,8 +61,8 @@ public class TDChangeTracker implements Runnable {
         OneShot, LongPoll, Continuous
     }
 
-    public TDChangeTracker(URL databaseURL, TDChangeTrackerMode mode,
-            Object lastSequenceID, TDChangeTrackerClient client) {
+    public CBLChangeTracker(URL databaseURL, TDChangeTrackerMode mode,
+            Object lastSequenceID, CBLChangeTrackerClient client) {
         this.databaseURL = databaseURL;
         this.mode = mode;
         this.lastSequenceID = lastSequenceID;
@@ -77,7 +77,7 @@ public class TDChangeTracker implements Runnable {
         this.filterParams = filterParams;
     }
 
-    public void setClient(TDChangeTrackerClient client) {
+    public void setClient(CBLChangeTrackerClient client) {
         this.client = client;
     }
 
@@ -135,7 +135,7 @@ public class TDChangeTracker implements Runnable {
         try {
             result = new URL(dbURLString);
         } catch(MalformedURLException e) {
-            Log.e(TDDatabase.TAG, "Changes feed ULR is malformed", e);
+            Log.e(CBLDatabase.TAG, "Changes feed ULR is malformed", e);
         }
         return result;
     }
@@ -181,18 +181,18 @@ public class TDChangeTracker implements Runnable {
                     }
                 }
                 else {
-                    Log.w(TDDatabase.TAG, "Unable to parse user info, not setting credentials");
+                    Log.w(CBLDatabase.TAG, "Unable to parse user info, not setting credentials");
                 }
             }
 
             try {
                 String maskedRemoteWithoutCredentials = getChangesFeedURL().toString();
                 maskedRemoteWithoutCredentials = maskedRemoteWithoutCredentials.replaceAll("://.*:.*@","://---:---@");
-                Log.v(TDDatabase.TAG, "Making request to " + maskedRemoteWithoutCredentials);
+                Log.v(CBLDatabase.TAG, "Making request to " + maskedRemoteWithoutCredentials);
                 HttpResponse response = httpClient.execute(request);
                 StatusLine status = response.getStatusLine();
                 if(status.getStatusCode() >= 300) {
-                    Log.e(TDDatabase.TAG, "Change tracker got error " + Integer.toString(status.getStatusCode()));
+                    Log.e(CBLDatabase.TAG, "Change tracker got error " + Integer.toString(status.getStatusCode()));
                     stop();
                 }
                 HttpEntity entity = response.getEntity();
@@ -200,13 +200,13 @@ public class TDChangeTracker implements Runnable {
                 	try {
 	                    InputStream input = entity.getContent();
 	                    if(mode == TDChangeTrackerMode.LongPoll) {
-	                        Map<String,Object> fullBody = TDServer.getObjectMapper().readValue(input, Map.class);
+	                        Map<String,Object> fullBody = CBLServer.getObjectMapper().readValue(input, Map.class);
 	                        boolean responseOK = receivedPollResponse(fullBody);
 	                        if(mode == TDChangeTrackerMode.LongPoll && responseOK) {
-	                            Log.v(TDDatabase.TAG, "Starting new longpoll");
+	                            Log.v(CBLDatabase.TAG, "Starting new longpoll");
 	                            continue;
 	                        } else {
-	                            Log.w(TDDatabase.TAG, "Change tracker calling stop");
+	                            Log.w(CBLDatabase.TAG, "Change tracker calling stop");
 	                            stop();
 	                        }
 	                    }
@@ -219,41 +219,41 @@ public class TDChangeTracker implements Runnable {
 	                                continue;
 	                            }
 	                            else if(line.startsWith("\"last_seq\"") && mode == TDChangeTrackerMode.OneShot) {
-	                                Log.w(TDDatabase.TAG, "Change tracker calling stop");
+	                                Log.w(CBLDatabase.TAG, "Change tracker calling stop");
 	                                stop();
 	                                break;
 	                            }
 	                            receivedChunk(line);
 	                        }
-	                        Log.v(TDDatabase.TAG, "read null from inpustream continuing");
+	                        Log.v(CBLDatabase.TAG, "read null from inpustream continuing");
 	                    }
                 	} finally {
                 		try { entity.consumeContent(); } catch (IOException e){}
                 	}
                 }
             } catch (ClientProtocolException e) {
-                Log.e(TDDatabase.TAG, "ClientProtocolException in change tracker", e);
+                Log.e(CBLDatabase.TAG, "ClientProtocolException in change tracker", e);
             } catch (IOException e) {
                 if(running) {
                     //we get an exception when we're shutting down and have to
                     //close the socket underneath our read, ignore that
-                    Log.e(TDDatabase.TAG, "IOException in change tracker", e);
+                    Log.e(CBLDatabase.TAG, "IOException in change tracker", e);
                 }
             }
         }
-        Log.v(TDDatabase.TAG, "Change tracker run loop exiting");
+        Log.v(CBLDatabase.TAG, "Change tracker run loop exiting");
     }
 
     public boolean receivedChunk(String line) {
         if(line.length() > 1) {
             try {
-                Map<String,Object> change = (Map)TDServer.getObjectMapper().readValue(line, Map.class);
+                Map<String,Object> change = (Map)CBLServer.getObjectMapper().readValue(line, Map.class);
                 if(!receivedChange(change)) {
-                    Log.w(TDDatabase.TAG, String.format("Received unparseable change line from server: %s", line));
+                    Log.w(CBLDatabase.TAG, String.format("Received unparseable change line from server: %s", line));
                     return false;
                 }
             } catch (Exception e) {
-                Log.w(TDDatabase.TAG, "Exception parsing JSON in change tracker", e);
+                Log.w(CBLDatabase.TAG, "Exception parsing JSON in change tracker", e);
                 return false;
             }
         }
@@ -287,7 +287,7 @@ public class TDChangeTracker implements Runnable {
     }
 
     public void setUpstreamError(String message) {
-        Log.w(TDDatabase.TAG, String.format("Server error: %s", message));
+        Log.w(CBLDatabase.TAG, String.format("Server error: %s", message));
         this.error = new Throwable(message);
     }
 
@@ -299,7 +299,7 @@ public class TDChangeTracker implements Runnable {
     }
 
     public void stop() {
-        Log.d(TDDatabase.TAG, "changed tracker asked to stop");
+        Log.d(CBLDatabase.TAG, "changed tracker asked to stop");
         running = false;
         thread.interrupt();
         if(request != null) {
@@ -310,13 +310,13 @@ public class TDChangeTracker implements Runnable {
     }
 
     public void stopped() {
-        Log.d(TDDatabase.TAG, "change tracker in stopped");
+        Log.d(CBLDatabase.TAG, "change tracker in stopped");
         if (client != null) {
-            Log.d(TDDatabase.TAG, "posting stopped");
-            client.changeTrackerStopped(TDChangeTracker.this);
+            Log.d(CBLDatabase.TAG, "posting stopped");
+            client.changeTrackerStopped(CBLChangeTracker.this);
         }
         client = null;
-        Log.d(TDDatabase.TAG, "change tracker client should be null now");
+        Log.d(CBLDatabase.TAG, "change tracker client should be null now");
     }
 
     public boolean isRunning() {

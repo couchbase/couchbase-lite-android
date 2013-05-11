@@ -4,26 +4,26 @@ import java.util.Properties;
 
 import Acme.Serve.Serve;
 
-import com.couchbase.cblite.TDServer;
+import com.couchbase.cblite.CBLServer;
 
 @SuppressWarnings("serial")
-public class TDHTTPServer extends Serve {
+public class CBLHTTPServer extends Serve {
 
-    public static final String TDSERVER_KEY = "TDServer";
+    public static final String CBLServer_KEY = "CBLServer";
 
     private Properties props;
-    private TDServer server;
-    private TDListener listener;
+    private CBLServer server;
+    private CBLListener listener;
 
-    public TDHTTPServer() {
+    public CBLHTTPServer() {
         props = new Properties();
     }
 
-    public void setServer(TDServer server) {
+    public void setServer(CBLServer server) {
         this.server = server;
     }
 
-    public void setListener(TDListener listener) {
+    public void setListener(CBLListener listener) {
         this.listener = listener;
     }
 
@@ -36,8 +36,8 @@ public class TDHTTPServer extends Serve {
         //pass our custom properties in
         this.arguments = props;
 
-        //pass in the tdserver to the servlet
-        TDHTTPServlet servlet = new TDHTTPServlet();
+        //pass in the CBLServer to the servlet
+        CBLHTTPServlet servlet = new CBLHTTPServlet();
         servlet.setServer(server);
         servlet.setListener(listener);
 

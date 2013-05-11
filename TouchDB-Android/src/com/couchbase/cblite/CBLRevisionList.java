@@ -27,24 +27,24 @@ import java.util.List;
  * An ordered list of TDRevisions
  */
 @SuppressWarnings("serial")
-public class TDRevisionList extends ArrayList<TDRevision> {
+public class CBLRevisionList extends ArrayList<CBLRevision> {
 
-    public TDRevisionList() {
+    public CBLRevisionList() {
         super();
     }
 
     /**
-     * Allow converting to TDRevisionList from List<TDRevision>
+     * Allow converting to CBLRevisionList from List<CBLRevision>
      * @param list
      */
-    public TDRevisionList(List<TDRevision> list) {
+    public CBLRevisionList(List<CBLRevision> list) {
         super(list);
     }
 
-    public TDRevision revWithDocIdAndRevId(String docId, String revId) {
-        Iterator<TDRevision> iterator = iterator();
+    public CBLRevision revWithDocIdAndRevId(String docId, String revId) {
+        Iterator<CBLRevision> iterator = iterator();
         while(iterator.hasNext()) {
-            TDRevision rev = iterator.next();
+            CBLRevision rev = iterator.next();
             if(docId.equals(rev.getDocId()) && revId.equals(rev.getRevId())) {
                 return rev;
             }
@@ -55,9 +55,9 @@ public class TDRevisionList extends ArrayList<TDRevision> {
     public List<String> getAllDocIds() {
         List<String> result = new ArrayList<String>();
 
-        Iterator<TDRevision> iterator = iterator();
+        Iterator<CBLRevision> iterator = iterator();
         while(iterator.hasNext()) {
-            TDRevision rev = iterator.next();
+            CBLRevision rev = iterator.next();
             result.add(rev.getDocId());
         }
 
@@ -67,9 +67,9 @@ public class TDRevisionList extends ArrayList<TDRevision> {
     public List<String> getAllRevIds() {
         List<String> result = new ArrayList<String>();
 
-        Iterator<TDRevision> iterator = iterator();
+        Iterator<CBLRevision> iterator = iterator();
         while(iterator.hasNext()) {
-            TDRevision rev = iterator.next();
+            CBLRevision rev = iterator.next();
             result.add(rev.getRevId());
         }
 
@@ -77,10 +77,10 @@ public class TDRevisionList extends ArrayList<TDRevision> {
     }
 
     public void sortBySequence() {
-        Collections.sort(this, new Comparator<TDRevision>() {
+        Collections.sort(this, new Comparator<CBLRevision>() {
 
-            public int compare(TDRevision rev1, TDRevision rev2) {
-                return TDMisc.TDSequenceCompare(rev1.getSequence(), rev2.getSequence());
+            public int compare(CBLRevision rev1, CBLRevision rev2) {
+                return CBLMisc.TDSequenceCompare(rev1.getSequence(), rev2.getSequence());
             }
 
         });

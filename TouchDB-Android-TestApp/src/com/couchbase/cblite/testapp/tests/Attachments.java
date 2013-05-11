@@ -29,40 +29,40 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 
-import com.couchbase.cblite.TDAttachment;
-import com.couchbase.cblite.TDBlobKey;
-import com.couchbase.cblite.TDBlobStore;
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDRevision;
-import com.couchbase.cblite.TDStatus;
+import com.couchbase.cblite.CBLAttachment;
+import com.couchbase.cblite.CBLBlobKey;
+import com.couchbase.cblite.CBLBlobStore;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.support.Base64;
 
-public class Attachments extends TouchDBTestCase {
+public class Attachments extends CBLiteTestCase {
 
     public static final String TAG = "Attachments";
 
     @SuppressWarnings("unchecked")
     public void testAttachments() throws Exception {
 
-        TDBlobStore attachments = database.getAttachments();
+        CBLBlobStore attachments = database.getAttachments();
 
         Assert.assertEquals(0, attachments.count());
         Assert.assertEquals(new HashSet<Object>(), attachments.allKeys());
 
-        TDStatus status = new TDStatus();
+        CBLStatus status = new CBLStatus();
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
-        TDRevision rev1 = database.putRevision(new TDRevision(rev1Properties), null, false, status);
+        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties), null, false, status);
 
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         byte[] attach1 = "This is the body of attach1".getBytes();
         status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
-        TDAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach", status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach", status);
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment.getContentType());
         byte[] data = IOUtils.toByteArray(attachment.getContentStream());
         Assert.assertTrue(Arrays.equals(attach1, data));
@@ -79,7 +79,7 @@ public class Attachments extends TouchDBTestCase {
         Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), false);
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
-        TDRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        CBLRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
         Assert.assertEquals(attachmentDict, gotAttachmentDict);
 
@@ -89,7 +89,7 @@ public class Attachments extends TouchDBTestCase {
         attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), true);
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
-        gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.of(TDDatabase.TDContentOptions.TDIncludeAttachments));
+        gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.of(CBLDatabase.TDContentOptions.TDIncludeAttachments));
         gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
         Assert.assertEquals(attachmentDict, gotAttachmentDict);
 
@@ -99,59 +99,59 @@ public class Attachments extends TouchDBTestCase {
         rev2Properties.put("_id", rev1.getDocId());
         rev2Properties.put("foo", 2);
         rev2Properties.put("bazz", false);
-        TDRevision rev2 = database.putRevision(new TDRevision(rev2Properties), rev1.getRevId(), false, status);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        CBLRevision rev2 = database.putRevision(new CBLRevision(rev2Properties), rev1.getRevId(), false, status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         status = database.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
 
         // Add a third revision of the same document:
         Map<String,Object> rev3Properties = new HashMap<String,Object>();
         rev3Properties.put("_id", rev2.getDocId());
         rev3Properties.put("foo", 2);
         rev3Properties.put("bazz", false);
-        TDRevision rev3 = database.putRevision(new TDRevision(rev3Properties), rev2.getRevId(), false, status);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        CBLRevision rev3 = database.putRevision(new CBLRevision(rev3Properties), rev2.getRevId(), false, status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
         status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         // Check the 2nd revision's attachment:
-        TDAttachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), "attach", status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        CBLAttachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), "attach", status);
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment2.getContentType());
         data = IOUtils.toByteArray(attachment2.getContentStream());
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         // Check the 3rd revision's attachment:
-        TDAttachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), "attach", status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        CBLAttachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), "attach", status);
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/html", attachment3.getContentType());
         data = IOUtils.toByteArray(attachment3.getContentStream());
         Assert.assertTrue(Arrays.equals(attach2, data));
 
         // Examine the attachment store:
         Assert.assertEquals(2, attachments.count());
-        Set<TDBlobKey> expected = new HashSet<TDBlobKey>();
-        expected.add(TDBlobStore.keyForBlob(attach1));
-        expected.add(TDBlobStore.keyForBlob(attach2));
+        Set<CBLBlobKey> expected = new HashSet<CBLBlobKey>();
+        expected.add(CBLBlobStore.keyForBlob(attach1));
+        expected.add(CBLBlobStore.keyForBlob(attach2));
 
         Assert.assertEquals(expected, attachments.allKeys());
 
         status = database.compact();  // This clears the body of the first revision
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals(1, attachments.count());
 
-        Set<TDBlobKey> expected2 = new HashSet<TDBlobKey>();
-        expected2.add(TDBlobStore.keyForBlob(attach2));
+        Set<CBLBlobKey> expected2 = new HashSet<CBLBlobKey>();
+        expected2.add(CBLBlobStore.keyForBlob(attach2));
         Assert.assertEquals(expected2, attachments.allKeys());
     }
 
     @SuppressWarnings("unchecked")
     public void testPutAttachment() {
 
-        TDBlobStore attachments = database.getAttachments();
+        CBLBlobStore attachments = database.getAttachments();
 
         // Put a revision that includes an _attachments dict:
         byte[] attach1 = "This is the body of attach1".getBytes();
@@ -167,15 +167,15 @@ public class Attachments extends TouchDBTestCase {
         properties.put("bar", false);
         properties.put("_attachments", attachmentDict);
 
-        TDStatus status = new TDStatus();
-        TDRevision rev1 = database.putRevision(new TDRevision(properties), null, false, status);
+        CBLStatus status = new CBLStatus();
+        CBLRevision rev1 = database.putRevision(new CBLRevision(properties), null, false, status);
 
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         // Examine the attachment store:
         Assert.assertEquals(1, attachments.count());
 
         // Get the revision:
-        TDRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        CBLRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Map<String,Object> gotAttachmentDict = (Map<String,Object>)gotRev1.getProperties().get("_attachments");
 
         Map<String,Object> innerDict = new HashMap<String,Object>();
@@ -193,16 +193,16 @@ public class Attachments extends TouchDBTestCase {
         // Update the attachment directly:
         byte[] attachv2 = "Replaced body of attach".getBytes();
         database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null, status);
-        Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
+        Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
         database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus", status);
-        Assert.assertEquals(TDStatus.CONFLICT, status.getCode());
-        TDRevision rev2 = database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId(), status);
-        Assert.assertEquals(TDStatus.CREATED, status.getCode());
+        Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
+        CBLRevision rev2 = database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId(), status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertEquals(2, rev2.getGeneration());
 
         // Get the updated revision:
-        TDRevision gotRev2 = database.getDocumentWithIDAndRev(rev2.getDocId(), rev2.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        CBLRevision gotRev2 = database.getDocumentWithIDAndRev(rev2.getDocId(), rev2.getRevId(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         attachmentDict = (Map<String, Object>) gotRev2.getProperties().get("_attachments");
 
         innerDict = new HashMap<String,Object>();
@@ -218,18 +218,18 @@ public class Attachments extends TouchDBTestCase {
 
         // Delete the attachment:
         database.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId(), status);
-        Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
+        Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
 
         database.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev", status);
-        Assert.assertEquals(TDStatus.NOT_FOUND, status.getCode());
+        Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
 
-        TDRevision rev3 = database.updateAttachment("attach", null, null, rev2.getDocId(), rev2.getRevId(), status);
-        Assert.assertEquals(TDStatus.OK, status.getCode());
+        CBLRevision rev3 = database.updateAttachment("attach", null, null, rev2.getDocId(), rev2.getRevId(), status);
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals(rev2.getDocId(), rev3.getDocId());
         Assert.assertEquals(3, rev3.getGeneration());
 
         // Get the updated revision:
-        TDRevision gotRev3 = database.getDocumentWithIDAndRev(rev3.getDocId(), rev3.getRevId(), EnumSet.noneOf(TDDatabase.TDContentOptions.class));
+        CBLRevision gotRev3 = database.getDocumentWithIDAndRev(rev3.getDocId(), rev3.getRevId(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         attachmentDict = (Map<String, Object>) gotRev3.getProperties().get("_attachments");
         Assert.assertNull(attachmentDict);
 

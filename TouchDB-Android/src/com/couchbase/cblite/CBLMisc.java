@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import android.util.Log;
 
-public class TDMisc {
+public class CBLMisc {
 
     public static String TDCreateUUID() {
         return UUID.randomUUID().toString();
@@ -17,7 +17,7 @@ public class TDMisc {
         try {
             md = MessageDigest.getInstance("SHA-1");
         } catch (NoSuchAlgorithmException e) {
-            Log.e(TDDatabase.TAG, "Error, SHA-1 digest is unavailable.");
+            Log.e(CBLDatabase.TAG, "Error, SHA-1 digest is unavailable.");
             return null;
         }
         byte[] sha1hash = new byte[40];

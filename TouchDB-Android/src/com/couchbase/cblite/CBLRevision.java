@@ -25,21 +25,21 @@ import java.util.Map;
  *
  * It can also store the sequence number and document contents (they can be added after creation).
  */
-public class TDRevision {
+public class CBLRevision {
 
     private String docId;
     private String revId;
     private boolean deleted;
-    private TDBody body;
+    private CBLBody body;
     private long sequence;
 
-    public TDRevision(String docId, String revId, boolean deleted) {
+    public CBLRevision(String docId, String revId, boolean deleted) {
         this.docId = docId;
         this.revId = revId;
         this.deleted = deleted;
     }
 
-    public TDRevision(TDBody body) {
+    public CBLRevision(CBLBody body) {
         this((String)body.getPropertyForKey("_id"),
                 (String)body.getPropertyForKey("_rev"),
                 (((Boolean)body.getPropertyForKey("_deleted") != null)
@@ -47,8 +47,8 @@ public class TDRevision {
         this.body = body;
     }
 
-    public TDRevision(Map<String,Object> properties) {
-        this(new TDBody(properties));
+    public CBLRevision(Map<String,Object> properties) {
+        this(new CBLBody(properties));
     }
 
     public Map<String,Object> getProperties() {
@@ -60,7 +60,7 @@ public class TDRevision {
     }
 
     public void setProperties(Map<String,Object> properties) {
-        this.body = new TDBody(properties);
+        this.body = new CBLBody(properties);
     }
 
     public byte[] getJson() {
@@ -72,14 +72,14 @@ public class TDRevision {
     }
 
     public void setJson(byte[] json) {
-        this.body = new TDBody(json);
+        this.body = new CBLBody(json);
     }
 
     @Override
     public boolean equals(Object o) {
         boolean result = false;
-        if(o instanceof TDRevision) {
-            TDRevision other = (TDRevision)o;
+        if(o instanceof CBLRevision) {
+            CBLRevision other = (CBLRevision)o;
             if(docId.equals(other.docId) && revId.equals(other.revId)) {
                 result = true;
             }
@@ -116,18 +116,18 @@ public class TDRevision {
         this.deleted = deleted;
     }
 
-    public TDBody getBody() {
+    public CBLBody getBody() {
         return body;
     }
 
-    public void setBody(TDBody body) {
+    public void setBody(CBLBody body) {
         this.body = body;
     }
 
-    public TDRevision copyWithDocID(String docId, String revId) {
+    public CBLRevision copyWithDocID(String docId, String revId) {
         assert((docId != null) && (revId != null));
         assert((this.docId == null) || (this.docId.equals(docId)));
-        TDRevision result = new TDRevision(docId, revId, deleted);
+        CBLRevision result = new CBLRevision(docId, revId, deleted);
         Map<String, Object> properties = getProperties();
         if(properties == null) {
             properties = new HashMap<String, Object>();

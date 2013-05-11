@@ -11,21 +11,21 @@ import java.util.concurrent.TimeUnit;
 import android.os.Handler;
 import android.util.Log;
 
-import com.couchbase.cblite.TDDatabase;
-import com.couchbase.cblite.TDRevision;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLRevision;
 
 /**
  * Utility that queues up objects until the queue fills up or a time interval elapses,
  * then passes all the objects at once to a client-supplied processor block.
  */
-public class TDBatcher<T> {
+public class CBLBatcher<T> {
 
     private ScheduledExecutorService workExecutor;
     private ScheduledFuture<?> flushFuture;
     private int capacity;
     private int delay;
     private List<T> inbox;
-    private TDBatchProcessor<T> processor;
+    private CBLBatchProcessor<T> processor;
     private boolean shuttingDown = false;
 
     private Runnable processNowRunnable = new Runnable() {
@@ -36,12 +36,12 @@ public class TDBatcher<T> {
                 processNow();
             } catch(Exception e) {
                 // we don't want this to crash the batcher
-                Log.e(TDDatabase.TAG, "TDBatchProcessor throw exception", e);
+                Log.e(CBLDatabase.TAG, "CBLBatchProcessor throw exception", e);
             }
         }
     };
 
-    public TDBatcher(ScheduledExecutorService workExecutor, int capacity, int delay, TDBatchProcessor<T> processor) {
+    public CBLBatcher(ScheduledExecutorService workExecutor, int capacity, int delay, CBLBatchProcessor<T> processor) {
         this.workExecutor = workExecutor;
         this.capacity = capacity;
         this.delay = delay;
@@ -89,7 +89,7 @@ public class TDBatcher<T> {
                 if(didcancel) {
                     processNow();
                 } else {
-                    Log.v(TDDatabase.TAG, "skipping process now because didcancel false");
+                    Log.v(CBLDatabase.TAG, "skipping process now because didcancel false");
                 }
             }
         }
