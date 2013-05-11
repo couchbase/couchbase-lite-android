@@ -59,9 +59,9 @@ public class Router extends CBLiteTestCase {
         send(server, "PUT", "/database2", CBLStatus.CREATED, null);
 
         List<String> allDbs = new ArrayList<String>();
+        allDbs.add("cblite-test");
         allDbs.add("database");
         allDbs.add("database2");
-        allDbs.add("cblite-test");
         send(server, "GET", "/_all_dbs", CBLStatus.OK, allDbs);
         dbInfo = (Map<String,Object>)send(server, "GET", "/database2", CBLStatus.OK, null);
         Assert.assertEquals("database2", dbInfo.get("db_name"));
