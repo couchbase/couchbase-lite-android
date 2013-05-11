@@ -471,7 +471,7 @@ public class CBLRouter implements Observer {
 
     public CBLStatus do_GETRoot(CBLDatabase _db, String _docID, String _attachmentName) {
         Map<String,Object> info = new HashMap<String,Object>();
-        info.put("TouchDB", "Welcome");
+        info.put("CBLite", "Welcome");
         info.put("couchdb", "Welcome"); // for compatibility
         info.put("version", getVersionString());
         connection.setResponseBody(new CBLBody(info));
