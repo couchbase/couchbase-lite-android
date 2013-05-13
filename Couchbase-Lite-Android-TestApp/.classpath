@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry kind="lib" path="/Users/traun/Development/TouchDB-Android/Couchbase-Lite-Android/libs/jackson-core-asl-1.9.2.jar"/>
+	<classpathentry kind="lib" path="/Users/traun/Development/TouchDB-Android/Couchbase-Lite-Android/libs/jackson-mapper-asl-1.9.2.jar"/>
+	<classpathentry kind="lib" path="/Users/traun/Development/TouchDB-Android/Couchbase-Lite-Android-Listener/libs/webserver.jar"/>
+	<classpathentry kind="lib" path="/Users/traun/Development/TouchDB-Android/Couchbase-Lite-Android-JavaScript/libs/js.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Couchbase-Lite-Android"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Couchbase-Lite-Android-Ektorp"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Couchbase-Lite-Android-Listener"/>
+	<classpathentry kind="output" path="bin/classes"/>
+</classpath>
