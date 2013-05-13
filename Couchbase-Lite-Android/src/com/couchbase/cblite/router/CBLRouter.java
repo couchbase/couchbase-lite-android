@@ -419,7 +419,7 @@ public class CBLRouter implements Observer {
             }
         }
 
-        connection.getResHeader().add("Server", String.format("TouchDB %s", getVersionString()));
+        connection.getResHeader().add("Server", String.format("Couchbase Lite %s", getVersionString()));
 
         // If response is ready (nonzero status), tell my client about it:
         if(status.getCode() != 0) {
