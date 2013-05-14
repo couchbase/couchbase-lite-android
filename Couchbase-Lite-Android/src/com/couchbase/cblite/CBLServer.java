@@ -48,7 +48,7 @@ public class CBLServer {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final String LEGAL_CHARACTERS = "[^a-z]{1,}[^a-z0-9_$()/+-]*$";
-    public static final String DATABASE_SUFFIX = ".cblite";
+    public static final String DATABASE_SUFFIX = ".touchdb";
 
     private File directory;
     private Map<String, CBLDatabase> databases;
