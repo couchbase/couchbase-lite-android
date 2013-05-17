@@ -1100,7 +1100,12 @@ public class CBLDatabase extends Observable {
         if(filters == null) {
             filters = new HashMap<String,CBLFilterBlock>();
         }
-        filters.put(filterName, filter);
+        if (filter != null) {
+            filters.put(filterName, filter);
+        }
+        else {
+            filters.remove(filterName);
+        }
     }
 
     public CBLFilterBlock getFilterNamed(String filterName) {
@@ -2190,7 +2195,12 @@ public class CBLDatabase extends Observable {
         if(validations == null) {
             validations = new HashMap<String, CBLValidationBlock>();
         }
-        validations.put(name, validationBlock);
+        if (validationBlock != null) {
+            validations.put(name, validationBlock);
+        }
+        else {
+            validations.remove(name);
+        }
     }
 
     public CBLValidationBlock getValidationNamed(String name) {
