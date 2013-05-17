@@ -199,6 +199,7 @@ public class Replicator extends CBLiteTestCase {
         }
     	
     	Assert.assertTrue(myObserver.replicationFinished);
+    	repl.deleteObserver(myObserver);
         	
 
     }
