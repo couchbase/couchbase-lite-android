@@ -2243,6 +2243,17 @@ public class CBLDatabase extends Observable {
 
     	return replicator;
     }
+    
+    public CBLReplicator getReplicator(String sessionId) {
+    	if(activeReplicators != null) {
+            for (CBLReplicator replicator : activeReplicators) {
+                if(replicator.getSessionID().equals(sessionId)) {
+                    return replicator;
+                }
+            }
+        }
+        return null;
+    }
 
     public CBLReplicator getReplicator(URL remote, HttpClientFactory httpClientFactory, boolean push, boolean continuous, ScheduledExecutorService workExecutor) {
         CBLReplicator result = getActiveReplicator(remote, push);
