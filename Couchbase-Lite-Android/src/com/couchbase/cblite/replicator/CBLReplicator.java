@@ -199,7 +199,8 @@ public abstract class CBLReplicator extends Observable {
         this.changesProcessed = this.changesTotal = 0;
 
         saveLastSequence();
-
+        notifyObservers();
+        
         batcher = null;
         db = null;
     }

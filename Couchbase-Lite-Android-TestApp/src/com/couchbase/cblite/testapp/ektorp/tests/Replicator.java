@@ -1,6 +1,8 @@
 package com.couchbase.cblite.testapp.ektorp.tests;
 
 import java.io.IOException;
+import java.util.Observable;
+import java.util.Observer;
 
 import junit.framework.Assert;
 
@@ -26,10 +28,13 @@ import org.ektorp.ReplicationStatus;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
+import android.util.Log;
+
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLFilterBlock;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.ektorp.CBLiteHttpClient;
+import com.couchbase.cblite.replicator.CBLReplicator;
 import com.couchbase.cblite.support.HttpClientFactory;
 import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
 
@@ -69,6 +74,9 @@ public class Replicator extends CBLiteTestCase {
             e.printStackTrace();
         }
         Assert.assertNotNull(status.getSessionId());
+        
+        
+        
 
     }
 
@@ -147,6 +155,53 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertNotNull(status.getSessionId());
 
     }
+    
+    public void testPullWithObserver() throws IOException {
+    	
+        class MyObserver implements Observer {
+    		public boolean replicationFinished = false;
+
+    		@Override
+    		public void update(Observable observable, Object data) {
+    			CBLReplicator replicator = (CBLReplicator) observable;
+    			replicationFinished = !replicator.isRunning();		
+    			String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
+    			Log.d(TAG, msg);
+    		}
+        }
+
+        HttpClient httpClient = new CBLiteHttpClient(server);
+        CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
+
+        // push this database to the test replication server
+        ReplicationCommand pushCommand = new ReplicationCommand.Builder()
+            .source(getReplicationURL().toExternalForm())
+            .target(DEFAULT_TEST_DB)
+            .continuous(false)
+            .build();
+
+        ReplicationStatus status = dbInstance.replicate(pushCommand);
+        Assert.assertNotNull(status.getSessionId());
+        
+        CBLReplicator repl = database.getReplicator(status.getSessionId());
+        Assert.assertEquals(repl.getSessionID(), status.getSessionId());
+                	
+    	MyObserver myObserver = new MyObserver();
+    	
+    	Log.d(TAG, "adding observer to replicator: " + repl);
+    	repl.addObserver(myObserver);
+    	
+    	try {
+    		Thread.sleep(5*1000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    	
+    	Assert.assertTrue(myObserver.replicationFinished);
+        	
+
+    }
 
     public void testPullWithoutCredentialsInURL() throws IOException {
 
@@ -216,6 +271,7 @@ public class Replicator extends CBLiteTestCase {
 
     }
 
+    // this test is short-circuited because the underlying feature (replication localdb <-> localdb) doesn't work yet
     public void disabledTestPushToLocal() throws IOException {
 
         CBLDatabase other = server.getExistingDatabaseNamed(DEFAULT_TEST_DB + "2");
