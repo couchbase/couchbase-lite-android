@@ -3,3 +3,7 @@
 *~
 .#*
 \#*\#
+
+/CouchbaseLiteProject/CouchbaseLiteProject/build/
+/CouchbaseLiteProject/.gradle/
+/CouchbaseLiteProject/.idea/workspace.xml
