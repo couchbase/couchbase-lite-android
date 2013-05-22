@@ -8,3 +8,4 @@
 /CouchbaseLiteProject/.gradle/
 /CouchbaseLiteProject/.idea/workspace.xml
 /CouchbaseLiteProject/CBLite/build/
+.DS_Store
