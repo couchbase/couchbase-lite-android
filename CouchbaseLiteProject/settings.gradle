@@ -1,1 +1,1 @@
-include ':CouchbaseLiteProject'
+include ':CouchbaseLiteProject', ':CBLite'
