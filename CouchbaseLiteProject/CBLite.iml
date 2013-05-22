@@ -1,8 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module external.linked.project.path="$MODULE_DIR$/build.gradle" external.system.id="GRADLE" type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="android" name="Android">
+      <configuration>
+        <option name="SELECTED_BUILD_VARIANT" value="debug" />
+        <option name="ASSEMBLE_TASK_NAME" value="bundleDebug" />
+        <option name="ALLOW_USER_CONFIGURATION" value="false" />
+        <option name="GEN_FOLDER_RELATIVE_PATH_APT" value="/CBLite/build/source/aidl/debug" />
+        <option name="MANIFEST_FILE_RELATIVE_PATH" value="/CBLite/src/main/AndroidManifest.xml" />
+        <option name="RES_FOLDER_RELATIVE_PATH" value="/CBLite/src/main/res" />
+        <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/CBLite/src/main/assets" />
+      </configuration>
+    </facet>
+    <facet type="android-gradle" name="Android-Gradle">
+      <configuration>
+        <option name="GRADLE_PROJECT_PATH" value=":CBLite" />
+        <option name="PROJECT_ABSOLUTE_PATH" value="$MODULE_DIR$" />
+        <option name="GRADLE_HOME_DIR_PATH" />
+      </configuration>
+    </facet>
+  </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <orderEntry type="inheritedJdk" />
+    <content url="file://$MODULE_DIR$/CBLite">
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/source/r/debug" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/source/aidl/debug" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/source/rs/debug" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/source/buildConfig/debug" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/res/rs/debug" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/source/r/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/source/aidl/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/source/rs/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/source/buildConfig/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/build/res/rs/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/debug/aidl" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/debug/assets" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/debug/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/debug/jni" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/debug/rs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/debug/res" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/debug/resources" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/main/aidl" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/main/assets" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/main/jni" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/main/rs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/main/res" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/main/resources" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/instrumentTest/aidl" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/instrumentTest/assets" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/instrumentTest/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/instrumentTest/jni" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/instrumentTest/rs" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/instrumentTest/res" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/CBLite/src/instrumentTest/resources" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/apk" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/assets" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/bundles" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/classes" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/dependency-cache" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/exploded-bundles" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/incremental" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/libs" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/manifests" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/symbols" />
+      <excludeFolder url="file://$MODULE_DIR$/CBLite/build/tmp" />
+    </content>
+    <orderEntry type="jdk" jdkName="Android 4.2.2" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="jackson-core-asl-1.9.2" level="project" />
     <orderEntry type="library" name="jackson-mapper-asl-1.9.2" level="project" />

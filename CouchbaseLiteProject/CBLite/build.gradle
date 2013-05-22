@@ -13,9 +13,13 @@ repositories {
 }
 
 dependencies {
-    compile files('libs/android-support-v4.jar')
-    compile 'org.codehaus.jackson:jackson-core-asl:1.9.2'
-    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
+    // workaround for issue: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/0ZAP8AVUZVw
+    compile files('libs/android-support-v4.jar', 'libs/jackson-core-asl-1.9.2.jar', 'libs/jackson-mapper-asl-1.9.2.jar')
+
+    // once that issue is fixed, it should use this instead:
+    // compile files('libs/android-support-v4.jar')
+    // compile 'org.codehaus.jackson:jackson-core-asl:1.9.2'
+    // compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
 }
 
 android {
