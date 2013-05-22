@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
-	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry kind="lib" path="../Couchbase-Lite-Android/libs/jackson-core-asl-1.9.2.jar"/>
 	<classpathentry kind="lib" path="../Couchbase-Lite-Android/libs/jackson-mapper-asl-1.9.2.jar"/>
 	<classpathentry kind="lib" path="../Couchbase-Lite-Android-Listener/libs/webserver.jar"/>
@@ -11,5 +11,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/Couchbase-Lite-Android"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Couchbase-Lite-Android-Ektorp"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Couchbase-Lite-Android-Listener"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
