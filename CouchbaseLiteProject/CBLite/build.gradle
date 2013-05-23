@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    // workaround for issue: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/0ZAP8AVUZVw
+    // workaround for issue: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/Efpf87EoDQ0
     compile files('libs/android-support-v4.jar', 'libs/jackson-core-asl-1.9.2.jar', 'libs/jackson-mapper-asl-1.9.2.jar')
 
     instrumentTestCompile 'commons-io:commons-io:2.0.1'
@@ -35,7 +35,7 @@ android {
 
 }
 
-// .so hack - this is a hack until gradle supports dependencies on .so objects
+// /begin .so hack - this is a hack until gradle supports dependencies on .so objects
 // the hack is described here:
 //      http://stackoverflow.com/questions/16683775/include-so-library-in-apk-in-android-studio
 // I had to modify it slightly to change buildDir -> getProjectDir()
