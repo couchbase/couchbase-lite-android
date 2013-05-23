@@ -71,6 +71,7 @@
     <orderEntry type="library" name="jackson-core-asl-1.9.2" level="project" />
     <orderEntry type="library" name="jackson-mapper-asl-1.9.2" level="project" />
     <orderEntry type="library" name="android-support-v4" level="project" />
+    <orderEntry type="library" scope="TEST" name="commons-io-2.0.1" level="project" />
   </component>
 </module>
 

@@ -102,12 +102,13 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
     }
 
     protected void loadCustomProperties() throws IOException {
+
         Properties systemProperties = System.getProperties();
-        InputStream mainProperties = CBLiteTestCase.class.getResourceAsStream("test.properties");
+        InputStream mainProperties = getInstrumentation().getContext().getAssets().open("test.properties");
         if(mainProperties != null) {
             systemProperties.load(mainProperties);
         }
-        InputStream localProperties = CBLiteTestCase.class.getResourceAsStream("local-test.properties");
+        InputStream localProperties = getInstrumentation().getContext().getAssets().open("local-test.properties");
         if(localProperties != null) {
             systemProperties.load(localProperties);
         }
