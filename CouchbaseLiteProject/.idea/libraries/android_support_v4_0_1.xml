@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="android-support-v4-0.1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/google/android-support-v4/0.1/android-support-v4-0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
