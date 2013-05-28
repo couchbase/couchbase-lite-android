@@ -7,9 +7,9 @@
         <option name="ASSEMBLE_TASK_NAME" value="assembleDebug" />
         <option name="ALLOW_USER_CONFIGURATION" value="false" />
         <option name="GEN_FOLDER_RELATIVE_PATH_APT" value="/CouchbaseLiteProject/build/source/aidl/debug" />
-        <option name="MANIFEST_FILE_RELATIVE_PATH" value="/CouchbaseLiteProject/src/main/AndroidManifest.xml" />
-        <option name="RES_FOLDER_RELATIVE_PATH" value="/CouchbaseLiteProject/src/main/res" />
-        <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/CouchbaseLiteProject/src/main/assets" />
+        <option name="MANIFEST_FILE_RELATIVE_PATH" value="/src/main/AndroidManifest.xml" />
+        <option name="RES_FOLDER_RELATIVE_PATH" value="/src/main/res" />
+        <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/src/main/assets" />
       </configuration>
     </facet>
     <facet type="android-gradle" name="Android-Gradle">
@@ -20,7 +20,8 @@
       </configuration>
     </facet>
   </component>
-  <component name="NewModuleRootManager" inherit-compiler-output="true">
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/CouchbaseLiteProject/build/classes/debug" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/CouchbaseLiteProject">
       <sourceFolder url="file://$MODULE_DIR$/CouchbaseLiteProject/build/source/r/debug" isTestSource="false" />
