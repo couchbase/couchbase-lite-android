@@ -6,7 +6,62 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 For information on the high-level goals of the project see the [Couchbase Lite iOS Readme](https://github.com/couchbase/couchbase-lite-ios/blob/master/README.md).  This document will limit itself to Android specific issues and deviations from the iOS version.
 
-## Getting Started
+## Prerequisites
+
+* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) 
+
+
+## Getting the Code
+
+Use Git to clone the Couchbase Lite repository to your local disk: 
+
+```
+$ git clone git://github.com/couchbase/couchbase-lite-android.git
+```
+
+
+## Building code via Gradle
+
+```
+$ ./gradlew build
+```
+
+## Building from Android Studio
+
+Hit the "Run" button (note: this won't actually run anything, but it should build the code)
+
+## Building an archive via Gradle
+
+```
+./gradlew clean && ./gradlew uploadArchives
+```
+
+## Running tests via Gradle
+
+The tests require one of the following to be installed and running:
+
+* CouchDB (recommended v1.3, but earlier versions will probably work)
+* Sync-Gateway
+
+### Configure local-test.properties to point to database
+
+First copy the test.properties -> local-test.properties, eg:
+
+```
+$ cd CBLite/src/instrumentTest/assets/
+$ cp test.properties local-test.properties 
+```
+
+Now customize local-test.properties to point to your database (URL and db name)
+
+### Run tests via Gradle
+
+```
+$ ./gradlew clean && ./gradlew connectedInstrumentTest
+```
+ 
+
+## Wiki
 
 See the [wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 
