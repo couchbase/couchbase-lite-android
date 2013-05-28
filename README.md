@@ -36,7 +36,7 @@ Hit the "Run" button (note: this won't actually run anything, but it should buil
 ./gradlew clean && ./gradlew uploadArchives
 ```
 
-## Running tests via Gradle
+## Running tests
 
 The tests require one of the following to be installed and running:
 
@@ -54,11 +54,29 @@ $ cp test.properties local-test.properties
 
 Now customize local-test.properties to point to your database (URL and db name)
 
-### Run tests via Gradle
+### Modify build.gradle to use a different dependencies file
+
+In order to workaround [this gradle/ADT issue](https://groups.google.com/forum/?fromgroups#!topic/adt-dev/Efpf87EoDQ0), you will need to change your build.gradle file from:
+
+```
+apply from: 'dependencies.gradle'            
+// apply from: 'dependencies-test.gradle'
+```
+
+to
+
+```
+// apply from: 'dependencies.gradle'  
+apply from: 'dependencies-test.gradle' 
+```
+
+### Tell gradle to run tests
 
 ```
 $ ./gradlew clean && ./gradlew connectedInstrumentTest
 ```
+
+NOTE: there's not yet a known way to run the tests via Android Studio.  At the time of writing, was not yet supported by Android Studio.
  
 
 ## Wiki
