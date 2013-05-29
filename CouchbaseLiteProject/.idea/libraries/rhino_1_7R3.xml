@@ -2,6 +2,7 @@
   <library name="rhino-1.7R3">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/CBLiteJavascript/libs/rhino-1.7R3.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/org.mozilla/rhino/1.7R3/jar/3bff1e632c665f8cf2d438f77a9f4d0758277db5/rhino-1.7R3.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

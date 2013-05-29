@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="CBLite-1.0.aar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/CBLiteEktorp/build/exploded-bundles/CBLite-1.0.aar/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
