@@ -3,6 +3,7 @@
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/CouchbaseLiteProject/libs/android-support-v4.jar!/" />
       <root url="jar://$PROJECT_DIR$/CBLite/libs/android-support-v4.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CBLiteListener/libs/android-support-v4.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.path="$MODULE_DIR$/../build.gradle" external.system.id="GRADLE" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="jackson-core-asl-1.9.2" level="project" />
+    <orderEntry type="library" name="jackson-mapper-asl-1.9.2" level="project" />
+    <orderEntry type="library" name="android-support-v4-0.1" level="project" />
+    <orderEntry type="library" name="android-support-v4" level="project" />
+    <orderEntry type="library" name="servlet-api-2.4" level="project" />
+    <orderEntry type="library" name="webserver" level="project" />
+    <orderEntry type="library" name="CBLite-1.0.aar" level="project" />
+  </component>
+</module>
+

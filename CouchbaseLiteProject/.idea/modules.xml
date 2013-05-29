@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/CBLite.iml" filepath="$PROJECT_DIR$/CBLite.iml" />
       <module fileurl="file://$PROJECT_DIR$/CBLiteEktorp/CBLiteEktorp.iml" filepath="$PROJECT_DIR$/CBLiteEktorp/CBLiteEktorp.iml" />
       <module fileurl="file://$PROJECT_DIR$/CBLiteJavascript/CBLiteJavascript.iml" filepath="$PROJECT_DIR$/CBLiteJavascript/CBLiteJavascript.iml" />
+      <module fileurl="file://$PROJECT_DIR$/CBLiteListener/CBLiteListener.iml" filepath="$PROJECT_DIR$/CBLiteListener/CBLiteListener.iml" />
       <module fileurl="file://$PROJECT_DIR$/CouchbaseLiteProject.iml" filepath="$PROJECT_DIR$/CouchbaseLiteProject.iml" />
       <module fileurl="file://$PROJECT_DIR$/CouchbaseLiteProject-CouchbaseLiteProject.iml" filepath="$PROJECT_DIR$/CouchbaseLiteProject-CouchbaseLiteProject.iml" />
     </modules>
