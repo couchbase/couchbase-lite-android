@@ -7,15 +7,15 @@ buildscript {
     }
 }
 apply plugin: 'android-library'
-
+apply plugin: 'maven'
 
 repositories {
     mavenLocal()
     mavenCentral()
 }
 
-// apply from: 'dependencies.gradle'            // <- enable this when building an .aar
-apply from: 'dependencies-test.gradle'    // <- enable this when testing
+apply from: 'dependencies.gradle'            // <- enable this when building an .aar
+// apply from: 'dependencies-test.gradle'    // <- enable this when testing
 
 
 android {
@@ -25,6 +25,17 @@ android {
     defaultConfig {
         minSdkVersion 7
         targetSdkVersion 16
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri("../testrepo"))
+            pom.version = '1.0'
+            pom.groupId = 'com.couchbase.cblite'
+            pom.artifactId = 'CBLiteJavascript'
+        }
     }
 }
 
