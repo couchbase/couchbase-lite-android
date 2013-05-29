@@ -7,6 +7,7 @@ buildscript {
     }
 }
 apply plugin: 'android-library'
+apply plugin: 'maven'
 
 repositories {
     mavenLocal()
@@ -14,8 +15,8 @@ repositories {
 }
 
 
-// apply from: 'dependencies.gradle'            // <- enable this when building an .aar
-apply from: 'dependencies-test.gradle'    // <- enable this when testing
+apply from: 'dependencies.gradle'            // <- enable this when building an .aar
+// apply from: 'dependencies-test.gradle'    // <- enable this when testing
 
 android {
     compileSdkVersion 17
@@ -26,6 +27,18 @@ android {
         targetSdkVersion 16
     }
 }
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri("../testrepo"))
+            pom.version = '1.0'
+            pom.groupId = 'com.couchbase.cblite'
+            pom.artifactId = 'CBLiteEktorp'
+        }
+    }
+}
+
 
 // /begin .so hack - this is a hack until gradle supports dependencies on .so objects
 // the hack is described here:

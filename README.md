@@ -45,6 +45,8 @@ Hit the "Run" button (note: this won't actually run anything, but it should buil
 ./gradlew clean && ./gradlew uploadArchives
 ```
 
+This will create a directory called `testrepo` in the root project directory, and create an .aar archive file and a pom.xml within that directory.
+
 ## Running tests
 
 The tests require one of the following to be installed and running:
