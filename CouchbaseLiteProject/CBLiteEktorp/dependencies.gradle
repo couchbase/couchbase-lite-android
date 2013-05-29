@@ -1,0 +1,7 @@
+
+dependencies {
+    compile project(':CBLite')
+    compile 'com.google:android-support-v4:0.1'
+    compile 'org.ektorp:org.ektorp:1.2.2'
+    compile 'org.ektorp:org.ektorp.android:1.2.2'
+}

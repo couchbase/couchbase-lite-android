@@ -63,6 +63,8 @@ $ cp test.properties local-test.properties
 
 Now customize local-test.properties to point to your database (URL and db name)
 
+_Note:_ you will need to repeat the above step for the other library projects (eg, CBLiteEktorp, etc)
+
 ### Modify build.gradle to use a different dependencies file
 
 In order to workaround [this gradle/ADT issue](https://groups.google.com/forum/?fromgroups#!topic/adt-dev/Efpf87EoDQ0), you will need to change your build.gradle file from:
@@ -85,7 +87,9 @@ apply from: 'dependencies-test.gradle'
 $ ./gradlew clean && ./gradlew connectedInstrumentTest
 ```
 
-NOTE: there's not yet a known way to run the tests via Android Studio.  At the time of writing, was not yet supported by Android Studio.
+_Warning:_ the full test suite takes a _long time_ (10mins?) because of some 1 minute waits in the Ektorp tests.  You can tell it to just run the core tests (which are much faster) by running `./gradlew :CBLite:clean && ./gradlew :CBLite:connectedInstrumentTest` instead.
+
+_Note:_ there's not yet a known way to run the tests via Android Studio.  At the time of writing, was not yet supported by Android Studio.
  
 
 ## Wiki
