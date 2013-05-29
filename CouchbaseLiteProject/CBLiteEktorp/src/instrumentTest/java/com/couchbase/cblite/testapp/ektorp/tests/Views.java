@@ -1,9 +1,11 @@
 package com.couchbase.cblite.testapp.ektorp.tests;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLView;
+import com.couchbase.cblite.CBLViewMapBlock;
+import com.couchbase.cblite.CBLViewMapEmitBlock;
+import com.couchbase.cblite.CBLViewReduceBlock;
+import com.couchbase.cblite.ektorp.CBLiteHttpClient;
 
 import junit.framework.Assert;
 
@@ -14,15 +16,12 @@ import org.ektorp.ViewResult;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLView;
-import com.couchbase.cblite.CBLViewMapBlock;
-import com.couchbase.cblite.CBLViewMapEmitBlock;
-import com.couchbase.cblite.CBLViewReduceBlock;
-import com.couchbase.cblite.ektorp.CBLiteHttpClient;
-import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-public class Views extends CBLiteTestCase {
+public class Views extends CBLiteEktorpTestCase {
 
     public static final String dDocName = "ddoc";
     public static final String dDocId = "_design/" + dDocName;

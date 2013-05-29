@@ -1,9 +1,6 @@
 package com.couchbase.cblite.testapp.ektorp.tests;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import com.couchbase.cblite.ektorp.CBLiteHttpClient;
 
 import junit.framework.Assert;
 
@@ -13,10 +10,12 @@ import org.ektorp.CouchDbInstance;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
-import com.couchbase.cblite.ektorp.CBLiteHttpClient;
-import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
-public class Attachments extends CBLiteTestCase {
+public class Attachments extends CBLiteEktorpTestCase {
 
     public void testAttachments() throws IOException {
 

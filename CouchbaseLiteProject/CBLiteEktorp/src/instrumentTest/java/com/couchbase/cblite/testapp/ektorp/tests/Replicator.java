@@ -1,8 +1,13 @@
 package com.couchbase.cblite.testapp.ektorp.tests;
 
-import java.io.IOException;
-import java.util.Observable;
-import java.util.Observer;
+import android.util.Log;
+
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLFilterBlock;
+import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.ektorp.CBLiteHttpClient;
+import com.couchbase.cblite.replicator.CBLReplicator;
+import com.couchbase.cblite.support.HttpClientFactory;
 
 import junit.framework.Assert;
 
@@ -28,17 +33,11 @@ import org.ektorp.ReplicationStatus;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
-import android.util.Log;
+import java.io.IOException;
+import java.util.Observable;
+import java.util.Observer;
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLFilterBlock;
-import com.couchbase.cblite.CBLRevision;
-import com.couchbase.cblite.ektorp.CBLiteHttpClient;
-import com.couchbase.cblite.replicator.CBLReplicator;
-import com.couchbase.cblite.support.HttpClientFactory;
-import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
-
-public class Replicator extends CBLiteTestCase {
+public class Replicator extends CBLiteEktorpTestCase {
 
     public void testPush() throws IOException {
 
@@ -155,7 +154,8 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertNotNull(status.getSessionId());
 
     }
-    
+
+
     public void testPullWithObserver() throws IOException {
     	
         class MyObserver implements Observer {
@@ -192,7 +192,7 @@ public class Replicator extends CBLiteTestCase {
     	repl.addObserver(myObserver);
     	
     	try {
-    		Thread.sleep(5*1000);
+    		Thread.sleep(60*1000);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

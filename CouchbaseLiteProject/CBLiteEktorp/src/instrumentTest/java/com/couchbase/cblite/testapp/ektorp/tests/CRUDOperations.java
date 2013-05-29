@@ -1,7 +1,8 @@
 package com.couchbase.cblite.testapp.ektorp.tests;
 
-import java.io.IOException;
-import java.util.List;
+import android.util.Log;
+
+import com.couchbase.cblite.ektorp.CBLiteHttpClient;
 
 import junit.framework.Assert;
 
@@ -14,12 +15,10 @@ import org.ektorp.changes.DocumentChange;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
-import android.util.Log;
+import java.io.IOException;
+import java.util.List;
 
-import com.couchbase.cblite.ektorp.CBLiteHttpClient;
-import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
-
-public class CRUDOperations extends CBLiteTestCase {
+public class CRUDOperations extends CBLiteEktorpTestCase {
 
     public static final String TAG = "Ektorp-CRUDOperations";
 
