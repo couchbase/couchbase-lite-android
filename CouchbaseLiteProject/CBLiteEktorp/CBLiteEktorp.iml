@@ -78,6 +78,7 @@
     <orderEntry type="library" name="org.ektorp.android-1.2.2" level="project" />
     <orderEntry type="library" name="CBLite.aar" level="project" />
     <orderEntry type="library" name="CBLite-1.0.aar" level="project" />
+    <orderEntry type="library" name="CBLite-0.7.aar" level="project" />
   </component>
 </module>
 

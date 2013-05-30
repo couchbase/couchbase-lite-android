@@ -74,6 +74,8 @@
     <orderEntry type="library" name="servlet-api-2.4" level="project" />
     <orderEntry type="library" name="webserver" level="project" />
     <orderEntry type="library" name="CBLite-1.0.aar" level="project" />
+    <orderEntry type="library" name="support-v4-13.0.0" level="project" />
+    <orderEntry type="library" name="CBLite.aar" level="project" />
   </component>
 </module>
 
