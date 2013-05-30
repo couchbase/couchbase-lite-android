@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.cblite.CBLDatabase.TDContentOptions;
+
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -628,9 +630,15 @@ public class CBLView {
                     String docId = cursor.getString(2);
                     Map<String,Object> docContents = null;
                     if(options.isIncludeDocs()) {
-                        docContents = db.documentPropertiesFromJSON(cursor.getBlob(4), docId, cursor.getString(3), cursor.getLong(5), options.getContentOptions());
-
-
+                        // http://wiki.apache.org/couchdb/Introduction_to_CouchDB_views#Linked_documents
+                        if (value instanceof Map && ((Map) value).containsKey("_id")) {
+                            String linkedDocId = (String) ((Map) value).get("_id");
+                            CBLRevision linkedDoc = db.getDocumentWithIDAndRev(linkedDocId, null, EnumSet.noneOf(TDContentOptions.class));
+                            docContents = linkedDoc.getProperties();
+                        }
+                        else {
+                            docContents = db.documentPropertiesFromJSON(cursor.getBlob(4), docId, cursor.getString(3), cursor.getLong(5), options.getContentOptions());
+                        }
                     }
 
 
