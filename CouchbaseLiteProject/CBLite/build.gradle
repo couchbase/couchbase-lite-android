@@ -32,7 +32,7 @@ uploadArchives {
     repositories {
         mavenDeployer {
             repository(url: uri("../testrepo"))
-            pom.version = '1.0'
+            pom.version = '0.7'
             pom.groupId = 'com.couchbase.cblite'
             pom.artifactId = 'CBLite'
         }
