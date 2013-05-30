@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     compile files('libs/android-support-v4.jar', 'libs/servlet-api-2.4.jar', 'libs/webserver.jar')
-    compile 'com.couchbase.cblite:CBLite:1.0'
+    compile project(':CBLite')
 }
 
 android {
