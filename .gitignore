@@ -18,3 +18,5 @@
 /CouchbaseLiteProject/CBLiteJavascript/build/
 /CouchbaseLiteProject/testrepo/
 /CouchbaseLiteProject/CBLiteListener/build/
+/CouchbaseLiteProject/CBLiteEktorp/src/instrumentTest/assets/local-test.properties
+/CouchbaseLiteProject/CBLiteJavascript/src/instrumentTest/assets/local-test.properties
