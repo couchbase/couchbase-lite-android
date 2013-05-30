@@ -81,6 +81,10 @@ _Note:_ there's not yet a known way to run the tests via Android Studio.  At the
 
 See the [wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 
+## Example Apps
+
+* [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)
+
 ## Current Status
 - Ported core functionality present in Couchbase-Lite-iOS as of approximately 1 year ago (May 2012).
 - Unit tests pass
