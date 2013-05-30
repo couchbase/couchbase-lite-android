@@ -122,6 +122,30 @@ public class Views extends CBLiteTestCase {
         return result;
     }
 
+    // http://wiki.apache.org/couchdb/Introduction_to_CouchDB_views#Linked_documents
+    public List<CBLRevision> putLinkedDocs(CBLDatabase db) {
+        List<CBLRevision> result = new ArrayList<CBLRevision>();
+
+        Map<String,Object> dict1 = new HashMap<String,Object>();
+        dict1.put("_id", "11111");
+        result.add(putDoc(db, dict1));
+
+        Map<String,Object> dict2 = new HashMap<String,Object>();
+        dict2.put("_id", "22222");
+        dict2.put("value", "hello");
+        dict2.put("ancestors", new String[] { "11111" });
+        result.add(putDoc(db, dict2));
+
+        Map<String,Object> dict3 = new HashMap<String,Object>();
+        dict3.put("_id", "33333");
+        dict3.put("value", "world");
+        dict3.put("ancestors", new String[] { "22222", "11111" });
+        result.add(putDoc(db, dict3));
+
+        return result;
+    }
+
+    
     public void putNDocs(CBLDatabase db, int n) {
         for(int i=0; i< n; i++) {
             Map<String,Object> doc = new HashMap<String,Object>();
@@ -932,6 +956,69 @@ public class Views extends CBLiteTestCase {
         CBLQueryOptions options = new CBLQueryOptions();
         CBLStatus status = new CBLStatus();
         List<Map<String, Object>> rows = view.queryWithOptions(options, status);
+    }
+    
+    
+    public void testViewLinkedDocs() {
+        putLinkedDocs(database);
+        
+        CBLView view = database.getViewNamed("linked");
+        view.setMapReduceBlocks(new CBLViewMapBlock() {
+            @Override
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+                if (document.containsKey("value")) {
+                    emitter.emit(new Object[] { document.get("value"), 0 }, null);
+                }
+                if (document.containsKey("ancestors")) {
+                    List<Object> ancestors = (List<Object>) document.get("ancestors");
+                    for (int i=0; i < ancestors.size(); i++) {
+                        Map<String,Object> value = new HashMap<String,Object>();
+                        value.put("_id", ancestors.get(i));
+                        emitter.emit(new Object[] { document.get("value"), i+1 }, value);
+                    }
+                }
+            }
+        }, null, "1");
+        
+        CBLStatus updated = view.updateIndex();
+        Assert.assertEquals(CBLStatus.OK, updated.getCode());
+
+        CBLQueryOptions options = new CBLQueryOptions();
+        options.setIncludeDocs(true);  // required for linked documents
+        
+        CBLStatus status = new CBLStatus();
+        List<Map<String, Object>> rows = view.queryWithOptions(options, status);
+        
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        Assert.assertNotNull(rows);
+        Assert.assertEquals(5, rows.size());
+
+        Object[][] expected = new Object[][] {
+                /* id, key0, key1, value._id, doc._id */
+                new Object[] { "22222", "hello", 0, null, "22222" },
+                new Object[] { "22222", "hello", 1, "11111", "11111" },
+                new Object[] { "33333", "world", 0, null, "33333" },
+                new Object[] { "33333", "world", 1, "22222", "22222" },
+                new Object[] { "33333", "world", 2, "11111", "11111" },
+        };
+
+        for (int i=0; i < rows.size(); i++) {
+            Map<String,Object> row = rows.get(i);
+            List<Object> key = (List<Object>) row.get("key");
+            Map<String,Object> doc = (Map<String,Object>)row.get("doc");
+            
+            Assert.assertEquals(expected[i][0], row.get("id"));
+            Assert.assertEquals(2, key.size());
+            Assert.assertEquals(expected[i][1], key.get(0));
+            Assert.assertEquals(expected[i][2], key.get(1));
+            if (expected[i][3] == null) {
+                Assert.assertNull(row.get("value"));
+            }
+            else {
+                Assert.assertEquals(expected[i][3], ((Map<String,Object>) row.get("value")).get("_id"));
+            }
+            Assert.assertEquals(expected[i][4], doc.get("_id"));
+        }
     }
 
 }
