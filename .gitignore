@@ -10,7 +10,6 @@
 /CouchbaseLiteProject/CBLite/build/
 .DS_Store
 /CouchbaseLiteProject/CBLite/src/instrumentTest/assets/local-test.properties
-/CouchbaseLiteProject/CBLite/dependencies-test.gradle
 /CouchbaseLiteProject/CBLiteEktorp/build/
 
 *.class

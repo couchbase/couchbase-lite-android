@@ -1,0 +1,23 @@
+
+// when testing, include this file in build.gradle.  it compiles in the jackson libs from the filesystem rather
+// than using them from maven (see reasoning below)
+
+dependencies {
+
+    // workaround for the "double include" issue documented here: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/l1gELhPSSkM
+    // for this to work you must first run:
+    //   mvn install:install-file -Dfile=android-support-v4.jar -DgroupId=com.google -DartifactId=android-support-v4 -Dversion=0.1 -Dpackaging=jar
+    compile 'com.google:android-support-v4:0.1'
+
+    // jackson libraries declared here only as a workaround for issue: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/Efpf87EoDQ0
+    compile files('libs/jackson-core-asl-1.9.2.jar', 'libs/jackson-mapper-asl-1.9.2.jar')
+
+    instrumentTestCompile 'commons-io:commons-io:2.0.1'
+
+    // jackson libraries are being declared here only for purposes of generating a correct maven .pom
+    // that lists these as dependencies.  otherwise, the static jars listed above are used for actually meeting dependencies
+    // because of this issue: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/Efpf87EoDQ0
+    // compile 'org.codehaus.jackson:jackson-core-asl:1.9.2'
+    // compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
+
+}
