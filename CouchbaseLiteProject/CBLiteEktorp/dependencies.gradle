@@ -1,7 +1,7 @@
 
 dependencies {
 
-    compile 'com.google:android-support-v4:0.1'
+    compile 'com.android.support:support-v4:13.0.0'
 
     // the cblite core library dependency is included as a maven archive because when declaring
     // as a "compile project" dependency any projects that include this library will get errors.

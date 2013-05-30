@@ -3,7 +3,7 @@ buildscript {
         maven { url 'http://repo1.maven.org/maven2' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.4'
+        classpath 'com.android.tools.build:gradle:0.4.2'
     }
 }
 apply plugin: 'android-library'
@@ -14,7 +14,8 @@ repositories {
 }
 
 dependencies {
-    compile files('libs/android-support-v4.jar', 'libs/servlet-api-2.4.jar', 'libs/webserver.jar')
+    compile 'com.android.support:support-v4:13.0.0'
+    compile files('libs/servlet-api-2.4.jar', 'libs/webserver.jar')
     compile project(':CBLite')
 }
 

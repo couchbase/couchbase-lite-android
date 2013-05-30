@@ -1,7 +1,7 @@
 dependencies {
     compile project(':CBLite')
     compile project(':CBLiteEktorp')
-    compile 'com.google:android-support-v4:0.1'
+    compile 'com.android.support:support-v4:13.0.0'
 
     compile files(
             'libs/jackson-core-asl-1.9.2.jar',

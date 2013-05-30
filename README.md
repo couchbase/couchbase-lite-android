@@ -10,6 +10,8 @@ For information on the high-level goals of the project see the [Couchbase Lite i
 
 * [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) 
 
+* Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository"
+
 
 ## Getting the Code
 
@@ -19,25 +21,6 @@ Use Git to clone the Couchbase Lite repository to your local disk:
 $ git clone git://github.com/couchbase/couchbase-lite-android.git
 ```
 
-## Setup local Maven repository
-
-Workaround for the "double include" issue [documented here](https://groups.google.com/forum/?fromgroups#!topic/adt-dev/l1gELhPSSkM)
-
-```
-mvn install:install-file -Dfile=android-support-v4.jar -DgroupId=com.google -DartifactId=android-support-v4 -Dversion=0.1 -Dpackaging=jar
-```
-
-Without this, the build will fail because it won't be able to find the `com.google:android-support-v4:0.1` dependency (which is required)
-
-## Building code via Gradle
-
-```
-$ ./gradlew build
-```
-
-## Building from Android Studio
-
-Hit the "Run" button (note: this won't actually run anything, but it should build the code)
 
 ## Building an archive via Gradle
 
