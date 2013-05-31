@@ -1,12 +1,7 @@
 dependencies {
 
-    // the cblite core library dependency is included as a maven archive because when declaring
-    // as a "compile project" dependency any projects that include this library will get errors.
-    // documented here: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/H2Jk2rVs6G8
-    compile 'com.couchbase.cblite:CBLite:0.7'
-    compile 'com.couchbase.cblite:CBLiteEktorp:0.7'
-    // compile project(':CBLite')
-    // compile project(':CBLiteEktorp')
+    compile project(':CBLite')
+    compile project(':CBLiteEktorp')
 
     compile 'com.android.support:support-v4:13.0.0'
     compile 'org.mozilla:rhino:1.7R3'
