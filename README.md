@@ -21,15 +21,6 @@ Use Git to clone the Couchbase Lite repository to your local disk:
 $ git clone git://github.com/couchbase/couchbase-lite-android.git
 ```
 
-
-## Building an archive via Gradle
-
-```
-./gradlew clean && ./gradlew uploadArchives
-```
-
-This will create a directory called `testrepo` in the root project directory, and create an .aar archive file and a pom.xml within that directory.
-
 ## Running tests
 
 The tests require one of the following to be installed and running:
@@ -76,6 +67,29 @@ _Warning:_ the full test suite takes a _long time_ (10mins?) because of some 1 m
 
 _Note:_ there's not yet a known way to run the tests via Android Studio.  At the time of writing, was not yet supported by Android Studio.
  
+## Building and deploying an archive
+
+Warning: this is a complicated process due to the issues mentioned on [this thread](https://groups.google.com/forum/#!topic/adt-dev/H2Jk2rVs6G8)
+
+
+Preparation:
+
+- You will need to have a maven repository installed and running
+- Delete all three archives from your repo: CBLite, CBLiteEktorp, and CBLiteJavascript
+- rm -rf ~/.gradle to delete any gradle cache files
+
+Building and deploying:
+
+- In the build.gradle file for CBLite, CBLiteEktorp, and CBLiteJavascript, set apply from: 'dependencies.gradle'
+- Run `./gradlew clean && ./gradlew :CBLite:uploadArchives`
+- Modify CBLiteEktorp/build.gradle to set apply from: 'dependencies-archive.gradle'
+- Run `./gradlew clean && ./gradlew :CBLiteEktorp:uploadArchives`
+- Modify CBLiteJavacript/build.gradle to set apply from: 'dependencies-archive.gradle'
+- Run `./gradlew clean && ./gradlew :CBLiteJavascript:uploadArchives`
+
+
+The end result: you will have three .aar archives in your maven repository.
+
 
 ## Wiki
 

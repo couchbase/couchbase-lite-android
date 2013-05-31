@@ -30,7 +30,9 @@ android {
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: uri("../testrepo"))
+            repository(url: "http://macbuild.local:8081/nexus/content/repositories/releases/") {
+                authentication(userName: '***', password: '***')
+            }
             pom.version = '0.7'
             pom.groupId = 'com.couchbase.cblite'
             pom.artifactId = 'CBLite'
