@@ -83,6 +83,7 @@
     <orderEntry type="library" name="CBLiteEktorp-1.0.aar" level="project" />
     <orderEntry type="library" name="CBLite-0.7.aar" level="project" />
     <orderEntry type="library" name="CBLiteEktorp-0.7.aar" level="project" />
+    <orderEntry type="library" name="support-v4-13.0.0" level="project" />
   </component>
 </module>
 
