@@ -80,6 +80,7 @@
     <orderEntry type="library" name="CBLite-1.0.aar" level="project" />
     <orderEntry type="library" name="CBLite-0.7.aar" level="project" />
     <orderEntry type="library" name="support-v4-13.0.0" level="project" />
+    <orderEntry type="library" name="slf4j-jdk14-1.6.1" level="project" />
   </component>
 </module>
 
