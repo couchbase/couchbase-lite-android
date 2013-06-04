@@ -1,21 +1,16 @@
 package com.couchbase.cblite.testapp.javascript.tests;
 
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.CBLView;
+import com.couchbase.cblite.javascript.CBLJavaScriptViewCompiler;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.WrapFactory;
-
-import com.couchbase.cblite.CBLStatus;
-import com.couchbase.cblite.CBLView;
-import com.couchbase.cblite.javascript.CBLJavaScriptViewCompiler;
-import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
-
 @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
-public class JavaScriptDesignDocument extends CBLiteTestCase {
+public class JavaScriptDesignDocument extends CBLiteJavascriptTestCase {
 
 	// Helpers ........................................................................
 
