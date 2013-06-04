@@ -37,6 +37,10 @@ public class CBLPusher extends CBLReplicator implements Observer {
         createTarget = false;
         observing = false;
     }
+    
+    public boolean isCreateTarget() {
+        return createTarget;
+    }
 
     public void setCreateTarget(boolean createTarget) {
         this.createTarget = createTarget;
