@@ -76,7 +76,7 @@ public class CBLRemoteRequest implements Runnable {
         // if the URL contains user info AND if this a DefaultHttpClient
         // then preemptively set the auth credentials
         if (url.getUserInfo() != null) {
-            if (url.getUserInfo().contains(":")) {
+            if (url.getUserInfo().contains(":") && !url.getUserInfo().trim().equals(":")) {
                 String[] userInfoSplit = url.getUserInfo().split(":");
                 final Credentials creds = new UsernamePasswordCredentials(
                         userInfoSplit[0], userInfoSplit[1]);
