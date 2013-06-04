@@ -89,12 +89,30 @@ public abstract class CBLReplicator extends Observable {
 		};
     }
 
+    public String getFilterName() {
+        return filterName;
+    }
+    
     public void setFilterName(String filterName) {
         this.filterName = filterName;
+    }
+    
+    public Map<String,Object> getFilterParams() {
+        return filterParams;
     }
 
     public void setFilterParams(Map<String, Object> filterParams) {
         this.filterParams = filterParams;
+    }
+    
+    public boolean isContinuous() {
+        return continuous;
+    }
+    
+    public void setContinuous(boolean continuous) {
+        if (!isRunning()) {
+            this.continuous = continuous;
+        }
     }
 
     public boolean isRunning() {
