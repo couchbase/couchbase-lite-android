@@ -4,8 +4,6 @@ dependencies {
     compile 'com.android.support:support-v4:13.0.0'
 
     compile files(
-            'libs/jackson-core-asl-1.9.2.jar',
-            'libs/jackson-mapper-asl-1.9.2.jar',
             'libs/rhino-1.7R3.jar'
     )
 

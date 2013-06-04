@@ -5,8 +5,6 @@ dependencies {
 
     compile files('libs/org.ektorp-1.2.2.jar',
             'libs/org.ektorp.android-1.2.2.jar',
-            'libs/jackson-core-asl-1.9.2.jar',
-            'libs/jackson-mapper-asl-1.9.2.jar',
             'libs/slf4j-api-1.6.1.jar',
             'libs/slf4j-jdk14-1.6.1.jar',
             'libs/commons-io-2.0.1.jar')
