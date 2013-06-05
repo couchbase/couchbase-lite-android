@@ -3,6 +3,8 @@ dependencies {
 
     compile 'com.android.support:support-v4:13.0.0'
 
+    compile fileTree(dir: 'libs', include: 'td_collator_so.jar')  // hack to add .so objects (bit.ly/17pUlJ1)
+
     // jackson libraries declared here only as a workaround for issue: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/Efpf87EoDQ0
     // compile files('libs/jackson-core-asl-1.9.2.jar', 'libs/jackson-mapper-asl-1.9.2.jar')
 

@@ -40,22 +40,3 @@ uploadArchives {
     }
 }
 
-// /begin .so hack - this is a hack until gradle supports dependencies on .so objects
-// the hack is described here:
-//      http://stackoverflow.com/questions/16683775/include-so-library-in-apk-in-android-studio
-// I had to modify it slightly to change buildDir -> getProjectDir()
-
-task copyNativeLibs(type: Copy) {
-    from(new File(project(':CBLite').getProjectDir(), 'native-libs')) { include '**/*.so' }
-    into new File(buildDir, 'native-libs')
-}
-
-tasks.withType(Compile) { compileTask -> compileTask.dependsOn copyNativeLibs }
-
-clean.dependsOn 'cleanCopyNativeLibs'
-
-tasks.withType(com.android.build.gradle.tasks.PackageApplication) { pkgTask ->
-    pkgTask.jniDir new File(buildDir, 'native-libs')
-}
-
-// /end .so hack
