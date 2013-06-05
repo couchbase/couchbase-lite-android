@@ -36,6 +36,7 @@ import org.ektorp.impl.StdCouchDbInstance;
 import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.CountDownLatch;
 
 public class Replicator extends CBLiteEktorpTestCase {
 
@@ -160,16 +161,34 @@ public class Replicator extends CBLiteEktorpTestCase {
     	
         class MyObserver implements Observer {
     		public boolean replicationFinished = false;
+            private CountDownLatch doneSignal;
 
-    		@Override
+            public MyObserver(CountDownLatch doneSignal) {
+                super();
+                this.doneSignal = doneSignal;
+            }
+
+            @Override
     		public void update(Observable observable, Object data) {
     			CBLReplicator replicator = (CBLReplicator) observable;
-    			replicationFinished = !replicator.isRunning();		
-    			String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
-    			Log.d(TAG, msg);
+                if (!replicator.isRunning()) {
+                    replicationFinished = true;
+                    String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
+                    Log.d(TAG, msg);
+                    doneSignal.countDown();
+                }
+                else {
+                    String msg = String.format("myobserver.update called, but replicator still running, so ignore it");
+                    Log.d(TAG, msg);
+                }
     		}
+
+            boolean isReplicationFinished() {
+                return replicationFinished;
+            }
         }
 
+        CountDownLatch doneSignal = new CountDownLatch(1);
         HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
@@ -186,19 +205,18 @@ public class Replicator extends CBLiteEktorpTestCase {
         CBLReplicator repl = database.getReplicator(status.getSessionId());
         Assert.assertEquals(repl.getSessionID(), status.getSessionId());
                 	
-    	MyObserver myObserver = new MyObserver();
+    	MyObserver myObserver = new MyObserver(doneSignal);
     	
     	Log.d(TAG, "adding observer to replicator: " + repl);
     	repl.addObserver(myObserver);
-    	
-    	try {
-    		Thread.sleep(60*1000);
+
+        try {
+            doneSignal.await();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    	
-    	Assert.assertTrue(myObserver.replicationFinished);
+
+        Assert.assertTrue(myObserver.isReplicationFinished());
     	repl.deleteObserver(myObserver);
         	
 
