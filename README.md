@@ -39,23 +39,12 @@ $ cp test.properties local-test.properties
 
 Now customize local-test.properties to point to your database (URL and db name)
 
+_Note:_ If you are running the tests on the android emulator, then you can use the special `10.0.2.2` address, which will have it use the IP address of the workstation which launched the emulator.  (assuming that's where your server is)
+
 _Note:_ you will need to repeat the above step for the other library projects (eg, CBLiteEktorp, etc)
 
-### Modify build.gradle to use a different dependencies file
 
-In order to workaround [this gradle/ADT issue](https://groups.google.com/forum/?fromgroups#!topic/adt-dev/Efpf87EoDQ0), you will need to change your build.gradle file from:
 
-```
-apply from: 'dependencies.gradle'            
-// apply from: 'dependencies-test.gradle'
-```
-
-to
-
-```
-// apply from: 'dependencies.gradle'  
-apply from: 'dependencies-test.gradle' 
-```
 
 ### Tell gradle to run tests
 
