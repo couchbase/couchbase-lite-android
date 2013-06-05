@@ -10,16 +10,27 @@ For information on the high-level goals of the project see the [Couchbase Lite i
 
 * [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) 
 
-* Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository"
+* Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
 
 
-## Getting the Code
+## Clone the repository
 
 Use Git to clone the Couchbase Lite repository to your local disk: 
 
 ```
 $ git clone git://github.com/couchbase/couchbase-lite-android.git
 ```
+
+## Opening Project in Android Studio
+
+You should be able to open the project directly in Android Studio:
+
+* `cp local.properties.example local.properties`
+* Customize `local.properties` according to your SDK installation directory
+* Start Android Studio
+* Choose File / Open and choose the CouchbaseLiteProject directory
+
+After opening the project, it should look [like this](http://cl.ly/image/002t0V233x2j/Screen%20Shot%202013-06-05%20at%204.29.07%20PM.png)
 
 ## Running tests
 
@@ -30,7 +41,13 @@ The tests require one of the following to be installed and running:
 
 ### Configure local-test.properties to point to database
 
+
+
 First copy the test.properties -> local-test.properties, eg:
+
+By default, the tests will try to connect to a CouchDB or Sync-Gateway running on your local workstation, and will not pass any username or password as credentials.  
+
+_Note:_ this step below of copying local-test.properties will need to be repeated for the all of the library projects that contain tests (eg, CBLite, CBLiteEktorp, CBLiteJavascript)
 
 ```
 $ cd CBLite/src/instrumentTest/assets/
@@ -40,10 +57,6 @@ $ cp test.properties local-test.properties
 Now customize local-test.properties to point to your database (URL and db name)
 
 _Note:_ If you are running the tests on the android emulator, then you can use the special `10.0.2.2` address, which will have it use the IP address of the workstation which launched the emulator.  (assuming that's where your server is)
-
-_Note:_ you will need to repeat the above step for the other library projects (eg, CBLiteEktorp, etc)
-
-
 
 
 ### Tell gradle to run tests
