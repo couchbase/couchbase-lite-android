@@ -108,9 +108,13 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
         if(mainProperties != null) {
             systemProperties.load(mainProperties);
         }
-        InputStream localProperties = getInstrumentation().getContext().getAssets().open("local-test.properties");
-        if(localProperties != null) {
-            systemProperties.load(localProperties);
+        try {
+            InputStream localProperties = getInstrumentation().getContext().getAssets().open("local-test.properties");
+            if(localProperties != null) {
+                systemProperties.load(localProperties);
+            }
+        } catch (IOException e) {
+            Log.w(TAG, "Error trying to read from local-test.properties, does this file exist?");
         }
     }
 
