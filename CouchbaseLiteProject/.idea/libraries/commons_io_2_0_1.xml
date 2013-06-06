@@ -4,6 +4,7 @@
       <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/commons-io/commons-io/2.0.1/jar/7ffdb02f95af1c1a208544e076cea5b8e66e731a/commons-io-2.0.1.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/commons-io/commons-io/2.0.1/commons-io-2.0.1.jar!/" />
       <root url="jar://$PROJECT_DIR$/CBLiteEktorp/libs/commons-io-2.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CBLiteJavascript/build/exploded-bundles/CBLiteEktorp.aar/libs/commons-io-2.0.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

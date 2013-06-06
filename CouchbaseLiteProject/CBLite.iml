@@ -75,6 +75,7 @@
     <orderEntry type="library" scope="TEST" name="commons-io-2.0.1" level="project" />
     <orderEntry type="library" name="android-support-v4-0.1" level="project" />
     <orderEntry type="library" name="support-v4-13.0.0" level="project" />
+    <orderEntry type="library" name="td_collator_so" level="project" />
   </component>
 </module>
 

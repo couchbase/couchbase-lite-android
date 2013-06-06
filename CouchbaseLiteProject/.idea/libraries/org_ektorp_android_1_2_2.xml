@@ -3,6 +3,7 @@
     <CLASSES>
       <root url="jar://$USER_HOME$/.gradle/caches/artifacts-24/filestore/org.ektorp/org.ektorp.android/1.2.2/jar/63c5dcdb3c383eb035001aa216b28b38e4ddd9a4/org.ektorp.android-1.2.2.jar!/" />
       <root url="jar://$PROJECT_DIR$/CBLiteEktorp/libs/org.ektorp.android-1.2.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CBLiteJavascript/build/exploded-bundles/CBLiteEktorp.aar/libs/org.ektorp.android-1.2.2.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
