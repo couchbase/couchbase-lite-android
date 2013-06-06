@@ -42,6 +42,7 @@ public class Replicator extends CBLiteEktorpTestCase {
 
     public void testPush() throws IOException {
 
+        CountDownLatch doneSignal = new CountDownLatch(1);
         HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
@@ -67,20 +68,23 @@ public class Replicator extends CBLiteEktorpTestCase {
             .build();
 
         ReplicationStatus status = dbInstance.replicate(pushCommand);
+        CBLReplicator repl = database.getReplicator(status.getSessionId());
+        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+        repl.addObserver(replicationObserver);
+
         try {
-            Thread.sleep(60*1000);
+            doneSignal.await();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         Assert.assertNotNull(status.getSessionId());
-        
-        
-        
+        repl.deleteObserver(replicationObserver);
 
     }
 
     public void testFilteredPush() throws IOException {
+
+        CountDownLatch doneSignal = new CountDownLatch(1);
 
         // install the filter
         database.defineFilter("evenFoo", new CBLFilterBlock() {
@@ -120,17 +124,24 @@ public class Replicator extends CBLiteEktorpTestCase {
             .build();
 
         ReplicationStatus status = dbInstance.replicate(pushCommand);
+        CBLReplicator repl = database.getReplicator(status.getSessionId());
+
+        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+        repl.addObserver(replicationObserver);
+
         try {
-            Thread.sleep(60*1000);
+            doneSignal.await();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         Assert.assertNotNull(status.getSessionId());
+        repl.deleteObserver(replicationObserver);
 
     }
 
     public void testPull() throws IOException {
+
+        CountDownLatch doneSignal = new CountDownLatch(1);
 
         HttpClient httpClient = new CBLiteHttpClient(server);
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
@@ -146,47 +157,22 @@ public class Replicator extends CBLiteEktorpTestCase {
             .build();
 
         ReplicationStatus status = dbInstance.replicate(pushCommand);
+        CBLReplicator repl = database.getReplicator(status.getSessionId());
+        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+        repl.addObserver(replicationObserver);
+
         try {
-            Thread.sleep(60*1000);
+            doneSignal.await();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         Assert.assertNotNull(status.getSessionId());
+        repl.deleteObserver(replicationObserver);
 
     }
 
 
     public void testPullWithObserver() throws IOException {
-    	
-        class MyObserver implements Observer {
-    		public boolean replicationFinished = false;
-            private CountDownLatch doneSignal;
-
-            public MyObserver(CountDownLatch doneSignal) {
-                super();
-                this.doneSignal = doneSignal;
-            }
-
-            @Override
-    		public void update(Observable observable, Object data) {
-    			CBLReplicator replicator = (CBLReplicator) observable;
-                if (!replicator.isRunning()) {
-                    replicationFinished = true;
-                    String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
-                    Log.d(TAG, msg);
-                    doneSignal.countDown();
-                }
-                else {
-                    String msg = String.format("myobserver.update called, but replicator still running, so ignore it");
-                    Log.d(TAG, msg);
-                }
-    		}
-
-            boolean isReplicationFinished() {
-                return replicationFinished;
-            }
-        }
 
         CountDownLatch doneSignal = new CountDownLatch(1);
         HttpClient httpClient = new CBLiteHttpClient(server);
@@ -200,15 +186,12 @@ public class Replicator extends CBLiteEktorpTestCase {
             .build();
 
         ReplicationStatus status = dbInstance.replicate(pushCommand);
-        Assert.assertNotNull(status.getSessionId());
-        
         CBLReplicator repl = database.getReplicator(status.getSessionId());
+    	ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+    	repl.addObserver(replicationObserver);
+
+        Assert.assertNotNull(status.getSessionId());
         Assert.assertEquals(repl.getSessionID(), status.getSessionId());
-                	
-    	MyObserver myObserver = new MyObserver(doneSignal);
-    	
-    	Log.d(TAG, "adding observer to replicator: " + repl);
-    	repl.addObserver(myObserver);
 
         try {
             doneSignal.await();
@@ -216,13 +199,15 @@ public class Replicator extends CBLiteEktorpTestCase {
             e.printStackTrace();
         }
 
-        Assert.assertTrue(myObserver.isReplicationFinished());
-    	repl.deleteObserver(myObserver);
+        Assert.assertTrue(replicationObserver.isReplicationFinished());
+    	repl.deleteObserver(replicationObserver);
         	
 
     }
 
     public void testPullWithoutCredentialsInURL() throws IOException {
+
+        CountDownLatch doneSignal = new CountDownLatch(1);
 
         server.setDefaultHttpClientFactory(new HttpClientFactory() {
 
@@ -280,13 +265,18 @@ public class Replicator extends CBLiteEktorpTestCase {
             .build();
 
         ReplicationStatus status = dbInstance.replicate(pushCommand);
+        CBLReplicator repl = database.getReplicator(status.getSessionId());
+        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+        repl.addObserver(replicationObserver);
+
         try {
-            Thread.sleep(60*1000);
+            doneSignal.await();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         Assert.assertNotNull(status.getSessionId());
+        repl.deleteObserver(replicationObserver);
+
 
     }
 
@@ -333,4 +323,34 @@ public class Replicator extends CBLiteEktorpTestCase {
 
     }
 
+    class ReplicationObserver implements Observer {
+        public boolean replicationFinished = false;
+        private CountDownLatch doneSignal;
+
+        public ReplicationObserver(CountDownLatch doneSignal) {
+            super();
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void update(Observable observable, Object data) {
+            Log.d(TAG, "ReplicationObserver.update called.  observable: " + observable);
+            CBLReplicator replicator = (CBLReplicator) observable;
+            if (!replicator.isRunning()) {
+                replicationFinished = true;
+                String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
+                Log.d(TAG, msg);
+                doneSignal.countDown();
+            }
+            else {
+                String msg = String.format("myobserver.update called, but replicator still running, so ignore it");
+                Log.d(TAG, msg);
+            }
+        }
+
+        boolean isReplicationFinished() {
+            return replicationFinished;
+        }
+    }
 }
+
