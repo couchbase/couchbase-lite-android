@@ -30,7 +30,7 @@ android {
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: "http://maven.hq.couchbase.com:8081/nexus/content/repositories/releases/") {
+            repository(url: "http://maven.hq.couchbase.com/nexus/content/repositories/releases/") {
                 authentication(userName: '***', password: '***')
             }
             pom.version = '0.7'
