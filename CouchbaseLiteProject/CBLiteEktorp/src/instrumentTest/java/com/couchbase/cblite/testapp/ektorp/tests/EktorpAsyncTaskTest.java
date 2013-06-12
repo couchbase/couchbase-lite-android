@@ -60,12 +60,18 @@ public class EktorpAsyncTaskTest extends CBLiteEktorpTestCase {
 
         };
 
+        // wait until list adaptor starts up changes listener task
+        // unfortunately, there is no way to hook into when the couchlistadapter's internal
+        // async task actually starts reading from the changes feed, so using a timer
+        // is the only way to
         try {
-            Thread.sleep(2000);  // wait until list adaptor starts up changes listener task
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
+        // create a dummy async task.  if things are working ok, the doInBackground()
+        // will get called back.  OTOH if async tasks are wedged, it will never get called back.
         EktorpAsyncTask asyncTask = new EktorpAsyncTask() {
             @Override
             protected void doInBackground() {
