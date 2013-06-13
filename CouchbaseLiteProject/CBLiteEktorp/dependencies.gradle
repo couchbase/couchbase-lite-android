@@ -5,8 +5,8 @@ dependencies {
 
     compile project(':CBLite')
 
-    compile 'org.ektorp:org.ektorp:1.2.2'
-    compile 'org.ektorp:org.ektorp.android:1.2.2'
+    compile 'org.ektorp:org.ektorp:1.2.3'
+    compile 'org.ektorp:org.ektorp.android:1.2.3'
     compile 'org.slf4j:slf4j-jdk14:1.6.1'
 
 }

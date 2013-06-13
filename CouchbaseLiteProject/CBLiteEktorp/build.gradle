@@ -10,6 +10,7 @@ apply plugin: 'android-library'
 apply plugin: 'maven'
 
 repositories {
+    maven { url 'http://maven.hq.couchbase.com/nexus/content/repositories/releases/' }
     mavenLocal()
     mavenCentral()
 }
@@ -35,7 +36,7 @@ uploadArchives {
             repository(url: "http://maven.hq.couchbase.com/nexus/content/repositories/releases/") {
                 authentication(userName: '***', password: '***')
             }
-            pom.version = '0.7'
+            pom.version = '0.7.2'
             pom.groupId = 'com.couchbase.cblite'
             pom.artifactId = 'CBLiteEktorp'
         }

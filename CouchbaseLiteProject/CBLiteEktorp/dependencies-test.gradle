@@ -3,8 +3,8 @@ dependencies {
     compile project(':CBLite')
     compile 'com.android.support:support-v4:13.0.0'
 
-    compile files('libs/org.ektorp-1.2.2.jar',
-            'libs/org.ektorp.android-1.2.2.jar',
+    compile files('libs/org.ektorp-1.2.3.jar',
+            'libs/org.ektorp.android-1.2.3.jar',
             'libs/slf4j-api-1.6.1.jar',
             'libs/slf4j-jdk14-1.6.1.jar',
             'libs/commons-io-2.0.1.jar')

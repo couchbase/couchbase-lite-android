@@ -8,8 +8,8 @@ dependencies {
     // documented here: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/H2Jk2rVs6G8
     compile 'com.couchbase.cblite:CBLite:0.7'
 
-    compile 'org.ektorp:org.ektorp:1.2.2'
-    compile 'org.ektorp:org.ektorp.android:1.2.2'
+    compile 'org.ektorp:org.ektorp:1.2.3'
+    compile 'org.ektorp:org.ektorp.android:1.2.3'
     compile 'org.slf4j:slf4j-jdk14:1.6.1'
 
 
