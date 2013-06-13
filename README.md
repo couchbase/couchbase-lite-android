@@ -4,7 +4,15 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 **Couchbase-Lite-Android** is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
 
-For information on the high-level goals of the project see the [Couchbase Lite iOS Readme](https://github.com/couchbase/couchbase-lite-ios/blob/master/README.md).  This document will limit itself to Android specific issues and deviations from the iOS version.
+![architecture.png](http://cl.ly/image/3v2F2T473m3f/architecture.png)
+
+For information on the high-level goals of the project see the [Couchbase Lite iOS Readme](https://github.com/couchbase/couchbase-lite-ios/blob/master/README.md). 
+
+## Using vs. Developing
+
+If you just want to _use_ Couchbase-Lite-Android in your app, you may not need to even clone or build the code as described in this document.  See [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) or jump straight to the [Grocery-Sync](https://github.com/couchbaselabs/GrocerySync-Android) demo application.
+
+Otherwise, if you need to hack on Couchbase-Lite-Android, or just want to read through the code, then this document is for you.  Read on!
 
 ## Prerequisites
 
