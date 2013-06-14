@@ -182,7 +182,7 @@ public class CBLChangeTracker implements Runnable {
                     }
                 }
                 else {
-                    Log.w(CBLDatabase.TAG, "Unable to parse user info, not setting credentials");
+                    Log.w(CBLDatabase.TAG, "ChangeTracker Unable to parse user info, not setting credentials");
                 }
             }
 

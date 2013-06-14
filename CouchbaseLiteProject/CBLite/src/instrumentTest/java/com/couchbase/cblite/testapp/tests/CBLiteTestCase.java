@@ -143,7 +143,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
     }
 
     protected URL getReplicationURL() throws MalformedURLException {
-        if(getReplicationAdminUser() != null) {
+        if(getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
             return new URL(String.format("%s://%s:%s@%s:%d/%s", getReplicationProtocol(), getReplicationAdminUser(), getReplicationAdminPassword(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
         } else {
             return new URL(String.format("%s://%s:%d/%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));

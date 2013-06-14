@@ -110,7 +110,7 @@ public class CBLRemoteRequest implements Runnable {
                 }
             } else {
                 Log.w(CBLDatabase.TAG,
-                        "Unable to parse user info, not setting credentials");
+                        "CBLRemoteRequest Unable to parse user info, not setting credentials");
             }
         }
 
