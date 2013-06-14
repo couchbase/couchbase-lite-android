@@ -9,6 +9,7 @@
         <option name="MANIFEST_FILE_RELATIVE_PATH" value="/src/main/AndroidManifest.xml" />
         <option name="RES_FOLDER_RELATIVE_PATH" value="/src/main/res" />
         <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/src/main/assets" />
+        <option name="LIBRARY_PROJECT" value="true" />
       </configuration>
     </facet>
     <facet type="android-gradle" name="Android-Gradle">
@@ -82,6 +83,8 @@
     <orderEntry type="library" name="support-v4-13.0.0" level="project" />
     <orderEntry type="library" name="slf4j-jdk14-1.6.1" level="project" />
     <orderEntry type="library" name="td_collator_so" level="project" />
+    <orderEntry type="library" name="org.ektorp-1.2.3" level="project" />
+    <orderEntry type="library" name="org.ektorp.android-1.2.3" level="project" />
   </component>
 </module>
 
