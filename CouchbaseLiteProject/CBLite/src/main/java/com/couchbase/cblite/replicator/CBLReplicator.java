@@ -22,6 +22,7 @@ import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLMisc;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLRevisionList;
+import com.couchbase.cblite.auth.CBLAuthorizer;
 import com.couchbase.cblite.support.HttpClientFactory;
 import com.couchbase.cblite.support.CBLBatchProcessor;
 import com.couchbase.cblite.support.CBLBatcher;
@@ -53,6 +54,7 @@ public abstract class CBLReplicator extends Observable {
     protected String filterName;
     protected Map<String,Object> filterParams;
     protected ExecutorService remoteRequestExecutor;
+    protected CBLAuthorizer authorizer;
 
     protected static final int PROCESSOR_DELAY = 500;
     protected static final int INBOX_CAPACITY = 100;
@@ -113,6 +115,14 @@ public abstract class CBLReplicator extends Observable {
         if (!isRunning()) {
             this.continuous = continuous;
         }
+    }
+
+    public void setAuthorizer(CBLAuthorizer authorizer) {
+        this.authorizer = authorizer;
+    }
+
+    public CBLAuthorizer getAuthorizer() {
+        return authorizer;
     }
 
     public boolean isRunning() {
@@ -194,7 +204,56 @@ public abstract class CBLReplicator extends Observable {
         running = true;
         lastSequence = null;
 
-        fetchRemoteCheckpointDoc();
+        checkSession();
+    }
+
+    protected void checkSession() {
+        if (getAuthorizer() != null && getAuthorizer().usesCookieBasedLogin()) {
+            checkSessionAtPath("/_session");
+        }
+        else {
+            fetchRemoteCheckpointDoc();
+        }
+    }
+
+    protected void checkSessionAtPath(final String sessionPath) {
+
+        Log.d(CBLDatabase.TAG, String.format("%s checkSessionAtPath:: %s", this, sessionPath));
+
+        asyncTaskStarted();
+        sendAsyncRequest("GET", sessionPath, null, new CBLRemoteRequestCompletionBlock() {
+
+            @Override
+            public void onCompletion(Object result, Throwable e) {
+
+                Log.d(CBLDatabase.TAG, String.format("%s checkSessionAtPath.onCompletion(): %s", this, sessionPath));
+
+                if(e instanceof HttpResponseException &&
+                        ((HttpResponseException)e).getStatusCode() == 404 &&
+                        sessionPath.equalsIgnoreCase("/_session")) {
+
+                    Log.d(CBLDatabase.TAG, String.format("%s checkSessionAtPath got 404 for %s, calling checkSessionAtPath with _session", this, sessionPath));
+                    checkSessionAtPath("_session");
+                    return;
+                }
+                else {
+                    Map<String,Object> response = (Map<String,Object>)result;
+                    Map<String,Object> userCtx = (Map<String,Object>) response.get("userCtx");
+                    String username = (String) userCtx.get("name");
+                    if (username != null && username.length() > 0) {
+                        Log.d(CBLDatabase.TAG, String.format("%s Active session, logged in as %s", this, username));
+                        fetchRemoteCheckpointDoc();
+                    }
+                    else {
+                        Log.d(CBLDatabase.TAG, String.format("%s No active session, going to login", this));
+                        login();
+                    }
+
+                }
+                asyncTaskFinished(1);
+            }
+
+        });
     }
 
     public abstract void beginReplicating();
@@ -224,6 +283,37 @@ public abstract class CBLReplicator extends Observable {
         db = null;
     }
 
+    protected void login() {
+        Map<String, String> loginParameters = getAuthorizer().loginParametersForSite(remote);
+        if (loginParameters == null) {
+            Log.d(CBLDatabase.TAG, String.format("%s: %s has no login parameters, so skipping login", this, getAuthorizer()));
+            fetchRemoteCheckpointDoc();
+            return;
+        }
+
+        final String loginPath = getAuthorizer().loginPathForSite(remote);
+
+        Log.d(CBLDatabase.TAG, String.format("%s: Doing login with %s at %s", this, getAuthorizer().getClass(), loginPath));
+        asyncTaskStarted();
+        sendAsyncRequest("POST", loginPath, loginParameters, new CBLRemoteRequestCompletionBlock() {
+
+            @Override
+            public void onCompletion(Object result, Throwable e) {
+                if(e != null && e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() != 404) {
+                    Log.d(CBLDatabase.TAG, String.format("%s: Login failed for path: %s", this, loginPath));
+                    error = e;
+                }
+                else {
+                    Log.d(CBLDatabase.TAG, String.format("%s: Successfully logged in!", this));
+                    fetchRemoteCheckpointDoc();
+                }
+                asyncTaskFinished(1);
+            }
+
+        });
+
+    }
+
     public synchronized void asyncTaskStarted() {
         ++asyncTaskCount;
     }
@@ -251,14 +341,19 @@ public abstract class CBLReplicator extends Observable {
 
     public void sendAsyncRequest(String method, String relativePath, Object body, CBLRemoteRequestCompletionBlock onCompletion) {
         //Log.v(CBLDatabase.TAG, String.format("%s: %s .%s", toString(), method, relativePath));
-        String urlStr = remote.toExternalForm() + relativePath;
         try {
+            String urlStr = remote.toExternalForm() + relativePath;
             URL url = new URL(urlStr);
-            CBLRemoteRequest request = new CBLRemoteRequest(workExecutor, clientFacotry, method, url, body, onCompletion);
-            remoteRequestExecutor.execute(request);
+            sendAsyncRequest(method, url, body, onCompletion);
         } catch (MalformedURLException e) {
             Log.e(CBLDatabase.TAG, "Malformed URL for async request", e);
         }
+    }
+
+    public void sendAsyncRequest(String method, URL url, Object body, CBLRemoteRequestCompletionBlock onCompletion) {
+        Log.d(CBLDatabase.TAG, String.format("%s: sendAsyncRequest to %s", toString(), url));
+        CBLRemoteRequest request = new CBLRemoteRequest(workExecutor, clientFacotry, method, url, body, onCompletion);
+        remoteRequestExecutor.execute(request);
     }
 
     /** CHECKPOINT STORAGE: **/

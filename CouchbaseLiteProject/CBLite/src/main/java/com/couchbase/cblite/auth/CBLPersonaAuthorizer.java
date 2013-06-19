@@ -9,7 +9,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,12 +16,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CBLPersonaAuthorizer {
+public class CBLPersonaAuthorizer extends CBLAuthorizer {
 
     private static Map<List<String>, String> assertions;
     public static final String ASSERTION_FIELD_EMAIL = "email";
     public static final String ASSERTION_FIELD_ORIGIN = "origin";
     public static final String ASSERTION_FIELD_EXPIRATION = "exp";
+
+    // set to true to skip checking whether assertions have expired (useful for testing)
+    private boolean skipAssertionExpirationCheck;
 
     private String emailAddress;
 
@@ -30,8 +32,40 @@ public class CBLPersonaAuthorizer {
         this.emailAddress = emailAddress;
     }
 
+    public void setSkipAssertionExpirationCheck(boolean skipAssertionExpirationCheck) {
+        Log.w(CBLDatabase.TAG, String.format("%s setSkipAssertionExpirationCheck getting set to: %s", this, skipAssertionExpirationCheck));
+
+        this.skipAssertionExpirationCheck = skipAssertionExpirationCheck;
+    }
+
+    public boolean isSkipAssertionExpirationCheck() {
+        return skipAssertionExpirationCheck;
+    }
+
     public String getEmailAddress() {
         return emailAddress;
+    }
+
+    protected boolean isAssertionExpired(Map<String, Object> parsedAssertion) {
+
+        if (this.isSkipAssertionExpirationCheck() == true) {
+            Log.d(CBLDatabase.TAG, String.format("%s assertion expiration check being skipped", this));
+            return false;
+        }
+        else {
+            Log.d(CBLDatabase.TAG, String.format("%s assertion expiration check not being skipped", this));
+        }
+
+        Date exp;
+        exp = (Date) parsedAssertion.get(ASSERTION_FIELD_EXPIRATION);
+        Date now = new Date();
+        if (exp.before(now)) {
+            Log.w(CBLDatabase.TAG, String.format("%s assertion for %s expired: %s",
+                    this.getClass(), this.emailAddress, exp));
+            return true;
+        }
+        return false;
+
     }
 
     public String assertionForSite(URL site) {
@@ -41,18 +75,34 @@ public class CBLPersonaAuthorizer {
                     this.getClass(), this.emailAddress, site));
             return null;
         }
-        String email, origin;
-        Date exp;
         Map<String, Object> result = parseAssertion(assertion);
-        exp = (Date) result.get(ASSERTION_FIELD_EXPIRATION);
-        Date now = new Date();
-        if (exp.before(now)) {
-            Log.w(CBLDatabase.TAG, String.format("%s %s assertion invalid or expired: %s",
-                    this.getClass(), this.emailAddress, assertion));
+        if (isAssertionExpired(result)) {
             return null;
         }
         return assertion;
 
+    }
+
+    public boolean usesCookieBasedLogin() {
+        return true;
+    }
+
+    public Map<String, String> loginParametersForSite(URL site) {
+        Map<String, String> loginParameters = new HashMap<String, String>();
+
+        String assertion = assertionForSite(site);
+        if (assertion != null) {
+            loginParameters.put(LOGIN_PARAMETER_ASSERTION, assertion);
+            return loginParameters;
+        }
+        else {
+            return null;
+        }
+
+    }
+
+    public String loginPathForSite(URL site) {
+        return "/_persona";
     }
 
     public synchronized static String registerAssertion(String assertion) {
@@ -75,6 +125,16 @@ public class CBLPersonaAuthorizer {
             throw new IllegalArgumentException(message, e);
         }
 
+        return registerAssertion(assertion, email, origin);
+
+    }
+
+    /**
+     * don't use this!! this was factored out for testing purposes, and had to be
+     * made public since tests are in their own package.
+     */
+    public synchronized static String registerAssertion(String assertion, String email, String origin) {
+
         List<String> key = new ArrayList<String>();
         key.add(email);
         key.add(origin);
@@ -88,6 +148,7 @@ public class CBLPersonaAuthorizer {
         return email;
 
     }
+
 
     public static Map<String, Object> parseAssertion(String assertion) {
 
@@ -133,7 +194,7 @@ public class CBLPersonaAuthorizer {
         List<String> key = new ArrayList<String>();
         key.add(email);
         key.add(site.toExternalForm().toLowerCase());
-        Log.d(CBLDatabase.TAG, "CBLPersonaAuthorizer looking up key: " + key);
+        Log.d(CBLDatabase.TAG, "CBLPersonaAuthorizer looking up key: " + key + " from list of assertions");
         return assertions.get(key);
     }
 
