@@ -33,8 +33,6 @@ public class CBLPersonaAuthorizer extends CBLAuthorizer {
     }
 
     public void setSkipAssertionExpirationCheck(boolean skipAssertionExpirationCheck) {
-        Log.w(CBLDatabase.TAG, String.format("%s setSkipAssertionExpirationCheck getting set to: %s", this, skipAssertionExpirationCheck));
-
         this.skipAssertionExpirationCheck = skipAssertionExpirationCheck;
     }
 
@@ -49,11 +47,7 @@ public class CBLPersonaAuthorizer extends CBLAuthorizer {
     protected boolean isAssertionExpired(Map<String, Object> parsedAssertion) {
 
         if (this.isSkipAssertionExpirationCheck() == true) {
-            Log.d(CBLDatabase.TAG, String.format("%s assertion expiration check being skipped", this));
             return false;
-        }
-        else {
-            Log.d(CBLDatabase.TAG, String.format("%s assertion expiration check not being skipped", this));
         }
 
         Date exp;
