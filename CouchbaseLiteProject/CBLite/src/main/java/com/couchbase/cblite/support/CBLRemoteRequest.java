@@ -3,8 +3,10 @@ package com.couchbase.cblite.support;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -17,6 +19,7 @@ import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
@@ -27,9 +30,12 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 
@@ -47,21 +53,26 @@ public class CBLRemoteRequest implements Runnable {
     private URL url;
     private Object body;
     private CBLRemoteRequestCompletionBlock onCompletion;
+    private BasicHttpContext httpContext;
+
 
     public CBLRemoteRequest(ScheduledExecutorService workExecutor,
-            HttpClientFactory clientFactory, String method, URL url,
-            Object body, CBLRemoteRequestCompletionBlock onCompletion) {
+                            HttpClientFactory clientFactory, String method, URL url,
+                            Object body, CBLRemoteRequestCompletionBlock onCompletion,
+                            BasicHttpContext httpContext) {
         this.clientFactory = clientFactory;
         this.method = method;
         this.url = url;
         this.body = body;
         this.onCompletion = onCompletion;
         this.workExecutor = workExecutor;
+        this.httpContext = httpContext;
     }
 
     @Override
     public void run() {
         HttpClient httpClient = clientFactory.getHttpClient();
+
         ClientConnectionManager manager = httpClient.getConnectionManager();
 
         HttpUriRequest request = null;
@@ -132,7 +143,8 @@ public class CBLRemoteRequest implements Runnable {
         Object fullBody = null;
         Throwable error = null;
         try {
-            HttpResponse response = httpClient.execute(request);
+            HttpResponse response = httpClient.execute(request, httpContext);
+
             StatusLine status = response.getStatusLine();
             if (status.getStatusCode() >= 300) {
                 Log.e(CBLDatabase.TAG,
