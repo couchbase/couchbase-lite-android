@@ -15,8 +15,6 @@
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
         <option name="GRADLE_PROJECT_PATH" value=":CBLiteListener" />
-        <option name="PROJECT_ABSOLUTE_PATH" value="$MODULE_DIR$/.." />
-        <option name="GRADLE_HOME_DIR_PATH" />
       </configuration>
     </facet>
   </component>
@@ -71,11 +69,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="jackson-core-asl-1.9.2" level="project" />
     <orderEntry type="library" name="jackson-mapper-asl-1.9.2" level="project" />
-    <orderEntry type="library" name="android-support-v4-0.1" level="project" />
-    <orderEntry type="library" name="android-support-v4" level="project" />
     <orderEntry type="library" name="servlet-api-2.4" level="project" />
     <orderEntry type="library" name="webserver" level="project" />
-    <orderEntry type="library" name="CBLite-1.0.aar" level="project" />
     <orderEntry type="library" name="support-v4-13.0.0" level="project" />
     <orderEntry type="library" name="CBLite.aar" level="project" />
     <orderEntry type="library" name="td_collator_so" level="project" />
