@@ -235,10 +235,11 @@ public class CBLChangeTracker implements Runnable {
             } catch (ClientProtocolException e) {
                 Log.e(CBLDatabase.TAG, "ClientProtocolException in change tracker", e);
             } catch (IOException e) {
+
                 if(running) {
                     //we get an exception when we're shutting down and have to
                     //close the socket underneath our read, ignore that
-                    // Log.e(CBLDatabase.TAG, "IOException in change tracker", e);  <-- commented per issue #11, needs further investigation
+                    Log.e(CBLDatabase.TAG, "IOException in change tracker", e);
                 }
             }
         }

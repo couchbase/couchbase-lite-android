@@ -11,11 +11,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
 
-import android.os.Handler;
 import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
@@ -55,6 +58,7 @@ public abstract class CBLReplicator extends Observable {
     protected Map<String,Object> filterParams;
     protected ExecutorService remoteRequestExecutor;
     protected CBLAuthorizer authorizer;
+    protected BasicHttpContext httpContext;
 
     protected static final int PROCESSOR_DELAY = 500;
     protected static final int INBOX_CAPACITY = 100;
@@ -72,7 +76,6 @@ public abstract class CBLReplicator extends Observable {
 
         this.remoteRequestExecutor = Executors.newCachedThreadPool();
 
-
         batcher = new CBLBatcher<CBLRevision>(workExecutor, INBOX_CAPACITY, PROCESSOR_DELAY, new CBLBatchProcessor<CBLRevision>() {
             @Override
             public void process(List<CBLRevision> inbox) {
@@ -89,6 +92,10 @@ public abstract class CBLReplicator extends Observable {
 				return new DefaultHttpClient();
 			}
 		};
+
+        httpContext = new BasicHttpContext();
+        httpContext.setAttribute(ClientContext.COOKIE_STORE, new BasicCookieStore());
+
     }
 
     public String getFilterName() {
@@ -352,7 +359,7 @@ public abstract class CBLReplicator extends Observable {
 
     public void sendAsyncRequest(String method, URL url, Object body, CBLRemoteRequestCompletionBlock onCompletion) {
         Log.d(CBLDatabase.TAG, String.format("%s: sendAsyncRequest to %s", toString(), url));
-        CBLRemoteRequest request = new CBLRemoteRequest(workExecutor, clientFacotry, method, url, body, onCompletion);
+        CBLRemoteRequest request = new CBLRemoteRequest(workExecutor, clientFacotry, method, url, body, onCompletion, httpContext);
         remoteRequestExecutor.execute(request);
     }
 
