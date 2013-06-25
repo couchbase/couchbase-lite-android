@@ -4,7 +4,7 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 **Couchbase-Lite-Android** is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
 
-![architecture.png](http://cl.ly/image/3v2F2T473m3f/architecture.png)
+![architecture.png](http://cl.ly/image/3s2T052s0i2A/couchbase-lite-architecture.png)
 
 For information on the high-level goals of the project see the [Couchbase Lite iOS Readme](https://github.com/couchbase/couchbase-lite-ios/blob/master/README.md). 
 
