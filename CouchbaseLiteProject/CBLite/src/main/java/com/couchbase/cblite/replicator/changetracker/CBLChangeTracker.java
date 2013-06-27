@@ -29,6 +29,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 
@@ -56,17 +57,20 @@ public class CBLChangeTracker implements Runnable {
     private Map<String, Object> filterParams;
 
     private Throwable error;
+    protected BasicHttpContext httpContext;
+
 
     public enum TDChangeTrackerMode {
         OneShot, LongPoll, Continuous
     }
 
     public CBLChangeTracker(URL databaseURL, TDChangeTrackerMode mode,
-            Object lastSequenceID, CBLChangeTrackerClient client) {
+                            Object lastSequenceID, CBLChangeTrackerClient client, BasicHttpContext httpContext) {
         this.databaseURL = databaseURL;
         this.mode = mode;
         this.lastSequenceID = lastSequenceID;
         this.client = client;
+        this.httpContext = httpContext;
     }
 
     public void setFilterName(String filterName) {
@@ -190,7 +194,7 @@ public class CBLChangeTracker implements Runnable {
                 String maskedRemoteWithoutCredentials = getChangesFeedURL().toString();
                 maskedRemoteWithoutCredentials = maskedRemoteWithoutCredentials.replaceAll("://.*:.*@","://---:---@");
                 Log.v(CBLDatabase.TAG, "Making request to " + maskedRemoteWithoutCredentials);
-                HttpResponse response = httpClient.execute(request);
+                HttpResponse response = httpClient.execute(request, this.httpContext);
                 StatusLine status = response.getStatusLine();
                 if(status.getStatusCode() >= 300) {
                     Log.e(CBLDatabase.TAG, "Change tracker got error " + Integer.toString(status.getStatusCode()));
