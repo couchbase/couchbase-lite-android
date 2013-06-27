@@ -1,10 +1,10 @@
 <component name="libraryTable">
   <library name="td_collator_so">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/CBLiteListener/build/exploded-bundles/CBLite.aar/libs/td_collator_so.jar!/" />
       <root url="jar://$PROJECT_DIR$/CBLiteEktorp/build/exploded-bundles/CBLite.aar/libs/td_collator_so.jar!/" />
       <root url="jar://$PROJECT_DIR$/CBLite/libs/td_collator_so.jar!/" />
       <root url="jar://$PROJECT_DIR$/CBLiteJavascript/build/exploded-bundles/CBLite.aar/libs/td_collator_so.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CBLiteListener/build/exploded-bundles/CBLite.aar/libs/td_collator_so.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
