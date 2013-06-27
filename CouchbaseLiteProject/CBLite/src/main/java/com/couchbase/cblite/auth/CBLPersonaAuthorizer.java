@@ -22,6 +22,8 @@ public class CBLPersonaAuthorizer extends CBLAuthorizer {
     public static final String ASSERTION_FIELD_EMAIL = "email";
     public static final String ASSERTION_FIELD_ORIGIN = "origin";
     public static final String ASSERTION_FIELD_EXPIRATION = "exp";
+    public static final String QUERY_PARAMETER = "personaAssertion";
+
 
     // set to true to skip checking whether assertions have expired (useful for testing)
     private boolean skipAssertionExpirationCheck;
@@ -88,8 +90,7 @@ public class CBLPersonaAuthorizer extends CBLAuthorizer {
         if (assertion != null) {
             loginParameters.put(LOGIN_PARAMETER_ASSERTION, assertion);
             return loginParameters;
-        }
-        else {
+        } else {
             return null;
         }
 
@@ -143,7 +144,6 @@ public class CBLPersonaAuthorizer extends CBLAuthorizer {
 
     }
 
-
     public static Map<String, Object> parseAssertion(String assertion) {
 
         // https://github.com/mozilla/id-specs/blob/prod/browserid/index.md
@@ -162,11 +162,11 @@ public class CBLPersonaAuthorizer extends CBLAuthorizer {
         try {
 
             ObjectMapper mapper = new ObjectMapper();
-            Map<?,?> component1Json = mapper.readValue(component1Decoded, Map.class);
-            Map<?,?> principal = (Map<?,?>) component1Json.get("principal");
+            Map<?, ?> component1Json = mapper.readValue(component1Decoded, Map.class);
+            Map<?, ?> principal = (Map<?, ?>) component1Json.get("principal");
             result.put(ASSERTION_FIELD_EMAIL, principal.get("email"));
 
-            Map<?,?> component3Json = mapper.readValue(component3Decoded, Map.class);
+            Map<?, ?> component3Json = mapper.readValue(component3Decoded, Map.class);
             result.put(ASSERTION_FIELD_ORIGIN, component3Json.get("aud"));
 
             Long expObject = (Long) component3Json.get("exp");

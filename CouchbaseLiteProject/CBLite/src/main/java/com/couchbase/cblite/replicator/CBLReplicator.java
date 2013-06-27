@@ -1,6 +1,7 @@
 package com.couchbase.cblite.replicator;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 
+import android.net.Uri;
 import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
@@ -26,6 +28,7 @@ import com.couchbase.cblite.CBLMisc;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.auth.CBLAuthorizer;
+import com.couchbase.cblite.auth.CBLPersonaAuthorizer;
 import com.couchbase.cblite.support.HttpClientFactory;
 import com.couchbase.cblite.support.CBLBatchProcessor;
 import com.couchbase.cblite.support.CBLBatcher;
@@ -42,7 +45,7 @@ public abstract class CBLReplicator extends Observable {
     protected boolean continuous;
     protected String lastSequence;
     protected boolean lastSequenceChanged;
-    protected Map<String,Object> remoteCheckpoint;
+    protected Map<String, Object> remoteCheckpoint;
     protected boolean savingCheckpoint;
     protected boolean overdueForSave;
     protected boolean running;
@@ -55,7 +58,7 @@ public abstract class CBLReplicator extends Observable {
     private int changesTotal;
     protected final HttpClientFactory clientFacotry;
     protected String filterName;
-    protected Map<String,Object> filterParams;
+    protected Map<String, Object> filterParams;
     protected ExecutorService remoteRequestExecutor;
     protected CBLAuthorizer authorizer;
     protected BasicHttpContext httpContext;
@@ -70,11 +73,32 @@ public abstract class CBLReplicator extends Observable {
     public CBLReplicator(CBLDatabase db, URL remote, boolean continuous, HttpClientFactory clientFacotry, ScheduledExecutorService workExecutor) {
 
         this.db = db;
-        this.remote = remote;
         this.continuous = continuous;
         this.workExecutor = workExecutor;
 
         this.remoteRequestExecutor = Executors.newCachedThreadPool();
+
+        if (remote.getQuery() != null && !remote.getQuery().isEmpty()) {
+
+            Uri uri = Uri.parse(remote.toExternalForm());
+
+            String personaAssertion = uri.getQueryParameter(CBLPersonaAuthorizer.QUERY_PARAMETER);
+            if (personaAssertion != null && !personaAssertion.isEmpty()) {
+                String email = CBLPersonaAuthorizer.registerAssertion(personaAssertion);
+                CBLPersonaAuthorizer authorizer = new CBLPersonaAuthorizer(email);
+                setAuthorizer(authorizer);
+            }
+
+            // we need to remove the query from the URL, since it will cause problems when
+            // communicating with sync gw / couchdb
+            try {
+                this.remote = new URL(remote.getProtocol(), remote.getHost(), remote.getPort(), remote.getPath());
+            } catch (MalformedURLException e) {
+                Log.e(CBLDatabase.TAG, "Exception trying to rebuild url without query parameters.  remote: " + remote);
+            }
+            Log.d(CBLDatabase.TAG, "new remote url: " + remote);
+
+        }
 
         batcher = new CBLBatcher<CBLRevision>(workExecutor, INBOX_CAPACITY, PROCESSOR_DELAY, new CBLBatchProcessor<CBLRevision>() {
             @Override
@@ -87,11 +111,11 @@ public abstract class CBLReplicator extends Observable {
         });
 
         this.clientFacotry = clientFacotry != null ? clientFacotry : new HttpClientFactory() {
-			@Override
-			public HttpClient getHttpClient() {
-				return new DefaultHttpClient();
-			}
-		};
+            @Override
+            public HttpClient getHttpClient() {
+                return new DefaultHttpClient();
+            }
+        };
 
         httpContext = new BasicHttpContext();
         httpContext.setAttribute(ClientContext.COOKIE_STORE, new BasicCookieStore());
@@ -101,23 +125,23 @@ public abstract class CBLReplicator extends Observable {
     public String getFilterName() {
         return filterName;
     }
-    
+
     public void setFilterName(String filterName) {
         this.filterName = filterName;
     }
-    
-    public Map<String,Object> getFilterParams() {
+
+    public Map<String, Object> getFilterParams() {
         return filterParams;
     }
 
     public void setFilterParams(Map<String, Object> filterParams) {
         this.filterParams = filterParams;
     }
-    
+
     public boolean isContinuous() {
         return continuous;
     }
-    
+
     public void setContinuous(boolean continuous) {
         if (!isRunning()) {
             this.continuous = continuous;
@@ -148,7 +172,7 @@ public abstract class CBLReplicator extends Observable {
 
     public String toString() {
         String maskedRemoteWithoutCredentials = (remote != null ? remote.toExternalForm() : "");
-        maskedRemoteWithoutCredentials = maskedRemoteWithoutCredentials.replaceAll("://.*:.*@","://---:---@");
+        maskedRemoteWithoutCredentials = maskedRemoteWithoutCredentials.replaceAll("://.*:.*@", "://---:---@");
         String name = getClass().getSimpleName() + "[" + maskedRemoteWithoutCredentials + "]";
         return name;
     }
@@ -162,10 +186,10 @@ public abstract class CBLReplicator extends Observable {
     }
 
     public void setLastSequence(String lastSequenceIn) {
-        if(!lastSequenceIn.equals(lastSequence)) {
+        if (!lastSequenceIn.equals(lastSequence)) {
             Log.v(CBLDatabase.TAG, toString() + ": Setting lastSequence to " + lastSequenceIn + " from( " + lastSequence + ")");
             lastSequence = lastSequenceIn;
-            if(!lastSequenceChanged) {
+            if (!lastSequenceChanged) {
                 lastSequenceChanged = true;
                 workExecutor.schedule(new Runnable() {
 
@@ -203,7 +227,7 @@ public abstract class CBLReplicator extends Observable {
     }
 
     public void start() {
-        if(running) {
+        if (running) {
             return;
         }
         this.sessionID = String.format("repl%03d", ++lastSessionID);
@@ -217,8 +241,7 @@ public abstract class CBLReplicator extends Observable {
     protected void checkSession() {
         if (getAuthorizer() != null && getAuthorizer().usesCookieBasedLogin()) {
             checkSessionAtPath("/_session");
-        }
-        else {
+        } else {
             fetchRemoteCheckpointDoc();
         }
     }
@@ -235,23 +258,21 @@ public abstract class CBLReplicator extends Observable {
 
                 Log.d(CBLDatabase.TAG, String.format("%s checkSessionAtPath.onCompletion(): %s", this, sessionPath));
 
-                if(e instanceof HttpResponseException &&
-                        ((HttpResponseException)e).getStatusCode() == 404 &&
+                if (e instanceof HttpResponseException &&
+                        ((HttpResponseException) e).getStatusCode() == 404 &&
                         sessionPath.equalsIgnoreCase("/_session")) {
 
                     Log.d(CBLDatabase.TAG, String.format("%s checkSessionAtPath got 404 for %s, calling checkSessionAtPath with _session", this, sessionPath));
                     checkSessionAtPath("_session");
                     return;
-                }
-                else {
-                    Map<String,Object> response = (Map<String,Object>)result;
-                    Map<String,Object> userCtx = (Map<String,Object>) response.get("userCtx");
+                } else {
+                    Map<String, Object> response = (Map<String, Object>) result;
+                    Map<String, Object> userCtx = (Map<String, Object>) response.get("userCtx");
                     String username = (String) userCtx.get("name");
                     if (username != null && username.length() > 0) {
                         Log.d(CBLDatabase.TAG, String.format("%s Active session, logged in as %s", this, username));
                         fetchRemoteCheckpointDoc();
-                    }
-                    else {
+                    } else {
                         Log.d(CBLDatabase.TAG, String.format("%s No active session, going to login", this));
                         login();
                     }
@@ -266,13 +287,13 @@ public abstract class CBLReplicator extends Observable {
     public abstract void beginReplicating();
 
     public void stop() {
-        if(!running) {
+        if (!running) {
             return;
         }
         Log.v(CBLDatabase.TAG, toString() + " STOPPING...");
         batcher.flush();
         continuous = false;
-        if(asyncTaskCount == 0) {
+        if (asyncTaskCount == 0) {
             stopped();
         }
     }
@@ -285,7 +306,7 @@ public abstract class CBLReplicator extends Observable {
         saveLastSequence();
         setChanged();
         notifyObservers();
-        
+
         batcher = null;
         db = null;
     }
@@ -306,11 +327,10 @@ public abstract class CBLReplicator extends Observable {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
-                if(e != null && e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() != 404) {
+                if (e != null && e instanceof HttpResponseException && ((HttpResponseException) e).getStatusCode() != 404) {
                     Log.d(CBLDatabase.TAG, String.format("%s: Login failed for path: %s", this, loginPath));
                     error = e;
-                }
-                else {
+                } else {
                     Log.d(CBLDatabase.TAG, String.format("%s: Successfully logged in!", this));
                     fetchRemoteCheckpointDoc();
                 }
@@ -327,15 +347,15 @@ public abstract class CBLReplicator extends Observable {
 
     public synchronized void asyncTaskFinished(int numTasks) {
         this.asyncTaskCount -= numTasks;
-        if(asyncTaskCount == 0) {
-            if(!continuous) {
+        if (asyncTaskCount == 0) {
+            if (!continuous) {
                 stopped();
             }
         }
     }
 
     public void addToInbox(CBLRevision rev) {
-        if(batcher.count() == 0) {
+        if (batcher.count() == 0) {
             active = true;
         }
         batcher.queueObject(rev);
@@ -363,7 +383,9 @@ public abstract class CBLReplicator extends Observable {
         remoteRequestExecutor.execute(request);
     }
 
-    /** CHECKPOINT STORAGE: **/
+    /**
+     * CHECKPOINT STORAGE: *
+     */
 
     public void maybeCreateRemoteDB() {
         // CBLPusher overrides this to implement the .createTarget option
@@ -375,7 +397,7 @@ public abstract class CBLReplicator extends Observable {
      * and the remote database's URL.
      */
     public String remoteCheckpointDocID() {
-        if(db == null) {
+        if (db == null) {
             return null;
         }
         String input = db.privateUUID() + "\n" + remote.toExternalForm() + "\n" + (isPush() ? "1" : "0");
@@ -385,7 +407,7 @@ public abstract class CBLReplicator extends Observable {
     public void fetchRemoteCheckpointDoc() {
         lastSequenceChanged = false;
         final String localLastSequence = db.lastSequenceWithRemoteURL(remote, isPush());
-        if(localLastSequence == null) {
+        if (localLastSequence == null) {
             maybeCreateRemoteDB();
             beginReplicating();
             return;
@@ -396,19 +418,19 @@ public abstract class CBLReplicator extends Observable {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
-                if(e != null && e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() != 404) {
+                if (e != null && e instanceof HttpResponseException && ((HttpResponseException) e).getStatusCode() != 404) {
                     error = e;
                 } else {
-                    if(e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() == 404) {
+                    if (e instanceof HttpResponseException && ((HttpResponseException) e).getStatusCode() == 404) {
                         maybeCreateRemoteDB();
                     }
-                    Map<String,Object> response = (Map<String,Object>)result;
+                    Map<String, Object> response = (Map<String, Object>) result;
                     remoteCheckpoint = response;
                     String remoteLastSequence = null;
-                    if(response != null) {
-                        remoteLastSequence = (String)response.get("lastSequence");
+                    if (response != null) {
+                        remoteLastSequence = (String) response.get("lastSequence");
                     }
-                    if(remoteLastSequence != null && remoteLastSequence.equals(localLastSequence)) {
+                    if (remoteLastSequence != null && remoteLastSequence.equals(localLastSequence)) {
                         lastSequence = localLastSequence;
                         Log.v(CBLDatabase.TAG, this + ": Replicating from lastSequence=" + lastSequence);
                     } else {
@@ -423,7 +445,7 @@ public abstract class CBLReplicator extends Observable {
     }
 
     public void saveLastSequence() {
-        if(!lastSequenceChanged) {
+        if (!lastSequenceChanged) {
             return;
         }
         if (savingCheckpoint) {
@@ -437,14 +459,14 @@ public abstract class CBLReplicator extends Observable {
         overdueForSave = false;
 
         Log.v(CBLDatabase.TAG, this + " checkpointing sequence=" + lastSequence);
-        final Map<String,Object> body = new HashMap<String,Object>();
-        if(remoteCheckpoint != null) {
+        final Map<String, Object> body = new HashMap<String, Object>();
+        if (remoteCheckpoint != null) {
             body.putAll(remoteCheckpoint);
         }
         body.put("lastSequence", lastSequence);
 
         String remoteCheckpointDocID = remoteCheckpointDocID();
-        if(remoteCheckpointDocID == null) {
+        if (remoteCheckpointDocID == null) {
             return;
         }
         savingCheckpoint = true;
@@ -452,17 +474,17 @@ public abstract class CBLReplicator extends Observable {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
-            	savingCheckpoint = false;
-                if(e != null) {
+                savingCheckpoint = false;
+                if (e != null) {
                     Log.v(CBLDatabase.TAG, this + ": Unable to save remote checkpoint", e);
                     // TODO: If error is 401 or 403, and this is a pull, remember that remote is read-only and don't attempt to read its checkpoint next time.
                 } else {
-                    Map<String,Object> response = (Map<String,Object>)result;
+                    Map<String, Object> response = (Map<String, Object>) result;
                     body.put("_rev", response.get("rev"));
                     remoteCheckpoint = body;
                 }
                 if (overdueForSave) {
-                	saveLastSequence();
+                    saveLastSequence();
                 }
             }
 
