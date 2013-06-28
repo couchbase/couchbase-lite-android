@@ -42,7 +42,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client, );
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client, null);
 
         runTestOnUiThread(new Runnable() {
 
@@ -81,7 +81,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client, );
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client, null);
 
         runTestOnUiThread(new Runnable() {
 
@@ -118,7 +118,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client, );
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client, null);
 
         runTestOnUiThread(new Runnable() {
 
@@ -135,7 +135,7 @@ public class ChangeTracker extends CBLiteTestCase {
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
-        CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null, );
+        CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null, null);
 
         // set filter
         changeTracker.setFilterName("filter");
