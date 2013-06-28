@@ -75,7 +75,7 @@ public abstract class CBLReplicator extends Observable {
         this.db = db;
         this.continuous = continuous;
         this.workExecutor = workExecutor;
-
+        this.remote = remote;
         this.remoteRequestExecutor = Executors.newCachedThreadPool();
 
         if (remote.getQuery() != null && !remote.getQuery().isEmpty()) {
