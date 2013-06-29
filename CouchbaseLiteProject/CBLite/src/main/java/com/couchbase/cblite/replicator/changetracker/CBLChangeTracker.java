@@ -32,6 +32,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonToken;
 
 import android.util.Log;
 
@@ -216,24 +219,34 @@ public class CBLChangeTracker implements Runnable {
 	                        }
 	                    }
 	                    else {
-	                        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-	                        String line = null;
-	                        while ((line=reader.readLine()) != null) {
-	                            //skip over lines which may be in a non-continuous response
-	                            if(line.equals("{\"results\":[") || line.equals("],")) {
-	                                continue;
-	                            }
-	                            else if(line.startsWith("\"last_seq\"") && mode == TDChangeTrackerMode.OneShot) {
-	                                Log.w(CBLDatabase.TAG, "Change tracker calling stop");
-	                                stop();
-	                                break;
-	                            }
-	                            receivedChunk(line);
-	                        }
-	                        Log.v(CBLDatabase.TAG, "read null from inpustream continuing");
+
+                            JsonFactory jsonFactory = CBLServer.getObjectMapper().getJsonFactory();
+                            JsonParser jp = jsonFactory.createJsonParser(input);
+
+                            while (jp.nextToken() != JsonToken.START_ARRAY) {
+                                // ignore these tokens
+                            }
+
+                            while (jp.nextToken() == JsonToken.START_OBJECT) {
+                                Map<String,Object> change = (Map)CBLServer.getObjectMapper().readValue(jp, Map.class);
+                                if(!receivedChange(change)) {
+                                    Log.w(CBLDatabase.TAG, String.format("Received unparseable change line from server: %s", change));
+                                }
+
+                            }
+
+                            stop();
+                            break;
+
 	                    }
-                	} finally {
-                		try { entity.consumeContent(); } catch (IOException e){}
+                	} catch (Exception e) {
+                        Log.e(CBLDatabase.TAG, "Exception reading changes feed", e);
+                    } finally {
+                		try {
+                            entity.consumeContent();
+                        } catch (IOException e) {
+                            Log.e(CBLDatabase.TAG, "Exception calling consumeContent()", e);
+                        }
                 	}
                 }
             } catch (ClientProtocolException e) {
@@ -248,22 +261,6 @@ public class CBLChangeTracker implements Runnable {
             }
         }
         Log.v(CBLDatabase.TAG, "Change tracker run loop exiting");
-    }
-
-    public boolean receivedChunk(String line) {
-        if(line.length() > 1) {
-            try {
-                Map<String,Object> change = (Map)CBLServer.getObjectMapper().readValue(line, Map.class);
-                if(!receivedChange(change)) {
-                    Log.w(CBLDatabase.TAG, String.format("Received unparseable change line from server: %s", line));
-                    return false;
-                }
-            } catch (Exception e) {
-                Log.w(CBLDatabase.TAG, "Exception parsing JSON in change tracker", e);
-                return false;
-            }
-        }
-        return true;
     }
 
     public boolean receivedChange(final Map<String,Object> change) {
