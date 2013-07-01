@@ -8,8 +8,17 @@ buildscript {
 }
 apply plugin: 'android'
 
+repositories {
+    mavenCentral()
+    maven {
+        url "http://maven.hq.couchbase.com/nexus/content/repositories/releases/"
+    }
+}
+
 dependencies {
-    compile files('libs/android-support-v4.jar')
+    compile 'com.android.support:support-v4:13.0.0'
+    compile project(':CBLite')
+    compile project(':CBLiteEktorp')
 }
 
 android {
@@ -17,7 +26,7 @@ android {
     buildToolsVersion "17.0.0"
 
     defaultConfig {
-        minSdkVersion 7
+        minSdkVersion 11
         targetSdkVersion 16
     }
 }
