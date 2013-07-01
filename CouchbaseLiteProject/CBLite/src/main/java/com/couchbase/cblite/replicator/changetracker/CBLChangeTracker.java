@@ -204,9 +204,10 @@ public class CBLChangeTracker implements Runnable {
                     stop();
                 }
                 HttpEntity entity = response.getEntity();
+                InputStream input = null;
                 if(entity != null) {
                 	try {
-	                    InputStream input = entity.getContent();
+	                    input = entity.getContent();
 	                    if(mode == TDChangeTrackerMode.LongPoll) {
 	                        Map<String,Object> fullBody = CBLServer.getObjectMapper().readValue(input, Map.class);
 	                        boolean responseOK = receivedPollResponse(fullBody);
@@ -241,13 +242,8 @@ public class CBLChangeTracker implements Runnable {
 	                    }
                 	} catch (Exception e) {
                         Log.e(CBLDatabase.TAG, "Exception reading changes feed", e);
-                    } finally {
-                		try {
-                            entity.consumeContent();
-                        } catch (IOException e) {
-                            Log.e(CBLDatabase.TAG, "Exception calling consumeContent()", e);
-                        }
-                	}
+                    }
+
                 }
             } catch (ClientProtocolException e) {
                 Log.e(CBLDatabase.TAG, "ClientProtocolException in change tracker", e);
