@@ -95,7 +95,7 @@ public class Replicator extends CBLiteTestCase {
             Thread.sleep(1000);
         }
         String lastSequence = repl.getLastSequence();
-        Assert.assertTrue("2".equals(lastSequence) || "3".equals(lastSequence));
+        Assert.assertTrue(lastSequence.contains("2") || lastSequence.contains("3"));
         Assert.assertEquals(2, database.getDocumentCount());
 
 
