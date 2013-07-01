@@ -133,7 +133,7 @@ public class CBLPuller extends CBLReplicator implements CBLChangeTrackerClient {
         setChangesTotal(getChangesTotal() + changes.size());
         while(revsToPull != null && revsToPull.size() > 1000) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(500);  // <-- TODO: why is this here?
             } catch(InterruptedException e) {
 
             }
