@@ -79,6 +79,9 @@
     <orderEntry type="library" name="org.ektorp.android-1.2.3" level="project" />
     <orderEntry type="library" name="slf4j-api-1.6.1" level="project" />
     <orderEntry type="library" name="slf4j-jdk14-1.6.1" level="project" />
+    <orderEntry type="library" name="CBLiteListener.aar" level="project" />
+    <orderEntry type="library" name="servlet-api-2.4" level="project" />
+    <orderEntry type="library" name="webserver" level="project" />
   </component>
 </module>
 

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="CBLiteListener.aar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/CouchbaseLiteProject/build/exploded-bundles/CBLiteListener.aar/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

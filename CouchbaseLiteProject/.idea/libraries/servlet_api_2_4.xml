@@ -2,6 +2,7 @@
   <library name="servlet-api-2.4">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/CBLiteListener/libs/servlet-api-2.4.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CouchbaseLiteProject/build/exploded-bundles/CBLiteListener.aar/libs/servlet-api-2.4.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
