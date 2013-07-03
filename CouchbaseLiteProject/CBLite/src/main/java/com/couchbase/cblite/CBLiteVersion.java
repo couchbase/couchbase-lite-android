@@ -2,6 +2,6 @@ package com.couchbase.cblite;
 
 public interface CBLiteVersion {
 
-    String CBLiteVersionNumber = "0.4";
+    String CBLiteVersionNumber = "0.7";
 
 }
