@@ -1,6 +1,50 @@
 
 require 'fileutils'
 
+TESTING_MODE="TESTING_MODE"
+ARCHIVE_MODE="ARCHIVE_MODE"
+
+def buildCode() 
+  build_result = %x( ./gradlew clean && ./gradlew build )
+  # check if the build worked 
+  if ($?.exitstatus != 0) 
+    puts "Build error, aborting"
+    exit($?.exitstatus)
+  end
+end
+
+def buildTestingMode()
+  build(TESTING_MODE)
+end
+
+def buildArchiveMode()
+  build(ARCHIVE_MODE)
+end
+
+def build(mode) 
+  # make sure we are in the correct place
+  assertPresentInCurrentDirectory(["settings.gradle"])
+
+  # backup original file build.gradle files
+  backupFiles(["CBLite/build.gradle", "CBLiteEktorp/build.gradle"]) 
+  
+  if mode == TESTING_MODE
+    setTestingMode(["CBLite/build.gradle", "CBLiteEktorp/build.gradle"]) 
+  elsif mode == ARCHIVE_MODE
+    setArchiveMode(["CBLite/build.gradle", "CBLiteEktorp/build.gradle"]) 
+  end
+
+  # build the code
+  puts "Building .."
+  build_result = buildCode()
+  puts "Build result: #{build_result}"
+
+  # restore original files
+  restoreFiles(["CBLite/build.gradle", "CBLiteEktorp/build.gradle"]) 
+
+
+end
+
 def assertPresentInCurrentDirectory(file_list) 
 
   Dir.foreach('.') do |item|
@@ -51,6 +95,8 @@ def restoreFiles(file_list)
     src = "#{dest}.bak"
     puts "Restoring #{src} to #{dest}"
     FileUtils.cp(src, dest)
+    FileUtils.remove(src)
   end
 end
+
 
