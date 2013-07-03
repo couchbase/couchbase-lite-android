@@ -17,7 +17,7 @@ def buildTestingMode()
   build(TESTING_MODE)
 end
 
-def buildArchiveMode()
+def buildArtifactsMode()
   build(ARTIFACTS_MODE)
 end
 
