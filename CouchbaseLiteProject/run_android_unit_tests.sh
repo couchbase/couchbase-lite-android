@@ -8,5 +8,7 @@
 #     ./CBLite/src/instrumentTest/assets/test.properties
 #     ./CBLiteEktorp/src/instrumentTest/assets/test.properties 
 # which can be overridden by local-test.properties in the same directory
+#
+# See also https://github.com/couchbase/couchbase-lite-android/wiki/Running-the-test-suite
 
 ./gradlew clean && ./gradlew connectedInstrumentTest
