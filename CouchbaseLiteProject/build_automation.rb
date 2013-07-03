@@ -2,7 +2,7 @@
 require 'fileutils'
 
 TESTING_MODE="TESTING_MODE"
-ARCHIVE_MODE="ARCHIVE_MODE"
+ARTIFACTS_MODE="ARTIFACTS_MODE"
 
 def buildCode() 
   build_result = %x( ./gradlew clean && ./gradlew build )
@@ -18,7 +18,7 @@ def buildTestingMode()
 end
 
 def buildArchiveMode()
-  build(ARCHIVE_MODE)
+  build(ARTIFACTS_MODE)
 end
 
 def build(mode) 
@@ -30,8 +30,8 @@ def build(mode)
   
   if mode == TESTING_MODE
     setTestingMode(["CBLite/build.gradle", "CBLiteEktorp/build.gradle"]) 
-  elsif mode == ARCHIVE_MODE
-    setArchiveMode(["CBLite/build.gradle", "CBLiteEktorp/build.gradle"]) 
+  elsif mode == ARTIFACTS_MODE
+    setArtifactsMode(["CBLite/build.gradle", "CBLiteEktorp/build.gradle"]) 
   end
 
   # build the code
@@ -67,23 +67,21 @@ def backupFiles(file_list)
 end
 
 def setTestingMode(file_list)
-  # change occurrences of dependencies-archive.gradle -> dependencies-testing.gradle
-  # in all files in file_list
+  # change occurrences of dependencies-archive.gradle -> dependencies-test.gradle
   file_list.each do |src| 
     puts "Set #{src} to testing mode"
-    outdata = File.read(src).gsub(/dependencies-archive.gradle/, "dependencies-testing.gradle")
+    outdata = File.read(src).gsub(/dependencies-archive.gradle/, "dependencies-test.gradle")
     File.open(src, 'w') do |out|
       out << outdata
     end 
   end
 end
 
-def setArchiveMode(file_list)
-  # change occurrences of dependencies-testing.gradle -> dependencies-archive.gradle
-  # in all files in file_list
+def setArtifactsMode(file_list)
+  # change occurrences of dependencies-test.gradle -> dependencies-archive.gradle
   file_list.each do |src| 
     puts "Set #{src} to archive mode"
-    outdata = File.read(src).gsub(/dependencies-testing.gradle/, "dependencies-archive.gradle")
+    outdata = File.read(src).gsub(/dependencies-test.gradle/, "dependencies-archive.gradle")
     File.open(src, 'w') do |out|
       out << outdata
     end 
