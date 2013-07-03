@@ -13,7 +13,7 @@ repositories {
     mavenCentral()
 }
 
-// apply from: 'dependencies.gradle'            // <- enable this when building an .aar
+// apply from: 'dependencies-archive.gradle'            // <- enable this when building an .aar
 apply from: 'dependencies-test.gradle'    // <- enable this when testing
 
 android {
