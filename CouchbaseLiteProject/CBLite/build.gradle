@@ -31,9 +31,9 @@ uploadArchives {
     repositories {
         mavenDeployer {
             repository(url: "http://maven.hq.couchbase.com/nexus/content/repositories/releases/") {
-                authentication(userName: '***', password: '***')
+                authentication(userName: System.getenv("UPLOAD_USERNAME"), password: System.getenv("UPLOAD_PASSWORD"))
             }
-            pom.version = '0.7'
+            pom.version = System.getenv("UPLOAD_VERSION_CBLITE")
             pom.groupId = 'com.couchbase.cblite'
             pom.artifactId = 'CBLite'
         }
