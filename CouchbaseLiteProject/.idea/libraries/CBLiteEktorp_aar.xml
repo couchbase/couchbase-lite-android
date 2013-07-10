@@ -5,6 +5,7 @@
       <root url="jar://$PROJECT_DIR$/CouchbaseLiteProject/build/exploded-bundles/CBLiteEktorp.aar/classes.jar!/" />
       <root url="jar://$PROJECT_DIR$/CBLiteJavascript/build/exploded-bundles/CBLiteEktorp.aar/classes.jar!/" />
       <root url="jar://$PROJECT_DIR$/CBLiteJavascript/build/exploded-bundles/CBLiteEktorp.aar/classes.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CouchbaseLiteProject/build/exploded-bundles/CBLiteEktorp.aar/classes.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

@@ -71,6 +71,7 @@
     <orderEntry type="library" name="support-v4-13.0.0" level="project" />
     <orderEntry type="library" name="CBLite.aar" level="project" />
     <orderEntry type="library" name="CBLiteEktorp.aar" level="project" />
+    <orderEntry type="library" name="CBLiteListener.aar" level="project" />
     <orderEntry type="library" name="jackson-core-asl-1.9.2" level="project" />
     <orderEntry type="library" name="jackson-mapper-asl-1.9.2" level="project" />
     <orderEntry type="library" name="td_collator_so" level="project" />
@@ -79,7 +80,6 @@
     <orderEntry type="library" name="org.ektorp.android-1.2.3" level="project" />
     <orderEntry type="library" name="slf4j-api-1.6.1" level="project" />
     <orderEntry type="library" name="slf4j-jdk14-1.6.1" level="project" />
-    <orderEntry type="library" name="CBLiteListener.aar" level="project" />
     <orderEntry type="library" name="servlet-api-2.4" level="project" />
     <orderEntry type="library" name="webserver" level="project" />
   </component>
