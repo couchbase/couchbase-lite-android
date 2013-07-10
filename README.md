@@ -108,6 +108,8 @@ See the [wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 ## Example Apps
 
 * [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)
+* [LiteServAndroid](https://github.com/couchbaselabs/LiteServAndroid)
+* [CouchChatAndroid](https://github.com/couchbaselabs/CouchChatAndroid)
 
 ## Current Status
 - Ported core functionality present in Couchbase-Lite-iOS as of approximately 1 year ago (May 2012).
