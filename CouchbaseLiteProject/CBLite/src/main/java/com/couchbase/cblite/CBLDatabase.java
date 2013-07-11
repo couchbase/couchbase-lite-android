@@ -2090,7 +2090,10 @@ public class CBLDatabase extends Observable {
             return new CBLStatus(CBLStatus.BAD_REQUEST);
         }
 
-        int historyCount = revHistory.size();
+        int historyCount = 0;
+        if (revHistory != null) {
+            historyCount = revHistory.size();
+        }
         if(historyCount == 0) {
             revHistory = new ArrayList<String>();
             revHistory.add(revId);
