@@ -20,18 +20,24 @@ public class CBLListener implements Runnable {
     public static final String TAG = "CBLListener";
     private int listenPort;
 
-
     //static inializer to ensure that cblite:// URLs are handled properly
     {
         CBLURLStreamHandlerFactory.registerSelfIgnoreError();
     }
 
-    public CBLListener(CBLServer server, int port) {
+    /**
+     * CBLListener constructor
+     *
+     * @param server the CBLServer instance
+     * @param suggestedPort the suggested port to use.  if not available, will hunt for a new port.
+     *                      and this port can be discovered by calling getListenPort()
+     */
+    public CBLListener(CBLServer server, int suggestedPort) {
         this.server = server;
         this.httpServer = new CBLHTTPServer();
         this.httpServer.setServer(server);
         this.httpServer.setListener(this);
-        this.listenPort = discoverEmptyPort(port);
+        this.listenPort = discoverEmptyPort(suggestedPort);
         this.httpServer.setPort(this.listenPort);
     }
 
