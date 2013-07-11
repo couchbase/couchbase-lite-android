@@ -39,6 +39,13 @@ public class RevTree extends CBLiteTestCase {
 
         List<String> revHistory = null;
         CBLRevision rev = new CBLRevision("FakeDocId", "1-tango", false);
+
+        Map<String, Object> revProperties = new HashMap<String, Object>();
+        revProperties.put("_id", rev.getDocId());
+        revProperties.put("_rev", rev.getRevId());
+        revProperties.put("message", "hi");
+        rev.setProperties(revProperties);
+
         CBLStatus status = database.forceInsert(rev, revHistory, null);
         Assert.assertEquals(201, status.getCode());
 
