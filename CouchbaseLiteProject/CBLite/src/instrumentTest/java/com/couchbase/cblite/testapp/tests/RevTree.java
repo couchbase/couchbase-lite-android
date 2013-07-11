@@ -35,6 +35,15 @@ public class RevTree extends CBLiteTestCase {
 
     public static final String TAG = "RevTree";
 
+    public void testForceInsertEmptyHistory() {
+
+        List<String> revHistory = null;
+        CBLRevision rev = new CBLRevision("FakeDocId", "1-tango", false);
+        CBLStatus status = database.forceInsert(rev, revHistory, null);
+        Assert.assertEquals(201, status.getCode());
+
+    }
+
     public void testRevTree() {
 
         CBLRevision rev = new CBLRevision("MyDocId", "4-foxy", false);
@@ -50,6 +59,8 @@ public class RevTree extends CBLiteTestCase {
         revHistory.add("3-thrice");
         revHistory.add("2-too");
         revHistory.add("1-won");
+
+
 
         CBLStatus status = database.forceInsert(rev, revHistory, null);
         Assert.assertEquals(201, status.getCode());
