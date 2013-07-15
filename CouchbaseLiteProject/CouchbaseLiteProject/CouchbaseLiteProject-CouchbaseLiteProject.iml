@@ -4,18 +4,17 @@
     <facet type="android" name="Android">
       <configuration>
         <option name="SELECTED_BUILD_VARIANT" value="Debug" />
-        <option name="ASSEMBLE_TASK_NAME" value="bundleDebug" />
+        <option name="ASSEMBLE_TASK_NAME" value="assembleDebug" />
         <option name="ASSEMBLE_TEST_TASK_NAME" value="assembleTest" />
         <option name="ALLOW_USER_CONFIGURATION" value="false" />
         <option name="MANIFEST_FILE_RELATIVE_PATH" value="/src/main/AndroidManifest.xml" />
         <option name="RES_FOLDER_RELATIVE_PATH" value="/src/main/res" />
         <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/src/main/assets" />
-        <option name="LIBRARY_PROJECT" value="true" />
       </configuration>
     </facet>
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
-        <option name="GRADLE_PROJECT_PATH" value=":CBLiteEktorp" />
+        <option name="GRADLE_PROJECT_PATH" value=":CouchbaseLiteProject" />
       </configuration>
     </facet>
   </component>
@@ -69,12 +68,9 @@
     <orderEntry type="jdk" jdkName="Android 4.2.2" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="CBLite" />
+    <orderEntry type="module" module-name="CBLiteEktorp" />
+    <orderEntry type="module" module-name="CBLiteListener" />
     <orderEntry type="library" name="support-v4-13.0.0" level="project" />
-    <orderEntry type="library" name="org.ektorp-1.2.3" level="project" />
-    <orderEntry type="library" name="org.ektorp.android-1.2.3" level="project" />
-    <orderEntry type="library" name="slf4j-api-1.6.1" level="project" />
-    <orderEntry type="library" name="slf4j-jdk14-1.6.1" level="project" />
-    <orderEntry type="library" name="commons-io-2.0.1" level="project" />
   </component>
 </module>
 

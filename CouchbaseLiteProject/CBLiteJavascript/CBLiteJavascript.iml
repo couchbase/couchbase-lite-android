@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module external.linked.project.path="$MODULE_DIR$/../build.gradle" external.system.id="GRADLE" type="JAVA_MODULE" version="4">
+<module external.linked.project.path="$MODULE_DIR$/.." external.system.id="GRADLE" type="JAVA_MODULE" version="4">
   <component name="FacetManager">
     <facet type="android" name="Android">
       <configuration>
-        <option name="SELECTED_BUILD_VARIANT" value="debug" />
+        <option name="SELECTED_BUILD_VARIANT" value="Debug" />
         <option name="ASSEMBLE_TASK_NAME" value="bundleDebug" />
         <option name="ASSEMBLE_TEST_TASK_NAME" value="assembleTest" />
         <option name="ALLOW_USER_CONFIGURATION" value="false" />
@@ -68,18 +68,10 @@
     </content>
     <orderEntry type="jdk" jdkName="Android 4.2.2" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="rhino-1.7R3" level="project" />
-    <orderEntry type="library" name="CBLite.aar" level="project" />
-    <orderEntry type="library" name="CBLiteEktorp.aar" level="project" />
+    <orderEntry type="module" module-name="CBLite" />
+    <orderEntry type="module" module-name="CBLiteEktorp" />
     <orderEntry type="library" name="support-v4-13.0.0" level="project" />
-    <orderEntry type="library" name="jackson-core-asl-1.9.2" level="project" />
-    <orderEntry type="library" name="jackson-mapper-asl-1.9.2" level="project" />
-    <orderEntry type="library" name="td_collator_so" level="project" />
-    <orderEntry type="library" name="commons-io-2.0.1" level="project" />
-    <orderEntry type="library" name="org.ektorp-1.2.3" level="project" />
-    <orderEntry type="library" name="org.ektorp.android-1.2.3" level="project" />
-    <orderEntry type="library" name="slf4j-api-1.6.1" level="project" />
-    <orderEntry type="library" name="slf4j-jdk14-1.6.1" level="project" />
+    <orderEntry type="library" name="rhino-1.7R3" level="project" />
   </component>
 </module>
 
