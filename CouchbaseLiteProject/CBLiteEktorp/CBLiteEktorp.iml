@@ -75,6 +75,10 @@
     <orderEntry type="library" name="slf4j-api-1.6.1" level="project" />
     <orderEntry type="library" name="slf4j-jdk14-1.6.1" level="project" />
     <orderEntry type="library" name="commons-io-2.0.1" level="project" />
+    <orderEntry type="library" name="jackson-core-asl-1.9.2" level="project" />
+    <orderEntry type="library" name="jackson-mapper-asl-1.9.2" level="project" />
+    <orderEntry type="library" name="httpclient-cache-4.1.1" level="project" />
+    <orderEntry type="library" scope="TEST" name="td_collator_so" level="project" />
   </component>
 </module>
 

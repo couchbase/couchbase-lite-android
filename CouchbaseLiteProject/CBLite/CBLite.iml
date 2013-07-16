@@ -70,7 +70,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="support-v4-13.0.0" level="project" />
     <orderEntry type="library" scope="TEST" name="commons-io-2.0.1" level="project" />
-    <orderEntry type="library" name="td_collator_so" level="project" />
+    <orderEntry type="library" scope="TEST" name="td_collator_so" level="project" />
     <orderEntry type="library" name="jackson-core-asl-1.9.2" level="project" />
     <orderEntry type="library" name="jackson-mapper-asl-1.9.2" level="project" />
   </component>
