@@ -3,7 +3,7 @@ buildscript {
         maven { url 'http://repo1.maven.org/maven2' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.5.1'
+        classpath 'com.android.tools.build:gradle:0.5.+'
     }
 }
 apply plugin: 'android-library'
@@ -34,7 +34,7 @@ uploadArchives {
             repository(url: "http://maven.hq.couchbase.com/nexus/content/repositories/releases/") {
                 authentication(userName: System.getenv("UPLOAD_USERNAME"), password: System.getenv("UPLOAD_PASSWORD"))
             }
-            pom.version = System.getenv("UPLOAD_VERSION_CBLITE_EKTORP")  // 0.7.2
+            pom.version = System.getenv("UPLOAD_VERSION_CBLITE_EKTORP")  // eg, 0.7.2
             pom.groupId = 'com.couchbase.cblite'
             pom.artifactId = 'CBLiteEktorp'
         }
