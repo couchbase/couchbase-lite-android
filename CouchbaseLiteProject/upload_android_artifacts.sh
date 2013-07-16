@@ -10,6 +10,7 @@ verifyEnvVariable("UPLOAD_USERNAME")
 verifyEnvVariable("UPLOAD_PASSWORD")
 verifyEnvVariable("UPLOAD_VERSION_CBLITE")
 verifyEnvVariable("UPLOAD_VERSION_CBLITE_EKTORP")
+verifyEnvVariable("UPLOAD_VERSION_CBLITE_JAVASCRIPT")
 
 uploadArchives()
 

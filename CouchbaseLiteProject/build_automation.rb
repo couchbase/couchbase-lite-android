@@ -4,7 +4,7 @@ require 'fileutils'
 TESTING_MODE="TESTING_MODE"
 ARTIFACTS_MODE="ARTIFACTS_MODE"
 
-gradleFiles = ["CBLite/build.gradle", 
+GRADLE_FILES = ["CBLite/build.gradle", 
                "CBLiteEktorp/build.gradle", 
                "CBLiteListener/build.gradle",
                "CouchbaseLiteProject/build.gradle"]
@@ -12,7 +12,7 @@ gradleFiles = ["CBLite/build.gradle",
 def uploadArchives() 
 
   # backup original file build.gradle files
-  backupFiles(gradleFiles)
+  backupFiles(GRADLE_FILES)
 
   # In the build.gradle file for CBLite, CBLiteEktorp, and CBLiteJavascript, set apply from: 'dependencies-test.gradle'
   build(TESTING_MODE)
@@ -21,11 +21,11 @@ def uploadArchives()
   setArtifactsModeSingleFile("CBLiteEktorp/build.gradle")
   uploadArchivesSingleLibrary("CBLiteEktorp")
 
-  # setArtifactsModeSingleFile("CBLiteJavascript/build.gradle")
-  # uploadArchivesSingleLibrary("CBLiteJavascript)"
+  setArtifactsModeSingleFile("CBLiteJavascript/build.gradle")
+  uploadArchivesSingleLibrary("CBLiteJavascript")
 
   # restore original files
-  restoreFiles(gradleFiles)
+  restoreFiles(GRADLE_FILES)
 
 end
 
@@ -62,12 +62,12 @@ def build(mode)
   assertPresentInCurrentDirectory(["settings.gradle"])
 
   # backup original file build.gradle files
-  backupFiles(gradleFiles)
+  backupFiles(GRADLE_FILES)
   
   if mode == TESTING_MODE
-    setTestingMode(gradleFiles)
+    setTestingMode(GRADLE_FILES)
   elsif mode == ARTIFACTS_MODE
-    setArtifactsMode(gradleFiles)
+    setArtifactsMode(GRADLE_FILES)
   end
 
   # build the code
@@ -76,7 +76,7 @@ def build(mode)
   puts "Build result: #{build_result}"
 
   # restore original files
-  restoreFiles(gradleFiles)
+  restoreFiles(GRADLE_FILES)
 
 end
 
@@ -134,9 +134,11 @@ end
 def restoreFiles(file_list)
   file_list.each do |dest| 
     src = "#{dest}.bak"
-    puts "Restoring #{src} to #{dest}"
-    FileUtils.cp(src, dest)
-    FileUtils.remove(src)
+    if File.exist?(src)
+      puts "Restoring #{src} to #{dest}"
+      FileUtils.cp(src, dest)
+      FileUtils.remove(src)
+    end
   end
 end
 
