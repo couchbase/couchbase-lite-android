@@ -3,7 +3,7 @@ buildscript {
         maven { url 'http://repo1.maven.org/maven2' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.5.1'
+        classpath 'com.android.tools.build:gradle:0.5.+'
     }
 }
 apply plugin: 'android-library'
@@ -14,7 +14,6 @@ repositories {
     mavenCentral()
 }
 
-// apply from: 'dependencies.gradle'               // <- enable this in "normal" building
 // apply from: 'dependencies-archive.gradle'    // <- enable this when building an .aar
 apply from: 'dependencies-test.gradle'       // <- enable this when testing
 

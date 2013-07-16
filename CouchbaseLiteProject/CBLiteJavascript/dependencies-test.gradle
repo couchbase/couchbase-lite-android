@@ -1,10 +1,16 @@
 dependencies {
+
+    compile 'com.android.support:support-v4:13.0.+'
+
     compile project(':CBLite')
     compile project(':CBLiteEktorp')
-    compile 'com.android.support:support-v4:13.0.0'
 
-    compile files(
-            'libs/rhino-1.7R3.jar'
-    )
+    // as discovered by trial and error, the build will fail if "compile" is
+    // used: Error: duplicate files during packaging of APK.  I guess it is
+    // being implicitly included by being in the libs folder, and then "double included"
+    // because of a "compile" directive to explicitly include the jar.
+    instrumentTestCompile fileTree(dir: 'libs', include: 'td_collator_so.jar')
+
+    compile 'org.mozilla:rhino:1.7R3'
 
 }

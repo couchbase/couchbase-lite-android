@@ -1,8 +1,0 @@
-dependencies {
-
-    compile project(':CBLite')
-    compile project(':CBLiteEktorp')
-
-    compile 'com.android.support:support-v4:13.0.0'
-    compile 'org.mozilla:rhino:1.7R3'
-}

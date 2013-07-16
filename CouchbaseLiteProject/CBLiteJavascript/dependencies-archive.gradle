@@ -1,11 +1,18 @@
 dependencies {
 
+    compile 'com.android.support:support-v4:13.0.+'
+
     // the cblite core library dependency is included as a maven archive because when declaring
     // as a "compile project" dependency any projects that include this library will get errors.
     // documented here: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/H2Jk2rVs6G8
     compile 'com.couchbase.cblite:CBLite:0.7'
     compile 'com.couchbase.cblite:CBLiteEktorp:0.7.2'
 
-    compile 'com.android.support:support-v4:13.0.0'
+    // as discovered by trial and error, the build will fail if "compile" is
+    // used: Error: duplicate files during packaging of APK.  I guess it is
+    // being implicitly included by being in the libs folder, and then "double included"
+    // because of a "compile" directive to explicitly include the jar.
+    instrumentTestCompile fileTree(dir: 'libs', include: 'td_collator_so.jar')
+
     compile 'org.mozilla:rhino:1.7R3'
 }

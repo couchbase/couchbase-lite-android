@@ -1,12 +1,24 @@
 
 dependencies {
-    compile project(':CBLite')
-    compile 'com.android.support:support-v4:13.0.0'
 
-    compile files('libs/org.ektorp-1.2.3.jar',
-            'libs/org.ektorp.android-1.2.3.jar',
-            'libs/slf4j-api-1.6.1.jar',
-            'libs/slf4j-jdk14-1.6.1.jar',
-            'libs/commons-io-2.0.1.jar')
+    compile 'com.android.support:support-v4:13.0.+'
+
+    // the cblite core library dependency is included as a maven archive because when declaring
+    // as a "compile project" dependency any projects that include this library will get errors.
+    // documented here: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/H2Jk2rVs6G8
+    // compile 'com.couchbase.cblite:CBLite:0.7'
+
+    compile project(':CBLite')
+
+    // as discovered by trial and error, the build will fail if "compile" is
+    // used: Error: duplicate files during packaging of APK.  I guess it is
+    // being implicitly included by being in the libs folder, and then "double included"
+    // because of a "compile" directive to explicitly include the jar.
+    instrumentTestCompile fileTree(dir: 'libs', include: 'td_collator_so.jar')
+
+    compile 'org.ektorp:org.ektorp:1.2.3'
+    compile 'org.ektorp:org.ektorp.android:1.2.3'
+    compile 'org.slf4j:slf4j-jdk14:1.6.1'
+
 
 }

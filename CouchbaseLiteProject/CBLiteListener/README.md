@@ -19,3 +19,12 @@ In it's current state, this is not easy because the dependent jars are not in a 
 
 - Specify them as local dependencies in your build.gradle file
 
+## Maven Artifacts
+
+There is currently no way to use the CBLListener component via maven artifacts.  This is a TODO item, please file an issue on github to bump the priority if you need this.
+
+In order for this to happen, the first step is to get the webserver dependencies into a Maven repository.
+
+## Webserver Dependencies
+
+Couchbase-lite android depends on the [Tiny Java Web Server and Servlet Container](http://tjws.sourceforge.net/).  See libs-src/Webserver-194-README.md for more details.
