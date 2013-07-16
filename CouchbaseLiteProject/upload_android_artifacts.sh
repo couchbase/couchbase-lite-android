@@ -1,9 +1,15 @@
+#!/usr/bin/ruby
 
-# make sure we have the following env variables defined
-: ${UPLOAD_USERNAME:?"Need to set UPLOAD_USERNAME"}
-: ${UPLOAD_PASSWORD:?"Need to set UPLOAD_PASSWORD"}
-: ${UPLOAD_VERSION_CBLITE:?"Need to set UPLOAD_VERSION_CBLITE"}
-: ${UPLOAD_VERSION_CBLITE_EKTORP:?"Need to set UPLOAD_VERSION_CBLITE_EKTORP"}
+require "build_automation.rb"
 
-./gradlew uploadArchives
+def verifyEnvVariable(envVarName) 
+  raise "Neet do set #{envVarName}" if ENV[envVarName] == nil 
+end
+
+verifyEnvVariable("UPLOAD_USERNAME")
+verifyEnvVariable("UPLOAD_PASSWORD")
+verifyEnvVariable("UPLOAD_VERSION_CBLITE")
+verifyEnvVariable("UPLOAD_VERSION_CBLITE_EKTORP")
+
+uploadArchives()
 

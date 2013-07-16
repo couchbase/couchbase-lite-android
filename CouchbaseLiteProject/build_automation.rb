@@ -4,6 +4,42 @@ require 'fileutils'
 TESTING_MODE="TESTING_MODE"
 ARTIFACTS_MODE="ARTIFACTS_MODE"
 
+gradleFiles = ["CBLite/build.gradle", 
+               "CBLiteEktorp/build.gradle", 
+               "CBLiteListener/build.gradle",
+               "CouchbaseLiteProject/build.gradle"]
+
+def uploadArchives() 
+
+  # backup original file build.gradle files
+  backupFiles(gradleFiles)
+
+  # In the build.gradle file for CBLite, CBLiteEktorp, and CBLiteJavascript, set apply from: 'dependencies-test.gradle'
+  build(TESTING_MODE)
+  uploadArchivesSingleLibrary("CBLite")
+
+  setArtifactsModeSingleFile("CBLiteEktorp/build.gradle")
+  uploadArchivesSingleLibrary("CBLiteEktorp")
+
+  # setArtifactsModeSingleFile("CBLiteJavascript/build.gradle")
+  # uploadArchivesSingleLibrary("CBLiteJavascript)"
+
+  # restore original files
+  restoreFiles(gradleFiles)
+
+end
+
+# upload the archives for a single library, eg, "CBLite"
+def uploadArchivesSingleLibrary(libraryName)
+  build_result = %x( ./gradlew clean && ./gradlew :#{libraryName}:uploadArchives )
+  # check if it worked
+  if ($?.exitstatus != 0) 
+    puts "Error uploading archive for #{libraryName}, aborting"
+    exit($?.exitstatus)
+  end
+
+end 
+
 def buildCode() 
   build_result = %x( ./gradlew clean && ./gradlew build )
   # check if the build worked 
@@ -24,11 +60,6 @@ end
 def build(mode) 
   # make sure we are in the correct place
   assertPresentInCurrentDirectory(["settings.gradle"])
-
-  gradleFiles = ["CBLite/build.gradle", 
-                 "CBLiteEktorp/build.gradle", 
-                 "CBLiteListener/build.gradle",
-                 "CouchbaseLiteProject/build.gradle"]
 
   # backup original file build.gradle files
   backupFiles(gradleFiles)
@@ -72,24 +103,32 @@ end
 
 def setTestingMode(file_list)
   # change occurrences of dependencies-archive.gradle -> dependencies-test.gradle
-  file_list.each do |src| 
-    puts "Set #{src} to testing mode"
-    outdata = File.read(src).gsub(/dependencies-archive.gradle/, "dependencies-test.gradle")
-    File.open(src, 'w') do |out|
-      out << outdata
-    end 
+  file_list.each do |gradle_file| 
+    setTestingModeSingleFile(gradle_file)
   end
+end
+
+def setTestingModeSingleFile(gradle_file)
+  puts "Set #{gradle_file} to testing mode"
+  outdata = File.read(gradle_file).gsub(/dependencies-archive.gradle/, "dependencies-test.gradle")
+  File.open(gradle_file, 'w') do |out|
+    out << outdata
+  end 
 end
 
 def setArtifactsMode(file_list)
   # change occurrences of dependencies-test.gradle -> dependencies-archive.gradle
-  file_list.each do |src| 
-    puts "Set #{src} to archive mode"
-    outdata = File.read(src).gsub(/dependencies-test.gradle/, "dependencies-archive.gradle")
-    File.open(src, 'w') do |out|
+  file_list.each do |gradle_file| 
+    setArtifactsModeSingleFile(gradle_file)
+  end
+end
+
+def setArtifactsModeSingleFile(gradle_file)
+    puts "Set #{gradle_file} to archive mode"
+    outdata = File.read(gradle_file).gsub(/dependencies-test.gradle/, "dependencies-archive.gradle")
+    File.open(gradle_file, 'w') do |out|
       out << outdata
     end 
-  end
 end
 
 def restoreFiles(file_list)
