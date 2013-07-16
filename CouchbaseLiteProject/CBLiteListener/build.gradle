@@ -13,11 +13,8 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    compile 'com.android.support:support-v4:13.0.+'
-    compile files('libs/servlet-api-2.4.jar', 'libs/webserver.jar')
-    compile project(':CBLite')
-}
+// apply from: 'dependencies-archive.gradle'    // <- enable this when building an .aar
+apply from: 'dependencies-test.gradle'       // <- enable this when testing
 
 android {
     compileSdkVersion 17

@@ -1,0 +1,16 @@
+dependencies {
+
+    compile 'com.android.support:support-v4:13.0.+'
+
+    // the cblite core library dependency is included as a maven archive because when declaring
+    // as a "compile project" dependency any projects that include this library will get errors.
+    // documented here: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/H2Jk2rVs6G8
+    // compile 'com.couchbase.cblite:CBLite:0.7'
+
+    compile project(':CBLite')
+
+    // these could be maven artifacts, however they have not been packaged into a maven
+    // repo as of yet (afaik).  for testing purposes, no harm in using static jars.
+    compile files('libs/servlet-api-2.4.jar', 'libs/webserver.jar')
+
+}
