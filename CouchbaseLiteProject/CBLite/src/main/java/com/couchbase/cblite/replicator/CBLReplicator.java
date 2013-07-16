@@ -186,7 +186,7 @@ public abstract class CBLReplicator extends Observable {
     }
 
     public void setLastSequence(String lastSequenceIn) {
-        if (!lastSequenceIn.equals(lastSequence)) {
+        if (lastSequenceIn != null && !lastSequenceIn.equals(lastSequence)) {
             Log.v(CBLDatabase.TAG, toString() + ": Setting lastSequence to " + lastSequenceIn + " from( " + lastSequence + ")");
             lastSequence = lastSequenceIn;
             if (!lastSequenceChanged) {
