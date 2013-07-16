@@ -90,7 +90,7 @@ Preparation:
 
 Building and deploying:
 
-- In the build.gradle file for CBLite, CBLiteEktorp, and CBLiteJavascript, set apply from: 'dependencies.gradle'
+- In the build.gradle file for CBLite, CBLiteEktorp, and CBLiteJavascript, set apply from: 'dependencies-test.gradle'
 - Run `./gradlew clean && ./gradlew :CBLite:uploadArchives`
 - Modify CBLiteEktorp/build.gradle to set apply from: 'dependencies-archive.gradle'
 - Run `./gradlew clean && ./gradlew :CBLiteEktorp:uploadArchives`
