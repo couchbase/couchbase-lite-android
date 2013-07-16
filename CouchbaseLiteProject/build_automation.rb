@@ -25,13 +25,18 @@ def build(mode)
   # make sure we are in the correct place
   assertPresentInCurrentDirectory(["settings.gradle"])
 
+  gradleFiles = ["CBLite/build.gradle", 
+                 "CBLiteEktorp/build.gradle", 
+                 "CBLiteListener/build.gradle",
+                 "CouchbaseLiteProject/build.gradle"]
+
   # backup original file build.gradle files
-  backupFiles(["CBLite/build.gradle", "CBLiteEktorp/build.gradle", "CBLiteListener/build.gradle"]) 
+  backupFiles(gradleFiles)
   
   if mode == TESTING_MODE
-    setTestingMode(["CBLite/build.gradle", "CBLiteEktorp/build.gradle", "CBLiteListener/build.gradle"]) 
+    setTestingMode(gradleFiles)
   elsif mode == ARTIFACTS_MODE
-    setArtifactsMode(["CBLite/build.gradle", "CBLiteEktorp/build.gradle", "CBLiteListener/build.gradle"]) 
+    setArtifactsMode(gradleFiles)
   end
 
   # build the code
@@ -40,8 +45,7 @@ def build(mode)
   puts "Build result: #{build_result}"
 
   # restore original files
-  restoreFiles(["CBLite/build.gradle", "CBLiteEktorp/build.gradle", "CBLiteListener/build.gradle"]) 
-
+  restoreFiles(gradleFiles)
 
 end
 

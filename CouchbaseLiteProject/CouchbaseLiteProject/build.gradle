@@ -15,12 +15,8 @@ repositories {
     }
 }
 
-dependencies {
-    compile 'com.android.support:support-v4:13.0.+'
-    compile project(':CBLite')
-    compile project(':CBLiteEktorp')
-    compile project(':CBLiteListener')
-}
+// apply from: 'dependencies-archive.gradle'    // <- enable this when building an .aar
+apply from: 'dependencies-test.gradle'       // <- enable this when testing
 
 android {
     compileSdkVersion 17
