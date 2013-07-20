@@ -28,6 +28,7 @@ import com.couchbase.cblite.CBLMisc;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.auth.CBLAuthorizer;
+import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
 import com.couchbase.cblite.auth.CBLPersonaAuthorizer;
 import com.couchbase.cblite.support.HttpClientFactory;
 import com.couchbase.cblite.support.CBLBatchProcessor;
@@ -89,12 +90,26 @@ public abstract class CBLReplicator extends Observable {
                 setAuthorizer(authorizer);
             }
 
+            String facebookAccessToken = uri.getQueryParameter(CBLFacebookAuthorizer.QUERY_PARAMETER);
+            if (facebookAccessToken != null && !facebookAccessToken.isEmpty()) {
+                String email = uri.getQueryParameter(CBLFacebookAuthorizer.QUERY_PARAMETER_EMAIL);
+                CBLFacebookAuthorizer authorizer = new CBLFacebookAuthorizer(email);
+                URL remoteWithQueryRemoved = null;
+                try {
+                    remoteWithQueryRemoved = new URL(remote.getProtocol(), remote.getHost(), remote.getPort(), remote.getPath());
+                } catch (MalformedURLException e) {
+                    throw new IllegalArgumentException(e);
+                }
+                authorizer.registerAccessToken(facebookAccessToken, email, remoteWithQueryRemoved.toExternalForm());
+                setAuthorizer(authorizer);
+            }
+
             // we need to remove the query from the URL, since it will cause problems when
             // communicating with sync gw / couchdb
             try {
                 this.remote = new URL(remote.getProtocol(), remote.getHost(), remote.getPort(), remote.getPath());
             } catch (MalformedURLException e) {
-                Log.e(CBLDatabase.TAG, "Exception trying to rebuild url without query parameters.  remote: " + remote);
+                throw new IllegalArgumentException(e);
             }
             Log.d(CBLDatabase.TAG, "new remote url: " + remote);
 

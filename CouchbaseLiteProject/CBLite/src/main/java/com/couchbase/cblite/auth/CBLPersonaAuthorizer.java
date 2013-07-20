@@ -18,6 +18,8 @@ import java.util.Map;
 
 public class CBLPersonaAuthorizer extends CBLAuthorizer {
 
+    public static final String LOGIN_PARAMETER_ASSERTION = "assertion";
+
     private static Map<List<String>, String> assertions;
     public static final String ASSERTION_FIELD_EMAIL = "email";
     public static final String ASSERTION_FIELD_ORIGIN = "origin";

@@ -6,7 +6,6 @@ import java.util.Map;
 
 public class CBLAuthorizer {
 
-    public static final String LOGIN_PARAMETER_ASSERTION = "assertion";
 
     public boolean usesCookieBasedLogin() {
         return false;
