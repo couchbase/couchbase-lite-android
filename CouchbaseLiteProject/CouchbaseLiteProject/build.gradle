@@ -9,10 +9,11 @@ buildscript {
 apply plugin: 'android'
 
 repositories {
-    mavenCentral()
+    mavenLocal()
     maven {
         url "http://maven.hq.couchbase.com/nexus/content/repositories/releases/"
     }
+    mavenCentral()
 }
 
 // apply from: 'dependencies-archive.gradle'    // <- enable this when building an .aar
