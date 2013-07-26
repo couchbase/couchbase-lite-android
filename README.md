@@ -116,8 +116,9 @@ See the [wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 - Unit tests pass
 
 ## Requirements
-- Android 2.2 or newer
-- Jackson JSON Parser/Generator
+- Android 3.0 Honeycomb (API level 11)
+ 
+*Note*: this was recently bumped up from Android 2.2, due to [Ektorp issue #88](https://github.com/helun/Ektorp/issues/88)
 
 ## License
 - Apache License 2.0
