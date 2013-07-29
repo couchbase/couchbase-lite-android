@@ -66,6 +66,9 @@ public class CBLDatabase extends Observable {
     private List<CBLReplicator> activeReplicators;
     private CBLBlobStore attachments;
 
+    // Length that constitutes a 'big' attachment
+    public static int kBigAttachmentLength = (16*1024);
+
     /**
      * Options for what metadata to include in document bodies
      */
@@ -563,8 +566,7 @@ public class CBLDatabase extends Observable {
         assert(sequenceNumber > 0);
 
         // Get attachment metadata, and optionally the contents:
-        boolean withAttachments = contentOptions.contains(TDContentOptions.TDIncludeAttachments);
-        Map<String, Object> attachmentsDict = getAttachmentsDictForSequenceWithContent(sequenceNumber, withAttachments);
+        Map<String, Object> attachmentsDict = getAttachmentsDictForSequenceWithContent(sequenceNumber, contentOptions);
 
         // Get more optional stuff to put in the properties:
         //OPT: This probably ends up making redundant SQL queries if multiple options are enabled.
@@ -1456,8 +1458,6 @@ public class CBLDatabase extends Observable {
     public Map<String,Object> getAttachmentsDictForSequenceWithContent(long sequence, EnumSet<TDContentOptions> contentOptions) {
         assert(sequence > 0);
 
-        boolean withContent = contentOptions.contains(TDContentOptions.TDIncludeAttachments);
-
         Cursor cursor = null;
 
         String args[] = { Long.toString(sequence) };
@@ -1472,30 +1472,51 @@ public class CBLDatabase extends Observable {
 
             while(!cursor.isAfterLast()) {
 
+                boolean dataSuppressed = false;
+                int length = cursor.getInt(3);
+
                 byte[] keyData = cursor.getBlob(1);
                 CBLBlobKey key = new CBLBlobKey(keyData);
                 String digestString = "sha1-" + Base64.encodeBytes(keyData);
                 String dataBase64 = null;
-                if(withContent) {
-                    byte[] data = attachments.blobForKey(key);
-                    if(data != null) {
-                        dataBase64 = Base64.encodeBytes(data);  // <-- very expensive
+                if(contentOptions.contains(TDContentOptions.TDIncludeAttachments)) {
+                    if (contentOptions.contains(TDContentOptions.TDBigAttachmentsFollow) &&
+                            length >= CBLDatabase.kBigAttachmentLength) {
+                        dataSuppressed = true;
                     }
                     else {
-                        Log.w(CBLDatabase.TAG, "Error loading attachment");
+                        byte[] data = attachments.blobForKey(key);
+
+                        if(data != null) {
+                            dataBase64 = Base64.encodeBytes(data);  // <-- very expensive
+                        }
+                        else {
+                            Log.w(CBLDatabase.TAG, "Error loading attachment");
+                        }
+
                     }
+
                 }
 
                 Map<String, Object> attachment = new HashMap<String, Object>();
-                if(dataBase64 == null) {
+
+
+
+                if(dataBase64 == null || dataSuppressed == true) {
                     attachment.put("stub", true);
                 }
-                else {
+
+                if(dataBase64 != null) {
                     attachment.put("data", dataBase64);
                 }
+
+                if (dataSuppressed == true) {
+                    attachment.put("follows", true);
+                }
+
                 attachment.put("digest", digestString);
                 attachment.put("content_type", cursor.getString(2));
-                attachment.put("length", cursor.getInt(3));
+                attachment.put("length", length);
                 attachment.put("revpos", cursor.getInt(4));
 
                 result.put(cursor.getString(0), attachment);
