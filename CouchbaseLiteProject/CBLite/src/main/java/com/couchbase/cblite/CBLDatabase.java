@@ -70,7 +70,7 @@ public class CBLDatabase extends Observable {
      * Options for what metadata to include in document bodies
      */
     public enum TDContentOptions {
-        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq, TDNoBody
+        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq, TDNoBody, TDBigAttachmentsFollow
     }
 
     private static final Set<String> KNOWN_SPECIAL_KEYS;
@@ -1453,8 +1453,10 @@ public class CBLDatabase extends Observable {
     /**
      * Constructs an "_attachments" dictionary for a revision, to be inserted in its JSON body.
      */
-    public Map<String,Object> getAttachmentsDictForSequenceWithContent(long sequence, boolean withContent) {
+    public Map<String,Object> getAttachmentsDictForSequenceWithContent(long sequence, EnumSet<TDContentOptions> contentOptions) {
         assert(sequence > 0);
+
+        boolean withContent = contentOptions.contains(TDContentOptions.TDIncludeAttachments);
 
         Cursor cursor = null;
 
@@ -1477,7 +1479,7 @@ public class CBLDatabase extends Observable {
                 if(withContent) {
                     byte[] data = attachments.blobForKey(key);
                     if(data != null) {
-                        dataBase64 = Base64.encodeBytes(data);
+                        dataBase64 = Base64.encodeBytes(data);  // <-- very expensive
                     }
                     else {
                         Log.w(CBLDatabase.TAG, "Error loading attachment");
