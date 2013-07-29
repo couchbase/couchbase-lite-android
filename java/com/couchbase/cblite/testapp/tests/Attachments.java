@@ -17,6 +17,8 @@
 
 package com.couchbase.cblite.testapp.tests;
 
+import android.util.Log;
+
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -146,6 +148,59 @@ public class Attachments extends CBLiteTestCase {
         Set<CBLBlobKey> expected2 = new HashSet<CBLBlobKey>();
         expected2.add(CBLBlobStore.keyForBlob(attach2));
         Assert.assertEquals(expected2, attachments.allKeys());
+    }
+
+    @SuppressWarnings("unchecked")
+    public void testPutLargeAttachment() throws Exception {
+
+        CBLStatus status = new CBLStatus();
+        Map<String,Object> rev1Properties = new HashMap<String,Object>();
+        rev1Properties.put("foo", 1);
+        rev1Properties.put("bar", false);
+        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties), null, false, status);
+
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+
+        StringBuffer largeAttachment = new StringBuffer();
+        for (int i=0; i<CBLDatabase.kBigAttachmentLength; i++) {
+            largeAttachment.append("big attachment!");
+        }
+        byte[] attach1 = largeAttachment.toString().getBytes();
+        status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+
+        CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach", status);
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        Assert.assertEquals("text/plain", attachment.getContentType());
+        byte[] data = IOUtils.toByteArray(attachment.getContentStream());
+        Assert.assertTrue(Arrays.equals(attach1, data));
+
+        EnumSet<CBLDatabase.TDContentOptions> contentOptions = EnumSet.of(
+                CBLDatabase.TDContentOptions.TDIncludeAttachments,
+                CBLDatabase.TDContentOptions.TDBigAttachmentsFollow
+        );
+
+        Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(
+                rev1.getSequence(),
+                contentOptions
+        );
+
+        Map<String,Object> innerDict = (Map<String,Object>) attachmentDictForSequence.get("attach");
+
+        if (!innerDict.containsKey("stub")) {
+            throw new RuntimeException("Expected attachment dict to have 'stub' key");
+        }
+
+        if (((Boolean)innerDict.get("stub")).booleanValue() == false) {
+            throw new RuntimeException("Expected attachment dict 'stub' key to be true");
+        }
+
+        if (!innerDict.containsKey("follows")) {
+            throw new RuntimeException("Expected attachment dict to have 'follows' key");
+        }
+
+
+
     }
 
     @SuppressWarnings("unchecked")
