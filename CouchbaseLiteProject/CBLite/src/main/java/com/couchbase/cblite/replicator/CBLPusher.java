@@ -189,7 +189,12 @@ public class CBLPusher extends CBLReplicator implements Observer {
                                 } else {
                                     // OPT: Shouldn't include all attachment bodies, just ones that have changed
                                     // OPT: Should send docs with many or big attachments as multipart/related
-                                    CBLStatus status = db.loadRevisionBody(rev, EnumSet.of(CBLDatabase.TDContentOptions.TDIncludeAttachments));
+                                    EnumSet<CBLDatabase.TDContentOptions> contentOptions = EnumSet.of(
+                                            CBLDatabase.TDContentOptions.TDIncludeAttachments,
+                                            CBLDatabase.TDContentOptions.TDBigAttachmentsFollow
+                                    );
+
+                                    CBLStatus status = db.loadRevisionBody(rev, contentOptions);
                                     if(!status.isSuccessful()) {
                                         Log.w(CBLDatabase.TAG, String.format("%s: Couldn't get local contents of %s", this, rev));
                                     } else {
