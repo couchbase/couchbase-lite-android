@@ -76,7 +76,7 @@ public class Attachments extends CBLiteTestCase {
         Map<String,Object> attachmentDict = new HashMap<String,Object>();
         attachmentDict.put("attach", innerDict);
 
-        Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), false);
+        Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
         CBLRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
@@ -86,7 +86,7 @@ public class Attachments extends CBLiteTestCase {
         // Check the attachment dict, with attachments included:
         innerDict.remove("stub");
         innerDict.put("data", Base64.encodeBytes(attach1));
-        attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), true);
+        attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), EnumSet.of(CBLDatabase.TDContentOptions.TDIncludeAttachments));
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
         gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.of(CBLDatabase.TDContentOptions.TDIncludeAttachments));
