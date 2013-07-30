@@ -47,14 +47,13 @@ import com.couchbase.cblite.CBLServer;
 
 public class CBLRemoteRequest implements Runnable {
 
-    private ScheduledExecutorService workExecutor;
-    private final HttpClientFactory clientFactory;
-    private String method;
-    private URL url;
-    private Object body;
-    private CBLRemoteRequestCompletionBlock onCompletion;
-    private BasicHttpContext httpContext;
-
+    protected ScheduledExecutorService workExecutor;
+    protected final HttpClientFactory clientFactory;
+    protected String method;
+    protected URL url;
+    protected Object body;
+    protected CBLRemoteRequestCompletionBlock onCompletion;
+    protected BasicHttpContext httpContext;
 
     public CBLRemoteRequest(ScheduledExecutorService workExecutor,
                             HttpClientFactory clientFactory, String method, URL url,
@@ -71,10 +70,24 @@ public class CBLRemoteRequest implements Runnable {
 
     @Override
     public void run() {
+
         HttpClient httpClient = clientFactory.getHttpClient();
 
         ClientConnectionManager manager = httpClient.getConnectionManager();
 
+        HttpUriRequest request = createConcreteRequest();
+
+        preemptivelySetAuthCredentials(httpClient);
+
+        request.addHeader("Accept", "application/json");
+
+        setBody(request);
+
+        executeRequest(httpClient, request);
+
+    }
+
+    private HttpUriRequest createConcreteRequest() {
         HttpUriRequest request = null;
         if (method.equalsIgnoreCase("GET")) {
             request = new HttpGet(url.toExternalForm());
@@ -83,7 +96,65 @@ public class CBLRemoteRequest implements Runnable {
         } else if (method.equalsIgnoreCase("POST")) {
             request = new HttpPost(url.toExternalForm());
         }
+        return request;
+    }
 
+    private void setBody(HttpUriRequest request) {
+        // set body if appropriate
+        if (body != null && request instanceof HttpEntityEnclosingRequestBase) {
+            byte[] bodyBytes = null;
+            try {
+                bodyBytes = CBLServer.getObjectMapper().writeValueAsBytes(body);
+            } catch (Exception e) {
+                Log.e(CBLDatabase.TAG, "Error serializing body of request", e);
+            }
+            ByteArrayEntity entity = new ByteArrayEntity(bodyBytes);
+            entity.setContentType("application/json");
+            ((HttpEntityEnclosingRequestBase) request).setEntity(entity);
+        }
+    }
+
+    protected void executeRequest(HttpClient httpClient, HttpUriRequest request) {
+        Object fullBody = null;
+        Throwable error = null;
+        try {
+            HttpResponse response = httpClient.execute(request, httpContext);
+
+            StatusLine status = response.getStatusLine();
+            if (status.getStatusCode() >= 300) {
+                Log.e(CBLDatabase.TAG,
+                        "Got error " + Integer.toString(status.getStatusCode()));
+                Log.e(CBLDatabase.TAG, "Request was for: " + request.toString());
+                Log.e(CBLDatabase.TAG,
+                        "Status reason: " + status.getReasonPhrase());
+                error = new HttpResponseException(status.getStatusCode(),
+                        status.getReasonPhrase());
+            } else {
+                HttpEntity temp = response.getEntity();
+                if (temp != null) {
+                    try {
+                        InputStream stream = temp.getContent();
+                        fullBody = CBLServer.getObjectMapper().readValue(stream,
+                                Object.class);
+                    } finally {
+                        try {
+                            temp.consumeContent();
+                        } catch (IOException e) {
+                        }
+                    }
+                }
+            }
+        } catch (ClientProtocolException e) {
+            Log.e(CBLDatabase.TAG, "client protocol exception", e);
+            error = e;
+        } catch (IOException e) {
+            Log.e(CBLDatabase.TAG, "io exception", e);
+            error = e;
+        }
+        respondWithResult(fullBody, error);
+    }
+
+    protected void preemptivelySetAuthCredentials(HttpClient httpClient) {
         // if the URL contains user info AND if this a DefaultHttpClient
         // then preemptively set the auth credentials
         if (url.getUserInfo() != null) {
@@ -124,59 +195,6 @@ public class CBLRemoteRequest implements Runnable {
                         "CBLRemoteRequest Unable to parse user info, not setting credentials");
             }
         }
-
-        request.addHeader("Accept", "application/json");
-
-        // set body if appropriate
-        if (body != null && request instanceof HttpEntityEnclosingRequestBase) {
-            byte[] bodyBytes = null;
-            try {
-                bodyBytes = CBLServer.getObjectMapper().writeValueAsBytes(body);
-            } catch (Exception e) {
-                Log.e(CBLDatabase.TAG, "Error serializing body of request", e);
-            }
-            ByteArrayEntity entity = new ByteArrayEntity(bodyBytes);
-            entity.setContentType("application/json");
-            ((HttpEntityEnclosingRequestBase) request).setEntity(entity);
-        }
-
-        Object fullBody = null;
-        Throwable error = null;
-        try {
-            HttpResponse response = httpClient.execute(request, httpContext);
-
-            StatusLine status = response.getStatusLine();
-            if (status.getStatusCode() >= 300) {
-                Log.e(CBLDatabase.TAG,
-                        "Got error " + Integer.toString(status.getStatusCode()));
-                Log.e(CBLDatabase.TAG, "Request was for: " + request.toString());
-                Log.e(CBLDatabase.TAG,
-                        "Status reason: " + status.getReasonPhrase());
-                error = new HttpResponseException(status.getStatusCode(),
-                        status.getReasonPhrase());
-            } else {
-                HttpEntity temp = response.getEntity();
-                if (temp != null) {
-                    try {
-                        InputStream stream = temp.getContent();
-                        fullBody = CBLServer.getObjectMapper().readValue(stream,
-                                Object.class);
-                    } finally {
-                        try {
-                            temp.consumeContent();
-                        } catch (IOException e) {
-                        }
-                    }
-                }
-            }
-        } catch (ClientProtocolException e) {
-            Log.e(CBLDatabase.TAG, "client protocol exception", e);
-            error = e;
-        } catch (IOException e) {
-            Log.e(CBLDatabase.TAG, "io exception", e);
-            error = e;
-        }
-        respondWithResult(fullBody, error);
     }
 
     public void respondWithResult(final Object result, final Throwable error) {
