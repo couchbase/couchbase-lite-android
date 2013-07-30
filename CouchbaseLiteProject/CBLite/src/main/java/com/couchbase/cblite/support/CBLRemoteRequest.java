@@ -79,7 +79,7 @@ public class CBLRemoteRequest implements Runnable {
 
         preemptivelySetAuthCredentials(httpClient);
 
-        request.addHeader("Accept", "application/json");
+        request.addHeader("Accept", "multipart/related, application/json");
 
         setBody(request);
 
