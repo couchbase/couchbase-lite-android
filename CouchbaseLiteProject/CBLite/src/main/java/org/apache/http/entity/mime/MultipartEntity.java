@@ -77,7 +77,7 @@ public class MultipartEntity implements HttpEntity {
         if (mode == null) {
             mode = HttpMultipartMode.STRICT;
         }
-        this.multipart = new HttpMultipart("form-data", charset, boundary, mode);
+        this.multipart = new HttpMultipart("related", charset, boundary, mode);
         this.contentType = new BasicHeader(
                 HTTP.CONTENT_TYPE,
                 generateContentType(boundary, charset));
@@ -104,7 +104,7 @@ public class MultipartEntity implements HttpEntity {
             final String boundary,
             final Charset charset) {
         StringBuilder buffer = new StringBuilder();
-        buffer.append("multipart/form-data; boundary=");
+        buffer.append("multipart/related; boundary=");
         buffer.append(boundary);
         if (charset != null) {
             buffer.append("; charset=");
