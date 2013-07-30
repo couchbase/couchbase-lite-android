@@ -27,8 +27,6 @@ dependencies {
     // because of a "compile" directive to explicitly include the jar.
     instrumentTestCompile fileTree(dir: 'libs', include: 'td_collator_so.jar')
 
-    compile 'org.apache.httpcomponents:httpmime:4.1.1'
-
     compile 'org.codehaus.jackson:jackson-core-asl:1.9.2'
     compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
 
