@@ -266,6 +266,7 @@ public class CBLPusher extends CBLReplicator implements Observer {
         MultipartEntity multiPart = null;
 
         Map<String, Object> revProps = revision.getProperties();
+        revProps.put("_revisions", db.getRevisionHistoryDict(revision));
 
         Map<String, Object> attachments = (Map<String, Object>) revProps.get("_attachments");
         for (String attachmentKey : attachments.keySet()) {
@@ -291,7 +292,8 @@ public class CBLPusher extends CBLReplicator implements Observer {
                 String base64Digest = (String) attachment.get("digest");
                 CBLBlobKey blobKey = new CBLBlobKey(base64Digest);
                 InputStream inputStream = blobStore.blobStreamForKey(blobKey);
-                multiPart.addPart(attachmentKey, new InputStreamBody(inputStream, "application/jpeg", "whatever.jpeg"));
+                String contentType = (String) attachment.get("content_type");
+                multiPart.addPart(attachmentKey, new InputStreamBody(inputStream, contentType, attachmentKey));
 
             }
         }
