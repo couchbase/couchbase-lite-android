@@ -1519,7 +1519,8 @@ public class CBLDatabase extends Observable {
                 attachment.put("length", length);
                 attachment.put("revpos", cursor.getInt(4));
 
-                result.put(cursor.getString(0), attachment);
+                String filename = cursor.getString(0);
+                result.put(filename, attachment);
 
                 cursor.moveToNext();
             }
