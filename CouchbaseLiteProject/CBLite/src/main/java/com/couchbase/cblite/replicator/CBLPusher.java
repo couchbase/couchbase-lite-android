@@ -1,6 +1,9 @@
 package com.couchbase.cblite.replicator;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -11,13 +14,20 @@ import java.util.Observer;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.http.client.HttpResponseException;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.ByteArrayBody;
+import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.entity.mime.content.StringBody;
 
 import android.util.Log;
 
+import com.couchbase.cblite.CBLBlobKey;
+import com.couchbase.cblite.CBLBlobStore;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLFilterBlock;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLRevisionList;
+import com.couchbase.cblite.CBLServer;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.support.HttpClientFactory;
 import com.couchbase.cblite.support.CBLRemoteRequestCompletionBlock;
@@ -201,6 +211,11 @@ public class CBLPusher extends CBLReplicator implements Observer {
                                         properties = new HashMap<String,Object>(rev.getProperties());
                                     }
                                 }
+                                if (properties.containsKey("_attachments")) {
+                                    if (uploadMultipartRevision(rev)) {
+                                        continue;
+                                    }
+                                }
                                 if(properties != null) {
                                     // Add the _revisions list:
                                     properties.put("_revisions", db.getRevisionHistoryDict(rev));
@@ -244,6 +259,67 @@ public class CBLPusher extends CBLReplicator implements Observer {
             }
 
         });
+    }
+
+    private boolean uploadMultipartRevision(CBLRevision revision) {
+
+        MultipartEntity multiPart = null;
+
+        Map<String, Object> revProps = revision.getProperties();
+
+        Map<String, Object> attachments = (Map<String, Object>) revProps.get("_attachments");
+        for (String attachmentKey : attachments.keySet()) {
+            Map<String, Object> attachment = (Map<String, Object>) attachments.get(attachmentKey);
+            if (attachment.containsKey("follows")) {
+
+                if (multiPart == null) {
+
+                    multiPart = new MultipartEntity();
+
+                    try {
+                        String json  = CBLServer.getObjectMapper().writeValueAsString(revProps);
+                        Charset utf8charset = Charset.forName("UTF-8");
+                        multiPart.addPart("param1", new StringBody(json, "application/json", utf8charset));
+
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException(e);
+                    }
+
+                }
+
+                CBLBlobStore blobStore = this.db.getAttachments();
+                String base64Digest = (String) attachment.get("digest");
+                CBLBlobKey blobKey = new CBLBlobKey(base64Digest);
+                InputStream inputStream = blobStore.blobStreamForKey(blobKey);
+                multiPart.addPart(attachmentKey, new InputStreamBody(inputStream, "application/jpeg", "whatever.jpeg"));
+
+            }
+        }
+
+        if (multiPart == null) {
+            return false;
+        }
+
+        String path = String.format("/%s?new_edits=false", revision.getDocId());
+
+        // TODO: need to throttle these requests
+        Log.d(CBLDatabase.TAG, "Uploadeding multipart request.  Revision: " + revision);
+        asyncTaskStarted();
+        sendAsyncMultipartRequest("PUT", path, multiPart, new CBLRemoteRequestCompletionBlock() {
+            @Override
+            public void onCompletion(Object result, Throwable e) {
+                if(e != null) {
+                    Log.e(CBLDatabase.TAG, "Exception uploading multipart request", e);
+                    error = e;
+                } else {
+                    Log.d(CBLDatabase.TAG, "Uploaded multipart request.  Result: " + result);
+                }
+                asyncTaskFinished(1);
+            }
+        });
+
+        return true;
+
     }
 
 }

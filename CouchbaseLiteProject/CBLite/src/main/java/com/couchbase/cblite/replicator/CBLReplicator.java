@@ -1,25 +1,5 @@
 package com.couchbase.cblite.replicator;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Observable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.protocol.ClientContext;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.BasicHttpContext;
-
 import android.net.Uri;
 import android.util.Log;
 
@@ -30,11 +10,31 @@ import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.auth.CBLAuthorizer;
 import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
 import com.couchbase.cblite.auth.CBLPersonaAuthorizer;
-import com.couchbase.cblite.support.HttpClientFactory;
 import com.couchbase.cblite.support.CBLBatchProcessor;
 import com.couchbase.cblite.support.CBLBatcher;
+import com.couchbase.cblite.support.CBLRemoteMultipartRequest;
 import com.couchbase.cblite.support.CBLRemoteRequest;
 import com.couchbase.cblite.support.CBLRemoteRequestCompletionBlock;
+import com.couchbase.cblite.support.HttpClientFactory;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public abstract class CBLReplicator extends Observable {
 
@@ -395,6 +395,19 @@ public abstract class CBLReplicator extends Observable {
     public void sendAsyncRequest(String method, URL url, Object body, CBLRemoteRequestCompletionBlock onCompletion) {
         Log.d(CBLDatabase.TAG, String.format("%s: sendAsyncRequest to %s", toString(), url));
         CBLRemoteRequest request = new CBLRemoteRequest(workExecutor, clientFacotry, method, url, body, onCompletion, httpContext);
+        remoteRequestExecutor.execute(request);
+    }
+
+    public void sendAsyncMultipartRequest(String method, String relativePath, MultipartEntity multiPartEntity, CBLRemoteRequestCompletionBlock onCompletion) {
+        URL url = null;
+        try {
+            String urlStr = remote.toExternalForm() + relativePath;
+            url = new URL(urlStr);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        }
+        Log.d(CBLDatabase.TAG, String.format("%s: sendAsyncMultipartRequest to %s", toString(), url));
+        CBLRemoteMultipartRequest request = new CBLRemoteMultipartRequest(workExecutor, clientFacotry, method, url, multiPartEntity, onCompletion, httpContext);
         remoteRequestExecutor.execute(request);
     }
 
