@@ -81,9 +81,7 @@ public class FormBodyPart {
 
     protected void generateContentDisp(final ContentBody body) {
         StringBuilder buffer = new StringBuilder();
-        buffer.append("form-data; name=\"");
-        buffer.append(getName());
-        buffer.append("\"");
+        buffer.append("attachment");
         if (body.getFilename() != null) {
             buffer.append("; filename=\"");
             buffer.append(body.getFilename());
