@@ -17,6 +17,10 @@
 
 package com.couchbase.cblite;
 
+
+import com.couchbase.cblite.support.Base64;
+
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -31,6 +35,39 @@ public class CBLBlobKey {
 
     public CBLBlobKey(byte[] bytes) {
         this.bytes = bytes;
+    }
+
+    /**
+     * Constructor
+     *
+     * @param base64Digest string with base64'd digest, with leading "sha1-" attached.
+     *                     eg, "sha1-LKJ32423JK..."
+     */
+    public CBLBlobKey(String base64Digest) {
+        this(decodeBase64Digest(base64Digest));
+    }
+
+    /**
+     * Decode base64'd digest into a byte array that is suitable for use
+     * as a blob key.
+     *
+     * @param base64Digest string with base64'd digest, with leading "sha1-" attached.
+     *                     eg, "sha1-LKJ32423JK..."
+     * @return a byte[] blob key
+     */
+    private static byte[] decodeBase64Digest(String base64Digest) {
+        String expectedPrefix = "sha1-";
+        if (!base64Digest.startsWith(expectedPrefix)) {
+            throw new IllegalArgumentException(base64Digest + " did not start with " + expectedPrefix);
+        }
+        base64Digest = base64Digest.replaceFirst(expectedPrefix, "");
+        byte[] bytes = new byte[0];
+        try {
+            bytes = Base64.decode(base64Digest);
+        } catch (IOException e) {
+            new IllegalArgumentException(e);
+        }
+        return bytes;
     }
 
     public void setBytes(byte[] bytes) {
