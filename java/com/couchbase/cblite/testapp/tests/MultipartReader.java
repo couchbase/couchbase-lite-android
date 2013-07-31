@@ -61,7 +61,8 @@ public class MultipartReader extends InstrumentationTestCase {
             CBLMultipartReaderDelegate delegate = null;
             CBLMultipartReader reader = new CBLMultipartReader("multipart/related; boundary=\"BOUNDARY\"", delegate);
             byte[] expectedBoundary = (byte[]) contentTypes.get(contentType);
-            Assert.assertEquals(reader.getBoundary(), expectedBoundary);
+            byte[] boundary = reader.getBoundary();
+            Assert.assertEquals(boundary, expectedBoundary);
         }
 
         try {
