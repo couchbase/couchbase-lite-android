@@ -95,7 +95,24 @@ public class CBLBlobStoreWriter {
 
     /** Installs a finished blob into the store. */
     public void install() {
-        // TODO!!
+
+        if (tempFile == null) {
+            return;  // already installed
+        }
+
+        // Move temp file to correct location in blob store:
+        String destPath = store.pathForKey(blobKey);
+        File destPathFile = new File(destPath);
+        boolean result = tempFile.renameTo(destPathFile);
+
+        // If the move fails, assume it means a file with the same name already exists; in that
+        // case it must have the identical contents, so we're still OK.
+        if (result == false) {
+            cancel();
+        }
+
+        tempFile = null;
+
     }
 
     public String mD5DigestString() {
