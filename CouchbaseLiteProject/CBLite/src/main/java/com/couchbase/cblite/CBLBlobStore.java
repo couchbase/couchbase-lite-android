@@ -289,4 +289,26 @@ public class CBLBlobStore {
         }
         return numDeleted;
     }
+
+    public File tempDir() {
+
+        File directory = new File(path);
+        File tempDirectory = new File(directory, "temp_attachments");
+
+        if(!tempDirectory.exists()) {
+            boolean result = tempDirectory.mkdirs();
+            if(result == false) {
+                throw new IllegalStateException("Unable to create directory for temporary blob store");
+            }
+        }
+        else if(!tempDirectory.isDirectory()) {
+            throw new IllegalStateException("Directory for temporary blob store is not a directory");
+        }
+        return tempDirectory;
+
+
+
+
+    }
+
 }
