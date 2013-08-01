@@ -145,7 +145,8 @@ public class CBLMultipartReader {
                     // The entire message might start with a boundary without a leading CRLF.
                     byte[] boundaryWithoutLeadingCRLF = getBoundaryWithoutLeadingCRLF();
                     if (bufLen >= boundaryWithoutLeadingCRLF.length) {
-                        if (Arrays.equals(buffer.toByteArray(), boundaryWithoutLeadingCRLF)) {
+                        // if (Arrays.equals(buffer.toByteArray(), boundaryWithoutLeadingCRLF)) {
+                        if (memcmp(buffer.toByteArray(), boundaryWithoutLeadingCRLF, boundaryWithoutLeadingCRLF.length)) {
                             deleteUpThrough(boundaryWithoutLeadingCRLF.length);
                             nextState = CBLMultipartReaderState.kInHeaders;
                         }
