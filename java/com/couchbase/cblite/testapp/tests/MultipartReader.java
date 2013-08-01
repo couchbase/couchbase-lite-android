@@ -88,9 +88,9 @@ public class MultipartReader extends InstrumentationTestCase {
         Charset utf8 = Charset.forName("UTF-8");
 
         byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
-        ByteArrayInputStream mimeInputStream = new ByteArrayInputStream(mime);
 
         for (int chunkSize=1; chunkSize <= mime.length; ++chunkSize) {
+            ByteArrayInputStream mimeInputStream = new ByteArrayInputStream(mime);
             TestMultipartReaderDelegate delegate = new TestMultipartReaderDelegate();
             String contentType = "multipart/related; boundary=\"BOUNDARY\"";
             CBLMultipartReader reader = new CBLMultipartReader(contentType, delegate);
