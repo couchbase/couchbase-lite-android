@@ -30,6 +30,7 @@ public class MultipartReader extends InstrumentationTestCase {
             if (partList == null) {
                 partList = new ArrayList<ByteArrayBuffer>();
             }
+            currentPartData = new ByteArrayBuffer(1024);
             partList.add(currentPartData);
             if (headersList == null) {
                 headersList = new ArrayList<Map<String, String>>();
