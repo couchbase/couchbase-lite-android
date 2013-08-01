@@ -303,7 +303,7 @@ public class Attachments extends CBLiteTestCase {
             blobWriter.finish();
 
             Assert.assertEquals(blobWriter.sHA1DigestString(), "sha1-C+7Hteo/D9vJXQ3UfzxbwnXaijM=");
-            Assert.assertEquals(blobWriter.mD5DigestString(), "rL0Y20zC+Fzt72VPzMSk2A==");
+            Assert.assertEquals(blobWriter.mD5DigestString(), "md5-rL0Y20zC+Fzt72VPzMSk2A==");
 
         } catch (IOException e) {
             Assert.assertTrue(e.getMessage(), false);
