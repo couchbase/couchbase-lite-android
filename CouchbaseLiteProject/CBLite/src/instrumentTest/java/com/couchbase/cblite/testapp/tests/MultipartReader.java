@@ -76,6 +76,13 @@ public class MultipartReader extends InstrumentationTestCase {
 
     }
 
+    public void testParseHeaders() {
+        String testString = new String("\r\nFoo: Bar\r\n Header : Val ue ");
+        CBLMultipartReader reader = new CBLMultipartReader("multipart/related;boundary=X", null);
+        reader.parseHeaders(testString);
+        Assert.assertEquals(reader.headers.keySet().size(), 2);
+    }
+
     public void testReaderOperation() {
 
         Charset utf8 = Charset.forName("UTF-8");

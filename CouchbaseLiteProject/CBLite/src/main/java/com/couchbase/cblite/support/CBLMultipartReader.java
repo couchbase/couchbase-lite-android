@@ -27,7 +27,7 @@ public class CBLMultipartReader {
     private String contentType;
     private byte[] boundary;
     private CBLMultipartReaderDelegate delegate;
-    private Map<String, String> headers;
+    public Map<String, String> headers;
 
     public CBLMultipartReader(String contentType, CBLMultipartReaderDelegate delegate) {
 
@@ -88,34 +88,40 @@ public class CBLMultipartReader {
         }
     }
 
-    private void parseHeaders(String headersStr) {
+    public void parseHeaders(String headersStr) {
 
         if (headersStr == null || headersStr.length() == 0) {
             throw new IllegalArgumentException("Unparseable UTF-8 in headers");
         }
         headers = new HashMap<String, String>();
-        boolean first = true;
+        headersStr = headersStr.trim();
         StringTokenizer tokenizer = new StringTokenizer(headersStr, "\r\n");
         while (tokenizer.hasMoreTokens()) {
             String header = tokenizer.nextToken();
-            if (first) {
-                first = false;  // first line is just the whitespace between separator and its CRLF
+
+            if (!header.contains(":")) {
+                throw new IllegalArgumentException("Missing ':' in header line: " + header);
             }
-            else {
-                if (header.indexOf(":") == -1) {
-                    throw new IllegalArgumentException("Missing ':' in header line: " + header);
-                }
-                StringTokenizer headerTokenizer  = new StringTokenizer(header, ":");
-                String key = headerTokenizer.nextToken().trim();
-                String value = headerTokenizer.nextToken().trim();
-                headers.put(key, value);
-            }
+            StringTokenizer headerTokenizer = new StringTokenizer(header, ":");
+            String key = headerTokenizer.nextToken().trim();
+            String value = headerTokenizer.nextToken().trim();
+            headers.put(key, value);
+
         }
 
     }
 
+    private void deleteUpThrough(int location) {
+
+        // int start = location + 1;  // start at the first byte after the location
+
+        byte[] newBuffer = Arrays.copyOfRange(buffer.toByteArray(), location, buffer.length());
+        buffer.clear();
+        buffer.append(newBuffer, 0, newBuffer.length);
+
+    }
+
     public void appendData(byte[] data) {
-        System.out.println("appendData called");
 
         if (buffer == null) {
             return;
@@ -135,7 +141,7 @@ public class CBLMultipartReader {
                     byte[] boundaryWithoutLeadingCRLF = getBoundaryWithoutLeadingCRLF();
                     if (bufLen >= boundaryWithoutLeadingCRLF.length) {
                         if (Arrays.equals(buffer.toByteArray(), boundaryWithoutLeadingCRLF)) {
-                            buffer.clear(); // TODO: broken!?
+                            deleteUpThrough(boundaryWithoutLeadingCRLF.length);
                             nextState = CBLMultipartReaderState.kInHeaders;
                         }
                         else {
@@ -159,7 +165,7 @@ public class CBLMultipartReader {
                             delegate.appendToPart(dataToAppend);
                             delegate.finishedPart();
                         }
-                        buffer.clear();  // TODO: broken!?
+                        deleteUpThrough(r.getLocation() + r.getLength());
                         nextState = CBLMultipartReaderState.kInHeaders;
                     }
                     break;
@@ -176,9 +182,11 @@ public class CBLMultipartReader {
                     Range r = searchFor(kCRLFCRLF, 0);
                     if (r.getLength() > 0) {
                         byte[] headersBytes = Arrays.copyOf(buffer.toByteArray(), r.getLocation());
+                        // byte[] headersBytes = Arrays.copyOfRange(buffer.toByteArray(), 0, r.getLocation())  <-- better?
+
                         String headersString = new String(headersBytes, utf8);
                         parseHeaders(headersString);
-                        buffer.clear();  // TODO: broken!?
+                        deleteUpThrough(r.getLocation() + r.getLength());
                         delegate.startedPart(headers);
                         nextState = CBLMultipartReaderState.kInBody;
 
@@ -236,12 +244,7 @@ public class CBLMultipartReader {
                 }
             }
         }
-
-
     }
-
-
-
 
 }
 
