@@ -80,11 +80,16 @@ public class CBLMultipartReader {
 
         KMPMatch searcher = new KMPMatch();
         int matchIndex = searcher.indexOf(byteArrayToSearch, pattern);
+
+        // the absolute location in the original buffer is the matchIndex in the byteArrayToSearch
+        // plus the startIndex
+        int location = matchIndex + start;
+
         if (matchIndex > 0) {
-            return new Range(matchIndex, pattern.length);
+            return new Range(location, pattern.length);
         }
         else {
-            return new Range(matchIndex, 0);
+            return new Range(location, 0);
         }
     }
 
@@ -211,7 +216,6 @@ public class CBLMultipartReader {
     private void close() {
         buffer = null;
         boundary = null;
-        state = CBLMultipartReaderState.kUninitialized;
     }
 
     private void parseContentType() {

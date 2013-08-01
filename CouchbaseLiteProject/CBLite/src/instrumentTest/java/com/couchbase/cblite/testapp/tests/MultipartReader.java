@@ -103,7 +103,7 @@ public class MultipartReader extends InstrumentationTestCase {
                 Assert.assertTrue("Parser didn't stop at end", location < mime.length);
                 length = Math.min(chunkSize, (mime.length - location));
                 byte[] bytesRead = new byte[length];
-                mimeInputStream.read(bytesRead, location, length);
+                mimeInputStream.read(bytesRead, 0, length);
                 reader.appendData(bytesRead);
                 location += chunkSize;
             } while (!reader.finished());
@@ -122,9 +122,8 @@ public class MultipartReader extends InstrumentationTestCase {
             Assert.assertTrue(headers1.containsKey("Foo"));
             Assert.assertEquals(headers1.get("Foo"), "Bar");
 
-            Map<String, String> headers2 = delegate.headersList.get(1);
-            Assert.assertTrue(headers2.containsKey("Header"));
-            Assert.assertEquals(headers2.get("Header"), "Val ue");
+            Assert.assertTrue(headers1.containsKey("Header"));
+            Assert.assertEquals(headers1.get("Header"), "Val ue");
 
         }
 
