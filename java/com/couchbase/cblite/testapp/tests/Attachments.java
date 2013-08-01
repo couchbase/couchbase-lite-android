@@ -20,6 +20,7 @@ package com.couchbase.cblite.testapp.tests;
 import android.util.Log;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import org.apache.commons.io.IOUtils;
 import com.couchbase.cblite.CBLAttachment;
 import com.couchbase.cblite.CBLBlobKey;
 import com.couchbase.cblite.CBLBlobStore;
+import com.couchbase.cblite.CBLBlobStoreWriter;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLStatus;
@@ -289,6 +291,24 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertNull(attachmentDict);
 
         database.close();
+    }
+
+    public void testStreamAttachmentBlobStoreWriter() {
+
+        try {
+            CBLBlobStore attachments = database.getAttachments();
+
+            CBLBlobStoreWriter blobWriter = new CBLBlobStoreWriter(attachments);
+            blobWriter.appendData(new String("foo").getBytes());
+            blobWriter.finish();
+
+            Assert.assertEquals(blobWriter.sHA1DigestString(), "sha1-C+7Hteo/D9vJXQ3UfzxbwnXaijM=");
+            Assert.assertEquals(blobWriter.mD5DigestString(), "rL0Y20zC+Fzt72VPzMSk2A==");
+
+        } catch (IOException e) {
+            Assert.assertTrue(e.getMessage(), false);
+        }
+
     }
 
 }
