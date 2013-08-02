@@ -23,7 +23,7 @@ public class LocalDocs extends CBLiteTestCase {
         documentProperties.put("bar", false);
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevision rev1 = new CBLRevision(body);
+        CBLRevision rev1 = new CBLRevision(body, database);
 
         CBLStatus status = new CBLStatus();
         rev1 = database.putLocalRevision(rev1, null, status);
@@ -45,7 +45,7 @@ public class LocalDocs extends CBLiteTestCase {
         documentProperties = readRev.getProperties();
         documentProperties.put("status", "updated!");
         body = new CBLBody(documentProperties);
-        CBLRevision rev2 = new CBLRevision(body);
+        CBLRevision rev2 = new CBLRevision(body, database);
         CBLRevision rev2input = rev2;
         rev2 = database.putLocalRevision(rev2, rev1.getRevId(), status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
@@ -63,7 +63,7 @@ public class LocalDocs extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
 
         // Delete it:
-        CBLRevision revD = new CBLRevision(rev2.getDocId(), null, true);
+        CBLRevision revD = new CBLRevision(rev2.getDocId(), null, true, database);
         CBLRevision revResult = database.putLocalRevision(revD, null, status);
         Assert.assertNull(revResult);
         Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
@@ -71,7 +71,7 @@ public class LocalDocs extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.OK, status.getCode());
 
         // Delete nonexistent doc:
-        CBLRevision revFake = new CBLRevision("_local/fake", null, true);
+        CBLRevision revFake = new CBLRevision("_local/fake", null, true, database);
         database.putLocalRevision(revFake, null, status);
         Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
 

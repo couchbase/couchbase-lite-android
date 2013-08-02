@@ -104,7 +104,7 @@ public class Revisions extends AndroidTestCase {
     }
 
     private static CBLRevision mkrev(String revID) {
-        return new CBLRevision("docid", revID, false);
+        return new CBLRevision("docid", revID, false, null);
     }
 
 }
