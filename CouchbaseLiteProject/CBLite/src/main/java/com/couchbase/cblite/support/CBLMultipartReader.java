@@ -75,25 +75,16 @@ public class CBLMultipartReader {
     private Range searchFor(byte[] pattern, int start) {
 
         byte[] byteArrayToSearch;
-        if (start == 0) {
-            byteArrayToSearch = buffer.toByteArray();
-        }
-        else {
-            byteArrayToSearch = Arrays.copyOfRange(buffer.toByteArray(), start, buffer.length());
-        }
+        byteArrayToSearch = buffer.toByteArray();
 
         KMPMatch searcher = new KMPMatch();
-        int matchIndex = searcher.indexOf(byteArrayToSearch, pattern);
-
-        // the absolute location in the original buffer is the matchIndex in the byteArrayToSearch
-        // plus the startIndex
-        int location = matchIndex + start;
+        int matchIndex = searcher.indexOf(byteArrayToSearch, pattern, start);
 
         if (matchIndex > 0) {
-            return new Range(location, pattern.length);
+            return new Range(matchIndex, pattern.length);
         }
         else {
-            return new Range(location, 0);
+            return new Range(matchIndex, 0);
         }
     }
 
@@ -283,14 +274,14 @@ class KMPMatch {
     /**
      * Finds the first occurrence of the pattern in the text.
      */
-    public int indexOf(byte[] data, byte[] pattern) {
+    public int indexOf(byte[] data, byte[] pattern, int dataOffset) {
         int[] failure = computeFailure(pattern);
 
         int j = 0;
         if (data.length == 0)
             return -1;
 
-        for (int i = 0; i < data.length; i++) {
+        for (int i = dataOffset; i < data.length; i++) {
             while (j > 0 && pattern[j] != data[i]) {
                 j = failure[j - 1];
             }
