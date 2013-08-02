@@ -87,7 +87,7 @@ public class CBLRemoteRequest implements Runnable {
 
     }
 
-    private HttpUriRequest createConcreteRequest() {
+    protected HttpUriRequest createConcreteRequest() {
         HttpUriRequest request = null;
         if (method.equalsIgnoreCase("GET")) {
             request = new HttpGet(url.toExternalForm());

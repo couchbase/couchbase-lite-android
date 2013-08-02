@@ -12,6 +12,7 @@ import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
 import com.couchbase.cblite.auth.CBLPersonaAuthorizer;
 import com.couchbase.cblite.support.CBLBatchProcessor;
 import com.couchbase.cblite.support.CBLBatcher;
+import com.couchbase.cblite.support.CBLRemoteMultipartDownloaderRequest;
 import com.couchbase.cblite.support.CBLRemoteMultipartRequest;
 import com.couchbase.cblite.support.CBLRemoteRequest;
 import com.couchbase.cblite.support.CBLRemoteRequestCompletionBlock;
@@ -406,7 +407,8 @@ public abstract class CBLReplicator extends Observable {
             Log.d(CBLDatabase.TAG, String.format("%s: sendAsyncMultipartDownloaderRequest to %s", toString(), url));
 
             CBLRemoteMultipartDownloaderRequest request = new CBLRemoteMultipartDownloaderRequest(workExecutor, clientFacotry, method, url, body, db, onCompletion, httpContext);
-            remoteRequestExecutor.execute(request);        } catch (MalformedURLException e) {
+            remoteRequestExecutor.execute(request);
+        } catch (MalformedURLException e) {
             Log.e(CBLDatabase.TAG, "Malformed URL for async request", e);
         }
     }
