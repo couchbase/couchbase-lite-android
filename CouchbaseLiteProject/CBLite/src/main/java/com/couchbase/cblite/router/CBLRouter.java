@@ -739,7 +739,7 @@ public class CBLRouter implements Observer {
                 CBLStatus status = new CBLStatus(CBLStatus.BAD_REQUEST);
                 CBLBody docBody = new CBLBody(doc);
                 if (noNewEdits) {
-                    rev = new CBLRevision(docBody);
+                    rev = new CBLRevision(docBody, db);
                     if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
                         status =  new CBLStatus(CBLStatus.BAD_REQUEST);
                     } else {
@@ -799,7 +799,7 @@ public class CBLRouter implements Observer {
         for (String docID : body.keySet()) {
             List<String> revIDs = (List<String>)body.get(docID);
             for (String revID : revIDs) {
-                CBLRevision rev = new CBLRevision(docID, revID, false);
+                CBLRevision rev = new CBLRevision(docID, revID, false, db);
                 revs.add(rev);
             }
         }
@@ -1216,7 +1216,7 @@ public class CBLRouter implements Observer {
             prevRevID = getRevIDFromIfMatchHeader();
         }
 
-        CBLRevision rev = new CBLRevision(docID, null, deleting);
+        CBLRevision rev = new CBLRevision(docID, null, deleting, db);
         rev.setBody(body);
 
         CBLRevision result = null;
@@ -1270,7 +1270,7 @@ public class CBLRouter implements Observer {
         } else {
             // PUT with new_edits=false -- forcible insertion of existing revision:
             CBLBody body = new CBLBody(bodyDict);
-            CBLRevision rev = new CBLRevision(body);
+            CBLRevision rev = new CBLRevision(body, _db);
             if(rev.getRevId() == null || rev.getDocId() == null || !rev.getDocId().equals(docID)) {
                 return new CBLStatus(CBLStatus.BAD_REQUEST);
             }

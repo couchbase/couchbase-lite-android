@@ -43,7 +43,7 @@ public class Validations extends CBLiteTestCase {
         Map<String, Object> props = new HashMap<String,Object>();
         props.put("name","Zaphod Beeblebrox");
         props.put("towel", "velvet");
-        CBLRevision rev = new CBLRevision(props);
+        CBLRevision rev = new CBLRevision(props, database);
         CBLStatus status = new CBLStatus();
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
@@ -70,7 +70,7 @@ public class Validations extends CBLiteTestCase {
         props = new HashMap<String,Object>();
         props.put("name","Vogon");
         props.put("poetry", true);
-        rev = new CBLRevision(props);
+        rev = new CBLRevision(props, database);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
@@ -81,7 +81,7 @@ public class Validations extends CBLiteTestCase {
         props.put("_id", "ford");
         props.put("name","Ford Prefect");
         props.put("towel", "terrycloth");
-        rev = new CBLRevision(props);
+        rev = new CBLRevision(props, database);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
@@ -89,7 +89,7 @@ public class Validations extends CBLiteTestCase {
         Assert.assertEquals("ford", rev.getDocId());
 
         // DELETE a document:
-        rev = new CBLRevision(rev.getDocId(), rev.getRevId(), true);
+        rev = new CBLRevision(rev.getDocId(), rev.getRevId(), true, database);
         Assert.assertTrue(rev.isDeleted());
         validationCalled = false;
         rev = database.putRevision(rev, rev.getRevId(), false, status);
@@ -100,7 +100,7 @@ public class Validations extends CBLiteTestCase {
         props = new HashMap<String,Object>();
         props.put("_id", "petunias");
         props.put("name","Pot of Petunias");
-        rev = new CBLRevision(props);
+        rev = new CBLRevision(props, database);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);

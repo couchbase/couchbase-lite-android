@@ -37,7 +37,7 @@ public class Changes extends CBLiteTestCase {
         documentProperties.put("baz", "touch");
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevision rev1 = new CBLRevision(body);
+        CBLRevision rev1 = new CBLRevision(body, database);
 
         CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);

@@ -84,7 +84,7 @@ public class Views extends CBLiteTestCase {
     }
 
     private CBLRevision putDoc(CBLDatabase db, Map<String,Object> props) {
-        CBLRevision rev = new CBLRevision(props);
+        CBLRevision rev = new CBLRevision(props, db);
         CBLStatus status = new CBLStatus();
         rev = db.putRevision(rev, null, false, status);
         Assert.assertTrue(status.isSuccessful());
@@ -216,7 +216,7 @@ public class Views extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.NOT_MODIFIED, updated.getCode());
 
         // Now add a doc and update a doc:
-        CBLRevision threeUpdated = new CBLRevision(rev3.getDocId(), rev3.getRevId(), false);
+        CBLRevision threeUpdated = new CBLRevision(rev3.getDocId(), rev3.getRevId(), false, database);
         Map<String,Object> newdict3 = new HashMap<String,Object>();
         newdict3.put("key", "3hree");
         threeUpdated.setProperties(newdict3);
@@ -228,7 +228,7 @@ public class Views extends CBLiteTestCase {
         dict4.put("key", "four");
         CBLRevision rev4 = putDoc(database, dict4);
 
-        CBLRevision twoDeleted = new CBLRevision(rev2.getDocId(), rev2.getRevId(), true);
+        CBLRevision twoDeleted = new CBLRevision(rev2.getDocId(), rev2.getRevId(), true, database);
         database.putRevision(twoDeleted, rev2.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 

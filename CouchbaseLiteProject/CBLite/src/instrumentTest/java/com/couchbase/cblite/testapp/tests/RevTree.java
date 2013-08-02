@@ -38,7 +38,7 @@ public class RevTree extends CBLiteTestCase {
     public void testForceInsertEmptyHistory() {
 
         List<String> revHistory = null;
-        CBLRevision rev = new CBLRevision("FakeDocId", "1-tango", false);
+        CBLRevision rev = new CBLRevision("FakeDocId", "1-tango", false, database);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
@@ -53,7 +53,7 @@ public class RevTree extends CBLiteTestCase {
 
     public void testRevTree() {
 
-        CBLRevision rev = new CBLRevision("MyDocId", "4-foxy", false);
+        CBLRevision rev = new CBLRevision("MyDocId", "4-foxy", false, );
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
@@ -74,7 +74,7 @@ public class RevTree extends CBLiteTestCase {
         Assert.assertEquals(1, database.getDocumentCount());
         verifyHistory(database, rev, revHistory);
 
-        CBLRevision conflict = new CBLRevision("MyDocId", "5-epsilon", false);
+        CBLRevision conflict = new CBLRevision("MyDocId", "5-epsilon", false, database);
 
         Map<String, Object> conflictProperties = new HashMap<String, Object>();
         conflictProperties.put("_id", conflict.getDocId());
@@ -95,7 +95,7 @@ public class RevTree extends CBLiteTestCase {
         verifyHistory(database, conflict, conflictHistory);
 
         // Add an unrelated document:
-        CBLRevision other = new CBLRevision("AnotherDocID", "1-ichi", false);
+        CBLRevision other = new CBLRevision("AnotherDocID", "1-ichi", false, database);
         Map<String,Object> otherProperties = new HashMap<String,Object>();
         otherProperties.put("language", "jp");
         other.setProperties(otherProperties);

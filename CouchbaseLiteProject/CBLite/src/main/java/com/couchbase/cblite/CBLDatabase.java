@@ -655,7 +655,7 @@ public class CBLDatabase extends Observable {
     @SuppressWarnings("unchecked")
     public Map<String, Object> documentPropertiesFromJSON(byte[] json, String docId, String revId, long sequence, EnumSet<TDContentOptions> contentOptions) {
 
-        CBLRevision rev = new CBLRevision(docId, revId, false);
+        CBLRevision rev = new CBLRevision(docId, revId, false, this);
         rev.setSequence(sequence);
         Map<String,Object> extra = extraPropertiesForRevision(rev, contentOptions);
         if(json == null) {
@@ -701,7 +701,7 @@ public class CBLDatabase extends Observable {
                     rev = cursor.getString(0);
                 }
                 boolean deleted = (cursor.getInt(1) > 0);
-                result = new CBLRevision(id, rev, deleted);
+                result = new CBLRevision(id, rev, deleted, this);
                 result.setSequence(cursor.getLong(2));
                 if(!contentOptions.equals(EnumSet.of(TDContentOptions.TDNoBody))) {
                     byte[] json = null;
@@ -805,7 +805,7 @@ public class CBLDatabase extends Observable {
             cursor.moveToFirst();
             result = new CBLRevisionList();
             while(!cursor.isAfterLast()) {
-                CBLRevision rev = new CBLRevision(docId, cursor.getString(1), (cursor.getInt(2) > 0));
+                CBLRevision rev = new CBLRevision(docId, cursor.getString(1), (cursor.getInt(2) > 0), this);
                 rev.setSequence(cursor.getLong(0));
                 result.add(rev);
                 cursor.moveToNext();
@@ -939,7 +939,7 @@ public class CBLDatabase extends Observable {
                 if(matches) {
                     revId = cursor.getString(2);
                     boolean deleted = (cursor.getInt(3) > 0);
-                    CBLRevision aRev = new CBLRevision(docId, revId, deleted);
+                    CBLRevision aRev = new CBLRevision(docId, revId, deleted, this);
                     aRev.setSequence(cursor.getLong(0));
                     result.add(aRev);
                     lastSequence = cursor.getLong(1);
@@ -1073,7 +1073,7 @@ public class CBLDatabase extends Observable {
                     lastDocId = docNumericId;
                 }
 
-                CBLRevision rev = new CBLRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
+                CBLRevision rev = new CBLRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0), this);
                 rev.setSequence(cursor.getLong(0));
                 if(includeDocs) {
                     expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, options.getContentOptions());
@@ -1662,7 +1662,7 @@ public class CBLDatabase extends Observable {
 
         beginTransaction();
         try {
-            CBLRevision oldRev = new CBLRevision(docID, oldRevID, false);
+            CBLRevision oldRev = new CBLRevision(docID, oldRevID, false, this);
             if(oldRevID != null) {
                 // Load existing revision if this is a replacement:
                 CBLStatus loadStatus = loadRevisionBody(oldRev, EnumSet.noneOf(TDContentOptions.class));
@@ -1987,7 +1987,7 @@ public class CBLDatabase extends Observable {
 
                 if(validations != null && validations.size() > 0) {
                     // Fetch the previous revision and validate the new one against it:
-                    CBLRevision prevRev = new CBLRevision(docId, prevRevId, false);
+                    CBLRevision prevRev = new CBLRevision(docId, prevRevId, false, this);
                     CBLStatus status = validateRevision(rev, prevRev);
                     if(!status.isSuccessful()) {
                         resultStatus.setCode(status.getCode());
@@ -2181,7 +2181,7 @@ public class CBLDatabase extends Observable {
                     }
                     else {
                         // It's an intermediate parent, so insert a stub:
-                        newRev = new CBLRevision(docId, revId, false);
+                        newRev = new CBLRevision(docId, revId, false, this);
                     }
 
                     // Insert it:
@@ -2433,7 +2433,7 @@ public class CBLDatabase extends Observable {
                     properties = CBLServer.getObjectMapper().readValue(json, Map.class);
                     properties.put("_id", docID);
                     properties.put("_rev", gotRevID);
-                    result = new CBLRevision(docID, gotRevID, false);
+                    result = new CBLRevision(docID, gotRevID, false, this);
                     result.setProperties(properties);
                 } catch (Exception e) {
                     Log.w(TAG, "Error parsing local doc JSON", e);

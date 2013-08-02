@@ -126,7 +126,7 @@ public class CBLPuller extends CBLReplicator implements CBLChangeTrackerClient {
             if(revID == null) {
                 continue;
             }
-            TDPulledRevision rev = new TDPulledRevision(docID, revID, deleted);
+            TDPulledRevision rev = new TDPulledRevision(docID, revID, deleted, db);
             rev.setRemoteSequenceID(lastSequence);
             addToInbox(rev);
         }
@@ -387,16 +387,16 @@ public class CBLPuller extends CBLReplicator implements CBLChangeTrackerClient {
  */
 class TDPulledRevision extends CBLRevision {
 
-    public TDPulledRevision(CBLBody body) {
-        super(body);
+    public TDPulledRevision(CBLBody body, CBLDatabase database) {
+        super(body, database);
     }
 
-    public TDPulledRevision(String docId, String revId, boolean deleted) {
-        super(docId, revId, deleted);
+    public TDPulledRevision(String docId, String revId, boolean deleted, CBLDatabase database) {
+        super(docId, revId, deleted, database);
     }
 
-    public TDPulledRevision(Map<String, Object> properties) {
-        super(properties);
+    public TDPulledRevision(Map<String, Object> properties, CBLDatabase database) {
+        super(properties, database);
     }
 
     protected String remoteSequenceID;

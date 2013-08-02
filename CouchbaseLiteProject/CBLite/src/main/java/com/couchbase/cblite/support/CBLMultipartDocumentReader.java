@@ -150,7 +150,7 @@ public class CBLMultipartDocumentReader implements CBLMultipartReaderDelegate {
             else if (attachment.containsKey("data") && length > 1000) {
                 String msg = String.format("Attachment '%s' sent inline (len=%d).  Large attachments " +
                         "should be sent in MIME parts for reduced memory overhead.", attachmentName);
-                Log.w(CBLDatabase.TAG, msg)
+                Log.w(CBLDatabase.TAG, msg);
             }
 
         }

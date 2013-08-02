@@ -17,10 +17,7 @@
 
 package com.couchbase.cblite.testapp.tests;
 
-import android.util.Log;
-
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -58,7 +55,7 @@ public class Attachments extends CBLiteTestCase {
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
-        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties), null, false, status);
+        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties, database), null, false, status);
 
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
@@ -104,7 +101,7 @@ public class Attachments extends CBLiteTestCase {
         rev2Properties.put("_id", rev1.getDocId());
         rev2Properties.put("foo", 2);
         rev2Properties.put("bazz", false);
-        CBLRevision rev2 = database.putRevision(new CBLRevision(rev2Properties), rev1.getRevId(), false, status);
+        CBLRevision rev2 = database.putRevision(new CBLRevision(rev2Properties, database), rev1.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         status = database.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
@@ -115,7 +112,7 @@ public class Attachments extends CBLiteTestCase {
         rev3Properties.put("_id", rev2.getDocId());
         rev3Properties.put("foo", 2);
         rev3Properties.put("bazz", false);
-        CBLRevision rev3 = database.putRevision(new CBLRevision(rev3Properties), rev2.getRevId(), false, status);
+        CBLRevision rev3 = database.putRevision(new CBLRevision(rev3Properties, database), rev2.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
@@ -160,7 +157,7 @@ public class Attachments extends CBLiteTestCase {
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
-        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties), null, false, status);
+        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties, database), null, false, status);
 
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
@@ -226,7 +223,7 @@ public class Attachments extends CBLiteTestCase {
         properties.put("_attachments", attachmentDict);
 
         CBLStatus status = new CBLStatus();
-        CBLRevision rev1 = database.putRevision(new CBLRevision(properties), null, false, status);
+        CBLRevision rev1 = database.putRevision(new CBLRevision(properties, database), null, false, status);
 
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         // Examine the attachment store:

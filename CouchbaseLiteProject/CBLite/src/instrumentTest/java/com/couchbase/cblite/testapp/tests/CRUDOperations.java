@@ -55,7 +55,7 @@ public class CRUDOperations extends CBLiteTestCase implements Observer {
         documentProperties.put("baz", "touch");
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevision rev1 = new CBLRevision(body);
+        CBLRevision rev1 = new CBLRevision(body, database);
 
         CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);
@@ -75,7 +75,7 @@ public class CRUDOperations extends CBLiteTestCase implements Observer {
         documentProperties = readRev.getProperties();
         documentProperties.put("status", "updated!");
         body = new CBLBody(documentProperties);
-        CBLRevision rev2 = new CBLRevision(body);
+        CBLRevision rev2 = new CBLRevision(body, database);
         CBLRevision rev2input = rev2;
         rev2 = database.putRevision(rev2, rev1.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
@@ -119,7 +119,7 @@ public class CRUDOperations extends CBLiteTestCase implements Observer {
 
 
         // Delete it:
-        CBLRevision revD = new CBLRevision(rev2.getDocId(), null, true);
+        CBLRevision revD = new CBLRevision(rev2.getDocId(), null, true, database);
         CBLRevision revResult = database.putRevision(revD, null, false, status);
         Assert.assertNull(revResult);
         Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
@@ -129,7 +129,7 @@ public class CRUDOperations extends CBLiteTestCase implements Observer {
         Assert.assertTrue(revD.getRevId().startsWith("3-"));
 
         // Delete nonexistent doc:
-        CBLRevision revFake = new CBLRevision("fake", null, true);
+        CBLRevision revFake = new CBLRevision("fake", null, true, database);
         database.putRevision(revFake, null, false, status);
         Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
 
