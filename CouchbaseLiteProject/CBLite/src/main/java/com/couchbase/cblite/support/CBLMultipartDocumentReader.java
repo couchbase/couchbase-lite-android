@@ -23,7 +23,7 @@ public class CBLMultipartDocumentReader implements CBLMultipartReaderDelegate {
     private CBLMultipartReader multipartReader;
     private CBLBlobStoreWriter curAttachment;
     private ByteArrayBuffer jsonBuffer;
-    private Object document;
+    private Map<String, Object> document;
     private CBLDatabase database;
     private Map<String, CBLBlobStoreWriter> attachmentsByName;
     private Map<String, CBLBlobStoreWriter> attachmentsByMd5Digest;
@@ -34,7 +34,7 @@ public class CBLMultipartDocumentReader implements CBLMultipartReaderDelegate {
     }
 
 
-    public Object getDocumentProperties() {
+    public Map<String, Object> getDocumentProperties() {
         return document;
     }
 
@@ -64,6 +64,108 @@ public class CBLMultipartDocumentReader implements CBLMultipartReaderDelegate {
         }
     }
 
+    public void finish() {
+        if (multipartReader != null) {
+            if (!multipartReader.finished()) {
+                throw new IllegalStateException("received incomplete MIME multipart response");
+            }
+
+            registerAttachments();
+        }
+        else {
+            parseJsonBuffer();
+        }
+    }
+
+    private void registerAttachments() {
+
+        int numAttachmentsInDoc = 0;
+
+        Map<String, Object> attachments = (Map<String, Object>) document.get("_attachments");
+        if (attachments == null) {
+            return;
+        }
+
+        for (String attachmentName : attachments.keySet()) {
+            Map<String, Object> attachment = (Map<String, Object>) attachments.get(attachmentName);
+
+            int length = 0;
+            if (attachment.containsKey("length")) {
+                length = ((Integer)attachment.get("length")).intValue();
+            }
+            if (attachment.containsKey("encoded_length")) {
+                length = ((Integer)attachment.get("encoded_length")).intValue();
+            }
+
+            if (attachment.containsKey("follows") &&
+                    ((Boolean)attachment.get("follows")).booleanValue() == true) {
+
+                // Check that each attachment in the JSON corresponds to an attachment MIME body.
+                // Look up the attachment by either its MIME Content-Disposition header or MD5 digest:
+                String digest = (String) attachment.get("digest");
+                CBLBlobStoreWriter writer = attachmentsByName.get(attachmentName);
+                if (writer != null) {
+                    // Identified the MIME body by the filename in its Disposition header:
+                    String actualDigest = writer.mD5DigestString();
+                    if (digest != null &&
+                            !digest.equals(actualDigest) &&
+                            !digest.equals(writer.sHA1DigestString())) {
+                        String errMsg = String.format("Attachment '%s' has incorrect MD5 digest (%s; should be %s)",
+                                attachmentName, digest, actualDigest);
+                        throw new IllegalStateException(errMsg);
+                    }
+                    attachment.put("digest", actualDigest);
+
+                }
+                else if (digest != null) {
+                    writer = attachmentsByMd5Digest.get(digest);
+                    if (writer == null) {
+                        String errMsg = String.format("Attachment '%s' does not appear in MIME body (%s; should be %s)",
+                                attachmentName);
+                        throw new IllegalStateException(errMsg);
+                    }
+                }
+                else if (attachments.size() == 1 && attachmentsByMd5Digest.size() == 1) {
+                    // Else there's only one attachment, so just assume it matches & use it:
+                    writer = attachmentsByMd5Digest.values().iterator().next();
+                    attachment.put("digest", writer.mD5DigestString());
+                }
+                else {
+                    // No digest metatata, no filename in MIME body; give up:
+                    String errMsg = String.format("Attachment '%s' has no digest metadata; cannot identify MIME body",
+                            attachmentName);
+                    throw new IllegalStateException(errMsg);
+                }
+
+                // Check that the length matches:
+                if (writer.getLength() != length) {
+                    String errMsg = String.format("Attachment '%s' has incorrect length field %d (should be %d)",
+                            attachmentName, length, writer.getLength());
+                    throw new IllegalStateException(errMsg);
+                }
+
+                ++numAttachmentsInDoc;
+
+            }
+            else if (attachment.containsKey("data") && length > 1000) {
+                String msg = String.format("Attachment '%s' sent inline (len=%d).  Large attachments " +
+                        "should be sent in MIME parts for reduced memory overhead.", attachmentName);
+                Log.w(CBLDatabase.TAG, msg)
+            }
+
+        }
+
+        if (numAttachmentsInDoc < attachmentsByMd5Digest.size()) {
+            String msg = String.format("More MIME bodies (%d) than attachments (%d) ",
+                    attachmentsByMd5Digest.size(), numAttachmentsInDoc);
+            throw new IllegalStateException(msg);
+        }
+
+        // hand over the (uninstalled) blobs to the database to remember:
+        database.rememberAttachmentWritersForDigests(attachmentsByMd5Digest);
+
+    }
+
     @Override
     public void startedPart(Map<String, String> headers) {
 
@@ -73,7 +175,7 @@ public class CBLMultipartDocumentReader implements CBLMultipartReaderDelegate {
         else {
             curAttachment = database.getAttachmentWriter();
 
-            String contentDisposition = response.getFirstHeader("Content-Disposition").getValue();
+            String contentDisposition = headers.get("Content-Disposition");
             if (contentDisposition.startsWith("attachment; filename=")) {
                 // TODO: Parse this less simplistically. Right now it assumes it's in exactly the same
                 // format generated by -[CBL_Pusher uploadMultipartRevision:]. CouchDB (as of 1.2) doesn't

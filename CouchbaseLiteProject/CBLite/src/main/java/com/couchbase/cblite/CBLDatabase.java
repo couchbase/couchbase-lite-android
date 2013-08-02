@@ -63,6 +63,7 @@ public class CBLDatabase extends Observable {
     private Map<String, CBLView> views;
     private Map<String, CBLFilterBlock> filters;
     private Map<String, CBLValidationBlock> validations;
+    private Map<String, CBLBlobStoreWriter> pendingAttachmentsByDigest;
     private List<CBLReplicator> activeReplicators;
     private CBLBlobStore attachments;
 
@@ -1728,9 +1729,17 @@ public class CBLDatabase extends Observable {
         }
     }
 
-    /**
-     * Deletes obsolete attachments from the database and blob store.
-     */
+    public void rememberAttachmentWritersForDigests(Map<String, CBLBlobStoreWriter> blobsByDigest) {
+        if (pendingAttachmentsByDigest == null) {
+            pendingAttachmentsByDigest = new HashMap<String, CBLBlobStoreWriter>();
+            pendingAttachmentsByDigest.putAll(blobsByDigest);
+        }
+    }
+
+
+        /**
+         * Deletes obsolete attachments from the database and blob store.
+         */
     public CBLStatus garbageCollectAttachments() {
         // First delete attachment rows for already-cleared revisions:
         // OPT: Could start after last sequence# we GC'd up to

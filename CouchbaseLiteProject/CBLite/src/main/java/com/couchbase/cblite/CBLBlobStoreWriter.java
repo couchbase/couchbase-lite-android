@@ -129,5 +129,7 @@ public class CBLBlobStoreWriter {
         return String.format("sha1-%s", base64Sha1Digest);
     }
 
-
+    public int getLength() {
+        return length;
+    }
 }
