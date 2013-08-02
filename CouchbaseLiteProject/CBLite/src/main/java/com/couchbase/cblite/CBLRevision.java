@@ -64,23 +64,19 @@ public class CBLRevision {
     public void setProperties(Map<String,Object> properties) {
         this.body = new CBLBody(properties);
 
-        /*
-        // Process _attachments dict, converting CBLAttachments to dicts:
-    NSDictionary* attachments = properties[@"_attachments"];
-    if (attachments.count) {
-        NSDictionary* expanded = [CBLAttachment installAttachmentBodies: attachments
-                                                             intoDatabase: _database];
-        if (expanded != attachments) {
-            NSMutableDictionary* nuProperties = [properties mutableCopy];
-            nuProperties[@"_attachments"] = expanded;
-            properties = nuProperties;
-        }
-    }
-
-         */
-        // Process _attachments dict, converting CBLAttachments to dicts:
+        // this is a much more simplified version that what happens on the iOS.  it was
+        // done this way due to time constraints, so at some point this needs to be
+        // revisited to port the remaining functionality.
         Map<String, Object> attachments = (Map<String, Object>) properties.get("_attachments");
         if (attachments != null && attachments.size() > 0) {
+            for (String attachmentName : attachments.keySet()) {
+                Map<String, Object> attachment = (Map<String, Object>) attachments.get(attachmentName);
+                CBLStatus status = database.installPendingAttachment(attachment);
+                if (status.isSuccessful() == false) {
+                    String msg = String.format("Unable to install pending attachment: %s.  Status: %d", attachment.toString(), status.getCode());
+                    throw new IllegalStateException(msg);
+                }
+            }
 
         }
 

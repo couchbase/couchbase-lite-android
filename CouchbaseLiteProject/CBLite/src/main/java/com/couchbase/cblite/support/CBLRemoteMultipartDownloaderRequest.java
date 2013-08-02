@@ -89,7 +89,7 @@ public class CBLRemoteMultipartDownloaderRequest extends CBLRemoteRequest {
                             }
                         }
 
-                        inputStream.close();  // TODO: do we need to close stream??  or is  entity.consumeContent(); enough?
+                        inputStream.close();
 
                         reader.finish();
                         fullBody = reader.getDocumentProperties();

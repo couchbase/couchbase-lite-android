@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -1356,12 +1357,17 @@ public class CBLDatabase extends Observable {
             return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
 
-        byte[] keyData = key.getBytes();
+
+        return insertAttachmentForSequenceWithNameAndType(sequence, name, contentType, revpos, key);
+
+    }
+
+    public CBLStatus insertAttachmentForSequenceWithNameAndType(long sequence, String name, String contentType, int revpos, CBLBlobKey key) {
         try {
             ContentValues args = new ContentValues();
             args.put("sequence", sequence);
             args.put("filename", name);
-            args.put("key", keyData);
+            args.put("key", key.getBytes());
             args.put("type", contentType);
             args.put("length", attachments.getSizeOfBlob(key));
             args.put("revpos", revpos);
@@ -1371,6 +1377,38 @@ public class CBLDatabase extends Observable {
             Log.e(CBLDatabase.TAG, "Error inserting attachment", e);
             return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Move pending (temporary) attachments into their permanent location.
+     */
+    public CBLStatus installPendingAttachment(Map<String, Object> attachment) {
+        String digest = (String) attachment.get("digest");
+        if (digest == null) {
+            return new CBLStatus(CBLStatus.BAD_ATTACHMENT);
+        }
+        Object writer = pendingAttachmentsByDigest.get(digest);
+        if (writer instanceof CBLBlobStoreWriter) {
+            try {
+                ((CBLBlobStoreWriter) writer).install();
+
+                // this is a temporary hack.  rather than doing what it does in the ios putRevision()
+                // method, and creating CBLAttachment objects and passing it down into this method,
+                // just set the digest in this map to be sha1 (the one we want).
+                attachment.put("digest", ((CBLBlobStoreWriter) writer).sHA1DigestString());
+
+            } catch (Exception e) {
+                String msg = String.format("Unable to install pending attachment: %s", digest);
+                Log.e(CBLDatabase.TAG, msg, e);
+                return new CBLStatus(CBLStatus.STATUS_ATTACHMENT_ERROR);
+            }
+            return new CBLStatus(CBLStatus.OK);
+        }
+        // TODO: deal with case where its a byte[] rather than a blob store writer, see ios
+        else {
+            return new CBLStatus(CBLStatus.BAD_ATTACHMENT);
+        }
+
     }
 
     public CBLStatus copyAttachmentNamedFromSequenceToSequence(String name, long fromSeq, long toSeq) {
@@ -1636,6 +1674,29 @@ public class CBLDatabase extends Observable {
 
                 // Finally insert the attachment:
                 status = insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(newContents), newSequence, name, (String)newAttach.get("content_type"), revpos);
+            }
+            else if (newAttach.containsKey("follows") && ((Boolean)newAttach.get("follows")).booleanValue() == true)  {
+
+                // Now determine the revpos, i.e. generation # this was added in. Usually this is
+                // implicit, but a rev being pulled in replication will have it set already.
+                int generation = rev.getGeneration();
+                assert(generation > 0);
+                Object revposObj = newAttach.get("revpos");
+                int revpos = generation;
+                if(revposObj != null && revposObj instanceof Integer) {
+                    revpos = ((Integer)revposObj).intValue();
+                }
+
+                if(revpos > generation) {
+                    return new CBLStatus(CBLStatus.BAD_REQUEST);
+                }
+
+                // Finally insert the attachment:
+                Charset utf8 = Charset.forName("UTF-8");
+                String sha1DigestKey = (String) newAttach.get("digest");
+                CBLBlobKey key = new CBLBlobKey(sha1DigestKey);
+                status = insertAttachmentForSequenceWithNameAndType(newSequence, name, (String)newAttach.get("content_type"), revpos, key);
+
             }
             else {
                 // It's just a stub, so copy the previous revision's attachment entry:

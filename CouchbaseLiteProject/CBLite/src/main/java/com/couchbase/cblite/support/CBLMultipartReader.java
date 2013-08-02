@@ -132,7 +132,7 @@ public class CBLMultipartReader {
         do {
             nextState = CBLMultipartReaderState.kUninitialized;
             int bufLen = buffer.length();
-            Log.d(CBLDatabase.TAG, "appendData.  bufLen: " + bufLen);
+            // Log.d(CBLDatabase.TAG, "appendData.  bufLen: " + bufLen);
             switch (state) {
                 case kAtStart: {
                     // The entire message might start with a boundary without a leading CRLF.
