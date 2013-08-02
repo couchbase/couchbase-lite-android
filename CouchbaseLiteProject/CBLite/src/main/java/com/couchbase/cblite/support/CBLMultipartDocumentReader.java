@@ -45,6 +45,7 @@ public class CBLMultipartDocumentReader implements CBLMultipartReaderDelegate {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to parse json buffer", e);
         }
+        jsonBuffer = null;
     }
 
     public void setContentType(String contentType) {
@@ -193,6 +194,8 @@ public class CBLMultipartDocumentReader implements CBLMultipartReaderDelegate {
 
 
     }
+
+
 
     @Override
     public void appendToPart(byte[] data) {
