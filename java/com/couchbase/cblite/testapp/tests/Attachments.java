@@ -296,30 +296,26 @@ public class Attachments extends CBLiteTestCase {
 
     public void testStreamAttachmentBlobStoreWriter() {
 
-        try {
-            CBLBlobStore attachments = database.getAttachments();
 
-            CBLBlobStoreWriter blobWriter = new CBLBlobStoreWriter(attachments);
-            String testBlob = "foo";
-            blobWriter.appendData(new String(testBlob).getBytes());
-            blobWriter.finish();
+        CBLBlobStore attachments = database.getAttachments();
 
-            String sha1Base64Digest = "sha1-C+7Hteo/D9vJXQ3UfzxbwnXaijM=";
-            Assert.assertEquals(blobWriter.sHA1DigestString(), sha1Base64Digest);
-            Assert.assertEquals(blobWriter.mD5DigestString(), "md5-rL0Y20zC+Fzt72VPzMSk2A==");
+        CBLBlobStoreWriter blobWriter = new CBLBlobStoreWriter(attachments);
+        String testBlob = "foo";
+        blobWriter.appendData(new String(testBlob).getBytes());
+        blobWriter.finish();
 
-            // install it
-            blobWriter.install();
+        String sha1Base64Digest = "sha1-C+7Hteo/D9vJXQ3UfzxbwnXaijM=";
+        Assert.assertEquals(blobWriter.sHA1DigestString(), sha1Base64Digest);
+        Assert.assertEquals(blobWriter.mD5DigestString(), "md5-rL0Y20zC+Fzt72VPzMSk2A==");
 
-            // look it up in blob store and make sure it's there
-            CBLBlobKey blobKey = new CBLBlobKey(sha1Base64Digest);
-            byte[] blob = attachments.blobForKey(blobKey);
-            Assert.assertTrue(Arrays.equals(testBlob.getBytes(Charset.forName("UTF-8")), blob));
+        // install it
+        blobWriter.install();
 
+        // look it up in blob store and make sure it's there
+        CBLBlobKey blobKey = new CBLBlobKey(sha1Base64Digest);
+        byte[] blob = attachments.blobForKey(blobKey);
+        Assert.assertTrue(Arrays.equals(testBlob.getBytes(Charset.forName("UTF-8")), blob));
 
-        } catch (IOException e) {
-            Assert.assertTrue(e.getMessage(), false);
-        }
 
     }
 
