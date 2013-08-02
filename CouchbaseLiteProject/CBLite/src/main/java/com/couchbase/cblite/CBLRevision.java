@@ -38,6 +38,7 @@ public class CBLRevision {
         this.docId = docId;
         this.revId = revId;
         this.deleted = deleted;
+        this.database = database;
     }
 
     public CBLRevision(CBLBody body, CBLDatabase database) {
