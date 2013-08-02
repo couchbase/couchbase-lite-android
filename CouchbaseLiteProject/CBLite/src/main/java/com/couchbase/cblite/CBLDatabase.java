@@ -375,6 +375,10 @@ public class CBLDatabase extends Observable {
         return attachments;
     }
 
+    public CBLBlobStoreWriter getAttachmentWriter() {
+        return new CBLBlobStoreWriter(getAttachments());
+    }
+
     public long totalDataSize() {
         File f = new File(path);
         long size = f.length() + attachments.totalDataSize();

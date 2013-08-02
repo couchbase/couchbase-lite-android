@@ -65,8 +65,12 @@ public class CBLBlobStoreWriter {
     }
 
     /** Appends data to the blob. Call this when new data is available. */
-    public void appendData(byte[] data) throws IOException {
-        outStream.write(data);
+    public void appendData(byte[] data)  {
+        try {
+            outStream.write(data);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to write to stream.", e);
+        }
         length += data.length;
         sha1Digest.update(data);
         md5Digest.update(data);

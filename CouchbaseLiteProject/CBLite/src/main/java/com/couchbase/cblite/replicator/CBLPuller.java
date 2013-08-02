@@ -262,7 +262,7 @@ public class CBLPuller extends CBLReplicator implements CBLChangeTrackerClient {
         //create a final version of this variable for the log statement inside
         //FIXME find a way to avoid this
         final String pathInside = path.toString();
-        sendAsyncRequest("GET", pathInside, null, new CBLRemoteRequestCompletionBlock() {
+        sendAsyncMultipartDownloaderRequest("GET", pathInside, null, db, new CBLRemoteRequestCompletionBlock() {
 
             @Override
             public void onCompletion(Object result, Throwable e) {
