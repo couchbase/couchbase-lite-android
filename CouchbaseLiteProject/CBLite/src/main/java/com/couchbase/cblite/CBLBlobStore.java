@@ -247,6 +247,9 @@ public class CBLBlobStore {
         File file = new File(path);
         File[] contents = file.listFiles();
         for (File attachment : contents) {
+            if (attachment.isDirectory()) {
+                continue;
+            }
             CBLBlobKey attachmentKey = new CBLBlobKey();
             getKeyForFilename(attachmentKey, attachment.getPath());
             result.add(attachmentKey);
