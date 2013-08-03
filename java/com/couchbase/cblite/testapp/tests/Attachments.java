@@ -207,6 +207,8 @@ public class Attachments extends CBLiteTestCase {
     public void testPutAttachment() {
 
         CBLBlobStore attachments = database.getAttachments();
+        attachments.deleteBlobs();
+        Assert.assertEquals(0, attachments.count());
 
         // Put a revision that includes an _attachments dict:
         byte[] attach1 = "This is the body of attach1".getBytes();
