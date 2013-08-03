@@ -153,6 +153,10 @@ public class Attachments extends CBLiteTestCase {
     @SuppressWarnings("unchecked")
     public void testPutLargeAttachment() throws Exception {
 
+        CBLBlobStore attachments = database.getAttachments();
+        attachments.deleteBlobs();
+        Assert.assertEquals(0, attachments.count());
+        
         CBLStatus status = new CBLStatus();
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
