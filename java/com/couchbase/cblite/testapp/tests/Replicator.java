@@ -4,6 +4,9 @@ import java.net.URL;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.CountDownLatch;
 
 import junit.framework.Assert;
 import android.util.Log;
@@ -21,6 +24,7 @@ public class Replicator extends CBLiteTestCase {
 
     public void testPusher() throws Throwable {
 
+        CountDownLatch doneSignal = new CountDownLatch(1);
         URL remote = getReplicationURL();
 
         deleteRemoteDB(remote);
@@ -65,10 +69,17 @@ public class Replicator extends CBLiteTestCase {
             }
         });
 
-        while(repl.isRunning()) {
-            Log.i(TAG, "Waiting for replicator to finish");
-            Thread.sleep(1000);
+        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+        repl.addObserver(replicationObserver);
+
+        Log.d(TAG, "Waiting for replication to finish");
+        try {
+            doneSignal.await();
+            Log.d(TAG, "Replication finish");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+
         Assert.assertEquals("3", repl.getLastSequence());
     }
 
@@ -76,6 +87,8 @@ public class Replicator extends CBLiteTestCase {
 
         //force a push first, to ensure that we have data to pull
         testPusher();
+
+        CountDownLatch doneSignal = new CountDownLatch(1);
 
         URL remote = getReplicationURL();
 
@@ -115,9 +128,15 @@ public class Replicator extends CBLiteTestCase {
             }
         });
 
-        while(repl2.isRunning()) {
-            Log.i(TAG, "Waiting for replicator2 to finish");
-            Thread.sleep(1000);
+        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+        repl.addObserver(replicationObserver);
+
+        Log.d(TAG, "Waiting for replication to finish");
+        try {
+            doneSignal.await();
+            Log.d(TAG, "Replication finish");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         Assert.assertEquals(3, database.getLastSequence());
 
@@ -131,6 +150,36 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertTrue(doc.getRevId().startsWith("1-"));
         Assert.assertEquals(true, doc.getProperties().get("fnord"));
 
+    }
+
+    class ReplicationObserver implements Observer {
+        public boolean replicationFinished = false;
+        private CountDownLatch doneSignal;
+
+        public ReplicationObserver(CountDownLatch doneSignal) {
+            super();
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void update(Observable observable, Object data) {
+            Log.d(TAG, "ReplicationObserver.update called.  observable: " + observable);
+            CBLReplicator replicator = (CBLReplicator) observable;
+            if (!replicator.isRunning()) {
+                replicationFinished = true;
+                String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
+                Log.d(TAG, msg);
+                doneSignal.countDown();
+            }
+            else {
+                String msg = String.format("myobserver.update called, but replicator still running, so ignore it");
+                Log.d(TAG, msg);
+            }
+        }
+
+        boolean isReplicationFinished() {
+            return replicationFinished;
+        }
     }
 
 }
