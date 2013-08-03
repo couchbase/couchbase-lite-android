@@ -53,7 +53,7 @@ public class RevTree extends CBLiteTestCase {
 
     public void testRevTree() {
 
-        CBLRevision rev = new CBLRevision("MyDocId", "4-foxy", false, );
+        CBLRevision rev = new CBLRevision("MyDocId", "4-foxy", false, database);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
