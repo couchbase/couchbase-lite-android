@@ -71,6 +71,12 @@ public class CBLRevision {
         if (attachments != null && attachments.size() > 0) {
             for (String attachmentName : attachments.keySet()) {
                 Map<String, Object> attachment = (Map<String, Object>) attachments.get(attachmentName);
+
+                // if there is actual data in this attachment, no need to try to install it
+                if (attachment.containsKey("data")) {
+                    continue;
+                }
+
                 CBLStatus status = database.installPendingAttachment(attachment);
                 if (status.isSuccessful() == false) {
                     String msg = String.format("Unable to install pending attachment: %s.  Status: %d", attachment.toString(), status.getCode());
