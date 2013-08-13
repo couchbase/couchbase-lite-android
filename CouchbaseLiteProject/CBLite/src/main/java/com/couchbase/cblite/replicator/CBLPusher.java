@@ -109,6 +109,8 @@ public class CBLPusher extends CBLReplicator implements Observer {
             observing = true;
             db.addObserver(this);
             asyncTaskStarted();  // prevents stopped() from being called when other tasks finish
+        } else {
+            stop();
         }
     }
 
