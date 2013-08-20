@@ -52,7 +52,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("bar", false);
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevision rev1 = new CBLRevision(body);
+        CBLRevision rev1 = new CBLRevision(body, database);
 
         CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);
@@ -62,7 +62,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("UPDATED", true);
 
         @SuppressWarnings("unused")
-        CBLRevision rev2 = database.putRevision(new CBLRevision(documentProperties), rev1.getRevId(), false, status);
+        CBLRevision rev2 = database.putRevision(new CBLRevision(documentProperties, database), rev1.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         documentProperties = new HashMap<String, Object>();
@@ -71,7 +71,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("baz", 666);
         documentProperties.put("fnord", true);
 
-        database.putRevision(new CBLRevision(documentProperties), null, false, status);
+        database.putRevision(new CBLRevision(documentProperties, database), null, false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
