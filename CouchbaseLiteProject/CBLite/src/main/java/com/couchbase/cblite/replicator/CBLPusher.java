@@ -76,14 +76,13 @@ public class CBLPusher extends CBLReplicator implements Observer {
             @Override
             public void onCompletion(Object result, Throwable e) {
                 if(e != null && e instanceof HttpResponseException && ((HttpResponseException)e).getStatusCode() != 412) {
-                    Log.e(CBLDatabase.TAG, "Failed to create remote db", e);
-                    error = e;
-                    stop();
+                    Log.v(CBLDatabase.TAG, "Unable to create remote db (normal if using sync gateway)");
                 } else {
                     Log.v(CBLDatabase.TAG, "Created remote db");
-                    createTarget = false;
-                    beginReplicating();
+
                 }
+                createTarget = false;
+                beginReplicating();
             }
 
         });
