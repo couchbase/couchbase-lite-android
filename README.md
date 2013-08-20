@@ -4,13 +4,13 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 **Couchbase-Lite-Android** is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
 
-![architecture.png](http://cl.ly/image/3s2T052s0i2A/couchbase-lite-architecture.png)
-
 For information on the high-level goals of the project see the [Couchbase Lite iOS Readme](https://github.com/couchbase/couchbase-lite-ios/blob/master/README.md). 
 
-## Using vs. Developing
+## Developing with Couchbase Lite
 
 If you just want to _use_ Couchbase-Lite-Android in your app, you may not need to even clone or build the code as described in this document.  See [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) or jump straight to the [Grocery-Sync](https://github.com/couchbaselabs/GrocerySync-Android) demo application.
+
+## Contributing to Couchbase Lite
 
 Otherwise, if you need to hack on Couchbase-Lite-Android, or just want to read through the code, then this document is for you.  Read on!
 
@@ -42,9 +42,8 @@ After opening the project, it should look [like this](http://cl.ly/image/002t0V2
 
 ## Running tests
 
-The tests require one of the following to be installed and running:
+The tests require Sync Gateway to be installed and running.
 
-* CouchDB (recommended v1.3, but earlier versions will probably work)
 * Sync-Gateway
 
 ### Configure local-test.properties to point to database
