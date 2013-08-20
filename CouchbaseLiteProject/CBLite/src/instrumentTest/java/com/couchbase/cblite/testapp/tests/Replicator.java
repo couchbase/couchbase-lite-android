@@ -1,5 +1,6 @@
 package com.couchbase.cblite.testapp.tests;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -9,6 +10,8 @@ import java.util.Observer;
 import java.util.concurrent.CountDownLatch;
 
 import junit.framework.Assert;
+
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.couchbase.cblite.CBLBody;
@@ -18,20 +21,29 @@ import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.replicator.CBLPusher;
 import com.couchbase.cblite.replicator.CBLReplicator;
 
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 public class Replicator extends CBLiteTestCase {
 
     public static final String TAG = "Replicator";
 
-    public void testPusher() throws Throwable {
+    public String testPusher() throws Throwable {
 
-        CountDownLatch doneSignal = new CountDownLatch(1);
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+
         URL remote = getReplicationURL();
-
-        deleteRemoteDB(remote);
+        String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
         // Create some documents:
         Map<String, Object> documentProperties = new HashMap<String, Object>();
-        documentProperties.put("_id", "doc1");
+        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
+        documentProperties.put("_id", doc1Id);
         documentProperties.put("foo", 1);
         documentProperties.put("bar", false);
 
@@ -50,7 +62,8 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         documentProperties = new HashMap<String, Object>();
-        documentProperties.put("_id", "doc2");
+        String doc2Id = String.format("doc2-%s", docIdTimestamp);
+        documentProperties.put("_id", doc2Id);
         documentProperties.put("baz", 666);
         documentProperties.put("fnord", true);
 
@@ -59,38 +72,99 @@ public class Replicator extends CBLiteTestCase {
 
         final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
-        runTestOnUiThread(new Runnable() {
+
+        AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
 
             @Override
-            public void run() {
+            protected Object doInBackground(Object... aParams) {
                 // Push them to the remote:
                 repl.start();
                 Assert.assertTrue(repl.isRunning());
+                return null;
             }
-        });
 
-        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+        };
+        replicationTask.execute();
+
+
+        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
         repl.addObserver(replicationObserver);
 
-        Log.d(TAG, "Waiting for replication to finish");
+        Log.d(TAG, "Waiting for replicator to finish");
         try {
-            doneSignal.await();
-            Log.d(TAG, "Replication finish");
+            replicationDoneSignal.await();
+            Log.d(TAG, "replicator finished");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        Assert.assertEquals("3", repl.getLastSequence());
+        // make sure doc1 is there
+        // TODO: make sure doc2 is there (refactoring needed)
+        URL replicationUrlTrailing = new URL(String.format("%s/", remote.toExternalForm()));
+        final URL pathToDoc = new URL(replicationUrlTrailing, doc1Id);
+        Log.d(TAG, "Send http request to " + pathToDoc);
+
+        final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
+        AsyncTask getDocTask = new AsyncTask<Object, Object, Object>() {
+
+            @Override
+            protected Object doInBackground(Object... aParams) {
+                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
+                HttpResponse response;
+                String responseString = null;
+                try {
+                    response = httpclient.execute(new HttpGet(pathToDoc.toExternalForm()));
+                    StatusLine statusLine = response.getStatusLine();
+                    Assert.assertTrue(statusLine.getStatusCode() == HttpStatus.SC_OK);
+                    if(statusLine.getStatusCode() == HttpStatus.SC_OK){
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        response.getEntity().writeTo(out);
+                        out.close();
+                        responseString = out.toString();
+                        Assert.assertTrue(responseString.contains(doc1Id));
+                        Log.d(TAG, "result: " + responseString);
+
+                    } else{
+                        //Closes the connection.
+                        response.getEntity().getContent().close();
+                        throw new IOException(statusLine.getReasonPhrase());
+                    }
+                } catch (ClientProtocolException e) {
+                    Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
+                } catch (IOException e) {
+                    Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
+                }
+
+                httpRequestDoneSignal.countDown();
+                return null;
+            }
+
+
+        };
+        getDocTask.execute();
+
+
+        Log.d(TAG, "Waiting for http request to finish");
+        try {
+            httpRequestDoneSignal.await();
+            Log.d(TAG, "http request finished");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+        Log.d(TAG, "testPusher() finished");
+        return docIdTimestamp;
+
     }
 
     public void testPuller() throws Throwable {
 
         //force a push first, to ensure that we have data to pull
-        testPusher();
-
-        CountDownLatch doneSignal = new CountDownLatch(1);
+        String docIdTimeStamp = testPusher();
 
         URL remote = getReplicationURL();
+        int docCountBefore = database.getDocumentCount();
 
         final CBLReplicator repl = database.getReplicator(remote, false, false, server.getWorkExecutor());
         runTestOnUiThread(new Runnable() {
@@ -104,12 +178,10 @@ public class Replicator extends CBLiteTestCase {
         });
 
         while(repl.isRunning()) {
-            Log.i(TAG, "Waiting for replicator to finish");
+            Log.d(TAG, "Waiting for replicator to finish");
             Thread.sleep(1000);
         }
-        String lastSequence = repl.getLastSequence();
-        Assert.assertTrue(lastSequence.contains("2") || lastSequence.contains("3"));
-        Assert.assertEquals(2, database.getDocumentCount());
+        Log.d(TAG, "replicator finished");
 
 
         //wait for a short time here
@@ -128,27 +200,26 @@ public class Replicator extends CBLiteTestCase {
             }
         });
 
-        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
-        repl.addObserver(replicationObserver);
-
-        Log.d(TAG, "Waiting for replication to finish");
-        try {
-            doneSignal.await();
-            Log.d(TAG, "Replication finish");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        while(repl.isRunning()) {
+            Log.d(TAG, "Waiting for replicator to finish");
+            Thread.sleep(1000);
         }
-        Assert.assertEquals(3, database.getLastSequence());
+        Log.d(TAG, "replicator finished");
 
-        CBLRevision doc = database.getDocumentWithIDAndRev("doc1", null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+
+        String doc1Id = String.format("doc1-%s", docIdTimeStamp);
+        CBLRevision doc = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertNotNull(doc);
         Assert.assertTrue(doc.getRevId().startsWith("2-"));
         Assert.assertEquals(1, doc.getProperties().get("foo"));
 
-        doc = database.getDocumentWithIDAndRev("doc2", null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
-        Assert.assertNotNull(doc);
+        String doc2Id = String.format("doc2-%s", docIdTimeStamp);
+        doc = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));        Assert.assertNotNull(doc);
         Assert.assertTrue(doc.getRevId().startsWith("1-"));
         Assert.assertEquals(true, doc.getProperties().get("fnord"));
+
+        Log.d(TAG, "testPuller() finished");
+
 
     }
 
