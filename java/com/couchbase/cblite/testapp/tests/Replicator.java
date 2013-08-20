@@ -27,7 +27,11 @@ import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicHeader;
 
 public class Replicator extends CBLiteTestCase {
 
@@ -160,11 +164,58 @@ public class Replicator extends CBLiteTestCase {
 
     public void testPuller() throws Throwable {
 
-        //force a push first, to ensure that we have data to pull
-        String docIdTimeStamp = testPusher();
+
+        String docIdTimestamp = Long.toString(System.currentTimeMillis());
+        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
+
+        // push a document to server
+        final String json = String.format("{\"foo\":1,\"bar\":false}", doc1Id);
+
+        URL replicationUrlTrailing = new URL(String.format("%s/%s", getReplicationURL().toExternalForm(), doc1Id));
+        final URL pathToDoc = new URL(replicationUrlTrailing, doc1Id);
+        Log.d(TAG, "Send http request to " + pathToDoc);
+
+        final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
+        AsyncTask getDocTask = new AsyncTask<Object, Object, Object>() {
+
+            @Override
+            protected Object doInBackground(Object... aParams) {
+                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
+                HttpResponse response;
+                String responseString = null;
+                try {
+                    HttpPut post = new HttpPut(pathToDoc.toExternalForm());
+                    StringEntity se = new StringEntity( json.toString() );
+                    se.setContentType(new BasicHeader("content_type", "application/json"));
+                    post.setEntity(se);
+                    response = httpclient.execute(post);
+                    StatusLine statusLine = response.getStatusLine();
+                    Log.d(TAG, "Got response: " + statusLine);
+                    Assert.assertTrue(statusLine.getStatusCode() == HttpStatus.SC_CREATED);
+                } catch (ClientProtocolException e) {
+                    Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
+                } catch (IOException e) {
+                    Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
+                }
+
+                httpRequestDoneSignal.countDown();
+                return null;
+            }
+
+
+        };
+        getDocTask.execute();
+
+        Log.d(TAG, "Waiting for http request to finish");
+        try {
+            httpRequestDoneSignal.await();
+            Log.d(TAG, "http request finished");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
 
         URL remote = getReplicationURL();
-        int docCountBefore = database.getDocumentCount();
 
         final CBLReplicator repl = database.getReplicator(remote, false, false, server.getWorkExecutor());
         runTestOnUiThread(new Runnable() {
@@ -207,16 +258,10 @@ public class Replicator extends CBLiteTestCase {
         Log.d(TAG, "replicator finished");
 
 
-        String doc1Id = String.format("doc1-%s", docIdTimeStamp);
         CBLRevision doc = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertNotNull(doc);
-        Assert.assertTrue(doc.getRevId().startsWith("2-"));
-        Assert.assertEquals(1, doc.getProperties().get("foo"));
-
-        String doc2Id = String.format("doc2-%s", docIdTimeStamp);
-        doc = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));        Assert.assertNotNull(doc);
         Assert.assertTrue(doc.getRevId().startsWith("1-"));
-        Assert.assertEquals(true, doc.getProperties().get("fnord"));
+        Assert.assertEquals(1, doc.getProperties().get("foo"));
 
         Log.d(TAG, "testPuller() finished");
 
