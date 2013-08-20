@@ -293,7 +293,7 @@ public class CBLPusher extends CBLReplicator implements Observer {
                 CBLBlobKey blobKey = new CBLBlobKey(base64Digest);
                 InputStream inputStream = blobStore.blobStreamForKey(blobKey);
                 if (inputStream == null) {
-                    Log.w(CBLDatabase.TAG, "Unable to find blob file for blobKey: " + blobKey);
+                    Log.w(CBLDatabase.TAG, "Unable to find blob file for blobKey: " + blobKey + " - Skipping upload of multipart revision.");
                     multiPart = null;
                 }
                 else {
