@@ -217,46 +217,31 @@ public class Replicator extends CBLiteTestCase {
 
         URL remote = getReplicationURL();
 
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         final CBLReplicator repl = database.getReplicator(remote, false, false, server.getWorkExecutor());
-        runTestOnUiThread(new Runnable() {
+        AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
 
             @Override
-            public void run() {
-                // Pull them from the remote:
+            protected Object doInBackground(Object... aParams) {
+                // Push them to the remote:
                 repl.start();
                 Assert.assertTrue(repl.isRunning());
+                return null;
             }
-        });
 
-        while(repl.isRunning()) {
-            Log.d(TAG, "Waiting for replicator to finish");
-            Thread.sleep(1000);
+        };
+        replicationTask.execute();
+
+        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
+        repl.addObserver(replicationObserver);
+
+        Log.d(TAG, "Waiting for replicator to finish");
+        try {
+            replicationDoneSignal.await();
+            Log.d(TAG, "replicator finished");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        Log.d(TAG, "replicator finished");
-
-
-        //wait for a short time here
-        //we want to ensure that the previous replicator has really finished
-        //writing its local state to the server
-        Thread.sleep(2*1000);
-
-        final CBLReplicator repl2 = database.getReplicator(remote, false, false, server.getWorkExecutor());
-        runTestOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                // Pull them from the remote:
-                repl2.start();
-                Assert.assertTrue(repl2.isRunning());
-            }
-        });
-
-        while(repl.isRunning()) {
-            Log.d(TAG, "Waiting for replicator to finish");
-            Thread.sleep(1000);
-        }
-        Log.d(TAG, "replicator finished");
-
 
         CBLRevision doc = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertNotNull(doc);
