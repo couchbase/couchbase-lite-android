@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -63,14 +64,18 @@ public class CBLDatabase extends Observable {
     private Map<String, CBLView> views;
     private Map<String, CBLFilterBlock> filters;
     private Map<String, CBLValidationBlock> validations;
+    private Map<String, CBLBlobStoreWriter> pendingAttachmentsByDigest;
     private List<CBLReplicator> activeReplicators;
     private CBLBlobStore attachments;
+
+    // Length that constitutes a 'big' attachment
+    public static int kBigAttachmentLength = (16*1024);
 
     /**
      * Options for what metadata to include in document bodies
      */
     public enum TDContentOptions {
-        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq, TDNoBody
+        TDIncludeAttachments, TDIncludeConflicts, TDIncludeRevs, TDIncludeRevsInfo, TDIncludeLocalSeq, TDNoBody, TDBigAttachmentsFollow
     }
 
     private static final Set<String> KNOWN_SPECIAL_KEYS;
@@ -372,6 +377,10 @@ public class CBLDatabase extends Observable {
         return attachments;
     }
 
+    public CBLBlobStoreWriter getAttachmentWriter() {
+        return new CBLBlobStoreWriter(getAttachments());
+    }
+
     public long totalDataSize() {
         File f = new File(path);
         long size = f.length() + attachments.totalDataSize();
@@ -563,8 +572,7 @@ public class CBLDatabase extends Observable {
         assert(sequenceNumber > 0);
 
         // Get attachment metadata, and optionally the contents:
-        boolean withAttachments = contentOptions.contains(TDContentOptions.TDIncludeAttachments);
-        Map<String, Object> attachmentsDict = getAttachmentsDictForSequenceWithContent(sequenceNumber, withAttachments);
+        Map<String, Object> attachmentsDict = getAttachmentsDictForSequenceWithContent(sequenceNumber, contentOptions);
 
         // Get more optional stuff to put in the properties:
         //OPT: This probably ends up making redundant SQL queries if multiple options are enabled.
@@ -648,7 +656,7 @@ public class CBLDatabase extends Observable {
     @SuppressWarnings("unchecked")
     public Map<String, Object> documentPropertiesFromJSON(byte[] json, String docId, String revId, long sequence, EnumSet<TDContentOptions> contentOptions) {
 
-        CBLRevision rev = new CBLRevision(docId, revId, false);
+        CBLRevision rev = new CBLRevision(docId, revId, false, this);
         rev.setSequence(sequence);
         Map<String,Object> extra = extraPropertiesForRevision(rev, contentOptions);
         if(json == null) {
@@ -694,7 +702,7 @@ public class CBLDatabase extends Observable {
                     rev = cursor.getString(0);
                 }
                 boolean deleted = (cursor.getInt(1) > 0);
-                result = new CBLRevision(id, rev, deleted);
+                result = new CBLRevision(id, rev, deleted, this);
                 result.setSequence(cursor.getLong(2));
                 if(!contentOptions.equals(EnumSet.of(TDContentOptions.TDNoBody))) {
                     byte[] json = null;
@@ -798,7 +806,7 @@ public class CBLDatabase extends Observable {
             cursor.moveToFirst();
             result = new CBLRevisionList();
             while(!cursor.isAfterLast()) {
-                CBLRevision rev = new CBLRevision(docId, cursor.getString(1), (cursor.getInt(2) > 0));
+                CBLRevision rev = new CBLRevision(docId, cursor.getString(1), (cursor.getInt(2) > 0), this);
                 rev.setSequence(cursor.getLong(0));
                 result.add(rev);
                 cursor.moveToNext();
@@ -932,7 +940,7 @@ public class CBLDatabase extends Observable {
                 if(matches) {
                     revId = cursor.getString(2);
                     boolean deleted = (cursor.getInt(3) > 0);
-                    CBLRevision aRev = new CBLRevision(docId, revId, deleted);
+                    CBLRevision aRev = new CBLRevision(docId, revId, deleted, this);
                     aRev.setSequence(cursor.getLong(0));
                     result.add(aRev);
                     lastSequence = cursor.getLong(1);
@@ -1066,7 +1074,7 @@ public class CBLDatabase extends Observable {
                     lastDocId = docNumericId;
                 }
 
-                CBLRevision rev = new CBLRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0));
+                CBLRevision rev = new CBLRevision(cursor.getString(2), cursor.getString(3), (cursor.getInt(4) > 0), this);
                 rev.setSequence(cursor.getLong(0));
                 if(includeDocs) {
                     expandStoredJSONIntoRevisionWithAttachments(cursor.getBlob(5), rev, options.getContentOptions());
@@ -1349,12 +1357,17 @@ public class CBLDatabase extends Observable {
             return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
 
-        byte[] keyData = key.getBytes();
+
+        return insertAttachmentForSequenceWithNameAndType(sequence, name, contentType, revpos, key);
+
+    }
+
+    public CBLStatus insertAttachmentForSequenceWithNameAndType(long sequence, String name, String contentType, int revpos, CBLBlobKey key) {
         try {
             ContentValues args = new ContentValues();
             args.put("sequence", sequence);
             args.put("filename", name);
-            args.put("key", keyData);
+            args.put("key", key.getBytes());
             args.put("type", contentType);
             args.put("length", attachments.getSizeOfBlob(key));
             args.put("revpos", revpos);
@@ -1364,6 +1377,38 @@ public class CBLDatabase extends Observable {
             Log.e(CBLDatabase.TAG, "Error inserting attachment", e);
             return new CBLStatus(CBLStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Move pending (temporary) attachments into their permanent location.
+     */
+    public CBLStatus installPendingAttachment(Map<String, Object> attachment) {
+        String digest = (String) attachment.get("digest");
+        if (digest == null) {
+            return new CBLStatus(CBLStatus.BAD_ATTACHMENT);
+        }
+        Object writer = pendingAttachmentsByDigest.get(digest);
+        if (writer instanceof CBLBlobStoreWriter) {
+            try {
+                ((CBLBlobStoreWriter) writer).install();
+
+                // this is a temporary hack.  rather than doing what it does in the ios putRevision()
+                // method, and creating CBLAttachment objects and passing it down into this method,
+                // just set the digest in this map to be sha1 (the one we want).
+                attachment.put("digest", ((CBLBlobStoreWriter) writer).sHA1DigestString());
+
+            } catch (Exception e) {
+                String msg = String.format("Unable to install pending attachment: %s", digest);
+                Log.e(CBLDatabase.TAG, msg, e);
+                return new CBLStatus(CBLStatus.STATUS_ATTACHMENT_ERROR);
+            }
+            return new CBLStatus(CBLStatus.OK);
+        }
+        // TODO: deal with case where its a byte[] rather than a blob store writer, see ios
+        else {
+            return new CBLStatus(CBLStatus.BAD_ATTACHMENT);
+        }
+
     }
 
     public CBLStatus copyAttachmentNamedFromSequenceToSequence(String name, long fromSeq, long toSeq) {
@@ -1453,7 +1498,7 @@ public class CBLDatabase extends Observable {
     /**
      * Constructs an "_attachments" dictionary for a revision, to be inserted in its JSON body.
      */
-    public Map<String,Object> getAttachmentsDictForSequenceWithContent(long sequence, boolean withContent) {
+    public Map<String,Object> getAttachmentsDictForSequenceWithContent(long sequence, EnumSet<TDContentOptions> contentOptions) {
         assert(sequence > 0);
 
         Cursor cursor = null;
@@ -1470,33 +1515,55 @@ public class CBLDatabase extends Observable {
 
             while(!cursor.isAfterLast()) {
 
+                boolean dataSuppressed = false;
+                int length = cursor.getInt(3);
+
                 byte[] keyData = cursor.getBlob(1);
                 CBLBlobKey key = new CBLBlobKey(keyData);
                 String digestString = "sha1-" + Base64.encodeBytes(keyData);
                 String dataBase64 = null;
-                if(withContent) {
-                    byte[] data = attachments.blobForKey(key);
-                    if(data != null) {
-                        dataBase64 = Base64.encodeBytes(data);
+                if(contentOptions.contains(TDContentOptions.TDIncludeAttachments)) {
+                    if (contentOptions.contains(TDContentOptions.TDBigAttachmentsFollow) &&
+                            length >= CBLDatabase.kBigAttachmentLength) {
+                        dataSuppressed = true;
                     }
                     else {
-                        Log.w(CBLDatabase.TAG, "Error loading attachment");
+                        byte[] data = attachments.blobForKey(key);
+
+                        if(data != null) {
+                            dataBase64 = Base64.encodeBytes(data);  // <-- very expensive
+                        }
+                        else {
+                            Log.w(CBLDatabase.TAG, "Error loading attachment");
+                        }
+
                     }
+
                 }
 
                 Map<String, Object> attachment = new HashMap<String, Object>();
-                if(dataBase64 == null) {
+
+
+
+                if(dataBase64 == null || dataSuppressed == true) {
                     attachment.put("stub", true);
                 }
-                else {
+
+                if(dataBase64 != null) {
                     attachment.put("data", dataBase64);
                 }
+
+                if (dataSuppressed == true) {
+                    attachment.put("follows", true);
+                }
+
                 attachment.put("digest", digestString);
                 attachment.put("content_type", cursor.getString(2));
-                attachment.put("length", cursor.getInt(3));
+                attachment.put("length", length);
                 attachment.put("revpos", cursor.getInt(4));
 
-                result.put(cursor.getString(0), attachment);
+                String filename = cursor.getString(0);
+                result.put(filename, attachment);
 
                 cursor.moveToNext();
             }
@@ -1608,6 +1675,29 @@ public class CBLDatabase extends Observable {
                 // Finally insert the attachment:
                 status = insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(newContents), newSequence, name, (String)newAttach.get("content_type"), revpos);
             }
+            else if (newAttach.containsKey("follows") && ((Boolean)newAttach.get("follows")).booleanValue() == true)  {
+
+                // Now determine the revpos, i.e. generation # this was added in. Usually this is
+                // implicit, but a rev being pulled in replication will have it set already.
+                int generation = rev.getGeneration();
+                assert(generation > 0);
+                Object revposObj = newAttach.get("revpos");
+                int revpos = generation;
+                if(revposObj != null && revposObj instanceof Integer) {
+                    revpos = ((Integer)revposObj).intValue();
+                }
+
+                if(revpos > generation) {
+                    return new CBLStatus(CBLStatus.BAD_REQUEST);
+                }
+
+                // Finally insert the attachment:
+                Charset utf8 = Charset.forName("UTF-8");
+                String sha1DigestKey = (String) newAttach.get("digest");
+                CBLBlobKey key = new CBLBlobKey(sha1DigestKey);
+                status = insertAttachmentForSequenceWithNameAndType(newSequence, name, (String)newAttach.get("content_type"), revpos, key);
+
+            }
             else {
                 // It's just a stub, so copy the previous revision's attachment entry:
                 //? Should I enforce that the type and digest (if any) match?
@@ -1633,7 +1723,7 @@ public class CBLDatabase extends Observable {
 
         beginTransaction();
         try {
-            CBLRevision oldRev = new CBLRevision(docID, oldRevID, false);
+            CBLRevision oldRev = new CBLRevision(docID, oldRevID, false, this);
             if(oldRevID != null) {
                 // Load existing revision if this is a replacement:
                 CBLStatus loadStatus = loadRevisionBody(oldRev, EnumSet.noneOf(TDContentOptions.class));
@@ -1700,9 +1790,17 @@ public class CBLDatabase extends Observable {
         }
     }
 
-    /**
-     * Deletes obsolete attachments from the database and blob store.
-     */
+    public void rememberAttachmentWritersForDigests(Map<String, CBLBlobStoreWriter> blobsByDigest) {
+        if (pendingAttachmentsByDigest == null) {
+            pendingAttachmentsByDigest = new HashMap<String, CBLBlobStoreWriter>();
+            pendingAttachmentsByDigest.putAll(blobsByDigest);
+        }
+    }
+
+
+        /**
+         * Deletes obsolete attachments from the database and blob store.
+         */
     public CBLStatus garbageCollectAttachments() {
         // First delete attachment rows for already-cleared revisions:
         // OPT: Could start after last sequence# we GC'd up to
@@ -1950,7 +2048,7 @@ public class CBLDatabase extends Observable {
 
                 if(validations != null && validations.size() > 0) {
                     // Fetch the previous revision and validate the new one against it:
-                    CBLRevision prevRev = new CBLRevision(docId, prevRevId, false);
+                    CBLRevision prevRev = new CBLRevision(docId, prevRevId, false, this);
                     CBLStatus status = validateRevision(rev, prevRev);
                     if(!status.isSuccessful()) {
                         resultStatus.setCode(status.getCode());
@@ -2144,7 +2242,7 @@ public class CBLDatabase extends Observable {
                     }
                     else {
                         // It's an intermediate parent, so insert a stub:
-                        newRev = new CBLRevision(docId, revId, false);
+                        newRev = new CBLRevision(docId, revId, false, this);
                     }
 
                     // Insert it:
@@ -2396,7 +2494,7 @@ public class CBLDatabase extends Observable {
                     properties = CBLServer.getObjectMapper().readValue(json, Map.class);
                     properties.put("_id", docID);
                     properties.put("_rev", gotRevID);
-                    result = new CBLRevision(docID, gotRevID, false);
+                    result = new CBLRevision(docID, gotRevID, false, this);
                     result.setProperties(properties);
                 } catch (Exception e) {
                     Log.w(TAG, "Error parsing local doc JSON", e);

@@ -25,8 +25,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 import android.util.Log;
@@ -247,6 +251,9 @@ public class CBLBlobStore {
         File file = new File(path);
         File[] contents = file.listFiles();
         for (File attachment : contents) {
+            if (attachment.isDirectory()) {
+                continue;
+            }
             CBLBlobKey attachmentKey = new CBLBlobKey();
             getKeyForFilename(attachmentKey, attachment.getPath());
             result.add(attachmentKey);
@@ -289,4 +296,30 @@ public class CBLBlobStore {
         }
         return numDeleted;
     }
+
+    public int deleteBlobs() {
+        return deleteBlobsExceptWithKeys(new ArrayList<CBLBlobKey>());
+    }
+
+    public File tempDir() {
+
+        File directory = new File(path);
+        File tempDirectory = new File(directory, "temp_attachments");
+
+        if(!tempDirectory.exists()) {
+            boolean result = tempDirectory.mkdirs();
+            if(result == false) {
+                throw new IllegalStateException("Unable to create directory for temporary blob store");
+            }
+        }
+        else if(!tempDirectory.isDirectory()) {
+            throw new IllegalStateException("Directory for temporary blob store is not a directory");
+        }
+        return tempDirectory;
+
+
+
+
+    }
+
 }

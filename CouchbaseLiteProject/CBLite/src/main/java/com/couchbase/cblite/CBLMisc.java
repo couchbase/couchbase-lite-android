@@ -47,4 +47,8 @@ public class CBLMisc {
         return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
     }
 
+    public static String unquoteString(String param) {
+        return param.replace("\"","");
+    }
+
 }

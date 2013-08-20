@@ -32,23 +32,25 @@ public class CBLRevision {
     private boolean deleted;
     private CBLBody body;
     private long sequence;
+    private CBLDatabase database;
 
-    public CBLRevision(String docId, String revId, boolean deleted) {
+    public CBLRevision(String docId, String revId, boolean deleted, CBLDatabase database) {
         this.docId = docId;
         this.revId = revId;
         this.deleted = deleted;
+        this.database = database;
     }
 
-    public CBLRevision(CBLBody body) {
+    public CBLRevision(CBLBody body, CBLDatabase database) {
         this((String)body.getPropertyForKey("_id"),
                 (String)body.getPropertyForKey("_rev"),
                 (((Boolean)body.getPropertyForKey("_deleted") != null)
-                        && ((Boolean)body.getPropertyForKey("_deleted") == true)));
+                        && ((Boolean)body.getPropertyForKey("_deleted") == true)), database);
         this.body = body;
     }
 
-    public CBLRevision(Map<String,Object> properties) {
-        this(new CBLBody(properties));
+    public CBLRevision(Map<String, Object> properties, CBLDatabase database) {
+        this(new CBLBody(properties), database);
     }
 
     public Map<String,Object> getProperties() {
@@ -61,7 +63,32 @@ public class CBLRevision {
 
     public void setProperties(Map<String,Object> properties) {
         this.body = new CBLBody(properties);
+
+        // this is a much more simplified version that what happens on the iOS.  it was
+        // done this way due to time constraints, so at some point this needs to be
+        // revisited to port the remaining functionality.
+        Map<String, Object> attachments = (Map<String, Object>) properties.get("_attachments");
+        if (attachments != null && attachments.size() > 0) {
+            for (String attachmentName : attachments.keySet()) {
+                Map<String, Object> attachment = (Map<String, Object>) attachments.get(attachmentName);
+
+                // if there is actual data in this attachment, no need to try to install it
+                if (attachment.containsKey("data")) {
+                    continue;
+                }
+
+                CBLStatus status = database.installPendingAttachment(attachment);
+                if (status.isSuccessful() == false) {
+                    String msg = String.format("Unable to install pending attachment: %s.  Status: %d", attachment.toString(), status.getCode());
+                    throw new IllegalStateException(msg);
+                }
+            }
+
+        }
+
     }
+
+
 
     public byte[] getJson() {
         byte[] result = null;
@@ -127,7 +154,7 @@ public class CBLRevision {
     public CBLRevision copyWithDocID(String docId, String revId) {
         assert((docId != null) && (revId != null));
         assert((this.docId == null) || (this.docId.equals(docId)));
-        CBLRevision result = new CBLRevision(docId, revId, deleted);
+        CBLRevision result = new CBLRevision(docId, revId, deleted, database);
         Map<String, Object> properties = getProperties();
         if(properties == null) {
             properties = new HashMap<String, Object>();

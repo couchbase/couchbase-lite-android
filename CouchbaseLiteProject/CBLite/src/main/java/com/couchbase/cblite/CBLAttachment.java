@@ -18,11 +18,14 @@
 package com.couchbase.cblite;
 
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CBLAttachment {
 
     private InputStream contentStream;
     private String contentType;
+    private Map<String, Object> metadata;
 
     public CBLAttachment() {
 
@@ -31,6 +34,9 @@ public class CBLAttachment {
     public CBLAttachment(InputStream contentStream, String contentType) {
         this.contentStream = contentStream;
         this.contentType = contentType;
+        metadata = new HashMap<String, Object>();
+        metadata.put("content_type", contentType);
+        metadata.put("follows", true);
     }
 
     public InputStream getContentStream() {
@@ -48,5 +54,8 @@ public class CBLAttachment {
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
+
+
+
 
 }

@@ -18,6 +18,7 @@
 package com.couchbase.cblite.testapp.tests;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import org.apache.commons.io.IOUtils;
 import com.couchbase.cblite.CBLAttachment;
 import com.couchbase.cblite.CBLBlobKey;
 import com.couchbase.cblite.CBLBlobStore;
+import com.couchbase.cblite.CBLBlobStoreWriter;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLStatus;
@@ -53,7 +55,7 @@ public class Attachments extends CBLiteTestCase {
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
-        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties), null, false, status);
+        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties, database), null, false, status);
 
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
@@ -76,7 +78,7 @@ public class Attachments extends CBLiteTestCase {
         Map<String,Object> attachmentDict = new HashMap<String,Object>();
         attachmentDict.put("attach", innerDict);
 
-        Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), false);
+        Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
         CBLRevision gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
@@ -86,7 +88,7 @@ public class Attachments extends CBLiteTestCase {
         // Check the attachment dict, with attachments included:
         innerDict.remove("stub");
         innerDict.put("data", Base64.encodeBytes(attach1));
-        attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), true);
+        attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), EnumSet.of(CBLDatabase.TDContentOptions.TDIncludeAttachments));
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
 
         gotRev1 = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), EnumSet.of(CBLDatabase.TDContentOptions.TDIncludeAttachments));
@@ -99,7 +101,7 @@ public class Attachments extends CBLiteTestCase {
         rev2Properties.put("_id", rev1.getDocId());
         rev2Properties.put("foo", 2);
         rev2Properties.put("bazz", false);
-        CBLRevision rev2 = database.putRevision(new CBLRevision(rev2Properties), rev1.getRevId(), false, status);
+        CBLRevision rev2 = database.putRevision(new CBLRevision(rev2Properties, database), rev1.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         status = database.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
@@ -110,7 +112,7 @@ public class Attachments extends CBLiteTestCase {
         rev3Properties.put("_id", rev2.getDocId());
         rev3Properties.put("foo", 2);
         rev3Properties.put("bazz", false);
-        CBLRevision rev3 = database.putRevision(new CBLRevision(rev3Properties), rev2.getRevId(), false, status);
+        CBLRevision rev3 = database.putRevision(new CBLRevision(rev3Properties, database), rev2.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
@@ -149,9 +151,68 @@ public class Attachments extends CBLiteTestCase {
     }
 
     @SuppressWarnings("unchecked")
+    public void testPutLargeAttachment() throws Exception {
+
+        CBLBlobStore attachments = database.getAttachments();
+        attachments.deleteBlobs();
+        Assert.assertEquals(0, attachments.count());
+        
+        CBLStatus status = new CBLStatus();
+        Map<String,Object> rev1Properties = new HashMap<String,Object>();
+        rev1Properties.put("foo", 1);
+        rev1Properties.put("bar", false);
+        CBLRevision rev1 = database.putRevision(new CBLRevision(rev1Properties, database), null, false, status);
+
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+
+        StringBuffer largeAttachment = new StringBuffer();
+        for (int i=0; i<CBLDatabase.kBigAttachmentLength; i++) {
+            largeAttachment.append("big attachment!");
+        }
+        byte[] attach1 = largeAttachment.toString().getBytes();
+        status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+
+        CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach", status);
+        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        Assert.assertEquals("text/plain", attachment.getContentType());
+        byte[] data = IOUtils.toByteArray(attachment.getContentStream());
+        Assert.assertTrue(Arrays.equals(attach1, data));
+
+        EnumSet<CBLDatabase.TDContentOptions> contentOptions = EnumSet.of(
+                CBLDatabase.TDContentOptions.TDIncludeAttachments,
+                CBLDatabase.TDContentOptions.TDBigAttachmentsFollow
+        );
+
+        Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(
+                rev1.getSequence(),
+                contentOptions
+        );
+
+        Map<String,Object> innerDict = (Map<String,Object>) attachmentDictForSequence.get("attach");
+
+        if (!innerDict.containsKey("stub")) {
+            throw new RuntimeException("Expected attachment dict to have 'stub' key");
+        }
+
+        if (((Boolean)innerDict.get("stub")).booleanValue() == false) {
+            throw new RuntimeException("Expected attachment dict 'stub' key to be true");
+        }
+
+        if (!innerDict.containsKey("follows")) {
+            throw new RuntimeException("Expected attachment dict to have 'follows' key");
+        }
+
+
+
+    }
+
+    @SuppressWarnings("unchecked")
     public void testPutAttachment() {
 
         CBLBlobStore attachments = database.getAttachments();
+        attachments.deleteBlobs();
+        Assert.assertEquals(0, attachments.count());
 
         // Put a revision that includes an _attachments dict:
         byte[] attach1 = "This is the body of attach1".getBytes();
@@ -168,7 +229,7 @@ public class Attachments extends CBLiteTestCase {
         properties.put("_attachments", attachmentDict);
 
         CBLStatus status = new CBLStatus();
-        CBLRevision rev1 = database.putRevision(new CBLRevision(properties), null, false, status);
+        CBLRevision rev1 = database.putRevision(new CBLRevision(properties, database), null, false, status);
 
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         // Examine the attachment store:
@@ -234,6 +295,31 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertNull(attachmentDict);
 
         database.close();
+    }
+
+    public void testStreamAttachmentBlobStoreWriter() {
+
+
+        CBLBlobStore attachments = database.getAttachments();
+
+        CBLBlobStoreWriter blobWriter = new CBLBlobStoreWriter(attachments);
+        String testBlob = "foo";
+        blobWriter.appendData(new String(testBlob).getBytes());
+        blobWriter.finish();
+
+        String sha1Base64Digest = "sha1-C+7Hteo/D9vJXQ3UfzxbwnXaijM=";
+        Assert.assertEquals(blobWriter.sHA1DigestString(), sha1Base64Digest);
+        Assert.assertEquals(blobWriter.mD5DigestString(), "md5-rL0Y20zC+Fzt72VPzMSk2A==");
+
+        // install it
+        blobWriter.install();
+
+        // look it up in blob store and make sure it's there
+        CBLBlobKey blobKey = new CBLBlobKey(sha1Base64Digest);
+        byte[] blob = attachments.blobForKey(blobKey);
+        Assert.assertTrue(Arrays.equals(testBlob.getBytes(Charset.forName("UTF-8")), blob));
+
+
     }
 
 }
