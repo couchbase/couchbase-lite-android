@@ -64,7 +64,7 @@ public class Replicator extends CBLiteEktorpTestCase {
             .source(DEFAULT_TEST_DB)
             .target(getReplicationURL().toExternalForm())
             .continuous(false)
-            .createTarget(false)
+            .createTarget(true)
             .build();
 
         ReplicationStatus status = dbInstance.replicate(pushCommand);
@@ -309,7 +309,7 @@ public class Replicator extends CBLiteEktorpTestCase {
             .source(DEFAULT_TEST_DB)
             .target(DEFAULT_TEST_DB + "2")
             .continuous(false)
-            .createTarget(false)
+            .createTarget(true)
             .build();
 
         ReplicationStatus status = dbInstance.replicate(pushCommand);
