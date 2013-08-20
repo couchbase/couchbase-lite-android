@@ -75,7 +75,7 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
-        ((CBLPusher)repl).setCreateTarget(true);
+        ((CBLPusher)repl).setCreateTarget(false);
 
         AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
 
