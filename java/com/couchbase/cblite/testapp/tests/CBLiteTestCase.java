@@ -174,27 +174,6 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
         return result;
     }
 
-    protected  void deleteRemoteDB(URL url) {
-        try {
-            Log.v(TAG, String.format("Deleting %s", url.toExternalForm()));
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-            String userInfo = url.getUserInfo();
-            if(userInfo != null) {
-                byte[] authEncBytes = Base64.encode(userInfo.getBytes(), Base64.DEFAULT);
-
-                conn.setRequestProperty("Authorization", "Basic " + new String(authEncBytes));
-            }
-
-            conn.setRequestMethod("DELETE");
-            conn.connect();
-            int responseCode = conn.getResponseCode();
-            Assert.assertTrue(responseCode < 300 || responseCode == 404);
-        } catch (Exception e) {
-            Log.e(TAG, "Exceptiong deleting remote db", e);
-        }
-    }
-
     protected CBLURLConnection sendRequest(CBLServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
         try {
             URL url = new URL("cblite://" + path);
