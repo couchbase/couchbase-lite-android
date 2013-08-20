@@ -292,8 +292,14 @@ public class CBLPusher extends CBLReplicator implements Observer {
                 String base64Digest = (String) attachment.get("digest");
                 CBLBlobKey blobKey = new CBLBlobKey(base64Digest);
                 InputStream inputStream = blobStore.blobStreamForKey(blobKey);
-                String contentType = (String) attachment.get("content_type");
-                multiPart.addPart(attachmentKey, new InputStreamBody(inputStream, contentType, attachmentKey));
+                if (inputStream == null) {
+                    Log.w(CBLDatabase.TAG, "Unable to find blob file for blobKey: " + blobKey);
+                    multiPart = null;
+                }
+                else {
+                    String contentType = (String) attachment.get("content_type");
+                    multiPart.addPart(attachmentKey, new InputStreamBody(inputStream, contentType, attachmentKey));
+                }
 
             }
         }
