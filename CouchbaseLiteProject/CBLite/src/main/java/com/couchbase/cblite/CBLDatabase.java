@@ -1387,28 +1387,30 @@ public class CBLDatabase extends Observable {
         if (digest == null) {
             return new CBLStatus(CBLStatus.BAD_ATTACHMENT);
         }
-        Object writer = pendingAttachmentsByDigest.get(digest);
-        if (writer instanceof CBLBlobStoreWriter) {
-            try {
-                ((CBLBlobStoreWriter) writer).install();
+        if (pendingAttachmentsByDigest != null && pendingAttachmentsByDigest.containsKey(digest)) {
+            Object writer = pendingAttachmentsByDigest.get(digest);
+            if (writer instanceof CBLBlobStoreWriter) {
+                try {
+                    ((CBLBlobStoreWriter) writer).install();
 
-                // this is a temporary hack.  rather than doing what it does in the ios putRevision()
-                // method, and creating CBLAttachment objects and passing it down into this method,
-                // just set the digest in this map to be sha1 (the one we want).
-                attachment.put("digest", ((CBLBlobStoreWriter) writer).sHA1DigestString());
+                    // this is a temporary hack.  rather than doing what it does in the ios putRevision()
+                    // method, and creating CBLAttachment objects and passing it down into this method,
+                    // just set the digest in this map to be sha1 (the one we want).
+                    attachment.put("digest", ((CBLBlobStoreWriter) writer).sHA1DigestString());
 
-            } catch (Exception e) {
-                String msg = String.format("Unable to install pending attachment: %s", digest);
-                Log.e(CBLDatabase.TAG, msg, e);
-                return new CBLStatus(CBLStatus.STATUS_ATTACHMENT_ERROR);
+                } catch (Exception e) {
+                    String msg = String.format("Unable to install pending attachment: %s", digest);
+                    Log.e(CBLDatabase.TAG, msg, e);
+                    return new CBLStatus(CBLStatus.STATUS_ATTACHMENT_ERROR);
+                }
+                return new CBLStatus(CBLStatus.OK);
             }
-            return new CBLStatus(CBLStatus.OK);
+            // TODO: deal with case where its a byte[] rather than a blob store writer, see ios
+            else {
+                return new CBLStatus(CBLStatus.BAD_ATTACHMENT);
+            }
         }
-        // TODO: deal with case where its a byte[] rather than a blob store writer, see ios
-        else {
-            return new CBLStatus(CBLStatus.BAD_ATTACHMENT);
-        }
-
+        return new CBLStatus(CBLStatus.OK);
     }
 
     public CBLStatus copyAttachmentNamedFromSequenceToSequence(String name, long fromSeq, long toSeq) {
