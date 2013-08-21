@@ -14,7 +14,7 @@ For information on the high-level goals of the project see the [Couchbase Lite i
 
 ## Developing / Contributing to Couchbase Lite
 
-If you are just building an application with Couchbase Lite, you can skip the rest of this document.  (see *Getting Started with Couchbase Lite*)
+If you are just building an application with Couchbase Lite, you can skip the rest of this document.  (see [Getting Started with Couchbase Lite](README.md#getting-started-with-couchbase-lite))
 
 However, if you need to debug Couchbase Lite Android or otherwise hack on it, these instructions will help you do that.
 
