@@ -197,7 +197,6 @@ public class CBLPusher extends CBLReplicator implements Observer {
                                     properties.put("_deleted", true);
                                 } else {
                                     // OPT: Shouldn't include all attachment bodies, just ones that have changed
-                                    // OPT: Should send docs with many or big attachments as multipart/related
                                     EnumSet<CBLDatabase.TDContentOptions> contentOptions = EnumSet.of(
                                             CBLDatabase.TDContentOptions.TDIncludeAttachments,
                                             CBLDatabase.TDContentOptions.TDBigAttachmentsFollow
