@@ -203,7 +203,11 @@ public class Attachments extends CBLiteTestCase {
             throw new RuntimeException("Expected attachment dict to have 'follows' key");
         }
 
-
+        CBLRevision rev1WithAttachments = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), contentOptions);
+        Map<String,Object> rev1PropertiesPrime = rev1WithAttachments.getProperties();
+        rev1PropertiesPrime.put("foo", 2);
+        CBLRevision rev2 = database.putRevision(rev1WithAttachments, rev1WithAttachments.getRevId(), false, status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
     }
 
