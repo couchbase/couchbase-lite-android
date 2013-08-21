@@ -12,7 +12,7 @@ For information on the high-level goals of the project see the [Couchbase Lite i
 
 * Create your own Hello World Couchbase Lite via the [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) guide.
 
-## Developing / Contributing to the Couchbase Lite core library
+## Developing / Contributing to Couchbase Lite
 
 If you are just building an application with Couchbase Lite, you can skip the rest of this document.  (see *Getting Started with Couchbase Lite*)
 
