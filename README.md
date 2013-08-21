@@ -6,13 +6,17 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 For information on the high-level goals of the project see the [Couchbase Lite iOS Readme](https://github.com/couchbase/couchbase-lite-ios/blob/master/README.md). 
 
-## Developing with Couchbase Lite
+## Getting Started with Couchbase Lite
 
-If you just want to _use_ Couchbase-Lite-Android in your app, you may not need to even clone or build the code as described in this document.  See [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) or jump straight to the [Grocery-Sync](https://github.com/couchbaselabs/GrocerySync-Android) demo application.
+* Download and run the  [Grocery-Sync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
 
-## Contributing to Couchbase Lite
+* Create your own Hello World Couchbase Lite via the [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) guide.
 
-Otherwise, if you need to hack on Couchbase-Lite-Android, or just want to read through the code, then this document is for you.  Read on!
+## Developing / Contributing to the Couchbase Lite core library
+
+If you are just building an application with Couchbase Lite, you can skip the rest of this document.  (see *Getting Started with Couchbase Lite*)
+
+However, if you need to debug Couchbase Lite Android or otherwise hack on it, these instructions will help you do that.
 
 ## Prerequisites
 
