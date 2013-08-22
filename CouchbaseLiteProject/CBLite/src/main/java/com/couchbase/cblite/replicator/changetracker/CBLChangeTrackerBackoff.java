@@ -1,6 +1,5 @@
 package com.couchbase.cblite.replicator.changetracker;
 
-import android.os.Debug;
 import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
@@ -8,7 +7,6 @@ import com.couchbase.cblite.CBLDatabase;
 public class CBLChangeTrackerBackoff {
 
     private static int MAX_SLEEP_MILLISECONDS = 5 * 60 * 1000;  // 5 mins
-    // private int currentSleepMilliseconds;
     private int numAttempts = 0;
 
     public void resetBackoff() {
@@ -35,7 +33,7 @@ public class CBLChangeTrackerBackoff {
         try {
             int sleepMilliseconds = getSleepMilliseconds();
             if (sleepMilliseconds > 0) {
-                Log.d(CBLDatabase.TAG, "Sleeping for " + sleepMilliseconds);
+                Log.d(CBLDatabase.TAG, this.getClass().getName() + " sleeping for " + sleepMilliseconds);
                 Thread.sleep(sleepMilliseconds);
             }
         } catch (InterruptedException e1) {
