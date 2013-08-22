@@ -4,3 +4,6 @@
 [submodule "CouchbaseLiteProject/CBLiteListener"]
 	path = CouchbaseLiteProject/CBLiteListener
 	url = git@github.com:couchbase/CBLiteListener.git
+[submodule "CouchbaseLiteProject/CBLite"]
+	path = CouchbaseLiteProject/CBLite
+	url = git@github.com:couchbase/CBLite.git
