@@ -1,0 +1,3 @@
+[submodule "CouchbaseLiteProject/CBLiteJavascript"]
+	path = CouchbaseLiteProject/CBLiteJavascript
+	url = git@github.com:couchbase/CBLiteJavascript.git
