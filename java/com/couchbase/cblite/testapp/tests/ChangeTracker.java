@@ -198,30 +198,26 @@ public class ChangeTracker extends CBLiteTestCase {
         task.execute();
 
         try {
+
+            // expected behavior:
+            // when:
+            //    mockHttpClient throws IOExceptions -> it should start high and then back off and numTimesExecute should be low
+
             for (int i=0; i<30; i++) {
 
                 int numTimesExectutedAfter10seconds = 0;
 
                 try {
                     Thread.sleep(1000);
-                    Log.d(TAG, "numTimesExecute called: " + mockHttpClient.getNumTimesExecuteCalled());
 
-                    // expect it to start fairly high, so in first 10 seconds might be up to 100 requests
-                    if (i < 5) {
-                        if (mockHttpClient.getNumTimesExecuteCalled() > 100) {
-                            Log.d(TAG, "higher number of numTimesExecutes than expected ");
-
-                        }
-                        Assert.assertTrue(mockHttpClient.getNumTimesExecuteCalled() < 100);
-                    }
-
+                    // take a snapshot of num times the http client was called after 10 seconds
                     if (i == 10) {
                         numTimesExectutedAfter10seconds = mockHttpClient.getNumTimesExecuteCalled();
                     }
 
+                    // take another snapshot after 20 seconds have passed
                     if (i == 20) {
-                        // by now it should have backed off, so the delta between 10s and 20s should
-                        // be small
+                        // by now it should have backed off, so the delta between 10s and 20s should be small
                         int delta = mockHttpClient.getNumTimesExecuteCalled() - numTimesExectutedAfter10seconds;
                         Assert.assertTrue(delta < 25);
                     }
@@ -235,14 +231,7 @@ public class ChangeTracker extends CBLiteTestCase {
             changeTracker.stop();
         }
 
-        // expected behavior:
-        // when:
-        //    mockHttpClient throws IOExceptions -> it should start high and then back off and numTimesExecute should be low
-        // when:
-        //    mockHttpClient returns valid response, then IOExceptions -> start high again and back off again
-        //
 
-        Log.d(TAG, "test done");
 
     }
 
