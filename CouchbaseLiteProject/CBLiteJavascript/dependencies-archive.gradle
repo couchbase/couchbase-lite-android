@@ -6,7 +6,6 @@ dependencies {
     // as a "compile project" dependency any projects that include this library will get errors.
     // documented here: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/H2Jk2rVs6G8
     compile 'com.couchbase.cblite:CBLite:0.7'
-    compile 'com.couchbase.cblite:CBLiteEktorp:0.7.2'
 
     // as discovered by trial and error, the build will fail if "compile" is
     // used: Error: duplicate files during packaging of APK.  I guess it is

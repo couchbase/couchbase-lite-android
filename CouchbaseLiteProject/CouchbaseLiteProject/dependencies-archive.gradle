@@ -6,8 +6,6 @@ dependencies {
     // documented here: https://groups.google.com/forum/?fromgroups#!topic/adt-dev/H2Jk2rVs6G8
     compile 'com.couchbase.cblite:CBLite:0.7'
 
-    compile 'com.couchbase.cblite:CBLiteEktorp:0.7.2'
-
     // compile 'com.couchbase.cblite:CBLiteListener:0.7.0' <-- doesn't even exist!
 
 }

@@ -3,7 +3,6 @@ dependencies {
     compile 'com.android.support:support-v4:13.0.+'
 
     compile project(':CBLite')
-    compile project(':CBLiteEktorp')
 
     // as discovered by trial and error, the build will fail if "compile" is
     // used: Error: duplicate files during packaging of APK.  I guess it is

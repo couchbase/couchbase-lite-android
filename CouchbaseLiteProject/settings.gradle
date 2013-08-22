@@ -1,1 +1,1 @@
-include ':CouchbaseLiteProject', ':CBLite', ':CBLiteEktorp', ':CBLiteJavascript', ':CBLiteListener'
+include ':CouchbaseLiteProject', ':CBLite', ':CBLiteJavascript', ':CBLiteListener'
