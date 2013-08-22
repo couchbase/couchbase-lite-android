@@ -33,7 +33,7 @@ public class CBLChangeTrackerBackoff {
         try {
             int sleepMilliseconds = getSleepMilliseconds();
             if (sleepMilliseconds > 0) {
-                Log.d(CBLDatabase.TAG, this.getClass().getName() + " sleeping for " + sleepMilliseconds);
+                Log.d(CBLDatabase.TAG, this.getClass().getSimpleName() + " sleeping for " + sleepMilliseconds);
                 Thread.sleep(sleepMilliseconds);
             }
         } catch (InterruptedException e1) {
