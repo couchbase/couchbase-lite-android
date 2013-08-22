@@ -151,6 +151,8 @@ public class CBLChangeTracker implements Runnable {
     public void run() {
         running = true;
         HttpClient httpClient = client.getHttpClient();
+        CBLChangeTrackerBackoff backoff = new CBLChangeTrackerBackoff();
+
         while (running) {
 
             URL url = getChangesFeedURL();
@@ -244,6 +246,8 @@ public class CBLChangeTracker implements Runnable {
                         Log.e(CBLDatabase.TAG, "Exception reading changes feed", e);
                     }
 
+                    backoff.resetBackoff();
+
                 }
             } catch (ClientProtocolException e) {
                 Log.e(CBLDatabase.TAG, "ClientProtocolException in change tracker", e);
@@ -254,6 +258,9 @@ public class CBLChangeTracker implements Runnable {
                     //close the socket underneath our read, ignore that
                     Log.e(CBLDatabase.TAG, "IOException in change tracker", e);
                 }
+
+                backoff.sleepAppropriateAmountOfTime();
+
             }
         }
         Log.v(CBLDatabase.TAG, "Change tracker run loop exiting");
