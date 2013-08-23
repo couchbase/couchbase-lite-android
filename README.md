@@ -31,6 +31,7 @@ Use Git to clone the Couchbase Lite repository to your local disk:
 
 ```
 $ git clone git://github.com/couchbase/couchbase-lite-android.git
+cd couchbase-lite-android
 $ git submodule init && git submodule update
 ```
 
