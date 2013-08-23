@@ -22,3 +22,4 @@
 /CouchbaseLiteProject/CBLiteJavascript/src/instrumentTest/assets/local-test.properties
 /CouchbaseLiteProject/local.properties
 .idea
+*.iml
