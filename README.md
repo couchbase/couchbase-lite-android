@@ -31,92 +31,64 @@ Use Git to clone the Couchbase Lite repository to your local disk:
 
 ```
 $ git clone git://github.com/couchbase/couchbase-lite-android.git
+$ git submodule init && git submodule update
 ```
 
-## Opening Project in Android Studio
-
-You should be able to open the project directly in Android Studio:
+## Configure Android Studio SDK location
 
 * `cp local.properties.example local.properties`
 * Customize `local.properties` according to your SDK installation directory
-* Start Android Studio
-* Choose File / Open and choose the CouchbaseLiteProject directory
 
-After opening the project, it should look [like this](http://cl.ly/image/002t0V233x2j/Screen%20Shot%202013-06-05%20at%204.29.07%20PM.png)
+
+## Importing Project into Android Studio
+
+You should be able to import the project directly into Android Studio:
+
+* Start Android Studio
+* Choose File / Import and choose the couchbase-lite-android/CouchbaseLiteProject directory [screenshot](http://cl.ly/image/1d0w0J0H0x1u)
+* Choose Import from External Model and make sure Gradle is selected [screenshot](http://cl.ly/image/2Y1m0O3U1Q2I)
+* Check the *auto-import* and the *Use gradle wrapper (recommended)* checkboxes [screenshot](http://cl.ly/image/1I0r1x2J032i)
+* Hit Finish and wait for all tasks to finish (may take a while)
+
+After it's finished with the import, it should look [like this](http://cl.ly/image/3R3X0Q3o1H09)
+
+## Working around Import bugs
+
+At this point, unfortunately, if you open the `CBLServer` class, it will look like [this](http://cl.ly/image/2C1M0F1T330t).  Android Studio will say it cannot resolve some objects.  This seems to be due to a bug in the import process.  
+
+To fix this:
+
+* Go to File / Project Structure
+* Choose Modules
+* Choose the CBLite module
+* Change the jackson-core-asl-1.9.2 and jackson-mapper-asl-1.9.2 dependencies from "test" to "compile" [screenshot](http://cl.ly/image/16113r0M2J2G)
+* Hit Apply
+
+_Note_: you may need to do this in other places for other libraries if you run into situations where Android Studio cannot resolve code.
+
+_Note_: the above workarounds are only needed for Android Studio, and even without these the command line gradle builds should still work.
 
 ## Running tests
 
-The tests require Sync Gateway to be installed and running.
+See the [[Running the Test Suite]] wiki page.
 
-* Sync-Gateway
+## Building and deploying maven artifacts.
 
-### Configure local-test.properties to point to database
+If you want to host and deploy your own maven artifacts, see the `upload_android_artifacts.sh` script.
 
-
-
-First copy the test.properties -> local-test.properties, eg:
-
-By default, the tests will try to connect to a CouchDB or Sync-Gateway running on your local workstation, and will not pass any username or password as credentials.  
-
-_Note:_ this step below of copying local-test.properties will need to be repeated for the all of the library projects that contain tests (eg, CBLite, CBLiteEktorp, CBLiteJavascript)
-
-```
-$ cd CBLite/src/instrumentTest/assets/
-$ cp test.properties local-test.properties 
-```
-
-Now customize local-test.properties to point to your database (URL and db name)
-
-_Note:_ If you are running the tests on the android emulator, then you can use the special `10.0.2.2` address, which will have it use the IP address of the workstation which launched the emulator.  (assuming that's where your server is)
-
-
-### Tell gradle to run tests
-
-```
-$ ./gradlew clean && ./gradlew connectedInstrumentTest
-```
-
-_Warning:_ the full test suite takes a _long time_ (10mins?) because of some 1 minute waits in the Ektorp tests.  You can tell it to just run the core tests (which are much faster) by running `./gradlew :CBLite:clean && ./gradlew :CBLite:connectedInstrumentTest` instead.
-
-_Note:_ there's not yet a known way to run the tests via Android Studio.  At the time of writing, was not yet supported by Android Studio.
- 
-## Building and deploying an archive
-
-Warning: this is a complicated process due to the issues mentioned on [this thread](https://groups.google.com/forum/#!topic/adt-dev/H2Jk2rVs6G8)
-
-
-Preparation:
-
-- You will need to have a maven repository installed and running
-- Delete all three archives from your repo: CBLite, CBLiteEktorp, and CBLiteJavascript
-- rm -rf ~/.gradle to delete any gradle cache files
-
-Building and deploying:
-
-- In the build.gradle file for CBLite, CBLiteEktorp, and CBLiteJavascript, set apply from: 'dependencies-test.gradle'
-- Run `./gradlew clean && ./gradlew :CBLite:uploadArchives`
-- Modify CBLiteEktorp/build.gradle to set apply from: 'dependencies-archive.gradle'
-- Run `./gradlew clean && ./gradlew :CBLiteEktorp:uploadArchives`
-- Modify CBLiteJavacript/build.gradle to set apply from: 'dependencies-archive.gradle'
-- Run `./gradlew clean && ./gradlew :CBLiteJavascript:uploadArchives`
-
-
-The end result: you will have three .aar archives in your maven repository.
-
-
-## Wiki
-
-See the [wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 
 ## Example Apps
 
 * [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)
 * [LiteServAndroid](https://github.com/couchbaselabs/LiteServAndroid)
-* [CouchChatAndroid](https://github.com/couchbaselabs/CouchChatAndroid)
+* [CouchChatAndroid](https://github.com/couchbaselabs/CouchChatAndroid) -- just a stub at this point.
+
+## Utilities
+
+* [CBLiteConsole](https://github.com/couchbaselabs/CBLiteConsole)
 
 ## Current Status
-- Ported core functionality present in Couchbase-Lite-iOS as of approximately 1 year ago (May 2012).
-- Unit tests pass
+- Alpha / Developer Preview
 
 ## Requirements
 - Android 3.0 Honeycomb (API level 11)
@@ -126,11 +98,4 @@ See the [wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 ## License
 - Apache License 2.0
 
-## Known Issues
-- Cannot deal with large attachments without running out of memory.
-- If the device goes offline, replications will stop and will not be automatically restarted.
-- Exception Handling in the current implementation makes things less readable.  This was a deliberate decision that was made to make it more of a literal port of the iOS version.  Once the majority of code is in place and working I would like to revisit this and handle exceptions in more natural Android/Java way.
-
-## TODO
-- Finish porting all of TDRouter so that all operations are supported
 
