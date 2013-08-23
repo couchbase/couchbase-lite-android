@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="jackson-core-asl-1.9.2">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/CBLite/libs/jackson-core-asl-1.9.2.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

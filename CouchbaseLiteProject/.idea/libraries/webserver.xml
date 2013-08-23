@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="webserver">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/CBLiteListener/libs/webserver.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
