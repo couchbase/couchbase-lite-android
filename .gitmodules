@@ -1,9 +1,9 @@
 [submodule "CouchbaseLiteProject/CBLiteJavascript"]
 	path = CouchbaseLiteProject/CBLiteJavascript
-	url = git@github.com:couchbase/CBLiteJavascript.git
+	url = https://github.com/couchbase/couchbase-lite-android-javascript.git
 [submodule "CouchbaseLiteProject/CBLiteListener"]
 	path = CouchbaseLiteProject/CBLiteListener
-	url = git@github.com:couchbase/CBLiteListener.git
+	url = https://github.com/couchbase/couchbase-lite-android-listener.git
 [submodule "CouchbaseLiteProject/CBLite"]
 	path = CouchbaseLiteProject/CBLite
-	url = git@github.com:couchbase/CBLite.git
+	url = https://github.com/couchbase/couchbase-lite-android-core.git
