@@ -145,19 +145,6 @@ public class Router extends CBLiteTestCase {
 
         send(server, "GET", "/db/doc1", CBLStatus.NOT_FOUND, null);
 
-        // Put with _deleted to delete a doc:
-        Log.d(TAG, "Put with _deleted to delete a doc");
-        Map<String,Object> doc5 = new HashMap<String,Object>();
-        doc5.put("message", "hello5");
-        Map<String,Object> resultDoc5 = (Map<String,Object>)sendBody(server, "PUT", "/db/doc5", doc5, CBLStatus.CREATED, null);
-        String revIdDoc5 = (String)resultDoc5.get("rev");
-        Assert.assertTrue(revIdDoc5.startsWith("1-"));
-        doc5.put("_deleted", true);
-        doc5.put("_rev", revIdDoc5);
-        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc5", doc5, CBLStatus.CREATED, null);
-        send(server, "GET", "/db/doc5", CBLStatus.NOT_FOUND, null);
-        Log.d(TAG, "Finished put with _deleted to delete a doc");
-
         // _changes:
         value1.put("rev", revID);
         List<Object> changes1 = new ArrayList<Object>();
@@ -201,6 +188,21 @@ public class Router extends CBLiteTestCase {
         results.remove(result1);
         expectedChanges.put("results", results);
         send(server, "GET", "/db/_changes?since=5", CBLStatus.OK, expectedChanges);
+
+        // Put with _deleted to delete a doc:
+        Log.d(TAG, "Put with _deleted to delete a doc");
+        send(server, "GET", "/db/doc5", CBLStatus.NOT_FOUND, null);
+        Map<String,Object> doc5 = new HashMap<String,Object>();
+        doc5.put("message", "hello5");
+        Map<String,Object> resultDoc5 = (Map<String,Object>)sendBody(server, "PUT", "/db/doc5", doc5, CBLStatus.CREATED, null);
+        String revIdDoc5 = (String)resultDoc5.get("rev");
+        Assert.assertTrue(revIdDoc5.startsWith("1-"));
+        doc5.put("_deleted", true);
+        doc5.put("_rev", revIdDoc5);
+        doc5.put("_id", "doc5");
+        result = (Map<String,Object>)sendBody(server, "PUT", "/db/doc5", doc5, CBLStatus.OK, null);
+        send(server, "GET", "/db/doc5", CBLStatus.NOT_FOUND, null);
+        Log.d(TAG, "Finished put with _deleted to delete a doc");
     }
 
     public void testLocalDocs() {
