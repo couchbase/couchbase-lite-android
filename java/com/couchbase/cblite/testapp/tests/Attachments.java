@@ -71,6 +71,7 @@ public class Attachments extends CBLiteTestCase {
 
         Map<String,Object> innerDict = new HashMap<String,Object>();
         innerDict.put("content_type", "text/plain");
+        innerDict.put("content-type", "text/plain");
         innerDict.put("digest", "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
         innerDict.put("length", 27);
         innerDict.put("stub", true);
@@ -224,6 +225,7 @@ public class Attachments extends CBLiteTestCase {
 
         Map<String,Object> attachment = new HashMap<String,Object>();
         attachment.put("content_type", "text/plain");
+        attachment.put("content-type", "text/plain");
         attachment.put("data", base64);
         Map<String,Object> attachmentDict = new HashMap<String,Object>();
         attachmentDict.put("attach", attachment);
@@ -245,6 +247,7 @@ public class Attachments extends CBLiteTestCase {
 
         Map<String,Object> innerDict = new HashMap<String,Object>();
         innerDict.put("content_type", "text/plain");
+        innerDict.put("content-type", "text/plain");
         innerDict.put("digest", "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
         innerDict.put("length", 27);
         innerDict.put("stub", true);
@@ -272,6 +275,7 @@ public class Attachments extends CBLiteTestCase {
 
         innerDict = new HashMap<String,Object>();
         innerDict.put("content_type", "application/foo");
+        innerDict.put("content-type", "application/foo");
         innerDict.put("digest", "sha1-mbT3208HI3PZgbG4zYWbDW2HsPk=");
         innerDict.put("length", 23);
         innerDict.put("stub", true);
