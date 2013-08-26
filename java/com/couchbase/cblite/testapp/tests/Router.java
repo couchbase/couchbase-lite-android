@@ -82,13 +82,9 @@ public class Router extends CBLiteTestCase {
 
     public void testDocWithAttachment() throws IOException {
 
-        Log.d(TAG, "start testDocWithAttachment");
-
         String inlineTextString = "Inline text string created by cblite functional test";
 
         send(server, "PUT", "/db", CBLStatus.CREATED, null);
-
-        // PUT:
 
         Map<String,Object> attachment = new HashMap<String,Object>();
         attachment.put("content-type", "text/plain");
@@ -105,8 +101,6 @@ public class Router extends CBLiteTestCase {
         Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/db/docWithAttachment", docWithAttachment, CBLStatus.CREATED, null);
 
         result = (Map<String,Object>)send(server, "GET", "/db/docWithAttachment", CBLStatus.OK, null);
-        Log.d(TAG, "result: " + result);
-
         Map<String,Object> attachmentsResult = (Map<String,Object>) result.get("_attachments");
         Map<String,Object> attachmentResult = (Map<String,Object>) attachmentsResult.get("inline.txt");
         Assert.assertTrue(attachmentResult.containsKey("content-type"));
@@ -119,7 +113,6 @@ public class Router extends CBLiteTestCase {
 
         StringWriter writer = new StringWriter();
         IOUtils.copy(conn.getInputStream(), writer, "UTF-8");
-        // IOUtils.copy(conn.getInputStream(), writer);
         String responseString = writer.toString();
         Assert.assertTrue(responseString.contains(inlineTextString));
 
