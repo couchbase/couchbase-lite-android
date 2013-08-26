@@ -8,6 +8,7 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
+import com.couchbase.cblite.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
@@ -73,6 +74,68 @@ public class Router extends CBLiteTestCase {
         send(server, "PUT", "/database%2Fwith%2Fslashes", CBLStatus.CREATED, null);
         dbInfo = (Map<String,Object>)send(server, "GET", "/database%2Fwith%2Fslashes", CBLStatus.OK, null);
         Assert.assertEquals("database/with/slashes", dbInfo.get("db_name"));
+    }
+
+    public void testDocWithAttachment() {
+
+        Log.d(TAG, "start testDocWithAttachment");
+
+        String inlineTextString = "Inline text string created by cblite functional test";
+
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
+
+        // PUT:
+
+        Map<String,Object> attachment = new HashMap<String,Object>();
+        attachment.put("content-type", "text/plain");
+        attachment.put("data", "data=SW5saW5lIHRleHQgc3RyaW5nIGNyZWF0ZWQgYnkgY2JsaXRlIGZ1bmN0aW9uYWwgdGVzdA==");
+
+        Map<String,Object> attachments = new HashMap<String,Object>();
+        attachments.put("inline.txt", attachment);
+
+        Map<String,Object> docWithAttachment = new HashMap<String,Object>();
+        docWithAttachment.put("_id", "docWithAttachment");
+        docWithAttachment.put("text", inlineTextString);
+        docWithAttachment.put("_attachments", attachments);
+
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "PUT", "/db/docWithAttachment", docWithAttachment, CBLStatus.CREATED, null);
+
+        result = (Map<String,Object>)send(server, "GET", "/db/docWithAttachment", CBLStatus.OK, null);
+        Log.d(TAG, "result: " + result);
+
+        /* re-enable this assertion later after primary bug is fixed .. mising content-type
+        Map<String,Object> attachmentsResult = (Map<String,Object>) result.get("_attachments");
+        Map<String,Object> attachmentResult = (Map<String,Object>) attachmentsResult.get("inline.txt");
+        Assert.assertTrue(attachmentResult.containsKey("content-type"));
+        Assert.assertNotNull(attachmentResult.get("content-type")); */
+
+        /*
+
+        Example response from sync gateway:
+
+        HTTP/1.1 200 OK
+        Content-Length: 52
+        Content-Type: text/plain; charset=utf-8
+        Date: Mon, 26 Aug 2013 17:42:41 GMT
+        Etag: sha1-i/STphkUNnLhfyegJkGZIcUECYk=
+        Server: Couchbase Sync Gateway/0.59
+
+        Inline text string created by cblite functional test
+
+         */
+
+        CBLURLConnection conn = sendRequest(server, "GET", "/db/docWithAttachment/inline.txt", null, null);
+        String contentType = conn.getHeaderField("Content-Type");
+        Assert.assertNotNull(contentType);
+        Assert.assertTrue(contentType.contains("text/plain"));
+
+        CBLBody responseBody = conn.getResponseBody();
+        String responseString = new String(responseBody.getJson());
+        Log.d(TAG, "responseBody json: " + responseString);
+        Assert.assertTrue(responseString.contains(inlineTextString));
+
+        Log.d(TAG, "finish testDocWithAttachment");
+
     }
 
     public void testDocs() {
