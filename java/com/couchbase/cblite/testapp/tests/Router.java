@@ -103,8 +103,11 @@ public class Router extends CBLiteTestCase {
         result = (Map<String,Object>)send(server, "GET", "/db/docWithAttachment", CBLStatus.OK, null);
         Map<String,Object> attachmentsResult = (Map<String,Object>) result.get("_attachments");
         Map<String,Object> attachmentResult = (Map<String,Object>) attachmentsResult.get("inline.txt");
-        Assert.assertTrue(attachmentResult.containsKey("content-type"));
-        Assert.assertNotNull(attachmentResult.get("content-type"));
+
+        // there should be either a content_type or content-type field.
+        String contentTypeField = (String) attachmentResult.get("content_type");;
+        Assert.assertTrue(attachmentResult.containsKey("content_type"));
+        Assert.assertNotNull(contentTypeField);
 
         CBLURLConnection conn = sendRequest(server, "GET", "/db/docWithAttachment/inline.txt", null, null);
         String contentType = conn.getHeaderField("Content-Type");
