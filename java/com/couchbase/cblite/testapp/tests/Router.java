@@ -566,4 +566,17 @@ public class Router extends CBLiteTestCase {
         sendBody(server, "POST", "/db/_revs_diff", revsDiffRequest, CBLStatus.OK, revsDiffResponse);
     }
 
+    public void testFacebookToken() {
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
+
+        Map<String,Object> doc1 = new HashMap<String,Object>();
+        doc1.put("email", "foo@bar.com");
+        doc1.put("remote_url", getReplicationURL().toExternalForm() );
+        doc1.put("access_token", "fake_access_token" );
+
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", "/db/_facebook_token", doc1, CBLStatus.OK, null);
+        Log.v(TAG, String.format("result %s", result));
+
+    }
+
 }
