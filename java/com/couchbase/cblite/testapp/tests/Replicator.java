@@ -32,6 +32,8 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 
 public class Replicator extends CBLiteTestCase {
 
@@ -249,6 +251,31 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertEquals(1, doc.getProperties().get("foo"));
 
         Log.d(TAG, "testPuller() finished");
+
+
+    }
+
+    public void testGetReplicator() throws Throwable {
+
+        String authJson = "{\n" +
+                "    \"facebook\" : {\n" +
+                "        \"email\" : \"jchris@couchbase.com\"\n" +
+                "     }\n" +
+                "   }\n";
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String,Object> authProperties  = mapper.readValue(authJson,
+                new TypeReference<HashMap<String,Object>>(){});
+
+        Map<String,Object> targetProperties = new HashMap<String,Object>();
+        targetProperties.put("url", getReplicationURL());
+        targetProperties.put("auth", authProperties);
+
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("source", DEFAULT_TEST_DB);
+        properties.put("target", targetProperties);
+
+        CBLReplicator replicator = server.getManager().getReplicator(properties);
+        Assert.assertNotNull(replicator);
 
 
     }
