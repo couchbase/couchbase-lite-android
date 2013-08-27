@@ -595,4 +595,64 @@ public class Router extends CBLiteTestCase {
 
     }
 
+    public void testPushReplicate() throws Exception {
+
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
+
+        String json = "{\n" +
+                "\"source\" : \"db\",\n" +
+                "\"target\" : {\n" +
+                "  \"url\" : \"http://10.0.2.2:4984/db\",\n" +
+                "  \"auth\" : {\n" +
+                "    \"facebook\" : {\n" +
+                "        \"email\" : \"jchris@couchbase.com\"\n" +
+                "     }\n" +
+                "   }\n" +
+                "}\n" +
+                "}";
+
+        Map<String,Object> replicateJsonMap = new HashMap<String,Object>();
+        ObjectMapper mapper = new ObjectMapper();
+        replicateJsonMap = mapper.readValue(json,
+                new TypeReference<HashMap<String,Object>>(){});
+
+        Log.v(TAG, "map: " + replicateJsonMap);
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", "/_replicate", replicateJsonMap, CBLStatus.OK, null);  // cblite:///_replicate ?  com.couchbase.cblite.router.CBLURLConnection:cblite://_replicate
+
+
+
+
+    }
+
+    public void testPullReplicate() throws Exception {
+
+        send(server, "PUT", "/db", CBLStatus.CREATED, null);
+
+        String json = "{\n" +
+                "\"target\" : \"db\",\n" +
+                "\"source\" : {\n" +
+                "  \"url\" : \"http://10.0.2.2:4984/db\",\n" +
+                "  \"auth\" : {\n" +
+                "    \"facebook\" : {\n" +
+                "        \"email\" : \"jchris@couchbase.com\"\n" +
+                "     }\n" +
+                "   }\n" +
+                "}\n" +
+                "}";
+
+        Map<String,Object> replicateJsonMap = new HashMap<String,Object>();
+        ObjectMapper mapper = new ObjectMapper();
+        replicateJsonMap = mapper.readValue(json,
+                new TypeReference<HashMap<String,Object>>(){});
+
+        Log.v(TAG, "map: " + replicateJsonMap);
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", "/_replicate", replicateJsonMap, CBLStatus.OK, null);  // cblite:///_replicate ?  com.couchbase.cblite.router.CBLURLConnection:cblite://_replicate
+
+
+
+
+    }
+
+
+
 }
