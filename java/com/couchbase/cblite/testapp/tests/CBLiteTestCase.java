@@ -142,11 +142,15 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
         return System.getProperty("replicationDatabase");
     }
 
-    protected URL getReplicationURL() throws MalformedURLException {
-        if(getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
-            return new URL(String.format("%s://%s:%s@%s:%d/%s", getReplicationProtocol(), getReplicationAdminUser(), getReplicationAdminPassword(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
-        } else {
-            return new URL(String.format("%s://%s:%d/%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
+    protected URL getReplicationURL()  {
+        try {
+            if(getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
+                return new URL(String.format("%s://%s:%s@%s:%d/%s", getReplicationProtocol(), getReplicationAdminUser(), getReplicationAdminPassword(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
+            } else {
+                return new URL(String.format("%s://%s:%d/%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
+            }
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 
