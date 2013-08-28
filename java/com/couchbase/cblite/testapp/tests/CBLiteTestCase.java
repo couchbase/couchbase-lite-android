@@ -15,6 +15,7 @@ import java.util.Properties;
 import junit.framework.Assert;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 
 import android.test.InstrumentationTestCase;
 import android.util.Base64;
@@ -177,6 +178,48 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
 
         return result;
     }
+
+    public Map<String, Object> getReplicationAuthParsedJson() throws IOException {
+        String authJson = "{\n" +
+                "    \"facebook\" : {\n" +
+                "        \"email\" : \"jchris@couchbase.com\"\n" +
+                "     }\n" +
+                "   }\n";
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String,Object> authProperties  = mapper.readValue(authJson,
+                new TypeReference<HashMap<String,Object>>(){});
+        return authProperties;
+
+    }
+
+    public Map<String, Object> getPushReplicationParsedJson() throws IOException {
+
+        Map<String,Object> authProperties = getReplicationAuthParsedJson();
+
+        Map<String,Object> targetProperties = new HashMap<String,Object>();
+        targetProperties.put("url", getReplicationURL().toExternalForm());
+        targetProperties.put("auth", authProperties);
+
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("source", DEFAULT_TEST_DB);
+        properties.put("target", targetProperties);
+        return properties;
+    }
+
+    public Map<String, Object> getPullReplicationParsedJson() throws IOException {
+
+        Map<String,Object> authProperties = getReplicationAuthParsedJson();
+
+        Map<String,Object> sourceProperties = new HashMap<String,Object>();
+        sourceProperties.put("url", getReplicationURL().toExternalForm());
+        sourceProperties.put("auth", authProperties);
+
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("source", sourceProperties);
+        properties.put("target", DEFAULT_TEST_DB);
+        return properties;
+    }
+
 
     protected CBLURLConnection sendRequest(CBLServer server, String method, String path, Map<String,String> headers, Object bodyObj) {
         try {

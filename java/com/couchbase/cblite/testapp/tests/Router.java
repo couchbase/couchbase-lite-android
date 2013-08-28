@@ -10,7 +10,6 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
@@ -599,28 +598,14 @@ public class Router extends CBLiteTestCase {
 
         send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
-        String json = "{\n" +
-                "\"source\" : \"db\",\n" +
-                "\"target\" : {\n" +
-                "  \"url\" : \"http://10.0.2.2:4984/db\",\n" +
-                "  \"auth\" : {\n" +
-                "    \"facebook\" : {\n" +
-                "        \"email\" : \"jchris@couchbase.com\"\n" +
-                "     }\n" +
-                "   }\n" +
-                "}\n" +
-                "}";
 
-        Map<String,Object> replicateJsonMap = new HashMap<String,Object>();
-        ObjectMapper mapper = new ObjectMapper();
-        replicateJsonMap = mapper.readValue(json,
-                new TypeReference<HashMap<String,Object>>(){});
+        Map<String, Object> replicateJsonMap = getPushReplicationParsedJson();
+
 
         Log.v(TAG, "map: " + replicateJsonMap);
-        Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", "/_replicate", replicateJsonMap, CBLStatus.OK, null);  // cblite:///_replicate ?  com.couchbase.cblite.router.CBLURLConnection:cblite://_replicate
-
-
-
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", "/_replicate", replicateJsonMap, CBLStatus.OK, null);
+        Log.v(TAG, "result: " + result);
+        Assert.assertNotNull(result.get("session_id"));
 
     }
 
@@ -628,26 +613,12 @@ public class Router extends CBLiteTestCase {
 
         send(server, "PUT", "/db", CBLStatus.CREATED, null);
 
-        String json = "{\n" +
-                "\"target\" : \"db\",\n" +
-                "\"source\" : {\n" +
-                "  \"url\" : \"http://10.0.2.2:4984/db\",\n" +
-                "  \"auth\" : {\n" +
-                "    \"facebook\" : {\n" +
-                "        \"email\" : \"jchris@couchbase.com\"\n" +
-                "     }\n" +
-                "   }\n" +
-                "}\n" +
-                "}";
-
-        Map<String,Object> replicateJsonMap = new HashMap<String,Object>();
-        ObjectMapper mapper = new ObjectMapper();
-        replicateJsonMap = mapper.readValue(json,
-                new TypeReference<HashMap<String,Object>>(){});
+        Map<String, Object> replicateJsonMap = getPullReplicationParsedJson();
 
         Log.v(TAG, "map: " + replicateJsonMap);
-        Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", "/_replicate", replicateJsonMap, CBLStatus.OK, null);  // cblite:///_replicate ?  com.couchbase.cblite.router.CBLURLConnection:cblite://_replicate
-
+        Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", "/_replicate", replicateJsonMap, CBLStatus.OK, null);
+        Log.v(TAG, "result: " + result);
+        Assert.assertNotNull(result.get("session_id"));
 
 
 

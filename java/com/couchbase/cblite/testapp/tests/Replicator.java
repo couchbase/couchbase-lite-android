@@ -18,6 +18,7 @@ import com.couchbase.cblite.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
 import com.couchbase.cblite.replicator.CBLPusher;
 import com.couchbase.cblite.replicator.CBLReplicator;
 
@@ -27,13 +28,10 @@ import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 
 public class Replicator extends CBLiteTestCase {
 
@@ -257,28 +255,40 @@ public class Replicator extends CBLiteTestCase {
 
     public void testGetReplicator() throws Throwable {
 
-        String authJson = "{\n" +
-                "    \"facebook\" : {\n" +
-                "        \"email\" : \"jchris@couchbase.com\"\n" +
-                "     }\n" +
-                "   }\n";
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String,Object> authProperties  = mapper.readValue(authJson,
-                new TypeReference<HashMap<String,Object>>(){});
-
-        Map<String,Object> targetProperties = new HashMap<String,Object>();
-        targetProperties.put("url", getReplicationURL());
-        targetProperties.put("auth", authProperties);
-
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", DEFAULT_TEST_DB);
-        properties.put("target", targetProperties);
+        properties.put("target", getReplicationURL().toExternalForm());
 
         CBLReplicator replicator = server.getManager().getReplicator(properties);
         Assert.assertNotNull(replicator);
+        Assert.assertEquals(getReplicationURL().toExternalForm(), replicator.getRemote().toExternalForm());
+        Assert.assertTrue(replicator.isPush());
+        Assert.assertFalse(replicator.isContinuous());
+        Assert.assertFalse(replicator.isRunning());
+
+        // start the replicator
+        replicator.start();
+
+        // now lets lookup existing replicator and stop it
+        properties.put("cancel", true);
+        CBLReplicator activeReplicator = server.getManager().getReplicator(properties);
+        activeReplicator.stop();
+        Assert.assertFalse(activeReplicator.isRunning());
+
+    }
+
+    public void testGetReplicatorWithAuth() throws Throwable {
+
+        Map<String, Object> properties = getPushReplicationParsedJson();
+
+        CBLReplicator replicator = server.getManager().getReplicator(properties);
+        Assert.assertNotNull(replicator);
+        Assert.assertNotNull(replicator.getAuthorizer());
+        Assert.assertTrue(replicator.getAuthorizer() instanceof CBLFacebookAuthorizer);
 
 
     }
+
 
     class ReplicationObserver implements Observer {
         public boolean replicationFinished = false;
