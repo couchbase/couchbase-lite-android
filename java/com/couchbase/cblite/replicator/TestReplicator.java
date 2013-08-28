@@ -9,13 +9,13 @@ import java.net.URL;
 public class TestReplicator extends InstrumentationTestCase {
 
     public void testBuildRelativeURLString() throws Exception {
-        CBLReplicator replicator = new CBLPusher(null, new URL("http://10.0.0.3:4984/todos/"), false, null);
-        String relativeUrlString = replicator.buildRelativeURLString("/_facebook");
 
-        
-        Assert.assertTrue(relativeUrlString.contains("//") == false);
+        String dbUrlString = "http://10.0.0.3:4984/todos/";
+        CBLReplicator replicator = new CBLPusher(null, new URL(dbUrlString), false, null);
+        String relativeUrlString = replicator.buildRelativeURLString("_facebook");
 
-
+        String expected = "http://10.0.0.3:4984/todos/_facebook";
+        Assert.assertEquals(expected, relativeUrlString);
     }
 
 }
