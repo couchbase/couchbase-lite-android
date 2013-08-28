@@ -12,10 +12,22 @@ public class TestReplicator extends InstrumentationTestCase {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         CBLReplicator replicator = new CBLPusher(null, new URL(dbUrlString), false, null);
-        String relativeUrlString = replicator.buildRelativeURLString("_facebook");
+        String relativeUrlString = replicator.buildRelativeURLString("foo");
 
-        String expected = "http://10.0.0.3:4984/todos/_facebook";
+        String expected = "http://10.0.0.3:4984/todos/foo";
         Assert.assertEquals(expected, relativeUrlString);
+
+    }
+
+    public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
+
+        String dbUrlString = "http://10.0.0.3:4984/todos/";
+        CBLReplicator replicator = new CBLPusher(null, new URL(dbUrlString), false, null);
+        String relativeUrlString = replicator.buildRelativeURLString("/foo");
+
+        String expected = "http://10.0.0.3:4984/todos/foo";
+        Assert.assertEquals(expected, relativeUrlString);
+
     }
 
 }
