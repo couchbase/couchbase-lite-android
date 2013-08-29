@@ -296,7 +296,7 @@ public class Replicator extends CBLiteTestCase {
         facebookTokenInfo.put("email", "jchris@couchbase.com");
         facebookTokenInfo.put("remote_url", getReplicationURL().toExternalForm());
         facebookTokenInfo.put("access_token", "fake_access_token");
-        String destUrl = String.format("/%s/_facebook_token", DEFAULT_TEST_DB);
+        String destUrl = String.format("/_facebook_token", DEFAULT_TEST_DB);
         Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", destUrl, facebookTokenInfo, CBLStatus.OK, null);
         Log.v(TAG, String.format("result %s", result));
 
