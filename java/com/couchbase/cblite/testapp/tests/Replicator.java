@@ -123,6 +123,8 @@ public class Replicator extends CBLiteTestCase {
             protected Object doInBackground(Object... aParams) {
 
                 // workaround attempt for issue #81
+                // the last commit fixed the problem (using a new httpcontext object for each http client).
+                // it ran the unit tests in a loop for 1 hour with no failures.
                 BasicHttpParams params = new BasicHttpParams();
                 SchemeRegistry schemeRegistry = new SchemeRegistry();
                 schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
