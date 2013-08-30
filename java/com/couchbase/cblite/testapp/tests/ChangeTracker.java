@@ -53,7 +53,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client, null);
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -92,7 +92,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client, null);
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -129,7 +129,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client, null);
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -146,7 +146,7 @@ public class ChangeTracker extends CBLiteTestCase {
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
-        CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null, null);
+        CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
 
         // set filter
         changeTracker.setFilterName("filter");
@@ -186,7 +186,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, CBLChangeTracker.TDChangeTrackerMode.Continuous, 0, client, null);
+        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, CBLChangeTracker.TDChangeTrackerMode.Continuous, 0, client);
 
         AsyncTask task = new AsyncTask<Object, Object, Object>() {
             @Override
