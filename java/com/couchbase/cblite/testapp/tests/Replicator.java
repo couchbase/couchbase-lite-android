@@ -122,16 +122,7 @@ public class Replicator extends CBLiteTestCase {
             @Override
             protected Object doInBackground(Object... aParams) {
 
-                // workaround attempt for issue #81
-                // the last commit fixed the problem (using a new httpcontext object for each http client).
-                // it ran the unit tests in a loop for 1 hour with no failures.
-                BasicHttpParams params = new BasicHttpParams();
-                SchemeRegistry schemeRegistry = new SchemeRegistry();
-                schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-                final SSLSocketFactory sslSocketFactory = SSLSocketFactory.getSocketFactory();
-                schemeRegistry.register(new Scheme("https", sslSocketFactory, 443));
-                ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient(cm, params);
+                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
 
                 HttpResponse response;
                 String responseString = null;
@@ -200,14 +191,7 @@ public class Replicator extends CBLiteTestCase {
             @Override
             protected Object doInBackground(Object... aParams) {
 
-                // workaround attempt for issue #81
-                BasicHttpParams params = new BasicHttpParams();
-                SchemeRegistry schemeRegistry = new SchemeRegistry();
-                schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-                final SSLSocketFactory sslSocketFactory = SSLSocketFactory.getSocketFactory();
-                schemeRegistry.register(new Scheme("https", sslSocketFactory, 443));
-                ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient(cm, params);
+                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
 
                 HttpResponse response;
                 String responseString = null;
