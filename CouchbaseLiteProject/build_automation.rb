@@ -5,7 +5,6 @@ TESTING_MODE="TESTING_MODE"
 ARTIFACTS_MODE="ARTIFACTS_MODE"
 
 GRADLE_FILES = ["CBLite/build.gradle", 
-               "CBLiteEktorp/build.gradle", 
                "CBLiteListener/build.gradle",
                "CouchbaseLiteProject/build.gradle"]
 
@@ -14,12 +13,9 @@ def uploadArchives()
   # backup original file build.gradle files
   backupFiles(GRADLE_FILES)
 
-  # In the build.gradle file for CBLite, CBLiteEktorp, and CBLiteJavascript, set apply from: 'dependencies-test.gradle'
+  # In the build.gradle file for CBLite, and CBLiteJavascript, set apply from: 'dependencies-test.gradle'
   build(TESTING_MODE)
   uploadArchivesSingleLibrary("CBLite")
-
-  setArtifactsModeSingleFile("CBLiteEktorp/build.gradle")
-  uploadArchivesSingleLibrary("CBLiteEktorp")
 
   setArtifactsModeSingleFile("CBLiteJavascript/build.gradle")
   uploadArchivesSingleLibrary("CBLiteJavascript")
