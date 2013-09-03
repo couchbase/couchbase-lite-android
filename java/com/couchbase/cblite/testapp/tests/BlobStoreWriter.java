@@ -12,9 +12,7 @@ import java.io.InputStream;
 
 public class BlobStoreWriter extends CBLiteTestCase {
 
-    public void testReproduceIssue89() throws Exception {
-
-        // Reproduces https://github.com/couchbase/couchbase-lite-android/issues/89
+    public void testBasicOperation() throws Exception {
 
         CBLBlobStore attachments = database.getAttachments();
 
@@ -27,13 +25,9 @@ public class BlobStoreWriter extends CBLiteTestCase {
         blobStoreWriter.install();
 
         String sha1DigestKey = blobStoreWriter.sHA1DigestString();
-        String md5DigestKey = blobStoreWriter.mD5DigestString();
 
         CBLBlobKey keyFromSha1 = new CBLBlobKey(sha1DigestKey);
         Assert.assertTrue(attachments.getSizeOfBlob(keyFromSha1) == bytes.length);
-
-        CBLBlobKey keyFromMd5 = new CBLBlobKey(md5DigestKey);
-        Assert.assertTrue(attachments.getSizeOfBlob(keyFromMd5) == bytes.length);
 
     }
 
