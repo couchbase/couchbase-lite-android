@@ -1,6 +1,8 @@
 package com.couchbase.cblite.testapp.tests;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -22,7 +24,9 @@ import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
 import com.couchbase.cblite.replicator.CBLPusher;
 import com.couchbase.cblite.replicator.CBLReplicator;
+import com.couchbase.cblite.support.Base64;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -174,12 +178,17 @@ public class Replicator extends CBLiteTestCase {
 
     public void testPuller() throws Throwable {
 
-
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
 
+        // add attachment to document
+        InputStream attachmentStream = getInstrumentation().getContext().getAssets().open("attachment.png");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        IOUtils.copy(attachmentStream, baos);
+        String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
+
         // push a document to server
-        final String json = String.format("{\"foo\":1,\"bar\":false}", doc1Id);
+        final String json = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentBase64);
 
         URL replicationUrlTrailing = new URL(String.format("%s/%s", getReplicationURL().toExternalForm(), doc1Id));
         final URL pathToDoc = new URL(replicationUrlTrailing, doc1Id);
