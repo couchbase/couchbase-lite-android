@@ -12,7 +12,9 @@ import java.io.InputStream;
 
 public class BlobStoreWriter extends CBLiteTestCase {
 
-    public void testThatItworks() throws Exception {
+    public void testReproduceIssue89() throws Exception {
+
+        // Reproduces https://github.com/couchbase/couchbase-lite-android/issues/89
 
         CBLBlobStore attachments = database.getAttachments();
 
