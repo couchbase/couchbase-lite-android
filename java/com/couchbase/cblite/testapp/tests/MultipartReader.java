@@ -4,6 +4,7 @@ import android.test.InstrumentationTestCase;
 
 import com.couchbase.cblite.support.CBLMultipartReader;
 import com.couchbase.cblite.support.CBLMultipartReaderDelegate;
+import com.couchbase.cblite.support.Range;
 
 import junit.framework.Assert;
 
@@ -83,11 +84,27 @@ public class MultipartReader extends InstrumentationTestCase {
         Assert.assertEquals(reader.headers.keySet().size(), 2);
     }
 
+    public void testSearchFor() throws Exception {
+        String testString = new String("\r\n\r\n");
+        byte[] testStringBytes = testString.getBytes(Charset.forName("UTF-8"));
+        CBLMultipartReader reader = new CBLMultipartReader("multipart/related;boundary=X", null);
+        reader.appendData(testStringBytes);
+        Range r = reader.searchFor(testStringBytes, 0);
+        Assert.assertEquals(0, r.getLocation());
+        Assert.assertEquals(4, r.getLength());
+
+        Range r2 = reader.searchFor(new String("nomatch").getBytes(Charset.forName("UTF-8")), 0);
+        Assert.assertEquals(-1, r2.getLocation());
+        Assert.assertEquals(0, r2.getLength());
+
+    }
+
     public void testReaderOperation() {
 
         Charset utf8 = Charset.forName("UTF-8");
 
         byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
+
 
         for (int chunkSize=1; chunkSize <= mime.length; ++chunkSize) {
             ByteArrayInputStream mimeInputStream = new ByteArrayInputStream(mime);
