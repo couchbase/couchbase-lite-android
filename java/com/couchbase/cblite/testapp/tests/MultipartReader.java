@@ -104,7 +104,17 @@ public class MultipartReader extends InstrumentationTestCase {
         Charset utf8 = Charset.forName("UTF-8");
 
         byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
+        readerOperationWithMime(mime);
 
+        byte[] mime2 = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY\r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
+        readerOperationWithMime(mime2);
+
+
+    }
+
+    private void readerOperationWithMime(byte[] mime) {
+
+        Charset utf8 = Charset.forName("UTF-8");
 
         for (int chunkSize=1; chunkSize <= mime.length; ++chunkSize) {
             ByteArrayInputStream mimeInputStream = new ByteArrayInputStream(mime);
@@ -143,8 +153,6 @@ public class MultipartReader extends InstrumentationTestCase {
             Assert.assertEquals(headers1.get("Header"), "Val ue");
 
         }
-
-
     }
 
 }
