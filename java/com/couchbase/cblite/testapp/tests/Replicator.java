@@ -1,6 +1,5 @@
 package com.couchbase.cblite.testapp.tests;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -34,16 +33,9 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.message.BasicHeader;
-import org.apache.http.params.BasicHttpParams;
 
 public class Replicator extends CBLiteTestCase {
 
@@ -180,61 +172,10 @@ public class Replicator extends CBLiteTestCase {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
+        final String doc2Id = String.format("doc2-%s", docIdTimestamp);
 
-        // add attachment to document
-        InputStream attachmentStream = getInstrumentation().getContext().getAssets().open("attachment.png");
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        IOUtils.copy(attachmentStream, baos);
-        String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
-
-        // push a document to server
-        final String json = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentBase64);
-
-        URL replicationUrlTrailing = new URL(String.format("%s/%s", getReplicationURL().toExternalForm(), doc1Id));
-        final URL pathToDoc = new URL(replicationUrlTrailing, doc1Id);
-        Log.d(TAG, "Send http request to " + pathToDoc);
-
-        final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
-        AsyncTask getDocTask = new AsyncTask<Object, Object, Object>() {
-
-            @Override
-            protected Object doInBackground(Object... aParams) {
-
-                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
-
-                HttpResponse response;
-                String responseString = null;
-                try {
-                    HttpPut post = new HttpPut(pathToDoc.toExternalForm());
-                    StringEntity se = new StringEntity( json.toString() );
-                    se.setContentType(new BasicHeader("content_type", "application/json"));
-                    post.setEntity(se);
-                    response = httpclient.execute(post);
-                    StatusLine statusLine = response.getStatusLine();
-                    Log.d(TAG, "Got response: " + statusLine);
-                    Assert.assertTrue(statusLine.getStatusCode() == HttpStatus.SC_CREATED);
-                } catch (ClientProtocolException e) {
-                    Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
-                } catch (IOException e) {
-                    Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
-                }
-
-                httpRequestDoneSignal.countDown();
-                return null;
-            }
-
-
-        };
-        getDocTask.execute();
-
-        Log.d(TAG, "Waiting for http request to finish");
-        try {
-            httpRequestDoneSignal.await();
-            Log.d(TAG, "http request finished");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
+        addDocWithId(doc1Id, "attachment.png");
+        addDocWithId(doc2Id, "attachment2.png");
 
         URL remote = getReplicationURL();
 
@@ -264,14 +205,76 @@ public class Replicator extends CBLiteTestCase {
             e.printStackTrace();
         }
 
-        CBLRevision doc = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
-        Assert.assertNotNull(doc);
-        Assert.assertTrue(doc.getRevId().startsWith("1-"));
-        Assert.assertEquals(1, doc.getProperties().get("foo"));
+        CBLRevision doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        Assert.assertNotNull(doc1);
+        Assert.assertTrue(doc1.getRevId().startsWith("1-"));
+        Assert.assertEquals(1, doc1.getProperties().get("foo"));
+
+        CBLRevision doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        Assert.assertNotNull(doc2);
+        Assert.assertTrue(doc2.getRevId().startsWith("1-"));
+        Assert.assertEquals(1, doc2.getProperties().get("foo"));
 
         Log.d(TAG, "testPuller() finished");
 
 
+    }
+
+    private void addDocWithId(String docId, String attachmentName) throws IOException {
+
+        // add attachment to document
+        InputStream attachmentStream = getInstrumentation().getContext().getAssets().open(attachmentName);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        IOUtils.copy(attachmentStream, baos);
+        String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
+
+        // push a document to server
+        final String doc1Json = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentBase64);
+
+        URL replicationUrlTrailingDoc1 = new URL(String.format("%s/%s", getReplicationURL().toExternalForm(), docId));
+        final URL pathToDoc1 = new URL(replicationUrlTrailingDoc1, docId);
+        Log.d(TAG, "Send http request to " + pathToDoc1);
+
+        final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
+        AsyncTask getDocTask = new AsyncTask<Object, Object, Object>() {
+
+            @Override
+            protected Object doInBackground(Object... aParams) {
+
+                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
+
+                HttpResponse response;
+                String responseString = null;
+                try {
+                    HttpPut post = new HttpPut(pathToDoc1.toExternalForm());
+                    StringEntity se = new StringEntity( doc1Json.toString() );
+                    se.setContentType(new BasicHeader("content_type", "application/json"));
+                    post.setEntity(se);
+                    response = httpclient.execute(post);
+                    StatusLine statusLine = response.getStatusLine();
+                    Log.d(TAG, "Got response: " + statusLine);
+                    Assert.assertTrue(statusLine.getStatusCode() == HttpStatus.SC_CREATED);
+                } catch (ClientProtocolException e) {
+                    Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
+                } catch (IOException e) {
+                    Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
+                }
+
+                httpRequestDoneSignal.countDown();
+                return null;
+            }
+
+
+        };
+        getDocTask.execute();
+
+        Log.d(TAG, "Waiting for http request to finish");
+        try {
+            httpRequestDoneSignal.await();
+            Log.d(TAG, "http request finished");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void testGetReplicator() throws Throwable {
