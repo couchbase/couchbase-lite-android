@@ -9,7 +9,7 @@ die () {
     echo >&2 "$@"
     exit 1
 }
-[ "$#" -eq 1 ] || die "1 argument required, $# provided"
+[ "$#" -ge 1 ] || die "at least 1 argument required"
 
 # start emulator
 emulator64-arm -avd $* -netspeed full -netdelay none
