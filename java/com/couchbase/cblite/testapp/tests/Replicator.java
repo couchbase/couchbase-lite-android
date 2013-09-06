@@ -168,6 +168,121 @@ public class Replicator extends CBLiteTestCase {
 
     }
 
+    public String testPusherDeletedDoc() throws Throwable {
+
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+
+        URL remote = getReplicationURL();
+        String docIdTimestamp = Long.toString(System.currentTimeMillis());
+
+        // Create some documents:
+        Map<String, Object> documentProperties = new HashMap<String, Object>();
+        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
+        documentProperties.put("_id", doc1Id);
+        documentProperties.put("foo", 1);
+        documentProperties.put("bar", false);
+
+        CBLBody body = new CBLBody(documentProperties);
+        CBLRevision rev1 = new CBLRevision(body, database);
+
+        CBLStatus status = new CBLStatus();
+        rev1 = database.putRevision(rev1, null, false, status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+
+        documentProperties.put("_rev", rev1.getRevId());
+        documentProperties.put("UPDATED", true);
+        documentProperties.put("_deleted", true);
+
+        @SuppressWarnings("unused")
+        CBLRevision rev2 = database.putRevision(new CBLRevision(documentProperties, database), rev1.getRevId(), false, status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+
+        documentProperties = new HashMap<String, Object>();
+        String doc2Id = String.format("doc2-%s", docIdTimestamp);
+        documentProperties.put("_id", doc2Id);
+        documentProperties.put("baz", 666);
+        documentProperties.put("fnord", true);
+
+        database.putRevision(new CBLRevision(documentProperties, database), null, false, status);
+        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+
+        final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
+        ((CBLPusher)repl).setCreateTarget(true);
+
+        AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
+
+            @Override
+            protected Object doInBackground(Object... aParams) {
+                // Push them to the remote:
+                repl.start();
+                Assert.assertTrue(repl.isRunning());
+                return null;
+            }
+
+        };
+        replicationTask.execute();
+
+
+        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
+        repl.addObserver(replicationObserver);
+
+        Log.d(TAG, "Waiting for replicator to finish");
+        try {
+            replicationDoneSignal.await();
+            Log.d(TAG, "replicator finished");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // make sure doc1 is deleted
+        URL replicationUrlTrailing = new URL(String.format("%s/", remote.toExternalForm()));
+        final URL pathToDoc = new URL(replicationUrlTrailing, doc1Id);
+        Log.d(TAG, "Send http request to " + pathToDoc);
+
+        final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
+        AsyncTask getDocTask = new AsyncTask<Object, Object, Object>() {
+
+            @Override
+            protected Object doInBackground(Object... aParams) {
+
+                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
+
+                HttpResponse response;
+                String responseString = null;
+                try {
+                    response = httpclient.execute(new HttpGet(pathToDoc.toExternalForm()));
+                    StatusLine statusLine = response.getStatusLine();
+                    Assert.assertTrue(statusLine.getStatusCode() == HttpStatus.SC_NOT_FOUND);
+
+                } catch (ClientProtocolException e) {
+                    Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
+                } catch (IOException e) {
+                    Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
+                }
+
+                httpRequestDoneSignal.countDown();
+                return null;
+            }
+
+
+        };
+        getDocTask.execute();
+
+
+        Log.d(TAG, "Waiting for http request to finish");
+        try {
+            httpRequestDoneSignal.await();
+            Log.d(TAG, "http request finished");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+        Log.d(TAG, "testPusherDeletedDoc() finished");
+        return docIdTimestamp;
+
+    }
+
     public void testPuller() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
