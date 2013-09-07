@@ -194,6 +194,8 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("_deleted", true);
 
         @SuppressWarnings("unused")
+        CBLRevision rev2 = database.putRevision(new CBLRevision(documentProperties, database), rev1.getRevId(), false, status);
+        Assert.assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
         final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
