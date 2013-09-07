@@ -168,7 +168,7 @@ public class Replicator extends CBLiteTestCase {
 
     }
 
-    public String testPusherDeletedDoc() throws Throwable {
+    public void testPusherDeletedDoc() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
@@ -194,17 +194,6 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("_deleted", true);
 
         @SuppressWarnings("unused")
-        CBLRevision rev2 = database.putRevision(new CBLRevision(documentProperties, database), rev1.getRevId(), false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
-
-        documentProperties = new HashMap<String, Object>();
-        String doc2Id = String.format("doc2-%s", docIdTimestamp);
-        documentProperties.put("_id", doc2Id);
-        documentProperties.put("baz", 666);
-        documentProperties.put("fnord", true);
-
-        database.putRevision(new CBLRevision(documentProperties, database), null, false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
@@ -252,7 +241,7 @@ public class Replicator extends CBLiteTestCase {
                 try {
                     response = httpclient.execute(new HttpGet(pathToDoc.toExternalForm()));
                     StatusLine statusLine = response.getStatusLine();
-                    Assert.assertTrue(statusLine.getStatusCode() == HttpStatus.SC_NOT_FOUND);
+                    return statusLine;
 
                 } catch (ClientProtocolException e) {
                     Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
@@ -264,6 +253,11 @@ public class Replicator extends CBLiteTestCase {
                 return null;
             }
 
+            @Override
+            protected void onPostExecute(Object o) {
+                StatusLine statusLine = (StatusLine) o;
+                Assert.assertEquals(HttpStatus.SC_NOT_FOUND, statusLine.getStatusCode());
+            }
 
         };
         getDocTask.execute();
@@ -279,7 +273,6 @@ public class Replicator extends CBLiteTestCase {
 
 
         Log.d(TAG, "testPusherDeletedDoc() finished");
-        return docIdTimestamp;
 
     }
 
