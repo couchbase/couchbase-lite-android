@@ -441,15 +441,25 @@ public class Replicator extends CBLiteTestCase {
         CBLReplicator replicator = server.getManager().getReplicator(properties);
         replicator.start();
 
-        // wait a few seconds
-        Thread.sleep(5 * 1000);
+        boolean foundError = false;
+        for (int i=0; i<10; i++) {
 
-        // expect an error since it will try to contact the sync gateway with this bogus login,
-        // and the sync gateway will reject it.
-        ArrayList<Object> activeTasks = (ArrayList<Object>)send(server, "GET", "/_active_tasks", CBLStatus.OK, null);
-        Log.d(TAG, "activeTasks: " + activeTasks);
-        Map<String,Object> activeTaskReplication = (Map<String,Object>) activeTasks.get(0);
-        Assert.assertNotNull(activeTaskReplication.get("error"));
+            // wait a few seconds
+            Thread.sleep(5 * 1000);
+
+            // expect an error since it will try to contact the sync gateway with this bogus login,
+            // and the sync gateway will reject it.
+            ArrayList<Object> activeTasks = (ArrayList<Object>)send(server, "GET", "/_active_tasks", CBLStatus.OK, null);
+            Log.d(TAG, "activeTasks: " + activeTasks);
+            Map<String,Object> activeTaskReplication = (Map<String,Object>) activeTasks.get(0);
+            foundError = (activeTaskReplication.get("error") != null);
+            if (foundError == true) {
+                break;
+            }
+
+        }
+
+        Assert.assertTrue(foundError);
 
     }
 
