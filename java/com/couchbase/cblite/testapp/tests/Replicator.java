@@ -243,20 +243,23 @@ public class Replicator extends CBLiteTestCase {
                 try {
                     response = httpclient.execute(new HttpGet(pathToDoc.toExternalForm()));
                     StatusLine statusLine = response.getStatusLine();
+                    Log.d(TAG, "statusLine " + statusLine);
                     return statusLine;
 
                 } catch (ClientProtocolException e) {
                     Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
                 } catch (IOException e) {
                     Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
+                } finally {
+                    httpRequestDoneSignal.countDown();
                 }
 
-                httpRequestDoneSignal.countDown();
                 return null;
             }
 
             @Override
             protected void onPostExecute(Object o) {
+                Log.d(TAG, "onPostExecute called with " + o);
                 StatusLine statusLine = (StatusLine) o;
                 Assert.assertEquals(HttpStatus.SC_NOT_FOUND, statusLine.getStatusCode());
             }
