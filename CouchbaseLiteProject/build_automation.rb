@@ -27,7 +27,10 @@ end
 
 # upload the archives for a single library, eg, "CBLite"
 def uploadArchivesSingleLibrary(libraryName)
-  build_result = %x( ./gradlew clean && ./gradlew :#{libraryName}:uploadArchivesWrapper )
+  cmd = "./gradlew :#{libraryName}:uploadArchivesWrapper"
+  puts cmd 
+  build_result = %x( #{cmd} )
+  puts build_result
   # check if it worked
   if ($?.exitstatus != 0) 
     puts "Error uploading archive for #{libraryName}, aborting"
@@ -37,7 +40,10 @@ def uploadArchivesSingleLibrary(libraryName)
 end 
 
 def buildCode() 
-  build_result = %x( ./gradlew clean && ./gradlew build )
+  cmd = "./gradlew clean && ./gradlew build"
+  puts cmd
+  build_result = %x( #{cmd} )
+  puts build_result
   # check if the build worked 
   if ($?.exitstatus != 0) 
     puts "Build error, aborting"
