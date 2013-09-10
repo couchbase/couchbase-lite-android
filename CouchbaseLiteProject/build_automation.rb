@@ -5,7 +5,7 @@ TESTING_MODE="TESTING_MODE"
 ARTIFACTS_MODE="ARTIFACTS_MODE"
 
 GRADLE_FILES = ["CBLite/build.gradle", 
-               "CBLiteListener/build.gradle",
+               "CBLiteJavascript/build.gradle",
                "CouchbaseLiteProject/build.gradle"]
 
 def uploadArchives() 
