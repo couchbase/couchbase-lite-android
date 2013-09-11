@@ -3,3 +3,4 @@
 require "build_automation.rb"
 
 buildArtifactsMode()
+buildZipArchiveRelease() 
