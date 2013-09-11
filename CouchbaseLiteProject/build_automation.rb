@@ -208,10 +208,6 @@ def buildZipArchiveRelease()
     runCommand cmd
   }
 
-  # list the directory for debugging
-  runCommand "ls -alh"
-  runCommand "ls -alh #{localArchive}"
-
   # re-zip the zip file and put in current directory  
   runCommand "zip -r -j #{localArchive} #{localArchive}"
 
