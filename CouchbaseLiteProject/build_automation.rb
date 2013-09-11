@@ -172,7 +172,7 @@ def buildZipArchiveRelease()
   #runCommand "rm -rf #{remoteArchive}"
 
   # download an existing zip archive which already has the 3rd party dependencies
-  runCommand "wget http://tleyden-misc.s3.amazonaws.com/#{remoteZipArchive}"
+  runCommand "curl -O http://tleyden-misc.s3.amazonaws.com/#{remoteZipArchive}"
 
   # unzip it
   runCommand "unzip #{remoteZipArchive}"
