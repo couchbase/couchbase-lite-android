@@ -162,21 +162,29 @@ end
 
 def buildZipArchiveRelease() 
 
-  existingArchive = "couchbase-lite-android-rc2"
-  existingZipArchive = "#{existingArchive}.zip"
+  remoteArchive = "couchbase-lite-android-rc2"
+  remoteZipArchive = "#{remoteArchive}.zip"
+  localArchive = "zip_release_archive"
+  localZipArchive = "#{localArchive}.zip"
 
   # clean out any residue from previous runs
-  runCommand "rm #{existingZipArchive}"
-  runCommand "rm -rf #{existingArchive}"
+  #runCommand "rm #{remoteZipArchive}"
+  #runCommand "rm -rf #{remoteArchive}"
 
   # download an existing zip archive which already has the 3rd party dependencies
-  runCommand "wget http://tleyden-misc.s3.amazonaws.com/#{existingZipArchive}"
+  runCommand "wget http://tleyden-misc.s3.amazonaws.com/#{remoteZipArchive}"
 
-  # unzip it to a temp dir
-  runCommand "unzip #{existingZipArchive}"
+  # unzip it
+  runCommand "unzip #{remoteZipArchive}"
+
+  # delete the old zip we downloaded
+  runCommand "rm #{remoteZipArchive}"
+
+  # rename it
+  runCommand "mv #{remoteArchive} #{localArchive}"
 
   # remove the existing cblite*.jar files
-  runCommand "rm -rf #{existingArchive}/CBLite*.jar"
+  runCommand "rm -rf #{localArchive}/CBLite*.jar"
 
   # collect the new cblite jar files and name them correctly based on UPLOAD_VERSION_CBLITE env var
   modules = ["CBLite", "CBLiteJavascript", "CBLiteListener"]
@@ -187,15 +195,15 @@ def buildZipArchiveRelease()
       envVarName = "UPLOAD_VERSION_CBLITE_JAVASCRIPT"
     end
     envVarValue = ENV[envVarName]
-    dest = "#{existingArchive}/#{mod}-#{envVarValue}.jar"     
+    dest = "#{localArchive}/#{mod}-#{envVarValue}.jar"     
     cmd = "cp #{src} #{dest}"
     runCommand cmd
   }
 
-  # delete the old zip we downloaded
-  runCommand "rm #{existingZipArchive}"
-
   # re-zip the zip file and put in current directory  
-  runCommand "zip -r #{existingArchive} #{existingArchive}"
+  runCommand "zip -r -j #{localArchive} #{localArchive}"
+
+  # delete the directory that was created
+  runCommand "rm -rf #{localArchive}"
 
 end
