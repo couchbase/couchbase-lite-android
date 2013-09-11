@@ -12,5 +12,9 @@ verifyEnvVariable("UPLOAD_PASSWORD")
 verifyEnvVariable("UPLOAD_VERSION_CBLITE")
 verifyEnvVariable("UPLOAD_VERSION_CBLITE_JAVASCRIPT")
 
+puts "call clean()"
+clean()
+
+puts "call uploadArchives()"
 uploadArchives()
 
