@@ -154,4 +154,48 @@ def restoreFiles(file_list)
   end
 end
 
+def runCommand(cmd)
+  puts cmd 
+  result = %x( #{cmd} )
+  puts result
+end
 
+def buildZipArchiveRelease() 
+
+  existingArchive = "couchbase-lite-android-rc2"
+  existingZipArchive = "#{existingArchive}.zip"
+
+  # clean out any residue from previous runs
+  runCommand "rm #{existingZipArchive}"
+  runCommand "rm -rf #{existingArchive}"
+
+  # download an existing zip archive which already has the 3rd party dependencies
+  runCommand "wget http://tleyden-misc.s3.amazonaws.com/#{existingZipArchive}"
+
+  # unzip it to a temp dir
+  runCommand "unzip #{existingZipArchive}"
+
+  # remove the existing cblite*.jar files
+  runCommand "rm -rf #{existingArchive}/CBLite*.jar"
+
+  # collect the new cblite jar files and name them correctly based on UPLOAD_VERSION_CBLITE env var
+  modules = ["CBLite", "CBLiteJavascript", "CBLiteListener"]
+  modules.each { |mod| 
+    src = "#{mod}/build/bundles/release/classes.jar"
+    envVarName = "UPLOAD_VERSION_CBLITE"
+    if mod == "CBLiteJavascript"
+      envVarName = "UPLOAD_VERSION_CBLITE_JAVASCRIPT"
+    end
+    envVarValue = ENV[envVarName]
+    dest = "#{existingArchive}/#{mod}-#{envVarValue}.jar"     
+    cmd = "cp #{src} #{dest}"
+    runCommand cmd
+  }
+
+  # delete the old zip we downloaded
+  runCommand "rm #{existingZipArchive}"
+
+  # re-zip the zip file and put in current directory  
+  runCommand "zip -r #{existingArchive} #{existingArchive}"
+
+end
