@@ -40,8 +40,16 @@ def uploadArchivesSingleLibrary(libraryName)
 
 end 
 
+def clean() 
+  cmd = "./gradlew clean"
+  puts cmd
+  build_result = %x( #{cmd} )
+  puts build_result
+
+end
+
 def buildCode() 
-  cmd = "./gradlew clean && ./gradlew build"
+  cmd = "./gradlew build"
   puts cmd
   build_result = %x( #{cmd} )
   puts build_result
