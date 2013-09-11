@@ -34,6 +34,7 @@ def uploadArchivesSingleLibrary(libraryName)
   # check if it worked
   if ($?.exitstatus != 0) 
     puts "Error uploading archive for #{libraryName}, aborting"
+    restoreFiles(GRADLE_FILES)
     exit($?.exitstatus)
   end
 
@@ -47,6 +48,7 @@ def buildCode()
   # check if the build worked 
   if ($?.exitstatus != 0) 
     puts "Build error, aborting"
+    restoreFiles(GRADLE_FILES)
     exit($?.exitstatus)
   end
 end
@@ -95,11 +97,15 @@ def assertPresentInCurrentDirectory(file_list)
 
 end
 
-def backupFiles(file_list)
-  file_list.each do |src| 
+def backupFile(src)
     dest = "#{src}.bak"
     puts "Copying #{src} to #{dest}"
     FileUtils.cp(src, dest)
+end
+
+def backupFiles(file_list)
+  file_list.each do |src| 
+    backupFile(src)
   end
 end
 
@@ -112,6 +118,7 @@ end
 
 def setTestingModeSingleFile(gradle_file)
   puts "Set #{gradle_file} to testing mode"
+  backupFile(gradle_file)
   outdata = File.read(gradle_file).gsub(/dependencies-archive.gradle/, "dependencies-test.gradle")
   File.open(gradle_file, 'w') do |out|
     out << outdata
@@ -127,6 +134,7 @@ end
 
 def setArtifactsModeSingleFile(gradle_file)
     puts "Set #{gradle_file} to archive mode"
+    backupFile(gradle_file)
     outdata = File.read(gradle_file).gsub(/dependencies-test.gradle/, "dependencies-archive.gradle")
     File.open(gradle_file, 'w') do |out|
       out << outdata
@@ -140,6 +148,8 @@ def restoreFiles(file_list)
       puts "Restoring #{src} to #{dest}"
       FileUtils.cp(src, dest)
       FileUtils.remove(src)
+    else
+      puts "Cannot find file: #{src}, not restoring"
     end
   end
 end
