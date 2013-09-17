@@ -4,7 +4,7 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 **Couchbase-Lite-Android** is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
 
-For information on the high-level goals of the project see the [Couchbase Lite iOS Readme](https://github.com/couchbase/couchbase-lite-ios/blob/master/README.md). 
+[Click here for **official documentation for Couchbase Lite Android**](http://docs.couchbase.com/couchbase-lite/cbl-android/)
 
 ## Getting Started with Couchbase Lite
 
