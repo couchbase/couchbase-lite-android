@@ -71,7 +71,7 @@ _Note_: the above workarounds are only needed for Android Studio, and even witho
 
 ## Running tests
 
-See the [[Running the Test Suite]] wiki page.
+See the [Running the Test Suite](https://github.com/couchbase/couchbase-lite-android/wiki/Running-the-test-suite) wiki page.
 
 ## Building and deploying maven artifacts.
 
