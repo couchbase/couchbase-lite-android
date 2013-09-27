@@ -34,7 +34,7 @@ public class LocalDocs extends CBLiteTestCase {
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));
 
         //read it back
-        CBLRevisionInternal readRev = database.getLocalDocument(rev1.getDocId(), null);
+        CBLRevisionInternal readRev = database.getDbInternal().getLocalDocument(rev1.getDocId(), null);
         Assert.assertNotNull(readRev);
         Map<String,Object> readRevProps = readRev.getProperties();
         Assert.assertEquals(rev1.getDocId(), readRev.getProperties().get("_id"));
@@ -54,7 +54,7 @@ public class LocalDocs extends CBLiteTestCase {
         Assert.assertTrue(rev2.getRevId().startsWith("2-"));
 
         //read it back
-        readRev = database.getLocalDocument(rev2.getDocId(), null);
+        readRev = database.getDbInternal().getLocalDocument(rev2.getDocId(), null);
         Assert.assertNotNull(readRev);
         Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
@@ -76,7 +76,7 @@ public class LocalDocs extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
 
         // Read it back (should fail):
-        readRev = database.getLocalDocument(revD.getDocId(), null);
+        readRev = database.getDbInternal().getLocalDocument(revD.getDocId(), null);
         Assert.assertNull(readRev);
     }
 
