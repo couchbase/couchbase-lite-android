@@ -9,7 +9,7 @@ import junit.framework.Assert;
 import android.test.AndroidTestCase;
 
 import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
 
 public class Revisions extends AndroidTestCase {
 
@@ -57,7 +57,7 @@ public class Revisions extends AndroidTestCase {
     }
 
     public void testMakeRevisionHistoryDict() {
-        List<CBLRevision> revs = new ArrayList<CBLRevision>();
+        List<CBLRevisionInternal> revs = new ArrayList<CBLRevisionInternal>();
         revs.add(mkrev("4-jkl"));
         revs.add(mkrev("3-ghi"));
         revs.add(mkrev("2-def"));
@@ -74,7 +74,7 @@ public class Revisions extends AndroidTestCase {
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
-        revs = new ArrayList<CBLRevision>();
+        revs = new ArrayList<CBLRevisionInternal>();
         revs.add(mkrev("4-jkl"));
         revs.add(mkrev("2-def"));
 
@@ -88,7 +88,7 @@ public class Revisions extends AndroidTestCase {
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
-        revs = new ArrayList<CBLRevision>();
+        revs = new ArrayList<CBLRevisionInternal>();
         revs.add(mkrev("12345"));
         revs.add(mkrev("6789"));
 
@@ -103,8 +103,8 @@ public class Revisions extends AndroidTestCase {
 
     }
 
-    private static CBLRevision mkrev(String revID) {
-        return new CBLRevision("docid", revID, false, null);
+    private static CBLRevisionInternal mkrev(String revID) {
+        return new CBLRevisionInternal("docid", revID, false, null);
     }
 
 }

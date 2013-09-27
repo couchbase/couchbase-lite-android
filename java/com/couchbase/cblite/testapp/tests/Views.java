@@ -27,7 +27,7 @@ import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLQueryOptions;
-import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
 import com.couchbase.cblite.CBLView.TDViewCollation;
@@ -83,16 +83,16 @@ public class Views extends CBLiteTestCase {
         Assert.assertTrue(changed);
     }
 
-    private CBLRevision putDoc(CBLDatabase db, Map<String,Object> props) {
-        CBLRevision rev = new CBLRevision(props, db);
+    private CBLRevisionInternal putDoc(CBLDatabase db, Map<String,Object> props) {
+        CBLRevisionInternal rev = new CBLRevisionInternal(props, db);
         CBLStatus status = new CBLStatus();
         rev = db.putRevision(rev, null, false, status);
         Assert.assertTrue(status.isSuccessful());
         return rev;
     }
 
-    public List<CBLRevision> putDocs(CBLDatabase db) {
-        List<CBLRevision> result = new ArrayList<CBLRevision>();
+    public List<CBLRevisionInternal> putDocs(CBLDatabase db) {
+        List<CBLRevisionInternal> result = new ArrayList<CBLRevisionInternal>();
 
         Map<String,Object> dict2 = new HashMap<String,Object>();
         dict2.put("_id", "22222");
@@ -123,8 +123,8 @@ public class Views extends CBLiteTestCase {
     }
 
     // http://wiki.apache.org/couchdb/Introduction_to_CouchDB_views#Linked_documents
-    public List<CBLRevision> putLinkedDocs(CBLDatabase db) {
-        List<CBLRevision> result = new ArrayList<CBLRevision>();
+    public List<CBLRevisionInternal> putLinkedDocs(CBLDatabase db) {
+        List<CBLRevisionInternal> result = new ArrayList<CBLRevisionInternal>();
 
         Map<String,Object> dict1 = new HashMap<String,Object>();
         dict1.put("_id", "11111");
@@ -187,9 +187,9 @@ public class Views extends CBLiteTestCase {
         Map<String,Object> dictX = new HashMap<String,Object>();
         dictX.put("clef", "quatre");
 
-        CBLRevision rev1 = putDoc(database, dict1);
-        CBLRevision rev2 = putDoc(database, dict2);
-        CBLRevision rev3 = putDoc(database, dict3);
+        CBLRevisionInternal rev1 = putDoc(database, dict1);
+        CBLRevisionInternal rev2 = putDoc(database, dict2);
+        CBLRevisionInternal rev3 = putDoc(database, dict3);
         putDoc(database, dictX);
 
         CBLView view = createView(database);
@@ -216,7 +216,7 @@ public class Views extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.NOT_MODIFIED, updated.getCode());
 
         // Now add a doc and update a doc:
-        CBLRevision threeUpdated = new CBLRevision(rev3.getDocId(), rev3.getRevId(), false, database);
+        CBLRevisionInternal threeUpdated = new CBLRevisionInternal(rev3.getDocId(), rev3.getRevId(), false, database);
         Map<String,Object> newdict3 = new HashMap<String,Object>();
         newdict3.put("key", "3hree");
         threeUpdated.setProperties(newdict3);
@@ -226,9 +226,9 @@ public class Views extends CBLiteTestCase {
 
         Map<String,Object> dict4 = new HashMap<String,Object>();
         dict4.put("key", "four");
-        CBLRevision rev4 = putDoc(database, dict4);
+        CBLRevisionInternal rev4 = putDoc(database, dict4);
 
-        CBLRevision twoDeleted = new CBLRevision(rev2.getDocId(), rev2.getRevId(), true, database);
+        CBLRevisionInternal twoDeleted = new CBLRevisionInternal(rev2.getDocId(), rev2.getRevId(), true, database);
         database.putRevision(twoDeleted, rev2.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
@@ -373,10 +373,10 @@ public class Views extends CBLiteTestCase {
 
     public void testAllDocsQuery() {
 
-        List<CBLRevision> docs = putDocs(database);
+        List<CBLRevisionInternal> docs = putDocs(database);
 
         List<Map<String,Object>> expectedRow = new ArrayList<Map<String,Object>>();
-        for (CBLRevision rev : docs) {
+        for (CBLRevisionInternal rev : docs) {
             Map<String,Object> value = new HashMap<String, Object>();
             value.put("rev", rev.getRevId());
 

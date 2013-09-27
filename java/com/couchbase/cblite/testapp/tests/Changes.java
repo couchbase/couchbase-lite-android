@@ -8,7 +8,7 @@ import java.util.Observer;
 import junit.framework.Assert;
 
 import com.couchbase.cblite.CBLBody;
-import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 
 public class Changes extends CBLiteTestCase {
@@ -37,7 +37,7 @@ public class Changes extends CBLiteTestCase {
         documentProperties.put("baz", "touch");
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevision rev1 = new CBLRevision(body, database);
+        CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
         CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);

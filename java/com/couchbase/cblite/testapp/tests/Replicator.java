@@ -18,7 +18,7 @@ import android.util.Log;
 
 import com.couchbase.cblite.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLRevision;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
 import com.couchbase.cblite.replicator.CBLPusher;
@@ -56,7 +56,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("bar", false);
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevision rev1 = new CBLRevision(body, database);
+        CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
         CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);
@@ -66,7 +66,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("UPDATED", true);
 
         @SuppressWarnings("unused")
-        CBLRevision rev2 = database.putRevision(new CBLRevision(documentProperties, database), rev1.getRevId(), false, status);
+        CBLRevisionInternal rev2 = database.putRevision(new CBLRevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         documentProperties = new HashMap<String, Object>();
@@ -75,7 +75,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("baz", 666);
         documentProperties.put("fnord", true);
 
-        database.putRevision(new CBLRevision(documentProperties, database), null, false, status);
+        database.putRevision(new CBLRevisionInternal(documentProperties, database), null, false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
@@ -183,7 +183,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("bar", false);
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevision rev1 = new CBLRevision(body, database);
+        CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
         CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);
@@ -194,7 +194,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("_deleted", true);
 
         @SuppressWarnings("unused")
-        CBLRevision rev2 = database.putRevision(new CBLRevision(documentProperties, database), rev1.getRevId(), false, status);
+        CBLRevisionInternal rev2 = database.putRevision(new CBLRevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
         Assert.assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
         final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
@@ -318,12 +318,12 @@ public class Replicator extends CBLiteTestCase {
             e.printStackTrace();
         }
 
-        CBLRevision doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        CBLRevisionInternal doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertNotNull(doc1);
         Assert.assertTrue(doc1.getRevId().startsWith("1-"));
         Assert.assertEquals(1, doc1.getProperties().get("foo"));
 
-        CBLRevision doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        CBLRevisionInternal doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertNotNull(doc2);
         Assert.assertTrue(doc2.getRevId().startsWith("1-"));
         Assert.assertEquals(1, doc2.getProperties().get("foo"));

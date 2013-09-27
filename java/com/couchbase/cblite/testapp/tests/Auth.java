@@ -8,7 +8,6 @@ import com.couchbase.cblite.auth.CBLPersonaAuthorizer;
 
 import junit.framework.Assert;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 
