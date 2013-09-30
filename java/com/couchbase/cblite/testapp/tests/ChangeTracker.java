@@ -1,11 +1,11 @@
 package com.couchbase.cblite.testapp.tests;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import android.os.AsyncTask;
+import android.util.Log;
+
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker;
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
+import com.couchbase.cblite.replicator.changetracker.CBLChangeTrackerClient;
 
 import junit.framework.Assert;
 
@@ -27,12 +27,12 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 
-import android.os.AsyncTask;
-import android.util.Log;
-
-import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker;
-import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
-import com.couchbase.cblite.replicator.changetracker.CBLChangeTrackerClient;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class ChangeTracker extends CBLiteTestCase {
 

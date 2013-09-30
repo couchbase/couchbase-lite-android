@@ -1,5 +1,31 @@
 package com.couchbase.cblite.testapp.tests;
 
+import android.os.AsyncTask;
+import android.util.Log;
+
+import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
+import com.couchbase.cblite.replicator.CBLPusher;
+import com.couchbase.cblite.replicator.CBLReplicator;
+import com.couchbase.cblite.support.Base64;
+
+import junit.framework.Assert;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicHeader;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -10,32 +36,6 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.CountDownLatch;
-
-import junit.framework.Assert;
-
-import android.os.AsyncTask;
-import android.util.Log;
-
-import com.couchbase.cblite.CBLBody;
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.CBLStatus;
-import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
-import com.couchbase.cblite.replicator.CBLPusher;
-import com.couchbase.cblite.replicator.CBLReplicator;
-import com.couchbase.cblite.support.Base64;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicHeader;
 
 public class Replicator extends CBLiteTestCase {
 
