@@ -6,7 +6,7 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 

@@ -3,7 +3,7 @@ package com.couchbase.cblite.testapp.tests;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.auth.CBLFacebookAuthorizer;

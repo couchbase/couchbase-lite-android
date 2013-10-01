@@ -7,7 +7,7 @@ import java.util.Observer;
 
 import junit.framework.Assert;
 
-import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 

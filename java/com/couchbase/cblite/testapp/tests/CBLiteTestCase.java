@@ -19,7 +19,7 @@ import org.codehaus.jackson.type.TypeReference;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
-import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLServer;
 import com.couchbase.cblite.router.CBLRouter;

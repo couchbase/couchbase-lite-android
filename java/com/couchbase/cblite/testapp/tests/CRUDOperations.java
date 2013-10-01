@@ -27,7 +27,7 @@ import java.util.Observer;
 import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.CBLBody;
+import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLFilterBlock;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
