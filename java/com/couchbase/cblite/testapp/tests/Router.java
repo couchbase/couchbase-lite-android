@@ -11,10 +11,10 @@ import junit.framework.Assert;
 import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLMapEmitFunction;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
-import com.couchbase.cblite.CBLViewMapBlock;
-import com.couchbase.cblite.CBLViewMapEmitBlock;
+import com.couchbase.cblite.CBLMapFunction;
 import com.couchbase.cblite.router.CBLRouter;
 import com.couchbase.cblite.router.CBLURLConnection;
 
@@ -368,10 +368,10 @@ public class Router extends CBLiteTestCase {
 
         CBLDatabase db = server.getDatabaseNamed("db");
         CBLView view = db.getViewNamed("design/view");
-        view.setMapReduceBlocks(new CBLViewMapBlock() {
+        view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
                 emitter.emit(document.get("message"), null);
             }
         }, null, "1");
@@ -459,26 +459,26 @@ public class Router extends CBLiteTestCase {
 
     	CBLDatabase db = server.getDatabaseNamed("db");
     	CBLView view = db.getViewNamed("design/view");
-    	view.setMapReduceBlocks(new CBLViewMapBlock() {
+    	view.setMapAndReduce(new CBLMapFunction() {
 
-    		@Override
-    		public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
-    			emitter.emit(document.get("message"), null);
-    		}
-    	}, null, "1");
+            @Override
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+                emitter.emit(document.get("message"), null);
+            }
+        }, null, "1");
 
     	Map<String,Object> key_doc1 = new HashMap<String,Object>();
     	key_doc1.put("parentId", "12345");
     	result = (Map<String,Object>)sendBody(server, "PUT", "/db/key_doc1", key_doc1, CBLStatus.CREATED, null);
     	view = db.getViewNamed("design/view");
-    	view.setMapReduceBlocks(new CBLViewMapBlock() {
-    		@Override
-    		public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
-    			if (document.get("parentId").equals("12345")) {
-    				emitter.emit(document.get("parentId"), document);
-    			}
-    		}
-    	}, null, "1");
+    	view.setMapAndReduce(new CBLMapFunction() {
+            @Override
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+                if (document.get("parentId").equals("12345")) {
+                    emitter.emit(document.get("parentId"), document);
+                }
+            }
+        }, null, "1");
 
     	List<Object> keys = new ArrayList<Object>();
     	keys.add("12345");

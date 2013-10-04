@@ -26,14 +26,14 @@ import junit.framework.Assert;
 import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLMapEmitFunction;
+import com.couchbase.cblite.CBLMapFunction;
 import com.couchbase.cblite.CBLQueryOptions;
+import com.couchbase.cblite.CBLReduceFunction;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
 import com.couchbase.cblite.CBLView.TDViewCollation;
-import com.couchbase.cblite.CBLViewMapBlock;
-import com.couchbase.cblite.CBLViewMapEmitBlock;
-import com.couchbase.cblite.CBLViewReduceBlock;
 
 public class Views extends CBLiteTestCase {
 
@@ -47,13 +47,13 @@ public class Views extends CBLiteTestCase {
         Assert.assertNotNull(view);
         Assert.assertEquals(database, view.getDb());
         Assert.assertEquals("aview", view.getName());
-        Assert.assertNull(view.getMapBlock());
+        Assert.assertNull(view.getMap());
         Assert.assertEquals(view, database.getExistingViewNamed("aview"));
 
-        boolean changed = view.setMapReduceBlocks(new CBLViewMapBlock() {
+        boolean changed = view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
                 //no-op
             }
         }, null, "1");
@@ -62,20 +62,20 @@ public class Views extends CBLiteTestCase {
         Assert.assertEquals(1, database.getAllViews().size());
         Assert.assertEquals(view, database.getAllViews().get(0));
 
-        changed = view.setMapReduceBlocks(new CBLViewMapBlock() {
+        changed = view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
                 //no-op
             }
         }, null, "1");
 
         Assert.assertFalse(changed);
 
-        changed = view.setMapReduceBlocks(new CBLViewMapBlock() {
+        changed = view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
                 //no-op
             }
         }, null, "2");
@@ -162,13 +162,13 @@ public class Views extends CBLiteTestCase {
 
     public static CBLView createView(CBLDatabase db) {
         CBLView view = db.getViewNamed("aview");
-        view.setMapReduceBlocks(new CBLViewMapBlock() {
+        view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
                 Assert.assertNotNull(document.get("_id"));
                 Assert.assertNotNull(document.get("_rev"));
-                if(document.get("key") != null) {
+                if (document.get("key") != null) {
                     emitter.emit(document.get("key"), null);
                 }
             }
@@ -471,25 +471,26 @@ public class Views extends CBLiteTestCase {
         putDoc(database, docProperties3);
 
         CBLView view = database.getViewNamed("totaler");
-        view.setMapReduceBlocks(new CBLViewMapBlock() {
+        view.setMapAndReduce(new CBLMapFunction() {
 
-            @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
-                Assert.assertNotNull(document.get("_id"));
-                Assert.assertNotNull(document.get("_rev"));
-                Object cost = document.get("cost");
-                if(cost != null) {
-                    emitter.emit(document.get("_id"), cost);
-                }
-            }
-        }, new CBLViewReduceBlock() {
+                                 @Override
+                                 public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+                                     Assert.assertNotNull(document.get("_id"));
+                                     Assert.assertNotNull(document.get("_rev"));
+                                     Object cost = document.get("cost");
+                                     if (cost != null) {
+                                         emitter.emit(document.get("_id"), cost);
+                                     }
+                                 }
+                             }, new CBLReduceFunction() {
 
-            @Override
-            public Object reduce(List<Object> keys, List<Object> values,
-                    boolean rereduce) {
-                return CBLView.totalValues(values);
-            }
-        }, "1");
+                                 @Override
+                                 public Object reduce(List<Object> keys, List<Object> values,
+                                                      boolean rereduce) {
+                                     return CBLView.totalValues(values);
+                                 }
+                             }, "1"
+        );
 
         CBLStatus updated = view.updateIndex();
         Assert.assertEquals(CBLStatus.OK, updated.getCode());
@@ -561,24 +562,25 @@ public class Views extends CBLiteTestCase {
         putDoc(database, docProperties5);
 
         CBLView view = database.getViewNamed("grouper");
-        view.setMapReduceBlocks(new CBLViewMapBlock() {
+        view.setMapAndReduce(new CBLMapFunction() {
 
-            @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
-                List<Object> key = new ArrayList<Object>();
-                key.add(document.get("artist"));
-                key.add(document.get("album"));
-                key.add(document.get("track"));
-                emitter.emit(key, document.get("time"));
-            }
-        }, new CBLViewReduceBlock() {
+                                 @Override
+                                 public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+                                     List<Object> key = new ArrayList<Object>();
+                                     key.add(document.get("artist"));
+                                     key.add(document.get("album"));
+                                     key.add(document.get("track"));
+                                     emitter.emit(key, document.get("time"));
+                                 }
+                             }, new CBLReduceFunction() {
 
-            @Override
-            public Object reduce(List<Object> keys, List<Object> values,
-                    boolean rereduce) {
-                return CBLView.totalValues(values);
-            }
-        }, "1");
+                                 @Override
+                                 public Object reduce(List<Object> keys, List<Object> values,
+                                                      boolean rereduce) {
+                                     return CBLView.totalValues(values);
+                                 }
+                             }, "1"
+        );
 
         CBLStatus status = new CBLStatus();
         status = view.updateIndex();
@@ -735,25 +737,26 @@ public class Views extends CBLiteTestCase {
         putDoc(database, docProperties5);
 
         CBLView view = database.getViewNamed("default/names");
-        view.setMapReduceBlocks(new CBLViewMapBlock() {
+        view.setMapAndReduce(new CBLMapFunction() {
 
-            @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
-                String name = (String)document.get("name");
-                if(name != null) {
-                    emitter.emit(name.substring(0, 1), 1);
-                }
-            }
+                                 @Override
+                                 public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+                                     String name = (String) document.get("name");
+                                     if (name != null) {
+                                         emitter.emit(name.substring(0, 1), 1);
+                                     }
+                                 }
 
-        }, new CBLViewReduceBlock() {
+                             }, new CBLReduceFunction() {
 
-            @Override
-            public Object reduce(List<Object> keys, List<Object> values,
-                    boolean rereduce) {
-                return values.size();
-            }
+                                 @Override
+                                 public Object reduce(List<Object> keys, List<Object> values,
+                                                      boolean rereduce) {
+                                     return values.size();
+                                 }
 
-        }, "1.0");
+                             }, "1.0"
+        );
 
         CBLStatus status = new CBLStatus();
         status = view.updateIndex();
@@ -842,10 +845,10 @@ public class Views extends CBLiteTestCase {
         }
 
         CBLView view = database.getViewNamed("default/names");
-        view.setMapReduceBlocks(new CBLViewMapBlock() {
+        view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
                 emitter.emit(document.get("name"), null);
             }
 
@@ -922,10 +925,10 @@ public class Views extends CBLiteTestCase {
         }
 
         CBLView view = database.getViewNamed("default/names");
-        view.setMapReduceBlocks(new CBLViewMapBlock() {
+        view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
                 emitter.emit(document.get("name"), null);
             }
 
@@ -963,18 +966,18 @@ public class Views extends CBLiteTestCase {
         putLinkedDocs(database);
         
         CBLView view = database.getViewNamed("linked");
-        view.setMapReduceBlocks(new CBLViewMapBlock() {
+        view.setMapAndReduce(new CBLMapFunction() {
             @Override
-            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
                 if (document.containsKey("value")) {
-                    emitter.emit(new Object[] { document.get("value"), 0 }, null);
+                    emitter.emit(new Object[]{document.get("value"), 0}, null);
                 }
                 if (document.containsKey("ancestors")) {
                     List<Object> ancestors = (List<Object>) document.get("ancestors");
-                    for (int i=0; i < ancestors.size(); i++) {
-                        Map<String,Object> value = new HashMap<String,Object>();
+                    for (int i = 0; i < ancestors.size(); i++) {
+                        Map<String, Object> value = new HashMap<String, Object>();
                         value.put("_id", ancestors.get(i));
-                        emitter.emit(new Object[] { document.get("value"), i+1 }, value);
+                        emitter.emit(new Object[]{document.get("value"), i + 1}, value);
                     }
                 }
             }
