@@ -57,8 +57,33 @@ public class Revisions extends AndroidTestCase {
     }
 
     public void testCBLCompareRevIDs() {
-        Assert.assertEquals(CBLRevisionInternal.CBLCollateRevIDs("1-foo", "1-foo"), 0);
 
+        // Single Digit
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("1-foo", "1-foo") == 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("2-bar", "1-foo") > 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("1-foo", "2-bar") < 0);
+
+        // Multi-digit:
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("123-bar", "456-foo") < 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("456-foo", "123-bar") > 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("456-foo", "456-foo") == 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("456-foo", "456-foofoo") < 0);
+
+        // Different numbers of digits:
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("89-foo", "123-bar") < 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("123-bar", "89-foo") > 0);
+
+        // Edge cases:
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("123-", "89-") > 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("123-a", "123-a") == 0);
+
+        // Invalid rev IDs:
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("-a", "-b") < 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("-", "-") == 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("", "") == 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("", "-b") < 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("bogus", "yo") < 0);
+        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("bogus-x", "yo-y") < 0);
 
     }
 
