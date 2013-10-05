@@ -7,6 +7,7 @@ import java.util.Observer;
 
 import junit.framework.Assert;
 
+import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
@@ -15,7 +16,7 @@ public class Changes extends CBLiteTestCase {
 
     private int changeNotifications = 0;
 
-    public void testChangeNotification() {
+    public void testChangeNotification() throws CBLiteException {
 
         // define a listener
         Observer changeListener = new Observer() {

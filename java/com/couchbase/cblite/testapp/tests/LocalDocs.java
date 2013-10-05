@@ -6,6 +6,7 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
+import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
@@ -14,7 +15,7 @@ public class LocalDocs extends CBLiteTestCase {
 
     public static final String TAG = "LocalDocs";
 
-    public void testLocalDocs() {
+    public void testLocalDocs() throws CBLiteException {
 
         //create a document
         Map<String, Object> documentProperties = new HashMap<String, Object>();
@@ -26,9 +27,8 @@ public class LocalDocs extends CBLiteTestCase {
         CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
         CBLStatus status = new CBLStatus();
-        rev1 = database.putLocalRevision(rev1, null, status);
+        rev1 = database.putLocalRevision(rev1, null);
 
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         Log.v(TAG, "Created " + rev1);
         Assert.assertEquals("_local/doc1", rev1.getDocId());
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));
@@ -47,8 +47,7 @@ public class LocalDocs extends CBLiteTestCase {
         body = new CBLBody(documentProperties);
         CBLRevisionInternal rev2 = new CBLRevisionInternal(body, database);
         CBLRevisionInternal rev2input = rev2;
-        rev2 = database.putLocalRevision(rev2, rev1.getRevId(), status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        rev2 = database.putLocalRevision(rev2, rev1.getRevId());
         Log.v(TAG, "Updated " + rev1);
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertTrue(rev2.getRevId().startsWith("2-"));
@@ -59,21 +58,42 @@ public class LocalDocs extends CBLiteTestCase {
         Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
         // Try to update the first rev, which should fail:
-        database.putLocalRevision(rev2input, rev1.getRevId(), status);
-        Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
+        boolean gotException = false;
+        try {
+            database.putLocalRevision(rev2input, rev1.getRevId());
+        } catch (CBLiteException e) {
+            Assert.assertEquals(CBLStatus.CONFLICT, e.getCBLStatus().getCode());
+            gotException = true;
+        }
+        Assert.assertTrue(gotException);
+
 
         // Delete it:
         CBLRevisionInternal revD = new CBLRevisionInternal(rev2.getDocId(), null, true, database);
-        CBLRevisionInternal revResult = database.putLocalRevision(revD, null, status);
-        Assert.assertNull(revResult);
-        Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
-        revD = database.putLocalRevision(revD, rev2.getRevId(), status);
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+
+        gotException = false;
+        try {
+            CBLRevisionInternal revResult = database.putLocalRevision(revD, null);
+            Assert.assertNull(revResult);
+        } catch (CBLiteException e) {
+            Assert.assertEquals(CBLStatus.CONFLICT, e.getCBLStatus().getCode());
+            gotException = true;
+        }
+        Assert.assertTrue(gotException);
+
+        revD = database.putLocalRevision(revD, rev2.getRevId());
 
         // Delete nonexistent doc:
+        gotException = false;
         CBLRevisionInternal revFake = new CBLRevisionInternal("_local/fake", null, true, database);
-        database.putLocalRevision(revFake, null, status);
-        Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
+        try {
+            database.putLocalRevision(revFake, null);
+        } catch (CBLiteException e) {
+            Assert.assertEquals(CBLStatus.NOT_FOUND, e.getCBLStatus().getCode());
+            gotException = true;
+        }
+        Assert.assertTrue(gotException);
+
 
         // Read it back (should fail):
         readRev = database.getDbInternal().getLocalDocument(revD.getDocId(), null);

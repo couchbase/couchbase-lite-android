@@ -56,6 +56,12 @@ public class Revisions extends AndroidTestCase {
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
     }
 
+    public void testCBLCompareRevIDs() {
+        Assert.assertEquals(CBLRevisionInternal.CBLCollateRevIDs("1-foo", "1-foo"), 0);
+
+
+    }
+
     public void testMakeRevisionHistoryDict() {
         List<CBLRevisionInternal> revs = new ArrayList<CBLRevisionInternal>();
         revs.add(mkrev("4-jkl"));

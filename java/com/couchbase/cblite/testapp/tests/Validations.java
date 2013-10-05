@@ -6,6 +6,7 @@ import java.util.Map;
 import junit.framework.Assert;
 import android.util.Log;
 
+import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLValidationBlock;
@@ -17,7 +18,7 @@ public class Validations extends CBLiteTestCase {
 
     boolean validationCalled = false;
 
-    public void testValidations() {
+    public void testValidations() throws CBLiteException {
 
         CBLValidationBlock validationBlock = new CBLValidationBlock() {
 

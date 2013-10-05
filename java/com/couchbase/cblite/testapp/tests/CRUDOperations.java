@@ -27,6 +27,7 @@ import java.util.Observer;
 import junit.framework.Assert;
 import android.util.Log;
 
+import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLFilterBlock;
@@ -38,7 +39,7 @@ public class CRUDOperations extends CBLiteTestCase implements Observer {
 
     public static final String TAG = "CRUDOperations";
 
-    public void testCRUDOperations() {
+    public void testCRUDOperations() throws CBLiteException {
 
         database.addObserver(this);
 
@@ -60,7 +61,6 @@ public class CRUDOperations extends CBLiteTestCase implements Observer {
         CBLStatus status = new CBLStatus();
         rev1 = database.putRevision(rev1, null, false, status);
 
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         Log.v(TAG, "Created " + rev1);
         Assert.assertTrue(rev1.getDocId().length() >= 10);
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));

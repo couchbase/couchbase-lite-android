@@ -27,6 +27,7 @@ import junit.framework.Assert;
 
 import com.couchbase.cblite.CBLChangesOptions;
 import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.CBLStatus;
@@ -35,7 +36,7 @@ public class RevTree extends CBLiteTestCase {
 
     public static final String TAG = "RevTree";
 
-    public void testForceInsertEmptyHistory() {
+    public void testForceInsertEmptyHistory() throws CBLiteException {
 
         List<String> revHistory = null;
         CBLRevisionInternal rev = new CBLRevisionInternal("FakeDocId", "1-tango", false, database);
@@ -46,12 +47,11 @@ public class RevTree extends CBLiteTestCase {
         revProperties.put("message", "hi");
         rev.setProperties(revProperties);
 
-        CBLStatus status = database.forceInsert(rev, revHistory, null);
-        Assert.assertEquals(201, status.getCode());
+        database.forceInsert(rev, revHistory, null);
 
     }
 
-    public void testRevTree() {
+    public void testRevTree() throws CBLiteException {
 
         CBLRevisionInternal rev = new CBLRevisionInternal("MyDocId", "4-foxy", false, database);
 
@@ -69,8 +69,7 @@ public class RevTree extends CBLiteTestCase {
 
 
 
-        CBLStatus status = database.forceInsert(rev, revHistory, null);
-        Assert.assertEquals(201, status.getCode());
+        database.forceInsert(rev, revHistory, null);
         Assert.assertEquals(1, database.getDocumentCount());
         verifyHistory(database, rev, revHistory);
 
@@ -89,8 +88,7 @@ public class RevTree extends CBLiteTestCase {
         conflictHistory.add("2-too");
         conflictHistory.add("1-won");
 
-        status = database.forceInsert(conflict, conflictHistory, null);
-        Assert.assertEquals(201, status.getCode());
+        database.forceInsert(conflict, conflictHistory, null);
         Assert.assertEquals(1, database.getDocumentCount());
         verifyHistory(database, conflict, conflictHistory);
 
@@ -101,8 +99,7 @@ public class RevTree extends CBLiteTestCase {
         other.setProperties(otherProperties);
         List<String> otherHistory = new ArrayList<String>();
         otherHistory.add(other.getRevId());
-        status = database.forceInsert(other, otherHistory, null);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        database.forceInsert(other, otherHistory, null);
 
         // Fetch one of those phantom revisions with no body:
         CBLRevisionInternal rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(CBLDatabase.TDContentOptions.class));

@@ -35,6 +35,7 @@ import com.couchbase.cblite.CBLBlobKey;
 import com.couchbase.cblite.CBLBlobStore;
 import com.couchbase.cblite.CBLBlobStoreWriter;
 import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.support.Base64;
@@ -60,11 +61,10 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         byte[] attach1 = "This is the body of attach1".getBytes();
-        status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
+        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
-        CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach", status);
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach");
         Assert.assertEquals("text/plain", attachment.getContentType());
         byte[] data = IOUtils.toByteArray(attachment.getBody());
         Assert.assertTrue(Arrays.equals(attach1, data));
@@ -104,8 +104,7 @@ public class Attachments extends CBLiteTestCase {
         CBLRevisionInternal rev2 = database.putRevision(new CBLRevisionInternal(rev2Properties, database), rev1.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
-        status = database.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        database.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
 
         // Add a third revision of the same document:
         Map<String,Object> rev3Properties = new HashMap<String,Object>();
@@ -116,18 +115,17 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
-        status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
 
         // Check the 2nd revision's attachment:
-        CBLAttachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), "attach", status);
+        CBLAttachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), "attach");
         Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment2.getContentType());
         data = IOUtils.toByteArray(attachment2.getBody());
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         // Check the 3rd revision's attachment:
-        CBLAttachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), "attach", status);
+        CBLAttachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), "attach");
         Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/html", attachment3.getContentType());
         data = IOUtils.toByteArray(attachment3.getBody());
@@ -170,11 +168,9 @@ public class Attachments extends CBLiteTestCase {
             largeAttachment.append("big attachment!");
         }
         byte[] attach1 = largeAttachment.toString().getBytes();
-        status = database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
 
-        CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach", status);
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach");
         Assert.assertEquals("text/plain", attachment.getContentType());
         byte[] data = IOUtils.toByteArray(attachment.getBody());
         Assert.assertTrue(Arrays.equals(attach1, data));
@@ -212,7 +208,7 @@ public class Attachments extends CBLiteTestCase {
     }
 
     @SuppressWarnings("unchecked")
-    public void testPutAttachment() {
+    public void testPutAttachment() throws CBLiteException {
 
         CBLBlobStore attachments = database.getAttachments();
         attachments.deleteBlobs();
@@ -233,7 +229,7 @@ public class Attachments extends CBLiteTestCase {
         properties.put("_attachments", attachmentDict);
 
         CBLStatus status = new CBLStatus();
-        CBLRevisionInternal rev1 = database.putRevision(new CBLRevisionInternal(properties, database), null, false, status);
+        CBLRevisionInternal rev1 = database.putRevision(new CBLRevisionInternal(properties, database), null, false);
 
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         // Examine the attachment store:
