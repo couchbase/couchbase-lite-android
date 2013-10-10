@@ -47,7 +47,7 @@ public class Views extends CBLiteTestCase {
 
         CBLView view = database.getViewNamed("aview");
         Assert.assertNotNull(view);
-        Assert.assertEquals(database, view.getDb());
+        Assert.assertEquals(database, view.getDatabase());
         Assert.assertEquals("aview", view.getName());
         Assert.assertNull(view.getMap());
         Assert.assertEquals(view, database.getExistingViewNamed("aview"));
