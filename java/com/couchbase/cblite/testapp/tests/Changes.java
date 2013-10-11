@@ -1,5 +1,7 @@
 package com.couchbase.cblite.testapp.tests;
 
+import android.util.Log;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
@@ -7,6 +9,8 @@ import java.util.Observer;
 
 import junit.framework.Assert;
 
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLDatabaseChangedFunction;
 import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
@@ -18,18 +22,20 @@ public class Changes extends CBLiteTestCase {
 
     public void testChangeNotification() throws CBLiteException {
 
-        // define a listener
-        Observer changeListener = new Observer() {
-
+        CBLDatabaseChangedFunction changeListener = new CBLDatabaseChangedFunction() {
             @Override
-            public void update(Observable observable, Object data) {
+            public void onDatabaseChanged(CBLDatabase database, Map<String, Object> changeNotification) {
                 changeNotifications++;
             }
-
+            @Override
+            public void onFailureDatabaseChanged(CBLiteException exception) {
+                Log.e(CBLDatabase.TAG, "onFailureDatabaseChanged", exception);
+                Assert.assertTrue(false);
+            }
         };
 
         // add listener to database
-        database.addObserver(changeListener);
+        database.addChangeListener(changeListener);
 
         // create a document
         Map<String, Object> documentProperties = new HashMap<String, Object>();

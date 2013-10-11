@@ -27,6 +27,7 @@ import java.util.Observer;
 import junit.framework.Assert;
 import android.util.Log;
 
+import com.couchbase.cblite.CBLDatabaseChangedFunction;
 import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
@@ -35,13 +36,13 @@ import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.CBLStatus;
 
-public class CRUDOperations extends CBLiteTestCase implements Observer {
+public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChangedFunction {
 
     public static final String TAG = "CRUDOperations";
 
     public void testCRUDOperations() throws CBLiteException {
 
-        database.addObserver(this);
+        database.addChangeListener(this);
 
         String privateUUID = database.privateUUID();
         String publicUUID = database.publicUUID();
@@ -149,17 +150,17 @@ public class CRUDOperations extends CBLiteTestCase implements Observer {
     }
 
     @Override
-    public void update(Observable observable, Object changeObject) {
-        if(observable instanceof CBLDatabase) {
-            //make sure we're listening to the right events
-            Map<String,Object> changeNotification = (Map<String,Object>)changeObject;
+    public void onDatabaseChanged(CBLDatabase database, Map<String, Object> changeNotification) {
+        CBLRevisionInternal rev = (CBLRevisionInternal)changeNotification.get("rev");
+        Assert.assertNotNull(rev);
+        Assert.assertNotNull(rev.getDocId());
+        Assert.assertNotNull(rev.getRevId());
+        Assert.assertEquals(rev.getDocId(), rev.getProperties().get("_id"));
+        Assert.assertEquals(rev.getRevId(), rev.getProperties().get("_rev"));
+    }
 
-            CBLRevisionInternal rev = (CBLRevisionInternal)changeNotification.get("rev");
-            Assert.assertNotNull(rev);
-            Assert.assertNotNull(rev.getDocId());
-            Assert.assertNotNull(rev.getRevId());
-            Assert.assertEquals(rev.getDocId(), rev.getProperties().get("_id"));
-            Assert.assertEquals(rev.getRevId(), rev.getProperties().get("_rev"));
-        }
+    @Override
+    public void onFailureDatabaseChanged(CBLiteException exception) {
+        Log.e(CBLDatabase.TAG, "onFailureDatabaseChanged", exception);
     }
 }
