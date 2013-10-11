@@ -17,7 +17,7 @@ public class Server extends CBLiteTestCase {
         //any stale foo.cblite
         CBLDatabase old = server.getExistingDatabaseNamed("foo");
         if(old != null) {
-            old.deleteDatabase();
+            old.delete();
         }
 
         CBLDatabase db = server.getDatabaseNamed("foo");

@@ -43,14 +43,14 @@ public class Views extends CBLiteTestCase {
 
     public void testViewCreation() {
 
-        Assert.assertNull(database.getExistingViewNamed("aview"));
+        Assert.assertNull(database.getExistingView("aview"));
 
-        CBLView view = database.getViewNamed("aview");
+        CBLView view = database.getView("aview");
         Assert.assertNotNull(view);
         Assert.assertEquals(database, view.getDatabase());
         Assert.assertEquals("aview", view.getName());
         Assert.assertNull(view.getMap());
-        Assert.assertEquals(view, database.getExistingViewNamed("aview"));
+        Assert.assertEquals(view, database.getExistingView("aview"));
 
         boolean changed = view.setMapAndReduce(new CBLMapFunction() {
 
@@ -163,7 +163,7 @@ public class Views extends CBLiteTestCase {
     }
 
     public static CBLView createView(CBLDatabase db) {
-        CBLView view = db.getViewNamed("aview");
+        CBLView view = db.getView("aview");
         view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
@@ -498,7 +498,7 @@ public class Views extends CBLiteTestCase {
         docProperties3.put("cost", 6.50);
         putDoc(database, docProperties3);
 
-        CBLView view = database.getViewNamed("totaler");
+        CBLView view = database.getView("totaler");
         view.setMapAndReduce(new CBLMapFunction() {
 
                                  @Override
@@ -588,7 +588,7 @@ public class Views extends CBLiteTestCase {
         docProperties5.put("time", 187);
         putDoc(database, docProperties5);
 
-        CBLView view = database.getViewNamed("grouper");
+        CBLView view = database.getView("grouper");
         view.setMapAndReduce(new CBLMapFunction() {
 
                                  @Override
@@ -777,7 +777,7 @@ public class Views extends CBLiteTestCase {
         docProperties5.put("name", "Jed");
         putDoc(database, docProperties5);
 
-        CBLView view = database.getViewNamed("default/names");
+        CBLView view = database.getView("default/names");
         view.setMapAndReduce(new CBLMapFunction() {
 
                                  @Override
@@ -889,7 +889,7 @@ public class Views extends CBLiteTestCase {
             putDoc(database, docProperties);
         }
 
-        CBLView view = database.getViewNamed("default/names");
+        CBLView view = database.getView("default/names");
         view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
@@ -967,7 +967,7 @@ public class Views extends CBLiteTestCase {
             putDoc(database, docProperties);
         }
 
-        CBLView view = database.getViewNamed("default/names");
+        CBLView view = database.getView("default/names");
         view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
@@ -1007,7 +1007,7 @@ public class Views extends CBLiteTestCase {
     public void testViewLinkedDocs() throws CBLiteException {
         putLinkedDocs(database);
         
-        CBLView view = database.getViewNamed("linked");
+        CBLView view = database.getView("linked");
         view.setMapAndReduce(new CBLMapFunction() {
             @Override
             public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {

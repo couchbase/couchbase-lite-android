@@ -367,7 +367,7 @@ public class Router extends CBLiteTestCase {
         String revID2 = (String)result.get("rev");
 
         CBLDatabase db = server.getDatabaseNamed("db");
-        CBLView view = db.getViewNamed("design/view");
+        CBLView view = db.getView("design/view");
         view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
@@ -458,7 +458,7 @@ public class Router extends CBLiteTestCase {
     	Map<String,Object> result;
 
     	CBLDatabase db = server.getDatabaseNamed("db");
-    	CBLView view = db.getViewNamed("design/view");
+    	CBLView view = db.getView("design/view");
     	view.setMapAndReduce(new CBLMapFunction() {
 
             @Override
@@ -470,7 +470,7 @@ public class Router extends CBLiteTestCase {
     	Map<String,Object> key_doc1 = new HashMap<String,Object>();
     	key_doc1.put("parentId", "12345");
     	result = (Map<String,Object>)sendBody(server, "PUT", "/db/key_doc1", key_doc1, CBLStatus.CREATED, null);
-    	view = db.getViewNamed("design/view");
+    	view = db.getView("design/view");
     	view.setMapAndReduce(new CBLMapFunction() {
             @Override
             public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {

@@ -93,7 +93,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
     protected CBLDatabase ensureEmptyDatabase(String dbName) {
         CBLDatabase db = server.getExistingDatabaseNamed(dbName);
         if(db != null) {
-            boolean status = db.deleteDatabase();
+            boolean status = db.delete();
             Assert.assertTrue(status);
         }
         db = server.getDatabaseNamed(dbName, true);
