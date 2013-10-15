@@ -30,7 +30,6 @@ import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLRevisionList;
-import com.couchbase.cblite.CBLStatus;
 
 public class RevTree extends CBLiteTestCase {
 
@@ -108,7 +107,7 @@ public class RevTree extends CBLiteTestCase {
         //Assert.assertNull(rev2.getBody());
 
         // Make sure no duplicate rows were inserted for the common revisions:
-        Assert.assertEquals(8, database.getLastSequence());
+        Assert.assertEquals(8, database.getLastSequenceNumber());
 
         // Make sure the revision with the higher revID wins the conflict:
         CBLRevisionInternal current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
