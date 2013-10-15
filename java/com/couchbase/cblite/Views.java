@@ -15,7 +15,7 @@
  * and limitations under the License.
  */
 
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.cblite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,6 +36,7 @@ import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
 import com.couchbase.cblite.CBLView.TDViewCollation;
+import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
 
 public class Views extends CBLiteTestCase {
 
@@ -403,22 +404,18 @@ public class Views extends CBLiteTestCase {
 
         List<CBLRevisionInternal> docs = putDocs(database);
 
-        List<Map<String,Object>> expectedRow = new ArrayList<Map<String,Object>>();
+        List<CBLQueryRow> expectedRow = new ArrayList<CBLQueryRow>();
         for (CBLRevisionInternal rev : docs) {
             Map<String,Object> value = new HashMap<String, Object>();
             value.put("rev", rev.getRevId());
-
-            Map<String, Object> row = new HashMap<String, Object>();
-            row.put("id", rev.getDocId());
-            row.put("key", rev.getDocId());
-            row.put("value", value);
-            expectedRow.add(row);
+            CBLQueryRow queryRow = new CBLQueryRow(rev.getDocId(), 0, rev.getDocId(), value, null);
+            expectedRow.add(queryRow);
         }
 
         CBLQueryOptions options = new CBLQueryOptions();
         Map<String,Object> query = database.getAllDocs(options);
 
-        List<Object>expectedRows = new ArrayList<Object>();
+        List<CBLQueryRow> expectedRows = new ArrayList<CBLQueryRow>();
         expectedRows.add(expectedRow.get(2));
         expectedRows.add(expectedRow.get(0));
         expectedRows.add(expectedRow.get(3));
@@ -435,7 +432,7 @@ public class Views extends CBLiteTestCase {
 
         query = database.getAllDocs(options);
 
-        expectedRows = new ArrayList<Object>();
+        expectedRows = new ArrayList<CBLQueryRow>();
         expectedRows.add(expectedRow.get(0));
         expectedRows.add(expectedRow.get(3));
         expectedRows.add(expectedRow.get(1));
@@ -448,7 +445,7 @@ public class Views extends CBLiteTestCase {
 
         query = database.getAllDocs(options);
 
-        expectedRows = new ArrayList<Object>();
+        expectedRows = new ArrayList<CBLQueryRow>();
         expectedRows.add(expectedRow.get(0));
         expectedRows.add(expectedRow.get(3));
 
@@ -457,23 +454,26 @@ public class Views extends CBLiteTestCase {
 
         // Get specific documents:
         options = new CBLQueryOptions();
-        query = database.getDocsWithIDs(new ArrayList<String>(), options);
-        expectedQueryResult = createExpectedQueryResult(new ArrayList<Object>(), 0);
+        query = database.getAllDocs(options);
+
+
+        expectedQueryResult = createExpectedQueryResult(new ArrayList<CBLQueryRow>(), 0);
         Assert.assertEquals(expectedQueryResult, query);
 
         // Get specific documents:
         options = new CBLQueryOptions();
-        List<String> docIds = new ArrayList<String>();
-        Map<String,Object> expected2 = expectedRow.get(2);
-        docIds.add((String)expected2.get("id"));
-        query = database.getDocsWithIDs(docIds, options);
-        expectedRows = new ArrayList<Object>();
+        List<Object> docIds = new ArrayList<Object>();
+        CBLQueryRow expected2 = expectedRow.get(2);
+        docIds.add(expected2.getDocument().getId());
+        options.setKeys(docIds);
+        query = database.getAllDocs(options);
+        expectedRows = new ArrayList<CBLQueryRow>();
         expectedRows.add(expected2);
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
         Assert.assertEquals(expectedQueryResult, query);
     }
 
-    private Map<String, Object> createExpectedQueryResult(List<Object> rows, int offset) {
+    private Map<String, Object> createExpectedQueryResult(List<CBLQueryRow> rows, int offset) {
         Map<String, Object> result = new HashMap<String, Object>();
         result.put("rows", rows);
         result.put("total_rows", rows.size());
