@@ -7,7 +7,7 @@ import java.util.List;
 import junit.framework.Assert;
 
 import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLServer;
+import com.couchbase.cblite.internal.CBLServerInternal;
 
 public class Server extends CBLiteTestCase {
 
@@ -56,14 +56,14 @@ public class Server extends CBLiteTestCase {
                 throw new IOException("Unable to create directory " + directory);
             }
         }
-        File oldTouchDbFile = new File(directory, String.format("old%s", CBLServer.DATABASE_SUFFIX_OLD));
+        File oldTouchDbFile = new File(directory, String.format("old%s", CBLServerInternal.DATABASE_SUFFIX_OLD));
         oldTouchDbFile.createNewFile();
-        File newCbLiteFile = new File(directory, String.format("new%s", CBLServer.DATABASE_SUFFIX));
+        File newCbLiteFile = new File(directory, String.format("new%s", CBLServerInternal.DATABASE_SUFFIX));
         newCbLiteFile.createNewFile();
 
-        CBLServer serverForThisTest = new CBLServer(fakeFilesDir);
+        CBLServerInternal serverForThisTest = new CBLServerInternal(fakeFilesDir);
 
-        File migratedOldFile = new File(directory, String.format("old%s", CBLServer.DATABASE_SUFFIX));
+        File migratedOldFile = new File(directory, String.format("old%s", CBLServerInternal.DATABASE_SUFFIX));
 
         Assert.assertTrue(migratedOldFile.exists());
         Assert.assertTrue(oldTouchDbFile.exists() == false);
