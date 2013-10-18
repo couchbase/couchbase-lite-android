@@ -17,24 +17,23 @@
 
 package com.couchbase.cblite.testapp.tests;
 
+import android.util.Log;
+
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLDatabaseChangedFunction;
+import com.couchbase.cblite.CBLFilterBlock;
+import com.couchbase.cblite.CBLRevisionList;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.CBLiteException;
+import com.couchbase.cblite.internal.CBLBody;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
+
+import junit.framework.Assert;
+
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
-
-import junit.framework.Assert;
-import android.util.Log;
-
-import com.couchbase.cblite.CBLDatabaseChangedFunction;
-import com.couchbase.cblite.CBLiteException;
-import com.couchbase.cblite.internal.CBLBody;
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLFilterBlock;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.CBLRevisionList;
-import com.couchbase.cblite.CBLStatus;
 
 public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChangedFunction {
 

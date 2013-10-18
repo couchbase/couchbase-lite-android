@@ -1,15 +1,16 @@
 package com.couchbase.cblite.testapp.tests;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import junit.framework.Assert;
 import android.test.AndroidTestCase;
 
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
+
+import junit.framework.Assert;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Revisions extends AndroidTestCase {
 

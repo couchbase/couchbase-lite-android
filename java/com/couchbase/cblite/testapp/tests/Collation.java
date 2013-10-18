@@ -1,13 +1,13 @@
 package com.couchbase.cblite.testapp.tests;
 
-import junit.framework.Assert;
-
-import org.codehaus.jackson.map.ObjectMapper;
-
 import android.test.AndroidTestCase;
 import android.util.Log;
 
 import com.couchbase.touchdb.TDCollateJSON;
+
+import junit.framework.Assert;
+
+import org.codehaus.jackson.map.ObjectMapper;
 
 public class Collation extends AndroidTestCase {
 

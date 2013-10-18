@@ -1,10 +1,10 @@
 package com.couchbase.cblite.testapp.tests;
 
-import junit.framework.Assert;
+import android.test.AndroidTestCase;
 
 import com.couchbase.cblite.support.CBLSequenceMap;
 
-import android.test.AndroidTestCase;
+import junit.framework.Assert;
 
 public class SequenceMap extends AndroidTestCase {
 	

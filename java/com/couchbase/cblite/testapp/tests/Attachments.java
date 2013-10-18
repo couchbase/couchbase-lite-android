@@ -17,6 +17,20 @@
 
 package com.couchbase.cblite.testapp.tests;
 
+import com.couchbase.cblite.CBLAttachment;
+import com.couchbase.cblite.CBLBlobKey;
+import com.couchbase.cblite.CBLBlobStore;
+import com.couchbase.cblite.CBLBlobStoreWriter;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.CBLiteException;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
+import com.couchbase.cblite.support.Base64;
+
+import junit.framework.Assert;
+
+import org.apache.commons.io.IOUtils;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -25,20 +39,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import junit.framework.Assert;
-
-import org.apache.commons.io.IOUtils;
-
-import com.couchbase.cblite.CBLAttachment;
-import com.couchbase.cblite.CBLBlobKey;
-import com.couchbase.cblite.CBLBlobStore;
-import com.couchbase.cblite.CBLBlobStoreWriter;
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLiteException;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.CBLStatus;
-import com.couchbase.cblite.support.Base64;
 
 public class Attachments extends CBLiteTestCase {
 

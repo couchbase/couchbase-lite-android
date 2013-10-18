@@ -3,10 +3,10 @@ package com.couchbase.cblite.testapp.tests;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
+import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.replicator.CBLPusher;
 import com.couchbase.cblite.replicator.CBLReplicator;
@@ -78,7 +78,7 @@ public class Replicator extends CBLiteTestCase {
         database.putRevision(new CBLRevisionInternal(documentProperties, database), null, false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
-        final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
+        final CBLReplicator repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
 
         AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
@@ -197,7 +197,7 @@ public class Replicator extends CBLiteTestCase {
         CBLRevisionInternal rev2 = database.putRevision(new CBLRevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
         Assert.assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
-        final CBLReplicator repl = database.getReplicator(remote, true, false, server.getWorkExecutor());
+        final CBLReplicator repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
 
         AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
@@ -293,7 +293,7 @@ public class Replicator extends CBLiteTestCase {
         URL remote = getReplicationURL();
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        final CBLReplicator repl = database.getReplicator(remote, false, false, server.getWorkExecutor());
+        final CBLReplicator repl = database.getReplicator(remote, false, false, manager.getWorkExecutor());
         AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
 
             @Override
@@ -396,7 +396,7 @@ public class Replicator extends CBLiteTestCase {
         properties.put("source", DEFAULT_TEST_DB);
         properties.put("target", getReplicationURL().toExternalForm());
 
-        CBLReplicator replicator = server.getManager().getReplicator(properties);
+        CBLReplicator replicator = manager.getReplicator(properties);
         Assert.assertNotNull(replicator);
         Assert.assertEquals(getReplicationURL().toExternalForm(), replicator.getRemote().toExternalForm());
         Assert.assertTrue(replicator.isPush());
@@ -408,7 +408,7 @@ public class Replicator extends CBLiteTestCase {
 
         // now lets lookup existing replicator and stop it
         properties.put("cancel", true);
-        CBLReplicator activeReplicator = server.getManager().getReplicator(properties);
+        CBLReplicator activeReplicator = manager.getReplicator(properties);
         activeReplicator.stop();
         Assert.assertFalse(activeReplicator.isRunning());
 
@@ -418,7 +418,7 @@ public class Replicator extends CBLiteTestCase {
 
         Map<String, Object> properties = getPushReplicationParsedJson();
 
-        CBLReplicator replicator = server.getManager().getReplicator(properties);
+        CBLReplicator replicator = manager.getReplicator(properties);
         Assert.assertNotNull(replicator);
         Assert.assertNotNull(replicator.getAuthorizer());
         Assert.assertTrue(replicator.getAuthorizer() instanceof CBLFacebookAuthorizer);
@@ -433,12 +433,12 @@ public class Replicator extends CBLiteTestCase {
         facebookTokenInfo.put("remote_url", getReplicationURL().toExternalForm());
         facebookTokenInfo.put("access_token", "fake_access_token");
         String destUrl = String.format("/_facebook_token", DEFAULT_TEST_DB);
-        Map<String,Object> result = (Map<String,Object>)sendBody(server, "POST", destUrl, facebookTokenInfo, CBLStatus.OK, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("POST", destUrl, facebookTokenInfo, CBLStatus.OK, null);
         Log.v(TAG, String.format("result %s", result));
 
         // start a replicator
         Map<String,Object> properties = getPullReplicationParsedJson();
-        CBLReplicator replicator = server.getManager().getReplicator(properties);
+        CBLReplicator replicator = manager.getReplicator(properties);
         replicator.start();
 
         boolean foundError = false;
@@ -449,7 +449,7 @@ public class Replicator extends CBLiteTestCase {
 
             // expect an error since it will try to contact the sync gateway with this bogus login,
             // and the sync gateway will reject it.
-            ArrayList<Object> activeTasks = (ArrayList<Object>)send(server, "GET", "/_active_tasks", CBLStatus.OK, null);
+            ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", CBLStatus.OK, null);
             Log.d(TAG, "activeTasks: " + activeTasks);
             Map<String,Object> activeTaskReplication = (Map<String,Object>) activeTasks.get(0);
             foundError = (activeTaskReplication.get("error") != null);

@@ -1,15 +1,16 @@
 package com.couchbase.cblite.testapp.tests;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import junit.framework.Assert;
 import android.util.Log;
 
+import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.CBLStatus;
+
+import junit.framework.Assert;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class LocalDocs extends CBLiteTestCase {
 

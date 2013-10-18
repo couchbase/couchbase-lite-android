@@ -1,14 +1,13 @@
 package com.couchbase.cblite.testapp.tests;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
+import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLManager;
 
 import junit.framework.Assert;
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLManager;
-import com.couchbase.cblite.internal.CBLServerInternal;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 public class Server extends CBLiteTestCase {
 
@@ -16,27 +15,27 @@ public class Server extends CBLiteTestCase {
 
         //to ensure this test is easily repeatable we will explicitly remove
         //any stale foo.cblite
-        CBLDatabase old = server.getExistingDatabaseNamed("foo");
+        CBLDatabase old = manager.getExistingDatabase("foo");
         if(old != null) {
             old.delete();
         }
 
-        CBLDatabase db = server.getDatabaseNamed("foo");
+        CBLDatabase db = manager.getDatabase("foo");
         Assert.assertNotNull(db);
         Assert.assertEquals("foo", db.getName());
         Assert.assertTrue(db.getPath().startsWith(getServerPath()));
         Assert.assertFalse(db.exists());
 
-        Assert.assertEquals(db, server.getDatabaseNamed("foo"));
+        Assert.assertEquals(db, manager.getDatabase("foo"));
 
         // because foo doesn't exist yet
-        List<String> databaseNames = server.allDatabaseNames();
+        List<String> databaseNames = manager.getAllDatabaseNames();
         Assert.assertTrue(!databaseNames.contains("foo"));
 
         Assert.assertTrue(db.open());
         Assert.assertTrue(db.exists());
 
-        databaseNames = server.allDatabaseNames();
+        databaseNames = manager.getAllDatabaseNames();
         Assert.assertTrue(databaseNames.contains("foo"));
 
         db.close();
@@ -62,8 +61,6 @@ public class Server extends CBLiteTestCase {
         oldTouchDbFile.createNewFile();
         File newCbLiteFile = new File(directory, String.format("new%s", CBLManager.DATABASE_SUFFIX));
         newCbLiteFile.createNewFile();
-
-        CBLServerInternal serverForThisTest = new CBLServerInternal(fakeFilesDir);
 
         File migratedOldFile = new File(directory, String.format("old%s", CBLManager.DATABASE_SUFFIX));
 

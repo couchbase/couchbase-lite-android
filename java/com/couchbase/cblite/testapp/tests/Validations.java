@@ -1,16 +1,17 @@
 package com.couchbase.cblite.testapp.tests;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.CBLiteException;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLValidationBlock;
 import com.couchbase.cblite.CBLValidationContext;
+import com.couchbase.cblite.CBLiteException;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
+
+import junit.framework.Assert;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Validations extends CBLiteTestCase {
 

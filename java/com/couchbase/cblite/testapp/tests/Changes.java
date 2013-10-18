@@ -2,19 +2,17 @@ package com.couchbase.cblite.testapp.tests;
 
 import android.util.Log;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
-
-import junit.framework.Assert;
-
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLDatabaseChangedFunction;
+import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.CBLStatus;
+
+import junit.framework.Assert;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Changes extends CBLiteTestCase {
 
