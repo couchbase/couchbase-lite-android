@@ -40,7 +40,8 @@ public class Server extends CBLiteTestCase {
         Assert.assertTrue(databaseNames.contains("foo"));
 
         db.close();
-        server.deleteDatabaseNamed("foo");
+        db.delete();
+
     }
 
     public void testUpgradeOldDatabaseFiles() throws Exception {
