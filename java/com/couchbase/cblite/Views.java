@@ -417,6 +417,7 @@ public class Views extends CBLiteTestCase {
             Map<String,Object> value = new HashMap<String, Object>();
             value.put("rev", rev.getRevId());
             CBLQueryRow queryRow = new CBLQueryRow(rev.getDocId(), 0, rev.getDocId(), value, null);
+            queryRow.setDatabase(database);
             expectedRow.add(queryRow);
         }
 
