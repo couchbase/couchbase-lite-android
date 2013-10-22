@@ -215,8 +215,16 @@ public class Views extends CBLiteTestCase {
 
         //no-op reindex
         Assert.assertFalse(view.isStale());
-        updated = view.updateIndex();
-        Assert.assertEquals(CBLStatus.NOT_MODIFIED, updated.getCode());
+        boolean gotNotModfiedException = false;
+
+        try {
+            updated = view.updateIndex();
+        } catch (CBLiteException e) {
+            if (e.getCBLStatus().getCode() == CBLStatus.NOT_MODIFIED) {
+                gotNotModfiedException = true;
+            }
+        }
+        Assert.assertTrue(gotNotModfiedException);
 
         // Now add a doc and update a doc:
         CBLRevisionInternal threeUpdated = new CBLRevisionInternal(rev3.getDocId(), rev3.getRevId(), false, database);
@@ -413,7 +421,7 @@ public class Views extends CBLiteTestCase {
         }
 
         CBLQueryOptions options = new CBLQueryOptions();
-        Map<String,Object> query = database.getAllDocs(options);
+        Map<String,Object> allDocs = database.getAllDocs(options);
 
         List<CBLQueryRow> expectedRows = new ArrayList<CBLQueryRow>();
         expectedRows.add(expectedRow.get(2));
@@ -423,14 +431,17 @@ public class Views extends CBLiteTestCase {
         expectedRows.add(expectedRow.get(4));
 
         Map<String,Object> expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+
+        // failing, I think its a real bug.  in one case "deleted" is null, in another, "deleted" is missing
+        // http://cl.ly/image/1X411c421u3V
+        Assert.assertEquals(expectedQueryResult, allDocs);
 
         // Start/end key query:
         options = new CBLQueryOptions();
         options.setStartKey("2");
         options.setEndKey("44444");
 
-        query = database.getAllDocs(options);
+        allDocs = database.getAllDocs(options);
 
         expectedRows = new ArrayList<CBLQueryRow>();
         expectedRows.add(expectedRow.get(0));
@@ -438,27 +449,27 @@ public class Views extends CBLiteTestCase {
         expectedRows.add(expectedRow.get(1));
 
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedQueryResult, allDocs);
 
         // Start/end query without inclusive end:
         options.setInclusiveEnd(false);
 
-        query = database.getAllDocs(options);
+        allDocs = database.getAllDocs(options);
 
         expectedRows = new ArrayList<CBLQueryRow>();
         expectedRows.add(expectedRow.get(0));
         expectedRows.add(expectedRow.get(3));
 
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedQueryResult, allDocs);
 
         // Get specific documents:
         options = new CBLQueryOptions();
-        query = database.getAllDocs(options);
+        allDocs = database.getAllDocs(options);
 
 
         expectedQueryResult = createExpectedQueryResult(new ArrayList<CBLQueryRow>(), 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedQueryResult, allDocs);
 
         // Get specific documents:
         options = new CBLQueryOptions();
@@ -466,11 +477,11 @@ public class Views extends CBLiteTestCase {
         CBLQueryRow expected2 = expectedRow.get(2);
         docIds.add(expected2.getDocument().getId());
         options.setKeys(docIds);
-        query = database.getAllDocs(options);
+        allDocs = database.getAllDocs(options);
         expectedRows = new ArrayList<CBLQueryRow>();
         expectedRows.add(expected2);
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
-        Assert.assertEquals(expectedQueryResult, query);
+        Assert.assertEquals(expectedQueryResult, allDocs);
     }
 
     private Map<String, Object> createExpectedQueryResult(List<CBLQueryRow> rows, int offset) {
