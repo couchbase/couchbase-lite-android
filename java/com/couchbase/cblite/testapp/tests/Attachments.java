@@ -228,10 +228,8 @@ public class Attachments extends CBLiteTestCase {
         properties.put("bar", false);
         properties.put("_attachments", attachmentDict);
 
-        CBLStatus status = new CBLStatus();
         CBLRevisionInternal rev1 = database.putRevision(new CBLRevisionInternal(properties, database), null, false);
 
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         // Examine the attachment store:
         Assert.assertEquals(1, attachments.count());
 
@@ -253,12 +251,31 @@ public class Attachments extends CBLiteTestCase {
 
         // Update the attachment directly:
         byte[] attachv2 = "Replaced body of attach".getBytes();
-        database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null, status);
-        Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
-        database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus", status);
-        Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
-        CBLRevisionInternal rev2 = database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId(), status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        boolean gotExpectedErrorCode = false;
+        try {
+            database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null);
+        } catch (CBLiteException e) {
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.CONFLICT);
+        }
+        Assert.assertTrue(gotExpectedErrorCode);
+
+        gotExpectedErrorCode = false;
+        try {
+            database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus");
+        } catch (CBLiteException e) {
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.CONFLICT);
+        }
+        Assert.assertTrue(gotExpectedErrorCode);
+
+        gotExpectedErrorCode = false;
+        CBLRevisionInternal rev2 = null;
+        try {
+            rev2 = database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId());
+        } catch (CBLiteException e) {
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.CONFLICT);
+        }
+        Assert.assertTrue(gotExpectedErrorCode);
+
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertEquals(2, rev2.getGeneration());
 
@@ -278,14 +295,24 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertEquals(expectAttachmentDict, attachmentDict);
 
         // Delete the attachment:
-        database.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId(), status);
-        Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
+        gotExpectedErrorCode = false;
+        try {
+            database.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId());
+        } catch (CBLiteException e) {
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.NOT_FOUND);
+        }
+        Assert.assertTrue(gotExpectedErrorCode);
 
-        database.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev", status);
-        Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
+        gotExpectedErrorCode = false;
+        try {
+            database.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev");
+        } catch (CBLiteException e) {
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.NOT_FOUND);
+        }
+        Assert.assertTrue(gotExpectedErrorCode);
 
-        CBLRevisionInternal rev3 = database.updateAttachment("attach", null, null, rev2.getDocId(), rev2.getRevId(), status);
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+
+        CBLRevisionInternal rev3 = database.updateAttachment("attach", null, null, rev2.getDocId(), rev2.getRevId());
         Assert.assertEquals(rev2.getDocId(), rev3.getDocId());
         Assert.assertEquals(3, rev3.getGeneration());
 
