@@ -78,7 +78,6 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChanged
         CBLRevisionInternal rev2 = new CBLRevisionInternal(body, database);
         CBLRevisionInternal rev2input = rev2;
         rev2 = database.putRevision(rev2, rev1.getRevId(), false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
         Log.v(TAG, "Updated " + rev1);
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertTrue(rev2.getRevId().startsWith("2-"));
@@ -89,8 +88,13 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChanged
         Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
         // Try to update the first rev, which should fail:
-        database.putRevision(rev2input, rev1.getRevId(), false, status);
-        Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
+        boolean gotExpectedError = false;
+        try {
+            database.putRevision(rev2input, rev1.getRevId(), false, status);
+        } catch (CBLiteException e) {
+            gotExpectedError = e.getCBLStatus().getCode() == CBLStatus.CONFLICT;
+        }
+        Assert.assertTrue(gotExpectedError);
 
         // Check the changes feed, with and without filters:
         CBLRevisionList changes = database.changesSince(0, null, null);
@@ -120,9 +124,16 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChanged
 
         // Delete it:
         CBLRevisionInternal revD = new CBLRevisionInternal(rev2.getDocId(), null, true, database);
-        CBLRevisionInternal revResult = database.putRevision(revD, null, false, status);
+        CBLRevisionInternal revResult = null;
+        gotExpectedError = false;
+        try {
+            revResult = database.putRevision(revD, null, false, status);
+        } catch (CBLiteException e) {
+            gotExpectedError = e.getCBLStatus().getCode() == CBLStatus.CONFLICT;
+        }
+        Assert.assertTrue(gotExpectedError);
+
         Assert.assertNull(revResult);
-        Assert.assertEquals(CBLStatus.CONFLICT, status.getCode());
         revD = database.putRevision(revD, rev2.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals(revD.getDocId(), rev2.getDocId());
@@ -130,8 +141,13 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChanged
 
         // Delete nonexistent doc:
         CBLRevisionInternal revFake = new CBLRevisionInternal("fake", null, true, database);
-        database.putRevision(revFake, null, false, status);
-        Assert.assertEquals(CBLStatus.NOT_FOUND, status.getCode());
+        gotExpectedError = false;
+        try {
+            database.putRevision(revFake, null, false, status);
+        } catch (CBLiteException e) {
+            gotExpectedError = e.getCBLStatus().getCode() == CBLStatus.NOT_FOUND;
+        }
+        Assert.assertTrue(gotExpectedError);
 
         // Read it back (should fail):
         readRev = database.getDocumentWithIDAndRev(revD.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
