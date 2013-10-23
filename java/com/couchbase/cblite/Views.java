@@ -200,8 +200,7 @@ public class Views extends CBLiteTestCase {
         Assert.assertEquals(1, view.getViewId());
         Assert.assertTrue(view.isStale());
 
-        CBLStatus updated = view.updateIndex();
-        Assert.assertEquals(CBLStatus.OK, updated.getCode());
+        view.updateIndex();
 
         List<Map<String,Object>> dumpResult = view.dump();
         Log.v(TAG, "View dump: " + dumpResult);
@@ -218,7 +217,7 @@ public class Views extends CBLiteTestCase {
         boolean gotNotModfiedException = false;
 
         try {
-            updated = view.updateIndex();
+            view.updateIndex();
         } catch (CBLiteException e) {
             if (e.getCBLStatus().getCode() == CBLStatus.NOT_MODIFIED) {
                 gotNotModfiedException = true;
@@ -245,8 +244,7 @@ public class Views extends CBLiteTestCase {
 
         // Reindex again:
         Assert.assertTrue(view.isStale());
-        updated = view.updateIndex();
-        Assert.assertEquals(CBLStatus.OK, updated.getCode());
+        view.updateIndex();
 
         dumpResult = view.dump();
         Log.v(TAG, "View dump: " + dumpResult);
@@ -276,8 +274,7 @@ public class Views extends CBLiteTestCase {
         putDocs(database);
         CBLView view = createView(database);
 
-        CBLStatus updated = view.updateIndex();
-        Assert.assertEquals(CBLStatus.OK, updated.getCode());
+        view.updateIndex();
 
         // Query all rows:
         CBLQueryOptions options = new CBLQueryOptions();
@@ -532,8 +529,7 @@ public class Views extends CBLiteTestCase {
                              }, "1"
         );
 
-        CBLStatus updated = view.updateIndex();
-        Assert.assertEquals(CBLStatus.OK, updated.getCode());
+        view.updateIndex();
 
         List<Map<String,Object>> dumpResult = view.dump();
         Log.v(TAG, "View dump: " + dumpResult);
@@ -622,8 +618,7 @@ public class Views extends CBLiteTestCase {
         );
 
         CBLStatus status = new CBLStatus();
-        status = view.updateIndex();
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        view.updateIndex();
 
         CBLQueryOptions options = new CBLQueryOptions();
         options.setReduce(true);
@@ -811,9 +806,8 @@ public class Views extends CBLiteTestCase {
                              }, "1.0"
         );
 
-        CBLStatus status = new CBLStatus();
-        status = view.updateIndex();
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+
+        view.updateIndex();
 
         CBLQueryOptions options = new CBLQueryOptions();
         options.setGroupLevel(1);
@@ -1006,8 +1000,7 @@ public class Views extends CBLiteTestCase {
         putNDocs(database, 4);
         CBLView view = createView(database);
 
-        CBLStatus updated = view.updateIndex();
-        Assert.assertEquals(CBLStatus.OK, updated.getCode());
+        view.updateIndex();
 
         // Query all rows:
         CBLQueryOptions options = new CBLQueryOptions();
@@ -1037,8 +1030,7 @@ public class Views extends CBLiteTestCase {
             }
         }, null, "1");
         
-        CBLStatus updated = view.updateIndex();
-        Assert.assertEquals(CBLStatus.OK, updated.getCode());
+        view.updateIndex();
 
         CBLQueryOptions options = new CBLQueryOptions();
         options.setIncludeDocs(true);  // required for linked documents
