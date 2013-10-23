@@ -202,7 +202,8 @@ public class Attachments extends CBLiteTestCase {
         CBLRevisionInternal rev1WithAttachments = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), contentOptions);
         Map<String,Object> rev1PropertiesPrime = rev1WithAttachments.getProperties();
         rev1PropertiesPrime.put("foo", 2);
-        CBLRevisionInternal rev2 = database.putRevision(rev1WithAttachments, rev1WithAttachments.getRevId(), false, status);
+        CBLRevisionInternal newRev = new CBLRevisionInternal(rev1PropertiesPrime, database);
+        CBLRevisionInternal rev2 = database.putRevision(newRev, rev1WithAttachments.getRevId(), false, status);
         Assert.assertEquals(CBLStatus.CREATED, status.getCode());
 
     }
