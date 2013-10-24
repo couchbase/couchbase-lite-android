@@ -214,16 +214,8 @@ public class Views extends CBLiteTestCase {
 
         //no-op reindex
         Assert.assertFalse(view.isStale());
-        boolean gotNotModfiedException = false;
-
-        try {
-            view.updateIndex();
-        } catch (CBLiteException e) {
-            if (e.getCBLStatus().getCode() == CBLStatus.NOT_MODIFIED) {
-                gotNotModfiedException = true;
-            }
-        }
-        Assert.assertTrue(gotNotModfiedException);
+        
+        view.updateIndex();
 
         // Now add a doc and update a doc:
         CBLRevisionInternal threeUpdated = new CBLRevisionInternal(rev3.getDocId(), rev3.getRevId(), false, database);
