@@ -19,22 +19,14 @@ package com.couchbase.cblite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
 import android.util.Log;
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLMapEmitFunction;
-import com.couchbase.cblite.CBLMapFunction;
-import com.couchbase.cblite.CBLQueryOptions;
-import com.couchbase.cblite.CBLQueryRow;
-import com.couchbase.cblite.CBLReduceFunction;
-import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.CBLStatus;
-import com.couchbase.cblite.CBLView;
 import com.couchbase.cblite.CBLView.TDViewCollation;
 import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
 
@@ -92,6 +84,11 @@ public class Views extends CBLiteTestCase {
         rev = db.putRevision(rev, null, false, status);
         Assert.assertTrue(status.isSuccessful());
         return rev;
+    }
+
+    private void putDocViaUntitledDoc(CBLDatabase db, Map<String, Object> props) throws CBLiteException {
+        CBLDocument document = db.createUntitledDocument();
+        document.putProperties(props);
     }
 
     public List<CBLRevisionInternal> putDocs(CBLDatabase db) throws CBLiteException {
@@ -159,7 +156,7 @@ public class Views extends CBLiteTestCase {
             }
             key.add(String.format("key-%d", i));
             doc.put("key", key);
-            putDoc(db, doc);
+            putDocViaUntitledDoc(db, doc);
         }
     }
 
@@ -214,7 +211,7 @@ public class Views extends CBLiteTestCase {
 
         //no-op reindex
         Assert.assertFalse(view.isStale());
-        
+
         view.updateIndex();
 
         // Now add a doc and update a doc:
