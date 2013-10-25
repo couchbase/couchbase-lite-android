@@ -5,6 +5,7 @@ import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
 import junit.framework.Assert;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class DocumentTest extends CBLiteTestCase {
@@ -30,8 +31,18 @@ public class DocumentTest extends CBLiteTestCase {
         Assert.assertNotNull(document.getCurrentRevision());
         String docId = document.getId();
         document.delete();
+        Assert.assertTrue(document.isDeleted());
         CBLDocument fetchedDoc = database.getExistingDocument(docId);
         Assert.assertNull(fetchedDoc);
+
+        // query all docs and make sure we don't see that document
+        database.getAllDocs(new CBLQueryOptions());
+        CBLQuery queryAllDocs = database.queryAllDocuments();
+        CBLQueryEnumerator queryEnumerator = queryAllDocs.getRows();
+        for (Iterator<CBLQueryRow> it = queryEnumerator; it.hasNext();) {
+            CBLQueryRow row = it.next();
+            Assert.assertFalse(row.getDocument().getId().equals(docId));
+        }
 
     }
 
