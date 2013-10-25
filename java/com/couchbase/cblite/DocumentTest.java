@@ -20,4 +20,19 @@ public class DocumentTest extends CBLiteTestCase {
 
     }
 
+    public void testDeleteDocument() throws CBLiteException {
+
+        CBLDocument document = database.createUntitledDocument();
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "foo");
+        properties.put("bar", Boolean.FALSE);
+        document.putProperties(properties);
+        Assert.assertNotNull(document.getCurrentRevision());
+        String docId = document.getId();
+        document.delete();
+        CBLDocument fetchedDoc = database.getDocument(docId);
+        Assert.assertNull(fetchedDoc);
+
+    }
+
 }
