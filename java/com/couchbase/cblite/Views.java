@@ -19,7 +19,6 @@ package com.couchbase.cblite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -87,7 +86,7 @@ public class Views extends CBLiteTestCase {
     }
 
     private void putDocViaUntitledDoc(CBLDatabase db, Map<String, Object> props) throws CBLiteException {
-        CBLDocument document = db.createUntitledDocument();
+        CBLDocument document = db.createDocument();
         document.putProperties(props);
     }
 

@@ -11,7 +11,7 @@ public class DocumentTest extends CBLiteTestCase {
 
     public void testNewDocumentHasCurrentRevision() throws CBLiteException {
 
-        CBLDocument document = database.createUntitledDocument();
+        CBLDocument document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "foo");
         properties.put("bar", Boolean.FALSE);
@@ -22,7 +22,7 @@ public class DocumentTest extends CBLiteTestCase {
 
     public void testDeleteDocument() throws CBLiteException {
 
-        CBLDocument document = database.createUntitledDocument();
+        CBLDocument document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "foo");
         properties.put("bar", Boolean.FALSE);
@@ -30,7 +30,7 @@ public class DocumentTest extends CBLiteTestCase {
         Assert.assertNotNull(document.getCurrentRevision());
         String docId = document.getId();
         document.delete();
-        CBLDocument fetchedDoc = database.getDocument(docId);
+        CBLDocument fetchedDoc = database.getExistingDocument(docId);
         Assert.assertNull(fetchedDoc);
 
     }
