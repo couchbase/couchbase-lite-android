@@ -104,19 +104,39 @@ public class MultipartReader extends InstrumentationTestCase {
         Charset utf8 = Charset.forName("UTF-8");
 
         byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
-        readerOperationWithMime(mime);
+        readerOperationWithMime(mime, "part the first", "2nd part", mime.length);
 
         byte[] mime2 = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY\r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
-        readerOperationWithMime(mime2);
+        readerOperationWithMime(mime2, "part the first", "2nd part", mime2.length);
+
+        StringBuffer mime3Buffer = new StringBuffer();
+        StringBuffer mime3BufferFirstPart = new StringBuffer();
+        mime3Buffer.append("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\n");
+        for (int i=0; i<10000; i++) {
+            mime3BufferFirstPart.append("large_part_data");
+        }
+        mime3Buffer.append(mime3BufferFirstPart);
+        mime3Buffer.append("\r\n--BOUNDARY\r\n\r\n2nd part\r\n--BOUNDARY--");
+        byte[] mime3 = mime3Buffer.toString().getBytes(utf8);
+        readerOperationWithMime(mime3, mime3BufferFirstPart.toString(), "2nd part", 1024);
 
 
     }
 
-    private void readerOperationWithMime(byte[] mime) {
+    private void readerOperationWithMime(byte[] mime, String part1ExpectedStr, String part2ExpectedStr, int recommendedChunkSize) {
 
         Charset utf8 = Charset.forName("UTF-8");
 
-        for (int chunkSize=1; chunkSize <= mime.length; ++chunkSize) {
+        // if the caller passes in a special chunksize, which is not equal to mime.length, then
+        // lets test the algorithm _only_ at that chunksize.  otherwise, test it at every chunksize
+        // between 1 and mime.length.  (this is needed because when testing with a very large mime value,
+        // the test takes too long to test at every single chunk size)
+        int chunkSize=1;
+        if (recommendedChunkSize != mime.length) {
+            chunkSize = recommendedChunkSize;
+        }
+
+        for (; chunkSize <= recommendedChunkSize; ++chunkSize) {
             ByteArrayInputStream mimeInputStream = new ByteArrayInputStream(mime);
             TestMultipartReaderDelegate delegate = new TestMultipartReaderDelegate();
             String contentType = "multipart/related; boundary=\"BOUNDARY\"";
@@ -138,8 +158,8 @@ public class MultipartReader extends InstrumentationTestCase {
             Assert.assertEquals(delegate.partList.size(), 2);
             Assert.assertEquals(delegate.headersList.size(), 2);
 
-            byte[] part1Expected = new String("part the first").getBytes(utf8);
-            byte[] part2Expected = new String("2nd part").getBytes(utf8);
+            byte[] part1Expected = part1ExpectedStr.getBytes(utf8);
+            byte[] part2Expected = part2ExpectedStr.getBytes(utf8);
             ByteArrayBuffer part1 = delegate.partList.get(0);
             ByteArrayBuffer part2 = delegate.partList.get(1);
             Assert.assertTrue(Arrays.equals(part1.toByteArray(), part1Expected));
