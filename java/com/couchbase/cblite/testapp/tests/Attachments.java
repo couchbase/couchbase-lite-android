@@ -119,6 +119,8 @@ public class Attachments extends CBLiteTestCase {
 
         // Check the 2nd revision's attachment:
         CBLAttachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), "attach");
+        //test will failed:
+        //insertAttachmentForSequenceWithNameAndType & getAttachmentForSequence doesn't provide status. status was not changed after putRevision calling
         Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment2.getContentType());
         data = IOUtils.toByteArray(attachment2.getBody());
@@ -273,9 +275,9 @@ public class Attachments extends CBLiteTestCase {
         try {
             rev2 = database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId());
         } catch (CBLiteException e) {
-            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.CONFLICT);
+            gotExpectedErrorCode = true;
         }
-        Assert.assertTrue(gotExpectedErrorCode);
+        Assert.assertFalse(gotExpectedErrorCode);
 
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertEquals(2, rev2.getGeneration());
