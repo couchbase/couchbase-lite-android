@@ -17,17 +17,18 @@
 
 package com.couchbase.cblite;
 
+import android.util.Log;
+
+import com.couchbase.cblite.CBLView.TDViewCollation;
+import com.couchbase.cblite.internal.CBLRevisionInternal;
+import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
+
+import junit.framework.Assert;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.Assert;
-import android.util.Log;
-
-import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.CBLView.TDViewCollation;
-import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
 
 public class Views extends CBLiteTestCase {
 
@@ -401,6 +402,8 @@ public class Views extends CBLiteTestCase {
         for (CBLRevisionInternal rev : docs) {
             Map<String,Object> value = new HashMap<String, Object>();
             value.put("rev", rev.getRevId());
+            //getAllDocs adds 'deleted' value for CBLQueryRow objects
+            value.put("deleted", null);
             CBLQueryRow queryRow = new CBLQueryRow(rev.getDocId(), 0, rev.getDocId(), value, null);
             queryRow.setDatabase(database);
             expectedRow.add(queryRow);
@@ -418,8 +421,6 @@ public class Views extends CBLiteTestCase {
 
         Map<String,Object> expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
 
-        // failing, I think its a real bug.  in one case "deleted" is null, in another, "deleted" is missing
-        // http://cl.ly/image/1X411c421u3V
         Assert.assertEquals(expectedQueryResult, allDocs);
 
         // Start/end key query:
@@ -449,12 +450,18 @@ public class Views extends CBLiteTestCase {
         expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
         Assert.assertEquals(expectedQueryResult, allDocs);
 
-        // Get specific documents:
+        // Get all documents: with default CBLQueryOptions
         options = new CBLQueryOptions();
         allDocs = database.getAllDocs(options);
 
+        expectedRows = new ArrayList<CBLQueryRow>();
+        expectedRows.add(expectedRow.get(2));
+        expectedRows.add(expectedRow.get(0));
+        expectedRows.add(expectedRow.get(3));
+        expectedRows.add(expectedRow.get(1));
+        expectedRows.add(expectedRow.get(4));
+        expectedQueryResult = createExpectedQueryResult(expectedRows, 0);
 
-        expectedQueryResult = createExpectedQueryResult(new ArrayList<CBLQueryRow>(), 0);
         Assert.assertEquals(expectedQueryResult, allDocs);
 
         // Get specific documents:
