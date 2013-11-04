@@ -44,8 +44,6 @@ public class Server extends CBLiteTestCase {
     }
 
     public void testUpgradeOldDatabaseFiles() throws Exception {
-
-
         String directoryName = "test-directory-" + System.currentTimeMillis();
         String normalFilesDir = getInstrumentation().getContext().getFilesDir().getAbsolutePath();
         String fakeFilesDir = String.format("%s/%s", normalFilesDir, directoryName);
@@ -63,11 +61,28 @@ public class Server extends CBLiteTestCase {
         newCbLiteFile.createNewFile();
 
         File migratedOldFile = new File(directory, String.format("old%s", CBLManager.DATABASE_SUFFIX));
+        migratedOldFile.createNewFile();
+        super.stopCBLite();
+        manager = new CBLManager(getInstrumentation().getContext(), directoryName);
 
+        Assert.assertTrue(migratedOldFile.exists());
+        //cannot rename old.touchdb in old.cblite, old.cblite already exists
+        Assert.assertTrue(oldTouchDbFile.exists());
+        Assert.assertTrue(newCbLiteFile.exists());
+
+        File dir=new File(getInstrumentation().getContext().getFilesDir(), directoryName);
+        Assert.assertEquals(3, dir.listFiles().length);
+
+        super.stopCBLite();
+        migratedOldFile.delete();
+        manager = new CBLManager(getInstrumentation().getContext(), directoryName);
+
+        //rename old.touchdb in old.cblite, previous old.cblite already doesn't exist
         Assert.assertTrue(migratedOldFile.exists());
         Assert.assertTrue(oldTouchDbFile.exists() == false);
         Assert.assertTrue(newCbLiteFile.exists());
-
+        dir=new File(getInstrumentation().getContext().getFilesDir(), directoryName);
+        Assert.assertEquals(2, dir.listFiles().length);
 
     }
 
