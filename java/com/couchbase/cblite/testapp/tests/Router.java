@@ -87,7 +87,7 @@ public class Router extends CBLiteTestCase {
         send("PUT", "/db", CBLStatus.CREATED, null);
 
         Map<String,Object> attachment = new HashMap<String,Object>();
-        attachment.put("content-type", "text/plain");
+        attachment.put("content_type", "text/plain");
         attachment.put("data", "SW5saW5lIHRleHQgc3RyaW5nIGNyZWF0ZWQgYnkgY2JsaXRlIGZ1bmN0aW9uYWwgdGVzdA==");
 
         Map<String,Object> attachments = new HashMap<String,Object>();
