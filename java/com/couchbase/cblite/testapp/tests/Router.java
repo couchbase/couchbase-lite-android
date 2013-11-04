@@ -105,6 +105,8 @@ public class Router extends CBLiteTestCase {
         Map<String,Object> attachmentResult = (Map<String,Object>) attachmentsResult.get("inline.txt");
 
         // there should be either a content_type or content-type field.
+        //https://github.com/couchbase/couchbase-lite-android-core/issues/12
+        //content_type becomes null for attachments in responses, should be as set in Content-Type
         String contentTypeField = (String) attachmentResult.get("content_type");;
         Assert.assertTrue(attachmentResult.containsKey("content_type"));
         Assert.assertNotNull(contentTypeField);
@@ -183,6 +185,8 @@ public class Router extends CBLiteTestCase {
         expectedRows.add(row3);
 
         List<Map<String,Object>> rows = (List<Map<String,Object>>)result.get("rows");
+        //https://github.com/couchbase/couchbase-lite-android-core/issues/11
+        //response of _all_docs contains extra keys in rows: "doc"->null and "value"["deleted"] -> null
         Assert.assertEquals(expectedRows, rows);
 
         // DELETE:
@@ -292,6 +296,8 @@ public class Router extends CBLiteTestCase {
         String revID2 = (String)result.get("rev");
 
         // _all_docs:
+        //https://github.com/couchbase/couchbase-lite-android-core/issues/11
+        //response of _all_docs contains extra keys in rows: "doc"->null and "value"["deleted"] -> null
         result = (Map<String,Object>)send("GET", "/db/_all_docs", CBLStatus.OK, null);
         Assert.assertEquals(3, result.get("total_rows"));
         Assert.assertEquals(0, result.get("offset"));
