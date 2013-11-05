@@ -65,7 +65,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
         File serverPathFile = new File(serverPath);
         FileDirUtils.deleteRecursive(serverPathFile);
         serverPathFile.mkdir();
-        manager = new CBLManager(getInstrumentation().getContext(), "test");
+        manager = new CBLManager(new File(getInstrumentation().getContext().getFilesDir(), "test"));
     }
 
     protected void stopCBLite() {
