@@ -178,6 +178,8 @@ public class Views extends CBLiteTestCase {
 
     public void testViewIndex() {
 
+        int numTimesMapFunctionInvoked = 0;
+
         Map<String,Object> dict1 = new HashMap<String,Object>();
         dict1.put("key", "one");
         Map<String,Object> dict2 = new HashMap<String,Object>();
@@ -192,7 +194,28 @@ public class Views extends CBLiteTestCase {
         CBLRevision rev3 = putDoc(database, dict3);
         putDoc(database, dictX);
 
-        CBLView view = createView(database);
+        class InstrumentedMapBlock implements CBLViewMapBlock {
+
+            int numTimesInvoked = 0;
+
+            @Override
+            public void map(Map<String, Object> document, CBLViewMapEmitBlock emitter) {
+                numTimesInvoked += 1;
+                Assert.assertNotNull(document.get("_id"));
+                Assert.assertNotNull(document.get("_rev"));
+                if (document.get("key") != null) {
+                    emitter.emit(document.get("key"), null);
+                }
+            }
+
+            public int getNumTimesInvoked() {
+                return numTimesInvoked;
+            }
+
+        }
+        CBLView view = database.getViewNamed("aview");
+        InstrumentedMapBlock mapBlock = new InstrumentedMapBlock();
+        view.setMapReduceBlocks(mapBlock, null, "1");
 
         Assert.assertEquals(1, view.getViewId());
         Assert.assertTrue(view.isStale());
@@ -215,7 +238,9 @@ public class Views extends CBLiteTestCase {
         updated = view.updateIndex();
         Assert.assertEquals(CBLStatus.NOT_MODIFIED, updated.getCode());
 
-        // Now add a doc and update a doc:
+        numTimesMapFunctionInvoked = mapBlock.getNumTimesInvoked();
+
+        // Update rev3
         CBLRevision threeUpdated = new CBLRevision(rev3.getDocId(), rev3.getRevId(), false, database);
         Map<String,Object> newdict3 = new HashMap<String,Object>();
         newdict3.put("key", "3hree");
@@ -223,6 +248,14 @@ public class Views extends CBLiteTestCase {
         CBLStatus status = new CBLStatus();
         rev3 = database.putRevision(threeUpdated, rev3.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
+
+        // Reindex again:
+        Assert.assertTrue(view.isStale());
+        updated = view.updateIndex();
+        Assert.assertEquals(CBLStatus.OK, updated.getCode());
+
+        // Make sure the map function was only invoked one more time (for the document that was added)
+        Assert.assertEquals(mapBlock.getNumTimesInvoked(), numTimesMapFunctionInvoked + 1);
 
         Map<String,Object> dict4 = new HashMap<String,Object>();
         dict4.put("key", "four");
