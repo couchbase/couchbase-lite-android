@@ -27,12 +27,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 
-import android.os.AsyncTask;
-import android.util.Log;
-
 import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker;
 import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
 import com.couchbase.cblite.replicator.changetracker.CBLChangeTrackerClient;
+import com.couchbase.cblite.threading.BackgroundTask;
+import com.couchbase.cblite.util.Log;
 
 public class ChangeTracker extends CBLiteTestCase {
 
@@ -196,11 +195,10 @@ public class ChangeTracker extends CBLiteTestCase {
 
         final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, CBLChangeTracker.TDChangeTrackerMode.Continuous, 0, client);
 
-        AsyncTask task = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask task = new BackgroundTask() {
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
                 changeTracker.start();
-                return null;
             }
         };
         task.execute();
@@ -271,11 +269,10 @@ public class ChangeTracker extends CBLiteTestCase {
 
         final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
 
-        AsyncTask task = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask task = new BackgroundTask() {
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
                 changeTracker.start();
-                return null;
             }
         };
         task.execute();

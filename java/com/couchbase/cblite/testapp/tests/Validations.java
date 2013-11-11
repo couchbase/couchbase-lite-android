@@ -4,12 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.Assert;
-import android.util.Log;
 
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLValidationBlock;
 import com.couchbase.cblite.CBLValidationContext;
+import com.couchbase.cblite.util.Log;
 
 public class Validations extends CBLiteTestCase {
 

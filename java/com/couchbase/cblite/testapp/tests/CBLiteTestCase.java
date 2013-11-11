@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -18,8 +17,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
 import android.test.InstrumentationTestCase;
-import android.util.Base64;
-import android.util.Log;
 
 import com.couchbase.cblite.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
@@ -28,6 +25,7 @@ import com.couchbase.cblite.router.CBLRouter;
 import com.couchbase.cblite.router.CBLURLConnection;
 import com.couchbase.cblite.router.CBLURLStreamHandlerFactory;
 import com.couchbase.cblite.support.FileDirUtils;
+import com.couchbase.cblite.util.Log;
 
 public abstract class CBLiteTestCase extends InstrumentationTestCase {
 

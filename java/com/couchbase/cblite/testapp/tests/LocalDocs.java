@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.Assert;
-import android.util.Log;
 
 import com.couchbase.cblite.CBLBody;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.util.Log;
 
 public class LocalDocs extends CBLiteTestCase {
 
