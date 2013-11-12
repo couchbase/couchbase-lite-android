@@ -297,18 +297,8 @@ public class Replicator extends CBLiteTestCase {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         final CBLReplicator repl = database.getReplicator(remote, false, false, server.getWorkExecutor());
-        AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
 
-            @Override
-            protected Object doInBackground(Object... aParams) {
-                // Push them to the remote:
-                repl.start();
-                Assert.assertTrue(repl.isRunning());
-                return null;
-            }
-
-        };
-        replicationTask.execute();
+        repl.start();
 
         ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
         repl.addObserver(replicationObserver);
