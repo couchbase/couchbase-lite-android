@@ -17,8 +17,6 @@
 
 package com.couchbase.cblite.testapp.tests;
 
-import android.util.Log;
-
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLDatabaseChangedFunction;
 import com.couchbase.cblite.CBLFilterBlock;
@@ -27,6 +25,7 @@ import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLiteException;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
+import com.couchbase.cblite.util.Log;
 
 import junit.framework.Assert;
 

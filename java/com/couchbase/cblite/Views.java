@@ -17,11 +17,10 @@
 
 package com.couchbase.cblite;
 
-import android.util.Log;
-
 import com.couchbase.cblite.CBLView.TDViewCollation;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
+import com.couchbase.cblite.util.Log;
 
 import junit.framework.Assert;
 
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 public class Views extends CBLiteTestCase {
 

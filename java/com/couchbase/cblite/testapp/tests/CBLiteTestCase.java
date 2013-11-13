@@ -1,7 +1,6 @@
 package com.couchbase.cblite.testapp.tests;
 
 import android.test.InstrumentationTestCase;
-import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLManager;
@@ -10,6 +9,7 @@ import com.couchbase.cblite.router.CBLRouter;
 import com.couchbase.cblite.router.CBLURLConnection;
 import com.couchbase.cblite.router.CBLURLStreamHandlerFactory;
 import com.couchbase.cblite.support.FileDirUtils;
+import com.couchbase.cblite.util.Log;
 
 import junit.framework.Assert;
 

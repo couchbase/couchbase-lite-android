@@ -1,9 +1,6 @@
 package com.couchbase.cblite.testapp.tests;
 
 
-import android.os.AsyncTask;
-import android.util.Log;
-
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
@@ -13,6 +10,8 @@ import com.couchbase.cblite.replicator.CBLPusher;
 import com.couchbase.cblite.replicator.CBLReplicator;
 import com.couchbase.cblite.support.Base64;
 import com.couchbase.cblite.support.HttpClientFactory;
+import com.couchbase.cblite.threading.BackgroundTask;
+import com.couchbase.cblite.util.Log;
 
 import junit.framework.Assert;
 
@@ -84,14 +83,13 @@ public class Replicator extends CBLiteTestCase {
         final CBLReplicator repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
 
-        AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask replicationTask = new BackgroundTask() {
 
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
                 // Push them to the remote:
                 repl.start();
                 Assert.assertTrue(repl.isRunning());
-                return null;
             }
 
         };
@@ -116,10 +114,10 @@ public class Replicator extends CBLiteTestCase {
         Log.d(TAG, "Send http request to " + pathToDoc);
 
         final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
-        AsyncTask getDocTask = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask getDocTask = new BackgroundTask() {
 
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
 
                 org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
 
@@ -149,7 +147,6 @@ public class Replicator extends CBLiteTestCase {
                 }
 
                 httpRequestDoneSignal.countDown();
-                return null;
             }
 
 
@@ -203,14 +200,13 @@ public class Replicator extends CBLiteTestCase {
         final CBLReplicator repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
 
-        AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask replicationTask = new BackgroundTask() {
 
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
                 // Push them to the remote:
                 repl.start();
                 Assert.assertTrue(repl.isRunning());
-                return null;
             }
 
         };
@@ -234,10 +230,10 @@ public class Replicator extends CBLiteTestCase {
         Log.d(TAG, "Send http request to " + pathToDoc);
 
         final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
-        AsyncTask getDocTask = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask getDocTask = new BackgroundTask() {
 
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
 
                 org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
 
@@ -247,8 +243,8 @@ public class Replicator extends CBLiteTestCase {
                     response = httpclient.execute(new HttpGet(pathToDoc.toExternalForm()));
                     StatusLine statusLine = response.getStatusLine();
                     Log.d(TAG, "statusLine " + statusLine);
-                    return statusLine;
 
+                    Assert.assertEquals(HttpStatus.SC_NOT_FOUND, statusLine.getStatusCode());
                 } catch (ClientProtocolException e) {
                     Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
                 } catch (IOException e) {
@@ -256,17 +252,7 @@ public class Replicator extends CBLiteTestCase {
                 } finally {
                     httpRequestDoneSignal.countDown();
                 }
-
-                return null;
             }
-
-            @Override
-            protected void onPostExecute(Object o) {
-                Log.d(TAG, "onPostExecute called with " + o);
-                StatusLine statusLine = (StatusLine) o;
-                Assert.assertEquals(HttpStatus.SC_NOT_FOUND, statusLine.getStatusCode());
-            }
-
         };
         getDocTask.execute();
 
@@ -343,10 +329,10 @@ public class Replicator extends CBLiteTestCase {
         Log.d(TAG, "Send http request to " + pathToDoc1);
 
         final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
-        AsyncTask getDocTask = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask getDocTask = new BackgroundTask() {
 
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
 
                 org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
 
@@ -368,7 +354,6 @@ public class Replicator extends CBLiteTestCase {
                 }
 
                 httpRequestDoneSignal.countDown();
-                return null;
             }
 
 

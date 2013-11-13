@@ -1,11 +1,10 @@
 package com.couchbase.cblite.testapp.tests;
 
-import android.os.AsyncTask;
-import android.util.Log;
-
 import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker;
 import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
 import com.couchbase.cblite.replicator.changetracker.CBLChangeTrackerClient;
+import com.couchbase.cblite.threading.BackgroundTask;
+import com.couchbase.cblite.util.Log;
 
 import junit.framework.Assert;
 
@@ -33,6 +32,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
 
 public class ChangeTracker extends CBLiteTestCase {
 
@@ -196,11 +196,10 @@ public class ChangeTracker extends CBLiteTestCase {
 
         final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, CBLChangeTracker.TDChangeTrackerMode.Continuous, 0, client);
 
-        AsyncTask task = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask task = new BackgroundTask() {
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
                 changeTracker.start();
-                return null;
             }
         };
         task.execute();
@@ -271,11 +270,10 @@ public class ChangeTracker extends CBLiteTestCase {
 
         final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
 
-        AsyncTask task = new AsyncTask<Object, Object, Object>() {
+        BackgroundTask task = new BackgroundTask() {
             @Override
-            protected Object doInBackground(Object... aParams) {
+            public void run() {
                 changeTracker.start();
-                return null;
             }
         };
         task.execute();
