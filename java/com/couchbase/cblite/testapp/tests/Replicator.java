@@ -1,5 +1,6 @@
 package com.couchbase.cblite.testapp.tests;
 
+
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -11,6 +12,7 @@ import com.couchbase.cblite.internal.CBLRevisionInternal;
 import com.couchbase.cblite.replicator.CBLPusher;
 import com.couchbase.cblite.replicator.CBLReplicator;
 import com.couchbase.cblite.support.Base64;
+import com.couchbase.cblite.support.HttpClientFactory;
 
 import junit.framework.Assert;
 
@@ -20,6 +22,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -293,19 +296,10 @@ public class Replicator extends CBLiteTestCase {
         URL remote = getReplicationURL();
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+
         final CBLReplicator repl = database.getReplicator(remote, false, false, manager.getWorkExecutor());
-        AsyncTask replicationTask = new AsyncTask<Object, Object, Object>() {
 
-            @Override
-            protected Object doInBackground(Object... aParams) {
-                // Push them to the remote:
-                repl.start();
-                Assert.assertTrue(repl.isRunning());
-                return null;
-            }
-
-        };
-        replicationTask.execute();
+        repl.start();
 
         ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
         repl.addObserver(replicationObserver);
@@ -462,6 +456,42 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertTrue(foundError);
 
     }
+
+
+    public void testFetchRemoteCheckpointDoc() throws Exception {
+
+        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() {
+                return new MockHttpClient();
+            }
+        };
+
+        Log.d("TEST", "testFetchRemoteCheckpointDoc() called");
+        String dbUrlString = "http://fake.test-url.com:4984/fake/";
+        URL remote = new URL(dbUrlString);
+        database.setLastSequence("1", remote, true);  // otherwise fetchRemoteCheckpoint won't contact remote
+        CBLReplicator replicator = new CBLPusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
+        replicator.fetchRemoteCheckpointDoc();
+
+        CountDownLatch doneSignal = new CountDownLatch(1);
+        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
+        replicator.addObserver(replicationObserver);
+
+        Log.d(TAG, "testFetchRemoteCheckpointDoc() Waiting for replicator to finish");
+        try {
+            doneSignal.await();
+            Log.d(TAG, "testFetchRemoteCheckpointDoc() replicator finished");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        String errorMessage = "Since we are passing in a mock http client that always throws " +
+                "errors, we expect the replicator to be in an error state";
+        Assert.assertNotNull(errorMessage, replicator.getError());
+
+    }
+
 
 
     class ReplicationObserver implements Observer {
