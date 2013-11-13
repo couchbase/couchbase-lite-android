@@ -1,14 +1,13 @@
 package com.couchbase.cblite.testapp.tests;
 
 import android.test.AndroidTestCase;
-import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.auth.CBLPersonaAuthorizer;
+import com.couchbase.cblite.util.Log;
 
 import junit.framework.Assert;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 

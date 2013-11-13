@@ -25,7 +25,6 @@ import java.util.Observable;
 import java.util.Observer;
 
 import junit.framework.Assert;
-import android.util.Log;
 
 import com.couchbase.cblite.CBLBody;
 import com.couchbase.cblite.CBLDatabase;
@@ -33,6 +32,7 @@ import com.couchbase.cblite.CBLFilterBlock;
 import com.couchbase.cblite.CBLRevision;
 import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.util.Log;
 
 public class CRUDOperations extends CBLiteTestCase implements Observer {
 

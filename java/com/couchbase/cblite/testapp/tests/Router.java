@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
-import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLStatus;
@@ -17,6 +16,7 @@ import com.couchbase.cblite.CBLViewMapBlock;
 import com.couchbase.cblite.CBLViewMapEmitBlock;
 import com.couchbase.cblite.router.CBLRouter;
 import com.couchbase.cblite.router.CBLURLConnection;
+import com.couchbase.cblite.util.Log;
 
 import org.apache.commons.io.IOUtils;
 

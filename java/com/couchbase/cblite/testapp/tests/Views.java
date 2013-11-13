@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
-import android.util.Log;
 
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLQueryOptions;
@@ -34,6 +33,7 @@ import com.couchbase.cblite.CBLView.TDViewCollation;
 import com.couchbase.cblite.CBLViewMapBlock;
 import com.couchbase.cblite.CBLViewMapEmitBlock;
 import com.couchbase.cblite.CBLViewReduceBlock;
+import com.couchbase.cblite.util.Log;
 
 public class Views extends CBLiteTestCase {
 
