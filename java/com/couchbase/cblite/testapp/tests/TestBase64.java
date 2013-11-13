@@ -18,7 +18,7 @@ public class TestBase64 extends InstrumentationTestCase {
 
         String output1a = new String(android.util.Base64.decode(input1, android.util.Base64.DEFAULT));
         Assert.assertEquals(expected1, output1a);
-        String output1b =  new String(com.couchbase.cblite.support.Base64.decode(input1, com.couchbase.cblite.support.Base64.NO_OPTIONS));
+        String output1b =  new String(com.couchbase.cblite.util.Base64.decode(input1, com.couchbase.cblite.util.Base64.DEFAULT));
         Assert.assertEquals(expected1, output1b);
 
         String input2 = "eyJleHAiOjEzNTgyOTY0Mzg0OTUsImF1ZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDk4NC8ifQ";
@@ -26,7 +26,7 @@ public class TestBase64 extends InstrumentationTestCase {
 
         String output2a = new String(android.util.Base64.decode(input2, android.util.Base64.DEFAULT));
         Assert.assertEquals(expected2, output2a);
-        String output2b = new String(com.couchbase.cblite.support.Base64.decode(input2, com.couchbase.cblite.support.Base64.NO_OPTIONS));
+        String output2b = new String(com.couchbase.cblite.util.Base64.decode(input2, com.couchbase.cblite.util.Base64.DEFAULT));
         Assert.assertEquals(expected2, output2b);
 
     }
