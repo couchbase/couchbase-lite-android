@@ -17,6 +17,7 @@ public class DocumentTest extends CBLiteTestCase {
         properties.put("foo", "foo");
         properties.put("bar", Boolean.FALSE);
         document.putProperties(properties);
+        Assert.assertNotNull(document.getCurrentRevisionId());
         Assert.assertNotNull(document.getCurrentRevision());
 
     }
