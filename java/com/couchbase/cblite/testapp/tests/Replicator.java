@@ -2,7 +2,13 @@ package com.couchbase.cblite.testapp.tests;
 
 
 import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLLiveQuery;
+import com.couchbase.cblite.CBLLiveQueryChangedFunction;
+import com.couchbase.cblite.CBLMapEmitFunction;
+import com.couchbase.cblite.CBLMapFunction;
+import com.couchbase.cblite.CBLQueryEnumerator;
 import com.couchbase.cblite.CBLStatus;
+import com.couchbase.cblite.CBLView;
 import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
 import com.couchbase.cblite.internal.CBLBody;
 import com.couchbase.cblite.internal.CBLRevisionInternal;
@@ -279,6 +285,78 @@ public class Replicator extends CBLiteTestCase {
         addDocWithId(doc1Id, "attachment.png");
         addDocWithId(doc2Id, "attachment2.png");
 
+        doPullReplication();
+
+        CBLRevisionInternal doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        Assert.assertNotNull(doc1);
+        Assert.assertTrue(doc1.getRevId().startsWith("1-"));
+        Assert.assertEquals(1, doc1.getProperties().get("foo"));
+
+        CBLRevisionInternal doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        Assert.assertNotNull(doc2);
+        Assert.assertTrue(doc2.getRevId().startsWith("1-"));
+        Assert.assertEquals(1, doc2.getProperties().get("foo"));
+
+        Log.d(TAG, "testPuller() finished");
+
+
+    }
+
+    public void testPullerWithLiveQuery() throws Throwable {
+
+        // This is essentially a regression test for a deadlock
+        // that was happening when the LiveQuery#onDatabaseChanged()
+        // was calling waitForUpdateThread(), but that thread was
+        // waiting on connection to be released by the thread calling
+        // waitForUpdateThread().  When the deadlock bug was present,
+        // this test would trigger the deadlock and never finish.
+
+        Log.d(CBLDatabase.TAG, "testPullerWithLiveQuery");
+        String docIdTimestamp = Long.toString(System.currentTimeMillis());
+        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
+        final String doc2Id = String.format("doc2-%s", docIdTimestamp);
+
+        addDocWithId(doc1Id, "attachment2.png");
+        addDocWithId(doc2Id, "attachment2.png");
+
+        final int numDocsBeforePull = database.getDocumentCount();
+
+        CBLView view = database.getView("testPullerWithLiveQueryView");
+        view.setMapAndReduce(new CBLMapFunction() {
+            @Override
+            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+                if (document.get("_id") != null) {
+                    emitter.emit(document.get("_id"), null);
+                }
+            }
+        }, null, "1");
+
+        CBLLiveQuery allDocsLiveQuery = view.createQuery().toLiveQuery();
+        allDocsLiveQuery.addChangeListener(new CBLLiveQueryChangedFunction() {
+            int numTimesCalled = 0;
+            @Override
+            public void onLiveQueryChanged(CBLQueryEnumerator rows) {
+                // the first time this is called back, the rows will be empty.
+                // but on subsequent times we should expect to get a non empty
+                // row set.
+                if (numTimesCalled++ > 0) {
+                    Assert.assertTrue(rows.getCount() > numDocsBeforePull);
+                }
+                Log.d(CBLDatabase.TAG, "rows " + rows);
+            }
+
+            @Override
+            public void onFailureLiveQueryChanged(Throwable exception) {
+                throw new RuntimeException(exception);
+            }
+        });
+        allDocsLiveQuery.start();
+
+        doPullReplication();
+
+    }
+
+    private void doPullReplication() {
         URL remote = getReplicationURL();
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
@@ -297,20 +375,6 @@ public class Replicator extends CBLiteTestCase {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-        CBLRevisionInternal doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
-        Assert.assertNotNull(doc1);
-        Assert.assertTrue(doc1.getRevId().startsWith("1-"));
-        Assert.assertEquals(1, doc1.getProperties().get("foo"));
-
-        CBLRevisionInternal doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
-        Assert.assertNotNull(doc2);
-        Assert.assertTrue(doc2.getRevId().startsWith("1-"));
-        Assert.assertEquals(1, doc2.getProperties().get("foo"));
-
-        Log.d(TAG, "testPuller() finished");
-
-
     }
 
     private void addDocWithId(String docId, String attachmentName) throws IOException {
