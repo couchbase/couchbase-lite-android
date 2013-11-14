@@ -25,7 +25,7 @@ public class Changes extends CBLiteTestCase {
                 changeNotifications++;
             }
             @Override
-            public void onFailureDatabaseChanged(CBLiteException exception) {
+            public void onFailureDatabaseChanged(Throwable exception) {
                 Log.e(CBLDatabase.TAG, "onFailureDatabaseChanged", exception);
                 Assert.assertTrue(false);
             }

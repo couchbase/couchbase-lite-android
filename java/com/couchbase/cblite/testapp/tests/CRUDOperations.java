@@ -174,7 +174,7 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChanged
     }
 
     @Override
-    public void onFailureDatabaseChanged(CBLiteException exception) {
+    public void onFailureDatabaseChanged(Throwable exception) {
         Log.e(CBLDatabase.TAG, "onFailureDatabaseChanged", exception);
     }
 }
