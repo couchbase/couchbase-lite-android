@@ -38,7 +38,7 @@ public class DocumentTest extends CBLiteTestCase {
 
         // query all docs and make sure we don't see that document
         database.getAllDocs(new CBLQueryOptions());
-        CBLQuery queryAllDocs = database.queryAllDocuments();
+        CBLQuery queryAllDocs = database.createAllDocumentsQuery();
         CBLQueryEnumerator queryEnumerator = queryAllDocs.getRows();
         for (Iterator<CBLQueryRow> it = queryEnumerator; it.hasNext();) {
             CBLQueryRow row = it.next();

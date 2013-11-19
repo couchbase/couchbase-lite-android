@@ -17,9 +17,9 @@
 
 package com.couchbase.cblite.testapp.tests;
 
+import com.couchbase.cblite.CBLChangeListener;
 import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLDatabaseChangedFunction;
-import com.couchbase.cblite.CBLFilterBlock;
+import com.couchbase.cblite.CBLFilterDelegate;
 import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLiteException;
@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChangedFunction {
+public class CRUDOperations extends CBLiteTestCase implements CBLChangeListener {
 
     public static final String TAG = "CRUDOperations";
 
@@ -100,20 +100,20 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabaseChanged
         Log.v(TAG, "Changes = " + changes);
         Assert.assertEquals(1, changes.size());
 
-        changes = database.changesSince(0, null, new CBLFilterBlock() {
+        changes = database.changesSince(0, null, new CBLFilterDelegate() {
 
             @Override
-            public boolean filter(CBLRevisionInternal revision) {
+            public boolean filter(CBLRevisionInternal revision, Map<String, Object> params) {
                 return "updated!".equals(revision.getProperties().get("status"));
             }
 
         });
         Assert.assertEquals(1, changes.size());
 
-        changes = database.changesSince(0, null, new CBLFilterBlock() {
+        changes = database.changesSince(0, null, new CBLFilterDelegate() {
 
             @Override
-            public boolean filter(CBLRevisionInternal revision) {
+            public boolean filter(CBLRevisionInternal revision, Map<String, Object> params) {
                 return "not updated!".equals(revision.getProperties().get("status"));
             }
 

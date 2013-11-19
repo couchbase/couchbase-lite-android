@@ -40,7 +40,7 @@ public class Validations extends CBLiteTestCase {
             }
         };
 
-        database.defineValidation("hoopy", validationBlock);
+        database.setValidation("hoopy", validationBlock);
 
         // POST a valid new document:
         Map<String, Object> props = new HashMap<String,Object>();
