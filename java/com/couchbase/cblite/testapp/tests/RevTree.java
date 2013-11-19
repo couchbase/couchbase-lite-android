@@ -104,7 +104,7 @@ public class RevTree extends CBLiteTestCase {
         CBLRevisionInternal rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
         Assert.assertEquals(rev.getDocId(), rev2.getDocId());
         Assert.assertEquals("2-too", rev2.getRevId());
-        //Assert.assertNull(rev2.getBody());
+        //Assert.assertNull(rev2.getContent());
 
         // Make sure no duplicate rows were inserted for the common revisions:
         Assert.assertEquals(8, database.getLastSequenceNumber());

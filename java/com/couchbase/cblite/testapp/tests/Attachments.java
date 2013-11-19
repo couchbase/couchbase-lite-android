@@ -66,7 +66,7 @@ public class Attachments extends CBLiteTestCase {
 
         CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach");
         Assert.assertEquals("text/plain", attachment.getContentType());
-        byte[] data = IOUtils.toByteArray(attachment.getBody());
+        byte[] data = IOUtils.toByteArray(attachment.getContent());
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         Map<String,Object> innerDict = new HashMap<String,Object>();
@@ -123,14 +123,14 @@ public class Attachments extends CBLiteTestCase {
         //insertAttachmentForSequenceWithNameAndType & getAttachmentForSequence doesn't provide status. status was not changed after putRevision calling
         Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/plain", attachment2.getContentType());
-        data = IOUtils.toByteArray(attachment2.getBody());
+        data = IOUtils.toByteArray(attachment2.getContent());
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         // Check the 3rd revision's attachment:
         CBLAttachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), "attach");
         Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/html", attachment3.getContentType());
-        data = IOUtils.toByteArray(attachment3.getBody());
+        data = IOUtils.toByteArray(attachment3.getContent());
         Assert.assertTrue(Arrays.equals(attach2, data));
 
         // Examine the attachment store:
@@ -174,7 +174,7 @@ public class Attachments extends CBLiteTestCase {
 
         CBLAttachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach");
         Assert.assertEquals("text/plain", attachment.getContentType());
-        byte[] data = IOUtils.toByteArray(attachment.getBody());
+        byte[] data = IOUtils.toByteArray(attachment.getContent());
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         EnumSet<CBLDatabase.TDContentOptions> contentOptions = EnumSet.of(
