@@ -287,7 +287,7 @@ public class Views extends CBLiteTestCase {
         Assert.assertEquals("four", rows.get(1).getKey());
         Assert.assertEquals(rev4.getDocId(), rows.get(1).getDocumentId());
 
-        view.removeIndex();
+        view.deleteIndex();
     }
 
     public void testViewQuery() throws CBLiteException {
