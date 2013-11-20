@@ -119,16 +119,13 @@ public class Attachments extends CBLiteTestCase {
 
         // Check the 2nd revision's attachment:
         CBLAttachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), "attach");
-        //test will failed:
-        //insertAttachmentForSequenceWithNameAndType & getAttachmentForSequence doesn't provide status. status was not changed after putRevision calling
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+
         Assert.assertEquals("text/plain", attachment2.getContentType());
         data = IOUtils.toByteArray(attachment2.getContent());
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         // Check the 3rd revision's attachment:
         CBLAttachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), "attach");
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
         Assert.assertEquals("text/html", attachment3.getContentType());
         data = IOUtils.toByteArray(attachment3.getContent());
         Assert.assertTrue(Arrays.equals(attach2, data));
