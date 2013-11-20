@@ -537,7 +537,7 @@ public class Replicator extends CBLiteTestCase {
 
         String errorMessage = "Since we are passing in a mock http client that always throws " +
                 "errors, we expect the replicator to be in an error state";
-        Assert.assertNotNull(errorMessage, replicator.getError());
+        Assert.assertNotNull(errorMessage, replicator.getLastError());
 
     }
 
