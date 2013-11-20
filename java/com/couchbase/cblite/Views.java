@@ -434,8 +434,6 @@ public class Views extends CBLiteTestCase {
         for (CBLRevisionInternal rev : docs) {
             Map<String,Object> value = new HashMap<String, Object>();
             value.put("rev", rev.getRevId());
-            //getAllDocs adds 'deleted' value for CBLQueryRow objects
-            value.put("deleted", null);
             CBLQueryRow queryRow = new CBLQueryRow(rev.getDocId(), 0, rev.getDocId(), value, null);
             queryRow.setDatabase(database);
             expectedRow.add(queryRow);

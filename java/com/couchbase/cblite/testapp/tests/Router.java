@@ -185,8 +185,6 @@ public class Router extends CBLiteTestCase {
         expectedRows.add(row3);
 
         List<Map<String,Object>> rows = (List<Map<String,Object>>)result.get("rows");
-        //https://github.com/couchbase/couchbase-lite-android-core/issues/11
-        //response of _all_docs contains extra keys in rows: "doc"->null and "value"["deleted"] -> null
         Assert.assertEquals(expectedRows, rows);
 
         // DELETE:
@@ -296,8 +294,6 @@ public class Router extends CBLiteTestCase {
         String revID2 = (String)result.get("rev");
 
         // _all_docs:
-        //https://github.com/couchbase/couchbase-lite-android-core/issues/11
-        //response of _all_docs contains extra keys in rows: "doc"->null and "value"["deleted"] -> null
         result = (Map<String,Object>)send("GET", "/db/_all_docs", CBLStatus.OK, null);
         Assert.assertEquals(3, result.get("total_rows"));
         Assert.assertEquals(0, result.get("offset"));
