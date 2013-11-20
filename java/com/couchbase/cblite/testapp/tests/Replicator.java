@@ -441,8 +441,8 @@ public class Replicator extends CBLiteTestCase {
 
         CBLReplicator replicator = manager.getReplicator(properties);
         Assert.assertNotNull(replicator);
-        Assert.assertEquals(getReplicationURL().toExternalForm(), replicator.getRemote().toExternalForm());
-        Assert.assertTrue(replicator.isPush());
+        Assert.assertEquals(getReplicationURL().toExternalForm(), replicator.getRemoteUrl().toExternalForm());
+        Assert.assertTrue(!replicator.isPull());
         Assert.assertFalse(replicator.isContinuous());
         Assert.assertFalse(replicator.isRunning());
 
