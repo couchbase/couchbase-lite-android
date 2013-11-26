@@ -2,10 +2,10 @@ package com.couchbase.cblite.testapp.tests;
 
 
 import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.CBLEmitter;
 import com.couchbase.cblite.CBLLiveQuery;
 import com.couchbase.cblite.CBLLiveQueryChangedFunction;
-import com.couchbase.cblite.CBLMapEmitFunction;
-import com.couchbase.cblite.CBLMapFunction;
+import com.couchbase.cblite.CBLMapper;
 import com.couchbase.cblite.CBLQueryEnumerator;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
@@ -322,9 +322,9 @@ public class Replicator extends CBLiteTestCase {
         final int numDocsBeforePull = database.getDocumentCount();
 
         CBLView view = database.getView("testPullerWithLiveQueryView");
-        view.setMapAndReduce(new CBLMapFunction() {
+        view.setMapAndReduce(new CBLMapper() {
             @Override
-            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+            public void map(Map<String, Object> document, CBLEmitter emitter) {
                 if (document.get("_id") != null) {
                     emitter.emit(document.get("_id"), null);
                 }

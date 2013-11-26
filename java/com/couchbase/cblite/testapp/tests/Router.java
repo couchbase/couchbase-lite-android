@@ -2,8 +2,8 @@ package com.couchbase.cblite.testapp.tests;
 
 
 import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLMapEmitFunction;
-import com.couchbase.cblite.CBLMapFunction;
+import com.couchbase.cblite.CBLEmitter;
+import com.couchbase.cblite.CBLMapper;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
 import com.couchbase.cblite.router.CBLRouter;
@@ -371,10 +371,10 @@ public class Router extends CBLiteTestCase {
 
         CBLDatabase db = manager.getDatabase("db");
         CBLView view = db.getView("design/view");
-        view.setMapAndReduce(new CBLMapFunction() {
+        view.setMapAndReduce(new CBLMapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+            public void map(Map<String, Object> document, CBLEmitter emitter) {
                 emitter.emit(document.get("message"), null);
             }
         }, null, "1");
@@ -462,10 +462,10 @@ public class Router extends CBLiteTestCase {
 
     	CBLDatabase db = manager.getDatabase("db");
     	CBLView view = db.getView("design/view");
-    	view.setMapAndReduce(new CBLMapFunction() {
+    	view.setMapAndReduce(new CBLMapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+            public void map(Map<String, Object> document, CBLEmitter emitter) {
                 emitter.emit(document.get("message"), null);
             }
         }, null, "1");
@@ -474,9 +474,9 @@ public class Router extends CBLiteTestCase {
     	key_doc1.put("parentId", "12345");
     	result = (Map<String,Object>)sendBody("PUT", "/db/key_doc1", key_doc1, CBLStatus.CREATED, null);
     	view = db.getView("design/view");
-    	view.setMapAndReduce(new CBLMapFunction() {
+    	view.setMapAndReduce(new CBLMapper() {
             @Override
-            public void map(Map<String, Object> document, CBLMapEmitFunction emitter) {
+            public void map(Map<String, Object> document, CBLEmitter emitter) {
                 if (document.get("parentId").equals("12345")) {
                     emitter.emit(document.get("parentId"), document);
                 }
