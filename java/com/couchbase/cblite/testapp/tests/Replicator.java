@@ -4,7 +4,6 @@ package com.couchbase.cblite.testapp.tests;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLEmitter;
 import com.couchbase.cblite.CBLLiveQuery;
-import com.couchbase.cblite.CBLLiveQueryChangedFunction;
 import com.couchbase.cblite.CBLMapper;
 import com.couchbase.cblite.CBLQueryEnumerator;
 import com.couchbase.cblite.CBLStatus;
@@ -332,24 +331,25 @@ public class Replicator extends CBLiteTestCase {
         }, null, "1");
 
         CBLLiveQuery allDocsLiveQuery = view.createQuery().toLiveQuery();
-        allDocsLiveQuery.addChangeListener(new CBLLiveQueryChangedFunction() {
-            int numTimesCalled = 0;
+        allDocsLiveQuery.addChangeListener(new CBLLiveQuery.ChangeListener() {
             @Override
-            public void onLiveQueryChanged(CBLQueryEnumerator rows) {
+            public void change(CBLLiveQuery.ChangeEvent event) {
+                int numTimesCalled = 0;
+                if (event.getError() != null) {
+                    throw new RuntimeException(event.getError());
+                }
                 // the first time this is called back, the rows will be empty.
                 // but on subsequent times we should expect to get a non empty
                 // row set.
                 if (numTimesCalled++ > 0) {
-                    Assert.assertTrue(rows.getCount() > numDocsBeforePull);
-                }
-                Log.d(CBLDatabase.TAG, "rows " + rows);
-            }
 
-            @Override
-            public void onFailureLiveQueryChanged(Throwable exception) {
-                throw new RuntimeException(exception);
+                    Assert.assertTrue(event.getQueryEnumerator().getCount() > numDocsBeforePull);
+                }
+                Log.d(CBLDatabase.TAG, "rows " + event.getQueryEnumerator());
+
             }
         });
+
         allDocsLiveQuery.start();
 
         doPullReplication();
