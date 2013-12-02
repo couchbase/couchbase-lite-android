@@ -332,7 +332,7 @@ public class Replicator extends CBLiteTestCase {
         CBLLiveQuery allDocsLiveQuery = view.createQuery().toLiveQuery();
         allDocsLiveQuery.addChangeListener(new CBLLiveQuery.ChangeListener() {
             @Override
-            public void change(CBLLiveQuery.ChangeEvent event) {
+            public void changed(CBLLiveQuery.ChangeEvent event) {
                 int numTimesCalled = 0;
                 if (event.getError() != null) {
                     throw new RuntimeException(event.getError());
