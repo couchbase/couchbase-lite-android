@@ -5,7 +5,6 @@ import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLEmitter;
 import com.couchbase.cblite.CBLLiveQuery;
 import com.couchbase.cblite.CBLMapper;
-import com.couchbase.cblite.CBLQueryEnumerator;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLView;
 import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
@@ -343,9 +342,9 @@ public class Replicator extends CBLiteTestCase {
                 // row set.
                 if (numTimesCalled++ > 0) {
 
-                    Assert.assertTrue(event.getQueryEnumerator().getCount() > numDocsBeforePull);
+                    Assert.assertTrue(event.getRows().getCount() > numDocsBeforePull);
                 }
-                Log.d(CBLDatabase.TAG, "rows " + event.getQueryEnumerator());
+                Log.d(CBLDatabase.TAG, "rows " + event.getRows());
 
             }
         });
