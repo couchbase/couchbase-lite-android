@@ -19,7 +19,7 @@ package com.couchbase.cblite.testapp.tests;
 
 import com.couchbase.cblite.CBLChangeListener;
 import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLFilterDelegate;
+import com.couchbase.cblite.ReplicationFilter;
 import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLiteException;
@@ -100,7 +100,7 @@ public class CRUDOperations extends CBLiteTestCase implements CBLChangeListener 
         Log.v(TAG, "Changes = " + changes);
         Assert.assertEquals(1, changes.size());
 
-        changes = database.changesSince(0, null, new CBLFilterDelegate() {
+        changes = database.changesSince(0, null, new ReplicationFilter() {
 
             @Override
             public boolean filter(CBLRevisionInternal revision, Map<String, Object> params) {
@@ -110,7 +110,7 @@ public class CRUDOperations extends CBLiteTestCase implements CBLChangeListener 
         });
         Assert.assertEquals(1, changes.size());
 
-        changes = database.changesSince(0, null, new CBLFilterDelegate() {
+        changes = database.changesSince(0, null, new ReplicationFilter() {
 
             @Override
             public boolean filter(CBLRevisionInternal revision, Map<String, Object> params) {
