@@ -17,8 +17,8 @@
 
 package com.couchbase.cblite.testapp.tests;
 
-import com.couchbase.cblite.CBLChangeListener;
 import com.couchbase.cblite.CBLDatabase;
+import com.couchbase.cblite.DocumentChange;
 import com.couchbase.cblite.ReplicationFilter;
 import com.couchbase.cblite.CBLRevisionList;
 import com.couchbase.cblite.CBLStatus;
@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CRUDOperations extends CBLiteTestCase implements CBLChangeListener {
+public class CRUDOperations extends CBLiteTestCase implements CBLDatabase.ChangeListener {
 
     public static final String TAG = "CRUDOperations";
 
@@ -163,18 +163,20 @@ public class CRUDOperations extends CBLiteTestCase implements CBLChangeListener 
         Assert.assertEquals(rev1, history.get(2));
     }
 
-    @Override
-    public void onDatabaseChanged(CBLDatabase database, Map<String, Object> changeNotification) {
-        CBLRevisionInternal rev = (CBLRevisionInternal)changeNotification.get("rev");
-        Assert.assertNotNull(rev);
-        Assert.assertNotNull(rev.getDocId());
-        Assert.assertNotNull(rev.getRevId());
-        Assert.assertEquals(rev.getDocId(), rev.getProperties().get("_id"));
-        Assert.assertEquals(rev.getRevId(), rev.getProperties().get("_rev"));
-    }
 
     @Override
-    public void onFailureDatabaseChanged(Throwable exception) {
-        Log.e(CBLDatabase.TAG, "onFailureDatabaseChanged", exception);
+    public void changed(CBLDatabase.ChangeEvent event) {
+        List<DocumentChange> changes = event.getChanges();
+        for (DocumentChange change : changes) {
+
+            CBLRevisionInternal rev = change.getRevisionInternal();
+            Assert.assertNotNull(rev);
+            Assert.assertNotNull(rev.getDocId());
+            Assert.assertNotNull(rev.getRevId());
+            Assert.assertEquals(rev.getDocId(), rev.getProperties().get("_id"));
+            Assert.assertEquals(rev.getRevId(), rev.getProperties().get("_rev"));
+        }
+
+
     }
 }

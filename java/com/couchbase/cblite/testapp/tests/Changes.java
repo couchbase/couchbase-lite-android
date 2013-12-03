@@ -1,6 +1,5 @@
 package com.couchbase.cblite.testapp.tests;
 
-import com.couchbase.cblite.CBLChangeListener;
 import com.couchbase.cblite.CBLDatabase;
 import com.couchbase.cblite.CBLStatus;
 import com.couchbase.cblite.CBLiteException;
@@ -19,15 +18,10 @@ public class Changes extends CBLiteTestCase {
 
     public void testChangeNotification() throws CBLiteException {
 
-        CBLChangeListener changeListener = new CBLChangeListener() {
+        CBLDatabase.ChangeListener changeListener = new CBLDatabase.ChangeListener() {
             @Override
-            public void onDatabaseChanged(CBLDatabase database, Map<String, Object> changeNotification) {
+            public void changed(CBLDatabase.ChangeEvent event) {
                 changeNotifications++;
-            }
-            @Override
-            public void onFailureDatabaseChanged(Throwable exception) {
-                Log.e(CBLDatabase.TAG, "onFailureDatabaseChanged", exception);
-                Assert.assertTrue(false);
             }
         };
 
