@@ -45,7 +45,7 @@ public class Views extends CBLiteTestCase {
         Assert.assertNull(view.getMap());
         Assert.assertEquals(view, database.getExistingView("aview"));
 
-        boolean changed = view.setMapAndReduce(new CBLMapper() {
+        boolean changed = view.setMapAndReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -57,7 +57,7 @@ public class Views extends CBLiteTestCase {
         Assert.assertEquals(1, database.getAllViews().size());
         Assert.assertEquals(view, database.getAllViews().get(0));
 
-        changed = view.setMapAndReduce(new CBLMapper() {
+        changed = view.setMapAndReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -67,7 +67,7 @@ public class Views extends CBLiteTestCase {
 
         Assert.assertFalse(changed);
 
-        changed = view.setMapAndReduce(new CBLMapper() {
+        changed = view.setMapAndReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -162,7 +162,7 @@ public class Views extends CBLiteTestCase {
 
     public static View createView(Database db) {
         View view = db.getView("aview");
-        view.setMapAndReduce(new CBLMapper() {
+        view.setMapAndReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -194,7 +194,7 @@ public class Views extends CBLiteTestCase {
         CBLRevisionInternal rev3 = putDoc(database, dict3);
         putDoc(database, dictX);
 
-        class InstrumentedMapBlock implements CBLMapper {
+        class InstrumentedMapBlock implements Mapper {
 
             int numTimesInvoked = 0;
 
@@ -533,7 +533,7 @@ public class Views extends CBLiteTestCase {
         putDoc(database, docProperties3);
 
         View view = database.getView("totaler");
-        view.setMapAndReduce(new CBLMapper() {
+        view.setMapAndReduce(new Mapper() {
 
                                  @Override
                                  public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -622,7 +622,7 @@ public class Views extends CBLiteTestCase {
         putDoc(database, docProperties5);
 
         View view = database.getView("grouper");
-        view.setMapAndReduce(new CBLMapper() {
+        view.setMapAndReduce(new Mapper() {
 
                                  @Override
                                  public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -810,7 +810,7 @@ public class Views extends CBLiteTestCase {
         putDoc(database, docProperties5);
 
         View view = database.getView("default/names");
-        view.setMapAndReduce(new CBLMapper() {
+        view.setMapAndReduce(new Mapper() {
 
                                  @Override
                                  public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -921,7 +921,7 @@ public class Views extends CBLiteTestCase {
         }
 
         View view = database.getView("default/names");
-        view.setMapAndReduce(new CBLMapper() {
+        view.setMapAndReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -999,7 +999,7 @@ public class Views extends CBLiteTestCase {
         }
 
         View view = database.getView("default/names");
-        view.setMapAndReduce(new CBLMapper() {
+        view.setMapAndReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -1038,7 +1038,7 @@ public class Views extends CBLiteTestCase {
         putLinkedDocs(database);
         
         View view = database.getView("linked");
-        view.setMapAndReduce(new CBLMapper() {
+        view.setMapAndReduce(new Mapper() {
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
                 if (document.containsKey("value")) {

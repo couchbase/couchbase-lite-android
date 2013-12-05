@@ -4,7 +4,7 @@ package com.couchbase.lite.testapp.tests;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.CBLEmitter;
 import com.couchbase.lite.LiveQuery;
-import com.couchbase.lite.CBLMapper;
+import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
 import com.couchbase.lite.auth.CBLFacebookAuthorizer;
@@ -318,7 +318,7 @@ public class Replicator extends CBLiteTestCase {
         final int numDocsBeforePull = database.getDocumentCount();
 
         View view = database.getView("testPullerWithLiveQueryView");
-        view.setMapAndReduce(new CBLMapper() {
+        view.setMapAndReduce(new Mapper() {
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
                 if (document.get("_id") != null) {
