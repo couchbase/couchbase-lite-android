@@ -1,6 +1,6 @@
 package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.lite.CBLBlobKey;
+import com.couchbase.lite.BlobKey;
 import com.couchbase.lite.CBLBlobStore;
 
 import junit.framework.Assert;
@@ -25,7 +25,7 @@ public class BlobStoreWriter extends CBLiteTestCase {
 
         String sha1DigestKey = blobStoreWriter.sHA1DigestString();
 
-        CBLBlobKey keyFromSha1 = new CBLBlobKey(sha1DigestKey);
+        BlobKey keyFromSha1 = new BlobKey(sha1DigestKey);
         Assert.assertTrue(attachments.getSizeOfBlob(keyFromSha1) == bytes.length);
 
     }

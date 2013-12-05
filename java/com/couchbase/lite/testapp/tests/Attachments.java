@@ -127,7 +127,7 @@ public class Attachments extends CBLiteTestCase {
 
         // Examine the attachment store:
         Assert.assertEquals(2, attachments.count());
-        Set<CBLBlobKey> expected = new HashSet<CBLBlobKey>();
+        Set<BlobKey> expected = new HashSet<BlobKey>();
         expected.add(CBLBlobStore.keyForBlob(attach1));
         expected.add(CBLBlobStore.keyForBlob(attach2));
 
@@ -137,7 +137,7 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertEquals(Status.OK, status.getCode());
         Assert.assertEquals(1, attachments.count());
 
-        Set<CBLBlobKey> expected2 = new HashSet<CBLBlobKey>();
+        Set<BlobKey> expected2 = new HashSet<BlobKey>();
         expected2.add(CBLBlobStore.keyForBlob(attach2));
         Assert.assertEquals(expected2, attachments.allKeys());
     }
@@ -337,7 +337,7 @@ public class Attachments extends CBLiteTestCase {
         blobWriter.install();
 
         // look it up in blob store and make sure it's there
-        CBLBlobKey blobKey = new CBLBlobKey(sha1Base64Digest);
+        BlobKey blobKey = new BlobKey(sha1Base64Digest);
         byte[] blob = attachments.blobForKey(blobKey);
         Assert.assertTrue(Arrays.equals(testBlob.getBytes(Charset.forName("UTF-8")), blob));
 
