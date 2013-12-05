@@ -1,12 +1,6 @@
-package com.couchbase.lite.testapp.tests;
+package com.couchbase.lite;
 
 
-import com.couchbase.lite.Database;
-import com.couchbase.lite.Emitter;
-import com.couchbase.lite.LiveQuery;
-import com.couchbase.lite.Mapper;
-import com.couchbase.lite.Status;
-import com.couchbase.lite.View;
 import com.couchbase.lite.auth.FacebookAuthorizer;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
@@ -16,8 +10,6 @@ import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
-
-import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -64,14 +56,14 @@ public class Replicator extends CBLiteTestCase {
 
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
-        Assert.assertEquals(Status.CREATED, status.getCode());
+        assertEquals(Status.CREATED, status.getCode());
 
         documentProperties.put("_rev", rev1.getRevId());
         documentProperties.put("UPDATED", true);
 
         @SuppressWarnings("unused")
         RevisionInternal rev2 = database.putRevision(new RevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
-        Assert.assertEquals(Status.CREATED, status.getCode());
+        assertEquals(Status.CREATED, status.getCode());
 
         documentProperties = new HashMap<String, Object>();
         String doc2Id = String.format("doc2-%s", docIdTimestamp);
@@ -80,7 +72,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("fnord", true);
 
         database.putRevision(new RevisionInternal(documentProperties, database), null, false, status);
-        Assert.assertEquals(Status.CREATED, status.getCode());
+        assertEquals(Status.CREATED, status.getCode());
 
         final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((Pusher)repl).setCreateTarget(true);
@@ -91,7 +83,7 @@ public class Replicator extends CBLiteTestCase {
             public void run() {
                 // Push them to the remote:
                 repl.start();
-                Assert.assertTrue(repl.isRunning());
+                assertTrue(repl.isRunning());
             }
 
         };
@@ -128,13 +120,13 @@ public class Replicator extends CBLiteTestCase {
                 try {
                     response = httpclient.execute(new HttpGet(pathToDoc.toExternalForm()));
                     StatusLine statusLine = response.getStatusLine();
-                    Assert.assertTrue(statusLine.getStatusCode() == HttpStatus.SC_OK);
+                    assertTrue(statusLine.getStatusCode() == HttpStatus.SC_OK);
                     if(statusLine.getStatusCode() == HttpStatus.SC_OK){
                         ByteArrayOutputStream out = new ByteArrayOutputStream();
                         response.getEntity().writeTo(out);
                         out.close();
                         responseString = out.toString();
-                        Assert.assertTrue(responseString.contains(doc1Id));
+                        assertTrue(responseString.contains(doc1Id));
                         Log.d(TAG, "result: " + responseString);
 
                     } else{
@@ -143,9 +135,9 @@ public class Replicator extends CBLiteTestCase {
                         throw new IOException(statusLine.getReasonPhrase());
                     }
                 } catch (ClientProtocolException e) {
-                    Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
+                    assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
                 } catch (IOException e) {
-                    Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
+                    assertNull("Got IOException: " + e.getLocalizedMessage(), e);
                 }
 
                 httpRequestDoneSignal.countDown();
@@ -189,7 +181,7 @@ public class Replicator extends CBLiteTestCase {
 
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
-        Assert.assertEquals(Status.CREATED, status.getCode());
+        assertEquals(Status.CREATED, status.getCode());
 
         documentProperties.put("_rev", rev1.getRevId());
         documentProperties.put("UPDATED", true);
@@ -197,7 +189,7 @@ public class Replicator extends CBLiteTestCase {
 
         @SuppressWarnings("unused")
         RevisionInternal rev2 = database.putRevision(new RevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
-        Assert.assertTrue(status.getCode() >= 200 && status.getCode() < 300);
+        assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
         final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((Pusher)repl).setCreateTarget(true);
@@ -208,7 +200,7 @@ public class Replicator extends CBLiteTestCase {
             public void run() {
                 // Push them to the remote:
                 repl.start();
-                Assert.assertTrue(repl.isRunning());
+                assertTrue(repl.isRunning());
             }
 
         };
@@ -246,11 +238,11 @@ public class Replicator extends CBLiteTestCase {
                     StatusLine statusLine = response.getStatusLine();
                     Log.d(TAG, "statusLine " + statusLine);
 
-                    Assert.assertEquals(HttpStatus.SC_NOT_FOUND, statusLine.getStatusCode());
+                    assertEquals(HttpStatus.SC_NOT_FOUND, statusLine.getStatusCode());
                 } catch (ClientProtocolException e) {
-                    Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
+                    assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
                 } catch (IOException e) {
-                    Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
+                    assertNull("Got IOException: " + e.getLocalizedMessage(), e);
                 } finally {
                     httpRequestDoneSignal.countDown();
                 }
@@ -284,14 +276,14 @@ public class Replicator extends CBLiteTestCase {
         doPullReplication();
 
         RevisionInternal doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(Database.TDContentOptions.class));
-        Assert.assertNotNull(doc1);
-        Assert.assertTrue(doc1.getRevId().startsWith("1-"));
-        Assert.assertEquals(1, doc1.getProperties().get("foo"));
+        assertNotNull(doc1);
+        assertTrue(doc1.getRevId().startsWith("1-"));
+        assertEquals(1, doc1.getProperties().get("foo"));
 
         RevisionInternal doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(Database.TDContentOptions.class));
-        Assert.assertNotNull(doc2);
-        Assert.assertTrue(doc2.getRevId().startsWith("1-"));
-        Assert.assertEquals(1, doc2.getProperties().get("foo"));
+        assertNotNull(doc2);
+        assertTrue(doc2.getRevId().startsWith("1-"));
+        assertEquals(1, doc2.getProperties().get("foo"));
 
         Log.d(TAG, "testPuller() finished");
 
@@ -340,7 +332,7 @@ public class Replicator extends CBLiteTestCase {
                 // row set.
                 if (numTimesCalled++ > 0) {
 
-                    Assert.assertTrue(event.getRows().getCount() > numDocsBeforePull);
+                    assertTrue(event.getRows().getCount() > numDocsBeforePull);
                 }
                 Log.d(Database.TAG, "rows " + event.getRows());
 
@@ -407,11 +399,11 @@ public class Replicator extends CBLiteTestCase {
                     response = httpclient.execute(post);
                     StatusLine statusLine = response.getStatusLine();
                     Log.d(TAG, "Got response: " + statusLine);
-                    Assert.assertTrue(statusLine.getStatusCode() == HttpStatus.SC_CREATED);
+                    assertTrue(statusLine.getStatusCode() == HttpStatus.SC_CREATED);
                 } catch (ClientProtocolException e) {
-                    Assert.assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
+                    assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
                 } catch (IOException e) {
-                    Assert.assertNull("Got IOException: " + e.getLocalizedMessage(), e);
+                    assertNull("Got IOException: " + e.getLocalizedMessage(), e);
                 }
 
                 httpRequestDoneSignal.countDown();
@@ -437,11 +429,11 @@ public class Replicator extends CBLiteTestCase {
         properties.put("target", getReplicationURL().toExternalForm());
 
         Replication replicator = manager.getReplicator(properties);
-        Assert.assertNotNull(replicator);
-        Assert.assertEquals(getReplicationURL().toExternalForm(), replicator.getRemoteUrl().toExternalForm());
-        Assert.assertTrue(!replicator.isPull());
-        Assert.assertFalse(replicator.isContinuous());
-        Assert.assertFalse(replicator.isRunning());
+        assertNotNull(replicator);
+        assertEquals(getReplicationURL().toExternalForm(), replicator.getRemoteUrl().toExternalForm());
+        assertTrue(!replicator.isPull());
+        assertFalse(replicator.isContinuous());
+        assertFalse(replicator.isRunning());
 
         // start the replicator
         replicator.start();
@@ -450,7 +442,7 @@ public class Replicator extends CBLiteTestCase {
         properties.put("cancel", true);
         Replication activeReplicator = manager.getReplicator(properties);
         activeReplicator.stop();
-        Assert.assertFalse(activeReplicator.isRunning());
+        assertFalse(activeReplicator.isRunning());
 
     }
 
@@ -459,9 +451,9 @@ public class Replicator extends CBLiteTestCase {
         Map<String, Object> properties = getPushReplicationParsedJson();
 
         Replication replicator = manager.getReplicator(properties);
-        Assert.assertNotNull(replicator);
-        Assert.assertNotNull(replicator.getAuthorizer());
-        Assert.assertTrue(replicator.getAuthorizer() instanceof FacebookAuthorizer);
+        assertNotNull(replicator);
+        assertNotNull(replicator.getAuthorizer());
+        assertTrue(replicator.getAuthorizer() instanceof FacebookAuthorizer);
 
     }
 
@@ -499,7 +491,7 @@ public class Replicator extends CBLiteTestCase {
 
         }
 
-        Assert.assertTrue(foundError);
+        assertTrue(foundError);
 
     }
 
@@ -534,7 +526,7 @@ public class Replicator extends CBLiteTestCase {
 
         String errorMessage = "Since we are passing in a mock http client that always throws " +
                 "errors, we expect the replicator to be in an error state";
-        Assert.assertNotNull(errorMessage, replicator.getLastError());
+        assertNotNull(errorMessage, replicator.getLastError());
 
     }
 

@@ -1,9 +1,4 @@
-package com.couchbase.lite.testapp.tests;
-
-import com.couchbase.lite.Database;
-import com.couchbase.lite.Manager;
-
-import junit.framework.Assert;
+package com.couchbase.lite;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,22 +16,22 @@ public class Server extends CBLiteTestCase {
         }
 
         Database db = manager.getDatabase("foo");
-        Assert.assertNotNull(db);
-        Assert.assertEquals("foo", db.getName());
-        Assert.assertTrue(db.getPath().startsWith(getServerPath()));
-        Assert.assertFalse(db.exists());
+        assertNotNull(db);
+        assertEquals("foo", db.getName());
+        assertTrue(db.getPath().startsWith(getServerPath()));
+        assertFalse(db.exists());
 
-        Assert.assertEquals(db, manager.getDatabase("foo"));
+        assertEquals(db, manager.getDatabase("foo"));
 
         // because foo doesn't exist yet
         List<String> databaseNames = manager.getAllDatabaseNames();
-        Assert.assertTrue(!databaseNames.contains("foo"));
+        assertTrue(!databaseNames.contains("foo"));
 
-        Assert.assertTrue(db.open());
-        Assert.assertTrue(db.exists());
+        assertTrue(db.open());
+        assertTrue(db.exists());
 
         databaseNames = manager.getAllDatabaseNames();
-        Assert.assertTrue(databaseNames.contains("foo"));
+        assertTrue(databaseNames.contains("foo"));
 
         db.close();
         db.delete();
@@ -65,24 +60,24 @@ public class Server extends CBLiteTestCase {
         super.stopCBLite();
         manager = new Manager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), Manager.DEFAULT_OPTIONS);
 
-        Assert.assertTrue(migratedOldFile.exists());
+        assertTrue(migratedOldFile.exists());
         //cannot rename old.touchdb in old.cblite, old.cblite already exists
-        Assert.assertTrue(oldTouchDbFile.exists());
-        Assert.assertTrue(newCbLiteFile.exists());
+        assertTrue(oldTouchDbFile.exists());
+        assertTrue(newCbLiteFile.exists());
 
         File dir=new File(getInstrumentation().getContext().getFilesDir(), directoryName);
-        Assert.assertEquals(3, dir.listFiles().length);
+        assertEquals(3, dir.listFiles().length);
 
         super.stopCBLite();
         migratedOldFile.delete();
         manager = new Manager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), Manager.DEFAULT_OPTIONS);
 
         //rename old.touchdb in old.cblite, previous old.cblite already doesn't exist
-        Assert.assertTrue(migratedOldFile.exists());
-        Assert.assertTrue(oldTouchDbFile.exists() == false);
-        Assert.assertTrue(newCbLiteFile.exists());
+        assertTrue(migratedOldFile.exists());
+        assertTrue(oldTouchDbFile.exists() == false);
+        assertTrue(newCbLiteFile.exists());
         dir=new File(getInstrumentation().getContext().getFilesDir(), directoryName);
-        Assert.assertEquals(2, dir.listFiles().length);
+        assertEquals(2, dir.listFiles().length);
 
     }
 

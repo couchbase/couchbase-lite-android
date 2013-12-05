@@ -1,7 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.testapp.tests.CBLiteTestCase;
-
 import junit.framework.Assert;
 
 import java.util.HashMap;

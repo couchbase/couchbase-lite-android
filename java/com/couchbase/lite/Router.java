@@ -1,15 +1,8 @@
-package com.couchbase.lite.testapp.tests;
+package com.couchbase.lite;
 
 
-import com.couchbase.lite.Database;
-import com.couchbase.lite.Emitter;
-import com.couchbase.lite.Mapper;
-import com.couchbase.lite.Status;
-import com.couchbase.lite.View;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
-
-import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 
@@ -55,9 +48,9 @@ public class Router extends CBLiteTestCase {
         send("PUT", "/database", Status.CREATED, null);
 
         Map<String,Object> dbInfo = (Map<String,Object>)send("GET", "/database", Status.OK, null);
-        Assert.assertEquals(0, dbInfo.get("doc_count"));
-        Assert.assertEquals(0, dbInfo.get("update_seq"));
-        Assert.assertTrue((Integer)dbInfo.get("disk_size") > 8000);
+        assertEquals(0, dbInfo.get("doc_count"));
+        assertEquals(0, dbInfo.get("update_seq"));
+        assertTrue((Integer)dbInfo.get("disk_size") > 8000);
 
         send("PUT", "/database", Status.PRECONDITION_FAILED, null);
         send("PUT", "/database2", Status.CREATED, null);
@@ -68,7 +61,7 @@ public class Router extends CBLiteTestCase {
         allDbs.add("database2");
         send("GET", "/_all_dbs", Status.OK, allDbs);
         dbInfo = (Map<String,Object>)send("GET", "/database2", Status.OK, null);
-        Assert.assertEquals("database2", dbInfo.get("db_name"));
+        assertEquals("database2", dbInfo.get("db_name"));
 
         send("DELETE", "/database2", Status.OK, null);
         allDbs.remove("database2");
@@ -76,7 +69,7 @@ public class Router extends CBLiteTestCase {
 
         send("PUT", "/database%2Fwith%2Fslashes", Status.CREATED, null);
         dbInfo = (Map<String,Object>)send("GET", "/database%2Fwith%2Fslashes", Status.OK, null);
-        Assert.assertEquals("database/with/slashes", dbInfo.get("db_name"));
+        assertEquals("database/with/slashes", dbInfo.get("db_name"));
     }
 
     public void testDocWithAttachment() throws IOException {
@@ -107,18 +100,18 @@ public class Router extends CBLiteTestCase {
         //https://github.com/couchbase/couchbase-lite-android-core/issues/12
         //content_type becomes null for attachments in responses, should be as set in Content-Type
         String contentTypeField = (String) attachmentResult.get("content_type");;
-        Assert.assertTrue(attachmentResult.containsKey("content_type"));
-        Assert.assertNotNull(contentTypeField);
+        assertTrue(attachmentResult.containsKey("content_type"));
+        assertNotNull(contentTypeField);
 
         URLConnection conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", null, null);
         String contentType = conn.getHeaderField("Content-Type");
-        Assert.assertNotNull(contentType);
-        Assert.assertTrue(contentType.contains("text/plain"));
+        assertNotNull(contentType);
+        assertTrue(contentType.contains("text/plain"));
 
         StringWriter writer = new StringWriter();
         IOUtils.copy(conn.getInputStream(), writer, "UTF-8");
         String responseString = writer.toString();
-        Assert.assertTrue(responseString.contains(inlineTextString));
+        assertTrue(responseString.contains(inlineTextString));
 
 
     }
@@ -131,7 +124,7 @@ public class Router extends CBLiteTestCase {
         doc1.put("message", "hello");
         Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
         String revID = (String)result.get("rev");
-        Assert.assertTrue(revID.startsWith("1-"));
+        assertTrue(revID.startsWith("1-"));
 
         // PUT to update:
         doc1.put("message", "goodbye");
@@ -139,7 +132,7 @@ public class Router extends CBLiteTestCase {
         result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
         Log.v(TAG, String.format("PUT returned %s", result));
         revID = (String)result.get("rev");
-        Assert.assertTrue(revID.startsWith("2-"));
+        assertTrue(revID.startsWith("2-"));
 
         doc1.put("_id", "doc1");
         doc1.put("_rev", revID);
@@ -155,8 +148,8 @@ public class Router extends CBLiteTestCase {
 
         // _all_docs:
         result = (Map<String,Object>)send("GET", "/db/_all_docs", Status.OK, null);
-        Assert.assertEquals(3, result.get("total_rows"));
-        Assert.assertEquals(0, result.get("offset"));
+        assertEquals(3, result.get("total_rows"));
+        assertEquals(0, result.get("offset"));
 
         Map<String,Object> value1 = new HashMap<String,Object>();
         value1.put("rev", revID);
@@ -184,12 +177,12 @@ public class Router extends CBLiteTestCase {
         expectedRows.add(row3);
 
         List<Map<String,Object>> rows = (List<Map<String,Object>>)result.get("rows");
-        Assert.assertEquals(expectedRows, rows);
+        assertEquals(expectedRows, rows);
 
         // DELETE:
         result = (Map<String,Object>)send("DELETE", String.format("/db/doc1?rev=%s", revID), Status.OK, null);
         revID = (String)result.get("rev");
-        Assert.assertTrue(revID.startsWith("3-"));
+        assertTrue(revID.startsWith("3-"));
 
         send("GET", "/db/doc1", Status.NOT_FOUND, null);
 
@@ -244,7 +237,7 @@ public class Router extends CBLiteTestCase {
         doc5.put("message", "hello5");
         Map<String,Object> resultDoc5 = (Map<String,Object>)sendBody("PUT", "/db/doc5", doc5, Status.CREATED, null);
         String revIdDoc5 = (String)resultDoc5.get("rev");
-        Assert.assertTrue(revIdDoc5.startsWith("1-"));
+        assertTrue(revIdDoc5.startsWith("1-"));
         doc5.put("_deleted", true);
         doc5.put("_rev", revIdDoc5);
         doc5.put("_id", "doc5");
@@ -261,7 +254,7 @@ public class Router extends CBLiteTestCase {
         doc1.put("message", "hello");
         Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/_local/doc1", doc1, Status.CREATED, null);
         String revID = (String)result.get("rev");
-        Assert.assertTrue(revID.startsWith("1-"));
+        assertTrue(revID.startsWith("1-"));
 
         // GET it:
         doc1.put("_id", "_local/doc1");
@@ -294,8 +287,8 @@ public class Router extends CBLiteTestCase {
 
         // _all_docs:
         result = (Map<String,Object>)send("GET", "/db/_all_docs", Status.OK, null);
-        Assert.assertEquals(3, result.get("total_rows"));
-        Assert.assertEquals(0, result.get("offset"));
+        assertEquals(3, result.get("total_rows"));
+        assertEquals(0, result.get("offset"));
 
         Map<String,Object> value1 = new HashMap<String,Object>();
         value1.put("rev", revID);
@@ -323,12 +316,12 @@ public class Router extends CBLiteTestCase {
         expectedRows.add(row3);
 
         List<Map<String,Object>> rows = (List<Map<String,Object>>)result.get("rows");
-        Assert.assertEquals(expectedRows, rows);
+        assertEquals(expectedRows, rows);
 
         // ?include_docs:
         result = (Map<String,Object>)send("GET", "/db/_all_docs?include_docs=true", Status.OK, null);
-        Assert.assertEquals(3, result.get("total_rows"));
-        Assert.assertEquals(0, result.get("offset"));
+        assertEquals(3, result.get("total_rows"));
+        assertEquals(0, result.get("offset"));
 
         doc1.put("_id", "doc1");
         doc1.put("_rev", revID);
@@ -348,7 +341,7 @@ public class Router extends CBLiteTestCase {
         expectedRowsWithDocs.add(row3);
 
         rows = (List<Map<String,Object>>)result.get("rows");
-        Assert.assertEquals(expectedRowsWithDocs, rows);
+        assertEquals(expectedRowsWithDocs, rows);
     }
 
     public void testViews() {
@@ -406,13 +399,13 @@ public class Router extends CBLiteTestCase {
         // Check the ETag:
         URLConnection conn = sendRequest("GET", "/db/_design/design/_view/view", null, null);
         String etag = conn.getHeaderField("Etag");
-        Assert.assertEquals(String.format("\"%d\"", view.getLastSequenceIndexed()), etag);
+        assertEquals(String.format("\"%d\"", view.getLastSequenceIndexed()), etag);
 
         // Try a conditional GET:
         Map<String,String> headers = new HashMap<String,String>();
         headers.put("If-None-Match", etag);
         conn = sendRequest("GET", "/db/_design/design/_view/view", headers, null);
-        Assert.assertEquals(Status.NOT_MODIFIED, conn.getResponseCode());
+        assertEquals(Status.NOT_MODIFIED, conn.getResponseCode());
 
         // Update the database:
         Map<String,Object> doc4 = new HashMap<String,Object>();
@@ -421,9 +414,9 @@ public class Router extends CBLiteTestCase {
 
         // Try a conditional GET:
         conn = sendRequest("GET", "/db/_design/design/_view/view", headers, null);
-        Assert.assertEquals(Status.OK, conn.getResponseCode());
+        assertEquals(Status.OK, conn.getResponseCode());
         result = (Map<String,Object>)parseJSONResponse(conn);
-        Assert.assertEquals(4, result.get("total_rows"));
+        assertEquals(4, result.get("total_rows"));
     }
 
     public void testPostBulkDocs() {
@@ -447,11 +440,11 @@ public class Router extends CBLiteTestCase {
         List<Map<String,Object>> bulk_result  =
                 (ArrayList<Map<String,Object>>)sendBody("POST", "/db/_bulk_docs", bodyObj, Status.CREATED, null);
 
-        Assert.assertEquals(2, bulk_result.size());
-        Assert.assertEquals(bulk_result.get(0).get("id"),  bulk_doc1.get("_id"));
-        Assert.assertNotNull(bulk_result.get(0).get("rev"));
-        Assert.assertEquals(bulk_result.get(1).get("id"),  bulk_doc2.get("_id"));
-        Assert.assertNotNull(bulk_result.get(1).get("rev"));
+        assertEquals(2, bulk_result.size());
+        assertEquals(bulk_result.get(0).get("id"),  bulk_doc1.get("_id"));
+        assertNotNull(bulk_result.get(0).get("rev"));
+        assertEquals(bulk_result.get(1).get("id"),  bulk_doc2.get("_id"));
+        assertNotNull(bulk_result.get(1).get("rev"));
     }
 
     public void testPostKeysView() {
@@ -488,7 +481,7 @@ public class Router extends CBLiteTestCase {
     	bodyObj.put("keys", keys);
         URLConnection conn = sendRequest("POST", "/db/_design/design/_view/view", null, bodyObj);
         result = (Map<String, Object>) parseJSONResponse(conn);
-    	Assert.assertEquals(1, result.get("total_rows"));
+    	assertEquals(1, result.get("total_rows"));
     }
 
     public void testRevsDiff() {
@@ -590,7 +583,7 @@ public class Router extends CBLiteTestCase {
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_persona_assertion", doc1, Status.OK, null);
         Log.v(TAG, String.format("result %s", result));
         String email = (String) result.get("email");
-        Assert.assertEquals(email, "jens@mooseyard.com");
+        assertEquals(email, "jens@mooseyard.com");
 
 
 
@@ -607,7 +600,7 @@ public class Router extends CBLiteTestCase {
         Log.v(TAG, "map: " + replicateJsonMap);
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
         Log.v(TAG, "result: " + result);
-        Assert.assertNotNull(result.get("session_id"));
+        assertNotNull(result.get("session_id"));
 
     }
 
@@ -620,7 +613,7 @@ public class Router extends CBLiteTestCase {
         Log.v(TAG, "map: " + replicateJsonMap);
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
         Log.v(TAG, "result: " + result);
-        Assert.assertNotNull(result.get("session_id"));
+        assertNotNull(result.get("session_id"));
 
 
 

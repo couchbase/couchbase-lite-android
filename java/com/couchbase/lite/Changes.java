@@ -1,12 +1,7 @@
-package com.couchbase.lite.testapp.tests;
+package com.couchbase.lite;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.Status;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
-
-import junit.framework.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +34,7 @@ public class Changes extends CBLiteTestCase {
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
 
-        Assert.assertEquals(1, changeNotifications);
+        assertEquals(1, changeNotifications);
     }
 
 }

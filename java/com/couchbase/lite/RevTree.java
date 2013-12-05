@@ -15,15 +15,9 @@
  * and limitations under the License.
  */
 
-package com.couchbase.lite.testapp.tests;
+package com.couchbase.lite;
 
-import com.couchbase.lite.ChangesOptions;
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.RevisionList;
 import com.couchbase.lite.internal.RevisionInternal;
-
-import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -69,7 +63,7 @@ public class RevTree extends CBLiteTestCase {
 
 
         database.forceInsert(rev, revHistory, null);
-        Assert.assertEquals(1, database.getDocumentCount());
+        assertEquals(1, database.getDocumentCount());
         verifyHistory(database, rev, revHistory);
 
         RevisionInternal conflict = new RevisionInternal("MyDocId", "5-epsilon", false, database);
@@ -88,7 +82,7 @@ public class RevTree extends CBLiteTestCase {
         conflictHistory.add("1-won");
 
         database.forceInsert(conflict, conflictHistory, null);
-        Assert.assertEquals(1, database.getDocumentCount());
+        assertEquals(1, database.getDocumentCount());
         verifyHistory(database, conflict, conflictHistory);
 
         // Add an unrelated document:
@@ -102,16 +96,16 @@ public class RevTree extends CBLiteTestCase {
 
         // Fetch one of those phantom revisions with no body:
         RevisionInternal rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(Database.TDContentOptions.class));
-        Assert.assertEquals(rev.getDocId(), rev2.getDocId());
-        Assert.assertEquals("2-too", rev2.getRevId());
+        assertEquals(rev.getDocId(), rev2.getDocId());
+        assertEquals("2-too", rev2.getRevId());
         //Assert.assertNull(rev2.getContent());
 
         // Make sure no duplicate rows were inserted for the common revisions:
-        Assert.assertEquals(8, database.getLastSequenceNumber());
+        assertEquals(8, database.getLastSequenceNumber());
 
         // Make sure the revision with the higher revID wins the conflict:
         RevisionInternal current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
-        Assert.assertEquals(conflict, current);
+        assertEquals(conflict, current);
 
         // Get the _changes feed and verify only the winner is in it:
         ChangesOptions options = new ChangesOptions();
@@ -119,28 +113,28 @@ public class RevTree extends CBLiteTestCase {
         RevisionList expectedChanges = new RevisionList();
         expectedChanges.add(conflict);
         expectedChanges.add(other);
-        Assert.assertEquals(changes, expectedChanges);
+        assertEquals(changes, expectedChanges);
         options.setIncludeConflicts(true);
         changes = database.changesSince(0, options, null);
         expectedChanges = new RevisionList();
         expectedChanges.add(rev);
         expectedChanges.add(conflict);
         expectedChanges.add(other);
-        Assert.assertEquals(changes, expectedChanges);
+        assertEquals(changes, expectedChanges);
     }
 
     private static void verifyHistory(Database db, RevisionInternal rev, List<String> history) {
         RevisionInternal gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
-        Assert.assertEquals(rev, gotRev);
-        Assert.assertEquals(rev.getProperties(), gotRev.getProperties());
+        assertEquals(rev, gotRev);
+        assertEquals(rev.getProperties(), gotRev.getProperties());
 
         List<RevisionInternal> revHistory = db.getRevisionHistory(gotRev);
-        Assert.assertEquals(history.size(), revHistory.size());
+        assertEquals(history.size(), revHistory.size());
         for(int i=0; i<history.size(); i++) {
             RevisionInternal hrev = revHistory.get(i);
-            Assert.assertEquals(rev.getDocId(), hrev.getDocId());
-            Assert.assertEquals(history.get(i), hrev.getRevId());
-            Assert.assertFalse(rev.isDeleted());
+            assertEquals(rev.getDocId(), hrev.getDocId());
+            assertEquals(history.get(i), hrev.getRevId());
+            assertFalse(rev.isDeleted());
         }
     }
 

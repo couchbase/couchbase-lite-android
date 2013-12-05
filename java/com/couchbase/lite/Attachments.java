@@ -15,10 +15,8 @@
  * and limitations under the License.
  */
 
-package com.couchbase.lite.testapp.tests;
+package com.couchbase.lite;
 
-import com.couchbase.lite.*;
-import com.couchbase.lite.BlobStoreWriter;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.support.Base64;
 

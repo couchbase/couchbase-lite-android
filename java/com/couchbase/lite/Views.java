@@ -19,7 +19,6 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.View.TDViewCollation;
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.testapp.tests.CBLiteTestCase;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;

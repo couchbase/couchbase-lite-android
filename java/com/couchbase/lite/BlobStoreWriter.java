@@ -1,7 +1,4 @@
-package com.couchbase.lite.testapp.tests;
-
-import com.couchbase.lite.BlobKey;
-import com.couchbase.lite.BlobStore;
+package com.couchbase.lite;
 
 import junit.framework.Assert;
 

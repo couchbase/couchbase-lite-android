@@ -1,11 +1,9 @@
-package com.couchbase.lite.testapp.tests;
+package com.couchbase.lite;
 
 import com.couchbase.lite.replicator.changetracker.ChangeTracker.TDChangeTrackerMode;
 import com.couchbase.lite.replicator.changetracker.ChangeTrackerClient;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
-
-import junit.framework.Assert;
 
 import org.apache.http.Header;
 import org.apache.http.HeaderIterator;
@@ -165,7 +163,7 @@ public class ChangeTracker extends CBLiteTestCase {
         // set filter map
         changeTracker.setFilterParams(filterMap);
 
-        Assert.assertEquals("_changes?feed=continuous&heartbeat=300000&since=0&filter=filter&param=value", changeTracker.getChangesFeedPath());
+        assertEquals("_changes?feed=continuous&heartbeat=300000&since=0&filter=filter&param=value", changeTracker.getChangesFeedPath());
 
     }
 
@@ -225,7 +223,7 @@ public class ChangeTracker extends CBLiteTestCase {
                     if (i == 20) {
                         // by now it should have backed off, so the delta between 10s and 20s should be small
                         int delta = mockHttpClient.getNumTimesExecuteCalled() - numTimesExectutedAfter10seconds;
-                        Assert.assertTrue(delta < 25);
+                        assertTrue(delta < 25);
                     }
 
 
@@ -299,7 +297,7 @@ public class ChangeTracker extends CBLiteTestCase {
                     if (i == 20) {
                         // by now it should have backed off, so the delta between 10s and 20s should be small
                         int delta = mockHttpClient.getNumTimesExecuteCalled() - numTimesExectutedAfter10seconds;
-                        Assert.assertTrue(delta < 25);
+                        assertTrue(delta < 25);
                     }
 
 

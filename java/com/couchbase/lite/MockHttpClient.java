@@ -1,4 +1,4 @@
-package com.couchbase.lite.testapp.tests;
+package com.couchbase.lite;
 
 
 import org.apache.http.HttpHost;

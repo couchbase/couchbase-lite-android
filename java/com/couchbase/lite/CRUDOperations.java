@@ -15,19 +15,11 @@
  * and limitations under the License.
  */
 
-package com.couchbase.lite.testapp.tests;
+package com.couchbase.lite;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.DocumentChange;
-import com.couchbase.lite.ReplicationFilter;
-import com.couchbase.lite.RevisionList;
-import com.couchbase.lite.Status;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
-
-import junit.framework.Assert;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -45,8 +37,8 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         String privateUUID = database.privateUUID();
         String publicUUID = database.publicUUID();
         Log.v(TAG, "DB private UUID = '" + privateUUID + "', public UUID = '" + publicUUID + "'");
-        Assert.assertTrue(privateUUID.length() >= 20);
-        Assert.assertTrue(publicUUID.length() >= 20);
+        assertTrue(privateUUID.length() >= 20);
+        assertTrue(publicUUID.length() >= 20);
 
         //create a document
         Map<String, Object> documentProperties = new HashMap<String, Object>();
@@ -61,14 +53,14 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         rev1 = database.putRevision(rev1, null, false, status);
 
         Log.v(TAG, "Created " + rev1);
-        Assert.assertTrue(rev1.getDocId().length() >= 10);
-        Assert.assertTrue(rev1.getRevId().startsWith("1-"));
+        assertTrue(rev1.getDocId().length() >= 10);
+        assertTrue(rev1.getRevId().startsWith("1-"));
 
         //read it back
         RevisionInternal readRev = database.getDocumentWithIDAndRev(rev1.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
-        Assert.assertNotNull(readRev);
+        assertNotNull(readRev);
         Map<String,Object> readRevProps = readRev.getProperties();
-        Assert.assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
+        assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
 
         //now update it
         documentProperties = readRev.getProperties();
@@ -78,13 +70,13 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         RevisionInternal rev2input = rev2;
         rev2 = database.putRevision(rev2, rev1.getRevId(), false, status);
         Log.v(TAG, "Updated " + rev1);
-        Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
-        Assert.assertTrue(rev2.getRevId().startsWith("2-"));
+        assertEquals(rev1.getDocId(), rev2.getDocId());
+        assertTrue(rev2.getRevId().startsWith("2-"));
 
         //read it back
         readRev = database.getDocumentWithIDAndRev(rev2.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
-        Assert.assertNotNull(readRev);
-        Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
+        assertNotNull(readRev);
+        assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
         // Try to update the first rev, which should fail:
         boolean gotExpectedError = false;
@@ -93,12 +85,12 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         } catch (CouchbaseLiteException e) {
             gotExpectedError = e.getCBLStatus().getCode() == Status.CONFLICT;
         }
-        Assert.assertTrue(gotExpectedError);
+        assertTrue(gotExpectedError);
 
         // Check the changes feed, with and without filters:
         RevisionList changes = database.changesSince(0, null, null);
         Log.v(TAG, "Changes = " + changes);
-        Assert.assertEquals(1, changes.size());
+        assertEquals(1, changes.size());
 
         changes = database.changesSince(0, null, new ReplicationFilter() {
 
@@ -108,7 +100,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
             }
 
         });
-        Assert.assertEquals(1, changes.size());
+        assertEquals(1, changes.size());
 
         changes = database.changesSince(0, null, new ReplicationFilter() {
 
@@ -118,7 +110,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
             }
 
         });
-        Assert.assertEquals(0, changes.size());
+        assertEquals(0, changes.size());
 
 
         // Delete it:
@@ -130,13 +122,13 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         } catch (CouchbaseLiteException e) {
             gotExpectedError = e.getCBLStatus().getCode() == Status.CONFLICT;
         }
-        Assert.assertTrue(gotExpectedError);
+        assertTrue(gotExpectedError);
 
-        Assert.assertNull(revResult);
+        assertNull(revResult);
         revD = database.putRevision(revD, rev2.getRevId(), false, status);
-        Assert.assertEquals(Status.OK, status.getCode());
-        Assert.assertEquals(revD.getDocId(), rev2.getDocId());
-        Assert.assertTrue(revD.getRevId().startsWith("3-"));
+        assertEquals(Status.OK, status.getCode());
+        assertEquals(revD.getDocId(), rev2.getDocId());
+        assertTrue(revD.getRevId().startsWith("3-"));
 
         // Delete nonexistent doc:
         RevisionInternal revFake = new RevisionInternal("fake", null, true, database);
@@ -146,21 +138,21 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         } catch (CouchbaseLiteException e) {
             gotExpectedError = e.getCBLStatus().getCode() == Status.NOT_FOUND;
         }
-        Assert.assertTrue(gotExpectedError);
+        assertTrue(gotExpectedError);
 
         // Read it back (should fail):
         readRev = database.getDocumentWithIDAndRev(revD.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
-        Assert.assertNull(readRev);
+        assertNull(readRev);
 
         // Get Changes feed
         changes = database.changesSince(0, null, null);
-        Assert.assertTrue(changes.size() == 1);
+        assertTrue(changes.size() == 1);
 
         // Get Revision History
         List<RevisionInternal> history = database.getRevisionHistory(revD);
-        Assert.assertEquals(revD, history.get(0));
-        Assert.assertEquals(rev2, history.get(1));
-        Assert.assertEquals(rev1, history.get(2));
+        assertEquals(revD, history.get(0));
+        assertEquals(rev2, history.get(1));
+        assertEquals(rev1, history.get(2));
     }
 
 
@@ -170,11 +162,11 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         for (DocumentChange change : changes) {
 
             RevisionInternal rev = change.getRevisionInternal();
-            Assert.assertNotNull(rev);
-            Assert.assertNotNull(rev.getDocId());
-            Assert.assertNotNull(rev.getRevId());
-            Assert.assertEquals(rev.getDocId(), rev.getProperties().get("_id"));
-            Assert.assertEquals(rev.getRevId(), rev.getProperties().get("_rev"));
+            assertNotNull(rev);
+            assertNotNull(rev.getDocId());
+            assertNotNull(rev.getRevId());
+            assertEquals(rev.getDocId(), rev.getProperties().get("_id"));
+            assertEquals(rev.getRevId(), rev.getProperties().get("_rev"));
         }
 
 
