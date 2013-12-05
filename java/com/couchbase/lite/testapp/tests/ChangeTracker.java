@@ -1,7 +1,7 @@
 package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.replicator.changetracker.ChangeTracker.TDChangeTrackerMode;
-import com.couchbase.lite.replicator.changetracker.CBLChangeTrackerClient;
+import com.couchbase.lite.replicator.changetracker.ChangeTrackerClient;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 
@@ -41,7 +41,7 @@ public class ChangeTracker extends CBLiteTestCase {
 
         URL testURL = getReplicationURL();
 
-        CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
+        ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
             public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
@@ -80,7 +80,7 @@ public class ChangeTracker extends CBLiteTestCase {
 
         URL testURL = getReplicationURL();
 
-        CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
+        ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
             public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
@@ -117,7 +117,7 @@ public class ChangeTracker extends CBLiteTestCase {
 
         URL testURL = getReplicationURL();
 
-        CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
+        ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
             public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
@@ -174,7 +174,7 @@ public class ChangeTracker extends CBLiteTestCase {
         URL testURL = getReplicationURL();
         final MockHttpClient mockHttpClient = new MockHttpClient();
 
-        CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
+        ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
             public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
@@ -248,7 +248,7 @@ public class ChangeTracker extends CBLiteTestCase {
         URL testURL = getReplicationURL();
         final MockHttpClientNeverResponds mockHttpClient = new MockHttpClientNeverResponds();
 
-        CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
+        ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
             public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
