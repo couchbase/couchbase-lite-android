@@ -1,7 +1,6 @@
 package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.lite.replicator.changetracker.CBLChangeTracker;
-import com.couchbase.lite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
+import com.couchbase.lite.replicator.changetracker.ChangeTracker.TDChangeTrackerMode;
 import com.couchbase.lite.replicator.changetracker.CBLChangeTrackerClient;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
@@ -45,7 +44,7 @@ public class ChangeTracker extends CBLiteTestCase {
         CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(CBLChangeTracker tracker) {
+            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -61,7 +60,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client);
+        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -84,7 +83,7 @@ public class ChangeTracker extends CBLiteTestCase {
         CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(CBLChangeTracker tracker) {
+            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -100,7 +99,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
+        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -121,7 +120,7 @@ public class ChangeTracker extends CBLiteTestCase {
         CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(CBLChangeTracker tracker) {
+            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -137,7 +136,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client);
+        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -154,7 +153,7 @@ public class ChangeTracker extends CBLiteTestCase {
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
-        CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
+        com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
 
         // set filter
         changeTracker.setFilterName("filter");
@@ -178,7 +177,7 @@ public class ChangeTracker extends CBLiteTestCase {
         CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(CBLChangeTracker tracker) {
+            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
                 Log.v(TAG, "changeTrackerStopped");
             }
 
@@ -194,7 +193,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, CBLChangeTracker.TDChangeTrackerMode.Continuous, 0, client);
+        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, com.couchbase.lite.replicator.changetracker.ChangeTracker.TDChangeTrackerMode.Continuous, 0, client);
 
         BackgroundTask task = new BackgroundTask() {
             @Override
@@ -252,7 +251,7 @@ public class ChangeTracker extends CBLiteTestCase {
         CBLChangeTrackerClient client = new CBLChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(CBLChangeTracker tracker) {
+            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
                 Log.v(TAG, "changeTrackerStopped");
             }
 
@@ -268,7 +267,7 @@ public class ChangeTracker extends CBLiteTestCase {
             }
         };
 
-        final CBLChangeTracker changeTracker = new CBLChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
+        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
 
         BackgroundTask task = new BackgroundTask() {
             @Override
