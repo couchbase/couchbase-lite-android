@@ -11,7 +11,7 @@ import com.couchbase.lite.auth.CBLFacebookAuthorizer;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.replicator.CBLPusher;
-import com.couchbase.lite.replicator.CBLReplicator;
+import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
@@ -82,7 +82,7 @@ public class Replicator extends CBLiteTestCase {
         database.putRevision(new CBLRevisionInternal(documentProperties, database), null, false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
-        final CBLReplicator repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
+        final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
 
         BackgroundTask replicationTask = new BackgroundTask() {
@@ -199,7 +199,7 @@ public class Replicator extends CBLiteTestCase {
         CBLRevisionInternal rev2 = database.putRevision(new CBLRevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
         Assert.assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
-        final CBLReplicator repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
+        final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
 
         BackgroundTask replicationTask = new BackgroundTask() {
@@ -358,7 +358,7 @@ public class Replicator extends CBLiteTestCase {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
-        final CBLReplicator repl = database.getReplicator(remote, false, false, manager.getWorkExecutor());
+        final Replication repl = database.getReplicator(remote, false, false, manager.getWorkExecutor());
 
         repl.start();
 
@@ -436,7 +436,7 @@ public class Replicator extends CBLiteTestCase {
         properties.put("source", DEFAULT_TEST_DB);
         properties.put("target", getReplicationURL().toExternalForm());
 
-        CBLReplicator replicator = manager.getReplicator(properties);
+        Replication replicator = manager.getReplicator(properties);
         Assert.assertNotNull(replicator);
         Assert.assertEquals(getReplicationURL().toExternalForm(), replicator.getRemoteUrl().toExternalForm());
         Assert.assertTrue(!replicator.isPull());
@@ -448,7 +448,7 @@ public class Replicator extends CBLiteTestCase {
 
         // now lets lookup existing replicator and stop it
         properties.put("cancel", true);
-        CBLReplicator activeReplicator = manager.getReplicator(properties);
+        Replication activeReplicator = manager.getReplicator(properties);
         activeReplicator.stop();
         Assert.assertFalse(activeReplicator.isRunning());
 
@@ -458,7 +458,7 @@ public class Replicator extends CBLiteTestCase {
 
         Map<String, Object> properties = getPushReplicationParsedJson();
 
-        CBLReplicator replicator = manager.getReplicator(properties);
+        Replication replicator = manager.getReplicator(properties);
         Assert.assertNotNull(replicator);
         Assert.assertNotNull(replicator.getAuthorizer());
         Assert.assertTrue(replicator.getAuthorizer() instanceof CBLFacebookAuthorizer);
@@ -478,7 +478,7 @@ public class Replicator extends CBLiteTestCase {
 
         // start a replicator
         Map<String,Object> properties = getPullReplicationParsedJson();
-        CBLReplicator replicator = manager.getReplicator(properties);
+        Replication replicator = manager.getReplicator(properties);
         replicator.start();
 
         boolean foundError = false;
@@ -517,7 +517,7 @@ public class Replicator extends CBLiteTestCase {
         String dbUrlString = "http://fake.test-url.com:4984/fake/";
         URL remote = new URL(dbUrlString);
         database.setLastSequence("1", remote, true);  // otherwise fetchRemoteCheckpoint won't contact remote
-        CBLReplicator replicator = new CBLPusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
+        Replication replicator = new CBLPusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
         replicator.fetchRemoteCheckpointDoc();
 
         CountDownLatch doneSignal = new CountDownLatch(1);
@@ -539,7 +539,7 @@ public class Replicator extends CBLiteTestCase {
     }
 
 
-    class ReplicationObserver implements CBLReplicator.ChangeListener {
+    class ReplicationObserver implements Replication.ChangeListener {
 
         public boolean replicationFinished = false;
         private CountDownLatch doneSignal;
@@ -549,8 +549,8 @@ public class Replicator extends CBLiteTestCase {
         }
 
         @Override
-        public void changed(CBLReplicator.ChangeEvent event) {
-            CBLReplicator replicator = event.getSource();
+        public void changed(Replication.ChangeEvent event) {
+            Replication replicator = event.getSource();
             if (!replicator.isRunning()) {
                 replicationFinished = true;
                 String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
