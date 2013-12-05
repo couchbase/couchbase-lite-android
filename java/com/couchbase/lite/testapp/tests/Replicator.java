@@ -3,10 +3,10 @@ package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.Database;
 import com.couchbase.lite.CBLEmitter;
-import com.couchbase.lite.CBLLiveQuery;
+import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.CBLMapper;
 import com.couchbase.lite.CBLStatus;
-import com.couchbase.lite.CBLView;
+import com.couchbase.lite.View;
 import com.couchbase.lite.auth.CBLFacebookAuthorizer;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
@@ -317,7 +317,7 @@ public class Replicator extends CBLiteTestCase {
 
         final int numDocsBeforePull = database.getDocumentCount();
 
-        CBLView view = database.getView("testPullerWithLiveQueryView");
+        View view = database.getView("testPullerWithLiveQueryView");
         view.setMapAndReduce(new CBLMapper() {
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
@@ -327,10 +327,10 @@ public class Replicator extends CBLiteTestCase {
             }
         }, null, "1");
 
-        CBLLiveQuery allDocsLiveQuery = view.createQuery().toLiveQuery();
-        allDocsLiveQuery.addChangeListener(new CBLLiveQuery.ChangeListener() {
+        LiveQuery allDocsLiveQuery = view.createQuery().toLiveQuery();
+        allDocsLiveQuery.addChangeListener(new LiveQuery.ChangeListener() {
             @Override
-            public void changed(CBLLiveQuery.ChangeEvent event) {
+            public void changed(LiveQuery.ChangeEvent event) {
                 int numTimesCalled = 0;
                 if (event.getError() != null) {
                     throw new RuntimeException(event.getError());

@@ -17,7 +17,7 @@
 
 package com.couchbase.lite;
 
-import com.couchbase.lite.CBLView.TDViewCollation;
+import com.couchbase.lite.View.TDViewCollation;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.testapp.tests.CBLiteTestCase;
 import com.couchbase.lite.util.Log;
@@ -38,7 +38,7 @@ public class Views extends CBLiteTestCase {
 
         Assert.assertNull(database.getExistingView("aview"));
 
-        CBLView view = database.getView("aview");
+        View view = database.getView("aview");
         Assert.assertNotNull(view);
         Assert.assertEquals(database, view.getDatabase());
         Assert.assertEquals("aview", view.getName());
@@ -160,8 +160,8 @@ public class Views extends CBLiteTestCase {
         }
     }
 
-    public static CBLView createView(Database db) {
-        CBLView view = db.getView("aview");
+    public static View createView(Database db) {
+        View view = db.getView("aview");
         view.setMapAndReduce(new CBLMapper() {
 
             @Override
@@ -213,7 +213,7 @@ public class Views extends CBLiteTestCase {
             }
 
         }
-        CBLView view = database.getView("aview");
+        View view = database.getView("aview");
         InstrumentedMapBlock mapBlock = new InstrumentedMapBlock();
         view.setMap(mapBlock, "1");
 
@@ -293,7 +293,7 @@ public class Views extends CBLiteTestCase {
     public void testViewQuery() throws CBLiteException {
 
         putDocs(database);
-        CBLView view = createView(database);
+        View view = createView(database);
 
         view.updateIndex();
 
@@ -532,7 +532,7 @@ public class Views extends CBLiteTestCase {
         docProperties3.put("cost", 6.50);
         putDoc(database, docProperties3);
 
-        CBLView view = database.getView("totaler");
+        View view = database.getView("totaler");
         view.setMapAndReduce(new CBLMapper() {
 
                                  @Override
@@ -549,7 +549,7 @@ public class Views extends CBLiteTestCase {
                                  @Override
                                  public Object reduce(List<Object> keys, List<Object> values,
                                                       boolean rereduce) {
-                                     return CBLView.totalValues(values);
+                                     return View.totalValues(values);
                                  }
                              }, "1"
         );
@@ -621,7 +621,7 @@ public class Views extends CBLiteTestCase {
         docProperties5.put("time", 187);
         putDoc(database, docProperties5);
 
-        CBLView view = database.getView("grouper");
+        View view = database.getView("grouper");
         view.setMapAndReduce(new CBLMapper() {
 
                                  @Override
@@ -637,7 +637,7 @@ public class Views extends CBLiteTestCase {
                                  @Override
                                  public Object reduce(List<Object> keys, List<Object> values,
                                                       boolean rereduce) {
-                                     return CBLView.totalValues(values);
+                                     return View.totalValues(values);
                                  }
                              }, "1"
         );
@@ -809,7 +809,7 @@ public class Views extends CBLiteTestCase {
         docProperties5.put("name", "Jed");
         putDoc(database, docProperties5);
 
-        CBLView view = database.getView("default/names");
+        View view = database.getView("default/names");
         view.setMapAndReduce(new CBLMapper() {
 
                                  @Override
@@ -920,7 +920,7 @@ public class Views extends CBLiteTestCase {
             putDoc(database, docProperties);
         }
 
-        CBLView view = database.getView("default/names");
+        View view = database.getView("default/names");
         view.setMapAndReduce(new CBLMapper() {
 
             @Override
@@ -998,7 +998,7 @@ public class Views extends CBLiteTestCase {
             putDoc(database, docProperties);
         }
 
-        CBLView view = database.getView("default/names");
+        View view = database.getView("default/names");
         view.setMapAndReduce(new CBLMapper() {
 
             @Override
@@ -1023,7 +1023,7 @@ public class Views extends CBLiteTestCase {
 
     public void testLargerViewQuery() throws CBLiteException {
         putNDocs(database, 4);
-        CBLView view = createView(database);
+        View view = createView(database);
 
         view.updateIndex();
 
@@ -1037,7 +1037,7 @@ public class Views extends CBLiteTestCase {
     public void testViewLinkedDocs() throws CBLiteException {
         putLinkedDocs(database);
         
-        CBLView view = database.getView("linked");
+        View view = database.getView("linked");
         view.setMapAndReduce(new CBLMapper() {
             @Override
             public void map(Map<String, Object> document, CBLEmitter emitter) {
