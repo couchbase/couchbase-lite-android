@@ -3,7 +3,7 @@ package com.couchbase.lite.testapp.tests;
 import android.test.InstrumentationTestCase;
 
 import com.couchbase.lite.support.CBLMultipartReader;
-import com.couchbase.lite.support.CBLMultipartReaderDelegate;
+import com.couchbase.lite.support.MultipartReaderDelegate;
 import com.couchbase.lite.support.Range;
 
 import junit.framework.Assert;
@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class MultipartReader extends InstrumentationTestCase {
 
-    class TestMultipartReaderDelegate implements CBLMultipartReaderDelegate {
+    class TestMultipartReaderDelegate implements MultipartReaderDelegate {
 
         private ByteArrayBuffer currentPartData;
         private List<Map<String, String>> headersList;
@@ -60,7 +60,7 @@ public class MultipartReader extends InstrumentationTestCase {
         contentTypes.put("multipart/related;boundary=X", new String("\r\n--X").getBytes(utf8));
 
         for (String contentType : contentTypes.keySet()) {
-            CBLMultipartReaderDelegate delegate = null;
+            MultipartReaderDelegate delegate = null;
             CBLMultipartReader reader = new CBLMultipartReader(contentType, delegate);
             byte[] expectedBoundary = (byte[]) contentTypes.get(contentType);
             byte[] boundary = reader.getBoundary();
@@ -68,7 +68,7 @@ public class MultipartReader extends InstrumentationTestCase {
         }
 
         try {
-            CBLMultipartReaderDelegate delegate = null;
+            MultipartReaderDelegate delegate = null;
             CBLMultipartReader reader = new CBLMultipartReader("multipart/related; boundary=\"BOUNDARY", delegate);
             Assert.assertTrue("Should not have gotten here, above lines should have thrown exception", false);
         } catch (Exception e) {
