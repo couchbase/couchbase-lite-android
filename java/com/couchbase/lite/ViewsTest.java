@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class Views extends CBLiteTestCase {
+public class ViewsTest extends CBLiteTestCase {
 
     public static final String TAG = "Views";
 

@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Revisions extends AndroidTestCase {
+public class RevisionsTest extends AndroidTestCase {
 
     public void testParseRevID() {
         int num;

@@ -4,7 +4,7 @@ import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
-public class SequenceMap extends AndroidTestCase {
+public class SequenceMapTest extends AndroidTestCase {
 	
 	public void testSequenceMap() {
 		

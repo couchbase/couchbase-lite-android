@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CRUDOperations extends CBLiteTestCase implements Database.ChangeListener {
+public class CRUDOperationsTest extends CBLiteTestCase implements Database.ChangeListener {
 
     public static final String TAG = "CRUDOperations";
 

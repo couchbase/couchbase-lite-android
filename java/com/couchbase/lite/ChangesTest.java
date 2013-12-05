@@ -6,7 +6,7 @@ import com.couchbase.lite.internal.RevisionInternal;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Changes extends CBLiteTestCase {
+public class ChangesTest extends CBLiteTestCase {
 
     private int changeNotifications = 0;
 

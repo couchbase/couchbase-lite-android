@@ -4,7 +4,7 @@ import android.test.InstrumentationTestCase;
 
 import junit.framework.Assert;
 
-public class Misc extends InstrumentationTestCase {
+public class MiscTest extends InstrumentationTestCase {
 
     public void testUnquoteString() {
 

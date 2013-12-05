@@ -1,15 +1,24 @@
-package com.couchbase.lite;
+package com.couchbase.lite.replicator;
 
+import android.test.InstrumentationTestCase;
 
+import com.couchbase.lite.CBLiteTestCase;
+import com.couchbase.lite.Database;
+import com.couchbase.lite.Emitter;
+import com.couchbase.lite.LiveQuery;
+import com.couchbase.lite.Mapper;
+import com.couchbase.lite.MockHttpClient;
+import com.couchbase.lite.Status;
+import com.couchbase.lite.View;
 import com.couchbase.lite.auth.FacebookAuthorizer;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.replicator.Pusher;
-import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
+
+import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -33,7 +42,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-public class Replicator extends CBLiteTestCase {
+public class ReplicationTest extends CBLiteTestCase {
 
     public static final String TAG = "Replicator";
 
@@ -561,6 +570,26 @@ public class Replicator extends CBLiteTestCase {
 
     }
 
+    public void testBuildRelativeURLString() throws Exception {
 
+        String dbUrlString = "http://10.0.0.3:4984/todos/";
+        Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
+        String relativeUrlString = replicator.buildRelativeURLString("foo");
+
+        String expected = "http://10.0.0.3:4984/todos/foo";
+        Assert.assertEquals(expected, relativeUrlString);
+
+    }
+
+    public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
+
+        String dbUrlString = "http://10.0.0.3:4984/todos/";
+        Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
+        String relativeUrlString = replicator.buildRelativeURLString("/foo");
+
+        String expected = "http://10.0.0.3:4984/todos/foo";
+        Assert.assertEquals(expected, relativeUrlString);
+
+    }
 
 }

@@ -11,7 +11,7 @@ import junit.framework.Assert;
 import java.net.URL;
 import java.util.Map;
 
-public class Auth extends AndroidTestCase {
+public class AuthTest extends AndroidTestCase {
 
     public void testParsePersonaAssertion() {
 

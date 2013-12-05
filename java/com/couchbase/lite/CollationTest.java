@@ -9,7 +9,7 @@ import junit.framework.Assert;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
-public class Collation extends AndroidTestCase {
+public class CollationTest extends AndroidTestCase {
 
     public static String TAG = "Collation";
 

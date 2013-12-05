@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MultipartReader extends InstrumentationTestCase {
+public class MultipartReaderTest extends InstrumentationTestCase {
 
     class TestMultipartReaderDelegate implements MultipartReaderDelegate {
 

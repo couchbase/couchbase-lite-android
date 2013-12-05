@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Attachments extends CBLiteTestCase {
+public class AttachmentsTest extends CBLiteTestCase {
 
     public static final String TAG = "Attachments";
 

@@ -13,7 +13,7 @@ import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 
-class MockHttpClient implements org.apache.http.client.HttpClient {
+public class MockHttpClient implements org.apache.http.client.HttpClient {
 
     private int numTimesExecuteCalled = 0;
 

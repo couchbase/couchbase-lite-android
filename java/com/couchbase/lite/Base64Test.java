@@ -7,7 +7,7 @@ import junit.framework.Assert;
 
 import java.io.IOException;
 
-public class TestBase64 extends InstrumentationTestCase {
+public class Base64Test extends InstrumentationTestCase {
 
 
     public void testDecode() throws IOException {

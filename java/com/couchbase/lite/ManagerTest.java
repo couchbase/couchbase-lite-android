@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public class Server extends CBLiteTestCase {
+public class ManagerTest extends CBLiteTestCase {
 
     public void testServer() {
 
