@@ -2,7 +2,6 @@ package com.couchbase.lite.testapp.tests;
 
 import android.test.InstrumentationTestCase;
 
-import com.couchbase.lite.support.CBLMultipartReader;
 import com.couchbase.lite.support.MultipartReaderDelegate;
 import com.couchbase.lite.support.Range;
 
@@ -61,7 +60,7 @@ public class MultipartReader extends InstrumentationTestCase {
 
         for (String contentType : contentTypes.keySet()) {
             MultipartReaderDelegate delegate = null;
-            CBLMultipartReader reader = new CBLMultipartReader(contentType, delegate);
+            com.couchbase.lite.support.MultipartReader reader = new com.couchbase.lite.support.MultipartReader(contentType, delegate);
             byte[] expectedBoundary = (byte[]) contentTypes.get(contentType);
             byte[] boundary = reader.getBoundary();
             Assert.assertTrue(Arrays.equals(boundary, expectedBoundary));
@@ -69,7 +68,7 @@ public class MultipartReader extends InstrumentationTestCase {
 
         try {
             MultipartReaderDelegate delegate = null;
-            CBLMultipartReader reader = new CBLMultipartReader("multipart/related; boundary=\"BOUNDARY", delegate);
+            com.couchbase.lite.support.MultipartReader reader = new com.couchbase.lite.support.MultipartReader("multipart/related; boundary=\"BOUNDARY", delegate);
             Assert.assertTrue("Should not have gotten here, above lines should have thrown exception", false);
         } catch (Exception e) {
             // expected exception
@@ -79,7 +78,7 @@ public class MultipartReader extends InstrumentationTestCase {
 
     public void testParseHeaders() {
         String testString = new String("\r\nFoo: Bar\r\n Header : Val ue ");
-        CBLMultipartReader reader = new CBLMultipartReader("multipart/related;boundary=X", null);
+        com.couchbase.lite.support.MultipartReader reader = new com.couchbase.lite.support.MultipartReader("multipart/related;boundary=X", null);
         reader.parseHeaders(testString);
         Assert.assertEquals(reader.headers.keySet().size(), 2);
     }
@@ -87,7 +86,7 @@ public class MultipartReader extends InstrumentationTestCase {
     public void testSearchFor() throws Exception {
         String testString = new String("\r\n\r\n");
         byte[] testStringBytes = testString.getBytes(Charset.forName("UTF-8"));
-        CBLMultipartReader reader = new CBLMultipartReader("multipart/related;boundary=X", null);
+        com.couchbase.lite.support.MultipartReader reader = new com.couchbase.lite.support.MultipartReader("multipart/related;boundary=X", null);
         reader.appendData(testStringBytes);
         Range r = reader.searchFor(testStringBytes, 0);
         Assert.assertEquals(0, r.getLocation());
@@ -140,7 +139,7 @@ public class MultipartReader extends InstrumentationTestCase {
             ByteArrayInputStream mimeInputStream = new ByteArrayInputStream(mime);
             TestMultipartReaderDelegate delegate = new TestMultipartReaderDelegate();
             String contentType = "multipart/related; boundary=\"BOUNDARY\"";
-            CBLMultipartReader reader = new CBLMultipartReader(contentType, delegate);
+            com.couchbase.lite.support.MultipartReader reader = new com.couchbase.lite.support.MultipartReader(contentType, delegate);
             Assert.assertFalse(reader.finished());
 
             int location = 0;
