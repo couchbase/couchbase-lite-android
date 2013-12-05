@@ -20,7 +20,7 @@ package com.couchbase.lite.testapp.tests;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.ReplicationFilter;
-import com.couchbase.lite.CBLRevisionList;
+import com.couchbase.lite.RevisionList;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLBody;
@@ -96,7 +96,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         Assert.assertTrue(gotExpectedError);
 
         // Check the changes feed, with and without filters:
-        CBLRevisionList changes = database.changesSince(0, null, null);
+        RevisionList changes = database.changesSince(0, null, null);
         Log.v(TAG, "Changes = " + changes);
         Assert.assertEquals(1, changes.size());
 
