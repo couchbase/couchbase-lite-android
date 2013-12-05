@@ -11,7 +11,7 @@ public class TestReplicator extends InstrumentationTestCase {
     public void testBuildRelativeURLString() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
-        Replication replicator = new CBLPusher(null, new URL(dbUrlString), false, null);
+        Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
         String relativeUrlString = replicator.buildRelativeURLString("foo");
 
         String expected = "http://10.0.0.3:4984/todos/foo";
@@ -22,7 +22,7 @@ public class TestReplicator extends InstrumentationTestCase {
     public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
-        Replication replicator = new CBLPusher(null, new URL(dbUrlString), false, null);
+        Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
         String relativeUrlString = replicator.buildRelativeURLString("/foo");
 
         String expected = "http://10.0.0.3:4984/todos/foo";

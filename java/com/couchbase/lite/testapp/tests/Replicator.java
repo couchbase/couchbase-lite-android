@@ -10,7 +10,7 @@ import com.couchbase.lite.View;
 import com.couchbase.lite.auth.CBLFacebookAuthorizer;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
-import com.couchbase.lite.replicator.CBLPusher;
+import com.couchbase.lite.replicator.Pusher;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.support.HttpClientFactory;
@@ -83,7 +83,7 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertEquals(Status.CREATED, status.getCode());
 
         final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
-        ((CBLPusher)repl).setCreateTarget(true);
+        ((Pusher)repl).setCreateTarget(true);
 
         BackgroundTask replicationTask = new BackgroundTask() {
 
@@ -200,7 +200,7 @@ public class Replicator extends CBLiteTestCase {
         Assert.assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
         final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
-        ((CBLPusher)repl).setCreateTarget(true);
+        ((Pusher)repl).setCreateTarget(true);
 
         BackgroundTask replicationTask = new BackgroundTask() {
 
@@ -517,7 +517,7 @@ public class Replicator extends CBLiteTestCase {
         String dbUrlString = "http://fake.test-url.com:4984/fake/";
         URL remote = new URL(dbUrlString);
         database.setLastSequence("1", remote, true);  // otherwise fetchRemoteCheckpoint won't contact remote
-        Replication replicator = new CBLPusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
+        Replication replicator = new Pusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
         replicator.fetchRemoteCheckpointDoc();
 
         CountDownLatch doneSignal = new CountDownLatch(1);
