@@ -42,7 +42,7 @@ public class Attachments extends CBLiteTestCase {
     @SuppressWarnings("unchecked")
     public void testAttachments() throws Exception {
 
-        CBLBlobStore attachments = database.getAttachments();
+        BlobStore attachments = database.getAttachments();
 
         Assert.assertEquals(0, attachments.count());
         Assert.assertEquals(new HashSet<Object>(), attachments.allKeys());
@@ -128,8 +128,8 @@ public class Attachments extends CBLiteTestCase {
         // Examine the attachment store:
         Assert.assertEquals(2, attachments.count());
         Set<BlobKey> expected = new HashSet<BlobKey>();
-        expected.add(CBLBlobStore.keyForBlob(attach1));
-        expected.add(CBLBlobStore.keyForBlob(attach2));
+        expected.add(BlobStore.keyForBlob(attach1));
+        expected.add(BlobStore.keyForBlob(attach2));
 
         Assert.assertEquals(expected, attachments.allKeys());
 
@@ -138,14 +138,14 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertEquals(1, attachments.count());
 
         Set<BlobKey> expected2 = new HashSet<BlobKey>();
-        expected2.add(CBLBlobStore.keyForBlob(attach2));
+        expected2.add(BlobStore.keyForBlob(attach2));
         Assert.assertEquals(expected2, attachments.allKeys());
     }
 
     @SuppressWarnings("unchecked")
     public void testPutLargeAttachment() throws Exception {
 
-        CBLBlobStore attachments = database.getAttachments();
+        BlobStore attachments = database.getAttachments();
         attachments.deleteBlobs();
         Assert.assertEquals(0, attachments.count());
         
@@ -205,7 +205,7 @@ public class Attachments extends CBLiteTestCase {
     @SuppressWarnings("unchecked")
     public void testPutAttachment() throws CouchbaseLiteException {
 
-        CBLBlobStore attachments = database.getAttachments();
+        BlobStore attachments = database.getAttachments();
         attachments.deleteBlobs();
         Assert.assertEquals(0, attachments.count());
 
@@ -322,7 +322,7 @@ public class Attachments extends CBLiteTestCase {
     public void testStreamAttachmentBlobStoreWriter() {
 
 
-        CBLBlobStore attachments = database.getAttachments();
+        BlobStore attachments = database.getAttachments();
 
         BlobStoreWriter blobWriter = new com.couchbase.lite.BlobStoreWriter(attachments);
         String testBlob = "foo";

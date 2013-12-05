@@ -1,7 +1,7 @@
 package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.BlobKey;
-import com.couchbase.lite.CBLBlobStore;
+import com.couchbase.lite.BlobStore;
 
 import junit.framework.Assert;
 
@@ -13,7 +13,7 @@ public class BlobStoreWriter extends CBLiteTestCase {
 
     public void testBasicOperation() throws Exception {
 
-        CBLBlobStore attachments = database.getAttachments();
+        BlobStore attachments = database.getAttachments();
 
         InputStream attachmentStream = getInstrumentation().getContext().getAssets().open("attachment.png");
         byte[] bytes = IOUtils.toByteArray(attachmentStream);
