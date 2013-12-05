@@ -63,7 +63,7 @@ public class Server extends CBLiteTestCase {
         File migratedOldFile = new File(directory, String.format("old%s", CBLManager.DATABASE_SUFFIX));
         migratedOldFile.createNewFile();
         super.stopCBLite();
-        manager = manager = new CBLManager(new File(getInstrumentation().getContext().getFilesDir(), directoryName));
+        manager = new CBLManager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), CBLManager.DEFAULT_OPTIONS);
 
         Assert.assertTrue(migratedOldFile.exists());
         //cannot rename old.touchdb in old.cblite, old.cblite already exists
@@ -75,7 +75,7 @@ public class Server extends CBLiteTestCase {
 
         super.stopCBLite();
         migratedOldFile.delete();
-        manager = manager = new CBLManager(new File(getInstrumentation().getContext().getFilesDir(), directoryName));
+        manager = new CBLManager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), CBLManager.DEFAULT_OPTIONS);
 
         //rename old.touchdb in old.cblite, previous old.cblite already doesn't exist
         Assert.assertTrue(migratedOldFile.exists());

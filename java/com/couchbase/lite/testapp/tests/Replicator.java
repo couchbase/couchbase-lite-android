@@ -101,7 +101,7 @@ public class Replicator extends CBLiteTestCase {
 
 
         ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
-        repl.addObserver(replicationObserver);
+        repl.addChangeListener(replicationObserver);
 
         Log.d(TAG, "Waiting for replicator to finish");
         try {
@@ -218,7 +218,7 @@ public class Replicator extends CBLiteTestCase {
 
 
         ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
-        repl.addObserver(replicationObserver);
+        repl.addChangeListener(replicationObserver);
 
         Log.d(TAG, "Waiting for replicator to finish");
         try {
@@ -365,7 +365,7 @@ public class Replicator extends CBLiteTestCase {
         repl.start();
 
         ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
-        repl.addObserver(replicationObserver);
+        repl.addChangeListener(replicationObserver);
 
         Log.d(TAG, "Waiting for replicator to finish");
         try {
@@ -524,7 +524,7 @@ public class Replicator extends CBLiteTestCase {
 
         CountDownLatch doneSignal = new CountDownLatch(1);
         ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
-        replicator.addObserver(replicationObserver);
+        replicator.addChangeListener(replicationObserver);
 
         Log.d(TAG, "testFetchRemoteCheckpointDoc() Waiting for replicator to finish");
         try {
@@ -541,20 +541,18 @@ public class Replicator extends CBLiteTestCase {
     }
 
 
+    class ReplicationObserver implements CBLReplicator.ChangeListener {
 
-    class ReplicationObserver implements Observer {
         public boolean replicationFinished = false;
         private CountDownLatch doneSignal;
 
-        public ReplicationObserver(CountDownLatch doneSignal) {
-            super();
+        ReplicationObserver(CountDownLatch doneSignal) {
             this.doneSignal = doneSignal;
         }
 
         @Override
-        public void update(Observable observable, Object data) {
-            Log.d(TAG, "ReplicationObserver.update called.  observable: " + observable);
-            CBLReplicator replicator = (CBLReplicator) observable;
+        public void changed(CBLReplicator.ChangeEvent event) {
+            CBLReplicator replicator = event.getSource();
             if (!replicator.isRunning()) {
                 replicationFinished = true;
                 String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
@@ -570,6 +568,9 @@ public class Replicator extends CBLiteTestCase {
         boolean isReplicationFinished() {
             return replicationFinished;
         }
+
     }
+
+
 
 }
