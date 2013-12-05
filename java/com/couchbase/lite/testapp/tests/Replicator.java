@@ -1,21 +1,21 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLEmitter;
-import com.couchbase.cblite.CBLLiveQuery;
-import com.couchbase.cblite.CBLMapper;
-import com.couchbase.cblite.CBLStatus;
-import com.couchbase.cblite.CBLView;
-import com.couchbase.cblite.auth.CBLFacebookAuthorizer;
-import com.couchbase.cblite.internal.CBLBody;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.replicator.CBLPusher;
-import com.couchbase.cblite.replicator.CBLReplicator;
-import com.couchbase.cblite.support.Base64;
-import com.couchbase.cblite.support.HttpClientFactory;
-import com.couchbase.cblite.threading.BackgroundTask;
-import com.couchbase.cblite.util.Log;
+import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.CBLEmitter;
+import com.couchbase.lite.CBLLiveQuery;
+import com.couchbase.lite.CBLMapper;
+import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.CBLView;
+import com.couchbase.lite.auth.CBLFacebookAuthorizer;
+import com.couchbase.lite.internal.CBLBody;
+import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.replicator.CBLPusher;
+import com.couchbase.lite.replicator.CBLReplicator;
+import com.couchbase.lite.support.Base64;
+import com.couchbase.lite.support.HttpClientFactory;
+import com.couchbase.lite.threading.BackgroundTask;
+import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 

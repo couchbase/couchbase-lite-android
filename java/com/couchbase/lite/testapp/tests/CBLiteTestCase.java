@@ -1,15 +1,15 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 import android.test.InstrumentationTestCase;
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLManager;
-import com.couchbase.cblite.internal.CBLBody;
-import com.couchbase.cblite.router.CBLRouter;
-import com.couchbase.cblite.router.CBLURLConnection;
-import com.couchbase.cblite.router.CBLURLStreamHandlerFactory;
-import com.couchbase.cblite.support.FileDirUtils;
-import com.couchbase.cblite.util.Log;
+import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.CBLManager;
+import com.couchbase.lite.internal.CBLBody;
+import com.couchbase.lite.router.CBLRouter;
+import com.couchbase.lite.router.CBLURLConnection;
+import com.couchbase.lite.router.CBLURLStreamHandlerFactory;
+import com.couchbase.lite.support.FileDirUtils;
+import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 

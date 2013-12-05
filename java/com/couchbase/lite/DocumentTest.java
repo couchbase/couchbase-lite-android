@@ -1,6 +1,6 @@
-package com.couchbase.cblite;
+package com.couchbase.lite;
 
-import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
+import com.couchbase.lite.testapp.tests.CBLiteTestCase;
 
 import junit.framework.Assert;
 

@@ -1,8 +1,8 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 import android.test.AndroidTestCase;
 
-import com.couchbase.cblite.util.Log;
+import com.couchbase.lite.util.Log;
 import com.couchbase.touchdb.TDCollateJSON;
 
 import junit.framework.Assert;

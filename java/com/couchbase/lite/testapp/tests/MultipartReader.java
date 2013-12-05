@@ -1,10 +1,10 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 import android.test.InstrumentationTestCase;
 
-import com.couchbase.cblite.support.CBLMultipartReader;
-import com.couchbase.cblite.support.CBLMultipartReaderDelegate;
-import com.couchbase.cblite.support.Range;
+import com.couchbase.lite.support.CBLMultipartReader;
+import com.couchbase.lite.support.CBLMultipartReaderDelegate;
+import com.couchbase.lite.support.Range;
 
 import junit.framework.Assert;
 

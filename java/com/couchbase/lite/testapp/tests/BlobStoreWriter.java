@@ -1,8 +1,8 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.cblite.CBLBlobKey;
-import com.couchbase.cblite.CBLBlobStore;
-import com.couchbase.cblite.CBLBlobStoreWriter;
+import com.couchbase.lite.CBLBlobKey;
+import com.couchbase.lite.CBLBlobStore;
+import com.couchbase.lite.CBLBlobStoreWriter;
 
 import junit.framework.Assert;
 

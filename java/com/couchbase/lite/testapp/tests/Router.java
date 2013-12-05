@@ -1,14 +1,14 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLEmitter;
-import com.couchbase.cblite.CBLMapper;
-import com.couchbase.cblite.CBLStatus;
-import com.couchbase.cblite.CBLView;
-import com.couchbase.cblite.router.CBLRouter;
-import com.couchbase.cblite.router.CBLURLConnection;
-import com.couchbase.cblite.util.Log;
+import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.CBLEmitter;
+import com.couchbase.lite.CBLMapper;
+import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.CBLView;
+import com.couchbase.lite.router.CBLRouter;
+import com.couchbase.lite.router.CBLURLConnection;
+import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 

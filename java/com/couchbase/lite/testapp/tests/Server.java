@@ -1,7 +1,7 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLManager;
+import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.CBLManager;
 
 import junit.framework.Assert;
 

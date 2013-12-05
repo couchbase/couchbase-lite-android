@@ -1,12 +1,12 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 
-import com.couchbase.cblite.CBLStatus;
-import com.couchbase.cblite.CBLValidationBlock;
-import com.couchbase.cblite.CBLValidationContext;
-import com.couchbase.cblite.CBLiteException;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.util.Log;
+import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.CBLValidationBlock;
+import com.couchbase.lite.CBLValidationContext;
+import com.couchbase.lite.CBLiteException;
+import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 

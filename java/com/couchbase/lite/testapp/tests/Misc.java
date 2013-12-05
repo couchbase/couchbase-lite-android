@@ -1,8 +1,8 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 import android.test.InstrumentationTestCase;
 
-import com.couchbase.cblite.CBLMisc;
+import com.couchbase.lite.CBLMisc;
 
 import junit.framework.Assert;
 

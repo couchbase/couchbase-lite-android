@@ -15,13 +15,13 @@
  * and limitations under the License.
  */
 
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.cblite.CBLChangesOptions;
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLRevisionList;
-import com.couchbase.cblite.CBLiteException;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
+import com.couchbase.lite.CBLChangesOptions;
+import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.CBLRevisionList;
+import com.couchbase.lite.CBLiteException;
+import com.couchbase.lite.internal.CBLRevisionInternal;
 
 import junit.framework.Assert;
 

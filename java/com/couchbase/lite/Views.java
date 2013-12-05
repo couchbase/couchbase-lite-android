@@ -15,12 +15,12 @@
  * and limitations under the License.
  */
 
-package com.couchbase.cblite;
+package com.couchbase.lite;
 
-import com.couchbase.cblite.CBLView.TDViewCollation;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.testapp.tests.CBLiteTestCase;
-import com.couchbase.cblite.util.Log;
+import com.couchbase.lite.CBLView.TDViewCollation;
+import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.testapp.tests.CBLiteTestCase;
+import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 

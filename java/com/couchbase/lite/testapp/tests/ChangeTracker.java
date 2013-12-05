@@ -1,10 +1,10 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker;
-import com.couchbase.cblite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
-import com.couchbase.cblite.replicator.changetracker.CBLChangeTrackerClient;
-import com.couchbase.cblite.threading.BackgroundTask;
-import com.couchbase.cblite.util.Log;
+import com.couchbase.lite.replicator.changetracker.CBLChangeTracker;
+import com.couchbase.lite.replicator.changetracker.CBLChangeTracker.TDChangeTrackerMode;
+import com.couchbase.lite.replicator.changetracker.CBLChangeTrackerClient;
+import com.couchbase.lite.threading.BackgroundTask;
+import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 

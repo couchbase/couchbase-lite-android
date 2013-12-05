@@ -1,4 +1,4 @@
-package com.couchbase.cblite.replicator;
+package com.couchbase.lite.replicator;
 
 import android.test.InstrumentationTestCase;
 

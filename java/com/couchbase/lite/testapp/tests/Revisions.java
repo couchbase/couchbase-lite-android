@@ -1,9 +1,9 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 import android.test.AndroidTestCase;
 
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
+import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.internal.CBLRevisionInternal;
 
 import junit.framework.Assert;
 

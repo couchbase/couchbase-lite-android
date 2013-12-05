@@ -15,17 +15,17 @@
  * and limitations under the License.
  */
 
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.cblite.CBLAttachment;
-import com.couchbase.cblite.CBLBlobKey;
-import com.couchbase.cblite.CBLBlobStore;
-import com.couchbase.cblite.CBLBlobStoreWriter;
-import com.couchbase.cblite.CBLDatabase;
-import com.couchbase.cblite.CBLStatus;
-import com.couchbase.cblite.CBLiteException;
-import com.couchbase.cblite.internal.CBLRevisionInternal;
-import com.couchbase.cblite.support.Base64;
+import com.couchbase.lite.CBLAttachment;
+import com.couchbase.lite.CBLBlobKey;
+import com.couchbase.lite.CBLBlobStore;
+import com.couchbase.lite.CBLBlobStoreWriter;
+import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.CBLiteException;
+import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.support.Base64;
 
 import junit.framework.Assert;
 

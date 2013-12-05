@@ -1,8 +1,8 @@
-package com.couchbase.cblite.testapp.tests;
+package com.couchbase.lite.testapp.tests;
 
 import android.test.AndroidTestCase;
 
-import com.couchbase.cblite.support.CBLSequenceMap;
+import com.couchbase.lite.support.CBLSequenceMap;
 
 import junit.framework.Assert;
 
