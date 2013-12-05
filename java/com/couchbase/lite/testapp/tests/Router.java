@@ -6,7 +6,6 @@ import com.couchbase.lite.Emitter;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
-import com.couchbase.lite.router.CBLRouter;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
 
@@ -29,7 +28,7 @@ public class Router extends CBLiteTestCase {
         Map<String,Object> responseBody = new HashMap<String,Object>();
         responseBody.put("CBLite", "Welcome");
         responseBody.put("couchdb", "Welcome");
-        responseBody.put("version", CBLRouter.getVersionString());
+        responseBody.put("version", com.couchbase.lite.router.Router.getVersionString());
         send("GET", "/", Status.OK, responseBody);
 
         Map<String,Object> session = new HashMap<String,Object>();

@@ -5,9 +5,8 @@ import android.test.InstrumentationTestCase;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.internal.CBLBody;
-import com.couchbase.lite.router.CBLRouter;
-import com.couchbase.lite.router.URLConnection;
-import com.couchbase.lite.router.URLStreamHandlerFactory;
+import com.couchbase.lite.router.*;
+import com.couchbase.lite.router.Router;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
 
@@ -233,7 +232,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
                 conn.setRequestInputStream(bais);
             }
 
-            CBLRouter router = new CBLRouter(manager, conn);
+            Router router = new com.couchbase.lite.router.Router(manager, conn);
             router.start();
             return conn;
         } catch (MalformedURLException e) {
