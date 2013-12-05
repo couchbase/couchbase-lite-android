@@ -37,11 +37,11 @@ public class DocumentTest extends CBLiteTestCase {
         Assert.assertNull(fetchedDoc);
 
         // query all docs and make sure we don't see that document
-        database.getAllDocs(new CBLQueryOptions());
+        database.getAllDocs(new QueryOptions());
         Query queryAllDocs = database.createAllDocumentsQuery();
-        CBLQueryEnumerator queryEnumerator = queryAllDocs.run();
-        for (Iterator<CBLQueryRow> it = queryEnumerator; it.hasNext();) {
-            CBLQueryRow row = it.next();
+        QueryEnumerator queryEnumerator = queryAllDocs.run();
+        for (Iterator<QueryRow> it = queryEnumerator; it.hasNext();) {
+            QueryRow row = it.next();
             Assert.assertFalse(row.getDocument().getId().equals(docId));
         }
 
