@@ -1,10 +1,10 @@
 package com.couchbase.lite.testapp.tests;
 
 
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.ValidationBlock;
 import com.couchbase.lite.ValidationContext;
-import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.util.Log;
 
@@ -20,7 +20,7 @@ public class Validations extends CBLiteTestCase {
 
     boolean validationCalled = false;
 
-    public void testValidations() throws CBLiteException {
+    public void testValidations() throws CouchbaseLiteException {
 
         ValidationBlock validationBlock = new ValidationBlock() {
 
@@ -68,7 +68,7 @@ public class Validations extends CBLiteTestCase {
         boolean gotExpectedError = false;
         try {
             rev = database.putRevision(rev, rev.getRevId(), false, status);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
         Assert.assertTrue(validationCalled);
@@ -83,7 +83,7 @@ public class Validations extends CBLiteTestCase {
         gotExpectedError = false;
         try {
             rev = database.putRevision(rev, null, false, status);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
         Assert.assertTrue(validationCalled);
@@ -116,7 +116,7 @@ public class Validations extends CBLiteTestCase {
         gotExpectedError = false;
         try {
             rev = database.putRevision(rev, null, false, status);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
         Assert.assertTrue(validationCalled);

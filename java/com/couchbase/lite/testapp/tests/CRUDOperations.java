@@ -17,12 +17,12 @@
 
 package com.couchbase.lite.testapp.tests;
 
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.RevisionList;
 import com.couchbase.lite.Status;
-import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.util.Log;
@@ -38,7 +38,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
 
     public static final String TAG = "CRUDOperations";
 
-    public void testCRUDOperations() throws CBLiteException {
+    public void testCRUDOperations() throws CouchbaseLiteException {
 
         database.addChangeListener(this);
 
@@ -90,7 +90,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         boolean gotExpectedError = false;
         try {
             database.putRevision(rev2input, rev1.getRevId(), false, status);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedError = e.getCBLStatus().getCode() == Status.CONFLICT;
         }
         Assert.assertTrue(gotExpectedError);
@@ -127,7 +127,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         gotExpectedError = false;
         try {
             revResult = database.putRevision(revD, null, false, status);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedError = e.getCBLStatus().getCode() == Status.CONFLICT;
         }
         Assert.assertTrue(gotExpectedError);
@@ -143,7 +143,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         gotExpectedError = false;
         try {
             database.putRevision(revFake, null, false, status);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedError = e.getCBLStatus().getCode() == Status.NOT_FOUND;
         }
         Assert.assertTrue(gotExpectedError);

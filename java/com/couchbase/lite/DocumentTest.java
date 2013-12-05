@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class DocumentTest extends CBLiteTestCase {
 
-    public void testNewDocumentHasCurrentRevision() throws CBLiteException {
+    public void testNewDocumentHasCurrentRevision() throws CouchbaseLiteException {
 
         Document document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();
@@ -22,7 +22,7 @@ public class DocumentTest extends CBLiteTestCase {
 
     }
 
-    public void testDeleteDocument() throws CBLiteException {
+    public void testDeleteDocument() throws CouchbaseLiteException {
 
         Document document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();

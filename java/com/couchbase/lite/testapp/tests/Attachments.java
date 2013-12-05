@@ -21,9 +21,9 @@ import com.couchbase.lite.Attachment;
 import com.couchbase.lite.CBLBlobKey;
 import com.couchbase.lite.CBLBlobStore;
 import com.couchbase.lite.CBLBlobStoreWriter;
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Status;
-import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.support.Base64;
 
@@ -208,7 +208,7 @@ public class Attachments extends CBLiteTestCase {
     }
 
     @SuppressWarnings("unchecked")
-    public void testPutAttachment() throws CBLiteException {
+    public void testPutAttachment() throws CouchbaseLiteException {
 
         CBLBlobStore attachments = database.getAttachments();
         attachments.deleteBlobs();
@@ -254,7 +254,7 @@ public class Attachments extends CBLiteTestCase {
         boolean gotExpectedErrorCode = false;
         try {
             database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.CONFLICT);
         }
         Assert.assertTrue(gotExpectedErrorCode);
@@ -262,7 +262,7 @@ public class Attachments extends CBLiteTestCase {
         gotExpectedErrorCode = false;
         try {
             database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus");
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.CONFLICT);
         }
         Assert.assertTrue(gotExpectedErrorCode);
@@ -271,7 +271,7 @@ public class Attachments extends CBLiteTestCase {
         CBLRevisionInternal rev2 = null;
         try {
             rev2 = database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId());
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = true;
         }
         Assert.assertFalse(gotExpectedErrorCode);
@@ -298,7 +298,7 @@ public class Attachments extends CBLiteTestCase {
         gotExpectedErrorCode = false;
         try {
             database.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId());
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.NOT_FOUND);
         }
         Assert.assertTrue(gotExpectedErrorCode);
@@ -306,7 +306,7 @@ public class Attachments extends CBLiteTestCase {
         gotExpectedErrorCode = false;
         try {
             database.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev");
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.NOT_FOUND);
         }
         Assert.assertTrue(gotExpectedErrorCode);

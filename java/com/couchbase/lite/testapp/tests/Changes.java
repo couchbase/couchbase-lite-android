@@ -1,8 +1,8 @@
 package com.couchbase.lite.testapp.tests;
 
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Status;
-import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 
@@ -15,7 +15,7 @@ public class Changes extends CBLiteTestCase {
 
     private int changeNotifications = 0;
 
-    public void testChangeNotification() throws CBLiteException {
+    public void testChangeNotification() throws CouchbaseLiteException {
 
         Database.ChangeListener changeListener = new Database.ChangeListener() {
             @Override

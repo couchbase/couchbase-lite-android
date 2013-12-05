@@ -78,7 +78,7 @@ public class Views extends CBLiteTestCase {
         Assert.assertTrue(changed);
     }
 
-    private CBLRevisionInternal putDoc(Database db, Map<String,Object> props) throws CBLiteException {
+    private CBLRevisionInternal putDoc(Database db, Map<String,Object> props) throws CouchbaseLiteException {
         CBLRevisionInternal rev = new CBLRevisionInternal(props, db);
         Status status = new Status();
         rev = db.putRevision(rev, null, false, status);
@@ -86,12 +86,12 @@ public class Views extends CBLiteTestCase {
         return rev;
     }
 
-    private void putDocViaUntitledDoc(Database db, Map<String, Object> props) throws CBLiteException {
+    private void putDocViaUntitledDoc(Database db, Map<String, Object> props) throws CouchbaseLiteException {
         Document document = db.createDocument();
         document.putProperties(props);
     }
 
-    public List<CBLRevisionInternal> putDocs(Database db) throws CBLiteException {
+    public List<CBLRevisionInternal> putDocs(Database db) throws CouchbaseLiteException {
         List<CBLRevisionInternal> result = new ArrayList<CBLRevisionInternal>();
 
         Map<String,Object> dict2 = new HashMap<String,Object>();
@@ -123,7 +123,7 @@ public class Views extends CBLiteTestCase {
     }
 
     // http://wiki.apache.org/couchdb/Introduction_to_CouchDB_views#Linked_documents
-    public List<CBLRevisionInternal> putLinkedDocs(Database db) throws CBLiteException {
+    public List<CBLRevisionInternal> putLinkedDocs(Database db) throws CouchbaseLiteException {
         List<CBLRevisionInternal> result = new ArrayList<CBLRevisionInternal>();
 
         Map<String,Object> dict1 = new HashMap<String,Object>();
@@ -146,7 +146,7 @@ public class Views extends CBLiteTestCase {
     }
 
     
-    public void putNDocs(Database db, int n) throws CBLiteException {
+    public void putNDocs(Database db, int n) throws CouchbaseLiteException {
         for(int i=0; i< n; i++) {
             Map<String,Object> doc = new HashMap<String,Object>();
             doc.put("_id", String.format("%d", i));
@@ -176,7 +176,7 @@ public class Views extends CBLiteTestCase {
         return view;
     }
 
-    public void testViewIndex() throws CBLiteException {
+    public void testViewIndex() throws CouchbaseLiteException {
 
         int numTimesMapFunctionInvoked = 0;
 
@@ -290,7 +290,7 @@ public class Views extends CBLiteTestCase {
         view.deleteIndex();
     }
 
-    public void testViewQuery() throws CBLiteException {
+    public void testViewQuery() throws CouchbaseLiteException {
 
         putDocs(database);
         View view = createView(database);
@@ -426,7 +426,7 @@ public class Views extends CBLiteTestCase {
 
     }
 
-    public void testAllDocsQuery() throws CBLiteException {
+    public void testAllDocsQuery() throws CouchbaseLiteException {
 
         List<CBLRevisionInternal> docs = putDocs(database);
 
@@ -515,7 +515,7 @@ public class Views extends CBLiteTestCase {
         return result;
     }
 
-    public void testViewReduce() throws CBLiteException {
+    public void testViewReduce() throws CouchbaseLiteException {
 
         Map<String,Object> docProperties1 = new HashMap<String,Object>();
         docProperties1.put("_id", "CD");
@@ -579,7 +579,7 @@ public class Views extends CBLiteTestCase {
 
     }
 
-    public void testViewGrouped() throws CBLiteException {
+    public void testViewGrouped() throws CouchbaseLiteException {
 
         Map<String,Object> docProperties1 = new HashMap<String,Object>();
         docProperties1.put("_id", "1");
@@ -787,7 +787,7 @@ public class Views extends CBLiteTestCase {
 
     }
 
-    public void testViewGroupedStrings() throws CBLiteException {
+    public void testViewGroupedStrings() throws CouchbaseLiteException {
 
         Map<String,Object> docProperties1 = new HashMap<String,Object>();
         docProperties1.put("name", "Alice");
@@ -861,7 +861,7 @@ public class Views extends CBLiteTestCase {
 
     }
 
-    public void testViewCollation() throws CBLiteException {
+    public void testViewCollation() throws CouchbaseLiteException {
         List<Object> list1 = new ArrayList<Object>();
         list1.add("a");
 
@@ -939,7 +939,7 @@ public class Views extends CBLiteTestCase {
     }
 
 
-    public void testViewCollationRaw() throws CBLiteException {
+    public void testViewCollationRaw() throws CouchbaseLiteException {
         List<Object> list1 = new ArrayList<Object>();
         list1.add("a");
 
@@ -1021,7 +1021,7 @@ public class Views extends CBLiteTestCase {
         database.close();
     }
 
-    public void testLargerViewQuery() throws CBLiteException {
+    public void testLargerViewQuery() throws CouchbaseLiteException {
         putNDocs(database, 4);
         View view = createView(database);
 
@@ -1034,7 +1034,7 @@ public class Views extends CBLiteTestCase {
     }
     
     
-    public void testViewLinkedDocs() throws CBLiteException {
+    public void testViewLinkedDocs() throws CouchbaseLiteException {
         putLinkedDocs(database);
         
         View view = database.getView("linked");

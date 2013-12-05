@@ -18,9 +18,9 @@
 package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.CBLChangesOptions;
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.RevisionList;
-import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 
 import junit.framework.Assert;
@@ -35,7 +35,7 @@ public class RevTree extends CBLiteTestCase {
 
     public static final String TAG = "RevTree";
 
-    public void testForceInsertEmptyHistory() throws CBLiteException {
+    public void testForceInsertEmptyHistory() throws CouchbaseLiteException {
 
         List<String> revHistory = null;
         CBLRevisionInternal rev = new CBLRevisionInternal("FakeDocId", "1-tango", false, database);
@@ -50,7 +50,7 @@ public class RevTree extends CBLiteTestCase {
 
     }
 
-    public void testRevTree() throws CBLiteException {
+    public void testRevTree() throws CouchbaseLiteException {
 
         CBLRevisionInternal rev = new CBLRevisionInternal("MyDocId", "4-foxy", false, database);
 

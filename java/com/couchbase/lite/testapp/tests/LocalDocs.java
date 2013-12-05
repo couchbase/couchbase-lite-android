@@ -1,7 +1,7 @@
 package com.couchbase.lite.testapp.tests;
 
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Status;
-import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.util.Log;
@@ -16,7 +16,7 @@ public class LocalDocs extends CBLiteTestCase {
 
     public static final String TAG = "LocalDocs";
 
-    public void testLocalDocs() throws CBLiteException {
+    public void testLocalDocs() throws CouchbaseLiteException {
 
         //create a document
         Map<String, Object> documentProperties = new HashMap<String, Object>();
@@ -62,7 +62,7 @@ public class LocalDocs extends CBLiteTestCase {
         boolean gotException = false;
         try {
             database.putLocalRevision(rev2input, rev1.getRevId());
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             Assert.assertEquals(Status.CONFLICT, e.getCBLStatus().getCode());
             gotException = true;
         }
@@ -76,7 +76,7 @@ public class LocalDocs extends CBLiteTestCase {
         try {
             CBLRevisionInternal revResult = database.putLocalRevision(revD, null);
             Assert.assertNull(revResult);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             Assert.assertEquals(Status.CONFLICT, e.getCBLStatus().getCode());
             gotException = true;
         }
@@ -89,7 +89,7 @@ public class LocalDocs extends CBLiteTestCase {
         CBLRevisionInternal revFake = new CBLRevisionInternal("_local/fake", null, true, database);
         try {
             database.putLocalRevision(revFake, null);
-        } catch (CBLiteException e) {
+        } catch (CouchbaseLiteException e) {
             Assert.assertEquals(Status.NOT_FOUND, e.getCBLStatus().getCode());
             gotException = true;
         }
