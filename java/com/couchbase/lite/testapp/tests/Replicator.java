@@ -7,7 +7,7 @@ import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
-import com.couchbase.lite.auth.CBLFacebookAuthorizer;
+import com.couchbase.lite.auth.FacebookAuthorizer;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.replicator.Pusher;
@@ -461,7 +461,7 @@ public class Replicator extends CBLiteTestCase {
         Replication replicator = manager.getReplicator(properties);
         Assert.assertNotNull(replicator);
         Assert.assertNotNull(replicator.getAuthorizer());
-        Assert.assertTrue(replicator.getAuthorizer() instanceof CBLFacebookAuthorizer);
+        Assert.assertTrue(replicator.getAuthorizer() instanceof FacebookAuthorizer);
 
     }
 
