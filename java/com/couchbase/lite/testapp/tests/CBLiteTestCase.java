@@ -3,7 +3,7 @@ package com.couchbase.lite.testapp.tests;
 import android.test.InstrumentationTestCase;
 
 import com.couchbase.lite.CBLDatabase;
-import com.couchbase.lite.CBLManager;
+import com.couchbase.lite.Manager;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.router.CBLRouter;
 import com.couchbase.lite.router.CBLURLConnection;
@@ -35,7 +35,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
 
     protected ObjectMapper mapper = new ObjectMapper();
 
-    protected CBLManager manager = null;
+    protected Manager manager = null;
     protected CBLDatabase database = null;
     protected String DEFAULT_TEST_DB = "cblite-test";
 
@@ -65,7 +65,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
         File serverPathFile = new File(serverPath);
         FileDirUtils.deleteRecursive(serverPathFile);
         serverPathFile.mkdir();
-        manager = new CBLManager(new File(getInstrumentation().getContext().getFilesDir(), "test"), CBLManager.DEFAULT_OPTIONS);
+        manager = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "test"), Manager.DEFAULT_OPTIONS);
     }
 
     protected void stopCBLite() {

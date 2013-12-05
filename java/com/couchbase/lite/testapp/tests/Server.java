@@ -1,7 +1,7 @@
 package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.CBLDatabase;
-import com.couchbase.lite.CBLManager;
+import com.couchbase.lite.Manager;
 
 import junit.framework.Assert;
 
@@ -55,15 +55,15 @@ public class Server extends CBLiteTestCase {
                 throw new IOException("Unable to create directory " + directory);
             }
         }
-        File oldTouchDbFile = new File(directory, String.format("old%s", CBLManager.DATABASE_SUFFIX_OLD));
+        File oldTouchDbFile = new File(directory, String.format("old%s", Manager.DATABASE_SUFFIX_OLD));
         oldTouchDbFile.createNewFile();
-        File newCbLiteFile = new File(directory, String.format("new%s", CBLManager.DATABASE_SUFFIX));
+        File newCbLiteFile = new File(directory, String.format("new%s", Manager.DATABASE_SUFFIX));
         newCbLiteFile.createNewFile();
 
-        File migratedOldFile = new File(directory, String.format("old%s", CBLManager.DATABASE_SUFFIX));
+        File migratedOldFile = new File(directory, String.format("old%s", Manager.DATABASE_SUFFIX));
         migratedOldFile.createNewFile();
         super.stopCBLite();
-        manager = new CBLManager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), CBLManager.DEFAULT_OPTIONS);
+        manager = new Manager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), Manager.DEFAULT_OPTIONS);
 
         Assert.assertTrue(migratedOldFile.exists());
         //cannot rename old.touchdb in old.cblite, old.cblite already exists
@@ -75,7 +75,7 @@ public class Server extends CBLiteTestCase {
 
         super.stopCBLite();
         migratedOldFile.delete();
-        manager = new CBLManager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), CBLManager.DEFAULT_OPTIONS);
+        manager = new Manager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), Manager.DEFAULT_OPTIONS);
 
         //rename old.touchdb in old.cblite, previous old.cblite already doesn't exist
         Assert.assertTrue(migratedOldFile.exists());
