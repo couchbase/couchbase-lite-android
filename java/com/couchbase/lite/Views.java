@@ -87,7 +87,7 @@ public class Views extends CBLiteTestCase {
     }
 
     private void putDocViaUntitledDoc(Database db, Map<String, Object> props) throws CBLiteException {
-        CBLDocument document = db.createDocument();
+        Document document = db.createDocument();
         document.putProperties(props);
     }
 

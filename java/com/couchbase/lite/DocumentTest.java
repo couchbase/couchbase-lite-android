@@ -12,7 +12,7 @@ public class DocumentTest extends CBLiteTestCase {
 
     public void testNewDocumentHasCurrentRevision() throws CBLiteException {
 
-        CBLDocument document = database.createDocument();
+        Document document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "foo");
         properties.put("bar", Boolean.FALSE);
@@ -24,7 +24,7 @@ public class DocumentTest extends CBLiteTestCase {
 
     public void testDeleteDocument() throws CBLiteException {
 
-        CBLDocument document = database.createDocument();
+        Document document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "foo");
         properties.put("bar", Boolean.FALSE);
@@ -33,7 +33,7 @@ public class DocumentTest extends CBLiteTestCase {
         String docId = document.getId();
         document.delete();
         Assert.assertTrue(document.isDeleted());
-        CBLDocument fetchedDoc = database.getExistingDocument(docId);
+        Document fetchedDoc = database.getExistingDocument(docId);
         Assert.assertNull(fetchedDoc);
 
         // query all docs and make sure we don't see that document
