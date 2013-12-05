@@ -544,7 +544,7 @@ public class Views extends CBLiteTestCase {
                                          emitter.emit(document.get("_id"), cost);
                                      }
                                  }
-                             }, new CBLReducer() {
+                             }, new Reducer() {
 
                                  @Override
                                  public Object reduce(List<Object> keys, List<Object> values,
@@ -632,7 +632,7 @@ public class Views extends CBLiteTestCase {
                                      key.add(document.get("track"));
                                      emitter.emit(key, document.get("time"));
                                  }
-                             }, new CBLReducer() {
+                             }, new Reducer() {
 
                                  @Override
                                  public Object reduce(List<Object> keys, List<Object> values,
@@ -820,7 +820,7 @@ public class Views extends CBLiteTestCase {
                                      }
                                  }
 
-                             }, new CBLReducer() {
+                             }, new Reducer() {
 
                                  @Override
                                  public Object reduce(List<Object> keys, List<Object> values,
