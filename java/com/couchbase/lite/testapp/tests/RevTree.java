@@ -17,7 +17,7 @@
 
 package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.lite.CBLChangesOptions;
+import com.couchbase.lite.ChangesOptions;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.RevisionList;
@@ -114,7 +114,7 @@ public class RevTree extends CBLiteTestCase {
         Assert.assertEquals(conflict, current);
 
         // Get the _changes feed and verify only the winner is in it:
-        CBLChangesOptions options = new CBLChangesOptions();
+        ChangesOptions options = new ChangesOptions();
         RevisionList changes = database.changesSince(0, options, null);
         RevisionList expectedChanges = new RevisionList();
         expectedChanges.add(conflict);
