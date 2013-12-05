@@ -17,13 +17,8 @@
 
 package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.lite.Attachment;
-import com.couchbase.lite.CBLBlobKey;
-import com.couchbase.lite.CBLBlobStore;
-import com.couchbase.lite.CBLBlobStoreWriter;
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.Status;
+import com.couchbase.lite.*;
+import com.couchbase.lite.BlobStoreWriter;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.support.Base64;
 
@@ -329,7 +324,7 @@ public class Attachments extends CBLiteTestCase {
 
         CBLBlobStore attachments = database.getAttachments();
 
-        CBLBlobStoreWriter blobWriter = new CBLBlobStoreWriter(attachments);
+        BlobStoreWriter blobWriter = new com.couchbase.lite.BlobStoreWriter(attachments);
         String testBlob = "foo";
         blobWriter.appendData(new String(testBlob).getBytes());
         blobWriter.finish();

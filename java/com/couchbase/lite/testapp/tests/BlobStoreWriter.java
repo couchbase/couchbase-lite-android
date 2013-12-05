@@ -2,7 +2,6 @@ package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.CBLBlobKey;
 import com.couchbase.lite.CBLBlobStore;
-import com.couchbase.lite.CBLBlobStoreWriter;
 
 import junit.framework.Assert;
 
@@ -19,7 +18,7 @@ public class BlobStoreWriter extends CBLiteTestCase {
         InputStream attachmentStream = getInstrumentation().getContext().getAssets().open("attachment.png");
         byte[] bytes = IOUtils.toByteArray(attachmentStream);
 
-        CBLBlobStoreWriter blobStoreWriter = new CBLBlobStoreWriter(attachments);
+        com.couchbase.lite.BlobStoreWriter blobStoreWriter = new com.couchbase.lite.BlobStoreWriter(attachments);
         blobStoreWriter.appendData(bytes);
         blobStoreWriter.finish();
         blobStoreWriter.install();
