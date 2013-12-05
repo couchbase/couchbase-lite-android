@@ -21,7 +21,7 @@ import com.couchbase.lite.ChangesOptions;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.RevisionList;
-import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.internal.RevisionInternal;
 
 import junit.framework.Assert;
 
@@ -38,7 +38,7 @@ public class RevTree extends CBLiteTestCase {
     public void testForceInsertEmptyHistory() throws CouchbaseLiteException {
 
         List<String> revHistory = null;
-        CBLRevisionInternal rev = new CBLRevisionInternal("FakeDocId", "1-tango", false, database);
+        RevisionInternal rev = new RevisionInternal("FakeDocId", "1-tango", false, database);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
@@ -52,7 +52,7 @@ public class RevTree extends CBLiteTestCase {
 
     public void testRevTree() throws CouchbaseLiteException {
 
-        CBLRevisionInternal rev = new CBLRevisionInternal("MyDocId", "4-foxy", false, database);
+        RevisionInternal rev = new RevisionInternal("MyDocId", "4-foxy", false, database);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
@@ -72,7 +72,7 @@ public class RevTree extends CBLiteTestCase {
         Assert.assertEquals(1, database.getDocumentCount());
         verifyHistory(database, rev, revHistory);
 
-        CBLRevisionInternal conflict = new CBLRevisionInternal("MyDocId", "5-epsilon", false, database);
+        RevisionInternal conflict = new RevisionInternal("MyDocId", "5-epsilon", false, database);
 
         Map<String, Object> conflictProperties = new HashMap<String, Object>();
         conflictProperties.put("_id", conflict.getDocId());
@@ -92,7 +92,7 @@ public class RevTree extends CBLiteTestCase {
         verifyHistory(database, conflict, conflictHistory);
 
         // Add an unrelated document:
-        CBLRevisionInternal other = new CBLRevisionInternal("AnotherDocID", "1-ichi", false, database);
+        RevisionInternal other = new RevisionInternal("AnotherDocID", "1-ichi", false, database);
         Map<String,Object> otherProperties = new HashMap<String,Object>();
         otherProperties.put("language", "jp");
         other.setProperties(otherProperties);
@@ -101,7 +101,7 @@ public class RevTree extends CBLiteTestCase {
         database.forceInsert(other, otherHistory, null);
 
         // Fetch one of those phantom revisions with no body:
-        CBLRevisionInternal rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(Database.TDContentOptions.class));
+        RevisionInternal rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertEquals(rev.getDocId(), rev2.getDocId());
         Assert.assertEquals("2-too", rev2.getRevId());
         //Assert.assertNull(rev2.getContent());
@@ -110,7 +110,7 @@ public class RevTree extends CBLiteTestCase {
         Assert.assertEquals(8, database.getLastSequenceNumber());
 
         // Make sure the revision with the higher revID wins the conflict:
-        CBLRevisionInternal current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
+        RevisionInternal current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertEquals(conflict, current);
 
         // Get the _changes feed and verify only the winner is in it:
@@ -129,15 +129,15 @@ public class RevTree extends CBLiteTestCase {
         Assert.assertEquals(changes, expectedChanges);
     }
 
-    private static void verifyHistory(Database db, CBLRevisionInternal rev, List<String> history) {
-        CBLRevisionInternal gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
+    private static void verifyHistory(Database db, RevisionInternal rev, List<String> history) {
+        RevisionInternal gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertEquals(rev, gotRev);
         Assert.assertEquals(rev.getProperties(), gotRev.getProperties());
 
-        List<CBLRevisionInternal> revHistory = db.getRevisionHistory(gotRev);
+        List<RevisionInternal> revHistory = db.getRevisionHistory(gotRev);
         Assert.assertEquals(history.size(), revHistory.size());
         for(int i=0; i<history.size(); i++) {
-            CBLRevisionInternal hrev = revHistory.get(i);
+            RevisionInternal hrev = revHistory.get(i);
             Assert.assertEquals(rev.getDocId(), hrev.getDocId());
             Assert.assertEquals(history.get(i), hrev.getRevId());
             Assert.assertFalse(rev.isDeleted());

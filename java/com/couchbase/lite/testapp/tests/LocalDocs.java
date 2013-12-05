@@ -3,7 +3,7 @@ package com.couchbase.lite.testapp.tests;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.internal.CBLBody;
-import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -25,7 +25,7 @@ public class LocalDocs extends CBLiteTestCase {
         documentProperties.put("bar", false);
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
+        RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();
         rev1 = database.putLocalRevision(rev1, null);
@@ -35,7 +35,7 @@ public class LocalDocs extends CBLiteTestCase {
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));
 
         //read it back
-        CBLRevisionInternal readRev = database.getLocalDocument(rev1.getDocId(), null);
+        RevisionInternal readRev = database.getLocalDocument(rev1.getDocId(), null);
         Assert.assertNotNull(readRev);
         Map<String,Object> readRevProps = readRev.getProperties();
         Assert.assertEquals(rev1.getDocId(), readRev.getProperties().get("_id"));
@@ -46,8 +46,8 @@ public class LocalDocs extends CBLiteTestCase {
         documentProperties = readRev.getProperties();
         documentProperties.put("status", "updated!");
         body = new CBLBody(documentProperties);
-        CBLRevisionInternal rev2 = new CBLRevisionInternal(body, database);
-        CBLRevisionInternal rev2input = rev2;
+        RevisionInternal rev2 = new RevisionInternal(body, database);
+        RevisionInternal rev2input = rev2;
         rev2 = database.putLocalRevision(rev2, rev1.getRevId());
         Log.v(TAG, "Updated " + rev1);
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
@@ -70,11 +70,11 @@ public class LocalDocs extends CBLiteTestCase {
 
 
         // Delete it:
-        CBLRevisionInternal revD = new CBLRevisionInternal(rev2.getDocId(), null, true, database);
+        RevisionInternal revD = new RevisionInternal(rev2.getDocId(), null, true, database);
 
         gotException = false;
         try {
-            CBLRevisionInternal revResult = database.putLocalRevision(revD, null);
+            RevisionInternal revResult = database.putLocalRevision(revD, null);
             Assert.assertNull(revResult);
         } catch (CouchbaseLiteException e) {
             Assert.assertEquals(Status.CONFLICT, e.getCBLStatus().getCode());
@@ -86,7 +86,7 @@ public class LocalDocs extends CBLiteTestCase {
 
         // Delete nonexistent doc:
         gotException = false;
-        CBLRevisionInternal revFake = new CBLRevisionInternal("_local/fake", null, true, database);
+        RevisionInternal revFake = new RevisionInternal("_local/fake", null, true, database);
         try {
             database.putLocalRevision(revFake, null);
         } catch (CouchbaseLiteException e) {

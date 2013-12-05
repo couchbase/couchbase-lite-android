@@ -3,7 +3,7 @@ package com.couchbase.lite.testapp.tests;
 import android.test.AndroidTestCase;
 
 import com.couchbase.lite.Database;
-import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.internal.RevisionInternal;
 
 import junit.framework.Assert;
 
@@ -60,36 +60,36 @@ public class Revisions extends AndroidTestCase {
     public void testCBLCompareRevIDs() {
 
         // Single Digit
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("1-foo", "1-foo") == 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("2-bar", "1-foo") > 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("1-foo", "2-bar") < 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("1-foo", "1-foo") == 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("2-bar", "1-foo") > 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("1-foo", "2-bar") < 0);
 
         // Multi-digit:
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("123-bar", "456-foo") < 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("456-foo", "123-bar") > 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("456-foo", "456-foo") == 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("456-foo", "456-foofoo") < 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("123-bar", "456-foo") < 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("456-foo", "123-bar") > 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("456-foo", "456-foo") == 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("456-foo", "456-foofoo") < 0);
 
         // Different numbers of digits:
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("89-foo", "123-bar") < 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("123-bar", "89-foo") > 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("89-foo", "123-bar") < 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("123-bar", "89-foo") > 0);
 
         // Edge cases:
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("123-", "89-") > 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("123-a", "123-a") == 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("123-", "89-") > 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("123-a", "123-a") == 0);
 
         // Invalid rev IDs:
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("-a", "-b") < 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("-", "-") == 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("", "") == 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("", "-b") < 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("bogus", "yo") < 0);
-        Assert.assertTrue(CBLRevisionInternal.CBLCollateRevIDs("bogus-x", "yo-y") < 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("-a", "-b") < 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("-", "-") == 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("", "") == 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("", "-b") < 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("bogus", "yo") < 0);
+        Assert.assertTrue(RevisionInternal.CBLCollateRevIDs("bogus-x", "yo-y") < 0);
 
     }
 
     public void testMakeRevisionHistoryDict() {
-        List<CBLRevisionInternal> revs = new ArrayList<CBLRevisionInternal>();
+        List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
         revs.add(mkrev("4-jkl"));
         revs.add(mkrev("3-ghi"));
         revs.add(mkrev("2-def"));
@@ -106,7 +106,7 @@ public class Revisions extends AndroidTestCase {
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
-        revs = new ArrayList<CBLRevisionInternal>();
+        revs = new ArrayList<RevisionInternal>();
         revs.add(mkrev("4-jkl"));
         revs.add(mkrev("2-def"));
 
@@ -120,7 +120,7 @@ public class Revisions extends AndroidTestCase {
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
-        revs = new ArrayList<CBLRevisionInternal>();
+        revs = new ArrayList<RevisionInternal>();
         revs.add(mkrev("12345"));
         revs.add(mkrev("6789"));
 
@@ -135,8 +135,8 @@ public class Revisions extends AndroidTestCase {
 
     }
 
-    private static CBLRevisionInternal mkrev(String revID) {
-        return new CBLRevisionInternal("docid", revID, false, null);
+    private static RevisionInternal mkrev(String revID) {
+        return new RevisionInternal("docid", revID, false, null);
     }
 
 }

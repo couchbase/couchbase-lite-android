@@ -18,7 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.View.TDViewCollation;
-import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.testapp.tests.CBLiteTestCase;
 import com.couchbase.lite.util.Log;
 
@@ -78,8 +78,8 @@ public class Views extends CBLiteTestCase {
         Assert.assertTrue(changed);
     }
 
-    private CBLRevisionInternal putDoc(Database db, Map<String,Object> props) throws CouchbaseLiteException {
-        CBLRevisionInternal rev = new CBLRevisionInternal(props, db);
+    private RevisionInternal putDoc(Database db, Map<String,Object> props) throws CouchbaseLiteException {
+        RevisionInternal rev = new RevisionInternal(props, db);
         Status status = new Status();
         rev = db.putRevision(rev, null, false, status);
         Assert.assertTrue(status.isSuccessful());
@@ -91,8 +91,8 @@ public class Views extends CBLiteTestCase {
         document.putProperties(props);
     }
 
-    public List<CBLRevisionInternal> putDocs(Database db) throws CouchbaseLiteException {
-        List<CBLRevisionInternal> result = new ArrayList<CBLRevisionInternal>();
+    public List<RevisionInternal> putDocs(Database db) throws CouchbaseLiteException {
+        List<RevisionInternal> result = new ArrayList<RevisionInternal>();
 
         Map<String,Object> dict2 = new HashMap<String,Object>();
         dict2.put("_id", "22222");
@@ -123,8 +123,8 @@ public class Views extends CBLiteTestCase {
     }
 
     // http://wiki.apache.org/couchdb/Introduction_to_CouchDB_views#Linked_documents
-    public List<CBLRevisionInternal> putLinkedDocs(Database db) throws CouchbaseLiteException {
-        List<CBLRevisionInternal> result = new ArrayList<CBLRevisionInternal>();
+    public List<RevisionInternal> putLinkedDocs(Database db) throws CouchbaseLiteException {
+        List<RevisionInternal> result = new ArrayList<RevisionInternal>();
 
         Map<String,Object> dict1 = new HashMap<String,Object>();
         dict1.put("_id", "11111");
@@ -189,9 +189,9 @@ public class Views extends CBLiteTestCase {
         Map<String,Object> dictX = new HashMap<String,Object>();
         dictX.put("clef", "quatre");
 
-        CBLRevisionInternal rev1 = putDoc(database, dict1);
-        CBLRevisionInternal rev2 = putDoc(database, dict2);
-        CBLRevisionInternal rev3 = putDoc(database, dict3);
+        RevisionInternal rev1 = putDoc(database, dict1);
+        RevisionInternal rev2 = putDoc(database, dict2);
+        RevisionInternal rev3 = putDoc(database, dict3);
         putDoc(database, dictX);
 
         class InstrumentedMapBlock implements Mapper {
@@ -238,7 +238,7 @@ public class Views extends CBLiteTestCase {
         view.updateIndex();
 
         // Now add a doc and update a doc:
-        CBLRevisionInternal threeUpdated = new CBLRevisionInternal(rev3.getDocId(), rev3.getRevId(), false, database);
+        RevisionInternal threeUpdated = new RevisionInternal(rev3.getDocId(), rev3.getRevId(), false, database);
         numTimesMapFunctionInvoked = mapBlock.getNumTimesInvoked();
 
         Map<String,Object> newdict3 = new HashMap<String,Object>();
@@ -257,9 +257,9 @@ public class Views extends CBLiteTestCase {
 
         Map<String,Object> dict4 = new HashMap<String,Object>();
         dict4.put("key", "four");
-        CBLRevisionInternal rev4 = putDoc(database, dict4);
+        RevisionInternal rev4 = putDoc(database, dict4);
 
-        CBLRevisionInternal twoDeleted = new CBLRevisionInternal(rev2.getDocId(), rev2.getRevId(), true, database);
+        RevisionInternal twoDeleted = new RevisionInternal(rev2.getDocId(), rev2.getRevId(), true, database);
         database.putRevision(twoDeleted, rev2.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
@@ -428,10 +428,10 @@ public class Views extends CBLiteTestCase {
 
     public void testAllDocsQuery() throws CouchbaseLiteException {
 
-        List<CBLRevisionInternal> docs = putDocs(database);
+        List<RevisionInternal> docs = putDocs(database);
 
         List<QueryRow> expectedRow = new ArrayList<QueryRow>();
-        for (CBLRevisionInternal rev : docs) {
+        for (RevisionInternal rev : docs) {
             Map<String,Object> value = new HashMap<String, Object>();
             value.put("rev", rev.getRevId());
             QueryRow queryRow = new QueryRow(rev.getDocId(), 0, rev.getDocId(), value, null);

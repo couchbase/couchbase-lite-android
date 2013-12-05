@@ -5,7 +5,7 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.ValidationBlock;
 import com.couchbase.lite.ValidationContext;
-import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -25,7 +25,7 @@ public class Validations extends CBLiteTestCase {
         ValidationBlock validationBlock = new ValidationBlock() {
 
             @Override
-            public boolean validate(CBLRevisionInternal newRevision, ValidationContext context) {
+            public boolean validate(RevisionInternal newRevision, ValidationContext context) {
 
                 Assert.assertNotNull(newRevision);
                 Assert.assertNotNull(context);
@@ -46,7 +46,7 @@ public class Validations extends CBLiteTestCase {
         Map<String, Object> props = new HashMap<String,Object>();
         props.put("name","Zaphod Beeblebrox");
         props.put("towel", "velvet");
-        CBLRevisionInternal rev = new CBLRevisionInternal(props, database);
+        RevisionInternal rev = new RevisionInternal(props, database);
         Status status = new Status();
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
@@ -78,7 +78,7 @@ public class Validations extends CBLiteTestCase {
         props = new HashMap<String,Object>();
         props.put("name","Vogon");
         props.put("poetry", true);
-        rev = new CBLRevisionInternal(props, database);
+        rev = new RevisionInternal(props, database);
         validationCalled = false;
         gotExpectedError = false;
         try {
@@ -94,14 +94,14 @@ public class Validations extends CBLiteTestCase {
         props.put("_id", "ford");
         props.put("name","Ford Prefect");
         props.put("towel", "terrycloth");
-        rev = new CBLRevisionInternal(props, database);
+        rev = new RevisionInternal(props, database);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
         Assert.assertEquals("ford", rev.getDocId());
 
         // DELETE a document:
-        rev = new CBLRevisionInternal(rev.getDocId(), rev.getRevId(), true, database);
+        rev = new RevisionInternal(rev.getDocId(), rev.getRevId(), true, database);
         Assert.assertTrue(rev.isDeleted());
         validationCalled = false;
         rev = database.putRevision(rev, rev.getRevId(), false, status);
@@ -111,7 +111,7 @@ public class Validations extends CBLiteTestCase {
         props = new HashMap<String,Object>();
         props.put("_id", "petunias");
         props.put("name","Pot of Petunias");
-        rev = new CBLRevisionInternal(props, database);
+        rev = new RevisionInternal(props, database);
         validationCalled = false;
         gotExpectedError = false;
         try {

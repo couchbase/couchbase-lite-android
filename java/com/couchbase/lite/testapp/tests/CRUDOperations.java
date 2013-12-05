@@ -24,7 +24,7 @@ import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.RevisionList;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.internal.CBLBody;
-import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -55,7 +55,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         documentProperties.put("baz", "touch");
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
+        RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
@@ -65,7 +65,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));
 
         //read it back
-        CBLRevisionInternal readRev = database.getDocumentWithIDAndRev(rev1.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
+        RevisionInternal readRev = database.getDocumentWithIDAndRev(rev1.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertNotNull(readRev);
         Map<String,Object> readRevProps = readRev.getProperties();
         Assert.assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
@@ -74,8 +74,8 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         documentProperties = readRev.getProperties();
         documentProperties.put("status", "updated!");
         body = new CBLBody(documentProperties);
-        CBLRevisionInternal rev2 = new CBLRevisionInternal(body, database);
-        CBLRevisionInternal rev2input = rev2;
+        RevisionInternal rev2 = new RevisionInternal(body, database);
+        RevisionInternal rev2input = rev2;
         rev2 = database.putRevision(rev2, rev1.getRevId(), false, status);
         Log.v(TAG, "Updated " + rev1);
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
@@ -103,7 +103,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         changes = database.changesSince(0, null, new ReplicationFilter() {
 
             @Override
-            public boolean filter(CBLRevisionInternal revision, Map<String, Object> params) {
+            public boolean filter(RevisionInternal revision, Map<String, Object> params) {
                 return "updated!".equals(revision.getProperties().get("status"));
             }
 
@@ -113,7 +113,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         changes = database.changesSince(0, null, new ReplicationFilter() {
 
             @Override
-            public boolean filter(CBLRevisionInternal revision, Map<String, Object> params) {
+            public boolean filter(RevisionInternal revision, Map<String, Object> params) {
                 return "not updated!".equals(revision.getProperties().get("status"));
             }
 
@@ -122,8 +122,8 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
 
 
         // Delete it:
-        CBLRevisionInternal revD = new CBLRevisionInternal(rev2.getDocId(), null, true, database);
-        CBLRevisionInternal revResult = null;
+        RevisionInternal revD = new RevisionInternal(rev2.getDocId(), null, true, database);
+        RevisionInternal revResult = null;
         gotExpectedError = false;
         try {
             revResult = database.putRevision(revD, null, false, status);
@@ -139,7 +139,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         Assert.assertTrue(revD.getRevId().startsWith("3-"));
 
         // Delete nonexistent doc:
-        CBLRevisionInternal revFake = new CBLRevisionInternal("fake", null, true, database);
+        RevisionInternal revFake = new RevisionInternal("fake", null, true, database);
         gotExpectedError = false;
         try {
             database.putRevision(revFake, null, false, status);
@@ -157,7 +157,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         Assert.assertTrue(changes.size() == 1);
 
         // Get Revision History
-        List<CBLRevisionInternal> history = database.getRevisionHistory(revD);
+        List<RevisionInternal> history = database.getRevisionHistory(revD);
         Assert.assertEquals(revD, history.get(0));
         Assert.assertEquals(rev2, history.get(1));
         Assert.assertEquals(rev1, history.get(2));
@@ -169,7 +169,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         List<DocumentChange> changes = event.getChanges();
         for (DocumentChange change : changes) {
 
-            CBLRevisionInternal rev = change.getRevisionInternal();
+            RevisionInternal rev = change.getRevisionInternal();
             Assert.assertNotNull(rev);
             Assert.assertNotNull(rev.getDocId());
             Assert.assertNotNull(rev.getRevId());

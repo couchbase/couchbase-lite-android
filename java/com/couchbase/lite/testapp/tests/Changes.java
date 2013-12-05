@@ -4,7 +4,7 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.internal.CBLBody;
-import com.couchbase.lite.internal.CBLRevisionInternal;
+import com.couchbase.lite.internal.RevisionInternal;
 
 import junit.framework.Assert;
 
@@ -34,7 +34,7 @@ public class Changes extends CBLiteTestCase {
         documentProperties.put("baz", "touch");
 
         CBLBody body = new CBLBody(documentProperties);
-        CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
+        RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
