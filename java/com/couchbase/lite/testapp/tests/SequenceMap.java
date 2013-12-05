@@ -2,15 +2,13 @@ package com.couchbase.lite.testapp.tests;
 
 import android.test.AndroidTestCase;
 
-import com.couchbase.lite.support.CBLSequenceMap;
-
 import junit.framework.Assert;
 
 public class SequenceMap extends AndroidTestCase {
 	
 	public void testSequenceMap() {
 		
-		CBLSequenceMap map = new CBLSequenceMap();
+		com.couchbase.lite.support.SequenceMap map = new com.couchbase.lite.support.SequenceMap();
 		
 		Assert.assertEquals(0, map.getCheckpointedSequence());
 		Assert.assertEquals(null, map.getCheckpointedValue());
