@@ -23,7 +23,7 @@ import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.RevisionList;
 import com.couchbase.lite.Status;
-import com.couchbase.lite.internal.CBLBody;
+import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
@@ -54,7 +54,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         documentProperties.put("bar", false);
         documentProperties.put("baz", "touch");
 
-        CBLBody body = new CBLBody(documentProperties);
+        Body body = new Body(documentProperties);
         RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();
@@ -73,7 +73,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         //now update it
         documentProperties = readRev.getProperties();
         documentProperties.put("status", "updated!");
-        body = new CBLBody(documentProperties);
+        body = new Body(documentProperties);
         RevisionInternal rev2 = new RevisionInternal(body, database);
         RevisionInternal rev2input = rev2;
         rev2 = database.putRevision(rev2, rev1.getRevId(), false, status);

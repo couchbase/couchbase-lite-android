@@ -2,7 +2,7 @@ package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Status;
-import com.couchbase.lite.internal.CBLBody;
+import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
@@ -24,7 +24,7 @@ public class LocalDocs extends CBLiteTestCase {
         documentProperties.put("foo", 1);
         documentProperties.put("bar", false);
 
-        CBLBody body = new CBLBody(documentProperties);
+        Body body = new Body(documentProperties);
         RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();
@@ -45,7 +45,7 @@ public class LocalDocs extends CBLiteTestCase {
         //now update it
         documentProperties = readRev.getProperties();
         documentProperties.put("status", "updated!");
-        body = new CBLBody(documentProperties);
+        body = new Body(documentProperties);
         RevisionInternal rev2 = new RevisionInternal(body, database);
         RevisionInternal rev2input = rev2;
         rev2 = database.putLocalRevision(rev2, rev1.getRevId());

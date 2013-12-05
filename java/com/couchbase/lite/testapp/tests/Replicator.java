@@ -8,7 +8,7 @@ import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
 import com.couchbase.lite.auth.CBLFacebookAuthorizer;
-import com.couchbase.lite.internal.CBLBody;
+import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.replicator.Pusher;
 import com.couchbase.lite.replicator.Replication;
@@ -59,7 +59,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("foo", 1);
         documentProperties.put("bar", false);
 
-        CBLBody body = new CBLBody(documentProperties);
+        Body body = new Body(documentProperties);
         RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();
@@ -184,7 +184,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("foo", 1);
         documentProperties.put("bar", false);
 
-        CBLBody body = new CBLBody(documentProperties);
+        Body body = new Body(documentProperties);
         RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();

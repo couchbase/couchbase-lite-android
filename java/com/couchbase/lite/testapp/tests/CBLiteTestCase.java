@@ -4,7 +4,7 @@ import android.test.InstrumentationTestCase;
 
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Manager;
-import com.couchbase.lite.internal.CBLBody;
+import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.router.*;
 import com.couchbase.lite.router.Router;
 import com.couchbase.lite.support.FileDirUtils;
@@ -245,7 +245,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
 
     protected Object parseJSONResponse(URLConnection conn) {
         Object result = null;
-        CBLBody responseBody = conn.getResponseBody();
+        Body responseBody = conn.getResponseBody();
         if(responseBody != null) {
             byte[] json = responseBody.getJson();
             String jsonString = null;

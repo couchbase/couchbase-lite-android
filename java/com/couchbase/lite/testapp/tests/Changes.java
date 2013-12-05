@@ -3,7 +3,7 @@ package com.couchbase.lite.testapp.tests;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Status;
-import com.couchbase.lite.internal.CBLBody;
+import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 
 import junit.framework.Assert;
@@ -33,7 +33,7 @@ public class Changes extends CBLiteTestCase {
         documentProperties.put("bar", false);
         documentProperties.put("baz", "touch");
 
-        CBLBody body = new CBLBody(documentProperties);
+        Body body = new Body(documentProperties);
         RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();
