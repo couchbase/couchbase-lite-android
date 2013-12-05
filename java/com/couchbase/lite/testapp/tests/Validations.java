@@ -2,8 +2,8 @@ package com.couchbase.lite.testapp.tests;
 
 
 import com.couchbase.lite.CBLStatus;
-import com.couchbase.lite.CBLValidationBlock;
-import com.couchbase.lite.CBLValidationContext;
+import com.couchbase.lite.ValidationBlock;
+import com.couchbase.lite.ValidationContext;
 import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.util.Log;
@@ -22,10 +22,10 @@ public class Validations extends CBLiteTestCase {
 
     public void testValidations() throws CBLiteException {
 
-        CBLValidationBlock validationBlock = new CBLValidationBlock() {
+        ValidationBlock validationBlock = new ValidationBlock() {
 
             @Override
-            public boolean validate(CBLRevisionInternal newRevision, CBLValidationContext context) {
+            public boolean validate(CBLRevisionInternal newRevision, ValidationContext context) {
 
                 Assert.assertNotNull(newRevision);
                 Assert.assertNotNull(context);
