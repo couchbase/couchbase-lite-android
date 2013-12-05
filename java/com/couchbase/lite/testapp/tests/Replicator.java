@@ -2,7 +2,7 @@ package com.couchbase.lite.testapp.tests;
 
 
 import com.couchbase.lite.Database;
-import com.couchbase.lite.CBLEmitter;
+import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Status;
@@ -320,7 +320,7 @@ public class Replicator extends CBLiteTestCase {
         View view = database.getView("testPullerWithLiveQueryView");
         view.setMapAndReduce(new Mapper() {
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 if (document.get("_id") != null) {
                     emitter.emit(document.get("_id"), null);
                 }

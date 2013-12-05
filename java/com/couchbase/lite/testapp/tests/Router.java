@@ -2,7 +2,7 @@ package com.couchbase.lite.testapp.tests;
 
 
 import com.couchbase.lite.Database;
-import com.couchbase.lite.CBLEmitter;
+import com.couchbase.lite.Emitter;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
@@ -374,7 +374,7 @@ public class Router extends CBLiteTestCase {
         view.setMapAndReduce(new Mapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 emitter.emit(document.get("message"), null);
             }
         }, null, "1");
@@ -465,7 +465,7 @@ public class Router extends CBLiteTestCase {
     	view.setMapAndReduce(new Mapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 emitter.emit(document.get("message"), null);
             }
         }, null, "1");
@@ -476,7 +476,7 @@ public class Router extends CBLiteTestCase {
     	view = db.getView("design/view");
     	view.setMapAndReduce(new Mapper() {
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 if (document.get("parentId").equals("12345")) {
                     emitter.emit(document.get("parentId"), document);
                 }

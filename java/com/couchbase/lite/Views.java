@@ -48,7 +48,7 @@ public class Views extends CBLiteTestCase {
         boolean changed = view.setMapAndReduce(new Mapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 //no-op
             }
         }, null, "1");
@@ -60,7 +60,7 @@ public class Views extends CBLiteTestCase {
         changed = view.setMapAndReduce(new Mapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 //no-op
             }
         }, null, "1");
@@ -70,7 +70,7 @@ public class Views extends CBLiteTestCase {
         changed = view.setMapAndReduce(new Mapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 //no-op
             }
         }, null, "2");
@@ -165,7 +165,7 @@ public class Views extends CBLiteTestCase {
         view.setMapAndReduce(new Mapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 Assert.assertNotNull(document.get("_id"));
                 Assert.assertNotNull(document.get("_rev"));
                 if (document.get("key") != null) {
@@ -199,7 +199,7 @@ public class Views extends CBLiteTestCase {
             int numTimesInvoked = 0;
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 numTimesInvoked += 1;
                 Assert.assertNotNull(document.get("_id"));
                 Assert.assertNotNull(document.get("_rev"));
@@ -536,7 +536,7 @@ public class Views extends CBLiteTestCase {
         view.setMapAndReduce(new Mapper() {
 
                                  @Override
-                                 public void map(Map<String, Object> document, CBLEmitter emitter) {
+                                 public void map(Map<String, Object> document, Emitter emitter) {
                                      Assert.assertNotNull(document.get("_id"));
                                      Assert.assertNotNull(document.get("_rev"));
                                      Object cost = document.get("cost");
@@ -625,7 +625,7 @@ public class Views extends CBLiteTestCase {
         view.setMapAndReduce(new Mapper() {
 
                                  @Override
-                                 public void map(Map<String, Object> document, CBLEmitter emitter) {
+                                 public void map(Map<String, Object> document, Emitter emitter) {
                                      List<Object> key = new ArrayList<Object>();
                                      key.add(document.get("artist"));
                                      key.add(document.get("album"));
@@ -813,7 +813,7 @@ public class Views extends CBLiteTestCase {
         view.setMapAndReduce(new Mapper() {
 
                                  @Override
-                                 public void map(Map<String, Object> document, CBLEmitter emitter) {
+                                 public void map(Map<String, Object> document, Emitter emitter) {
                                      String name = (String) document.get("name");
                                      if (name != null) {
                                          emitter.emit(name.substring(0, 1), 1);
@@ -924,7 +924,7 @@ public class Views extends CBLiteTestCase {
         view.setMapAndReduce(new Mapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 emitter.emit(document.get("name"), null);
             }
 
@@ -1002,7 +1002,7 @@ public class Views extends CBLiteTestCase {
         view.setMapAndReduce(new Mapper() {
 
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 emitter.emit(document.get("name"), null);
             }
 
@@ -1040,7 +1040,7 @@ public class Views extends CBLiteTestCase {
         View view = database.getView("linked");
         view.setMapAndReduce(new Mapper() {
             @Override
-            public void map(Map<String, Object> document, CBLEmitter emitter) {
+            public void map(Map<String, Object> document, Emitter emitter) {
                 if (document.containsKey("value")) {
                     emitter.emit(new Object[]{document.get("value"), 0}, null);
                 }
