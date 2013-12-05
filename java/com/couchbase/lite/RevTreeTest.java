@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RevTreeTest extends CBLiteTestCase {
+public class RevTreeTest extends LiteTestCase {
 
     public static final String TAG = "RevTree";
 

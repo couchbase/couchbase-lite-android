@@ -31,7 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 
 
-public class ChangeTrackerTest extends CBLiteTestCase {
+public class ChangeTrackerTest extends LiteTestCase {
 
     public static final String TAG = "ChangeTracker";
 

@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RouterTest extends CBLiteTestCase {
+public class RouterTest extends LiteTestCase {
 
     public static final String TAG = "Router";
 

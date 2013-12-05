@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public abstract class CBLiteTestCase extends InstrumentationTestCase {
+public abstract class LiteTestCase extends InstrumentationTestCase {
 
-    public static final String TAG = "CBLiteTestCase";
+    public static final String TAG = "LiteTestCase";
 
     private static boolean initializedUrlHandler = false;
 

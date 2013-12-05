@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class DocumentTest extends CBLiteTestCase {
+public class DocumentTest extends LiteTestCase {
 
     public void testNewDocumentHasCurrentRevision() throws CouchbaseLiteException {
 

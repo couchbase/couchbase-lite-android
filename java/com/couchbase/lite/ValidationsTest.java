@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class ValidationsTest extends CBLiteTestCase {
+public class ValidationsTest extends LiteTestCase {
 
     public static final String TAG = "Validations";
 

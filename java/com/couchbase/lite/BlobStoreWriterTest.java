@@ -6,7 +6,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;
 
-public class BlobStoreWriterTest extends CBLiteTestCase {
+public class BlobStoreWriterTest extends LiteTestCase {
 
     public void testBasicOperation() throws Exception {
 

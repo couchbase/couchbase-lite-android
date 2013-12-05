@@ -1,8 +1,6 @@
 package com.couchbase.lite.replicator;
 
-import android.test.InstrumentationTestCase;
-
-import com.couchbase.lite.CBLiteTestCase;
+import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiveQuery;
@@ -42,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-public class ReplicationTest extends CBLiteTestCase {
+public class ReplicationTest extends LiteTestCase {
 
     public static final String TAG = "Replicator";
 
