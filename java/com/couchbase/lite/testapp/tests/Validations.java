@@ -1,7 +1,7 @@
 package com.couchbase.lite.testapp.tests;
 
 
-import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.Status;
 import com.couchbase.lite.ValidationBlock;
 import com.couchbase.lite.ValidationContext;
 import com.couchbase.lite.CBLiteException;
@@ -47,11 +47,11 @@ public class Validations extends CBLiteTestCase {
         props.put("name","Zaphod Beeblebrox");
         props.put("towel", "velvet");
         CBLRevisionInternal rev = new CBLRevisionInternal(props, database);
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         // PUT a valid update:
         props.put("head_count", 3);
@@ -59,7 +59,7 @@ public class Validations extends CBLiteTestCase {
         validationCalled = false;
         rev = database.putRevision(rev, rev.getRevId(), false, status);
         Assert.assertTrue(validationCalled);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         // PUT an invalid update:
         props.remove("towel");
@@ -69,7 +69,7 @@ public class Validations extends CBLiteTestCase {
         try {
             rev = database.putRevision(rev, rev.getRevId(), false, status);
         } catch (CBLiteException e) {
-            gotExpectedError = (e.getCBLStatus().getCode() == CBLStatus.FORBIDDEN);
+            gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
         Assert.assertTrue(validationCalled);
         Assert.assertTrue(gotExpectedError);
@@ -84,7 +84,7 @@ public class Validations extends CBLiteTestCase {
         try {
             rev = database.putRevision(rev, null, false, status);
         } catch (CBLiteException e) {
-            gotExpectedError = (e.getCBLStatus().getCode() == CBLStatus.FORBIDDEN);
+            gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
         Assert.assertTrue(validationCalled);
         Assert.assertTrue(gotExpectedError);
@@ -117,7 +117,7 @@ public class Validations extends CBLiteTestCase {
         try {
             rev = database.putRevision(rev, null, false, status);
         } catch (CBLiteException e) {
-            gotExpectedError = (e.getCBLStatus().getCode() == CBLStatus.FORBIDDEN);
+            gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
         Assert.assertTrue(validationCalled);
         Assert.assertTrue(gotExpectedError);

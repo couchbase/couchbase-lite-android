@@ -21,7 +21,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.CBLRevisionList;
-import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.Status;
 import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
@@ -57,7 +57,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         CBLBody body = new CBLBody(documentProperties);
         CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
 
         Log.v(TAG, "Created " + rev1);
@@ -91,7 +91,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         try {
             database.putRevision(rev2input, rev1.getRevId(), false, status);
         } catch (CBLiteException e) {
-            gotExpectedError = e.getCBLStatus().getCode() == CBLStatus.CONFLICT;
+            gotExpectedError = e.getCBLStatus().getCode() == Status.CONFLICT;
         }
         Assert.assertTrue(gotExpectedError);
 
@@ -128,13 +128,13 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         try {
             revResult = database.putRevision(revD, null, false, status);
         } catch (CBLiteException e) {
-            gotExpectedError = e.getCBLStatus().getCode() == CBLStatus.CONFLICT;
+            gotExpectedError = e.getCBLStatus().getCode() == Status.CONFLICT;
         }
         Assert.assertTrue(gotExpectedError);
 
         Assert.assertNull(revResult);
         revD = database.putRevision(revD, rev2.getRevId(), false, status);
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        Assert.assertEquals(Status.OK, status.getCode());
         Assert.assertEquals(revD.getDocId(), rev2.getDocId());
         Assert.assertTrue(revD.getRevId().startsWith("3-"));
 
@@ -144,7 +144,7 @@ public class CRUDOperations extends CBLiteTestCase implements Database.ChangeLis
         try {
             database.putRevision(revFake, null, false, status);
         } catch (CBLiteException e) {
-            gotExpectedError = e.getCBLStatus().getCode() == CBLStatus.NOT_FOUND;
+            gotExpectedError = e.getCBLStatus().getCode() == Status.NOT_FOUND;
         }
         Assert.assertTrue(gotExpectedError);
 

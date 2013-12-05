@@ -22,7 +22,7 @@ import com.couchbase.lite.CBLBlobKey;
 import com.couchbase.lite.CBLBlobStore;
 import com.couchbase.lite.CBLBlobStoreWriter;
 import com.couchbase.lite.Database;
-import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.Status;
 import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLRevisionInternal;
 import com.couchbase.lite.support.Base64;
@@ -52,17 +52,17 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertEquals(0, attachments.count());
         Assert.assertEquals(new HashSet<Object>(), attachments.allKeys());
 
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
         CBLRevisionInternal rev1 = database.putRevision(new CBLRevisionInternal(rev1Properties, database), null, false, status);
 
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         byte[] attach1 = "This is the body of attach1".getBytes();
         database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach");
         Assert.assertEquals("text/plain", attachment.getContentType());
@@ -102,7 +102,7 @@ public class Attachments extends CBLiteTestCase {
         rev2Properties.put("foo", 2);
         rev2Properties.put("bazz", false);
         CBLRevisionInternal rev2 = database.putRevision(new CBLRevisionInternal(rev2Properties, database), rev1.getRevId(), false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         database.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
 
@@ -112,7 +112,7 @@ public class Attachments extends CBLiteTestCase {
         rev3Properties.put("foo", 2);
         rev3Properties.put("bazz", false);
         CBLRevisionInternal rev3 = database.putRevision(new CBLRevisionInternal(rev3Properties, database), rev2.getRevId(), false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
         database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
@@ -139,7 +139,7 @@ public class Attachments extends CBLiteTestCase {
         Assert.assertEquals(expected, attachments.allKeys());
 
         status = database.compact();  // This clears the body of the first revision
-        Assert.assertEquals(CBLStatus.OK, status.getCode());
+        Assert.assertEquals(Status.OK, status.getCode());
         Assert.assertEquals(1, attachments.count());
 
         Set<CBLBlobKey> expected2 = new HashSet<CBLBlobKey>();
@@ -154,13 +154,13 @@ public class Attachments extends CBLiteTestCase {
         attachments.deleteBlobs();
         Assert.assertEquals(0, attachments.count());
         
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         Map<String,Object> rev1Properties = new HashMap<String,Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
         CBLRevisionInternal rev1 = database.putRevision(new CBLRevisionInternal(rev1Properties, database), null, false, status);
 
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         StringBuffer largeAttachment = new StringBuffer();
         for (int i=0; i< Database.kBigAttachmentLength; i++) {
@@ -203,7 +203,7 @@ public class Attachments extends CBLiteTestCase {
         rev1PropertiesPrime.put("foo", 2);
         CBLRevisionInternal newRev = new CBLRevisionInternal(rev1PropertiesPrime, database);
         CBLRevisionInternal rev2 = database.putRevision(newRev, rev1WithAttachments.getRevId(), false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
     }
 
@@ -255,7 +255,7 @@ public class Attachments extends CBLiteTestCase {
         try {
             database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null);
         } catch (CBLiteException e) {
-            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.CONFLICT);
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.CONFLICT);
         }
         Assert.assertTrue(gotExpectedErrorCode);
 
@@ -263,7 +263,7 @@ public class Attachments extends CBLiteTestCase {
         try {
             database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus");
         } catch (CBLiteException e) {
-            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.CONFLICT);
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.CONFLICT);
         }
         Assert.assertTrue(gotExpectedErrorCode);
 
@@ -299,7 +299,7 @@ public class Attachments extends CBLiteTestCase {
         try {
             database.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId());
         } catch (CBLiteException e) {
-            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.NOT_FOUND);
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.NOT_FOUND);
         }
         Assert.assertTrue(gotExpectedErrorCode);
 
@@ -307,7 +307,7 @@ public class Attachments extends CBLiteTestCase {
         try {
             database.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev");
         } catch (CBLiteException e) {
-            gotExpectedErrorCode = (e.getCBLStatus().getCode() == CBLStatus.NOT_FOUND);
+            gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.NOT_FOUND);
         }
         Assert.assertTrue(gotExpectedErrorCode);
 

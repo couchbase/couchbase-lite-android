@@ -1,7 +1,7 @@
 package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.Database;
-import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.Status;
 import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
@@ -36,7 +36,7 @@ public class Changes extends CBLiteTestCase {
         CBLBody body = new CBLBody(documentProperties);
         CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
 
         Assert.assertEquals(1, changeNotifications);

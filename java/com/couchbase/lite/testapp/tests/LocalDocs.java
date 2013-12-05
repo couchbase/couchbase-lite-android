@@ -1,6 +1,6 @@
 package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.Status;
 import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.internal.CBLRevisionInternal;
@@ -27,7 +27,7 @@ public class LocalDocs extends CBLiteTestCase {
         CBLBody body = new CBLBody(documentProperties);
         CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         rev1 = database.putLocalRevision(rev1, null);
 
         Log.v(TAG, "Created " + rev1);
@@ -63,7 +63,7 @@ public class LocalDocs extends CBLiteTestCase {
         try {
             database.putLocalRevision(rev2input, rev1.getRevId());
         } catch (CBLiteException e) {
-            Assert.assertEquals(CBLStatus.CONFLICT, e.getCBLStatus().getCode());
+            Assert.assertEquals(Status.CONFLICT, e.getCBLStatus().getCode());
             gotException = true;
         }
         Assert.assertTrue(gotException);
@@ -77,7 +77,7 @@ public class LocalDocs extends CBLiteTestCase {
             CBLRevisionInternal revResult = database.putLocalRevision(revD, null);
             Assert.assertNull(revResult);
         } catch (CBLiteException e) {
-            Assert.assertEquals(CBLStatus.CONFLICT, e.getCBLStatus().getCode());
+            Assert.assertEquals(Status.CONFLICT, e.getCBLStatus().getCode());
             gotException = true;
         }
         Assert.assertTrue(gotException);
@@ -90,7 +90,7 @@ public class LocalDocs extends CBLiteTestCase {
         try {
             database.putLocalRevision(revFake, null);
         } catch (CBLiteException e) {
-            Assert.assertEquals(CBLStatus.NOT_FOUND, e.getCBLStatus().getCode());
+            Assert.assertEquals(Status.NOT_FOUND, e.getCBLStatus().getCode());
             gotException = true;
         }
         Assert.assertTrue(gotException);

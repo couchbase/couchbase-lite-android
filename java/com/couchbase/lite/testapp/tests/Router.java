@@ -4,7 +4,7 @@ package com.couchbase.lite.testapp.tests;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.CBLEmitter;
 import com.couchbase.lite.CBLMapper;
-import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
 import com.couchbase.lite.router.CBLRouter;
 import com.couchbase.lite.router.CBLURLConnection;
@@ -30,7 +30,7 @@ public class Router extends CBLiteTestCase {
         responseBody.put("CBLite", "Welcome");
         responseBody.put("couchdb", "Welcome");
         responseBody.put("version", CBLRouter.getVersionString());
-        send("GET", "/", CBLStatus.OK, responseBody);
+        send("GET", "/", Status.OK, responseBody);
 
         Map<String,Object> session = new HashMap<String,Object>();
         Map<String,Object> userCtx = new HashMap<String,Object>();
@@ -40,43 +40,43 @@ public class Router extends CBLiteTestCase {
         userCtx.put("name", null);
         userCtx.put("roles", roles);
         session.put("userCtx", userCtx);
-        send("GET", "/_session", CBLStatus.OK, session);
+        send("GET", "/_session", Status.OK, session);
 
         List<String> allDbs = new ArrayList<String>();
         allDbs.add("cblite-test");
-        send("GET", "/_all_dbs", CBLStatus.OK, allDbs);
+        send("GET", "/_all_dbs", Status.OK, allDbs);
 
-        send("GET", "/non-existant", CBLStatus.NOT_FOUND, null);
-        send("GET", "/BadName", CBLStatus.NOT_FOUND, null);
-        send("PUT", "/", CBLStatus.BAD_REQUEST, null);
-        send("POST", "/", CBLStatus.BAD_REQUEST, null);
+        send("GET", "/non-existant", Status.NOT_FOUND, null);
+        send("GET", "/BadName", Status.NOT_FOUND, null);
+        send("PUT", "/", Status.BAD_REQUEST, null);
+        send("POST", "/", Status.BAD_REQUEST, null);
     }
 
     public void testDatabase() {
-        send("PUT", "/database", CBLStatus.CREATED, null);
+        send("PUT", "/database", Status.CREATED, null);
 
-        Map<String,Object> dbInfo = (Map<String,Object>)send("GET", "/database", CBLStatus.OK, null);
+        Map<String,Object> dbInfo = (Map<String,Object>)send("GET", "/database", Status.OK, null);
         Assert.assertEquals(0, dbInfo.get("doc_count"));
         Assert.assertEquals(0, dbInfo.get("update_seq"));
         Assert.assertTrue((Integer)dbInfo.get("disk_size") > 8000);
 
-        send("PUT", "/database", CBLStatus.PRECONDITION_FAILED, null);
-        send("PUT", "/database2", CBLStatus.CREATED, null);
+        send("PUT", "/database", Status.PRECONDITION_FAILED, null);
+        send("PUT", "/database2", Status.CREATED, null);
 
         List<String> allDbs = new ArrayList<String>();
         allDbs.add("cblite-test");
         allDbs.add("database");
         allDbs.add("database2");
-        send("GET", "/_all_dbs", CBLStatus.OK, allDbs);
-        dbInfo = (Map<String,Object>)send("GET", "/database2", CBLStatus.OK, null);
+        send("GET", "/_all_dbs", Status.OK, allDbs);
+        dbInfo = (Map<String,Object>)send("GET", "/database2", Status.OK, null);
         Assert.assertEquals("database2", dbInfo.get("db_name"));
 
-        send("DELETE", "/database2", CBLStatus.OK, null);
+        send("DELETE", "/database2", Status.OK, null);
         allDbs.remove("database2");
-        send("GET", "/_all_dbs", CBLStatus.OK, allDbs);
+        send("GET", "/_all_dbs", Status.OK, allDbs);
 
-        send("PUT", "/database%2Fwith%2Fslashes", CBLStatus.CREATED, null);
-        dbInfo = (Map<String,Object>)send("GET", "/database%2Fwith%2Fslashes", CBLStatus.OK, null);
+        send("PUT", "/database%2Fwith%2Fslashes", Status.CREATED, null);
+        dbInfo = (Map<String,Object>)send("GET", "/database%2Fwith%2Fslashes", Status.OK, null);
         Assert.assertEquals("database/with/slashes", dbInfo.get("db_name"));
     }
 
@@ -84,7 +84,7 @@ public class Router extends CBLiteTestCase {
 
         String inlineTextString = "Inline text string created by cblite functional test";
 
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         Map<String,Object> attachment = new HashMap<String,Object>();
         attachment.put("content_type", "text/plain");
@@ -98,9 +98,9 @@ public class Router extends CBLiteTestCase {
         docWithAttachment.put("text", inlineTextString);
         docWithAttachment.put("_attachments", attachments);
 
-        Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/docWithAttachment", docWithAttachment, CBLStatus.CREATED, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/docWithAttachment", docWithAttachment, Status.CREATED, null);
 
-        result = (Map<String,Object>)send("GET", "/db/docWithAttachment", CBLStatus.OK, null);
+        result = (Map<String,Object>)send("GET", "/db/docWithAttachment", Status.OK, null);
         Map<String,Object> attachmentsResult = (Map<String,Object>) result.get("_attachments");
         Map<String,Object> attachmentResult = (Map<String,Object>) attachmentsResult.get("inline.txt");
 
@@ -125,37 +125,37 @@ public class Router extends CBLiteTestCase {
     }
 
     public void testDocs() {
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         // PUT:
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, CBLStatus.CREATED, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
         String revID = (String)result.get("rev");
         Assert.assertTrue(revID.startsWith("1-"));
 
         // PUT to update:
         doc1.put("message", "goodbye");
         doc1.put("_rev", revID);
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
         Log.v(TAG, String.format("PUT returned %s", result));
         revID = (String)result.get("rev");
         Assert.assertTrue(revID.startsWith("2-"));
 
         doc1.put("_id", "doc1");
         doc1.put("_rev", revID);
-        result = (Map<String,Object>)send("GET", "/db/doc1", CBLStatus.OK, doc1);
+        result = (Map<String,Object>)send("GET", "/db/doc1", Status.OK, doc1);
 
         // Add more docs:
         Map<String,Object> docX = new HashMap<String,Object>();
         docX.put("message", "hello");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc3", docX, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc3", docX, Status.CREATED, null);
         String revID3 = (String)result.get("rev");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc2", docX, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc2", docX, Status.CREATED, null);
         String revID2 = (String)result.get("rev");
 
         // _all_docs:
-        result = (Map<String,Object>)send("GET", "/db/_all_docs", CBLStatus.OK, null);
+        result = (Map<String,Object>)send("GET", "/db/_all_docs", Status.OK, null);
         Assert.assertEquals(3, result.get("total_rows"));
         Assert.assertEquals(0, result.get("offset"));
 
@@ -188,11 +188,11 @@ public class Router extends CBLiteTestCase {
         Assert.assertEquals(expectedRows, rows);
 
         // DELETE:
-        result = (Map<String,Object>)send("DELETE", String.format("/db/doc1?rev=%s", revID), CBLStatus.OK, null);
+        result = (Map<String,Object>)send("DELETE", String.format("/db/doc1?rev=%s", revID), Status.OK, null);
         revID = (String)result.get("rev");
         Assert.assertTrue(revID.startsWith("3-"));
 
-        send("GET", "/db/doc1", CBLStatus.NOT_FOUND, null);
+        send("GET", "/db/doc1", Status.NOT_FOUND, null);
 
         // _changes:
         value1.put("rev", revID);
@@ -226,75 +226,75 @@ public class Router extends CBLiteTestCase {
         expectedChanges.put("last_seq", 5);
         expectedChanges.put("results", results);
 
-        send("GET", "/db/_changes", CBLStatus.OK, expectedChanges);
+        send("GET", "/db/_changes", Status.OK, expectedChanges);
 
         // _changes with ?since:
         results.remove(result3);
         results.remove(result2);
         expectedChanges.put("results", results);
-        send("GET", "/db/_changes?since=4", CBLStatus.OK, expectedChanges);
+        send("GET", "/db/_changes?since=4", Status.OK, expectedChanges);
 
         results.remove(result1);
         expectedChanges.put("results", results);
-        send("GET", "/db/_changes?since=5", CBLStatus.OK, expectedChanges);
+        send("GET", "/db/_changes?since=5", Status.OK, expectedChanges);
 
         // Put with _deleted to delete a doc:
         Log.d(TAG, "Put with _deleted to delete a doc");
-        send("GET", "/db/doc5", CBLStatus.NOT_FOUND, null);
+        send("GET", "/db/doc5", Status.NOT_FOUND, null);
         Map<String,Object> doc5 = new HashMap<String,Object>();
         doc5.put("message", "hello5");
-        Map<String,Object> resultDoc5 = (Map<String,Object>)sendBody("PUT", "/db/doc5", doc5, CBLStatus.CREATED, null);
+        Map<String,Object> resultDoc5 = (Map<String,Object>)sendBody("PUT", "/db/doc5", doc5, Status.CREATED, null);
         String revIdDoc5 = (String)resultDoc5.get("rev");
         Assert.assertTrue(revIdDoc5.startsWith("1-"));
         doc5.put("_deleted", true);
         doc5.put("_rev", revIdDoc5);
         doc5.put("_id", "doc5");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc5", doc5, CBLStatus.OK, null);
-        send("GET", "/db/doc5", CBLStatus.NOT_FOUND, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc5", doc5, Status.OK, null);
+        send("GET", "/db/doc5", Status.NOT_FOUND, null);
         Log.d(TAG, "Finished put with _deleted to delete a doc");
     }
 
     public void testLocalDocs() {
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         // PUT a local doc:
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/_local/doc1", doc1, CBLStatus.CREATED, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/_local/doc1", doc1, Status.CREATED, null);
         String revID = (String)result.get("rev");
         Assert.assertTrue(revID.startsWith("1-"));
 
         // GET it:
         doc1.put("_id", "_local/doc1");
         doc1.put("_rev", revID);
-        result = (Map<String,Object>)send("GET", "/db/_local/doc1", CBLStatus.OK, doc1);
+        result = (Map<String,Object>)send("GET", "/db/_local/doc1", Status.OK, doc1);
 
         // Local doc should not appear in _changes feed:
         Map<String,Object> expectedChanges = new HashMap<String,Object>();
         expectedChanges.put("last_seq", 0);
         expectedChanges.put("results", new ArrayList<Object>());
-        send("GET", "/db/_changes", CBLStatus.OK, expectedChanges);
+        send("GET", "/db/_changes", Status.OK, expectedChanges);
     }
 
     public void testAllDocs() {
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         Map<String,Object> result;
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
         String revID = (String)result.get("rev");
         Map<String,Object> doc3 = new HashMap<String,Object>();
         doc3.put("message", "bonjour");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc3", doc3, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc3", doc3, Status.CREATED, null);
         String revID3 = (String)result.get("rev");
         Map<String,Object> doc2 = new HashMap<String,Object>();
         doc2.put("message", "guten tag");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc2", doc2, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc2", doc2, Status.CREATED, null);
         String revID2 = (String)result.get("rev");
 
         // _all_docs:
-        result = (Map<String,Object>)send("GET", "/db/_all_docs", CBLStatus.OK, null);
+        result = (Map<String,Object>)send("GET", "/db/_all_docs", Status.OK, null);
         Assert.assertEquals(3, result.get("total_rows"));
         Assert.assertEquals(0, result.get("offset"));
 
@@ -327,7 +327,7 @@ public class Router extends CBLiteTestCase {
         Assert.assertEquals(expectedRows, rows);
 
         // ?include_docs:
-        result = (Map<String,Object>)send("GET", "/db/_all_docs?include_docs=true", CBLStatus.OK, null);
+        result = (Map<String,Object>)send("GET", "/db/_all_docs?include_docs=true", Status.OK, null);
         Assert.assertEquals(3, result.get("total_rows"));
         Assert.assertEquals(0, result.get("offset"));
 
@@ -353,20 +353,20 @@ public class Router extends CBLiteTestCase {
     }
 
     public void testViews() {
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         Map<String,Object> result;
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
         String revID = (String)result.get("rev");
         Map<String,Object> doc3 = new HashMap<String,Object>();
         doc3.put("message", "bonjour");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc3", doc3, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc3", doc3, Status.CREATED, null);
         String revID3 = (String)result.get("rev");
         Map<String,Object> doc2 = new HashMap<String,Object>();
         doc2.put("message", "guten tag");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc2", doc2, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc2", doc2, Status.CREATED, null);
         String revID2 = (String)result.get("rev");
 
         Database db = manager.getDatabase("db");
@@ -402,7 +402,7 @@ public class Router extends CBLiteTestCase {
         expectedResult.put("rows", expectedRows);
 
         // Query the view and check the result:
-        send("GET", "/db/_design/design/_view/view", CBLStatus.OK, expectedResult);
+        send("GET", "/db/_design/design/_view/view", Status.OK, expectedResult);
 
         // Check the ETag:
         CBLURLConnection conn = sendRequest("GET", "/db/_design/design/_view/view", null, null);
@@ -413,22 +413,22 @@ public class Router extends CBLiteTestCase {
         Map<String,String> headers = new HashMap<String,String>();
         headers.put("If-None-Match", etag);
         conn = sendRequest("GET", "/db/_design/design/_view/view", headers, null);
-        Assert.assertEquals(CBLStatus.NOT_MODIFIED, conn.getResponseCode());
+        Assert.assertEquals(Status.NOT_MODIFIED, conn.getResponseCode());
 
         // Update the database:
         Map<String,Object> doc4 = new HashMap<String,Object>();
         doc4.put("message", "aloha");
-        result = (Map<String,Object>)sendBody("PUT", "/db/doc4", doc4, CBLStatus.CREATED, null);
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc4", doc4, Status.CREATED, null);
 
         // Try a conditional GET:
         conn = sendRequest("GET", "/db/_design/design/_view/view", headers, null);
-        Assert.assertEquals(CBLStatus.OK, conn.getResponseCode());
+        Assert.assertEquals(Status.OK, conn.getResponseCode());
         result = (Map<String,Object>)parseJSONResponse(conn);
         Assert.assertEquals(4, result.get("total_rows"));
     }
 
     public void testPostBulkDocs() {
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         Map<String,Object> bulk_doc1 = new HashMap<String,Object>();
         bulk_doc1.put("_id", "bulk_message1");
@@ -446,7 +446,7 @@ public class Router extends CBLiteTestCase {
         bodyObj.put("docs", list);
 
         List<Map<String,Object>> bulk_result  =
-                (ArrayList<Map<String,Object>>)sendBody("POST", "/db/_bulk_docs", bodyObj, CBLStatus.CREATED, null);
+                (ArrayList<Map<String,Object>>)sendBody("POST", "/db/_bulk_docs", bodyObj, Status.CREATED, null);
 
         Assert.assertEquals(2, bulk_result.size());
         Assert.assertEquals(bulk_result.get(0).get("id"),  bulk_doc1.get("_id"));
@@ -456,7 +456,7 @@ public class Router extends CBLiteTestCase {
     }
 
     public void testPostKeysView() {
-    	send("PUT", "/db", CBLStatus.CREATED, null);
+    	send("PUT", "/db", Status.CREATED, null);
 
     	Map<String,Object> result;
 
@@ -472,7 +472,7 @@ public class Router extends CBLiteTestCase {
 
     	Map<String,Object> key_doc1 = new HashMap<String,Object>();
     	key_doc1.put("parentId", "12345");
-    	result = (Map<String,Object>)sendBody("PUT", "/db/key_doc1", key_doc1, CBLStatus.CREATED, null);
+    	result = (Map<String,Object>)sendBody("PUT", "/db/key_doc1", key_doc1, Status.CREATED, null);
     	view = db.getView("design/view");
     	view.setMapAndReduce(new CBLMapper() {
             @Override
@@ -494,31 +494,31 @@ public class Router extends CBLiteTestCase {
 
     public void testRevsDiff() {
 
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         Map<String,Object> doc = new HashMap<String,Object>();
-        Map<String,Object> doc1r1 = (Map<String,Object>)sendBody("PUT", "/db/11111", doc, CBLStatus.CREATED, null);
+        Map<String,Object> doc1r1 = (Map<String,Object>)sendBody("PUT", "/db/11111", doc, Status.CREATED, null);
         String doc1r1ID = (String)doc1r1.get("rev");
 
-        Map<String,Object> doc2r1 = (Map<String,Object>)sendBody("PUT", "/db/22222", doc, CBLStatus.CREATED, null);
+        Map<String,Object> doc2r1 = (Map<String,Object>)sendBody("PUT", "/db/22222", doc, Status.CREATED, null);
         String doc2r1ID = (String)doc2r1.get("rev");
 
-        Map<String,Object> doc3r1 = (Map<String,Object>)sendBody("PUT", "/db/33333", doc, CBLStatus.CREATED, null);
+        Map<String,Object> doc3r1 = (Map<String,Object>)sendBody("PUT", "/db/33333", doc, Status.CREATED, null);
         String doc3r1ID = (String)doc3r1.get("rev");
 
 
         Map<String, Object> doc1v2 = new HashMap<String, Object>();
         doc1v2.put("_rev", doc1r1ID);
-        Map<String,Object> doc1r2 = (Map<String,Object>)sendBody("PUT", "/db/11111", doc1v2, CBLStatus.CREATED, null);
+        Map<String,Object> doc1r2 = (Map<String,Object>)sendBody("PUT", "/db/11111", doc1v2, Status.CREATED, null);
         String doc1r2ID = (String)doc1r2.get("rev");
 
         Map<String, Object> doc2v2 = new HashMap<String, Object>();
         doc2v2.put("_rev", doc2r1ID);
-        sendBody("PUT", "/db/22222", doc2v2, CBLStatus.CREATED, null);
+        sendBody("PUT", "/db/22222", doc2v2, Status.CREATED, null);
 
         Map<String, Object> doc1v3 = new HashMap<String, Object>();
         doc1v3.put("_rev", doc1r2ID);
-        Map<String,Object> doc1r3 = (Map<String,Object>)sendBody("PUT", "/db/11111", doc1v3, CBLStatus.CREATED, null);
+        Map<String,Object> doc1r3 = (Map<String,Object>)sendBody("PUT", "/db/11111", doc1v3, Status.CREATED, null);
         String doc1r3ID = (String)doc1r1.get("rev");
 
         //now build up the request
@@ -565,30 +565,30 @@ public class Router extends CBLiteTestCase {
         revsDiffResponse.put("33333", doc3missingMap);
         revsDiffResponse.put("99999", doc9missingMap);
 
-        sendBody("POST", "/db/_revs_diff", revsDiffRequest, CBLStatus.OK, revsDiffResponse);
+        sendBody("POST", "/db/_revs_diff", revsDiffRequest, Status.OK, revsDiffResponse);
     }
 
     public void testFacebookToken() {
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("email", "foo@bar.com");
         doc1.put("remote_url", getReplicationURL().toExternalForm() );
         doc1.put("access_token", "fake_access_token" );
 
-        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_facebook_token", doc1, CBLStatus.OK, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_facebook_token", doc1, Status.OK, null);
         Log.v(TAG, String.format("result %s", result));
 
     }
 
     public void testPersonaAssertion() {
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         Map<String,Object> doc1 = new HashMap<String,Object>();
         String sampleAssertion = "eyJhbGciOiJSUzI1NiJ9.eyJwdWJsaWMta2V5Ijp7ImFsZ29yaXRobSI6IkRTIiwieSI6ImNhNWJiYTYzZmI4MDQ2OGE0MjFjZjgxYTIzN2VlMDcwYTJlOTM4NTY0ODhiYTYzNTM0ZTU4NzJjZjllMGUwMDk0ZWQ2NDBlOGNhYmEwMjNkYjc5ODU3YjkxMzBlZGNmZGZiNmJiNTUwMWNjNTk3MTI1Y2NiMWQ1ZWQzOTVjZTMyNThlYjEwN2FjZTM1ODRiOWIwN2I4MWU5MDQ4NzhhYzBhMjFlOWZkYmRjYzNhNzNjOTg3MDAwYjk4YWUwMmZmMDQ4ODFiZDNiOTBmNzllYzVlNDU1YzliZjM3NzFkYjEzMTcxYjNkMTA2ZjM1ZDQyZmZmZjQ2ZWZiZDcwNjgyNWQiLCJwIjoiZmY2MDA0ODNkYjZhYmZjNWI0NWVhYjc4NTk0YjM1MzNkNTUwZDlmMWJmMmE5OTJhN2E4ZGFhNmRjMzRmODA0NWFkNGU2ZTBjNDI5ZDMzNGVlZWFhZWZkN2UyM2Q0ODEwYmUwMGU0Y2MxNDkyY2JhMzI1YmE4MWZmMmQ1YTViMzA1YThkMTdlYjNiZjRhMDZhMzQ5ZDM5MmUwMGQzMjk3NDRhNTE3OTM4MDM0NGU4MmExOGM0NzkzMzQzOGY4OTFlMjJhZWVmODEyZDY5YzhmNzVlMzI2Y2I3MGVhMDAwYzNmNzc2ZGZkYmQ2MDQ2MzhjMmVmNzE3ZmMyNmQwMmUxNyIsInEiOiJlMjFlMDRmOTExZDFlZDc5OTEwMDhlY2FhYjNiZjc3NTk4NDMwOWMzIiwiZyI6ImM1MmE0YTBmZjNiN2U2MWZkZjE4NjdjZTg0MTM4MzY5YTYxNTRmNGFmYTkyOTY2ZTNjODI3ZTI1Y2ZhNmNmNTA4YjkwZTVkZTQxOWUxMzM3ZTA3YTJlOWUyYTNjZDVkZWE3MDRkMTc1ZjhlYmY2YWYzOTdkNjllMTEwYjk2YWZiMTdjN2EwMzI1OTMyOWU0ODI5YjBkMDNiYmM3ODk2YjE1YjRhZGU1M2UxMzA4NThjYzM0ZDk2MjY5YWE4OTA0MWY0MDkxMzZjNzI0MmEzODg5NWM5ZDViY2NhZDRmMzg5YWYxZDdhNGJkMTM5OGJkMDcyZGZmYTg5NjIzMzM5N2EifSwicHJpbmNpcGFsIjp7ImVtYWlsIjoiamVuc0Btb29zZXlhcmQuY29tIn0sImlhdCI6MTM1ODI5NjIzNzU3NywiZXhwIjoxMzU4MzgyNjM3NTc3LCJpc3MiOiJsb2dpbi5wZXJzb25hLm9yZyJ9.RnDK118nqL2wzpLCVRzw1MI4IThgeWpul9jPl6ypyyxRMMTurlJbjFfs-BXoPaOem878G8-4D2eGWS6wd307k7xlPysevYPogfFWxK_eDHwkTq3Ts91qEDqrdV_JtgULC8c1LvX65E0TwW_GL_TM94g3CvqoQnGVxxoaMVye4ggvR7eOZjimWMzUuu4Lo9Z-VBHBj7XM0UMBie57CpGwH4_Wkv0V_LHZRRHKdnl9ISp_aGwfBObTcHG9v0P3BW9vRrCjihIn0SqOJQ9obl52rMf84GD4Lcy9NIktzfyka70xR9Sh7ALotW7rWywsTzMTu3t8AzMz2MJgGjvQmx49QA~eyJhbGciOiJEUzEyOCJ9.eyJleHAiOjEzNTgyOTY0Mzg0OTUsImF1ZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDk4NC8ifQ.4FV2TrUQffDya0MOxOQlzJQbDNvCPF2sfTIJN7KOLvvlSFPknuIo5g";
         doc1.put("assertion", sampleAssertion);
 
-        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_persona_assertion", doc1, CBLStatus.OK, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_persona_assertion", doc1, Status.OK, null);
         Log.v(TAG, String.format("result %s", result));
         String email = (String) result.get("email");
         Assert.assertEquals(email, "jens@mooseyard.com");
@@ -599,14 +599,14 @@ public class Router extends CBLiteTestCase {
 
     public void testPushReplicate() throws Exception {
 
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
 
         Map<String, Object> replicateJsonMap = getPushReplicationParsedJson();
 
 
         Log.v(TAG, "map: " + replicateJsonMap);
-        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, CBLStatus.OK, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
         Log.v(TAG, "result: " + result);
         Assert.assertNotNull(result.get("session_id"));
 
@@ -614,12 +614,12 @@ public class Router extends CBLiteTestCase {
 
     public void testPullReplicate() throws Exception {
 
-        send("PUT", "/db", CBLStatus.CREATED, null);
+        send("PUT", "/db", Status.CREATED, null);
 
         Map<String, Object> replicateJsonMap = getPullReplicationParsedJson();
 
         Log.v(TAG, "map: " + replicateJsonMap);
-        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, CBLStatus.OK, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
         Log.v(TAG, "result: " + result);
         Assert.assertNotNull(result.get("session_id"));
 

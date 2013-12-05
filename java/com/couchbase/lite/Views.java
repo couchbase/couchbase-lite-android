@@ -80,7 +80,7 @@ public class Views extends CBLiteTestCase {
 
     private CBLRevisionInternal putDoc(Database db, Map<String,Object> props) throws CBLiteException {
         CBLRevisionInternal rev = new CBLRevisionInternal(props, db);
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         rev = db.putRevision(rev, null, false, status);
         Assert.assertTrue(status.isSuccessful());
         return rev;
@@ -244,7 +244,7 @@ public class Views extends CBLiteTestCase {
         Map<String,Object> newdict3 = new HashMap<String,Object>();
         newdict3.put("key", "3hree");
         threeUpdated.setProperties(newdict3);
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         rev3 = database.putRevision(threeUpdated, rev3.getRevId(), false, status);
         Assert.assertTrue(status.isSuccessful());
 
@@ -642,7 +642,7 @@ public class Views extends CBLiteTestCase {
                              }, "1"
         );
 
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         view.updateIndex();
 
         QueryOptions options = new QueryOptions();
@@ -660,7 +660,7 @@ public class Views extends CBLiteTestCase {
 
         //now group
         options.setGroup(true);
-        status = new CBLStatus();
+        status = new Status();
         rows = view.queryWithOptions(options);
 
         expectedRows = new ArrayList<Map<String,Object>>();
@@ -723,7 +723,7 @@ public class Views extends CBLiteTestCase {
 
         //group level 1
         options.setGroupLevel(1);
-        status = new CBLStatus();
+        status = new Status();
         rows = view.queryWithOptions(options);
 
         expectedRows = new ArrayList<Map<String,Object>>();
@@ -749,7 +749,7 @@ public class Views extends CBLiteTestCase {
 
         //group level 2
         options.setGroupLevel(2);
-        status = new CBLStatus();
+        status = new Status();
         rows = view.queryWithOptions(options);
 
         expectedRows = new ArrayList<Map<String,Object>>();
@@ -1029,7 +1029,7 @@ public class Views extends CBLiteTestCase {
 
         // Query all rows:
         QueryOptions options = new QueryOptions();
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         List<QueryRow> rows = view.queryWithOptions(options);
     }
     

@@ -5,7 +5,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.CBLEmitter;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.CBLMapper;
-import com.couchbase.lite.CBLStatus;
+import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
 import com.couchbase.lite.auth.CBLFacebookAuthorizer;
 import com.couchbase.lite.internal.CBLBody;
@@ -62,16 +62,16 @@ public class Replicator extends CBLiteTestCase {
         CBLBody body = new CBLBody(documentProperties);
         CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         documentProperties.put("_rev", rev1.getRevId());
         documentProperties.put("UPDATED", true);
 
         @SuppressWarnings("unused")
         CBLRevisionInternal rev2 = database.putRevision(new CBLRevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         documentProperties = new HashMap<String, Object>();
         String doc2Id = String.format("doc2-%s", docIdTimestamp);
@@ -80,7 +80,7 @@ public class Replicator extends CBLiteTestCase {
         documentProperties.put("fnord", true);
 
         database.putRevision(new CBLRevisionInternal(documentProperties, database), null, false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         final CBLReplicator repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((CBLPusher)repl).setCreateTarget(true);
@@ -187,9 +187,9 @@ public class Replicator extends CBLiteTestCase {
         CBLBody body = new CBLBody(documentProperties);
         CBLRevisionInternal rev1 = new CBLRevisionInternal(body, database);
 
-        CBLStatus status = new CBLStatus();
+        Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
-        Assert.assertEquals(CBLStatus.CREATED, status.getCode());
+        Assert.assertEquals(Status.CREATED, status.getCode());
 
         documentProperties.put("_rev", rev1.getRevId());
         documentProperties.put("UPDATED", true);
@@ -473,7 +473,7 @@ public class Replicator extends CBLiteTestCase {
         facebookTokenInfo.put("remote_url", getReplicationURL().toExternalForm());
         facebookTokenInfo.put("access_token", "fake_access_token");
         String destUrl = String.format("/_facebook_token", DEFAULT_TEST_DB);
-        Map<String,Object> result = (Map<String,Object>)sendBody("POST", destUrl, facebookTokenInfo, CBLStatus.OK, null);
+        Map<String,Object> result = (Map<String,Object>)sendBody("POST", destUrl, facebookTokenInfo, Status.OK, null);
         Log.v(TAG, String.format("result %s", result));
 
         // start a replicator
@@ -489,7 +489,7 @@ public class Replicator extends CBLiteTestCase {
 
             // expect an error since it will try to contact the sync gateway with this bogus login,
             // and the sync gateway will reject it.
-            ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", CBLStatus.OK, null);
+            ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
             Log.d(TAG, "activeTasks: " + activeTasks);
             Map<String,Object> activeTaskReplication = (Map<String,Object>) activeTasks.get(0);
             foundError = (activeTaskReplication.get("error") != null);
