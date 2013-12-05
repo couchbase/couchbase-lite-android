@@ -2,8 +2,6 @@ package com.couchbase.lite.testapp.tests;
 
 import android.test.InstrumentationTestCase;
 
-import com.couchbase.lite.CBLMisc;
-
 import junit.framework.Assert;
 
 public class Misc extends InstrumentationTestCase {
@@ -12,7 +10,7 @@ public class Misc extends InstrumentationTestCase {
 
         String testString = "attachment; filename=\"attach\"";
         String expected = "attachment; filename=attach";
-        String result = CBLMisc.unquoteString(testString);
+        String result = com.couchbase.lite.Misc.unquoteString(testString);
         Assert.assertEquals(expected, result);
 
     }
