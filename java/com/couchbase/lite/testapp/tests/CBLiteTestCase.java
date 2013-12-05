@@ -6,7 +6,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.router.CBLRouter;
-import com.couchbase.lite.router.CBLURLConnection;
+import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.router.URLStreamHandlerFactory;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
@@ -215,10 +215,10 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
     }
 
 
-    protected CBLURLConnection sendRequest(String method, String path, Map<String, String> headers, Object bodyObj) {
+    protected URLConnection sendRequest(String method, String path, Map<String, String> headers, Object bodyObj) {
         try {
             URL url = new URL("cblite://" + path);
-            CBLURLConnection conn = (CBLURLConnection)url.openConnection();
+            URLConnection conn = (URLConnection)url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod(method);
             if(headers != null) {
@@ -244,7 +244,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
         return null;
     }
 
-    protected Object parseJSONResponse(CBLURLConnection conn) {
+    protected Object parseJSONResponse(URLConnection conn) {
         Object result = null;
         CBLBody responseBody = conn.getResponseBody();
         if(responseBody != null) {
@@ -263,7 +263,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
     }
 
     protected Object sendBody(String method, String path, Object bodyObj, int expectedStatus, Object expectedResult) {
-        CBLURLConnection conn = sendRequest(method, path, null, bodyObj);
+        URLConnection conn = sendRequest(method, path, null, bodyObj);
         Object result = parseJSONResponse(conn);
         Log.v(TAG, String.format("%s %s --> %d", method, path, conn.getResponseCode()));
         Assert.assertEquals(expectedStatus, conn.getResponseCode());

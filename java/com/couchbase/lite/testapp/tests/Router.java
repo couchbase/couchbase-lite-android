@@ -7,7 +7,7 @@ import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
 import com.couchbase.lite.router.CBLRouter;
-import com.couchbase.lite.router.CBLURLConnection;
+import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -111,7 +111,7 @@ public class Router extends CBLiteTestCase {
         Assert.assertTrue(attachmentResult.containsKey("content_type"));
         Assert.assertNotNull(contentTypeField);
 
-        CBLURLConnection conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", null, null);
+        URLConnection conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", null, null);
         String contentType = conn.getHeaderField("Content-Type");
         Assert.assertNotNull(contentType);
         Assert.assertTrue(contentType.contains("text/plain"));
@@ -405,7 +405,7 @@ public class Router extends CBLiteTestCase {
         send("GET", "/db/_design/design/_view/view", Status.OK, expectedResult);
 
         // Check the ETag:
-        CBLURLConnection conn = sendRequest("GET", "/db/_design/design/_view/view", null, null);
+        URLConnection conn = sendRequest("GET", "/db/_design/design/_view/view", null, null);
         String etag = conn.getHeaderField("Etag");
         Assert.assertEquals(String.format("\"%d\"", view.getLastSequenceIndexed()), etag);
 
@@ -487,7 +487,7 @@ public class Router extends CBLiteTestCase {
     	keys.add("12345");
     	Map<String,Object> bodyObj = new HashMap<String,Object>();
     	bodyObj.put("keys", keys);
-        CBLURLConnection conn = sendRequest("POST", "/db/_design/design/_view/view", null, bodyObj);
+        URLConnection conn = sendRequest("POST", "/db/_design/design/_view/view", null, bodyObj);
         result = (Map<String, Object>) parseJSONResponse(conn);
     	Assert.assertEquals(1, result.get("total_rows"));
     }
