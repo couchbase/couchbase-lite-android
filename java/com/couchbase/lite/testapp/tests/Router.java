@@ -1,7 +1,7 @@
 package com.couchbase.lite.testapp.tests;
 
 
-import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.Database;
 import com.couchbase.lite.CBLEmitter;
 import com.couchbase.lite.CBLMapper;
 import com.couchbase.lite.CBLStatus;
@@ -369,7 +369,7 @@ public class Router extends CBLiteTestCase {
         result = (Map<String,Object>)sendBody("PUT", "/db/doc2", doc2, CBLStatus.CREATED, null);
         String revID2 = (String)result.get("rev");
 
-        CBLDatabase db = manager.getDatabase("db");
+        Database db = manager.getDatabase("db");
         CBLView view = db.getView("design/view");
         view.setMapAndReduce(new CBLMapper() {
 
@@ -460,7 +460,7 @@ public class Router extends CBLiteTestCase {
 
     	Map<String,Object> result;
 
-    	CBLDatabase db = manager.getDatabase("db");
+    	Database db = manager.getDatabase("db");
     	CBLView view = db.getView("design/view");
     	view.setMapAndReduce(new CBLMapper() {
 

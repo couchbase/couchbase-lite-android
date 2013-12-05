@@ -17,7 +17,7 @@
 
 package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.Database;
 import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.CBLRevisionList;
@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CRUDOperations extends CBLiteTestCase implements CBLDatabase.ChangeListener {
+public class CRUDOperations extends CBLiteTestCase implements Database.ChangeListener {
 
     public static final String TAG = "CRUDOperations";
 
@@ -65,7 +65,7 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabase.Change
         Assert.assertTrue(rev1.getRevId().startsWith("1-"));
 
         //read it back
-        CBLRevisionInternal readRev = database.getDocumentWithIDAndRev(rev1.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        CBLRevisionInternal readRev = database.getDocumentWithIDAndRev(rev1.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertNotNull(readRev);
         Map<String,Object> readRevProps = readRev.getProperties();
         Assert.assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
@@ -82,7 +82,7 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabase.Change
         Assert.assertTrue(rev2.getRevId().startsWith("2-"));
 
         //read it back
-        readRev = database.getDocumentWithIDAndRev(rev2.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        readRev = database.getDocumentWithIDAndRev(rev2.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertNotNull(readRev);
         Assert.assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
@@ -149,7 +149,7 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabase.Change
         Assert.assertTrue(gotExpectedError);
 
         // Read it back (should fail):
-        readRev = database.getDocumentWithIDAndRev(revD.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        readRev = database.getDocumentWithIDAndRev(revD.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertNull(readRev);
 
         // Get Changes feed
@@ -165,7 +165,7 @@ public class CRUDOperations extends CBLiteTestCase implements CBLDatabase.Change
 
 
     @Override
-    public void changed(CBLDatabase.ChangeEvent event) {
+    public void changed(Database.ChangeEvent event) {
         List<DocumentChange> changes = event.getChanges();
         for (DocumentChange change : changes) {
 

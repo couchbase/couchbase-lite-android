@@ -1,6 +1,6 @@
 package com.couchbase.lite.testapp.tests;
 
-import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.Database;
 import com.couchbase.lite.Manager;
 
 import junit.framework.Assert;
@@ -15,12 +15,12 @@ public class Server extends CBLiteTestCase {
 
         //to ensure this test is easily repeatable we will explicitly remove
         //any stale foo.cblite
-        CBLDatabase old = manager.getExistingDatabase("foo");
+        Database old = manager.getExistingDatabase("foo");
         if(old != null) {
             old.delete();
         }
 
-        CBLDatabase db = manager.getDatabase("foo");
+        Database db = manager.getDatabase("foo");
         Assert.assertNotNull(db);
         Assert.assertEquals("foo", db.getName());
         Assert.assertTrue(db.getPath().startsWith(getServerPath()));

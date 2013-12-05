@@ -2,7 +2,7 @@ package com.couchbase.lite.testapp.tests;
 
 import android.test.InstrumentationTestCase;
 
-import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.Database;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.router.CBLRouter;
@@ -36,7 +36,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
     protected ObjectMapper mapper = new ObjectMapper();
 
     protected Manager manager = null;
-    protected CBLDatabase database = null;
+    protected Database database = null;
     protected String DEFAULT_TEST_DB = "cblite-test";
 
     @Override
@@ -86,8 +86,8 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
         }
     }
 
-    protected CBLDatabase ensureEmptyDatabase(String dbName) {
-        CBLDatabase db = manager.getExistingDatabase(dbName);
+    protected Database ensureEmptyDatabase(String dbName) {
+        Database db = manager.getExistingDatabase(dbName);
         if(db != null) {
             boolean status = db.delete();
             Assert.assertTrue(status);

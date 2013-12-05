@@ -78,7 +78,7 @@ public class Views extends CBLiteTestCase {
         Assert.assertTrue(changed);
     }
 
-    private CBLRevisionInternal putDoc(CBLDatabase db, Map<String,Object> props) throws CBLiteException {
+    private CBLRevisionInternal putDoc(Database db, Map<String,Object> props) throws CBLiteException {
         CBLRevisionInternal rev = new CBLRevisionInternal(props, db);
         CBLStatus status = new CBLStatus();
         rev = db.putRevision(rev, null, false, status);
@@ -86,12 +86,12 @@ public class Views extends CBLiteTestCase {
         return rev;
     }
 
-    private void putDocViaUntitledDoc(CBLDatabase db, Map<String, Object> props) throws CBLiteException {
+    private void putDocViaUntitledDoc(Database db, Map<String, Object> props) throws CBLiteException {
         CBLDocument document = db.createDocument();
         document.putProperties(props);
     }
 
-    public List<CBLRevisionInternal> putDocs(CBLDatabase db) throws CBLiteException {
+    public List<CBLRevisionInternal> putDocs(Database db) throws CBLiteException {
         List<CBLRevisionInternal> result = new ArrayList<CBLRevisionInternal>();
 
         Map<String,Object> dict2 = new HashMap<String,Object>();
@@ -123,7 +123,7 @@ public class Views extends CBLiteTestCase {
     }
 
     // http://wiki.apache.org/couchdb/Introduction_to_CouchDB_views#Linked_documents
-    public List<CBLRevisionInternal> putLinkedDocs(CBLDatabase db) throws CBLiteException {
+    public List<CBLRevisionInternal> putLinkedDocs(Database db) throws CBLiteException {
         List<CBLRevisionInternal> result = new ArrayList<CBLRevisionInternal>();
 
         Map<String,Object> dict1 = new HashMap<String,Object>();
@@ -146,7 +146,7 @@ public class Views extends CBLiteTestCase {
     }
 
     
-    public void putNDocs(CBLDatabase db, int n) throws CBLiteException {
+    public void putNDocs(Database db, int n) throws CBLiteException {
         for(int i=0; i< n; i++) {
             Map<String,Object> doc = new HashMap<String,Object>();
             doc.put("_id", String.format("%d", i));
@@ -160,7 +160,7 @@ public class Views extends CBLiteTestCase {
         }
     }
 
-    public static CBLView createView(CBLDatabase db) {
+    public static CBLView createView(Database db) {
         CBLView view = db.getView("aview");
         view.setMapAndReduce(new CBLMapper() {
 

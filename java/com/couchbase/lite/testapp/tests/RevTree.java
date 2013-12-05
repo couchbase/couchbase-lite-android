@@ -18,7 +18,7 @@
 package com.couchbase.lite.testapp.tests;
 
 import com.couchbase.lite.CBLChangesOptions;
-import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.Database;
 import com.couchbase.lite.CBLRevisionList;
 import com.couchbase.lite.CBLiteException;
 import com.couchbase.lite.internal.CBLRevisionInternal;
@@ -101,7 +101,7 @@ public class RevTree extends CBLiteTestCase {
         database.forceInsert(other, otherHistory, null);
 
         // Fetch one of those phantom revisions with no body:
-        CBLRevisionInternal rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        CBLRevisionInternal rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertEquals(rev.getDocId(), rev2.getDocId());
         Assert.assertEquals("2-too", rev2.getRevId());
         //Assert.assertNull(rev2.getContent());
@@ -110,7 +110,7 @@ public class RevTree extends CBLiteTestCase {
         Assert.assertEquals(8, database.getLastSequenceNumber());
 
         // Make sure the revision with the higher revID wins the conflict:
-        CBLRevisionInternal current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        CBLRevisionInternal current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertEquals(conflict, current);
 
         // Get the _changes feed and verify only the winner is in it:
@@ -129,8 +129,8 @@ public class RevTree extends CBLiteTestCase {
         Assert.assertEquals(changes, expectedChanges);
     }
 
-    private static void verifyHistory(CBLDatabase db, CBLRevisionInternal rev, List<String> history) {
-        CBLRevisionInternal gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+    private static void verifyHistory(Database db, CBLRevisionInternal rev, List<String> history) {
+        CBLRevisionInternal gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertEquals(rev, gotRev);
         Assert.assertEquals(rev.getProperties(), gotRev.getProperties());
 

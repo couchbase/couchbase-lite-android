@@ -1,7 +1,7 @@
 package com.couchbase.lite.testapp.tests;
 
 
-import com.couchbase.lite.CBLDatabase;
+import com.couchbase.lite.Database;
 import com.couchbase.lite.CBLEmitter;
 import com.couchbase.lite.CBLLiveQuery;
 import com.couchbase.lite.CBLMapper;
@@ -39,8 +39,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.CountDownLatch;
 
 public class Replicator extends CBLiteTestCase {
@@ -285,12 +283,12 @@ public class Replicator extends CBLiteTestCase {
 
         doPullReplication();
 
-        CBLRevisionInternal doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        CBLRevisionInternal doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertNotNull(doc1);
         Assert.assertTrue(doc1.getRevId().startsWith("1-"));
         Assert.assertEquals(1, doc1.getProperties().get("foo"));
 
-        CBLRevisionInternal doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(CBLDatabase.TDContentOptions.class));
+        CBLRevisionInternal doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertNotNull(doc2);
         Assert.assertTrue(doc2.getRevId().startsWith("1-"));
         Assert.assertEquals(1, doc2.getProperties().get("foo"));
@@ -309,7 +307,7 @@ public class Replicator extends CBLiteTestCase {
         // waitForUpdateThread().  When the deadlock bug was present,
         // this test would trigger the deadlock and never finish.
 
-        Log.d(CBLDatabase.TAG, "testPullerWithLiveQuery");
+        Log.d(Database.TAG, "testPullerWithLiveQuery");
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
         final String doc2Id = String.format("doc2-%s", docIdTimestamp);
@@ -344,7 +342,7 @@ public class Replicator extends CBLiteTestCase {
 
                     Assert.assertTrue(event.getRows().getCount() > numDocsBeforePull);
                 }
-                Log.d(CBLDatabase.TAG, "rows " + event.getRows());
+                Log.d(Database.TAG, "rows " + event.getRows());
 
             }
         });
