@@ -7,7 +7,7 @@ import com.couchbase.lite.Manager;
 import com.couchbase.lite.internal.CBLBody;
 import com.couchbase.lite.router.CBLRouter;
 import com.couchbase.lite.router.CBLURLConnection;
-import com.couchbase.lite.router.CBLURLStreamHandlerFactory;
+import com.couchbase.lite.router.URLStreamHandlerFactory;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
 
@@ -46,7 +46,7 @@ public abstract class CBLiteTestCase extends InstrumentationTestCase {
 
         //for some reason a traditional static initializer causes junit to die
         if(!initializedUrlHandler) {
-            CBLURLStreamHandlerFactory.registerSelfIgnoreError();
+            URLStreamHandlerFactory.registerSelfIgnoreError();
             initializedUrlHandler = true;
         }
 
