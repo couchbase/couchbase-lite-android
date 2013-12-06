@@ -1031,8 +1031,7 @@ public class ViewsTest extends LiteTestCase {
         Status status = new Status();
         List<QueryRow> rows = view.queryWithOptions(options);
     }
-    
-    
+
     public void testViewLinkedDocs() throws CouchbaseLiteException {
         putLinkedDocs(database);
         
@@ -1075,10 +1074,14 @@ public class ViewsTest extends LiteTestCase {
 
         for (int i=0; i < rows.size(); i++) {
             QueryRow row = rows.get(i);
-            List<Object> key = (List<Object>) row.getKey();
-            Map<String,Object> doc = (Map<String,Object>)row.getDocumentProperties();
-            
-            Assert.assertEquals(expected[i][0], row.getDocumentId());
+
+            Map<String, Object> rowAsJson = row.asJSONDictionary();
+            Log.d(TAG, "" + rowAsJson);
+            List<Object> key = (List<Object>) rowAsJson.get("key");
+            Map<String,Object> doc = (Map<String,Object>) rowAsJson.get("doc");
+            String id = (String) rowAsJson.get("id");
+
+            Assert.assertEquals(expected[i][0], id);
             Assert.assertEquals(2, key.size());
             Assert.assertEquals(expected[i][1], key.get(0));
             Assert.assertEquals(expected[i][2], key.get(1));
@@ -1086,9 +1089,10 @@ public class ViewsTest extends LiteTestCase {
                 Assert.assertNull(row.getValue());
             }
             else {
-                Assert.assertEquals(expected[i][3], ((Map<String,Object>) row.getValue()).get("_id"));
+                Assert.assertEquals(expected[i][3], ((Map<String, Object>) row.getValue()).get("_id"));
             }
-            Assert.assertEquals(expected[i][4], doc.get("_id"));
+            Assert.assertEquals(expected[i][4], doc.get("_id")); 
+
         }
     }
 
