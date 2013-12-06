@@ -44,7 +44,7 @@ public class ReplicationTest extends LiteTestCase {
 
     public static final String TAG = "Replicator";
 
-    public String testPusher() throws Throwable {
+    public void testPusher() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
@@ -165,7 +165,6 @@ public class ReplicationTest extends LiteTestCase {
 
 
         Log.d(TAG, "testPusher() finished");
-        return docIdTimestamp;
 
     }
 
@@ -280,13 +279,18 @@ public class ReplicationTest extends LiteTestCase {
         addDocWithId(doc1Id, "attachment.png");
         addDocWithId(doc2Id, "attachment2.png");
 
+        // workaround for https://github.com/couchbase/sync_gateway/issues/228
+        Thread.sleep(1000);
+
         doPullReplication();
 
+        Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
         RevisionInternal doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(Database.TDContentOptions.class));
         assertNotNull(doc1);
         assertTrue(doc1.getRevId().startsWith("1-"));
         assertEquals(1, doc1.getProperties().get("foo"));
 
+        Log.d(TAG, "Fetching doc2 via id: " + doc2Id);
         RevisionInternal doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(Database.TDContentOptions.class));
         assertNotNull(doc2);
         assertTrue(doc2.getRevId().startsWith("1-"));
@@ -375,15 +379,21 @@ public class ReplicationTest extends LiteTestCase {
 
     private void addDocWithId(String docId, String attachmentName) throws IOException {
 
-        // add attachment to document
-        InputStream attachmentStream = getInstrumentation().getContext().getAssets().open(attachmentName);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        IOUtils.copy(attachmentStream, baos);
-        String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
+        final String docJson;
+
+        if (attachmentName != null) {
+            // add attachment to document
+            InputStream attachmentStream = getInstrumentation().getContext().getAssets().open(attachmentName);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            IOUtils.copy(attachmentStream, baos);
+            String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
+            docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentBase64);
+        }
+        else {
+            docJson = "{\"foo\":1,\"bar\":false}";
+        }
 
         // push a document to server
-        final String doc1Json = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentBase64);
-
         URL replicationUrlTrailingDoc1 = new URL(String.format("%s/%s", getReplicationURL().toExternalForm(), docId));
         final URL pathToDoc1 = new URL(replicationUrlTrailingDoc1, docId);
         Log.d(TAG, "Send http request to " + pathToDoc1);
@@ -400,7 +410,7 @@ public class ReplicationTest extends LiteTestCase {
                 String responseString = null;
                 try {
                     HttpPut post = new HttpPut(pathToDoc1.toExternalForm());
-                    StringEntity se = new StringEntity( doc1Json.toString() );
+                    StringEntity se = new StringEntity( docJson.toString() );
                     se.setContentType(new BasicHeader("content_type", "application/json"));
                     post.setEntity(se);
                     response = httpclient.execute(post);
