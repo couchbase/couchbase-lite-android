@@ -92,9 +92,8 @@ If you want to host and deploy your own maven artifacts, see the `upload_android
 - Alpha / Developer Preview
 
 ## Requirements
-- Android 3.0 Honeycomb (API level 11)
- 
-*Note*: this was recently bumped up from Android 2.2, due to [Ektorp issue #88](https://github.com/helun/Ektorp/issues/88)
+- Android 2.3 Gingerbread (API level 9) and above.
+
 
 ## License
 - Apache License 2.0
