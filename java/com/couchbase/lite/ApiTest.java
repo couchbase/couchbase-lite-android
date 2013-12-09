@@ -1,0 +1,809 @@
+package com.couchbase.lite;
+
+import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.util.Log;
+
+import junit.framework.Assert;
+
+import org.apache.commons.io.IOUtils;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+
+/**
+ * Created by andrey on 12/3/13.
+ */
+public class ApiTest extends LiteTestCase {
+
+    static void createDocuments(Database db, int n) {
+        //TODO should be changed to use db.runInTransaction
+        for (int i=0; i<n; i++) {
+            Map<String,Object> properties = new HashMap<String,Object>();
+            properties.put("testName", "testDatabase");
+            properties.put("sequence", i);
+            createDocumentWithProperties(db, properties);
+        }
+    };
+
+    static Document createDocumentWithProperties(Database db, Map<String,Object>  properties) {
+        Document  doc = db.createDocument();
+        Assert.assertNotNull(doc);
+        Assert.assertNull(doc.getCurrentRevisionId());
+        Assert.assertNull(doc.getCurrentRevision());
+        Assert.assertNotNull("Document has no ID", doc.getId()); // 'untitled' docs are no longer untitled (8/10/12)
+        try{
+            doc.putProperties(properties);
+        } catch( Exception e){
+            assertTrue("can't create new document in db:"+db.getName() + " with properties:"+ properties.toString(), false);
+        }
+        Assert.assertNotNull(doc.getId());
+        Assert.assertNotNull(doc.getCurrentRevisionId());
+        Assert.assertNotNull(doc.getUserProperties());
+        Assert.assertEquals(db.getDocument(doc.getId()), doc);
+        return doc;
+    }
+
+
+    //SERVER & DOCUMENTS
+
+    public void testAPIManager() {
+        Manager manager = this.manager;
+        Assert.assertTrue(manager!=null);
+        for(String dbName : manager.getAllDatabaseNames()){
+            Database db = manager.getDatabase(dbName);
+            Log.i(TAG, "Database '" + dbName + "':" + db.getDocumentCount() + " documents");
+        }
+        ManagerOptions options= new ManagerOptions(true, false);
+
+        Manager roManager=new Manager(new File(manager.getDirectory()), options);
+        Assert.assertTrue(roManager!=null);
+
+        Database db =roManager.getDatabase("foo");
+        Assert.assertNull(db);
+        List<String> dbNames=manager.getAllDatabaseNames();
+        Assert.assertFalse(dbNames.contains("foo"));
+        Assert.assertTrue(dbNames.contains(DEFAULT_TEST_DB));
+    }
+
+    public void testCreateDocument() {
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("testName", "testCreateDocument");
+        properties.put("tag", 1337);
+
+        Database db = startDatabase();
+        Document doc=createDocumentWithProperties(db, properties);
+        String docID=doc.getId();
+        assertTrue("Invalid doc ID: " +docID , docID.length()>10);
+        String currentRevisionID=doc.getCurrentRevisionId();
+        assertTrue("Invalid doc revision: " +docID , currentRevisionID.length()>10);
+        assertEquals(doc.getUserProperties(), properties);
+        assertEquals(db.getDocument(docID), doc);
+
+        db.clearDocumentCache();// so we can load fresh copies
+
+        Document doc2 = db.getExistingDocument(docID);
+        assertEquals(doc2.getId(), docID);
+        assertEquals(doc2.getCurrentRevisionId(), currentRevisionID);
+
+        assertNull(db.getExistingDocument("b0gus"));
+    }
+
+
+    public void testCreateRevisions() throws Exception{
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("testName", "testCreateRevisions");
+        properties.put("tag", 1337);
+
+        Database db = startDatabase();
+        Document doc=createDocumentWithProperties(db, properties);
+
+        SavedRevision rev1 = doc.getCurrentRevision();
+        assertTrue(rev1.getId().startsWith("1-"));
+        assertEquals(1, rev1.getSequence());
+        assertNull(rev1.getAttachments());
+
+        // Test -createRevisionWithProperties:
+        Map<String,Object> properties2 = new HashMap<String,Object>(properties);
+        properties2.put("tag", 4567);
+
+        SavedRevision rev2 = rev1.createRevision(properties2);
+        assertNotNull("Put failed", rev2);
+
+        assertTrue("Document revision ID is still " + doc.getCurrentRevisionId(), doc.getCurrentRevisionId().startsWith("2-"));
+
+
+        assertEquals(rev2.getId(), doc.getCurrentRevisionId());
+        assertNotNull(rev2.arePropertiesAvailable());
+        assertEquals(rev2.getUserProperties(), properties2);
+        assertEquals(rev2.getDocument(), doc);
+        assertEquals(rev2.getProperty("_id"), doc.getId());
+        assertEquals(rev2.getProperty("_rev"), rev2.getId());
+
+        // Test -createRevision:
+        UnsavedRevision newRev = rev2.createRevision();
+        assertNull(newRev.getId());
+        assertEquals(newRev.getParentRevision(), rev2);
+        assertEquals(newRev.getParentRevisionId(), rev2.getId());
+        List<SavedRevision> listRevs=new ArrayList<SavedRevision>();
+        listRevs.add(rev1);
+        listRevs.add(rev2);
+
+        assertEquals(newRev.getRevisionHistory(), listRevs);
+        assertEquals(newRev.getProperties(), rev2.getProperties());
+        assertEquals(newRev.getUserProperties(), rev2.getUserProperties());
+
+        Map<String,Object> userProperties=new HashMap<String, Object>();
+        userProperties.put("because", "NoSQL");
+
+        newRev.setUserProperties(userProperties);
+        assertEquals(newRev.getUserProperties(), userProperties);
+
+        Map<String,Object> expectProperties=new HashMap<String, Object>();
+        expectProperties.put("because", "NoSQL");
+        expectProperties.put("_id", doc.getId());
+        expectProperties.put("_rev", rev2.getId());
+
+        assertEquals(newRev.getProperties(),expectProperties);
+        SavedRevision rev3 = newRev.save();
+        assertNotNull(rev3);
+        assertEquals(rev3.getUserProperties(), newRev.getUserProperties());
+    }
+
+
+    public void testCreateNewRevisions() throws Exception{
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("testName", "testCreateRevisions");
+        properties.put("tag", 1337);
+
+        Database db = startDatabase();
+        Document doc=db.createDocument();
+        UnsavedRevision newRev =doc.createRevision();
+
+        Document newRevDocument = newRev.getDocument();
+        assertEquals(newRevDocument, doc);
+        assertEquals(newRev.getDatabase(), db);
+        assertNull(newRev.getParentRevisionId());
+        assertNull(newRev.getParentRevision());
+
+        Map<String,Object> expectProperties=new HashMap<String, Object>();
+        expectProperties.put("_id", doc.getId());
+        assertEquals(newRev.getProperties(), expectProperties);
+        assertTrue(!newRev.isDeletion());
+        assertEquals(newRev.getSequence(), 0);
+
+        //ios support another approach to set properties::
+        //newRev.([@"testName"] = @"testCreateRevisions";
+        //newRev[@"tag"] = @1337;
+        newRev.setUserProperties(properties);
+        assertEquals(newRev.getUserProperties(), properties);
+
+
+        SavedRevision rev1 = newRev.save();
+        assertNotNull("Save 1 failed", rev1);
+        assertEquals(rev1, doc.getCurrentRevision());
+        assertNotNull(rev1.getId().startsWith("1-"));
+        assertEquals(rev1.getSequence(), 1);
+        assertNull(rev1.getParentRevisionId());
+        assertNull(rev1.getParentRevision());
+
+        newRev = rev1.createRevision();
+        newRevDocument = newRev.getDocument();
+        assertEquals(newRevDocument, doc);
+        assertEquals(newRev.getDatabase(), db);
+        assertEquals(newRev.getParentRevisionId(), rev1.getId());
+        assertEquals(newRev.getParentRevision(), rev1);
+        assertEquals(newRev.getProperties(), rev1.getProperties());
+        assertEquals(newRev.getUserProperties(), rev1.getUserProperties());
+        assertNotNull(!newRev.isDeletion());
+
+        // we can't add/modify one property as on ios. need  to add separate method?
+        // newRev[@"tag"] = @4567;
+        properties.put("tag", 4567);
+        newRev.setUserProperties(properties);
+        SavedRevision rev2 = newRev.save();
+        assertNotNull( "Save 2 failed", rev2);
+        assertEquals(rev2, doc.getCurrentRevision());
+        assertNotNull(rev2.getId().startsWith("2-"));
+        assertEquals(rev2.getSequence(), 2);
+        assertEquals(rev2.getParentRevisionId(), rev1.getId());
+        assertEquals(rev2.getParentRevision(), rev1);
+
+        assertNotNull("Document revision ID is still " + doc.getCurrentRevisionId(), doc.getCurrentRevisionId().startsWith("2-"));
+
+        // Add a deletion/tombstone revision:
+        newRev = doc.createRevision();
+        assertEquals(newRev.getParentRevisionId(), rev2.getId());
+        assertEquals(newRev.getParentRevision(), rev2);
+        newRev.setIsDeletion(true);
+        SavedRevision rev3 = newRev.save();
+        assertNotNull("Save 3 failed", rev3);
+        assertEquals(rev3, doc.getCurrentRevision());
+        assertNotNull("Unexpected revID " + rev3.getId(), rev3.getId().startsWith("3-"));
+        assertEquals(rev3.getSequence(), 3);
+        assertTrue(rev3.isDeletion());
+
+        assertTrue(doc.isDeleted());
+        db.getDocumentCount();
+        Document doc2 = db.getExistingDocument(doc.getId());
+        // BUG ON IOS!
+        assertNull(doc2);
+
+    }
+
+    //API_SaveMultipleDocuments on IOS
+    //API_SaveMultipleUnsavedDocuments on IOS
+    //API_DeleteMultipleDocuments commented on IOS
+
+
+    public void testDeleteDocument() throws Exception{
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testDeleteDocument");
+
+        Database db = startDatabase();
+        Document doc=createDocumentWithProperties(db, properties);
+        assertTrue(!doc.isDeleted());
+        assertTrue(!doc.getCurrentRevision().isDeletion());
+        assertTrue(doc.delete());
+        assertTrue(doc.isDeleted());
+        assertNotNull(doc.getCurrentRevision().isDeletion());
+    }
+
+
+    public void testPurgeDocument() throws Exception{
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testPurgeDocument");
+
+        Database db = startDatabase();
+        Document doc=createDocumentWithProperties(db, properties);
+        assertNotNull(doc);
+        assertNotNull(doc.purge());
+
+        Document redoc = db.getCachedDocument(doc.getId());
+        assertNull(redoc);
+
+    }
+
+
+    public void testAllDocuments() throws Exception{
+        Database db = startDatabase();
+        int kNDocs = 5;
+        createDocuments(db, kNDocs);
+
+        // clear the cache so all documents/revisions will be re-fetched:
+        db.clearDocumentCache();
+        Log.i(TAG,"----- all documents -----");
+
+        Query query = db.createAllDocumentsQuery();
+        //query.prefetch = YES;
+        Log.i(TAG, "Getting all documents: " + query);
+
+        QueryEnumerator rows = query.run();
+        assertEquals(rows.getCount(), kNDocs);
+        int n = 0;
+        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+            QueryRow row = it.next();
+            Log.i(TAG, "    --> " + row);
+            Document doc = row.getDocument();
+            assertNotNull("Couldn't get doc from query", doc );
+            assertNotNull("QueryRow should have preloaded revision contents", doc.getCurrentRevision().arePropertiesAvailable());
+            Log.i(TAG, "        Properties =" + doc.getProperties());
+            assertNotNull("Couldn't get doc properties", doc.getProperties());
+            assertEquals(doc.getProperty("testName"), "testDatabase");
+            n++;
+        }
+        assertEquals(n, kNDocs);
+    }
+
+
+    public void testLocalDocs() throws Exception{
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
+
+        Database db = startDatabase();
+
+        Map<String,Object> props = db.getExistingLocalDocument("dock");
+        assertNull(props);
+        assertNotNull("Couldn't put new local doc", db.putLocalDocument(properties, "dock"));
+        props = db.getExistingLocalDocument("dock");
+        assertEquals(props.get("foo"), "bar");
+
+
+        Map<String,Object> newProperties = new HashMap<String, Object>();
+        newProperties.put("FOOO", "BARRR");
+
+        assertNotNull("Couldn't update local doc", db.putLocalDocument(newProperties, "dock"));
+        props = db.getExistingLocalDocument("dock");
+        assertNull(props.get("foo"));
+        assertEquals(props.get("FOOO"), "BARRR");
+
+        assertNotNull("Couldn't delete local doc", db.deleteLocalDocument("dock"));
+        props = db.getExistingLocalDocument("dock");
+        assertNull(props);
+
+        assertNotNull("Second delete should have failed", !db.deleteLocalDocument("dock"));
+        //TODO issue: deleteLocalDocument should return error.code( see ios)
+
+    }
+
+
+    // HISTORY
+
+    public void testHistory() throws Exception{
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "test06_History");
+        properties.put("tag", 1);
+
+        Database db = startDatabase();
+
+        Document doc = createDocumentWithProperties(db, properties);
+        String rev1ID = doc.getCurrentRevisionId();
+        Log.i(TAG, "1st revision: "+ rev1ID);
+        assertNotNull("1st revision looks wrong: " + rev1ID, rev1ID.startsWith("1-"));
+        assertEquals(doc.getUserProperties(), properties);
+        properties = new HashMap<String, Object>();
+        properties.putAll(doc.getProperties());
+        properties.put("tag", 2);
+        assertNotNull(!properties.equals(doc.getProperties()));
+        assertNotNull(doc.putProperties(properties));
+        String rev2ID = doc.getCurrentRevisionId();
+        Log.i(TAG, "rev2ID" + rev2ID);
+        assertNotNull("2nd revision looks wrong:" + rev2ID, rev2ID.startsWith("2-"));
+
+        List<SavedRevision> revisions = doc.getRevisionHistory();
+        Log.i(TAG, "Revisions = " + revisions);
+        assertEquals(revisions.size(), 2);
+
+        SavedRevision rev1 = revisions.get(0);
+        assertEquals(rev1.getId(), rev1ID);
+        Map<String,Object> gotProperties = rev1.getProperties();
+        assertEquals(gotProperties.get("tag"), 1);
+
+        SavedRevision rev2 = revisions.get(1);
+        assertEquals(rev2.getId(), rev2ID);
+        assertEquals(rev2, doc.getCurrentRevision());
+        gotProperties = rev2.getProperties();
+        assertEquals(gotProperties.get("tag"), 2);
+
+        List<SavedRevision> tmp =  new ArrayList<SavedRevision>();
+        tmp.add(rev2);
+        assertEquals(doc.getConflictingRevisions(), tmp);
+        assertEquals(doc.getLeafRevisions(), tmp);
+
+    }
+
+    /* TODO conflict is not supported now?
+    public void testConflict() throws Exception{
+        Map<String,Object> prop = new HashMap<String, Object>();
+        prop.put("foo", "bar");
+
+        Database db = startDatabase();
+        Document doc = createDocumentWithProperties(db, prop);
+        SavedRevision rev1 = doc.getCurrentRevision();
+
+        Map<String,Object> properties = doc.getProperties();
+        properties.put("tag", 2);
+        SavedRevision rev2a = doc.putProperties(properties);
+
+        properties = rev1.getProperties();
+        properties.put("tag", 3);
+        UnsavedRevision newRev = rev1.createRevision();
+        newRev.setProperties(properties);
+        //TODO ? saveAllowingConflict not found, see ios
+        SavedRevision rev2b = newRev.save();
+        assertNotNull("Failed to create a a conflict", rev2b);
+
+        List<SavedRevision> confRevs = new ArrayList<SavedRevision>();
+        confRevs.add(rev2b);
+        confRevs.add(rev2a);
+        assertEquals(doc.getConflictingRevisions(), confRevs);
+
+        assertEquals(doc.getLeafRevisions(), confRevs);
+
+        SavedRevision defaultRev, otherRev;
+        if (rev2a.getId().compareTo(rev2b.getId()) > 0) {
+            defaultRev = rev2a; otherRev = rev2b;
+        } else {
+            defaultRev = rev2b; otherRev = rev2a;
+        }
+        assertEquals(doc.getCurrentRevision(), defaultRev);
+
+        Query query = db.createAllDocumentsQuery();
+        // TODO allDocsMode?
+        query.allDocsMode = kCBLShowConflicts;
+        QueryEnumerator rows = query.getRows();
+        assertEquals(rows.getCount(), 1);
+        QueryRow row = rows.getRow(0);
+        // TODO conflictingRevisions?
+        List<SavedRevision>  revs = row.conflictingRevisions;
+        assertEquals(revs.size(), 2);
+        assertEquals(revs.get(0), defaultRev);
+        assertEquals(revs.get(1), otherRev);
+    }
+    */
+
+
+    //ATTACHMENTS
+
+    public void testAttachments() throws Exception, IOException {
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testAttachments");
+
+        Database db = startDatabase();
+
+        Document doc = createDocumentWithProperties(db, properties);
+        SavedRevision rev = doc.getCurrentRevision();
+
+        assertNull(rev.getAttachments());
+        assertNull(rev.getAttachmentNames());
+        assertNull(rev.getAttachment("index.html"));
+
+        String content  = "This is a test attachment!";
+        ByteArrayInputStream body = new ByteArrayInputStream(content.getBytes());
+
+        UnsavedRevision rev2 = doc.createRevision();
+        rev2.setAttachment("index.html", "text/plain; charset=utf-8", body);
+
+        SavedRevision rev3 = rev2.save();
+        assertNotNull(rev3);
+        assertEquals(rev3.getAttachments().size(), 1);
+        assertEquals(rev3.getAttachmentNames().size(), 1);
+
+        Attachment attach = rev3.getAttachment("index.html");
+        assertNotNull(attach);
+        assertEquals(attach.getDocument(), doc);
+        assertEquals(attach.getName(), "index.html");
+        List<String> attNames = new ArrayList<String>();
+        attNames.add("index.html");
+        assertEquals(rev3.getAttachmentNames(), attNames);
+
+        assertEquals(attach.getContentType(), "text/plain; charset=utf-8");
+        assertEquals(IOUtils.toString(attach.getContent(), "UTF-8"), content);
+        assertEquals(attach.getLength(), content.getBytes().length);
+        // TODO getcontentURL was not implemented?
+//        NSURL* bodyURL = attach.getcontentURL;
+//        assertNotNull(bodyURL.isFileURL);
+//        assertEquals([NSData dataWithContentsOfURL: bodyURL], body);
+//
+//        UnsavedRevision *newRev = [rev3 createRevision];
+//        [newRev removeAttachmentNamed: attach.name];
+//        CBLRevision* rev4 = [newRev save: &error];
+//        assertNotNull(!error);
+//        assertNotNull(rev4);
+//        assertEquals([rev4.attachmentNames count], (NSUInteger)0);
+
+    }
+
+
+
+    //CHANGE TRACKING
+
+/*
+
+    public void testAttachments() throws Exception{
+
+        Database db = startDatabase();
+        __block int changeCount = 0;
+        [[NSNotificationCenter defaultCenter] addObserverForName: kDatabaseChangeNotification
+        object: db
+        queue: nil
+        usingBlock: ^(NSNotification *n) {
+            ++changeCount;
+        }];
+
+        createDocuments(db,5);
+
+        [[NSRunLoop currentRunLoop] runUntilDate: [NSDate dateWithTimeIntervalSinceNow: 1.0]];
+        // We expect that the changes reported by the server won't be notified, because those revisions
+        // are already cached in memory.
+        assertEquals(changeCount, 1);
+
+        assertEquals(db.lastSequenceNumber, 5);
+
+    }
+*/
+
+    //VIEWS
+
+    public void testCreateView() throws Exception{
+        Database db = startDatabase();
+        View view = db.getView("vu");
+        assertNotNull(view);
+        assertEquals(view.getDatabase(), db);
+        assertEquals(view.getName(), "vu");
+        assertNull(view.getMap());
+        assertNull(view.getReduce());
+
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("sequence"), null);
+            }
+        }, "1");
+
+        assertNotNull(view.getMap() != null);
+
+        int kNDocs = 50;
+        createDocuments(db, kNDocs);
+
+        Query query = view.createQuery();
+        assertEquals(query.getDatabase(), db);
+        query.setStartKey(23);
+        query.setEndKey(33);
+        QueryEnumerator rows = query.run();
+        assertNotNull(rows);
+        assertEquals(rows.getCount(), 11);
+
+        int expectedKey = 23;
+        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+            QueryRow row = it.next();
+            assertEquals(row.getKey(), expectedKey);
+            assertEquals(row.getSequenceNumber(), expectedKey+1);
+            ++expectedKey;
+        }
+    }
+
+
+
+    //API_RunSlowView commented on IOS
+
+
+    public void testValidation() throws Exception{
+        Database db = startDatabase();
+        db.setValidation("uncool", new ValidationBlock() {
+            @Override
+            public boolean validate(RevisionInternal newRevision, ValidationContext context) {
+                {
+                    if (newRevision.getPropertyForKey("groovy") ==null) {
+                        context.setErrorMessage("uncool");
+                        return false;
+                    }
+                    return true;
+
+                }
+            }
+        });
+
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("groovy",  "right on");
+        properties.put( "foo", "bar");
+
+        Document doc = db.createDocument();
+        assertNotNull(doc.putProperties(properties));
+
+        properties = new HashMap<String,Object>();
+        properties.put( "foo", "bar");
+        doc = db.createDocument();
+        try{
+            assertNull(doc.putProperties(properties));
+        } catch (CouchbaseLiteException e){
+            //TODO
+            assertEquals(e.getCBLStatus().getCode(), Status.FORBIDDEN);
+//            assertEquals(e.getLocalizedMessage(), "forbidden: uncool"); //TODO: Not hooked up yet
+        }
+
+    }
+
+
+    public void testViewWithLinkedDocs() throws Exception{
+        Database db = startDatabase();
+        int kNDocs = 50;
+        Document[] docs = new Document[50];
+
+        String lastDocID = "";
+        for (int i=0; i<kNDocs; i++) {
+            Map<String,Object> properties = new HashMap<String,Object>();
+            properties.put("sequence", i);
+            properties.put("prev", lastDocID);
+            Document doc = createDocumentWithProperties(db, properties);
+            docs[i]=doc;
+            lastDocID = doc.getId();
+        }
+
+        Query query = db.slowQuery(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+
+                emitter.emit(document.get("sequence"), new Object[]{"_id" , document.get("prev") });
+
+            }
+        });
+
+        query.setStartKey(23);
+        query.setEndKey(33);
+        query.setPrefetch(true);
+        QueryEnumerator rows = query.run();
+        assertNotNull(rows);
+        assertEquals(rows.getCount(), 11);
+
+        int rowNumber = 23;
+
+
+        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+            QueryRow row = it.next();
+            assertEquals(row.getKey(), rowNumber);
+            Document prevDoc = docs[rowNumber];
+            assertEquals(row.getDocumentId(), prevDoc.getId());
+            assertEquals(row.getDocument(), prevDoc);
+            ++rowNumber;
+        }
+    }
+
+    /*
+        public void testLiveQuery() throws Exception{
+            final Database db = startDatabase();
+            View view = db.getView("vu");
+
+            view.setMap(new Mapper() {
+                @Override
+                public void map(Map<String, Object> document, Emitter emitter) {
+                    emitter.emit(document.get("sequence"), null);
+                }
+            }, "1");
+
+            int kNDocs = 50;
+            createDocuments(db, kNDocs);
+
+            final CBLLiveQuery query = view.createQuery().toLiveQuery();;
+            query.setStartKey(23);
+            query.setEndKey(33);
+            Log.i(TAG, "Created  " + query);
+            assertNull(query.getRows());
+
+            Log.i(TAG, "Waiting for live query to update...");
+            boolean finished = false;
+            query.start();
+            //TODO temp solution for infinite loop
+            int i=0;
+            while (!finished && i <100){
+                    QueryEnumerator rows = query.getRows();
+                    Log.i(TAG, "Live query rows = " + rows);
+                    i++;
+                    if (rows != null) {
+                        assertEquals(rows.getCount(), 11);
+
+                        int expectedKey = 23;
+                        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+                            QueryRow row = it.next();
+                            assertEquals(row.getDocument().getDatabase(), db);
+                            assertEquals(row.getKey(), expectedKey);
+                            ++expectedKey;
+                        }
+                        finished = true;
+                    }
+            }
+
+            query.stop();
+            assertTrue("Live query timed out!", finished);
+
+        }
+
+
+        public void testAsyncViewQuery() throws Exception, InterruptedException {
+            final Database db = startDatabase();
+            View view = db.getView("vu");
+            view.setMap(new Mapper() {
+                @Override
+                public void map(Map<String, Object> document, Emitter emitter) {
+                    emitter.emit(document.get("sequence"), null);
+                }
+            }, "1");
+
+            int kNDocs = 50;
+            createDocuments(db, kNDocs);
+
+            Query query = view.createQuery();
+            query.setStartKey(23);
+            query.setEndKey(33);
+
+            final boolean[] finished = {false};
+            final Thread curThread = Thread.currentThread();
+            query.runAsync(new Query.QueryCompleteListener() {
+                @Override
+                public void queryComplete(QueryEnumerator rows, Throwable error) {
+                    Log.i(TAG, "Async query finished!");
+                    //TODO Failed!
+                    assertEquals(Thread.currentThread().getId(), curThread.getId());
+                    assertNotNull(rows);
+                    assertNull(error);
+                    assertEquals(rows.getCount(), 11);
+
+                    int expectedKey = 23;
+                    for (Iterator<QueryRow> it = rows; it.hasNext();) {
+                        QueryRow row = it.next();
+                        assertEquals(row.getDocument().getDatabase(), db);
+                        assertEquals(row.getKey(), expectedKey);
+                        ++expectedKey;
+                    }
+                    finished[0] = true;
+
+                }
+            });
+            Log.i(TAG, "Waiting for async query to finish...");
+            assertTrue("Async query timed out!", finished[0]);
+        }
+
+
+        // Make sure that a database's map/reduce functions are shared with the shadow database instance
+        // running in the background server.
+        public void testSharedMapBlocks() throws Exception, ExecutionException, InterruptedException {
+            Manager mgr = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "API_SharedMapBlocks"));
+            Database db = mgr.getDatabase("db");
+            db.open();
+            db.setFilter("phil", new CBLFilterDelegate() {
+                @Override
+                public boolean filter(RevisionInternal revision, Map<String, Object> params) {
+                    return true;
+                }
+            });
+
+            db.setValidation("val", new ValidationBlock() {
+                @Override
+                public boolean validate(RevisionInternal newRevision, ValidationContext context) {
+                    return true;
+                }
+            });
+
+            View view = db.getView("view");
+            boolean ok = view.setMapAndReduce(new Mapper() {
+                @Override
+                public void map(Map<String, Object> document, Emitter emitter) {
+
+                }}, new CBLReducer() {
+                                     @Override
+                                     public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                                         return null;
+                                     }
+                                 }, "1");
+
+            assertNotNull("Couldn't set map/reduce", ok);
+
+            final Mapper map = view.getMap();
+            final CBLReducer reduce = view.getReduce();
+            final CBLFilterDelegate filter = db.getFilter("phil");
+            final ValidationBlock validation = db.getValidation("val");
+
+            Future result = mgr.runAsync("db", new DatabaseAsyncFunction() {
+                @Override
+                public boolean performFunction(Database database) {
+                    assertNotNull(database);
+                    View serverView = database.getExistingView("view");
+                    assertNotNull(serverView);
+                    assertEquals(database.getFilter("phil"), filter);
+                    assertEquals(database.getValidation("val"), validation);
+                    assertEquals(serverView.getMap(), map);
+                    assertEquals(serverView.getReduce(), reduce);
+                    return true;
+
+                }
+            });
+            Thread.sleep(20000);
+            assertEquals(result.get(), true);
+            db.close();
+            mgr.close();
+        }
+
+        */
+    public void testChangeUUID() throws Exception{
+        Manager mgr = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "ChangeUUID"), Manager.DEFAULT_OPTIONS);
+        Database db = mgr.getDatabase("db");
+        db.open();
+        String pub = db.publicUUID();
+        String priv = db.privateUUID();
+        assertTrue(pub.length() > 10);
+        assertTrue(priv.length() > 10);
+
+        assertTrue("replaceUUIDs failed", db.replaceUUIDs());
+        assertFalse(pub.equals(db.publicUUID()));
+        assertFalse(priv.equals(db.privateUUID()));
+        mgr.close();
+    }
+
+
+}

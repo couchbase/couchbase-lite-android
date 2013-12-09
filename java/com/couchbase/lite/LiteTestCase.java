@@ -73,10 +73,11 @@ public abstract class LiteTestCase extends InstrumentationTestCase {
         }
     }
 
-    protected void startDatabase() {
+    protected Database startDatabase() {
         database = ensureEmptyDatabase(DEFAULT_TEST_DB);
         boolean status = database.open();
         Assert.assertTrue(status);
+        return database;
     }
 
     protected void stopDatabse() {
