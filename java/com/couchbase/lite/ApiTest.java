@@ -440,8 +440,8 @@ public class ApiTest extends LiteTestCase {
         Document doc = createDocumentWithProperties(db, properties);
         SavedRevision rev = doc.getCurrentRevision();
 
-        assertNull(rev.getAttachments());
-        assertNull(rev.getAttachmentNames());
+        assertEquals(rev.getAttachments().size(), 0);
+        assertEquals(rev.getAttachmentNames().size(), 0);
         assertNull(rev.getAttachment("index.html"));
 
         String content  = "This is a test attachment!";
