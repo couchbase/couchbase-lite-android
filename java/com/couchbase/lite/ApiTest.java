@@ -107,7 +107,7 @@ public class ApiTest extends LiteTestCase {
         SavedRevision rev1 = doc.getCurrentRevision();
         assertTrue(rev1.getId().startsWith("1-"));
         assertEquals(1, rev1.getSequence());
-        assertNull(rev1.getAttachments());
+        assertEquals(0, rev1.getAttachments().size());
 
         // Test -createRevisionWithProperties:
         Map<String,Object> properties2 = new HashMap<String,Object>(properties);
