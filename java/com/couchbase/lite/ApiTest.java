@@ -167,14 +167,14 @@ public class ApiTest extends LiteTestCase {
         UnsavedRevision newRev =doc.createRevision();
 
         Document newRevDocument = newRev.getDocument();
-        assertEquals(newRevDocument, doc);
-        assertEquals(newRev.getDatabase(), db);
+        assertEquals(doc, newRevDocument);
+        assertEquals(db, newRev.getDatabase());
         assertNull(newRev.getParentRevisionId());
         assertNull(newRev.getParentRevision());
 
         Map<String,Object> expectProperties=new HashMap<String, Object>();
         expectProperties.put("_id", doc.getId());
-        assertEquals(newRev.getProperties(), expectProperties);
+        assertEquals(expectProperties, newRev.getProperties());
         assertTrue(!newRev.isDeletion());
         assertEquals(newRev.getSequence(), 0);
 
@@ -187,20 +187,20 @@ public class ApiTest extends LiteTestCase {
 
         SavedRevision rev1 = newRev.save();
         assertNotNull("Save 1 failed", rev1);
-        assertEquals(rev1, doc.getCurrentRevision());
+        assertEquals(doc.getCurrentRevision(), rev1);
         assertNotNull(rev1.getId().startsWith("1-"));
-        assertEquals(rev1.getSequence(), 1);
+        assertEquals(1, rev1.getSequence());
         assertNull(rev1.getParentRevisionId());
         assertNull(rev1.getParentRevision());
 
         newRev = rev1.createRevision();
         newRevDocument = newRev.getDocument();
-        assertEquals(newRevDocument, doc);
-        assertEquals(newRev.getDatabase(), db);
-        assertEquals(newRev.getParentRevisionId(), rev1.getId());
-        assertEquals(newRev.getParentRevision(), rev1);
-        assertEquals(newRev.getProperties(), rev1.getProperties());
-        assertEquals(newRev.getUserProperties(), rev1.getUserProperties());
+        assertEquals(doc, newRevDocument);
+        assertEquals(db, newRev.getDatabase());
+        assertEquals(rev1.getId(), newRev.getParentRevisionId());
+        assertEquals(rev1, newRev.getParentRevision());
+        assertEquals(rev1.getProperties(), newRev.getProperties());
+        assertEquals(rev1.getUserProperties(), newRev.getUserProperties());
         assertNotNull(!newRev.isDeletion());
 
         // we can't add/modify one property as on ios. need  to add separate method?
@@ -209,24 +209,24 @@ public class ApiTest extends LiteTestCase {
         newRev.setUserProperties(properties);
         SavedRevision rev2 = newRev.save();
         assertNotNull( "Save 2 failed", rev2);
-        assertEquals(rev2, doc.getCurrentRevision());
+        assertEquals(doc.getCurrentRevision(), rev2);
         assertNotNull(rev2.getId().startsWith("2-"));
-        assertEquals(rev2.getSequence(), 2);
-        assertEquals(rev2.getParentRevisionId(), rev1.getId());
-        assertEquals(rev2.getParentRevision(), rev1);
+        assertEquals(2, rev2.getSequence());
+        assertEquals(rev1.getId(), rev2.getParentRevisionId());
+        assertEquals(rev1, rev2.getParentRevision());
 
         assertNotNull("Document revision ID is still " + doc.getCurrentRevisionId(), doc.getCurrentRevisionId().startsWith("2-"));
 
         // Add a deletion/tombstone revision:
         newRev = doc.createRevision();
-        assertEquals(newRev.getParentRevisionId(), rev2.getId());
-        assertEquals(newRev.getParentRevision(), rev2);
+        assertEquals(rev2.getId(), newRev.getParentRevisionId());
+        assertEquals(rev2, newRev.getParentRevision());
         newRev.setIsDeletion(true);
         SavedRevision rev3 = newRev.save();
         assertNotNull("Save 3 failed", rev3);
-        assertEquals(rev3, doc.getCurrentRevision());
+        assertEquals(doc.getCurrentRevision(), rev3);
         assertNotNull("Unexpected revID " + rev3.getId(), rev3.getId().startsWith("3-"));
-        assertEquals(rev3.getSequence(), 3);
+        assertEquals(3, rev3.getSequence());
         assertTrue(rev3.isDeletion());
 
         assertTrue(doc.isDeleted());
