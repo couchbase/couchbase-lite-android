@@ -463,7 +463,7 @@ public class ApiTest extends LiteTestCase {
         attNames.add("index.html");
         assertEquals(rev3.getAttachmentNames(), attNames);
 
-        assertEquals(attach.getContentType(), "text/plain; charset=utf-8");
+        assertEquals("text/plain; charset=utf-8", attach.getContentType());
         assertEquals(IOUtils.toString(attach.getContent(), "UTF-8"), content);
         assertEquals(attach.getLength(), content.getBytes().length);
         // TODO getcontentURL was not implemented?
