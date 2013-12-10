@@ -515,8 +515,8 @@ public class ApiTest extends LiteTestCase {
         Database db = startDatabase();
         View view = db.getView("vu");
         assertNotNull(view);
-        assertEquals(view.getDatabase(), db);
-        assertEquals(view.getName(), "vu");
+        assertEquals(db, view.getDatabase());
+        assertEquals("vu", view.getName());
         assertNull(view.getMap());
         assertNull(view.getReduce());
 
@@ -533,18 +533,18 @@ public class ApiTest extends LiteTestCase {
         createDocuments(db, kNDocs);
 
         Query query = view.createQuery();
-        assertEquals(query.getDatabase(), db);
+        assertEquals(db, query.getDatabase());
         query.setStartKey(23);
         query.setEndKey(33);
         QueryEnumerator rows = query.run();
         assertNotNull(rows);
-        assertEquals(rows.getCount(), 11);
+        assertEquals(11, rows.getCount());
 
         int expectedKey = 23;
         for (Iterator<QueryRow> it = rows; it.hasNext();) {
             QueryRow row = it.next();
-            assertEquals(row.getKey(), expectedKey);
-            assertEquals(row.getSequenceNumber(), expectedKey+1);
+            assertEquals(expectedKey, row.getKey());
+            assertEquals(expectedKey+1, row.getSequenceNumber());
             ++expectedKey;
         }
     }
