@@ -363,13 +363,13 @@ public class ApiTest extends LiteTestCase {
         SavedRevision rev1 = revisions.get(0);
         assertEquals(rev1.getId(), rev1ID);
         Map<String,Object> gotProperties = rev1.getProperties();
-        assertEquals(gotProperties.get("tag"), 1);
+        assertEquals(1, gotProperties.get("tag"));
 
         SavedRevision rev2 = revisions.get(1);
         assertEquals(rev2.getId(), rev2ID);
         assertEquals(rev2, doc.getCurrentRevision());
         gotProperties = rev2.getProperties();
-        assertEquals(gotProperties.get("tag"), 2);
+        assertEquals(2, gotProperties.get("tag"));
 
         List<SavedRevision> tmp =  new ArrayList<SavedRevision>();
         tmp.add(rev2);
@@ -465,7 +465,7 @@ public class ApiTest extends LiteTestCase {
 
         assertEquals("text/plain; charset=utf-8", attach.getContentType());
         assertEquals(IOUtils.toString(attach.getContent(), "UTF-8"), content);
-        assertEquals(attach.getLength(), content.getBytes().length);
+        assertEquals(content.getBytes().length, attach.getLength());
         // TODO getcontentURL was not implemented?
 //        NSURL* bodyURL = attach.getcontentURL;
 //        assertNotNull(bodyURL.isFileURL);
