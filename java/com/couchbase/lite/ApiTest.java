@@ -457,8 +457,8 @@ public class ApiTest extends LiteTestCase {
 
         Attachment attach = rev3.getAttachment("index.html");
         assertNotNull(attach);
-        assertEquals(attach.getDocument(), doc);
-        assertEquals(attach.getName(), "index.html");
+        assertEquals(doc, attach.getDocument());
+        assertEquals("index.html", attach.getName());
         List<String> attNames = new ArrayList<String>();
         attNames.add("index.html");
         assertEquals(rev3.getAttachmentNames(), attNames);
