@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 
 /**
@@ -635,161 +636,164 @@ public class ApiTest extends LiteTestCase {
         }
     }
 
-    /*
-        public void testLiveQuery() throws Exception{
-            final Database db = startDatabase();
-            View view = db.getView("vu");
 
-            view.setMap(new Mapper() {
-                @Override
-                public void map(Map<String, Object> document, Emitter emitter) {
-                    emitter.emit(document.get("sequence"), null);
-                }
-            }, "1");
+    public void failingTestLiveQuery() throws Exception {
+        final Database db = startDatabase();
+        View view = db.getView("vu");
 
-            int kNDocs = 50;
-            createDocuments(db, kNDocs);
-
-            final CBLLiveQuery query = view.createQuery().toLiveQuery();;
-            query.setStartKey(23);
-            query.setEndKey(33);
-            Log.i(TAG, "Created  " + query);
-            assertNull(query.getRows());
-
-            Log.i(TAG, "Waiting for live query to update...");
-            boolean finished = false;
-            query.start();
-            //TODO temp solution for infinite loop
-            int i=0;
-            while (!finished && i <100){
-                    QueryEnumerator rows = query.getRows();
-                    Log.i(TAG, "Live query rows = " + rows);
-                    i++;
-                    if (rows != null) {
-                        assertEquals(rows.getCount(), 11);
-
-                        int expectedKey = 23;
-                        for (Iterator<QueryRow> it = rows; it.hasNext();) {
-                            QueryRow row = it.next();
-                            assertEquals(row.getDocument().getDatabase(), db);
-                            assertEquals(row.getKey(), expectedKey);
-                            ++expectedKey;
-                        }
-                        finished = true;
-                    }
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("sequence"), null);
             }
+        }, "1");
 
-            query.stop();
-            assertTrue("Live query timed out!", finished);
+        int kNDocs = 50;
+        createDocuments(db, kNDocs);
 
+        final LiveQuery query = view.createQuery().toLiveQuery();
+        ;
+        query.setStartKey(23);
+        query.setEndKey(33);
+        Log.i(TAG, "Created  " + query);
+        assertNull(query.run());
+
+        Log.i(TAG, "Waiting for live query to update...");
+        boolean finished = false;
+        query.start();
+        //TODO temp solution for infinite loop
+        int i = 0;
+        while (!finished && i < 100) {
+            QueryEnumerator rows = query.run();
+            Log.i(TAG, "Live query rows = " + rows);
+            i++;
+            if (rows != null) {
+                assertEquals(rows.getCount(), 11);
+
+                int expectedKey = 23;
+                for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
+                    QueryRow row = it.next();
+                    assertEquals(row.getDocument().getDatabase(), db);
+                    assertEquals(row.getKey(), expectedKey);
+                    ++expectedKey;
+                }
+                finished = true;
+            }
         }
 
+        query.stop();
+        assertTrue("Live query timed out!", finished);
 
-        public void testAsyncViewQuery() throws Exception, InterruptedException {
-            final Database db = startDatabase();
-            View view = db.getView("vu");
-            view.setMap(new Mapper() {
-                @Override
-                public void map(Map<String, Object> document, Emitter emitter) {
-                    emitter.emit(document.get("sequence"), null);
+    }
+
+
+    public void failingTestAsyncViewQuery() throws Exception, InterruptedException {
+        final Database db = startDatabase();
+        View view = db.getView("vu");
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("sequence"), null);
+            }
+        }, "1");
+
+        int kNDocs = 50;
+        createDocuments(db, kNDocs);
+
+        Query query = view.createQuery();
+        query.setStartKey(23);
+        query.setEndKey(33);
+
+        final boolean[] finished = {false};
+        final Thread curThread = Thread.currentThread();
+        query.runAsync(new Query.QueryCompleteListener() {
+            @Override
+            public void completed(QueryEnumerator rows, Throwable error) {
+                Log.i(TAG, "Async query finished!");
+                //TODO Failed!
+                assertEquals(Thread.currentThread().getId(), curThread.getId());
+                assertNotNull(rows);
+                assertNull(error);
+                assertEquals(rows.getCount(), 11);
+
+                int expectedKey = 23;
+                for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
+                    QueryRow row = it.next();
+                    assertEquals(row.getDocument().getDatabase(), db);
+                    assertEquals(row.getKey(), expectedKey);
+                    ++expectedKey;
                 }
-            }, "1");
+                finished[0] = true;
 
-            int kNDocs = 50;
-            createDocuments(db, kNDocs);
-
-            Query query = view.createQuery();
-            query.setStartKey(23);
-            query.setEndKey(33);
-
-            final boolean[] finished = {false};
-            final Thread curThread = Thread.currentThread();
-            query.runAsync(new Query.QueryCompleteListener() {
-                @Override
-                public void queryComplete(QueryEnumerator rows, Throwable error) {
-                    Log.i(TAG, "Async query finished!");
-                    //TODO Failed!
-                    assertEquals(Thread.currentThread().getId(), curThread.getId());
-                    assertNotNull(rows);
-                    assertNull(error);
-                    assertEquals(rows.getCount(), 11);
-
-                    int expectedKey = 23;
-                    for (Iterator<QueryRow> it = rows; it.hasNext();) {
-                        QueryRow row = it.next();
-                        assertEquals(row.getDocument().getDatabase(), db);
-                        assertEquals(row.getKey(), expectedKey);
-                        ++expectedKey;
-                    }
-                    finished[0] = true;
-
-                }
-            });
-            Log.i(TAG, "Waiting for async query to finish...");
-            assertTrue("Async query timed out!", finished[0]);
-        }
+            }
+        });
+        Log.i(TAG, "Waiting for async query to finish...");
+        assertTrue("Async query timed out!", finished[0]);
+    }
 
 
-        // Make sure that a database's map/reduce functions are shared with the shadow database instance
-        // running in the background server.
-        public void testSharedMapBlocks() throws Exception, ExecutionException, InterruptedException {
-            Manager mgr = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "API_SharedMapBlocks"));
-            Database db = mgr.getDatabase("db");
-            db.open();
-            db.setFilter("phil", new CBLFilterDelegate() {
-                @Override
-                public boolean filter(RevisionInternal revision, Map<String, Object> params) {
-                    return true;
-                }
-            });
+    // Make sure that a database's map/reduce functions are shared with the shadow database instance
+    // running in the background server.
+    public void failingTestSharedMapBlocks() throws Exception {
+        Manager mgr = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "API_SharedMapBlocks"), Manager.DEFAULT_OPTIONS);
+        Database db = mgr.getDatabase("db");
+        db.open();
+        db.setFilter("phil", new ReplicationFilter() {
+            @Override
+            public boolean filter(RevisionInternal revision, Map<String, Object> params) {
+                return true;
+            }
+        });
 
-            db.setValidation("val", new ValidationBlock() {
-                @Override
-                public boolean validate(RevisionInternal newRevision, ValidationContext context) {
-                    return true;
-                }
-            });
+        db.setValidation("val", new ValidationBlock() {
+            @Override
+            public boolean validate(RevisionInternal newRevision, ValidationContext context) {
+                return true;
+            }
+        });
 
-            View view = db.getView("view");
-            boolean ok = view.setMapAndReduce(new Mapper() {
-                @Override
-                public void map(Map<String, Object> document, Emitter emitter) {
+        View view = db.getView("view");
+        boolean ok = view.setMapAndReduce(new Mapper() {
+                                              @Override
+                                              public void map(Map<String, Object> document, Emitter emitter) {
 
-                }}, new CBLReducer() {
-                                     @Override
-                                     public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
-                                         return null;
-                                     }
-                                 }, "1");
+                                              }
+                                          }, new Reducer() {
+                                              @Override
+                                              public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                                                  return null;
+                                              }
+                                          }, "1"
+        );
 
-            assertNotNull("Couldn't set map/reduce", ok);
+        assertNotNull("Couldn't set map/reduce", ok);
 
-            final Mapper map = view.getMap();
-            final CBLReducer reduce = view.getReduce();
-            final CBLFilterDelegate filter = db.getFilter("phil");
-            final ValidationBlock validation = db.getValidation("val");
+        final Mapper map = view.getMap();
+        final Reducer reduce = view.getReduce();
+        final ReplicationFilter filter = db.getFilter("phil");
+        final ValidationBlock validation = db.getValidation("val");
 
-            Future result = mgr.runAsync("db", new DatabaseAsyncFunction() {
-                @Override
-                public boolean performFunction(Database database) {
-                    assertNotNull(database);
-                    View serverView = database.getExistingView("view");
-                    assertNotNull(serverView);
-                    assertEquals(database.getFilter("phil"), filter);
-                    assertEquals(database.getValidation("val"), validation);
-                    assertEquals(serverView.getMap(), map);
-                    assertEquals(serverView.getReduce(), reduce);
-                    return true;
+        Future result = mgr.runAsync("db", new AsyncTask() {
+            @Override
+            public boolean run(Database database) {
+                assertNotNull(database);
+                View serverView = database.getExistingView("view");
+                assertNotNull(serverView);
+                assertEquals(database.getFilter("phil"), filter);
+                assertEquals(database.getValidation("val"), validation);
+                assertEquals(serverView.getMap(), map);
+                assertEquals(serverView.getReduce(), reduce);
+                return true;
 
-                }
-            });
-            Thread.sleep(20000);
-            assertEquals(result.get(), true);
-            db.close();
-            mgr.close();
-        }
+            }
+        });
+        Thread.sleep(20000);
+        assertEquals(result.get(), true);
+        db.close();
+        mgr.close();
+    }
 
-        */
+
     public void testChangeUUID() throws Exception{
         Manager mgr = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "ChangeUUID"), Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
