@@ -740,7 +740,7 @@ public class ApiTest extends LiteTestCase {
         db.open();
         db.setFilter("phil", new ReplicationFilter() {
             @Override
-            public boolean filter(RevisionInternal revision, Map<String, Object> params) {
+            public boolean filter(SavedRevision revision, Map<String, Object> params) {
                 return true;
             }
         });

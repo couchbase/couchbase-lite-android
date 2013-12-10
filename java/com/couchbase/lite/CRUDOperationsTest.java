@@ -95,7 +95,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         changes = database.changesSince(0, null, new ReplicationFilter() {
 
             @Override
-            public boolean filter(RevisionInternal revision, Map<String, Object> params) {
+            public boolean filter(SavedRevision revision, Map<String, Object> params) {
                 return "updated!".equals(revision.getProperties().get("status"));
             }
 
@@ -105,7 +105,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         changes = database.changesSince(0, null, new ReplicationFilter() {
 
             @Override
-            public boolean filter(RevisionInternal revision, Map<String, Object> params) {
+            public boolean filter(SavedRevision revision, Map<String, Object> params) {
                 return "not updated!".equals(revision.getProperties().get("status"));
             }
 
