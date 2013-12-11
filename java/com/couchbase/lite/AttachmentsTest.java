@@ -198,6 +198,11 @@ public class AttachmentsTest extends LiteTestCase {
         RevisionInternal rev2 = database.putRevision(newRev, rev1WithAttachments.getRevId(), false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
+        // regression test for the case where we had a "recursive data structure" in the attachment properties
+        Map<String, Object> rev2Attachment = (Map<String, Object>) rev2.getProperties().get("_attachments");
+        Map<String, Object> attachMeta = (Map<String, Object>) rev2Attachment.get("attach");
+        assertFalse(attachMeta.containsKey("attach"));
+
     }
 
     @SuppressWarnings("unchecked")
