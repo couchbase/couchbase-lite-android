@@ -40,6 +40,8 @@ public class AttachmentsTest extends LiteTestCase {
     @SuppressWarnings("unchecked")
     public void testAttachments() throws Exception {
 
+        String testAttachmentName = "test_attachment";
+
         BlobStore attachments = database.getAttachments();
 
         Assert.assertEquals(0, attachments.count());
@@ -54,10 +56,10 @@ public class AttachmentsTest extends LiteTestCase {
         Assert.assertEquals(Status.CREATED, status.getCode());
 
         byte[] attach1 = "This is the body of attach1".getBytes();
-        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
+        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), testAttachmentName, "text/plain", rev1.getGeneration());
         Assert.assertEquals(Status.CREATED, status.getCode());
 
-        Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach");
+        Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), testAttachmentName);
         Assert.assertEquals("text/plain", attachment.getContentType());
         byte[] data = IOUtils.toByteArray(attachment.getContent());
         Assert.assertTrue(Arrays.equals(attach1, data));
@@ -69,7 +71,7 @@ public class AttachmentsTest extends LiteTestCase {
         innerDict.put("stub", true);
         innerDict.put("revpos", 1);
         Map<String,Object> attachmentDict = new HashMap<String,Object>();
-        attachmentDict.put("attach", innerDict);
+        attachmentDict.put(testAttachmentName, innerDict);
 
         Map<String,Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(rev1.getSequence(), EnumSet.noneOf(Database.TDContentOptions.class));
         Assert.assertEquals(attachmentDict, attachmentDictForSequence);
@@ -97,7 +99,7 @@ public class AttachmentsTest extends LiteTestCase {
         RevisionInternal rev2 = database.putRevision(new RevisionInternal(rev2Properties, database), rev1.getRevId(), false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
-        database.copyAttachmentNamedFromSequenceToSequence("attach", rev1.getSequence(), rev2.getSequence());
+        database.copyAttachmentNamedFromSequenceToSequence(testAttachmentName, rev1.getSequence(), rev2.getSequence());
 
         // Add a third revision of the same document:
         Map<String,Object> rev3Properties = new HashMap<String,Object>();
@@ -108,17 +110,17 @@ public class AttachmentsTest extends LiteTestCase {
         Assert.assertEquals(Status.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
-        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), "attach", "text/html", rev2.getGeneration());
+        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach2), rev3.getSequence(), testAttachmentName, "text/html", rev2.getGeneration());
 
         // Check the 2nd revision's attachment:
-        Attachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), "attach");
+        Attachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), testAttachmentName);
 
         Assert.assertEquals("text/plain", attachment2.getContentType());
         data = IOUtils.toByteArray(attachment2.getContent());
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         // Check the 3rd revision's attachment:
-        Attachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), "attach");
+        Attachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), testAttachmentName);
         Assert.assertEquals("text/html", attachment3.getContentType());
         data = IOUtils.toByteArray(attachment3.getContent());
         Assert.assertTrue(Arrays.equals(attach2, data));
@@ -143,6 +145,8 @@ public class AttachmentsTest extends LiteTestCase {
     @SuppressWarnings("unchecked")
     public void testPutLargeAttachment() throws Exception {
 
+        String testAttachmentName = "test_attachment";
+
         BlobStore attachments = database.getAttachments();
         attachments.deleteBlobs();
         Assert.assertEquals(0, attachments.count());
@@ -160,9 +164,10 @@ public class AttachmentsTest extends LiteTestCase {
             largeAttachment.append("big attachment!");
         }
         byte[] attach1 = largeAttachment.toString().getBytes();
-        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), "attach", "text/plain", rev1.getGeneration());
+        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1),
+                rev1.getSequence(), testAttachmentName, "text/plain", rev1.getGeneration());
 
-        Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), "attach");
+        Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), testAttachmentName);
         Assert.assertEquals("text/plain", attachment.getContentType());
         byte[] data = IOUtils.toByteArray(attachment.getContent());
         Assert.assertTrue(Arrays.equals(attach1, data));
@@ -177,7 +182,7 @@ public class AttachmentsTest extends LiteTestCase {
                 contentOptions
         );
 
-        Map<String,Object> innerDict = (Map<String,Object>) attachmentDictForSequence.get("attach");
+        Map<String,Object> innerDict = (Map<String,Object>) attachmentDictForSequence.get(testAttachmentName);
 
         if (!innerDict.containsKey("stub")) {
             throw new RuntimeException("Expected attachment dict to have 'stub' key");
@@ -200,14 +205,15 @@ public class AttachmentsTest extends LiteTestCase {
 
         // regression test for the case where we had a "recursive data structure" in the attachment properties
         Map<String, Object> rev2Attachment = (Map<String, Object>) rev2.getProperties().get("_attachments");
-        Map<String, Object> attachMeta = (Map<String, Object>) rev2Attachment.get("attach");
-        assertFalse(attachMeta.containsKey("attach"));
+        Map<String, Object> attachMeta = (Map<String, Object>) rev2Attachment.get(testAttachmentName);
+        assertFalse(attachMeta.containsKey(testAttachmentName));
 
     }
 
     @SuppressWarnings("unchecked")
     public void testPutAttachment() throws CouchbaseLiteException {
 
+        String testAttachmentName = "test_attachment";
         BlobStore attachments = database.getAttachments();
         attachments.deleteBlobs();
         Assert.assertEquals(0, attachments.count());
@@ -220,7 +226,7 @@ public class AttachmentsTest extends LiteTestCase {
         attachment.put("content_type", "text/plain");
         attachment.put("data", base64);
         Map<String,Object> attachmentDict = new HashMap<String,Object>();
-        attachmentDict.put("attach", attachment);
+        attachmentDict.put(testAttachmentName, attachment);
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("foo", 1);
         properties.put("bar", false);
@@ -243,7 +249,7 @@ public class AttachmentsTest extends LiteTestCase {
         innerDict.put("revpos", 1);
 
         Map<String,Object> expectAttachmentDict = new HashMap<String,Object>();
-        expectAttachmentDict.put("attach", innerDict);
+        expectAttachmentDict.put(testAttachmentName, innerDict);
 
         Assert.assertEquals(expectAttachmentDict, gotAttachmentDict);
 
@@ -251,7 +257,7 @@ public class AttachmentsTest extends LiteTestCase {
         byte[] attachv2 = "Replaced body of attach".getBytes();
         boolean gotExpectedErrorCode = false;
         try {
-            database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null);
+            database.updateAttachment(testAttachmentName, new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null);
         } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.CONFLICT);
         }
@@ -259,7 +265,7 @@ public class AttachmentsTest extends LiteTestCase {
 
         gotExpectedErrorCode = false;
         try {
-            database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus");
+            database.updateAttachment(testAttachmentName, new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus");
         } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.CONFLICT);
         }
@@ -268,7 +274,7 @@ public class AttachmentsTest extends LiteTestCase {
         gotExpectedErrorCode = false;
         RevisionInternal rev2 = null;
         try {
-            rev2 = database.updateAttachment("attach", new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId());
+            rev2 = database.updateAttachment(testAttachmentName, new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId());
         } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = true;
         }
@@ -288,7 +294,7 @@ public class AttachmentsTest extends LiteTestCase {
         innerDict.put("stub", true);
         innerDict.put("revpos", 2);
 
-        expectAttachmentDict.put("attach", innerDict);
+        expectAttachmentDict.put(testAttachmentName, innerDict);
 
         Assert.assertEquals(expectAttachmentDict, attachmentDict);
 
@@ -310,7 +316,7 @@ public class AttachmentsTest extends LiteTestCase {
         Assert.assertTrue(gotExpectedErrorCode);
 
 
-        RevisionInternal rev3 = database.updateAttachment("attach", null, null, rev2.getDocId(), rev2.getRevId());
+        RevisionInternal rev3 = database.updateAttachment(testAttachmentName, null, null, rev2.getDocId(), rev2.getRevId());
         Assert.assertEquals(rev2.getDocId(), rev3.getDocId());
         Assert.assertEquals(3, rev3.getGeneration());
 
