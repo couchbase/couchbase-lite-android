@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -557,12 +556,12 @@ public class ApiTest extends LiteTestCase {
 
     public void testValidation() throws Exception{
         Database db = startDatabase();
-        db.setValidation("uncool", new ValidationBlock() {
+        db.setValidation("uncool", new Validator() {
             @Override
-            public boolean validate(RevisionInternal newRevision, ValidationContext context) {
+            public boolean validate(Revision newRevision, ValidationContext context) {
                 {
-                    if (newRevision.getPropertyForKey("groovy") ==null) {
-                        context.setErrorMessage("uncool");
+                    if (newRevision.getProperty("groovy") ==null) {
+                        context.reject("uncool");
                         return false;
                     }
                     return true;
@@ -745,9 +744,9 @@ public class ApiTest extends LiteTestCase {
             }
         });
 
-        db.setValidation("val", new ValidationBlock() {
+        db.setValidation("val", new Validator() {
             @Override
-            public boolean validate(RevisionInternal newRevision, ValidationContext context) {
+            public boolean validate(Revision newRevision, ValidationContext context) {
                 return true;
             }
         });
@@ -771,7 +770,7 @@ public class ApiTest extends LiteTestCase {
         final Mapper map = view.getMap();
         final Reducer reduce = view.getReduce();
         final ReplicationFilter filter = db.getFilter("phil");
-        final ValidationBlock validation = db.getValidation("val");
+        final Validator validation = db.getValidation("val");
 
         Future result = mgr.runAsync("db", new AsyncTask() {
             @Override

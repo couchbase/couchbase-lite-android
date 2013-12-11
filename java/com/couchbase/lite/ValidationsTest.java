@@ -16,25 +16,25 @@ public class ValidationsTest extends LiteTestCase {
 
     public void testValidations() throws CouchbaseLiteException {
 
-        ValidationBlock validationBlock = new ValidationBlock() {
+        Validator validator = new Validator() {
 
             @Override
-            public boolean validate(RevisionInternal newRevision, ValidationContext context) {
+            public boolean validate(Revision newRevision, ValidationContext context) {
 
                 assertNotNull(newRevision);
                 assertNotNull(context);
-                assertTrue(newRevision.getProperties() != null || newRevision.isDeleted());
+                assertTrue(newRevision.getProperties() != null || newRevision.isDeletion());
                 validationCalled = true;
-                boolean hoopy = newRevision.isDeleted()  || (newRevision.getProperties().get("towel") != null);
+                boolean hoopy = newRevision.isDeletion()  || (newRevision.getProperties().get("towel") != null);
                 Log.v(TAG, String.format("--- Validating %s --> %b", newRevision.getProperties(), hoopy));
                 if(!hoopy) {
-                    context.setErrorMessage("Where's your towel?");
+                    context.reject("Where's your towel?");
                 }
                 return hoopy;
             }
         };
 
-        database.setValidation("hoopy", validationBlock);
+        database.setValidation("hoopy", validator);
 
         // POST a valid new document:
         Map<String, Object> props = new HashMap<String,Object>();
