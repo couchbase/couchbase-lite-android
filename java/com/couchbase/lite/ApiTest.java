@@ -32,7 +32,9 @@ public class ApiTest extends LiteTestCase {
         db.runAsync(new AsyncTask() {
             @Override
             public boolean run(Database database) {
+                db.beginTransaction();
                 createDocuments(db, n);
+                db.endTransaction(true);
                 return true;
             }
         });
@@ -503,24 +505,24 @@ public class ApiTest extends LiteTestCase {
 
 
 
-    public void failingChangeTracking() throws Exception{
+    public void testChangeTracking() throws Exception{
+
+        final CountDownLatch doneSignal = new CountDownLatch(1);
 
         Database db = startDatabase();
-        changeCount = 0;
         db.addChangeListener(new Database.ChangeListener() {
             @Override
             public void changed(Database.ChangeEvent event) {
-                changeCount++;
+                doneSignal.countDown();
             }
         });
 
-        createDocuments(db,5);
-
+        createDocumentsAsync(db, 5);
         // We expect that the changes reported by the server won't be notified, because those revisions
         // are already cached in memory.
-        assertEquals(changeCount, 1);
-
-        assertEquals(db.getLastSequenceNumber(), 5);
+        boolean success = doneSignal.await(1, TimeUnit.SECONDS);
+        assertTrue(success);
+        assertEquals(5, db.getLastSequenceNumber());
 
     }
 
