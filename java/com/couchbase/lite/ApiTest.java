@@ -250,9 +250,9 @@ public class ApiTest extends LiteTestCase {
 
         assertTrue(doc.isDeleted());
         db.getDocumentCount();
-        Document doc2 = db.getExistingDocument(doc.getId());
-        // BUG ON IOS!
-        assertNull(doc2);
+        Document doc2 = db.getDocument(doc.getId());
+        assertEquals(doc, doc2);
+        assertNull(db.getExistingDocument(doc.getId()));
 
     }
 
