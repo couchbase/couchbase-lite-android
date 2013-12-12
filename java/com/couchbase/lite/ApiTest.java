@@ -761,7 +761,9 @@ public class ApiTest extends LiteTestCase {
     }
 
 
-    public void testAsyncViewQuery() throws Exception, InterruptedException {
+    public void testAsyncViewQuery() throws Exception {
+
+        final CountDownLatch doneSignal = new CountDownLatch(1);
         final Database db = startDatabase();
         View view = db.getView("vu");
         view.setMap(new Mapper() {
@@ -778,13 +780,10 @@ public class ApiTest extends LiteTestCase {
         query.setStartKey(23);
         query.setEndKey(33);
 
-        final boolean[] finished = {false};
-        final Thread curThread = Thread.currentThread();
         query.runAsync(new Query.QueryCompleteListener() {
             @Override
             public void completed(QueryEnumerator rows, Throwable error) {
                 Log.i(TAG, "Async query finished!");
-                //assertEquals(Thread.currentThread().getId(), curThread.getId()); TODO Failed!
                 assertNotNull(rows);
                 assertNull(error);
                 assertEquals(rows.getCount(), 11);
@@ -796,17 +795,15 @@ public class ApiTest extends LiteTestCase {
                     assertEquals(row.getKey(), expectedKey);
                     ++expectedKey;
                 }
-                finished[0] = true;
+                doneSignal.countDown();
 
             }
         });
+
         Log.i(TAG, "Waiting for async query to finish...");
-        long t= System.currentTimeMillis();
-        long end = t + 20000;
-        while((System.currentTimeMillis() < end) || !finished[0]) {
-            Thread.sleep(1000);
-        }
-        assertTrue("Async query timed out!", finished[0]);
+        boolean success = doneSignal.await(30, TimeUnit.SECONDS);
+        assertTrue("Done signal timed out, async query never ran", success);
+
     }
 
 
