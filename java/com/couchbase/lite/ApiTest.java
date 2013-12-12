@@ -670,11 +670,14 @@ public class ApiTest extends LiteTestCase {
         query.setEndKey(33);
         Log.i(TAG, "Created  " + query);
 
+        // these are the keys that we expect to see in the livequery change listener callback
         final Set<Integer> expectedKeys = new HashSet<Integer>();
         for (int i=23; i<34; i++) {
             expectedKeys.add(i);
         }
 
+        // install a change listener which decrements countdown latch when it sees a new
+        // key from the list of expected keys
         query.addChangeListener(new LiveQuery.ChangeListener() {
             @Override
             public void changed(LiveQuery.ChangeEvent event) {
@@ -689,16 +692,19 @@ public class ApiTest extends LiteTestCase {
                 }
             }
         });
+
+        // start the livequery running asynchronously
         query.start();
 
+        // create the docs that will cause the above change listener to decrement countdown latch
         int kNDocs = 50;
         createDocumentsAsync(db, kNDocs);
 
-        // wait for the doneSignal to be finished, with a 1 second timeout
+        // wait for the doneSignal to be finished
         boolean success = doneSignal.await(1, TimeUnit.SECONDS);
         assertTrue("Done signal timed out, live query never ran", success);
 
-        // stop the livequery
+        // stop the livequery since we are done with it
         query.stop();
 
     }
