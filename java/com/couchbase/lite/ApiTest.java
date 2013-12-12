@@ -703,7 +703,7 @@ public class ApiTest extends LiteTestCase {
         createDocumentsAsync(db, kNDocs);
 
         // wait for the doneSignal to be finished
-        boolean success = doneSignal.await(1, TimeUnit.SECONDS);
+        boolean success = doneSignal.await(30, TimeUnit.SECONDS);
         assertTrue("Done signal timed out, live query never ran", success);
 
         // stop the livequery since we are done with it
