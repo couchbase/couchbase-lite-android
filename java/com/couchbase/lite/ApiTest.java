@@ -11,10 +11,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -24,7 +28,18 @@ public class ApiTest extends LiteTestCase {
 
     private int changeCount = 0;
 
-    static void createDocuments(Database db, int n) {
+    static void createDocumentsAsync(final Database db, final int n) {
+        db.runAsync(new AsyncTask() {
+            @Override
+            public boolean run(Database database) {
+                createDocuments(db, n);
+                return true;
+            }
+        });
+
+    };
+
+    static void createDocuments(final Database db, final int n) {
         //TODO should be changed to use db.runInTransaction
         for (int i=0; i<n; i++) {
             Map<String,Object> properties = new HashMap<String,Object>();
@@ -57,7 +72,7 @@ public class ApiTest extends LiteTestCase {
 
     public void testAPIManager() {
         Manager manager = this.manager;
-        Assert.assertTrue(manager!=null);
+        Assert.assertTrue(manager != null);
         for(String dbName : manager.getAllDatabaseNames()){
             Database db = manager.getDatabase(dbName);
             Log.i(TAG, "Database '" + dbName + "':" + db.getDocumentCount() + " documents");
@@ -280,7 +295,7 @@ public class ApiTest extends LiteTestCase {
 
         // clear the cache so all documents/revisions will be re-fetched:
         db.clearDocumentCache();
-        Log.i(TAG,"----- all documents -----");
+        Log.i(TAG, "----- all documents -----");
 
         Query query = db.createAllDocumentsQuery();
         //query.prefetch = YES;
@@ -637,7 +652,58 @@ public class ApiTest extends LiteTestCase {
     }
 
 
-    public void failingTestLiveQuery() throws Exception {
+    public void testLiveQuery() throws Exception {
+
+        final Database db = startDatabase();
+        final CountDownLatch doneSignal = new CountDownLatch(11);
+
+        // run a live query
+        View view = db.getView("vu");
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("sequence"), null);
+            }
+        }, "1");
+        final LiveQuery query = view.createQuery().toLiveQuery();
+        query.setStartKey(23);
+        query.setEndKey(33);
+        Log.i(TAG, "Created  " + query);
+
+        final Set<Integer> expectedKeys = new HashSet<Integer>();
+        for (int i=23; i<34; i++) {
+            expectedKeys.add(i);
+        }
+
+        query.addChangeListener(new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                QueryEnumerator rows = event.getRows();
+                for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
+                    QueryRow row = it.next();
+                    if (expectedKeys.contains(row.getKey())) {
+                        expectedKeys.remove(row.getKey());
+                        doneSignal.countDown();
+                    }
+
+                }
+            }
+        });
+        query.start();
+
+        int kNDocs = 50;
+        createDocumentsAsync(db, kNDocs);
+
+        // wait for the doneSignal to be finished, with a 1 second timeout
+        boolean success = doneSignal.await(10, TimeUnit.SECONDS);
+        assertTrue("Done signal timed out, live query never ran", success);
+
+        // stop the livequery
+        query.stop();
+
+    }
+
+    public void failingiOSPortTestLiveQuery() throws Exception {
         final Database db = startDatabase();
         View view = db.getView("vu");
 
@@ -649,6 +715,7 @@ public class ApiTest extends LiteTestCase {
         }, "1");
 
         int kNDocs = 50;
+
         createDocuments(db, kNDocs);
 
         LiveQuery query = view.createQuery().toLiveQuery();
