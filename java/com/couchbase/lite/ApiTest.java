@@ -655,7 +655,7 @@ public class ApiTest extends LiteTestCase {
     public void testLiveQuery() throws Exception {
 
         final Database db = startDatabase();
-        final CountDownLatch doneSignal = new CountDownLatch(11);
+        final CountDownLatch doneSignal = new CountDownLatch(11);  // 11 corresponds to startKey=23; endKey=33
 
         // run a live query
         View view = db.getView("vu");
@@ -695,7 +695,7 @@ public class ApiTest extends LiteTestCase {
         createDocumentsAsync(db, kNDocs);
 
         // wait for the doneSignal to be finished, with a 1 second timeout
-        boolean success = doneSignal.await(10, TimeUnit.SECONDS);
+        boolean success = doneSignal.await(1, TimeUnit.SECONDS);
         assertTrue("Done signal timed out, live query never ran", success);
 
         // stop the livequery
