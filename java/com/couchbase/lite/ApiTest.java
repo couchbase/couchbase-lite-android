@@ -654,9 +654,12 @@ public class ApiTest extends LiteTestCase {
     }
 
 
-    public void testLiveQuery() throws Exception {
-        runLiveQuery("start");
+    public void testLiveQueryRun() throws Exception {
         runLiveQuery("run");
+    }
+
+    public void testLiveQueryStart() throws Exception {
+        runLiveQuery("start");
     }
 
     public void runLiveQuery(String methodNameToCall) throws Exception {
@@ -685,7 +688,7 @@ public class ApiTest extends LiteTestCase {
 
         // install a change listener which decrements countdown latch when it sees a new
         // key from the list of expected keys
-        query.addChangeListener(new LiveQuery.ChangeListener() {
+        final LiveQuery.ChangeListener changeListener = new LiveQuery.ChangeListener() {
             @Override
             public void changed(LiveQuery.ChangeEvent event) {
                 QueryEnumerator rows = event.getRows();
@@ -698,7 +701,8 @@ public class ApiTest extends LiteTestCase {
 
                 }
             }
-        });
+        };
+        query.addChangeListener(changeListener);
 
         // create the docs that will cause the above change listener to decrement countdown latch
         int kNDocs = 50;
@@ -716,6 +720,7 @@ public class ApiTest extends LiteTestCase {
         assertTrue("Done signal timed out, live query never ran", success);
 
         // stop the livequery since we are done with it
+        query.removeChangeListener(changeListener);
         query.stop();
 
     }
