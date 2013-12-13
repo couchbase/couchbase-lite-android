@@ -72,7 +72,7 @@ public class ApiTest extends LiteTestCase {
 
     //SERVER & DOCUMENTS
 
-    public void testAPIManager() {
+    public void testAPIManager() throws IOException {
         Manager manager = this.manager;
         Assert.assertTrue(manager != null);
         for(String dbName : manager.getAllDatabaseNames()){
