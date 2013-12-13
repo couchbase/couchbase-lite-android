@@ -712,7 +712,9 @@ public class ApiTest extends LiteTestCase {
             // start the livequery running asynchronously
             query.start();
         } else {
-            query.run();
+            assertNull(query.getRows());
+            query.run();  // this will block until the query completes
+            assertNotNull(query.getRows());
         }
 
         // wait for the doneSignal to be finished
