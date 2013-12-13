@@ -397,7 +397,7 @@ public class ApiTest extends LiteTestCase {
 
     }
 
-    /* TODO conflict is not supported now?
+
     public void testConflict() throws Exception{
         Map<String,Object> prop = new HashMap<String, Object>();
         prop.put("foo", "bar");
@@ -406,16 +406,17 @@ public class ApiTest extends LiteTestCase {
         Document doc = createDocumentWithProperties(db, prop);
         SavedRevision rev1 = doc.getCurrentRevision();
 
-        Map<String,Object> properties = doc.getProperties();
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.putAll(doc.getProperties());
         properties.put("tag", 2);
         SavedRevision rev2a = doc.putProperties(properties);
 
-        properties = rev1.getProperties();
+        properties = new HashMap<String, Object>();
+        properties.putAll(rev1.getProperties());
         properties.put("tag", 3);
         UnsavedRevision newRev = rev1.createRevision();
         newRev.setProperties(properties);
-        //TODO ? saveAllowingConflict not found, see ios
-        SavedRevision rev2b = newRev.save();
+        SavedRevision rev2b = newRev.saveAllowingConflict();
         assertNotNull("Failed to create a a conflict", rev2b);
 
         List<SavedRevision> confRevs = new ArrayList<SavedRevision>();
@@ -434,19 +435,17 @@ public class ApiTest extends LiteTestCase {
         assertEquals(doc.getCurrentRevision(), defaultRev);
 
         Query query = db.createAllDocumentsQuery();
-        // TODO allDocsMode?
-        query.allDocsMode = kCBLShowConflicts;
-        QueryEnumerator rows = query.getRows();
+        query.setAllDocsMode(Query.AllDocsMode.SHOW_CONFLICTS);
+        QueryEnumerator rows = query.run();
         assertEquals(rows.getCount(), 1);
         QueryRow row = rows.getRow(0);
-        // TODO conflictingRevisions?
-        List<SavedRevision>  revs = row.conflictingRevisions;
+
+        List<SavedRevision> revs = row.getConflictingRevisions();
         assertEquals(revs.size(), 2);
         assertEquals(revs.get(0), defaultRev);
         assertEquals(revs.get(1), otherRev);
-    }
-    */
 
+    }
 
     //ATTACHMENTS
 
