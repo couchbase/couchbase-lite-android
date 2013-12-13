@@ -772,10 +772,11 @@ public class ApiTest extends LiteTestCase {
 
     }
 
-
-    // Make sure that a database's map/reduce functions are shared with the shadow database instance
-    // running in the background server.
-    public void failingTestSharedMapBlocks() throws Exception {
+    /**
+     * Make sure that a database's map/reduce functions are shared with the shadow database instance
+     * running in the background server.
+     */
+    public void testSharedMapBlocks() throws Exception {
         Manager mgr = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "API_SharedMapBlocks"), Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
@@ -828,10 +829,10 @@ public class ApiTest extends LiteTestCase {
 
             }
         });
-        Thread.sleep(10000);
+        result.get();  // blocks until async task has run
         db.close();
         mgr.close();
-        assertEquals(result.get(), true);
+
     }
 
 
