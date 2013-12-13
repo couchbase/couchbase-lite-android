@@ -655,6 +655,11 @@ public class ApiTest extends LiteTestCase {
 
 
     public void testLiveQuery() throws Exception {
+        runLiveQuery("start");
+        runLiveQuery("run");
+    }
+
+    public void runLiveQuery(String methodNameToCall) throws Exception {
 
         final Database db = startDatabase();
         final CountDownLatch doneSignal = new CountDownLatch(11);  // 11 corresponds to startKey=23; endKey=33
@@ -695,12 +700,16 @@ public class ApiTest extends LiteTestCase {
             }
         });
 
-        // start the livequery running asynchronously
-        query.start();
-
         // create the docs that will cause the above change listener to decrement countdown latch
         int kNDocs = 50;
         createDocumentsAsync(db, kNDocs);
+
+        if (methodNameToCall.equals("start")) {
+            // start the livequery running asynchronously
+            query.start();
+        } else {
+            query.run();
+        }
 
         // wait for the doneSignal to be finished
         boolean success = doneSignal.await(30, TimeUnit.SECONDS);
@@ -710,56 +719,6 @@ public class ApiTest extends LiteTestCase {
         query.stop();
 
     }
-
-    public void failingiOSPortTestLiveQuery() throws Exception {
-        final Database db = startDatabase();
-        View view = db.getView("vu");
-
-        view.setMap(new Mapper() {
-            @Override
-            public void map(Map<String, Object> document, Emitter emitter) {
-                emitter.emit(document.get("sequence"), null);
-            }
-        }, "1");
-
-        int kNDocs = 50;
-
-        createDocuments(db, kNDocs);
-
-        LiveQuery query = view.createQuery().toLiveQuery();
-
-        query.setStartKey(23);
-        query.setEndKey(33);
-        Log.i(TAG, "Created  " + query);
-        assertNull(query.run());
-
-        Log.i(TAG, "Waiting for live query to update...");
-        boolean finished = false;
-        //TODO temp solution for infinite loop
-        int i = 0;
-        while (!finished && i < 100) {
-            QueryEnumerator rows = query.run();
-            Log.i(TAG, "Live query rows = " + rows);
-            i++;
-            if (rows != null) {
-                assertEquals(rows.getCount(), 11);
-
-                int expectedKey = 23;
-                for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
-                    QueryRow row = it.next();
-                    assertEquals(row.getDocument().getDatabase(), db);
-                    assertEquals(row.getKey(), expectedKey);
-                    ++expectedKey;
-                }
-                finished = true;
-            }
-        }
-        Thread.sleep(10000);
-        query.stop();
-        assertTrue("Live query timed out!", finished);
-
-    }
-
 
     public void testAsyncViewQuery() throws Exception {
 
