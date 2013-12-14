@@ -116,6 +116,18 @@ public class RouterTest extends LiteTestCase {
 
     }
 
+    private Map<String, Object> valueMapWithRev(String revId) {
+        Map<String,Object> value = valueMapWithRevNoConflictArray(revId);
+        value.put("_conflicts", new ArrayList<String>());
+        return value;
+    }
+
+    private Map<String, Object> valueMapWithRevNoConflictArray(String revId) {
+        Map<String,Object> value = new HashMap<String,Object>();
+        value.put("rev", revId);
+        return value;
+    }
+
     public void testDocs() {
         send("PUT", "/db", Status.CREATED, null);
 
@@ -151,12 +163,9 @@ public class RouterTest extends LiteTestCase {
         assertEquals(3, result.get("total_rows"));
         assertEquals(0, result.get("offset"));
 
-        Map<String,Object> value1 = new HashMap<String,Object>();
-        value1.put("rev", revID);
-        Map<String,Object> value2 = new HashMap<String,Object>();
-        value2.put("rev", revID2);
-        Map<String,Object> value3 = new HashMap<String,Object>();
-        value3.put("rev", revID3);
+        Map<String,Object> value1 = valueMapWithRev(revID);
+        Map<String,Object> value2 = valueMapWithRev(revID2);
+        Map<String,Object> value3 = valueMapWithRev(revID3);
 
         Map<String,Object> row1 = new HashMap<String,Object>();
         row1.put("id", "doc1");
@@ -187,13 +196,12 @@ public class RouterTest extends LiteTestCase {
         send("GET", "/db/doc1", Status.NOT_FOUND, null);
 
         // _changes:
-        value1.put("rev", revID);
         List<Object> changes1 = new ArrayList<Object>();
-        changes1.add(value1);
+        changes1.add(valueMapWithRevNoConflictArray(revID));
         List<Object> changes2 = new ArrayList<Object>();
-        changes2.add(value2);
+        changes2.add(valueMapWithRevNoConflictArray(revID2));
         List<Object> changes3 = new ArrayList<Object>();
-        changes3.add(value3);
+        changes3.add(valueMapWithRevNoConflictArray(revID3));
 
         Map<String,Object> result1 = new HashMap<String,Object>();
         result1.put("id", "doc1");
@@ -290,12 +298,10 @@ public class RouterTest extends LiteTestCase {
         assertEquals(3, result.get("total_rows"));
         assertEquals(0, result.get("offset"));
 
-        Map<String,Object> value1 = new HashMap<String,Object>();
-        value1.put("rev", revID);
-        Map<String,Object> value2 = new HashMap<String,Object>();
-        value2.put("rev", revID2);
-        Map<String,Object> value3 = new HashMap<String,Object>();
-        value3.put("rev", revID3);
+        Map<String,Object> value1 = valueMapWithRev(revID);
+        Map<String,Object> value2 = valueMapWithRev(revID2);
+        Map<String,Object> value3 = valueMapWithRev(revID3);
+
 
         Map<String,Object> row1 = new HashMap<String,Object>();
         row1.put("id", "doc1");
