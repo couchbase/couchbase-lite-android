@@ -161,7 +161,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         List<DocumentChange> changes = event.getChanges();
         for (DocumentChange change : changes) {
 
-            RevisionInternal rev = change.getRevisionInternal();
+            RevisionInternal rev = change.getAddedRevision();
             assertNotNull(rev);
             assertNotNull(rev.getDocId());
             assertNotNull(rev.getRevId());
