@@ -61,7 +61,7 @@ public class ApiTest extends LiteTestCase {
             doc.putProperties(properties);
         } catch( Exception e){
             Log.e(TAG, "Error creating document", e);
-            assertTrue("can't create new document in db:"+db.getName() + " with properties:"+ properties.toString(), false);
+            assertTrue("can't create new document in db:" + db.getName() + " with properties:" + properties.toString(), false);
         }
         Assert.assertNotNull(doc.getId());
         Assert.assertNotNull(doc.getCurrentRevisionId());
@@ -485,25 +485,16 @@ public class ApiTest extends LiteTestCase {
         assertEquals("text/plain; charset=utf-8", attach.getContentType());
         assertEquals(IOUtils.toString(attach.getContent(), "UTF-8"), content);
         assertEquals(content.getBytes().length, attach.getLength());
-        // TODO getcontentURL was not implemented?
-//        NSURL* bodyURL = attach.getcontentURL;
-//        assertNotNull(bodyURL.isFileURL);
-//        assertEquals([NSData dataWithContentsOfURL: bodyURL], body);
-//
-//        UnsavedRevision *newRev = [rev3 createRevision];
-//        [newRev removeAttachmentNamed: attach.name];
-//        CBLRevision* rev4 = [newRev save: &error];
-//        assertNotNull(!error);
-//        assertNotNull(rev4);
-//        assertEquals([rev4.attachmentNames count], (NSUInteger)0);
+
+        UnsavedRevision newRev = rev3.createRevision();
+        newRev.removeAttachment(attach.getName());
+        SavedRevision rev4 = newRev.save();
+        assertNotNull(rev4);
+        assertEquals(0, rev4.getAttachmentNames().size());
 
     }
 
-
-
     //CHANGE TRACKING
-
-
 
     public void testChangeTracking() throws Exception{
 
