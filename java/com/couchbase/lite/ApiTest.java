@@ -428,20 +428,11 @@ public class ApiTest extends LiteTestCase {
         assertEquals(doc.getLeafRevisions(), confRevs);
 
         SavedRevision defaultRev, otherRev;
-        Log.d(TAG, String.format("rev2a: %s rev2b: %s", rev2a.getId(), rev2b.getId()));
         if (rev2a.getId().compareTo(rev2b.getId()) > 0) {
-            Log.d(TAG, "CompareTo was > 0 (descending - eg, rev2a was bigger), so expected rev is rev2a");
             defaultRev = rev2a; otherRev = rev2b;
         } else {
-            Log.d(TAG, "CompareTo was < 0 (descending - eg, rev2b was bigger), so expected rev is rev2b");
             defaultRev = rev2b; otherRev = rev2a;
         }
-        /*
-        saw this fail with
-        junit.framework.AssertionFailedError: expected:<{dc5e182f-f64e-4d2a-b642-dbe6e1a90ea1 #2-367d8e53-96a9-4475-8457-60b92405e7ff}> but was:<{dc5e182f-f64e-4d2a-b642-dbe6e1a90ea1 #2-84451ede-6a39-47f0-9934-5719bcc814e3}>
-        at com.couchbase.lite.ApiTest.testConflict(ApiTest.java:435)
-         */
-        Log.d(TAG, "doc.getCurrentRevision(): " + doc.getCurrentRevision().getId());
         assertEquals(doc.getCurrentRevision(), defaultRev);
 
         Query query = db.createAllDocumentsQuery();
