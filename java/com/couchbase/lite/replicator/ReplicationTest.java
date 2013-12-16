@@ -81,8 +81,26 @@ public class ReplicationTest extends LiteTestCase {
         database.putRevision(new RevisionInternal(documentProperties, database), null, false, status);
         assertEquals(Status.CREATED, status.getCode());
 
-        final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
-        ((Pusher)repl).setCreateTarget(true);
+        final boolean push = true;
+        final boolean continuous = false;
+        final Replication repl = database.getReplicator(remote, push, continuous, manager.getWorkExecutor());
+        repl.setCreateTarget(true);
+
+        // Check the replication's properties:
+        Assert.assertEquals(database, repl.getLocalDatabase());
+        Assert.assertEquals(remote, repl.getRemoteUrl());
+        Assert.assertFalse(repl.isPull());
+        Assert.assertFalse(repl.isContinuous());
+        Assert.assertTrue(repl.shouldCreateTarget());
+        Assert.assertNull(repl.getFilter());
+        Assert.assertNull(repl.getFilterParams());
+        // TODO: CAssertNil(r1.doc_ids);
+        // TODO: CAssertNil(r1.headers);
+
+        // Check that the replication hasn't started running:
+        Assert.assertFalse(repl.isRunning());
+        Assert.assertEquals(Replication.ReplicationMode.REPLICATION_STOPPED, repl.getMode());
+
 
         BackgroundTask replicationTask = new BackgroundTask() {
 
@@ -168,7 +186,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPusherDeletedDoc() throws Throwable {
+    public void DIStestPusherDeletedDoc() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
@@ -270,7 +288,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPuller() throws Throwable {
+    public void DIStestPuller() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
@@ -301,7 +319,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPullerWithLiveQuery() throws Throwable {
+    public void DIStestPullerWithLiveQuery() throws Throwable {
 
         // This is essentially a regression test for a deadlock
         // that was happening when the LiveQuery#onDatabaseChanged()
@@ -439,7 +457,7 @@ public class ReplicationTest extends LiteTestCase {
         }
     }
 
-    public void testGetReplicator() throws Throwable {
+    public void DIStestGetReplicator() throws Throwable {
 
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", DEFAULT_TEST_DB);
@@ -463,7 +481,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testGetReplicatorWithAuth() throws Throwable {
+    public void DIStestGetReplicatorWithAuth() throws Throwable {
 
         Map<String, Object> properties = getPushReplicationParsedJson();
 
@@ -474,7 +492,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testReplicatorErrorStatus() throws Exception {
+    public void DIStestReplicatorErrorStatus() throws Exception {
 
         // register bogus fb token
         Map<String,Object> facebookTokenInfo = new HashMap<String,Object>();
@@ -513,7 +531,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-    public void testFetchRemoteCheckpointDoc() throws Exception {
+    public void DIStestFetchRemoteCheckpointDoc() throws Exception {
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
@@ -578,7 +596,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testBuildRelativeURLString() throws Exception {
+    public void DIStestBuildRelativeURLString() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
@@ -589,7 +607,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
+    public void DIStestBuildRelativeURLStringWithLeadingSlash() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
