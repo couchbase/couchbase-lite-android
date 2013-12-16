@@ -99,7 +99,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // Check that the replication hasn't started running:
         Assert.assertFalse(repl.isRunning());
-        Assert.assertEquals(Replication.ReplicationMode.REPLICATION_STOPPED, repl.getMode());
+        Assert.assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, repl.getStatus());
 
 
         BackgroundTask replicationTask = new BackgroundTask() {

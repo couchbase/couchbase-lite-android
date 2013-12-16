@@ -67,9 +67,9 @@ public class ReplicationAPITest extends LiteTestCase {
             if (repl.isRunning()) {
                 started = true;
             }
-            //TODO getMode() always throws UnsupportedOperationException (see ios test)
-            if (started && (repl.getMode() == Replication.ReplicationMode.REPLICATION_ACTIVE ||
-                    repl.getMode() == Replication.ReplicationMode.REPLICATION_ACTIVE)){
+            //TODO getStatus() always throws UnsupportedOperationException (see ios test)
+            if (started && (repl.getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE ||
+                    repl.getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE)){
                 done = true;
             }
             // Replication runs on a background thread, so the main runloop should not be blocked.
@@ -117,7 +117,7 @@ public class ReplicationAPITest extends LiteTestCase {
 
         // Check that the replication hasn't started running:
         assertTrue(!r1.isRunning());
-        assertEquals(Replication.ReplicationMode.REPLICATION_STOPPED, r1.getMode()); // TODO UnsupportedOperationException
+        assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, r1.getStatus()); // TODO UnsupportedOperationException
         assertEquals(0 ,r1.getCompletedChangesCount());
         assertEquals(0, r1.getChangesCount());
         assertNull(r1.getLastError());
@@ -194,7 +194,7 @@ public class ReplicationAPITest extends LiteTestCase {
 
         // It should have failed with a 404:
         r1.start();
-        assertEquals(Replication.ReplicationMode.REPLICATION_STOPPED, r1.getMode()); //UnsupportedOperationException
+        assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, r1.getStatus()); //UnsupportedOperationException
         assertEquals(0, r1.getCompletedChangesCount());
         assertEquals(0, r1.getChangesCount());
         assertEquals(r1.getLastError(), "domain.CBLHTTPErrorDomain");
