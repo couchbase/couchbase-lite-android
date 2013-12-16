@@ -17,41 +17,72 @@ import java.util.Map;
  */
 public class ReplicationAPITest extends LiteTestCase {
 
-//    static Database  startDatabase(void) {
-//        CBLManager* mgr = [CBLManager createEmptyAtTemporaryPath: @"CBL_ReplicatorTests"];
-//        NSError* error;
-//        Database  db = [mgr databaseNamed: @"db" error: &error];
-//        assertTrue(db);
-//        return db;
-//    }
+    String pushThenPullDBName = "db";
+    String syncGatewayUrl = "http://localhost:4985/";
+    int kNDocuments = 50;
+
+    static void createDocumentsAsync(final Database db, final int n) {
+        db.runAsync(new AsyncTask() {
+            @Override
+            public boolean run(Database database) {
+                db.beginTransaction();
+                createDocuments(db, n);
+                db.endTransaction(true);
+                return true;
+            }
+        });
+
+    };
+
+
+    static void createDocuments(final Database db, final int n) {
+        for (int i=0; i<n; i++) {
+            Map<String,Object> properties = new HashMap<String,Object>();
+            properties.put("_id", "doc-" + i);
+            properties.put("index", i);
+            properties.put("bar", false);
+            createDocumentWithProperties(db, properties);
+        }
+    };
+
+    static Document createDocumentWithProperties(Database db, Map<String,Object>  properties) {
+        Document  doc = db.createDocument();
+        try{
+            doc.putProperties(properties);
+        } catch( Exception e){
+            Log.e(TAG, "Error creating document", e);
+            assertTrue("can't create new document in db:" + db.getName() + " with properties:" + properties.toString(), false);
+        }
+        return doc;
+    }
+
 
 
     static void runReplication(Replication repl) throws InterruptedException{
         Log.i(TAG, "Waiting for " + repl + " to finish...");
         boolean started = false, done = false;
-        repl.start();;
+        repl.start();
         long lastTime = System.currentTimeMillis();;
         while (!done) {
             if (repl.isRunning()) {
                 started = true;
             }
-            if (started && (!repl.isContinuous() || !repl.isRunning())){
+            //TODO getMode() always throws UnsupportedOperationException (see ios test)
+            if (started && (repl.getMode() == Replication.ReplicationMode.REPLICATION_ACTIVE ||
+                    repl.getMode() == Replication.ReplicationMode.REPLICATION_ACTIVE)){
                 done = true;
             }
-
-
             // Replication runs on a background thread, so the main runloop should not be blocked.
             // Make sure it's spinning in a timely manner:
-            //TODO getMode() always throws UnsupportedOperationException (see ios test)
             long now = System.currentTimeMillis();
             if (lastTime > 0 && now-lastTime > 25)
-                Log.w(TAG,"Runloop was blocked for " + (now-lastTime)*100 + " sec");
+                Log.w(TAG, "Runloop was blocked for " + (now-lastTime)*100 + " sec");
             lastTime = now;
             Thread.sleep(100);
             break;
 
         }
-        if(repl.getLastError()==null) {
+        if(repl.getLastError() == null) {
             Log.i(TAG, String.format("...replicator finished. progress %d/%d without error", repl.getCompletedChangesCount(), repl.getChangesCount()));
         } else{
             Log.i(TAG, String.format("...replicator finished. progress %d/%d, error=%s", repl.getCompletedChangesCount(), repl.getChangesCount(), repl.getLastError().toString()));
@@ -114,58 +145,44 @@ public class ReplicationAPITest extends LiteTestCase {
         assertEquals(repl.getDocsIds(), r3.getDocsIds());
     }
 
-/* //TODO RemoteTestDBURL should be added based on iOS code
-    public void testRunPushReplication() {
-        NSURL* remoteDbURL = RemoteTestDBURL(kPushThenPullDBName);
-        if (!remoteDbURL) {
-            Warn(@"Skipping test RunPushReplication (no remote test DB URL)");
-            return;
-        }
-        DeleteRemoteDB(remoteDbURL);
 
-        Log(@"Creating %d documents...", kNDocuments);
+    public void failingRunPushReplication() throws Throwable {
+        URL remoteDbURL = new URL(syncGatewayUrl + pushThenPullDBName);
+        //java.net.ConnectException: failed to connect to /127.0.0.1 (port 4985): connect failed: ECONNREFUSED (Connection refused)
+        //RemoteRequest remoteRequest = new RemoteRequest(null, CouchbaseLiteHttpClientFactory.INSTANCE, "DELETE", remoteDbURL, null, null);
+        //remoteRequest.run();
         Database  db = startDatabase();
-        [db inTransaction:^BOOL{
-            for (int i = 1; i <= kNDocuments; i++) {
-                @autoreleasepool {
-                    CBLDocument* doc = db[ $sprintf(@"doc-%d", i) ];
-                    NSError* error;
-                    [doc putProperties: @{@"index": @(i), @"bar": $false} error: &error];
-                    AssertNil(error);
-                }
-            }
-            return YES;
-        }];
 
-        Log(@"Pushing...");
-        CBLReplication* repl = [db replicationToURL: remoteDbURL];
-        repl.createTarget = YES;
+        Log.i(TAG, "Creating " + kNDocuments + " documents...");
+        createDocumentsAsync(db, kNDocuments);
+
+        Log.i(TAG, "Pushing...");
+        Replication repl = db.getPullReplication(remoteDbURL);
+        repl.setCreateTarget(true);
         runReplication(repl);
-        AssertNil(repl.lastError);
+        assertNull(repl.getLastError());
+
+        testRunPullReplication();
     }
 
-
-    public void testRunPullReplication() {
-        NSURL* remoteDbURL = RemoteTestDBURL(kPushThenPullDBName);
-        if (!remoteDbURL) {
-            Warn(@"Skipping test RunPullReplication (no remote test DB URL)");
-            return;
-        }
+    //depends on testRunPushReplication
+    private void testRunPullReplication() throws Throwable{
+        URL remoteDbURL = new URL(syncGatewayUrl + pushThenPullDBName);
         Database  db = startDatabase();
 
-        Log(@"Pulling...");
-        CBLReplication* repl = [db replicationFromURL: remoteDbURL];
+        Log.i(TAG, "Pulling...");
+        Replication repl = db.getPullReplication(remoteDbURL);
         runReplication(repl);
-        AssertNil(repl.lastError);
+        assertNull(repl.getLastError());
 
-        Log(@"Verifying documents...");
+        Log.i(TAG, "Verifying documents...");
         for (int i = 1; i <= kNDocuments; i++) {
-            CBLDocument* doc = db[ $sprintf(@"doc-%d", i) ];
-            AssertEqual(doc[@"index"], @(i));
-            AssertEqual(doc[@"bar"], $false);
+            Document doc = db.getDocument("doc-" + i);
+            assertEquals(i, doc.getProperty("index"));
+            assertEquals(false, doc.getProperty("bar"));
         }
     }
-    */
+
 
     public void failingRunReplicationWithError() throws Exception {
         Database  db = startDatabase();
