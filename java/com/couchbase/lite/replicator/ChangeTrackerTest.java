@@ -26,7 +26,10 @@ import org.apache.http.protocol.HttpContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -164,10 +167,22 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         assertEquals("_changes?feed=continuous&heartbeat=300000&since=0&filter=filter&param=value", changeTracker.getChangesFeedPath());
 
-        // TODO: set doc ids and check url
+    }
 
+    public void testChangeTrackerWithDocsIds() {
 
+        URL testURL = getReplicationURL();
 
+        ChangeTracker changeTrackerDocIds = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, null);
+        List<String> docIds = new ArrayList<String>();
+        docIds.add("doc1");
+        docIds.add("doc2");
+        changeTrackerDocIds.setDocIDs(docIds);
+
+        String docIdsEncoded = URLEncoder.encode("[\"doc1\",\"doc2\"]");
+        String expectedFeedPath = String.format("_changes?feed=continuous&heartbeat=300000&since=0&filter=_doc_ids&doc_ids=%s", docIdsEncoded);
+        final String changesFeedPath = changeTrackerDocIds.getChangesFeedPath();
+        assertEquals(expectedFeedPath, changesFeedPath);
 
     }
 
