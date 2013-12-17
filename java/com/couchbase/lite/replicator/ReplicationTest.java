@@ -634,7 +634,8 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "testFetchRemoteCheckpointDoc() Waiting for replicator to finish");
         try {
-            doneSignal.await();
+            boolean succeeded = doneSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(succeeded);
             Log.d(TAG, "testFetchRemoteCheckpointDoc() replicator finished");
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -646,6 +647,21 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    public void testGoOffline() throws Exception {
+
+        URL remote = getReplicationURL();
+
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+
+        Replication repl = database.getPullReplication(remote);
+        repl.setContinuous(true);
+        repl.start();
+
+        repl.goOffline();
+        Assert.assertTrue(repl.getStatus() == Replication.ReplicationStatus.REPLICATION_OFFLINE);
+
+
+    }
 
     class ReplicationObserver implements Replication.ChangeListener {
 
