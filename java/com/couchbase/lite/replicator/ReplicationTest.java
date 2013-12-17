@@ -37,6 +37,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -714,5 +715,18 @@ public class ReplicationTest extends LiteTestCase {
         Assert.assertEquals(expected, relativeUrlString);
 
     }
+
+    public void testChannels() throws Exception {
+
+        URL remote = getReplicationURL();
+        Replication replicator = database.getPullReplication(remote);
+        List<String> channels = new ArrayList<String>();
+        channels.add("chan1");
+        channels.add("chan2");
+        replicator.setChannels(channels);
+        Assert.assertEquals(channels, replicator.getChannels());
+
+    }
+
 
 }
