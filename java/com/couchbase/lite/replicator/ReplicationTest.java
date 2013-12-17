@@ -504,15 +504,55 @@ public class ReplicationTest extends LiteTestCase {
 
         replication.start();
 
+        final CountDownLatch replicationDoneSignalPolling = new CountDownLatch(1);
+        waitForReplicationFinishViaPolling(replication, replicationDoneSignalPolling);
+
         Log.d(TAG, "Waiting for replicator to finish");
         try {
             boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
             assertTrue(success);
+
+            success = replicationDoneSignalPolling.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+
             Log.d(TAG, "replicator finished");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
+
+    }
+
+    private void waitForReplicationFinishViaPolling(final Replication replication, final CountDownLatch doneSignal) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean started = false;
+                boolean done = false;
+                while (!done) {
+
+                    if (replication.isRunning()) {
+                        started = true;
+                    }
+                    final boolean statusIsDone = (replication.getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED ||
+                            replication.getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE);
+                    if (started && statusIsDone) {
+                        done = true;
+                    }
+
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                doneSignal.countDown();
+
+            }
+        }).start();
 
     }
 
