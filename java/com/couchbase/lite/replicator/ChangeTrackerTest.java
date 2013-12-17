@@ -1,6 +1,8 @@
-package com.couchbase.lite;
+package com.couchbase.lite.replicator;
 
-import com.couchbase.lite.replicator.changetracker.ChangeTracker.TDChangeTrackerMode;
+import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.MockHttpClient;
+import com.couchbase.lite.replicator.changetracker.ChangeTracker;
 import com.couchbase.lite.replicator.changetracker.ChangeTrackerClient;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
@@ -30,7 +32,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-
 public class ChangeTrackerTest extends LiteTestCase {
 
     public static final String TAG = "ChangeTracker";
@@ -58,7 +59,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.OneShot, 0, client);
+        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.OneShot, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -81,7 +82,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
+            public void changeTrackerStopped(ChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -97,7 +98,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -118,7 +119,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
+            public void changeTrackerStopped(ChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -134,7 +135,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
@@ -151,7 +152,7 @@ public class ChangeTrackerTest extends LiteTestCase {
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
-        com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.Continuous, 0, null);
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, null);
 
         // set filter
         changeTracker.setFilterName("filter");
@@ -165,6 +166,11 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         assertEquals("_changes?feed=continuous&heartbeat=300000&since=0&filter=filter&param=value", changeTracker.getChangesFeedPath());
 
+        // TODO: set doc ids and check url
+
+
+
+
     }
 
     public void testChangeTrackerBackoff() throws Throwable {
@@ -175,7 +181,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
+            public void changeTrackerStopped(ChangeTracker tracker) {
                 Log.v(TAG, "changeTrackerStopped");
             }
 
@@ -186,12 +192,12 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
 
             @Override
-            public org.apache.http.client.HttpClient getHttpClient() {
+            public HttpClient getHttpClient() {
                 return mockHttpClient;
             }
         };
 
-        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, com.couchbase.lite.replicator.changetracker.ChangeTracker.TDChangeTrackerMode.Continuous, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, client);
 
         BackgroundTask task = new BackgroundTask() {
             @Override
@@ -249,7 +255,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
+            public void changeTrackerStopped(ChangeTracker tracker) {
                 Log.v(TAG, "changeTrackerStopped");
             }
 
@@ -260,12 +266,12 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
 
             @Override
-            public org.apache.http.client.HttpClient getHttpClient() {
+            public HttpClient getHttpClient() {
                 return mockHttpClient;
             }
         };
 
-        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, TDChangeTrackerMode.LongPoll, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, client);
 
         BackgroundTask task = new BackgroundTask() {
             @Override
@@ -536,6 +542,5 @@ class MockHttpClientNeverResponds implements org.apache.http.client.HttpClient {
     public <T> T execute(HttpHost httpHost, HttpRequest httpRequest, ResponseHandler<? extends T> responseHandler, HttpContext httpContext) throws IOException, ClientProtocolException {
         throw new IOException("<T> Test IOException");
     }
-
 
 }
