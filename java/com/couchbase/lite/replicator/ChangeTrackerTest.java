@@ -2,8 +2,6 @@ package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.MockHttpClient;
-import com.couchbase.lite.replicator.changetracker.ChangeTracker;
-import com.couchbase.lite.replicator.changetracker.ChangeTrackerClient;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 
@@ -43,7 +41,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
-            public void changeTrackerStopped(com.couchbase.lite.replicator.changetracker.ChangeTracker tracker) {
+            public void changeTrackerStopped(ChangeTracker tracker) {
                 Log.v(TAG, "See change tracker stopped");
             }
 
@@ -59,7 +57,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final com.couchbase.lite.replicator.changetracker.ChangeTracker changeTracker = new com.couchbase.lite.replicator.changetracker.ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.OneShot, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.OneShot, 0, client);
 
         runTestOnUiThread(new Runnable() {
 
