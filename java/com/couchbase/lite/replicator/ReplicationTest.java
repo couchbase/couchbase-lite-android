@@ -39,6 +39,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ReplicationTest extends LiteTestCase {
 
@@ -100,7 +101,9 @@ public class ReplicationTest extends LiteTestCase {
         // Check that the replication hasn't started running:
         Assert.assertFalse(repl.isRunning());
         Assert.assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, repl.getStatus());
-
+        Assert.assertEquals(0, repl.getCompletedChangesCount());
+        Assert.assertEquals(0, repl.getChangesCount());
+        Assert.assertNull(repl.getLastError());
 
         BackgroundTask replicationTask = new BackgroundTask() {
 
@@ -186,7 +189,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestPusherDeletedDoc() throws Throwable {
+    public void testPusherDeletedDoc() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
@@ -288,7 +291,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestPuller() throws Throwable {
+    public void testPuller() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
@@ -319,7 +322,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestPullerWithLiveQuery() throws Throwable {
+    public void testPullerWithLiveQuery() throws Throwable {
 
         // This is essentially a regression test for a deadlock
         // that was happening when the LiveQuery#onDatabaseChanged()
@@ -457,7 +460,7 @@ public class ReplicationTest extends LiteTestCase {
         }
     }
 
-    public void DIStestGetReplicator() throws Throwable {
+    public void testGetReplicator() throws Throwable {
 
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", DEFAULT_TEST_DB);
@@ -481,7 +484,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestGetReplicatorWithAuth() throws Throwable {
+    public void testGetReplicatorWithAuth() throws Throwable {
 
         Map<String, Object> properties = getPushReplicationParsedJson();
 
@@ -492,7 +495,45 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestReplicatorErrorStatus() throws Exception {
+    private void runReplication(Replication replication) {
+
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+
+        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
+        replication.addChangeListener(replicationObserver);
+
+        replication.start();
+
+        Log.d(TAG, "Waiting for replicator to finish");
+        try {
+            boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            Log.d(TAG, "replicator finished");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public void testRunReplicationWithError() throws Exception {
+
+        URL remote = new URL("http://couchbase.com/no_such_db");
+        Replication r1 = database.getPullReplication(remote);
+        Assert.assertFalse(r1.isContinuous());
+        runReplication(r1);
+
+        // It should have failed with a 404:
+        Assert.assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, r1.getStatus());
+        Assert.assertEquals(0, r1.getCompletedChangesCount());
+        Assert.assertEquals(0, r1.getChangesCount());
+        Assert.assertNotNull(r1.getLastError());
+
+
+
+    }
+
+    public void testReplicatorErrorStatus() throws Exception {
 
         // register bogus fb token
         Map<String,Object> facebookTokenInfo = new HashMap<String,Object>();
@@ -531,7 +572,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-    public void DIStestFetchRemoteCheckpointDoc() throws Exception {
+    public void testFetchRemoteCheckpointDoc() throws Exception {
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
@@ -596,7 +637,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestBuildRelativeURLString() throws Exception {
+    public void testBuildRelativeURLString() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
@@ -607,7 +648,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestBuildRelativeURLStringWithLeadingSlash() throws Exception {
+    public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
