@@ -725,6 +725,8 @@ public class ReplicationTest extends LiteTestCase {
         channels.add("chan2");
         replicator.setChannels(channels);
         Assert.assertEquals(channels, replicator.getChannels());
+        replicator.setChannels(null);
+        Assert.assertTrue(replicator.getChannels().isEmpty());
 
     }
 
