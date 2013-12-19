@@ -7,6 +7,7 @@ buildscript {
     }
 }
 apply plugin: 'android'
+apply plugin: 'eclipse'
 
 repositories {
     mavenLocal()
