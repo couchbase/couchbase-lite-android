@@ -29,6 +29,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -564,8 +565,24 @@ public class ReplicationTest extends LiteTestCase {
 
     public void testRunReplicationWithError() throws Exception {
 
-        URL remote = new URL("http://couchbase.com/no_such_db");
-        Replication r1 = database.getPullReplication(remote);
+        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() {
+                CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+                mockHttpClient.setResponder("*", new CustomizableMockHttpClient.Responder() {
+                    @Override
+                    public HttpResponse execute(HttpUriRequest httpUriRequest) {
+                        return CustomizableMockHttpClient.emptyResponseWithStatusCode(500);
+                    }
+                });
+                return mockHttpClient;
+            }
+        };
+
+        String dbUrlString = "http://fake.test-url.com:4984/fake/";
+        URL remote = new URL(dbUrlString);
+        final boolean continuous = false;
+        Replication r1 = new Puller(database, remote, continuous, mockHttpClientFactory, manager.getWorkExecutor());
         Assert.assertFalse(r1.isContinuous());
         runReplication(r1);
 
@@ -574,7 +591,6 @@ public class ReplicationTest extends LiteTestCase {
         Assert.assertEquals(0, r1.getCompletedChangesCount());
         Assert.assertEquals(0, r1.getChangesCount());
         Assert.assertNotNull(r1.getLastError());
-
 
 
     }
