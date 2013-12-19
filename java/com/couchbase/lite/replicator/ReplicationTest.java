@@ -648,11 +648,12 @@ public class ReplicationTest extends LiteTestCase {
         URL remote = new URL(dbUrlString);
         database.setLastSequence("1", remote, true);  // otherwise fetchRemoteCheckpoint won't contact remote
         Replication replicator = new Pusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
-        replicator.fetchRemoteCheckpointDoc();
 
         CountDownLatch doneSignal = new CountDownLatch(1);
         ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
         replicator.addChangeListener(replicationObserver);
+
+        replicator.fetchRemoteCheckpointDoc();
 
         Log.d(TAG, "testFetchRemoteCheckpointDoc() Waiting for replicator to finish");
         try {
