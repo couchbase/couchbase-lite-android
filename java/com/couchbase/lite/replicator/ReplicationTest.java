@@ -20,6 +20,8 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.http.Header;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
@@ -505,8 +507,7 @@ public class ReplicationTest extends LiteTestCase {
 
         replication.start();
 
-        final CountDownLatch replicationDoneSignalPolling = new CountDownLatch(1);
-        waitForReplicationFinishViaPolling(replication, replicationDoneSignalPolling);
+        CountDownLatch replicationDoneSignalPolling = replicationWatcherThread(replication);
 
         Log.d(TAG, "Waiting for replicator to finish");
         try {
@@ -524,7 +525,9 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    private void waitForReplicationFinishViaPolling(final Replication replication, final CountDownLatch doneSignal) {
+    private CountDownLatch replicationWatcherThread(final Replication replication) {
+
+        final CountDownLatch doneSignal = new CountDownLatch(1);
 
         new Thread(new Runnable() {
             @Override
@@ -554,6 +557,7 @@ public class ReplicationTest extends LiteTestCase {
 
             }
         }).start();
+        return doneSignal;
 
     }
 
@@ -730,5 +734,46 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    public void testHeaders() throws Exception {
+
+        final MockHttpClient mockHttpClient = new MockHttpClient();
+
+        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() {
+                return mockHttpClient;
+            }
+        };
+
+        URL remote = getReplicationURL();
+        Replication puller = new Puller(
+                database,
+                remote,
+                false,
+                mockHttpClientFactory,
+                manager.getWorkExecutor());
+        Map<String, Object> headers = new HashMap<String, Object>();
+        headers.put("foo", "bar");
+        puller.setHeaders(headers);
+        puller.start();
+
+        Thread.sleep(2000);
+        puller.stop();
+
+        boolean foundFooHeader = false;
+        List<HttpRequest> requests = mockHttpClient.getCapturedRequests();
+        for (HttpRequest request : requests) {
+            Header[] requestHeaders = request.getHeaders("foo");
+            for (Header requestHeader : requestHeaders) {
+                foundFooHeader = true;
+                Assert.assertEquals("bar", requestHeader.getValue());
+            }
+        }
+
+        Assert.assertTrue(foundFooHeader);
+
+
+    }
 
 }
+
