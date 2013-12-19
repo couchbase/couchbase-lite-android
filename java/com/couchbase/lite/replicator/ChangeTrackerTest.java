@@ -1,7 +1,6 @@
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.MockHttpClient;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 
@@ -189,7 +188,10 @@ public class ChangeTrackerTest extends LiteTestCase {
     public void testChangeTrackerBackoff() throws Throwable {
 
         URL testURL = getReplicationURL();
-        final MockHttpClient mockHttpClient = new MockHttpClient();
+
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderThrowExceptionAllRequests();
+
 
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
@@ -235,13 +237,13 @@ public class ChangeTrackerTest extends LiteTestCase {
 
                     // take a snapshot of num times the http client was called after 10 seconds
                     if (i == 10) {
-                        numTimesExectutedAfter10seconds = mockHttpClient.getNumTimesExecuteCalled();
+                        numTimesExectutedAfter10seconds = mockHttpClient.getCapturedRequests().size();
                     }
 
                     // take another snapshot after 20 seconds have passed
                     if (i == 20) {
                         // by now it should have backed off, so the delta between 10s and 20s should be small
-                        int delta = mockHttpClient.getNumTimesExecuteCalled() - numTimesExectutedAfter10seconds;
+                        int delta = mockHttpClient.getCapturedRequests().size() - numTimesExectutedAfter10seconds;
                         assertTrue(delta < 25);
                     }
 

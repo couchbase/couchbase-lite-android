@@ -1,11 +1,10 @@
 package com.couchbase.lite.replicator;
 
-import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Emitter;
+import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Mapper;
-import com.couchbase.lite.MockHttpClient;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.View;
 import com.couchbase.lite.auth.FacebookAuthorizer;
@@ -29,7 +28,6 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -569,12 +567,8 @@ public class ReplicationTest extends LiteTestCase {
             @Override
             public HttpClient getHttpClient() {
                 CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
-                mockHttpClient.setResponder("*", new CustomizableMockHttpClient.Responder() {
-                    @Override
-                    public HttpResponse execute(HttpUriRequest httpUriRequest) {
-                        return CustomizableMockHttpClient.emptyResponseWithStatusCode(500);
-                    }
-                });
+                int statusCode = 500;
+                mockHttpClient.addResponderFailAllRequests(statusCode);
                 return mockHttpClient;
             }
         };
@@ -639,7 +633,9 @@ public class ReplicationTest extends LiteTestCase {
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
             public HttpClient getHttpClient() {
-                return new MockHttpClient();
+                CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+                mockHttpClient.addResponderThrowExceptionAllRequests();
+                return mockHttpClient;
             }
         };
 
@@ -789,7 +785,8 @@ public class ReplicationTest extends LiteTestCase {
 
     public void testHeaders() throws Exception {
 
-        final MockHttpClient mockHttpClient = new MockHttpClient();
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderThrowExceptionAllRequests();
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override

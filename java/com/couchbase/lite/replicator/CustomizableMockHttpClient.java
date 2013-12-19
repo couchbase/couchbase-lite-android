@@ -21,6 +21,7 @@ import org.apache.http.protocol.HttpContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,10 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
     // tests can register custom responders per url.  the key is the URL pattern to match,
     // the value is the responder that should handle that request.
     private Map<String, Responder> responders;
+
+    // capture all request so that the test can verify expected requests were received.
+    private List<HttpRequest> capturedRequests = Collections.synchronizedList(new ArrayList<HttpRequest>());
+
 
     public CustomizableMockHttpClient() {
         responders = new HashMap<String, Responder>();
@@ -64,6 +69,28 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
 
     }
 
+    public void addResponderFailAllRequests(final int statusCode) {
+        setResponder("*", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                return CustomizableMockHttpClient.emptyResponseWithStatusCode(statusCode);
+            }
+        });
+    }
+
+    public void addResponderThrowExceptionAllRequests() {
+        setResponder("*", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                throw new IOException("Test IOException");
+            }
+        });
+    }
+
+    public List<HttpRequest> getCapturedRequests() {
+        return capturedRequests;
+    }
+
     @Override
     public HttpParams getParams() {
         return null;
@@ -76,6 +103,8 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
 
     @Override
     public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+
+        capturedRequests.add(httpUriRequest);
 
         for (String urlPattern : responders.keySet()) {
             if (urlPattern.equals("*") || httpUriRequest.getURI().getPath().contains(urlPattern)) {
@@ -222,37 +251,37 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
 
     @Override
     public HttpResponse execute(HttpUriRequest httpUriRequest, HttpContext httpContext) throws IOException {
-        return null;
+        throw new RuntimeException("Mock Http Client does not know how to handle this request.  It should be fixed");
     }
 
     @Override
     public HttpResponse execute(HttpHost httpHost, HttpRequest httpRequest) throws IOException {
-        return null;
+        throw new RuntimeException("Mock Http Client does not know how to handle this request.  It should be fixed");
     }
 
     @Override
     public HttpResponse execute(HttpHost httpHost, HttpRequest httpRequest, HttpContext httpContext) throws IOException {
-        return null;
+        throw new RuntimeException("Mock Http Client does not know how to handle this request.  It should be fixed");
     }
 
     @Override
     public <T> T execute(HttpUriRequest httpUriRequest, ResponseHandler<? extends T> responseHandler) throws IOException {
-        return null;
+        throw new RuntimeException("Mock Http Client does not know how to handle this request.  It should be fixed");
     }
 
     @Override
     public <T> T execute(HttpUriRequest httpUriRequest, ResponseHandler<? extends T> responseHandler, HttpContext httpContext) throws IOException {
-        return null;
+        throw new RuntimeException("Mock Http Client does not know how to handle this request.  It should be fixed");
     }
 
     @Override
     public <T> T execute(HttpHost httpHost, HttpRequest httpRequest, ResponseHandler<? extends T> responseHandler) throws IOException {
-        return null;
+        throw new RuntimeException("Mock Http Client does not know how to handle this request.  It should be fixed");
     }
 
     @Override
     public <T> T execute(HttpHost httpHost, HttpRequest httpRequest, ResponseHandler<? extends T> responseHandler, HttpContext httpContext) throws IOException {
-        return null;
+        throw new RuntimeException("Mock Http Client does not know how to handle this request.  It should be fixed");
     }
 
     static interface Responder {
