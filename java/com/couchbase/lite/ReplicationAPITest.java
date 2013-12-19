@@ -203,37 +203,5 @@ public class ReplicationAPITest extends LiteTestCase {
 
     }
 
-    public void failingReplicationChannelsProperty() throws MalformedURLException {
-        Database  db = startDatabase();
-        URL fakeRemoteURL = new URL("http://couchbase.com/no_such_db");
-        Replication r1 = db.getPullReplication(fakeRemoteURL);
 
-        assertNull(r1.getChannels());//TODO UnsupportedOperationException
-        r1.setFilter("foo/bar");
-        assertNull(r1.getChannels());
-        Map<String, Object> filterParams= new HashMap<String, Object>();
-        filterParams.put("a", "b");
-        r1.setFilterParams(filterParams);
-        assertNull(r1.getChannels());
-
-        r1.setChannels(null);
-        assertEquals("foo/bar", r1.getFilter());
-        assertEquals(filterParams, r1.getFilterParams());
-
-
-        List<String> channels = new ArrayList<String>();
-        channels.add("NBC");
-        channels.add("MTV");
-        r1.setChannels(channels);
-        assertEquals(channels, r1.getChannels());
-        assertEquals("sync_gateway/bychannel", r1.getFilter());
-        filterParams= new HashMap<String, Object>();
-        filterParams.put("channels", "NBC,MTV");
-        assertEquals(filterParams, r1.getFilterParams());
-
-        r1.setChannels(null);
-        assertEquals(r1.getFilter(), null);
-        assertEquals(null ,r1.getFilterParams());
-
-    }
 }
