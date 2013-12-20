@@ -78,6 +78,53 @@ public class ChangeTrackerTest extends LiteTestCase {
         changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.LongPoll);
     }
 
+    public void failingTestChangeTrackerContinuous() throws Throwable {
+
+        final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
+        final CountDownLatch changeReceivedSignal = new CountDownLatch(1);
+
+        URL testURL = getReplicationURL();
+
+        ChangeTrackerClient client = new ChangeTrackerClient() {
+
+            @Override
+            public void changeTrackerStopped(ChangeTracker tracker) {
+                changeTrackerFinishedSignal.countDown();
+            }
+
+            @Override
+            public void changeTrackerReceivedChange(Map<String, Object> change) {
+                Object seq = change.get("seq");
+                changeReceivedSignal.countDown();
+            }
+
+            @Override
+            public HttpClient getHttpClient() {
+                return new DefaultHttpClient();
+            }
+        };
+
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, client);
+        changeTracker.start();
+
+        try {
+            boolean success = changeReceivedSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        changeTracker.stop();
+
+        try {
+            boolean success = changeTrackerFinishedSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     public void changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode mode) throws Throwable {
 
         final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
@@ -139,7 +186,7 @@ public class ChangeTrackerTest extends LiteTestCase {
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
-        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, null);
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, null);
 
         // set filter
         changeTracker.setFilterName("filter");
@@ -151,7 +198,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         // set filter map
         changeTracker.setFilterParams(filterMap);
 
-        assertEquals("_changes?feed=continuous&heartbeat=300000&since=0&filter=filter&param=value", changeTracker.getChangesFeedPath());
+        assertEquals("_changes?feed=longpoll&limit=50&heartbeat=300000&since=0&filter=filter&param=value", changeTracker.getChangesFeedPath());
 
     }
 
@@ -159,14 +206,14 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         URL testURL = getReplicationURL();
 
-        ChangeTracker changeTrackerDocIds = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, null);
+        ChangeTracker changeTrackerDocIds = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, null);
         List<String> docIds = new ArrayList<String>();
         docIds.add("doc1");
         docIds.add("doc2");
         changeTrackerDocIds.setDocIDs(docIds);
 
         String docIdsEncoded = URLEncoder.encode("[\"doc1\",\"doc2\"]");
-        String expectedFeedPath = String.format("_changes?feed=continuous&heartbeat=300000&since=0&filter=_doc_ids&doc_ids=%s", docIdsEncoded);
+        String expectedFeedPath = String.format("_changes?feed=longpoll&limit=50&heartbeat=300000&since=0&filter=_doc_ids&doc_ids=%s", docIdsEncoded);
         final String changesFeedPath = changeTrackerDocIds.getChangesFeedPath();
         assertEquals(expectedFeedPath, changesFeedPath);
 
@@ -199,7 +246,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, client);
 
         BackgroundTask task = new BackgroundTask() {
             @Override
