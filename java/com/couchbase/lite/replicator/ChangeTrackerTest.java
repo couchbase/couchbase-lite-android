@@ -1,6 +1,7 @@
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 
@@ -31,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ChangeTrackerTest extends LiteTestCase {
 
@@ -69,36 +72,13 @@ public class ChangeTrackerTest extends LiteTestCase {
     }
 
     public void testChangeTrackerLongPoll() throws Throwable {
-
-        URL testURL = getReplicationURL();
-
-        ChangeTrackerClient client = new ChangeTrackerClient() {
-
-            @Override
-            public void changeTrackerStopped(ChangeTracker tracker) {
-                Log.v(TAG, "See change tracker stopped");
-            }
-
-            @Override
-            public void changeTrackerReceivedChange(Map<String, Object> change) {
-                Object seq = change.get("seq");
-                Log.v(TAG, "See change " + seq.toString());
-            }
-
-            @Override
-            public HttpClient getHttpClient() {
-            	return new DefaultHttpClient();
-            }
-        };
-
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, client);
-        changeTracker.start();
-
-        Thread.sleep(10*1000);
-
+        changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.LongPoll);
     }
 
-    public void testChangeTrackerContinuous() throws Throwable {
+    public void changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode mode) throws Throwable {
+
+        final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
+        final CountDownLatch changeReceivedSignal = new CountDownLatch(1);
 
         URL testURL = getReplicationURL();
 
@@ -106,25 +86,50 @@ public class ChangeTrackerTest extends LiteTestCase {
 
             @Override
             public void changeTrackerStopped(ChangeTracker tracker) {
-                Log.v(TAG, "See change tracker stopped");
+                changeTrackerFinishedSignal.countDown();
             }
 
             @Override
             public void changeTrackerReceivedChange(Map<String, Object> change) {
                 Object seq = change.get("seq");
-                Log.v(TAG, "See change " + seq.toString());
+                assertEquals("*:1", seq.toString());
+                changeReceivedSignal.countDown();
             }
 
             @Override
             public HttpClient getHttpClient() {
-            	return new DefaultHttpClient();
+                CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+                mockHttpClient.setResponder("_changes", new CustomizableMockHttpClient.Responder() {
+                    @Override
+                    public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                        String json = "{\"results\":[\n" +
+                                "{\"seq\":\"*:1\",\"id\":\"doc1-138\",\"changes\":[{\"rev\":\"1-82d\"}]}],\n" +
+                                "\"last_seq\":\"*:50\"}";
+                        return CustomizableMockHttpClient.generateHttpResponseObject(json);
+                    }
+                });
+                return mockHttpClient;
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, 0, client);
         changeTracker.start();
 
-        Thread.sleep(10*1000);
+        try {
+            boolean success = changeReceivedSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        changeTracker.stop();
+
+        try {
+            boolean success = changeTrackerFinishedSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
