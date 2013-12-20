@@ -52,10 +52,9 @@ public abstract class LiteTestCase extends TestCase {
         startDatabase();
     }
 
-    // TODO: Portable Java Test [Begin] -----
-
     protected void runTestOnUiThread(Runnable runnable) {
-        // TODO: What should we do?
+        // TODO: What should we do here?  Do the tests run on the UI thread so just running would
+        // take care of this?
         runnable.run();
     }
 
@@ -70,8 +69,6 @@ public abstract class LiteTestCase extends TestCase {
 
         return rootDirectory;
     }
-
-    // TODO: Portable Java Test [End] -----
 
     protected String getServerPath() {
         String filesDir = getRootDirectory().getAbsolutePath();
