@@ -85,9 +85,10 @@ public class ReplicationTest extends LiteTestCase {
         database.putRevision(new RevisionInternal(documentProperties, database), null, false, status);
         assertEquals(Status.CREATED, status.getCode());
 
-        final boolean push = true;
         final boolean continuous = false;
-        final Replication repl = database.getReplicator(remote, push, continuous, manager.getWorkExecutor());
+        final Replication repl = database.getPushReplication(remote);
+        repl.setContinuous(continuous);
+
         repl.setCreateTarget(true);
 
         // Check the replication's properties:
@@ -200,7 +201,7 @@ public class ReplicationTest extends LiteTestCase {
         RevisionInternal rev2 = database.putRevision(new RevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
         assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
-        final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
+        final Replication repl = database.getPushReplication(remote);
         ((Pusher)repl).setCreateTarget(true);
 
         runReplication(repl);
@@ -343,7 +344,8 @@ public class ReplicationTest extends LiteTestCase {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
-        final Replication repl = database.getReplicator(remote, false, false, manager.getWorkExecutor());
+        final Replication repl = (Replication) database.getPullReplication(remote);
+        repl.setContinuous(false);
 
         runReplication(repl);
 
