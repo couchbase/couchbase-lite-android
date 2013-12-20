@@ -60,14 +60,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         };
 
         final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.OneShot, 0, client);
-
-        runTestOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                changeTracker.start();
-            }
-        });
+        changeTracker.start();
 
         while(changeTracker.isRunning()) {
             Thread.sleep(1000);
@@ -99,14 +92,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         };
 
         final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, client);
-
-        runTestOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                changeTracker.start();
-            }
-        });
+        changeTracker.start();
 
         Thread.sleep(10*1000);
 
@@ -136,14 +122,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         };
 
         final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, client);
-
-        runTestOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                changeTracker.start();
-            }
-        });
+        changeTracker.start();
 
         Thread.sleep(10*1000);
 

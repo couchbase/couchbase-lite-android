@@ -52,12 +52,6 @@ public abstract class LiteTestCase extends TestCase {
         startDatabase();
     }
 
-    protected void runTestOnUiThread(Runnable runnable) {
-        // TODO: What should we do here?  Do the tests run on the UI thread so just running would
-        // take care of this?
-        runnable.run();
-    }
-
     protected InputStream getAsset(String name) {
         return this.getClass().getResourceAsStream("/assets/" + name);
     }
