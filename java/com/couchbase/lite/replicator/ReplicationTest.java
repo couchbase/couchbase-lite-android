@@ -108,29 +108,8 @@ public class ReplicationTest extends LiteTestCase {
         Assert.assertEquals(0, repl.getChangesCount());
         Assert.assertNull(repl.getLastError());
 
-        BackgroundTask replicationTask = new BackgroundTask() {
+        runReplication(repl);
 
-            @Override
-            public void run() {
-                // Push them to the remote:
-                repl.start();
-                assertTrue(repl.isRunning());
-            }
-
-        };
-        replicationTask.execute();
-
-
-        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
-        repl.addChangeListener(replicationObserver);
-
-        Log.d(TAG, "Waiting for replicator to finish");
-        try {
-            replicationDoneSignal.await();
-            Log.d(TAG, "replicator finished");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
         // make sure doc1 is there
         // TODO: make sure doc2 is there (refactoring needed)
@@ -224,29 +203,8 @@ public class ReplicationTest extends LiteTestCase {
         final Replication repl = database.getReplicator(remote, true, false, manager.getWorkExecutor());
         ((Pusher)repl).setCreateTarget(true);
 
-        BackgroundTask replicationTask = new BackgroundTask() {
+        runReplication(repl);
 
-            @Override
-            public void run() {
-                // Push them to the remote:
-                repl.start();
-                assertTrue(repl.isRunning());
-            }
-
-        };
-        replicationTask.execute();
-
-
-        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
-        repl.addChangeListener(replicationObserver);
-
-        Log.d(TAG, "Waiting for replicator to finish");
-        try {
-            replicationDoneSignal.await();
-            Log.d(TAG, "replicator finished");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
         // make sure doc1 is deleted
         URL replicationUrlTrailing = new URL(String.format("%s/", remote.toExternalForm()));
@@ -387,18 +345,8 @@ public class ReplicationTest extends LiteTestCase {
 
         final Replication repl = database.getReplicator(remote, false, false, manager.getWorkExecutor());
 
-        repl.start();
+        runReplication(repl);
 
-        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
-        repl.addChangeListener(replicationObserver);
-
-        Log.d(TAG, "Waiting for replicator to finish");
-        try {
-            replicationDoneSignal.await();
-            Log.d(TAG, "replicator finished");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     private void addDocWithId(String docId, String attachmentName) throws IOException {
