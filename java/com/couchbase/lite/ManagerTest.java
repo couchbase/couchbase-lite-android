@@ -40,7 +40,7 @@ public class ManagerTest extends LiteTestCase {
 
     public void testUpgradeOldDatabaseFiles() throws Exception {
         String directoryName = "test-directory-" + System.currentTimeMillis();
-        String normalFilesDir = getInstrumentation().getContext().getFilesDir().getAbsolutePath();
+        String normalFilesDir = getRootDirectory().getAbsolutePath();
         String fakeFilesDir = String.format("%s/%s", normalFilesDir, directoryName);
 
         File directory = new File(fakeFilesDir);
@@ -58,25 +58,25 @@ public class ManagerTest extends LiteTestCase {
         File migratedOldFile = new File(directory, String.format("old%s", Manager.DATABASE_SUFFIX));
         migratedOldFile.createNewFile();
         super.stopCBLite();
-        manager = new Manager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), Manager.DEFAULT_OPTIONS);
+        manager = new Manager(new File(getRootDirectory(), directoryName), Manager.DEFAULT_OPTIONS);
 
         assertTrue(migratedOldFile.exists());
         //cannot rename old.touchdb in old.cblite, old.cblite already exists
         assertTrue(oldTouchDbFile.exists());
         assertTrue(newCbLiteFile.exists());
 
-        File dir=new File(getInstrumentation().getContext().getFilesDir(), directoryName);
+        File dir=new File(getRootDirectory(), directoryName);
         assertEquals(3, dir.listFiles().length);
 
         super.stopCBLite();
         migratedOldFile.delete();
-        manager = new Manager(new File(getInstrumentation().getContext().getFilesDir(), directoryName), Manager.DEFAULT_OPTIONS);
+        manager = new Manager(new File(getRootDirectory(), directoryName), Manager.DEFAULT_OPTIONS);
 
         //rename old.touchdb in old.cblite, previous old.cblite already doesn't exist
         assertTrue(migratedOldFile.exists());
         assertTrue(oldTouchDbFile.exists() == false);
         assertTrue(newCbLiteFile.exists());
-        dir=new File(getInstrumentation().getContext().getFilesDir(), directoryName);
+        dir=new File(getRootDirectory(), directoryName);
         assertEquals(2, dir.listFiles().length);
 
     }

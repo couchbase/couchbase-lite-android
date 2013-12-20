@@ -355,7 +355,7 @@ public class ReplicationTest extends LiteTestCase {
 
         if (attachmentName != null) {
             // add attachment to document
-            InputStream attachmentStream = getInstrumentation().getContext().getAssets().open(attachmentName);
+            InputStream attachmentStream = getAsset(attachmentName);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             IOUtils.copy(attachmentStream, baos);
             String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());

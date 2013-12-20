@@ -768,7 +768,7 @@ public class ApiTest extends LiteTestCase {
      * running in the background server.
      */
     public void testSharedMapBlocks() throws Exception {
-        Manager mgr = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "API_SharedMapBlocks"), Manager.DEFAULT_OPTIONS);
+        Manager mgr = new Manager(new File(getRootDirectory(), "API_SharedMapBlocks"), Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
         db.setFilter("phil", new ReplicationFilter() {
@@ -828,7 +828,7 @@ public class ApiTest extends LiteTestCase {
 
 
     public void testChangeUUID() throws Exception{
-        Manager mgr = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "ChangeUUID"), Manager.DEFAULT_OPTIONS);
+        Manager mgr = new Manager(new File(getRootDirectory(), "ChangeUUID"), Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
         String pub = db.publicUUID();

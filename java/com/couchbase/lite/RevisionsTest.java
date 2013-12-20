@@ -1,8 +1,5 @@
 package com.couchbase.lite;
 
-import android.test.AndroidTestCase;
-
-import com.couchbase.lite.Database;
 import com.couchbase.lite.internal.RevisionInternal;
 
 import junit.framework.Assert;
@@ -12,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RevisionsTest extends AndroidTestCase {
+public class RevisionsTest extends LiteTestCase {
 
     public void testParseRevID() {
         int num;

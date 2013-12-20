@@ -1,7 +1,5 @@
 package com.couchbase.lite;
 
-import android.test.AndroidTestCase;
-
 import com.couchbase.lite.util.Log;
 import com.couchbase.touchdb.TDCollateJSON;
 
@@ -9,7 +7,7 @@ import junit.framework.Assert;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
-public class CollationTest extends AndroidTestCase {
+public class CollationTest extends LiteTestCase {
 
     public static String TAG = "Collation";
 

@@ -1,10 +1,8 @@
 package com.couchbase.lite;
 
-import android.test.InstrumentationTestCase;
-
 import junit.framework.Assert;
 
-public class MiscTest extends InstrumentationTestCase {
+public class MiscTest extends LiteTestCase {
 
     public void testUnquoteString() {
 

@@ -1,7 +1,5 @@
 package com.couchbase.lite;
 
-import android.test.InstrumentationTestCase;
-
 import com.couchbase.lite.support.MultipartReaderDelegate;
 import com.couchbase.lite.support.Range;
 
@@ -17,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MultipartReaderTest extends InstrumentationTestCase {
+public class MultipartReaderTest extends LiteTestCase {
 
     class TestMultipartReaderDelegate implements MultipartReaderDelegate {
 
