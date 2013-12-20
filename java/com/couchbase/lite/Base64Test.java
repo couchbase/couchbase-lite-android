@@ -1,13 +1,10 @@
 package com.couchbase.lite;
 
-
-import android.test.InstrumentationTestCase;
-
 import junit.framework.Assert;
 
 import java.io.IOException;
 
-public class Base64Test extends InstrumentationTestCase {
+public class Base64Test extends LiteTestCase {
 
 
     public void testDecode() throws IOException {

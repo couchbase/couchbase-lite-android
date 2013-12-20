@@ -1,10 +1,8 @@
 package com.couchbase.lite;
 
-import android.test.AndroidTestCase;
-
 import junit.framework.Assert;
 
-public class SequenceMapTest extends AndroidTestCase {
+public class SequenceMapTest extends LiteTestCase {
 	
 	public void testSequenceMap() {
 		

@@ -1,17 +1,15 @@
 package com.couchbase.lite;
 
-import android.test.AndroidTestCase;
-
-import com.couchbase.lite.Database;
 import com.couchbase.lite.auth.PersonaAuthorizer;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
+import junit.framework.TestCase;
 
 import java.net.URL;
 import java.util.Map;
 
-public class AuthTest extends AndroidTestCase {
+public class AuthTest extends TestCase {
 
     public void testParsePersonaAssertion() {
 

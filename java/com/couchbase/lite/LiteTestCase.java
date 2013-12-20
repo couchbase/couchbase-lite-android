@@ -1,9 +1,7 @@
 package com.couchbase.lite;
 
-import android.test.InstrumentationTestCase;
+import junit.framework.TestCase;
 
-import com.couchbase.lite.Database;
-import com.couchbase.lite.Manager;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.router.*;
 import com.couchbase.lite.router.Router;
@@ -26,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public abstract class LiteTestCase extends InstrumentationTestCase {
+public abstract class LiteTestCase extends TestCase {
 
     public static final String TAG = "LiteTestCase";
 
@@ -54,8 +52,29 @@ public abstract class LiteTestCase extends InstrumentationTestCase {
         startDatabase();
     }
 
+    // TODO: Portable Java Test [Begin] -----
+
+    protected void runTestOnUiThread(Runnable runnable) {
+        // TODO: What should we do?
+        runnable.run();
+    }
+
+    protected InputStream getAsset(String name) {
+        return this.getClass().getResourceAsStream("/assets/" + name);
+    }
+
+    protected File getRootDirectory() {
+        String rootDirectoryPath = System.getProperty("user.dir");
+        File rootDirectory = new File(rootDirectoryPath);
+        rootDirectory = new File(rootDirectory, "data/data/com.couchbase.cblite.test/files");
+
+        return rootDirectory;
+    }
+
+    // TODO: Portable Java Test [End] -----
+
     protected String getServerPath() {
-        String filesDir = getInstrumentation().getContext().getFilesDir().getAbsolutePath();
+        String filesDir = getRootDirectory().getAbsolutePath();
         return filesDir;
     }
 
@@ -64,7 +83,7 @@ public abstract class LiteTestCase extends InstrumentationTestCase {
         File serverPathFile = new File(serverPath);
         FileDirUtils.deleteRecursive(serverPathFile);
         serverPathFile.mkdir();
-        manager = new Manager(new File(getInstrumentation().getContext().getFilesDir(), "test"), Manager.DEFAULT_OPTIONS);
+        manager = new Manager(new File(getRootDirectory(), "test"), Manager.DEFAULT_OPTIONS);
     }
 
     protected void stopCBLite() {
@@ -99,12 +118,12 @@ public abstract class LiteTestCase extends InstrumentationTestCase {
     protected void loadCustomProperties() throws IOException {
 
         Properties systemProperties = System.getProperties();
-        InputStream mainProperties = getInstrumentation().getContext().getAssets().open("test.properties");
+        InputStream mainProperties = getAsset("test.properties");
         if(mainProperties != null) {
             systemProperties.load(mainProperties);
         }
         try {
-            InputStream localProperties = getInstrumentation().getContext().getAssets().open("local-test.properties");
+            InputStream localProperties = getAsset("local-test.properties");
             if(localProperties != null) {
                 systemProperties.load(localProperties);
             }

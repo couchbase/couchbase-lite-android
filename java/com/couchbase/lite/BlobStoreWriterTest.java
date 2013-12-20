@@ -12,7 +12,7 @@ public class BlobStoreWriterTest extends LiteTestCase {
 
         BlobStore attachments = database.getAttachments();
 
-        InputStream attachmentStream = getInstrumentation().getContext().getAssets().open("attachment.png");
+        InputStream attachmentStream = getAsset("attachment.png");
         byte[] bytes = IOUtils.toByteArray(attachmentStream);
 
         com.couchbase.lite.BlobStoreWriter blobStoreWriter = new com.couchbase.lite.BlobStoreWriter(attachments);
