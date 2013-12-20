@@ -41,19 +41,19 @@ public class ChangeTrackerTest extends LiteTestCase {
 
     public void testChangeTracker() throws Throwable {
 
+        final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
         URL testURL = getReplicationURL();
 
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
             public void changeTrackerStopped(ChangeTracker tracker) {
-                Log.v(TAG, "See change tracker stopped");
+                changeTrackerFinishedSignal.countDown();
             }
 
             @Override
             public void changeTrackerReceivedChange(Map<String, Object> change) {
                 Object seq = change.get("seq");
-                Log.v(TAG, "See change " + seq.toString());
             }
 
             @Override
@@ -65,8 +65,11 @@ public class ChangeTrackerTest extends LiteTestCase {
         final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.OneShot, 0, client);
         changeTracker.start();
 
-        while(changeTracker.isRunning()) {
-            Thread.sleep(1000);
+        try {
+            boolean success = changeTrackerFinishedSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
     }
