@@ -420,7 +420,9 @@ public class AttachmentsTest extends LiteTestCase {
             InputStream is = attachmentRetrieved.getContent();
             assertNotNull(is);
             byte[] attachmentDataRetrieved = TextUtils.read(is);
-            assertEquals(attachBodyBytes, attachmentDataRetrieved);
+            String attachmentDataRetrievedString = new String(attachmentDataRetrieved);
+            String attachBodyString = new String(attachBodyBytes);
+            assertEquals(attachBodyString, attachmentDataRetrievedString);
 
         }
 
