@@ -19,12 +19,14 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.support.Base64;
+import com.couchbase.lite.util.TextUtils;
 
 import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -358,7 +360,7 @@ public class AttachmentsTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/134
      */
-    public void testGetAttachmentBodyUsingPrefetch() throws CouchbaseLiteException {
+    public void testGetAttachmentBodyUsingPrefetch() throws CouchbaseLiteException, IOException {
 
         // add a doc with an attachment
         Document doc = database.createDocument();
@@ -368,8 +370,9 @@ public class AttachmentsTest extends LiteTestCase {
         properties.put("foo", "bar");
         rev.setUserProperties(properties);
 
+        final byte[] attachBodyBytes = "attach body".getBytes();
         Attachment attachment = new Attachment(
-                new ByteArrayInputStream("attach body".getBytes()),
+                new ByteArrayInputStream(attachBodyBytes),
                 "text/plain"
         );
 
@@ -399,15 +402,12 @@ public class AttachmentsTest extends LiteTestCase {
         while (results.hasNext()) {
 
             QueryRow row = results.next();
-            // I know my document has an attachment called track.mp3. Here's
-            // what happens:
+
 
             // This returns the revision just fine, but the sequence number
             // is set to 0.
             SavedRevision revision = row.getDocument().getCurrentRevision();
 
-            // This returns a list of the attachments, which includes an entry
-            // for "track.mp3".
             List<String> attachments = revision.getAttachmentNames();
 
             // This returns an Attachment object which looks ok, except again
@@ -419,10 +419,10 @@ public class AttachmentsTest extends LiteTestCase {
             // This throws a CouchbaseLiteException with Status.NOT_FOUND.
             InputStream is = attachmentRetrieved.getContent();
             assertNotNull(is);
-
+            byte[] attachmentDataRetrieved = TextUtils.read(is);
+            assertEquals(attachBodyBytes, attachmentDataRetrieved);
 
         }
-
 
     }
 
