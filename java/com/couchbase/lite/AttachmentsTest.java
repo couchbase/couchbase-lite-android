@@ -25,11 +25,13 @@ import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -349,6 +351,77 @@ public class AttachmentsTest extends LiteTestCase {
         BlobKey blobKey = new BlobKey(sha1Base64Digest);
         byte[] blob = attachments.blobForKey(blobKey);
         Assert.assertTrue(Arrays.equals(testBlob.getBytes(Charset.forName("UTF-8")), blob));
+
+
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/134
+     */
+    public void testGetAttachmentBodyUsingPrefetch() throws CouchbaseLiteException {
+
+        // add a doc with an attachment
+        Document doc = database.createDocument();
+        UnsavedRevision rev = doc.createRevision();
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
+        rev.setUserProperties(properties);
+
+        Attachment attachment = new Attachment(
+                new ByteArrayInputStream("attach body".getBytes()),
+                "text/plain"
+        );
+
+        final String attachmentName = "test_attachment.txt";
+        rev.addAttachment(attachment, attachmentName);
+        rev.save();
+
+        // do query that finds that doc with prefetch
+        View view = database.getView("aview");
+        view.setMapAndReduce(new Mapper() {
+
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                String id = (String)document.get("_id");
+                emitter.emit(id, null);
+            }
+        }, null, "1");
+
+
+        // try to get the attachment
+
+        Query query = view.createQuery();
+        query.setPrefetch(true);
+
+        QueryEnumerator results = query.run();
+
+        while (results.hasNext()) {
+
+            QueryRow row = results.next();
+            // I know my document has an attachment called track.mp3. Here's
+            // what happens:
+
+            // This returns the revision just fine, but the sequence number
+            // is set to 0.
+            SavedRevision revision = row.getDocument().getCurrentRevision();
+
+            // This returns a list of the attachments, which includes an entry
+            // for "track.mp3".
+            List<String> attachments = revision.getAttachmentNames();
+
+            // This returns an Attachment object which looks ok, except again
+            // its sequence number is 0. The metadata property knows about
+            // the length and mime type of the attachment. It also says
+            // "stub" -> "true".
+            Attachment attachmentRetrieved = revision.getAttachment(attachmentName);
+
+            // This throws a CouchbaseLiteException with Status.NOT_FOUND.
+            InputStream is = attachmentRetrieved.getContent();
+            assertNotNull(is);
+
+
+        }
 
 
     }
