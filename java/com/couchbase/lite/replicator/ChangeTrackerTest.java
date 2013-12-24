@@ -66,7 +66,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         changeTracker.start();
 
         try {
-            boolean success = changeTrackerFinishedSignal.await(30, TimeUnit.SECONDS);
+            boolean success = changeTrackerFinishedSignal.await(300, TimeUnit.SECONDS);
             assertTrue(success);
         } catch (InterruptedException e) {
             e.printStackTrace();
