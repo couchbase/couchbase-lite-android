@@ -80,7 +80,9 @@ public class ApiTest extends LiteTestCase {
             Database db = manager.getDatabase(dbName);
             Log.i(TAG, "Database '" + dbName + "':" + db.getDocumentCount() + " documents");
         }
-        ManagerOptions options= new ManagerOptions(true, false);
+        boolean readOnly = true;
+        boolean noReplicator = false;
+        ManagerOptions options= new ManagerOptions(readOnly, noReplicator);
 
         Manager roManager=new Manager(new File(manager.getDirectory()), options);
         Assert.assertTrue(roManager!=null);

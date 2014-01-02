@@ -10,18 +10,19 @@ public class ManagerTest extends LiteTestCase {
 
         //to ensure this test is easily repeatable we will explicitly remove
         //any stale foo.cblite
-        Database old = manager.getExistingDatabase("foo");
+        boolean mustExist = true;
+        Database old = manager.getDatabaseWithoutOpening("foo", mustExist);
         if(old != null) {
             old.delete();
         }
 
-        Database db = manager.getDatabase("foo");
+        mustExist = false;
+        Database db = manager.getDatabaseWithoutOpening("foo", mustExist);
         assertNotNull(db);
         assertEquals("foo", db.getName());
         assertTrue(db.getPath().startsWith(getServerPath()));
         assertFalse(db.exists());
 
-        assertEquals(db, manager.getDatabase("foo"));
 
         // because foo doesn't exist yet
         List<String> databaseNames = manager.getAllDatabaseNames();
