@@ -417,7 +417,8 @@ public class ApiTest extends LiteTestCase {
         properties.put("tag", 3);
         UnsavedRevision newRev = rev1.createRevision();
         newRev.setProperties(properties);
-        SavedRevision rev2b = newRev.saveAllowingConflict();
+        boolean allowConflict = true;
+        SavedRevision rev2b = newRev.save(allowConflict);
         assertNotNull("Failed to create a a conflict", rev2b);
 
         List<SavedRevision> confRevs = new ArrayList<SavedRevision>();
