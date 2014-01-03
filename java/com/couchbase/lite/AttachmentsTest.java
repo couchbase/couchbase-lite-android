@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.support.Base64;
+import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
 
 import junit.framework.Assert;
@@ -147,6 +148,9 @@ public class AttachmentsTest extends LiteTestCase {
     }
 
     @SuppressWarnings("unchecked")
+    /**
+     ObjectiveC equivalent: CBL_Database_Tests.CBL_Database_Attachments()
+     */
     public void testPutLargeAttachment() throws Exception {
 
         String testAttachmentName = "test_attachment";
@@ -201,16 +205,61 @@ public class AttachmentsTest extends LiteTestCase {
         }
 
         RevisionInternal rev1WithAttachments = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), contentOptions);
-        Map<String,Object> rev1PropertiesPrime = rev1WithAttachments.getProperties();
-        rev1PropertiesPrime.put("foo", 2);
-        RevisionInternal newRev = new RevisionInternal(rev1PropertiesPrime, database);
+        // Map<String,Object> rev1PropertiesPrime = rev1WithAttachments.getProperties();
+        // rev1PropertiesPrime.put("foo", 2);
+
+
+        Map<String,Object> rev1WithAttachmentsProperties = rev1WithAttachments.getProperties();
+
+        Map<String,Object> rev2Properties = new HashMap<String, Object>();
+        rev2Properties.put("_id", rev1WithAttachmentsProperties.get("_id"));
+        rev2Properties.put("foo", 2);
+
+        RevisionInternal newRev = new RevisionInternal(rev2Properties, database);
         RevisionInternal rev2 = database.putRevision(newRev, rev1WithAttachments.getRevId(), false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
-        // regression test for the case where we had a "recursive data structure" in the attachment properties
-        Map<String, Object> rev2Attachment = (Map<String, Object>) rev2.getProperties().get("_attachments");
-        Map<String, Object> attachMeta = (Map<String, Object>) rev2Attachment.get(testAttachmentName);
-        assertFalse(attachMeta.containsKey(testAttachmentName));
+        database.copyAttachmentNamedFromSequenceToSequence(
+                testAttachmentName,
+                rev1WithAttachments.getSequence(),
+                rev2.getSequence());
+
+        // Check the 2nd revision's attachment:
+        Attachment rev2FetchedAttachment =  database.getAttachmentForSequence(rev2.getSequence(), testAttachmentName);
+        Assert.assertEquals(attachment.getLength(), rev2FetchedAttachment.getLength());
+        Assert.assertEquals(attachment.getMetadata(), rev2FetchedAttachment.getMetadata());
+        Assert.assertEquals(attachment.getContentType(), rev2FetchedAttachment.getContentType());
+
+        // Add a third revision of the same document:
+        Map<String,Object> rev3Properties = new HashMap<String, Object>();
+        rev3Properties.put("_id", rev2.getProperties().get("_id"));
+        rev3Properties.put("foo", 3);
+        rev3Properties.put("baz", false);
+
+        RevisionInternal rev3 = new RevisionInternal(rev3Properties, database);
+        rev3 = database.putRevision(rev3, rev2.getRevId(), false, status);
+        Assert.assertEquals(Status.CREATED, status.getCode());
+
+        byte[] attach3 = "<html><blink>attach3</blink></html>".getBytes();
+        database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach3),
+                rev3.getSequence(), testAttachmentName, "text/html", rev3.getGeneration());
+
+        // Check the 3rd revision's attachment:
+        Attachment rev3FetchedAttachment =  database.getAttachmentForSequence(rev3.getSequence(), testAttachmentName);
+
+        data = IOUtils.toByteArray(rev3FetchedAttachment.getContent());
+        Assert.assertTrue(Arrays.equals(attach3, data));
+        Assert.assertEquals("text/html", rev3FetchedAttachment.getContentType());
+
+        // TODO: why doesn't this work?
+        // Assert.assertEquals(attach3.length, rev3FetchedAttachment.getLength());
+
+        Set<BlobKey> blobKeys = database.getAttachments().allKeys();
+        Assert.assertEquals(2, blobKeys.size());
+        database.compact();
+        blobKeys = database.getAttachments().allKeys();
+        Assert.assertEquals(1, blobKeys.size());
+
 
     }
 
