@@ -81,7 +81,6 @@ public class ApiTest extends LiteTestCase {
             Log.i(TAG, "Database '" + dbName + "':" + db.getDocumentCount() + " documents");
         }
         boolean readOnly = true;
-        boolean noReplicator = false;
         ManagerOptions options= new ManagerOptions(readOnly);
 
         Manager roManager=new Manager(new File(manager.getDirectory()), options);
