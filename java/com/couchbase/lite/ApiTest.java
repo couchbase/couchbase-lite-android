@@ -82,7 +82,7 @@ public class ApiTest extends LiteTestCase {
         }
         boolean readOnly = true;
         boolean noReplicator = false;
-        ManagerOptions options= new ManagerOptions(readOnly, noReplicator);
+        ManagerOptions options= new ManagerOptions(readOnly);
 
         Manager roManager=new Manager(new File(manager.getDirectory()), options);
         Assert.assertTrue(roManager!=null);
