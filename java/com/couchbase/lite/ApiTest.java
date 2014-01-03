@@ -514,7 +514,7 @@ public class ApiTest extends LiteTestCase {
         createDocumentsAsync(db, 5);
         // We expect that the changes reported by the server won't be notified, because those revisions
         // are already cached in memory.
-        boolean success = doneSignal.await(1, TimeUnit.SECONDS);
+        boolean success = doneSignal.await(300, TimeUnit.SECONDS);
         assertTrue(success);
         assertEquals(5, db.getLastSequenceNumber());
 
@@ -712,7 +712,7 @@ public class ApiTest extends LiteTestCase {
         }
 
         // wait for the doneSignal to be finished
-        boolean success = doneSignal.await(30, TimeUnit.SECONDS);
+        boolean success = doneSignal.await(300, TimeUnit.SECONDS);
         assertTrue("Done signal timed out, live query never ran", success);
 
         // stop the livequery since we are done with it
@@ -761,7 +761,7 @@ public class ApiTest extends LiteTestCase {
         });
 
         Log.i(TAG, "Waiting for async query to finish...");
-        boolean success = doneSignal.await(30, TimeUnit.SECONDS);
+        boolean success = doneSignal.await(300, TimeUnit.SECONDS);
         assertTrue("Done signal timed out, async query never ran", success);
 
     }

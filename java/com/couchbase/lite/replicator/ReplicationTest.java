@@ -161,7 +161,7 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "Waiting for http request to finish");
         try {
-            httpRequestDoneSignal.await();
+            httpRequestDoneSignal.await(300, TimeUnit.SECONDS);
             Log.d(TAG, "http request finished");
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -242,7 +242,7 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "Waiting for http request to finish");
         try {
-            httpRequestDoneSignal.await();
+            httpRequestDoneSignal.await(300, TimeUnit.SECONDS);
             Log.d(TAG, "http request finished");
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -406,7 +406,7 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "Waiting for http request to finish");
         try {
-            httpRequestDoneSignal.await();
+            httpRequestDoneSignal.await(300, TimeUnit.SECONDS);
             Log.d(TAG, "http request finished");
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -461,10 +461,10 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "Waiting for replicator to finish");
         try {
-            boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+            boolean success = replicationDoneSignal.await(300, TimeUnit.SECONDS);
             assertTrue(success);
 
-            success = replicationDoneSignalPolling.await(30, TimeUnit.SECONDS);
+            success = replicationDoneSignalPolling.await(300, TimeUnit.SECONDS);
             assertTrue(success);
 
             Log.d(TAG, "replicator finished");
@@ -603,7 +603,7 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "testFetchRemoteCheckpointDoc() Waiting for replicator to finish");
         try {
-            boolean succeeded = doneSignal.await(30, TimeUnit.SECONDS);
+            boolean succeeded = doneSignal.await(300, TimeUnit.SECONDS);
             assertTrue(succeeded);
             Log.d(TAG, "testFetchRemoteCheckpointDoc() replicator finished");
         } catch (InterruptedException e) {
