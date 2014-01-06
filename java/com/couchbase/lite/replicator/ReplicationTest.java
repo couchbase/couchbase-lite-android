@@ -746,12 +746,10 @@ public class ReplicationTest extends LiteTestCase {
         };
 
         URL remote = getReplicationURL();
-        Replication puller = new Puller(
-                database,
-                remote,
-                false,
-                mockHttpClientFactory,
-                manager.getWorkExecutor());
+
+        manager.setDefaultHttpClientFactory(mockHttpClientFactory);
+        Replication puller = database.getPullReplication(remote);
+
         Map<String, Object> headers = new HashMap<String, Object>();
         headers.put("foo", "bar");
         puller.setHeaders(headers);
@@ -771,7 +769,7 @@ public class ReplicationTest extends LiteTestCase {
         }
 
         Assert.assertTrue(foundFooHeader);
-
+        manager.setDefaultHttpClientFactory(null);
 
     }
 
