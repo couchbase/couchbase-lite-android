@@ -39,7 +39,7 @@ public class RouterTest extends LiteTestCase {
         send("GET", "/_all_dbs", Status.OK, allDbs);
 
         send("GET", "/non-existant", Status.NOT_FOUND, null);
-        send("GET", "/BadName", Status.NOT_FOUND, null);
+        send("GET", "/BadName", Status.BAD_REQUEST, null);
         send("PUT", "/", Status.BAD_REQUEST, null);
         send("POST", "/", Status.BAD_REQUEST, null);
     }
