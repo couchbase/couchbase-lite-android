@@ -117,6 +117,35 @@ public class ApiTest extends LiteTestCase {
     }
 
 
+    public void testDatabaseCompaction() throws Exception{
+
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("testName", "testDatabaseCompaction");
+        properties.put("tag", 1337);
+
+
+        Document doc=createDocumentWithProperties(database, properties);
+        SavedRevision rev1 = doc.getCurrentRevision();
+
+        Map<String,Object> properties2 = new HashMap<String,Object>(properties);
+        properties2.put("tag", 4567);
+
+        SavedRevision rev2 = rev1.createRevision(properties2);
+        database.compact();
+
+        Document fetchedDoc = database.getDocument(doc.getId());
+        List<SavedRevision> revisions = fetchedDoc.getRevisionHistory();
+        for (SavedRevision revision : revisions) {
+            if (revision.getId().equals(rev1)) {
+                assertFalse(revision.arePropertiesAvailable());
+            }
+            if (revision.getId().equals(rev2)) {
+                assertTrue(revision.arePropertiesAvailable());
+            }
+        }
+
+    }
+
     public void testCreateRevisions() throws Exception{
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("testName", "testCreateRevisions");
