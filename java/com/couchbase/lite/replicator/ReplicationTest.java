@@ -86,7 +86,7 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(Status.CREATED, status.getCode());
 
         final boolean continuous = false;
-        final Replication repl = database.getPushReplication(remote);
+        final Replication repl = database.createPushReplication(remote);
         repl.setContinuous(continuous);
 
         repl.setCreateTarget(true);
@@ -201,7 +201,7 @@ public class ReplicationTest extends LiteTestCase {
         RevisionInternal rev2 = database.putRevision(new RevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
         assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
-        final Replication repl = database.getPushReplication(remote);
+        final Replication repl = database.createPushReplication(remote);
         ((Pusher)repl).setCreateTarget(true);
 
         runReplication(repl);
@@ -344,7 +344,7 @@ public class ReplicationTest extends LiteTestCase {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
-        final Replication repl = (Replication) database.getPullReplication(remote);
+        final Replication repl = (Replication) database.createPullReplication(remote);
         repl.setContinuous(false);
 
         runReplication(repl);
@@ -622,7 +622,7 @@ public class ReplicationTest extends LiteTestCase {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
-        Replication repl = database.getPullReplication(remote);
+        Replication repl = database.createPullReplication(remote);
         repl.setContinuous(true);
         repl.start();
 
@@ -687,7 +687,7 @@ public class ReplicationTest extends LiteTestCase {
     public void testChannels() throws Exception {
 
         URL remote = getReplicationURL();
-        Replication replicator = database.getPullReplication(remote);
+        Replication replicator = database.createPullReplication(remote);
         List<String> channels = new ArrayList<String>();
         channels.add("chan1");
         channels.add("chan2");
@@ -702,7 +702,7 @@ public class ReplicationTest extends LiteTestCase {
 
         Database  db = startDatabase();
         URL fakeRemoteURL = new URL("http://couchbase.com/no_such_db");
-        Replication r1 = db.getPullReplication(fakeRemoteURL);
+        Replication r1 = db.createPullReplication(fakeRemoteURL);
 
         assertTrue(r1.getChannels().isEmpty());
         r1.setFilter("foo/bar");
@@ -748,7 +748,7 @@ public class ReplicationTest extends LiteTestCase {
         URL remote = getReplicationURL();
 
         manager.setDefaultHttpClientFactory(mockHttpClientFactory);
-        Replication puller = database.getPullReplication(remote);
+        Replication puller = database.createPullReplication(remote);
 
         Map<String, Object> headers = new HashMap<String, Object>();
         headers.put("foo", "bar");
