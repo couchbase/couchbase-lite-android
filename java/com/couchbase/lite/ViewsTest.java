@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 
 public class ViewsTest extends LiteTestCase {
@@ -576,6 +577,44 @@ public class ViewsTest extends LiteTestCase {
         Object value = reduced.get(0).getValue();
         Number numberValue = (Number)value;
         Assert.assertTrue(Math.abs(numberValue.doubleValue() - 17.44) < 0.001);
+
+    }
+
+    public void testIndexUpdateMode() throws CouchbaseLiteException {
+
+        View view = createView(database);
+        Query query = view.createQuery();
+        query.setIndexUpdateMode(Query.IndexUpdateMode.BEFORE);
+        int numRowsBefore = query.run().getCount();
+        assertEquals(0, numRowsBefore);
+
+        // do a query and force re-indexing, number of results should be +4
+        putNDocs(database, 1);
+        query.setIndexUpdateMode(Query.IndexUpdateMode.BEFORE);
+        assertEquals(1, query.run().getCount());
+
+        // do a query without re-indexing, number of results should be the same
+        putNDocs(database, 4);
+        query.setIndexUpdateMode(Query.IndexUpdateMode.NEVER);
+        assertEquals(1, query.run().getCount());
+
+        // do a query and force re-indexing, number of results should be +4
+        query.setIndexUpdateMode(Query.IndexUpdateMode.BEFORE);
+        assertEquals(5, query.run().getCount());
+
+        // do a query which will kick off an async index
+        putNDocs(database, 1);
+        query.setIndexUpdateMode(Query.IndexUpdateMode.AFTER);
+        query.run().getCount();
+
+        // wait until indexing is (hopefully) done
+        try {
+            Thread.sleep(1 * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(6, query.run().getCount());
 
     }
 
