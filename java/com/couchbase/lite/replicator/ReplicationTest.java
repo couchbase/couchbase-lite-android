@@ -1,6 +1,7 @@
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.Database;
+import com.couchbase.lite.Document;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiveQuery;
@@ -268,16 +269,32 @@ public class ReplicationTest extends LiteTestCase {
         doPullReplication();
 
         Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
-        RevisionInternal doc1 = database.getDocumentWithIDAndRev(doc1Id, null, EnumSet.noneOf(Database.TDContentOptions.class));
+        Document doc1 = database.getDocument(doc1Id);
         assertNotNull(doc1);
-        assertTrue(doc1.getRevId().startsWith("1-"));
+        assertTrue(doc1.getCurrentRevisionId().startsWith("1-"));
         assertEquals(1, doc1.getProperties().get("foo"));
 
         Log.d(TAG, "Fetching doc2 via id: " + doc2Id);
-        RevisionInternal doc2 = database.getDocumentWithIDAndRev(doc2Id, null, EnumSet.noneOf(Database.TDContentOptions.class));
+                Document doc2 = database.getDocument(doc2Id);
         assertNotNull(doc2);
-        assertTrue(doc2.getRevId().startsWith("1-"));
+        assertTrue(doc2.getCurrentRevisionId().startsWith("1-"));
         assertEquals(1, doc2.getProperties().get("foo"));
+
+        // update doc1 on sync gateway
+        String docJson = String.format("{\"foo\":2,\"bar\":true,\"_rev\":\"%s\",\"_id\":\"%s\"}", doc1.getCurrentRevisionId(), doc1.getId());
+        pushDocumentToSyncGateway(doc1.getId(), docJson);
+
+        // workaround for https://github.com/couchbase/sync_gateway/issues/228
+        Thread.sleep(1000);
+
+        // do another pull
+        doPullReplication();
+
+        // make sure it has the latest properties
+        Document doc1Fetched = database.getDocument(doc1Id);
+        assertNotNull(doc1Fetched);
+        assertTrue(doc1Fetched.getCurrentRevisionId().startsWith("2-"));
+        assertEquals(2, doc1Fetched.getProperties().get("foo"));
 
         Log.d(TAG, "testPuller() finished");
 
@@ -351,6 +368,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+
     private void addDocWithId(String docId, String attachmentName) throws IOException {
 
         final String docJson;
@@ -366,7 +384,12 @@ public class ReplicationTest extends LiteTestCase {
         else {
             docJson = "{\"foo\":1,\"bar\":false}";
         }
+        pushDocumentToSyncGateway(docId, docJson);
 
+
+    }
+
+    private void pushDocumentToSyncGateway(String docId, final String docJson) throws MalformedURLException {
         // push a document to server
         URL replicationUrlTrailingDoc1 = new URL(String.format("%s/%s", getReplicationURL().toExternalForm(), docId));
         final URL pathToDoc1 = new URL(replicationUrlTrailingDoc1, docId);
@@ -378,7 +401,7 @@ public class ReplicationTest extends LiteTestCase {
             @Override
             public void run() {
 
-                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
+                HttpClient httpclient = new DefaultHttpClient();
 
                 HttpResponse response;
                 String responseString = null;
