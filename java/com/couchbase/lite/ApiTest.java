@@ -146,6 +146,31 @@ public class ApiTest extends LiteTestCase {
 
     }
 
+    public void testDocumentCache() throws Exception{
+
+        Database db = startDatabase();
+        Document doc = db.createDocument();
+        UnsavedRevision rev1 = doc.createRevision();
+        Map<String, Object> rev1Properties = new HashMap<String, Object>();
+        rev1Properties.put("foo", "bar");
+        rev1.setUserProperties(rev1Properties);
+        SavedRevision savedRev1 = rev1.save();
+        String documentId = savedRev1.getDocument().getId();
+
+        // getting the document puts it in cache
+        Document docRev1 = db.getExistingDocument(documentId);
+
+        UnsavedRevision rev2 = docRev1.createRevision();
+        Map<String, Object> rev2Properties = rev2.getProperties();
+        rev2Properties.put("foo", "baz");
+        rev2.setUserProperties(rev2Properties);
+        rev2.save();
+
+        Document docRev2 = db.getExistingDocument(documentId);
+        assertEquals("baz", docRev2.getProperty("foo"));
+
+    }
+
     public void testCreateRevisions() throws Exception{
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("testName", "testCreateRevisions");
@@ -319,6 +344,7 @@ public class ApiTest extends LiteTestCase {
         assertNull(redoc);
 
     }
+
 
 
     public void testAllDocuments() throws Exception{
