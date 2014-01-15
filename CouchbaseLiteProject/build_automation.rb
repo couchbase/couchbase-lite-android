@@ -177,8 +177,8 @@ def buildZipArchiveRelease()
   
   # download 3rd party jars into a zip file
   runCommand "cd    build &&  ./zip_jars.sh"
-  runCommand "cp    #{thirdPartyZipArchive} ."
-  runCommand "file  #{thirdPartyZipArchive}"
+  runCommand "cp    build/target/#{thirdPartyZipArchive} ."
+  runCommand "file               #{thirdPartyZipArchive}"
   
   # unzip it
   runCommand "unzip #{thirdPartyZipArchive}"
