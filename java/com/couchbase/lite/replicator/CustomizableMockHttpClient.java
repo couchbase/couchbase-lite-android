@@ -87,6 +87,21 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         });
     }
 
+    public void clearResponders() {
+        responders = new HashMap<String, Responder>();
+    }
+
+    public void addResponderReturnEmptyChangesFeed() {
+        setResponder("_changes", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                String json = "{\"results\":[]}";
+                return CustomizableMockHttpClient.generateHttpResponseObject(json);
+            }
+        });
+    }
+
+
     public List<HttpRequest> getCapturedRequests() {
         return capturedRequests;
     }
