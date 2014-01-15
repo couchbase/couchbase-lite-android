@@ -240,39 +240,31 @@ public class ChangeTrackerTest extends LiteTestCase {
         };
         task.execute();
 
-        try {
+        // sleep for 10 seconds
+        Thread.sleep(5 * 1000);
 
-            // expected behavior:
-            // when:
-            //    mockHttpClient throws IOExceptions -> it should start high and then back off and numTimesExecute should be low
+        // make sure we got less than 10 requests in those 10 seconds (if it was hammering, we'd get a lot more)
+        assertTrue(mockHttpClient.getCapturedRequests().size() < 25);
+        assertTrue(changeTracker.backoff.getNumAttempts() > 0);
 
-            for (int i=0; i<30; i++) {
+        mockHttpClient.clearResponders();
+        mockHttpClient.addResponderReturnEmptyChangesFeed();
 
-                int numTimesExectutedAfter10seconds = 0;
+        // at this point, the change tracker backoff should cause it to sleep for about 3 seconds
+        // and so lets wait 3 seconds until it wakes up and starts getting valid responses
+        Thread.sleep(3 * 1000);
 
-                try {
-                    Thread.sleep(1000);
+        // now find the delta in requests received in a 2s period
+        int before = mockHttpClient.getCapturedRequests().size();
+        Thread.sleep(2 * 1000);
+        int after = mockHttpClient.getCapturedRequests().size();
 
-                    // take a snapshot of num times the http client was called after 10 seconds
-                    if (i == 10) {
-                        numTimesExectutedAfter10seconds = mockHttpClient.getCapturedRequests().size();
-                    }
+        // assert that the delta is high, because at this point the change tracker should
+        // be hammering away
+        assertTrue((after - before) > 25);
 
-                    // take another snapshot after 20 seconds have passed
-                    if (i == 20) {
-                        // by now it should have backed off, so the delta between 10s and 20s should be small
-                        int delta = mockHttpClient.getCapturedRequests().size() - numTimesExectutedAfter10seconds;
-                        assertTrue(delta < 25);
-                    }
-
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } finally {
-            changeTracker.stop();
-        }
+        // the backoff numAttempts should have been reset to 0
+        assertTrue(changeTracker.backoff.getNumAttempts() == 0);
 
 
 
