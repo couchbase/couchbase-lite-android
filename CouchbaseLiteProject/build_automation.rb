@@ -169,31 +169,25 @@ def runCommand(cmd)
 end
 
 def buildZipArchiveRelease() 
-
-  remoteArchive = "couchbase-lite-android-rc2"
-  remoteZipArchive = "#{remoteArchive}.zip"
-  localArchive = "zip_release_archive"
-  localZipArchive = "#{localArchive}.zip"
-
-  # clean out any residue from previous runs
-  #runCommand "rm #{remoteZipArchive}"
-  #runCommand "rm -rf #{remoteArchive}"
-
-  # download an existing zip archive which already has the 3rd party dependencies
-  runCommand "curl -O http://tleyden-misc.s3.amazonaws.com/#{remoteZipArchive}"
-
+  
+  thirdPartyArchive    = "com.couchbase.CBLite-1.0"
+  thirdPartyZipArchive = "#{thirdPartyArchive}.zip"
+  localArchive         = "zip_release_archive"
+  localZipArchive      = "#{localArchive}.zip"
+  
+  # download 3rd party jars into a zip file
+  runCommand "cd   build &&  ./zip_jars.sh"
+  runCommand "file build/target/com.couchbase.CBLite-1.0-cblite-zipfile.zip"
+  
   # unzip it
-  runCommand "unzip #{remoteZipArchive}"
-
+  runCommand "unzip #{thirdPartyZipArchive}"
+  
   # delete the old zip we downloaded
-  runCommand "rm #{remoteZipArchive}"
-
+  runCommand "rm #{thirdPartyZipArchive}"
+  
   # rename it
-  runCommand "mv #{remoteArchive} #{localArchive}"
-
-  # remove the existing cblite*.jar files
-  runCommand "rm -rf #{localArchive}/CBLite*.jar"
-
+  runCommand "mv #{thirdPartyArchive} #{localArchive}"
+  
   # collect the new cblite jar files and name them correctly based on UPLOAD_VERSION_CBLITE env var
   modules = ["CBLite", "CBLiteJavascript", "CBLiteListener"]
   modules.each { |mod| 
@@ -207,11 +201,11 @@ def buildZipArchiveRelease()
     cmd = "cp #{src} #{dest}"
     runCommand cmd
   }
-
+  
   # re-zip the zip file and put in current directory  
   runCommand "zip -r -j #{localArchive} #{localArchive}"
-
+  
   # delete the directory that was created
   runCommand "rm -rf #{localArchive}"
-
+  
 end
