@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.util.Log;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -60,8 +61,6 @@ public class RevTreeTest extends LiteTestCase {
         revHistory.add("2-too");
         revHistory.add("1-won");
 
-
-
         database.forceInsert(rev, revHistory, null);
         assertEquals(1, database.getDocumentCount());
         verifyHistory(database, rev, revHistory);
@@ -81,7 +80,19 @@ public class RevTreeTest extends LiteTestCase {
         conflictHistory.add("2-too");
         conflictHistory.add("1-won");
 
+        final List wasInConflict = new ArrayList();
+        final Database.ChangeListener listener = new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                if (event.getChanges().get(0).isConflict()) {
+                    wasInConflict.add(new Object());
+                }
+            }
+        };
+        database.addChangeListener(listener);
         database.forceInsert(conflict, conflictHistory, null);
+        assertTrue(wasInConflict.size() > 0);
+        database.removeChangeListener(listener);
         assertEquals(1, database.getDocumentCount());
         verifyHistory(database, conflict, conflictHistory);
 
