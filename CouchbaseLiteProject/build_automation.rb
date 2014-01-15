@@ -171,19 +171,20 @@ end
 def buildZipArchiveRelease() 
   
   thirdPartyArchive    = "com.couchbase.CBLite-1.0"
-  thirdPartyZipArchive = "#{thirdPartyArchive}.zip"
+  thirdPartyZipArchive = "#{thirdPartyArchive}-cblite-zipfile.zip"
   localArchive         = "zip_release_archive"
   localZipArchive      = "#{localArchive}.zip"
   
   # download 3rd party jars into a zip file
-  runCommand "cd   build &&  ./zip_jars.sh"
-  runCommand "file build/target/com.couchbase.CBLite-1.0-cblite-zipfile.zip"
+  runCommand "cd    build &&  ./zip_jars.sh"
+  runCommand "file  #{thirdPartyZipArchive}"
+  runCommand "cp    #{thirdPartyZipArchive} ."
   
   # unzip it
   runCommand "unzip #{thirdPartyZipArchive}"
   
   # delete the old zip we downloaded
-  runCommand "rm #{thirdPartyZipArchive}"
+  # runCommand "rm #{thirdPartyZipArchive}"
   
   # rename it
   runCommand "mv #{thirdPartyArchive} #{localArchive}"
@@ -206,6 +207,6 @@ def buildZipArchiveRelease()
   runCommand "zip -r -j #{localArchive} #{localArchive}"
   
   # delete the directory that was created
-  runCommand "rm -rf #{localArchive}"
+  # runCommand "rm -rf #{localArchive}"
   
 end
