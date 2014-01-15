@@ -204,7 +204,7 @@ def buildZipArchiveRelease()
   }
   
   # re-zip the zip file and put in current directory  
-  runCommand "zip -r -j #{localArchive} #{localArchive}"
+  runCommand "zip -r --junk-paths #{localZipArchive} #{localArchive}"
   
   # delete the directory that was created
   # runCommand "rm -rf #{localArchive}"
