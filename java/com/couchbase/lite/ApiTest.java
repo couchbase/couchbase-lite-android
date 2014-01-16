@@ -117,6 +117,18 @@ public class ApiTest extends LiteTestCase {
     }
 
 
+    public void testDeleteDatabase() {
+        Database deleteme = manager.getDatabase("deleteme");
+        assertTrue(deleteme.exists());
+        boolean deleted = deleteme.delete();
+        assertFalse(deleteme.exists());
+        assertTrue(deleted);
+        deleted = deleteme.delete();  // delete again, even though already deleted
+        assertTrue(deleted);  // slightly counter-intuitive, but this is according to spec
+        Database deletemeFetched = manager.getExistingDatabase("deleteme");
+        assertNull(deletemeFetched);
+    }
+
     public void testDatabaseCompaction() throws Exception{
 
         Map<String,Object> properties = new HashMap<String,Object>();
