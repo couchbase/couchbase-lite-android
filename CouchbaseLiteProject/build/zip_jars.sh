@@ -1,3 +1,3 @@
 #!/bin/bash
 
-mvn --settings ./settings.xml clean package
+mvn --settings ./settings.xml --quiet clean package
