@@ -190,9 +190,9 @@ public class RevTreeTest extends LiteTestCase {
                 assertFalse(change.isConflict()); // fails
 
                 Document doc = database.getDocument(change.getDocumentId());
-                assertEquals(rev3.getRevId(), doc.getCurrentRevisionId()); // fails
+                assertEquals(rev3.getRevId(), doc.getCurrentRevisionId());
                 try {
-                    assertEquals(3, doc.getRevisionHistory().size()); // fails
+                    assertEquals(3, doc.getRevisionHistory().size());
                 } catch (CouchbaseLiteException ex) {
                     fail("CouchbaseLiteException in change listener: " + ex.toString());
                 }
@@ -225,7 +225,7 @@ public class RevTreeTest extends LiteTestCase {
                 assertTrue(change.isConflict());
 
                 Document doc = database.getDocument(change.getDocumentId());
-                assertEquals(conflictRev.getRevId(), doc.getCurrentRevisionId()); //fails
+                assertEquals(conflictRev.getRevId(), doc.getCurrentRevisionId());
                 try {
                     assertEquals(2, doc.getConflictingRevisions().size());
                     assertEquals(3, doc.getRevisionHistory().size());
