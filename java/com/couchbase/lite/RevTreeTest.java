@@ -18,9 +18,9 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -132,6 +132,111 @@ public class RevTreeTest extends LiteTestCase {
         expectedChanges.add(conflict);
         expectedChanges.add(other);
         assertEquals(changes, expectedChanges);
+    }
+
+    /**
+     * Test that the public API works as expected in change notifications after a rev tree
+     * insertion.
+     */
+    public void testRevTreeChangeNotifications() throws CouchbaseLiteException {
+        final String DOCUMENT_ID = "MyDocId";
+
+        // add a document with a single (first) revision
+        final RevisionInternal rev = new RevisionInternal(DOCUMENT_ID, "1-one", false, database);
+        Map<String, Object> revProperties = new HashMap<String, Object>();
+        revProperties.put("_id", rev.getDocId());
+        revProperties.put("_rev", rev.getRevId());
+        revProperties.put("message", "hi");
+        rev.setProperties(revProperties);
+
+        List<String> revHistory = Arrays.asList(rev.getRevId());
+
+        Database.ChangeListener listener = new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                assertEquals(1, event.getChanges().size());
+                DocumentChange change = event.getChanges().get(0);
+                assertEquals(DOCUMENT_ID, change.getDocumentId());
+                assertEquals(rev.getRevId(), change.getRevisionId());
+                assertTrue(change.isCurrentRevision());
+                assertFalse(change.isConflict()); // fails
+
+                SavedRevision current = database.getDocument(change.getDocumentId()).getCurrentRevision();
+                assertEquals(rev.getRevId(), current.getId());
+            }
+        };
+        database.addChangeListener(listener);
+        database.forceInsert(rev, revHistory, null);
+        database.removeChangeListener(listener);
+
+        // add two more revisions to the document
+        final RevisionInternal rev3 = new RevisionInternal(DOCUMENT_ID, "3-three", false, database);
+        Map<String, Object> rev3Properties = new HashMap<String, Object>();
+        rev3Properties.put("_id", rev3.getDocId());
+        rev3Properties.put("_rev", rev3.getRevId());
+        rev3Properties.put("message", "hi again");
+        rev3.setProperties(rev3Properties);
+
+        List<String> rev3History = Arrays.asList(rev3.getRevId(), "2-two", rev.getRevId());
+
+        listener = new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                assertEquals(1, event.getChanges().size());
+                DocumentChange change = event.getChanges().get(0);
+                assertEquals(DOCUMENT_ID, change.getDocumentId());
+                assertEquals(rev3.getRevId(), change.getRevisionId());
+                assertTrue(change.isCurrentRevision());
+                assertFalse(change.isConflict()); // fails
+
+                Document doc = database.getDocument(change.getDocumentId());
+                assertEquals(rev3.getRevId(), doc.getCurrentRevisionId()); // fails
+                try {
+                    assertEquals(3, doc.getRevisionHistory().size()); // fails
+                } catch (CouchbaseLiteException ex) {
+                    fail("CouchbaseLiteException in change listener: " + ex.toString());
+                }
+            }
+        };
+        database.addChangeListener(listener);
+        database.forceInsert(rev3, rev3History, null);
+        database.removeChangeListener(listener);
+
+        // add a conflicting revision, with the same history length as the last revision we
+        // inserted. Since this new revision's revID has a higher ASCII sort, it should become the
+        // new winning revision.
+        final RevisionInternal conflictRev = new RevisionInternal(DOCUMENT_ID, "3-winner", false, database);
+        Map<String, Object> conflictProperties = new HashMap<String, Object>();
+        conflictProperties.put("_id", conflictRev.getDocId());
+        conflictProperties.put("_rev", conflictRev.getRevId());
+        conflictProperties.put("message", "winner");
+        conflictRev.setProperties(conflictProperties);
+
+        List<String> conflictRevHistory = Arrays.asList(conflictRev.getRevId(), "2-two", rev.getRevId());
+
+        listener = new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                assertEquals(1, event.getChanges().size());
+                DocumentChange change = event.getChanges().get(0);
+                assertEquals(DOCUMENT_ID, change.getDocumentId());
+                assertEquals(conflictRev.getRevId(), change.getRevisionId());
+                assertTrue(change.isCurrentRevision());
+                assertTrue(change.isConflict());
+
+                Document doc = database.getDocument(change.getDocumentId());
+                assertEquals(conflictRev.getRevId(), doc.getCurrentRevisionId()); //fails
+                try {
+                    assertEquals(2, doc.getConflictingRevisions().size());
+                    assertEquals(3, doc.getRevisionHistory().size());
+                } catch (CouchbaseLiteException ex) {
+                    fail("CouchbaseLiteException in change listener: " + ex.toString());
+                }
+            }
+        };
+        database.addChangeListener(listener);
+        database.forceInsert(conflictRev, conflictRevHistory, null);
+        database.removeChangeListener(listener);
     }
 
     private static void verifyHistory(Database db, RevisionInternal rev, List<String> history) {
