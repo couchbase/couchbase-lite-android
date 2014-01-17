@@ -7,6 +7,7 @@ import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Status;
+import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.View;
 import com.couchbase.lite.auth.FacebookAuthorizer;
 import com.couchbase.lite.internal.Body;
@@ -28,6 +29,7 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -48,6 +50,101 @@ import java.util.concurrent.TimeUnit;
 public class ReplicationTest extends LiteTestCase {
 
     public static final String TAG = "Replicator";
+
+    // Reproduces issue #167
+    // https://github.com/couchbase/couchbase-lite-android/issues/167
+    public void testPushPurgedDoc() throws Throwable {
+
+        int numBulkDocRequests = 0;
+        HttpPost lastBulkDocsRequest = null;
+
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testPurgeDocument");
+
+        Document doc = createDocumentWithProperties(database, properties);
+        assertNotNull(doc);
+
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderRevDiffsAllMissing();
+        mockHttpClient.setResponseDelayMilliseconds(250);
+
+        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() {
+                return mockHttpClient;
+            }
+        };
+
+        URL remote = getReplicationURL();
+
+        manager.setDefaultHttpClientFactory(mockHttpClientFactory);
+        Replication pusher = database.createPushReplication(remote);
+        pusher.setContinuous(true);
+        pusher.start();
+
+        final CountDownLatch replicationCaughtUpSignal = new CountDownLatch(1);
+
+        pusher.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                final int changesCount = event.getSource().getChangesCount();
+                final int completedChangesCount = event.getSource().getCompletedChangesCount();
+                String msg = String.format("changes: %d completed changes: %d", changesCount, completedChangesCount);
+                Log.d(TAG, msg);
+                if (changesCount == completedChangesCount) {
+                    replicationCaughtUpSignal.countDown();
+                }
+            }
+        });
+
+        // wait until that doc is pushed
+        boolean didNotTimeOut = replicationCaughtUpSignal.await(5, TimeUnit.SECONDS);
+        assertTrue(didNotTimeOut);
+
+        // at this point, we should have captured exactly 1 bulk docs request
+        numBulkDocRequests = 0;
+        for (HttpRequest capturedRequest : mockHttpClient.getCapturedRequests()) {
+            if (capturedRequest instanceof  HttpPost && ((HttpPost) capturedRequest).getURI().toString().endsWith("_bulk_docs")) {
+                lastBulkDocsRequest = (HttpPost) capturedRequest;
+                numBulkDocRequests += 1;
+            }
+        }
+        assertEquals(1, numBulkDocRequests);
+
+        // that bulk docs request should have the "start" key under its _revisions
+        Map<String, Object> jsonMap = mockHttpClient.getJsonMapFromRequest((HttpPost) lastBulkDocsRequest);
+        List docs = (List) jsonMap.get("docs");
+        Map<String, Object> onlyDoc = (Map) docs.get(0);
+        Map<String, Object> revisions = (Map) onlyDoc.get("_revisions");
+        assertTrue(revisions.containsKey("start"));
+
+        // now add a new revision, which will trigger the pusher to try to push it
+        properties = new HashMap<String, Object>();
+        properties.put("testName2", "update doc");
+        UnsavedRevision unsavedRevision = doc.createRevision();
+        unsavedRevision.setUserProperties(properties);
+        unsavedRevision.save();
+
+        // but then immediately purge it
+        assertTrue(doc.purge());
+
+        // wait for a while to give the replicator a chance to push it
+        // (it should not actually push anything)
+        Thread.sleep(5*1000);
+
+        // we should not have gotten any more _bulk_docs requests, because
+        // the replicator should not have pushed anything else.
+        // (in the case of the bug, it was trying to push the purged revision)
+        numBulkDocRequests = 0;
+        for (HttpRequest capturedRequest : mockHttpClient.getCapturedRequests()) {
+            if (capturedRequest instanceof  HttpPost && ((HttpPost) capturedRequest).getURI().toString().endsWith("_bulk_docs")) {
+                numBulkDocRequests += 1;
+            }
+        }
+        assertEquals(1, numBulkDocRequests);
+
+
+    }
 
     public void testPusher() throws Throwable {
 
