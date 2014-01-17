@@ -51,26 +51,6 @@ public class ApiTest extends LiteTestCase {
         }
     };
 
-    static Document createDocumentWithProperties(Database db, Map<String,Object>  properties) {
-        Document  doc = db.createDocument();
-        Assert.assertNotNull(doc);
-        Assert.assertNull(doc.getCurrentRevisionId());
-        Assert.assertNull(doc.getCurrentRevision());
-        Assert.assertNotNull("Document has no ID", doc.getId()); // 'untitled' docs are no longer untitled (8/10/12)
-        try{
-            doc.putProperties(properties);
-        } catch( Exception e){
-            Log.e(TAG, "Error creating document", e);
-            assertTrue("can't create new document in db:" + db.getName() + " with properties:" + properties.toString(), false);
-        }
-        Assert.assertNotNull(doc.getId());
-        Assert.assertNotNull(doc.getCurrentRevisionId());
-        Assert.assertNotNull(doc.getUserProperties());
-        Assert.assertEquals(db.getDocument(doc.getId()), doc);
-        return doc;
-    }
-
-
     //SERVER & DOCUMENTS
 
     public void testAPIManager() throws IOException {
