@@ -137,6 +137,9 @@ public class RevTreeTest extends LiteTestCase {
     /**
      * Test that the public API works as expected in change notifications after a rev tree
      * insertion.
+     *
+     * These tests are currently known to be failing, the bug is being tracked in:
+     * https://github.com/couchbase/couchbase-lite-android-core/pull/27
      */
     public void testRevTreeChangeNotifications() throws CouchbaseLiteException {
         final String DOCUMENT_ID = "MyDocId";
