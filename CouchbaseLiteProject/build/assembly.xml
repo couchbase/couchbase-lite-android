@@ -26,5 +26,16 @@
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
+        
+        <file>
+            <source> ${ZIP_HOME}/servlet-${servlet.version}.jar            </source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
+        <file>
+            <source> ${ZIP_HOME}/webserver-${servlet.version}.jar          </source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
     </files>
 </assembly>
