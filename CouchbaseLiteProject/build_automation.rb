@@ -170,7 +170,7 @@ end
 
 def buildZipArchiveRelease() 
   
-  thirdPartyArchive    = "com.couchbase.CBLite-1.0"
+  thirdPartyArchive    = "com.couchbase.cblite-1.0"
   thirdPartyZipArchive = "#{thirdPartyArchive}-cblite-zipfile.zip"
   localArchive         = "zip_release_archive"
   localZipArchive      = "#{localArchive}.zip"
