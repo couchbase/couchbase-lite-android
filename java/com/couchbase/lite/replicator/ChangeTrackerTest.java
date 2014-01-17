@@ -203,13 +203,22 @@ public class ChangeTrackerTest extends LiteTestCase {
 
     }
 
-    public void testChangeTrackerBackoff() throws Throwable {
-
-        URL testURL = getReplicationURL();
-
+    public void testChangeTrackerBackoffExceptions() throws Throwable {
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderThrowExceptionAllRequests();
+        testChangeTrackerBackoff(mockHttpClient);
 
+    }
+
+    public void testChangeTrackerBackoffInvalidJson() throws Throwable {
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderReturnInvalidChangesFeedJson();
+        testChangeTrackerBackoff(mockHttpClient);
+    }
+
+    private void testChangeTrackerBackoff(final CustomizableMockHttpClient mockHttpClient) throws Throwable {
+
+        URL testURL = getReplicationURL();
 
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
@@ -271,79 +280,5 @@ public class ChangeTrackerTest extends LiteTestCase {
     }
 
 
-
-    public void testChangeTrackerInvalidJson() throws Throwable {
-
-        URL testURL = getReplicationURL();
-
-        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
-        mockHttpClient.addResponderThrowExceptionAllRequests();
-
-        ChangeTrackerClient client = new ChangeTrackerClient() {
-
-            @Override
-            public void changeTrackerStopped(ChangeTracker tracker) {
-                Log.v(TAG, "changeTrackerStopped");
-            }
-
-            @Override
-            public void changeTrackerReceivedChange(Map<String, Object> change) {
-                Object seq = change.get("seq");
-                Log.v(TAG, "changeTrackerReceivedChange: " + seq.toString());
-            }
-
-            @Override
-            public HttpClient getHttpClient() {
-                return mockHttpClient;
-            }
-        };
-
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, client);
-
-        BackgroundTask task = new BackgroundTask() {
-            @Override
-            public void run() {
-                changeTracker.start();
-            }
-        };
-        task.execute();
-
-        try {
-
-            // expected behavior:
-            // when:
-            //    mockHttpClient throws IOExceptions -> it should start high and then back off and numTimesExecute should be low
-
-            for (int i=0; i<30; i++) {
-
-                int numTimesExectutedAfter10seconds = 0;
-
-                try {
-                    Thread.sleep(1000);
-
-                    // take a snapshot of num times the http client was called after 10 seconds
-                    if (i == 10) {
-                        numTimesExectutedAfter10seconds = mockHttpClient.getCapturedRequests().size();
-                    }
-
-                    // take another snapshot after 20 seconds have passed
-                    if (i == 20) {
-                        // by now it should have backed off, so the delta between 10s and 20s should be small
-                        int delta = mockHttpClient.getCapturedRequests().size() - numTimesExectutedAfter10seconds;
-                        assertTrue(delta < 25);
-                    }
-
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        } finally {
-            changeTracker.stop();
-        }
-
-
-
-    }
 
 }

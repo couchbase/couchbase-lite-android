@@ -35,6 +35,8 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
     // capture all request so that the test can verify expected requests were received.
     private List<HttpRequest> capturedRequests = Collections.synchronizedList(new ArrayList<HttpRequest>());
 
+    // if this is set, it will delay responses by this number of milliseconds
+    private long responseDelayMilliseconds;
 
     public CustomizableMockHttpClient() {
         responders = new HashMap<String, Responder>();
@@ -45,27 +47,17 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         responders.put(urlPattern, responder);
     }
 
+    public void setResponseDelayMilliseconds(long responseDelayMilliseconds) {
+        this.responseDelayMilliseconds = responseDelayMilliseconds;
+    }
+
     public void addDefaultResponders() {
-        responders.put("_revs_diff", new Responder() {
-            @Override
-            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
-                return CustomizableMockHttpClient.fakeRevsDiff(httpUriRequest);
-            }
-        });
 
-        responders.put("_bulk_docs", new Responder() {
-            @Override
-            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
-                return CustomizableMockHttpClient.fakeBulkDocs(httpUriRequest);
-            }
-        });
+        addResponderRevDiffsAllMissing();
 
-        responders.put("_local", new Responder() {
-            @Override
-            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
-                return CustomizableMockHttpClient.fakeLocalDocumentUpdate(httpUriRequest);
-            }
-        });
+        addResponderFakeBulkDocs();
+
+        addResponderFakeLocalDocumentUpdate();
 
     }
 
@@ -83,6 +75,44 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
             @Override
             public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
                 throw new IOException("Test IOException");
+            }
+        });
+    }
+
+    public void addResponderFakeLocalDocumentUpdate() {
+        responders.put("_local", new Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                return CustomizableMockHttpClient.fakeLocalDocumentUpdate(httpUriRequest);
+            }
+        });
+    }
+
+    public void addResponderFakeBulkDocs() {
+        responders.put("_bulk_docs", new Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                return CustomizableMockHttpClient.fakeBulkDocs(httpUriRequest);
+            }
+        });
+    }
+
+    public void addResponderRevDiffsAllMissing() {
+        responders.put("_revs_diff", new Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                return CustomizableMockHttpClient.fakeRevsDiff(httpUriRequest);
+            }
+        });
+
+    }
+
+    public void addResponderReturnInvalidChangesFeedJson() {
+        setResponder("_changes", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                String json = "{\"results\":[";
+                return CustomizableMockHttpClient.generateHttpResponseObject(json);
             }
         });
     }
@@ -119,6 +149,8 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
     @Override
     public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
 
+        delayResponseIfNeeded();
+
         capturedRequests.add(httpUriRequest);
 
         for (String urlPattern : responders.keySet()) {
@@ -129,7 +161,6 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         }
 
         throw new RuntimeException("No responders matched for url pattern: " + httpUriRequest.getURI().getPath());
-
 
     }
 
@@ -267,10 +298,20 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         return response;
     }
 
-    private static Map<String, Object> getJsonMapFromRequest(HttpPost httpUriRequest) throws IOException {
+    public static Map<String, Object> getJsonMapFromRequest(HttpPost httpUriRequest) throws IOException {
         HttpPost post = (HttpPost) httpUriRequest;
         InputStream is =  post.getEntity().getContent();
         return Manager.getObjectMapper().readValue(is, Map.class);
+    }
+
+    private void delayResponseIfNeeded() {
+        if (responseDelayMilliseconds > 0) {
+            try {
+                Thread.sleep(responseDelayMilliseconds);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
