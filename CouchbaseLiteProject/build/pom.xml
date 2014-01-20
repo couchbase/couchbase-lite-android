@@ -6,7 +6,7 @@
     
     <groupId>com.couchbase</groupId>
     <artifactId>com.couchbase.cblite</artifactId>
-    <version>0.0</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
     
     <repositories>
