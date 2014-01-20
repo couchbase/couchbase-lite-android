@@ -170,9 +170,11 @@ end
 
 def buildZipArchiveRelease() 
   
-  thirdPartyArchive    = "com.couchbase.cblite-1.0"
+  android_VERSION  = ENV["VERSION"]
+  android_REVISION = ENV["REVISION"]
+  thirdPartyArchive    = "com.couchbase.cblite-#{android_VERSION}"
   thirdPartyZipArchive = "#{thirdPartyArchive}-cblite-zipfile.zip"
-  localArchive         = "zip_release_archive"
+  localArchive         = "cblite_android_#{android_REVISION}.zip"
   localZipArchive      = "#{localArchive}.zip"
   
   # download 3rd party jars into a zip file
