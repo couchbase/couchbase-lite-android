@@ -6,7 +6,7 @@
     
     <groupId>com.couchbase</groupId>
     <artifactId>com.couchbase.cblite</artifactId>
-    <version>1.0</version>
+    <version>0.0</version>
     <packaging>jar</packaging>
     
     <repositories>
@@ -15,18 +15,17 @@
             <url>http://files.couchbase.com/maven2</url>
         </repository>
     </repositories>
-
+    
     <properties>
-        <jackson.version>1.9.2</jackson.version>
-        <commons-io.version>2.0.1</commons-io.version>
-        <rhino.version>1.7R3</rhino.version>
-        <servlet.version>2-3</servlet.version>
+        <jackson.version>    1.9.2 </jackson.version>
+        <commons-io.version> 2.0.1 </commons-io.version>
+        <rhino.version>      1.7R3 </rhino.version>
+        <servlet.version>    2-3   </servlet.version>
         
         <local-m2dir>${basedir}/m2</local-m2dir>
         <ZIP_HOME>${basedir}/staging</ZIP_HOME>
     </properties>
     
-        
     <dependencies>
         <dependency>
             <groupId>org.codehaus.jackson</groupId>
