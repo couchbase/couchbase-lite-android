@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-require "build_automation.rb"
+require_relative "build_automation.rb"
 
 def verifyEnvVariable(envVarName) 
   raise "Neet do set #{envVarName}" if ENV[envVarName] == nil 
