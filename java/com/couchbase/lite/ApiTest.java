@@ -100,11 +100,9 @@ public class ApiTest extends LiteTestCase {
     public void testDeleteDatabase() {
         Database deleteme = manager.getDatabase("deleteme");
         assertTrue(deleteme.exists());
-        boolean deleted = deleteme.delete();
+        deleteme.delete();
         assertFalse(deleteme.exists());
-        assertTrue(deleted);
-        deleted = deleteme.delete();  // delete again, even though already deleted
-        assertTrue(deleted);  // slightly counter-intuitive, but this is according to spec
+        deleteme.delete();  // delete again, even though already deleted
         Database deletemeFetched = manager.getExistingDatabase("deleteme");
         assertNull(deletemeFetched);
     }
