@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-require "build_automation.rb"
+require_relative "build_automation.rb"
 
 puts "call buildTestingMode()"
 buildTestingMode()
