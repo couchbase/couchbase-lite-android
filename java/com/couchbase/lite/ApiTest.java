@@ -616,13 +616,11 @@ public class ApiTest extends LiteTestCase {
         Database db = startDatabase();
         db.setValidation("uncool", new Validator() {
             @Override
-            public boolean validate(Revision newRevision, ValidationContext context) {
+            public void validate(Revision newRevision, ValidationContext context) {
                 {
                     if (newRevision.getProperty("groovy") ==null) {
                         context.reject("uncool");
-                        return false;
                     }
-                    return true;
 
                 }
             }
@@ -829,8 +827,7 @@ public class ApiTest extends LiteTestCase {
 
         db.setValidation("val", new Validator() {
             @Override
-            public boolean validate(Revision newRevision, ValidationContext context) {
-                return true;
+            public void validate(Revision newRevision, ValidationContext context) {
             }
         });
 

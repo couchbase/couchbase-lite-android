@@ -19,7 +19,7 @@ public class ValidationsTest extends LiteTestCase {
         Validator validator = new Validator() {
 
             @Override
-            public boolean validate(Revision newRevision, ValidationContext context) {
+            public void validate(Revision newRevision, ValidationContext context) {
 
                 assertNotNull(newRevision);
                 assertNotNull(context);
@@ -30,7 +30,6 @@ public class ValidationsTest extends LiteTestCase {
                 if(!hoopy) {
                     context.reject("Where's your towel?");
                 }
-                return hoopy;
             }
         };
 
