@@ -178,9 +178,9 @@ def buildZipArchiveRelease()
   localZipArchive      = "#{localArchive}.zip"
   
   # download 3rd party jars into a zip file
-  runCommand "cd    extras/jenkins_build && ./zip_jars.sh"
-  runCommand "file  extras/jenkins_build/target/#{thirdPartyZipArchive} || exit 99"
-  runCommand "cp    extras/jenkins_build/target/#{thirdPartyZipArchive} ."
+  runCommand "cd    extra/jenkins_build && ./zip_jars.sh"
+  runCommand "file  extra/jenkins_build/target/#{thirdPartyZipArchive} || exit 99"
+  runCommand "cp    extra/jenkins_build/target/#{thirdPartyZipArchive} ."
   
   # unzip it
   runCommand "unzip #{thirdPartyZipArchive}"
