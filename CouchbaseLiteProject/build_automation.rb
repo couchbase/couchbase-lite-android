@@ -178,15 +178,12 @@ def buildZipArchiveRelease()
   localZipArchive      = "#{localArchive}.zip"
   
   # download 3rd party jars into a zip file
-  runCommand "cd    build &&  ./zip_jars.sh"
-  runCommand "file  build/target/#{thirdPartyZipArchive} || exit 99"
-  runCommand "cp    build/target/#{thirdPartyZipArchive} ."
+  runCommand "cd    extras/jenkins_build && ./zip_jars.sh"
+  runCommand "file  extras/jenkins_build/target/#{thirdPartyZipArchive} || exit 99"
+  runCommand "cp    extras/jenkins_build/target/#{thirdPartyZipArchive} ."
   
   # unzip it
   runCommand "unzip #{thirdPartyZipArchive}"
-  
-  # delete the old zip we downloaded
-  # runCommand "rm #{thirdPartyZipArchive}"
   
   # rename it
   runCommand "mv #{thirdPartyArchive} #{localArchive}"
@@ -207,8 +204,5 @@ def buildZipArchiveRelease()
   
   # re-zip the zip file and put in current directory  
   runCommand "zip -r --junk-paths #{localZipArchive} #{localArchive}"
-  
-  # delete the directory that was created
-  # runCommand "rm -rf #{localArchive}"
   
 end
