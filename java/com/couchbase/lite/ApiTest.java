@@ -52,7 +52,7 @@ public class ApiTest extends LiteTestCase {
 
     //SERVER & DOCUMENTS
 
-    public void testAPIManager() throws IOException {
+    public void testAPIManager() throws Exception {
         Manager manager = this.manager;
         Assert.assertTrue(manager != null);
         for(String dbName : manager.getAllDatabaseNames()){
@@ -72,7 +72,7 @@ public class ApiTest extends LiteTestCase {
         Assert.assertTrue(dbNames.contains(DEFAULT_TEST_DB));
     }
 
-    public void testCreateDocument() {
+    public void testCreateDocument() throws CouchbaseLiteException {
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("testName", "testCreateDocument");
         properties.put("tag", 1337);
@@ -96,7 +96,7 @@ public class ApiTest extends LiteTestCase {
     }
 
 
-    public void testDeleteDatabase() {
+    public void testDeleteDatabase() throws Exception {
         Database deleteme = manager.getDatabase("deleteme");
         assertTrue(deleteme.exists());
         deleteme.delete();

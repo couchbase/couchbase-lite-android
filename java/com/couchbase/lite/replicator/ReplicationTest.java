@@ -1,5 +1,6 @@
 package com.couchbase.lite.replicator;
 
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Emitter;
@@ -818,7 +819,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testChannelsMore() throws MalformedURLException {
+    public void testChannelsMore() throws MalformedURLException, CouchbaseLiteException {
 
         Database  db = startDatabase();
         URL fakeRemoteURL = new URL("http://couchbase.com/no_such_db");
