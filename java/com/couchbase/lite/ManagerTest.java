@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ManagerTest extends LiteTestCase {
 
-    public void testServer() {
+    public void testServer() throws CouchbaseLiteException {
 
         //to ensure this test is easily repeatable we will explicitly remove
         //any stale foo.cblite

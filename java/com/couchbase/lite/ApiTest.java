@@ -31,11 +31,10 @@ public class ApiTest extends LiteTestCase {
     static void createDocumentsAsync(final Database db, final int n) {
         db.runAsync(new AsyncTask() {
             @Override
-            public boolean run(Database database) {
+            public void run(Database database) {
                 db.beginTransaction();
                 createDocuments(db, n);
                 db.endTransaction(true);
-                return true;
             }
         });
 
@@ -53,7 +52,7 @@ public class ApiTest extends LiteTestCase {
 
     //SERVER & DOCUMENTS
 
-    public void testAPIManager() throws IOException {
+    public void testAPIManager() throws Exception {
         Manager manager = this.manager;
         Assert.assertTrue(manager != null);
         for(String dbName : manager.getAllDatabaseNames()){
@@ -73,7 +72,7 @@ public class ApiTest extends LiteTestCase {
         Assert.assertTrue(dbNames.contains(DEFAULT_TEST_DB));
     }
 
-    public void testCreateDocument() {
+    public void testCreateDocument() throws CouchbaseLiteException {
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("testName", "testCreateDocument");
         properties.put("tag", 1337);
@@ -97,14 +96,12 @@ public class ApiTest extends LiteTestCase {
     }
 
 
-    public void testDeleteDatabase() {
+    public void testDeleteDatabase() throws Exception {
         Database deleteme = manager.getDatabase("deleteme");
         assertTrue(deleteme.exists());
-        boolean deleted = deleteme.delete();
+        deleteme.delete();
         assertFalse(deleteme.exists());
-        assertTrue(deleted);
-        deleted = deleteme.delete();  // delete again, even though already deleted
-        assertTrue(deleted);  // slightly counter-intuitive, but this is according to spec
+        deleteme.delete();  // delete again, even though already deleted
         Database deletemeFetched = manager.getExistingDatabase("deleteme");
         assertNull(deletemeFetched);
     }
@@ -616,13 +613,11 @@ public class ApiTest extends LiteTestCase {
         Database db = startDatabase();
         db.setValidation("uncool", new Validator() {
             @Override
-            public boolean validate(Revision newRevision, ValidationContext context) {
+            public void validate(Revision newRevision, ValidationContext context) {
                 {
                     if (newRevision.getProperty("groovy") ==null) {
                         context.reject("uncool");
-                        return false;
                     }
-                    return true;
 
                 }
             }
@@ -829,8 +824,7 @@ public class ApiTest extends LiteTestCase {
 
         db.setValidation("val", new Validator() {
             @Override
-            public boolean validate(Revision newRevision, ValidationContext context) {
-                return true;
+            public void validate(Revision newRevision, ValidationContext context) {
             }
         });
 
@@ -857,7 +851,7 @@ public class ApiTest extends LiteTestCase {
 
         Future result = mgr.runAsync("db", new AsyncTask() {
             @Override
-            public boolean run(Database database) {
+            public void run(Database database) {
                 assertNotNull(database);
                 View serverView = database.getExistingView("view");
                 assertNotNull(serverView);
@@ -865,8 +859,6 @@ public class ApiTest extends LiteTestCase {
                 assertEquals(database.getValidation("val"), validation);
                 assertEquals(serverView.getMap(), map);
                 assertEquals(serverView.getReduce(), reduce);
-                return true;
-
             }
         });
         result.get();  // blocks until async task has run

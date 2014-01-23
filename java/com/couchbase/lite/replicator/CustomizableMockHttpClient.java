@@ -3,6 +3,7 @@ package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.Manager;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -37,6 +38,9 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
 
     // if this is set, it will delay responses by this number of milliseconds
     private long responseDelayMilliseconds;
+
+    // track the number of times consumeContent is called on HttpEntity returned in response (detect resource leaks)
+    private int numberOfEntityConsumeCallbacks;
 
     public CustomizableMockHttpClient() {
         responders = new HashMap<String, Responder>();
@@ -134,6 +138,14 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
 
     public List<HttpRequest> getCapturedRequests() {
         return capturedRequests;
+    }
+
+    public void recordEntityConsumeCallback() {
+        numberOfEntityConsumeCallbacks += 1;
+    }
+
+    public int getNumberOfEntityConsumeCallbacks() {
+        return numberOfEntityConsumeCallbacks;
     }
 
     @Override
@@ -288,6 +300,14 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         HttpResponse response = responseFactory.newHttpResponse(statusLine, null);
         byte[] responseBytes = responseJson.getBytes();
         response.setEntity(new ByteArrayEntity(responseBytes));
+        return response;
+    }
+
+    public static HttpResponse generateHttpResponseObject(HttpEntity responseEntity) throws IOException {
+        DefaultHttpResponseFactory responseFactory = new DefaultHttpResponseFactory();
+        BasicStatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, 200, "OK");
+        HttpResponse response = responseFactory.newHttpResponse(statusLine, null);
+        response.setEntity(responseEntity);
         return response;
     }
 

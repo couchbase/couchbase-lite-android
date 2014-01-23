@@ -83,7 +83,7 @@ public abstract class LiteTestCase extends TestCase {
         }
     }
 
-    protected Database startDatabase() {
+    protected Database startDatabase() throws CouchbaseLiteException {
         database = ensureEmptyDatabase(DEFAULT_TEST_DB);
         return database;
     }
@@ -94,11 +94,10 @@ public abstract class LiteTestCase extends TestCase {
         }
     }
 
-    protected Database ensureEmptyDatabase(String dbName) {
+    protected Database ensureEmptyDatabase(String dbName) throws CouchbaseLiteException {
         Database db = manager.getExistingDatabase(dbName);
         if(db != null) {
-            boolean status = db.delete();
-            Assert.assertTrue(status);
+            db.delete();
         }
         db = manager.getDatabase(dbName);
         return db;

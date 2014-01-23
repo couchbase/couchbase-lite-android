@@ -350,7 +350,7 @@ public class RouterTest extends LiteTestCase {
         assertEquals(expectedRowsWithDocs, rows);
     }
 
-    public void testViews() {
+    public void testViews() throws CouchbaseLiteException {
         send("PUT", "/db", Status.CREATED, null);
 
         Map<String,Object> result;
@@ -453,7 +453,7 @@ public class RouterTest extends LiteTestCase {
         assertNotNull(bulk_result.get(1).get("rev"));
     }
 
-    public void testPostKeysView() {
+    public void testPostKeysView() throws CouchbaseLiteException {
     	send("PUT", "/db", Status.CREATED, null);
 
     	Map<String,Object> result;
