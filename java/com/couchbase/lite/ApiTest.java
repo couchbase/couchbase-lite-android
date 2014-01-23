@@ -31,11 +31,10 @@ public class ApiTest extends LiteTestCase {
     static void createDocumentsAsync(final Database db, final int n) {
         db.runAsync(new AsyncTask() {
             @Override
-            public boolean run(Database database) {
+            public void run(Database database) {
                 db.beginTransaction();
                 createDocuments(db, n);
                 db.endTransaction(true);
-                return true;
             }
         });
 
@@ -852,7 +851,7 @@ public class ApiTest extends LiteTestCase {
 
         Future result = mgr.runAsync("db", new AsyncTask() {
             @Override
-            public boolean run(Database database) {
+            public void run(Database database) {
                 assertNotNull(database);
                 View serverView = database.getExistingView("view");
                 assertNotNull(serverView);
@@ -860,8 +859,6 @@ public class ApiTest extends LiteTestCase {
                 assertEquals(database.getValidation("val"), validation);
                 assertEquals(serverView.getMap(), map);
                 assertEquals(serverView.getReduce(), reduce);
-                return true;
-
             }
         });
         result.get();  // blocks until async task has run
