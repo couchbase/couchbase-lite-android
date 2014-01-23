@@ -375,7 +375,7 @@ public class ApiTest extends LiteTestCase {
 
         Map<String,Object> props = db.getExistingLocalDocument("dock");
         assertNull(props);
-        assertNotNull("Couldn't put new local doc", db.putLocalDocument(properties, "dock"));
+        assertNotNull("Couldn't put new local doc", db.putLocalDocument("dock", properties));
         props = db.getExistingLocalDocument("dock");
         assertEquals(props.get("foo"), "bar");
 
@@ -383,7 +383,7 @@ public class ApiTest extends LiteTestCase {
         Map<String,Object> newProperties = new HashMap<String, Object>();
         newProperties.put("FOOO", "BARRR");
 
-        assertNotNull("Couldn't update local doc", db.putLocalDocument(newProperties, "dock"));
+        assertNotNull("Couldn't update local doc", db.putLocalDocument("dock", newProperties));
         props = db.getExistingLocalDocument("dock");
         assertNull(props.get("foo"));
         assertEquals(props.get("FOOO"), "BARRR");
