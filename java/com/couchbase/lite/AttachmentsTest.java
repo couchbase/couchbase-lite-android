@@ -138,8 +138,7 @@ public class AttachmentsTest extends LiteTestCase {
 
         Assert.assertEquals(expected, attachments.allKeys());
 
-        status = database.compact();  // This clears the body of the first revision
-        Assert.assertEquals(Status.OK, status.getCode());
+        database.compact();  // This clears the body of the first revision
         Assert.assertEquals(1, attachments.count());
 
         Set<BlobKey> expected2 = new HashSet<BlobKey>();
