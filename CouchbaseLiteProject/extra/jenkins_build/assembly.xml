@@ -7,6 +7,11 @@
     </formats>
     <files>
         <file>
+            <source> ${ZIP_HOME}/${LICENSE_FILE}                           </source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
+        <file>
             <source> ${ZIP_HOME}/rhino-${rhino.version}.jar                </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
