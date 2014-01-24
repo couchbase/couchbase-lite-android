@@ -444,6 +444,35 @@ public class ApiTest extends LiteTestCase {
     }
 
 
+    public void failingTestHistoryAfterDocDeletion() throws Exception{
+        Map<String,Object> properties = new HashMap<String, Object>();
+        String testName = "testHistoryAfterDocDeletion";
+        properties.put("tag", 1);
+
+        Database db = startDatabase();
+        Document doc = new Document(db, testName);
+        doc.putProperties(properties);
+
+        String revID = doc.getCurrentRevisionId();
+        assertEquals("Doc Id is not correct ", testName, doc.getId());
+        for(int i=2; i<6; i++){
+            properties.put("tag", i);
+            properties.put("_rev", revID );
+            doc.putProperties(properties);
+            revID = doc.getCurrentRevisionId();
+            Log.i(TAG, i + " revision: " + revID);
+            assertTrue("revision is not correct:" + revID + ", should be with prefix " + i +"-", revID.startsWith(String.valueOf(i) +"-"));
+            assertEquals("Doc Id is not correct ", testName, doc.getId());
+        }
+        doc.delete();
+        properties = new HashMap<String, Object>();
+        properties.put("tag", 6);
+        doc = new Document(db, testName);
+        doc.putProperties(properties);
+        assertTrue("revision is not correct:" + revID, revID.startsWith("6-"));
+    }
+
+
     public void testConflict() throws Exception{
         Map<String,Object> prop = new HashMap<String, Object>();
         prop.put("foo", "bar");
