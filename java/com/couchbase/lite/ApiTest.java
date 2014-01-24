@@ -80,9 +80,9 @@ public class ApiTest extends LiteTestCase {
         Database db = startDatabase();
         Document doc=createDocumentWithProperties(db, properties);
         String docID=doc.getId();
-        assertTrue("Invalid doc ID: " +docID , docID.length()>10);
+        assertTrue("Invalid doc ID: " + docID, docID.length() > 10);
         String currentRevisionID=doc.getCurrentRevisionId();
-        assertTrue("Invalid doc revision: " +docID , currentRevisionID.length()>10);
+        assertTrue("Invalid doc revision: " + docID, currentRevisionID.length() > 10);
         assertEquals(doc.getUserProperties(), properties);
         assertEquals(db.getDocument(docID), doc);
 
@@ -443,18 +443,18 @@ public class ApiTest extends LiteTestCase {
 
     }
 
+    public void testHistoryAfterDocDeletion() throws Exception{
 
-    public void failingTestHistoryAfterDocDeletion() throws Exception{
         Map<String,Object> properties = new HashMap<String, Object>();
-        String testName = "testHistoryAfterDocDeletion";
+        String docId = "testHistoryAfterDocDeletion";
         properties.put("tag", 1);
 
         Database db = startDatabase();
-        Document doc = new Document(db, testName);
+        Document doc = db.getDocument(docId);
+        assertEquals(docId, doc.getId());
         doc.putProperties(properties);
 
         String revID = doc.getCurrentRevisionId();
-        assertEquals("Doc Id is not correct ", testName, doc.getId());
         for(int i=2; i<6; i++){
             properties.put("tag", i);
             properties.put("_rev", revID );
@@ -462,16 +462,33 @@ public class ApiTest extends LiteTestCase {
             revID = doc.getCurrentRevisionId();
             Log.i(TAG, i + " revision: " + revID);
             assertTrue("revision is not correct:" + revID + ", should be with prefix " + i +"-", revID.startsWith(String.valueOf(i) +"-"));
-            assertEquals("Doc Id is not correct ", testName, doc.getId());
+            assertEquals("Doc Id is not correct ", docId, doc.getId());
         }
+
+        // now delete the doc and clear it from the cache so we
+        // make sure we are reading a fresh copy
         doc.delete();
+        database.clearDocumentCache();
+
+        // get doc from db with same ID as before, and the current rev should be null since the
+        // last update was a deletion
+        Document docPostDelete = db.getDocument(docId);
+        assertNull(docPostDelete.getCurrentRevision());
+
+        // save a new revision
         properties = new HashMap<String, Object>();
         properties.put("tag", 6);
-        doc = new Document(db, testName);
-        doc.putProperties(properties);
-        assertTrue("revision is not correct:" + revID, revID.startsWith("6-"));
-    }
+        UnsavedRevision newRevision = docPostDelete.createRevision();
+        newRevision.setProperties(properties);
+        SavedRevision newSavedRevision = newRevision.save();
 
+        // make sure the current revision of doc matches the rev we just saved
+        assertEquals(newSavedRevision, docPostDelete.getCurrentRevision());
+
+        // make sure the rev id is 7-
+        assertTrue(docPostDelete.getCurrentRevisionId().startsWith("7-"));
+
+    }
 
     public void testConflict() throws Exception{
         Map<String,Object> prop = new HashMap<String, Object>();
