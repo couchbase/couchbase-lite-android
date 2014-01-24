@@ -41,7 +41,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -419,7 +418,7 @@ public class ReplicationTest extends LiteTestCase {
         final int numDocsBeforePull = database.getDocumentCount();
 
         View view = database.getView("testPullerWithLiveQueryView");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 if (document.get("_id") != null) {

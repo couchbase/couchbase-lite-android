@@ -829,17 +829,17 @@ public class ApiTest extends LiteTestCase {
         });
 
         View view = db.getView("view");
-        boolean ok = view.setMapAndReduce(new Mapper() {
-                                              @Override
-                                              public void map(Map<String, Object> document, Emitter emitter) {
+        boolean ok = view.setMapReduce(new Mapper() {
+                                           @Override
+                                           public void map(Map<String, Object> document, Emitter emitter) {
 
-                                              }
-                                          }, new Reducer() {
-                                              @Override
-                                              public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
-                                                  return null;
-                                              }
-                                          }, "1"
+                                           }
+                                       }, new Reducer() {
+                                           @Override
+                                           public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                                               return null;
+                                           }
+                                       }, "1"
         );
 
         assertNotNull("Couldn't set map/reduce", ok);

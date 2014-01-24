@@ -369,7 +369,7 @@ public class RouterTest extends LiteTestCase {
 
         Database db = manager.getDatabase("db");
         View view = db.getView("design/view");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -460,7 +460,7 @@ public class RouterTest extends LiteTestCase {
 
     	Database db = manager.getDatabase("db");
     	View view = db.getView("design/view");
-    	view.setMapAndReduce(new Mapper() {
+    	view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -472,7 +472,7 @@ public class RouterTest extends LiteTestCase {
     	key_doc1.put("parentId", "12345");
     	result = (Map<String,Object>)sendBody("PUT", "/db/key_doc1", key_doc1, Status.CREATED, null);
     	view = db.getView("design/view");
-    	view.setMapAndReduce(new Mapper() {
+    	view.setMapReduce(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 if (document.get("parentId").equals("12345")) {
