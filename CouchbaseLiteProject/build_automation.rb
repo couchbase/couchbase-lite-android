@@ -203,6 +203,6 @@ def buildZipArchiveRelease()
   }
   
   # re-zip the zip file and put in current directory  
-  runCommand "zip -r --junk-paths #{thirdPartyArchive} #{localArchive}"
+  runCommand "zip -r --junk-paths #{localZipArchive} #{localArchive}"
   
 end
