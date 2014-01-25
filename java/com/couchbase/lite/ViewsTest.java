@@ -33,6 +33,14 @@ public class ViewsTest extends LiteTestCase {
 
     public static final String TAG = "Views";
 
+    public void testQueryDefaultIndexUpdateMode() {
+
+        View view = database.getView("aview");
+        Query query = view.createQuery();
+        assertEquals(Query.IndexUpdateMode.BEFORE, query.getIndexUpdateMode());
+
+    }
+
     public void testViewCreation() {
 
         Assert.assertNull(database.getExistingView("aview"));
