@@ -27,12 +27,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 
 public class ViewsTest extends LiteTestCase {
 
     public static final String TAG = "Views";
+
+    public void testQueryDefaultIndexUpdateMode() {
+
+        View view = database.getView("aview");
+        Query query = view.createQuery();
+        assertEquals(Query.IndexUpdateMode.BEFORE, query.getIndexUpdateMode());
+
+    }
 
     public void testViewCreation() {
 
@@ -45,7 +52,7 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertNull(view.getMap());
         Assert.assertEquals(view, database.getExistingView("aview"));
 
-        boolean changed = view.setMapAndReduce(new Mapper() {
+        boolean changed = view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -57,7 +64,7 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(1, database.getAllViews().size());
         Assert.assertEquals(view, database.getAllViews().get(0));
 
-        changed = view.setMapAndReduce(new Mapper() {
+        changed = view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -67,7 +74,7 @@ public class ViewsTest extends LiteTestCase {
 
         Assert.assertFalse(changed);
 
-        changed = view.setMapAndReduce(new Mapper() {
+        changed = view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -162,7 +169,7 @@ public class ViewsTest extends LiteTestCase {
 
     public static View createView(Database db) {
         View view = db.getView("aview");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -534,25 +541,25 @@ public class ViewsTest extends LiteTestCase {
         putDoc(database, docProperties3);
 
         View view = database.getView("totaler");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
 
-                                 @Override
-                                 public void map(Map<String, Object> document, Emitter emitter) {
-                                     Assert.assertNotNull(document.get("_id"));
-                                     Assert.assertNotNull(document.get("_rev"));
-                                     Object cost = document.get("cost");
-                                     if (cost != null) {
-                                         emitter.emit(document.get("_id"), cost);
-                                     }
-                                 }
-                             }, new Reducer() {
+                              @Override
+                              public void map(Map<String, Object> document, Emitter emitter) {
+                                  Assert.assertNotNull(document.get("_id"));
+                                  Assert.assertNotNull(document.get("_rev"));
+                                  Object cost = document.get("cost");
+                                  if (cost != null) {
+                                      emitter.emit(document.get("_id"), cost);
+                                  }
+                              }
+                          }, new Reducer() {
 
-                                 @Override
-                                 public Object reduce(List<Object> keys, List<Object> values,
-                                                      boolean rereduce) {
-                                     return View.totalValues(values);
-                                 }
-                             }, "1"
+                              @Override
+                              public Object reduce(List<Object> keys, List<Object> values,
+                                                   boolean rereduce) {
+                                  return View.totalValues(values);
+                              }
+                          }, "1"
         );
 
         view.updateIndex();
@@ -661,24 +668,24 @@ public class ViewsTest extends LiteTestCase {
         putDoc(database, docProperties5);
 
         View view = database.getView("grouper");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
 
-                                 @Override
-                                 public void map(Map<String, Object> document, Emitter emitter) {
-                                     List<Object> key = new ArrayList<Object>();
-                                     key.add(document.get("artist"));
-                                     key.add(document.get("album"));
-                                     key.add(document.get("track"));
-                                     emitter.emit(key, document.get("time"));
-                                 }
-                             }, new Reducer() {
+                              @Override
+                              public void map(Map<String, Object> document, Emitter emitter) {
+                                  List<Object> key = new ArrayList<Object>();
+                                  key.add(document.get("artist"));
+                                  key.add(document.get("album"));
+                                  key.add(document.get("track"));
+                                  emitter.emit(key, document.get("time"));
+                              }
+                          }, new Reducer() {
 
-                                 @Override
-                                 public Object reduce(List<Object> keys, List<Object> values,
-                                                      boolean rereduce) {
-                                     return View.totalValues(values);
-                                 }
-                             }, "1"
+                              @Override
+                              public Object reduce(List<Object> keys, List<Object> values,
+                                                   boolean rereduce) {
+                                  return View.totalValues(values);
+                              }
+                          }, "1"
         );
 
         Status status = new Status();
@@ -849,25 +856,25 @@ public class ViewsTest extends LiteTestCase {
         putDoc(database, docProperties5);
 
         View view = database.getView("default/names");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
 
-                                 @Override
-                                 public void map(Map<String, Object> document, Emitter emitter) {
-                                     String name = (String) document.get("name");
-                                     if (name != null) {
-                                         emitter.emit(name.substring(0, 1), 1);
-                                     }
-                                 }
+                              @Override
+                              public void map(Map<String, Object> document, Emitter emitter) {
+                                  String name = (String) document.get("name");
+                                  if (name != null) {
+                                      emitter.emit(name.substring(0, 1), 1);
+                                  }
+                              }
 
-                             }, new Reducer() {
+                          }, new Reducer() {
 
-                                 @Override
-                                 public Object reduce(List<Object> keys, List<Object> values,
-                                                      boolean rereduce) {
-                                     return values.size();
-                                 }
+                              @Override
+                              public Object reduce(List<Object> keys, List<Object> values,
+                                                   boolean rereduce) {
+                                  return values.size();
+                              }
 
-                             }, "1.0"
+                          }, "1.0"
         );
 
 
@@ -960,7 +967,7 @@ public class ViewsTest extends LiteTestCase {
         }
 
         View view = database.getView("default/names");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -1038,7 +1045,7 @@ public class ViewsTest extends LiteTestCase {
         }
 
         View view = database.getView("default/names");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -1076,7 +1083,7 @@ public class ViewsTest extends LiteTestCase {
         putLinkedDocs(database);
         
         View view = database.getView("linked");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 if (document.containsKey("value")) {

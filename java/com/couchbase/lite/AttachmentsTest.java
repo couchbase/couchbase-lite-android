@@ -19,7 +19,6 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.support.Base64;
-import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
 
 import junit.framework.Assert;
@@ -430,11 +429,11 @@ public class AttachmentsTest extends LiteTestCase {
 
         // do query that finds that doc with prefetch
         View view = database.getView("aview");
-        view.setMapAndReduce(new Mapper() {
+        view.setMapReduce(new Mapper() {
 
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
-                String id = (String)document.get("_id");
+                String id = (String) document.get("_id");
                 emitter.emit(id, null);
             }
         }, null, "1");

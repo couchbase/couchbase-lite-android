@@ -193,8 +193,8 @@ public class ApiTest extends LiteTestCase {
         // Test -createRevision:
         UnsavedRevision newRev = rev2.createRevision();
         assertNull(newRev.getId());
-        assertEquals(newRev.getParentRevision(), rev2);
-        assertEquals(newRev.getParentRevisionId(), rev2.getId());
+        assertEquals(newRev.getParent(), rev2);
+        assertEquals(newRev.getParentId(), rev2.getId());
         List<SavedRevision> listRevs=new ArrayList<SavedRevision>();
         listRevs.add(rev1);
         listRevs.add(rev2);
@@ -233,8 +233,8 @@ public class ApiTest extends LiteTestCase {
         Document newRevDocument = newRev.getDocument();
         assertEquals(doc, newRevDocument);
         assertEquals(db, newRev.getDatabase());
-        assertNull(newRev.getParentRevisionId());
-        assertNull(newRev.getParentRevision());
+        assertNull(newRev.getParentId());
+        assertNull(newRev.getParent());
 
         Map<String,Object> expectProperties=new HashMap<String, Object>();
         expectProperties.put("_id", doc.getId());
@@ -254,15 +254,15 @@ public class ApiTest extends LiteTestCase {
         assertEquals(doc.getCurrentRevision(), rev1);
         assertNotNull(rev1.getId().startsWith("1-"));
         assertEquals(1, rev1.getSequence());
-        assertNull(rev1.getParentRevisionId());
-        assertNull(rev1.getParentRevision());
+        assertNull(rev1.getParentId());
+        assertNull(rev1.getParent());
 
         newRev = rev1.createRevision();
         newRevDocument = newRev.getDocument();
         assertEquals(doc, newRevDocument);
         assertEquals(db, newRev.getDatabase());
-        assertEquals(rev1.getId(), newRev.getParentRevisionId());
-        assertEquals(rev1, newRev.getParentRevision());
+        assertEquals(rev1.getId(), newRev.getParentId());
+        assertEquals(rev1, newRev.getParent());
         assertEquals(rev1.getProperties(), newRev.getProperties());
         assertEquals(rev1.getUserProperties(), newRev.getUserProperties());
         assertNotNull(!newRev.isDeletion());
@@ -276,15 +276,15 @@ public class ApiTest extends LiteTestCase {
         assertEquals(doc.getCurrentRevision(), rev2);
         assertNotNull(rev2.getId().startsWith("2-"));
         assertEquals(2, rev2.getSequence());
-        assertEquals(rev1.getId(), rev2.getParentRevisionId());
-        assertEquals(rev1, rev2.getParentRevision());
+        assertEquals(rev1.getId(), rev2.getParentId());
+        assertEquals(rev1, rev2.getParent());
 
         assertNotNull("Document revision ID is still " + doc.getCurrentRevisionId(), doc.getCurrentRevisionId().startsWith("2-"));
 
         // Add a deletion/tombstone revision:
         newRev = doc.createRevision();
-        assertEquals(rev2.getId(), newRev.getParentRevisionId());
-        assertEquals(rev2, newRev.getParentRevision());
+        assertEquals(rev2.getId(), newRev.getParentId());
+        assertEquals(rev2, newRev.getParent());
         newRev.setIsDeletion(true);
         SavedRevision rev3 = newRev.save();
         assertNotNull("Save 3 failed", rev3);
@@ -375,7 +375,7 @@ public class ApiTest extends LiteTestCase {
 
         Map<String,Object> props = db.getExistingLocalDocument("dock");
         assertNull(props);
-        assertNotNull("Couldn't put new local doc", db.putLocalDocument(properties, "dock"));
+        assertNotNull("Couldn't put new local doc", db.putLocalDocument("dock", properties));
         props = db.getExistingLocalDocument("dock");
         assertEquals(props.get("foo"), "bar");
 
@@ -383,7 +383,7 @@ public class ApiTest extends LiteTestCase {
         Map<String,Object> newProperties = new HashMap<String, Object>();
         newProperties.put("FOOO", "BARRR");
 
-        assertNotNull("Couldn't update local doc", db.putLocalDocument(newProperties, "dock"));
+        assertNotNull("Couldn't update local doc", db.putLocalDocument("dock", newProperties));
         props = db.getExistingLocalDocument("dock");
         assertNull(props.get("foo"));
         assertEquals(props.get("FOOO"), "BARRR");
@@ -875,17 +875,17 @@ public class ApiTest extends LiteTestCase {
         });
 
         View view = db.getView("view");
-        boolean ok = view.setMapAndReduce(new Mapper() {
-                                              @Override
-                                              public void map(Map<String, Object> document, Emitter emitter) {
+        boolean ok = view.setMapReduce(new Mapper() {
+                                           @Override
+                                           public void map(Map<String, Object> document, Emitter emitter) {
 
-                                              }
-                                          }, new Reducer() {
-                                              @Override
-                                              public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
-                                                  return null;
-                                              }
-                                          }, "1"
+                                           }
+                                       }, new Reducer() {
+                                           @Override
+                                           public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                                               return null;
+                                           }
+                                       }, "1"
         );
 
         assertNotNull("Couldn't set map/reduce", ok);
