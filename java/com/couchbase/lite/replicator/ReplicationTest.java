@@ -7,6 +7,7 @@ import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Mapper;
+import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.View;
@@ -23,6 +24,7 @@ import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -35,6 +37,8 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -893,6 +897,61 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    public void testAllLeafRevisionsArePushed() throws Exception {
+        Document doc = database.createDocument();
+        SavedRevision rev1a = doc.createRevision().save();
+        SavedRevision rev2a = rev1a.createRevision().save();
+        SavedRevision rev3a = rev2a.createRevision().save();
+
+        // sync with remote DB, so it also has doc at rev3a
+        Replication pushReplication = database.createPushReplication(getReplicationURL());
+        pushReplication.start();
+        while (pushReplication.isRunning()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                fail("thread interrupted");
+            }
+        }
+
+        // delete the branch we've been using, then create a new one to replace it
+        SavedRevision rev4a = rev3a.deleteDocument();
+        SavedRevision rev2b = rev1a.createRevision().save(true);
+        assertEquals(rev2b.getId(), doc.getCurrentRevisionId());
+
+        // sync with remote DB again -- should push both leaf revisions
+        Replication secondPush = database.createPushReplication(getReplicationURL());
+        secondPush.start();
+        while (secondPush.isRunning()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                fail("thread interrupted");
+            }
+        }
+
+        // if the remote got both leaf revisions, its state should match ours, and rev2b will be the
+        // new winning revision
+        URL docUrl;
+        try {
+            docUrl = new URL(getReplicationURL().toExternalForm() + "/" + doc.getId() + "?conflicts=true");
+        } catch (MalformedURLException ex) {
+            fail("document URL was malformed");
+            return;
+        }
+        HttpClient client = new DefaultHttpClient();
+        HttpResponse response = client.execute(new HttpGet(docUrl.toExternalForm()));
+        assertEquals(200, response.getStatusLine().getStatusCode());
+        HttpEntity entity = response.getEntity();
+        assertNotNull(entity);
+        try {
+            String jsonString = EntityUtils.toString(entity, "utf8");
+            JSONObject json = new JSONObject(jsonString);
+            assertEquals(rev2b.getId(), (String) json.get("_rev"));
+        } finally {
+            entity.consumeContent();
+        }
+    }
 
 }
 
