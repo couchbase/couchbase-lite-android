@@ -24,7 +24,7 @@
         <rhino.version>      1.7R3 </rhino.version>
         <servlet.version>    2-3   </servlet.version>
         
-        <LICENSE_DIR>${basedir}/../../..</LICENSE_DIR>
+        <LICENSE_DIR>${basedir}</LICENSE_DIR>
         <LICENSE_FILE>LICENSE.txt</LICENSE_FILE>
         
         <ZIP_HOME>${basedir}/staging</ZIP_HOME>
