@@ -897,61 +897,54 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * Regression test for issue couchbase/couchbase-lite-android#174
+     */
     public void testAllLeafRevisionsArePushed() throws Exception {
+
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderRevDiffsAllMissing();
+        mockHttpClient.setResponseDelayMilliseconds(250);
+
+        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() {
+                return mockHttpClient;
+            }
+        };
+        manager.setDefaultHttpClientFactory(mockHttpClientFactory);
+
         Document doc = database.createDocument();
         SavedRevision rev1a = doc.createRevision().save();
         SavedRevision rev2a = rev1a.createRevision().save();
         SavedRevision rev3a = rev2a.createRevision().save();
-
-        // sync with remote DB, so it also has doc at rev3a
-        Replication pushReplication = database.createPushReplication(getReplicationURL());
-        pushReplication.start();
-        while (pushReplication.isRunning()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ex) {
-                fail("thread interrupted");
-            }
-        }
 
         // delete the branch we've been using, then create a new one to replace it
         SavedRevision rev4a = rev3a.deleteDocument();
         SavedRevision rev2b = rev1a.createRevision().save(true);
         assertEquals(rev2b.getId(), doc.getCurrentRevisionId());
 
-        // sync with remote DB again -- should push both leaf revisions
-        Replication secondPush = database.createPushReplication(getReplicationURL());
-        secondPush.start();
-        while (secondPush.isRunning()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ex) {
-                fail("thread interrupted");
-            }
-        }
+        // sync with remote DB -- should push both leaf revisions
+        Replication push = database.createPushReplication(getReplicationURL());
+        runReplication(push);
 
-        // if the remote got both leaf revisions, its state should match ours, and rev2b will be the
-        // new winning revision
-        URL docUrl;
-        try {
-            docUrl = new URL(getReplicationURL().toExternalForm() + "/" + doc.getId() + "?conflicts=true");
-        } catch (MalformedURLException ex) {
-            fail("document URL was malformed");
-            return;
-        }
-        HttpClient client = new DefaultHttpClient();
-        HttpResponse response = client.execute(new HttpGet(docUrl.toExternalForm()));
-        assertEquals(200, response.getStatusLine().getStatusCode());
-        HttpEntity entity = response.getEntity();
-        assertNotNull(entity);
-        try {
-            String jsonString = EntityUtils.toString(entity, "utf8");
-            JSONObject json = new JSONObject(jsonString);
-            assertEquals(rev2b.getId(), (String) json.get("_rev"));
-        } finally {
-            entity.consumeContent();
-        }
+        // find the _revs_diff captured request and decode into json
+        List<HttpRequest> captured = mockHttpClient.getCapturedRequests();
+        Log.d(TAG, "captured " + captured);
+        HttpRequest revsDiff = captured.get(0);
+        assertTrue(revsDiff instanceof HttpPost);
+        HttpPost revsDiffPost = (HttpPost) revsDiff;
+        assertTrue(revsDiffPost.getURI().toString().endsWith("_revs_diff"));
+        Map<String, Object> jsonMap = CustomizableMockHttpClient.getJsonMapFromRequest(revsDiffPost);
+
+        // assert that it contains the expected revisions
+        List<String> revisionIds = (List) jsonMap.get(doc.getId());
+        assertEquals(2, revisionIds.size());
+        assertTrue(revisionIds.contains(rev4a.getId()));
+        assertTrue(revisionIds.contains(rev2b.getId()));
+
     }
+
 
 }
 
