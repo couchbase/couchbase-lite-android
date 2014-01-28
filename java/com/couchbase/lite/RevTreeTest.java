@@ -136,10 +136,7 @@ public class RevTreeTest extends LiteTestCase {
 
     /**
      * Test that the public API works as expected in change notifications after a rev tree
-     * insertion.
-     *
-     * These tests are currently known to be failing, the bug is being tracked in:
-     * https://github.com/couchbase/couchbase-lite-android-core/pull/27 -- NOTE: commented temporarily 
+     * insertion.  See https://github.com/couchbase/couchbase-lite-android-core/pull/27
      */
     public void testRevTreeChangeNotifications() throws CouchbaseLiteException {
         final String DOCUMENT_ID = "MyDocId";
@@ -162,7 +159,7 @@ public class RevTreeTest extends LiteTestCase {
                 assertEquals(DOCUMENT_ID, change.getDocumentId());
                 assertEquals(rev.getRevId(), change.getRevisionId());
                 assertTrue(change.isCurrentRevision());
-                // assertFalse(change.isConflict()); // fails - temp commented so that the build passes
+                assertFalse(change.isConflict());
 
                 SavedRevision current = database.getDocument(change.getDocumentId()).getCurrentRevision();
                 assertEquals(rev.getRevId(), current.getId());
@@ -190,7 +187,7 @@ public class RevTreeTest extends LiteTestCase {
                 assertEquals(DOCUMENT_ID, change.getDocumentId());
                 assertEquals(rev3.getRevId(), change.getRevisionId());
                 assertTrue(change.isCurrentRevision());
-                // assertFalse(change.isConflict()); // fails -- temp commented so that the build passes
+                // assertFalse(change.isConflict()); commented - currently failing.  see https://github.com/couchbase/couchbase-lite-android-core/pull/27
 
                 Document doc = database.getDocument(change.getDocumentId());
                 assertEquals(rev3.getRevId(), doc.getCurrentRevisionId());
