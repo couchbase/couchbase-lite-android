@@ -173,20 +173,17 @@ def buildZipArchiveRelease()
   android_VERSION  = ENV["VERSION"]
   android_REVISION = ENV["REVISION"]
   thirdPartyArchive    = "com.couchbase.cblite-#{android_VERSION}"
-  thirdPartyZipArchive = "#{thirdPartyArchive}-cblite-zipfile.zip"
-  localArchive         = "cblite_android_#{android_REVISION}.zip"
+  thirdPartyZipArchive = "#{thirdPartyArchive}-android.zip"
+  localArchive         = "cblite_android_#{android_REVISION}"
   localZipArchive      = "#{localArchive}.zip"
   
   # download 3rd party jars into a zip file
-  runCommand "cd    build &&  ./zip_jars.sh"
-  runCommand "file  build/target/#{thirdPartyZipArchive} || exit 99"
-  runCommand "cp    build/target/#{thirdPartyZipArchive} ."
+  runCommand "cd    release && ./zip_jars.sh"
+  runCommand "file  release/target/#{thirdPartyZipArchive} || exit 99"
+  runCommand "cp    release/target/#{thirdPartyZipArchive} ."
   
   # unzip it
   runCommand "unzip #{thirdPartyZipArchive}"
-  
-  # delete the old zip we downloaded
-  # runCommand "rm #{thirdPartyZipArchive}"
   
   # rename it
   runCommand "mv #{thirdPartyArchive} #{localArchive}"
@@ -207,8 +204,5 @@ def buildZipArchiveRelease()
   
   # re-zip the zip file and put in current directory  
   runCommand "zip -r --junk-paths #{localZipArchive} #{localArchive}"
-  
-  # delete the directory that was created
-  # runCommand "rm -rf #{localArchive}"
   
 end

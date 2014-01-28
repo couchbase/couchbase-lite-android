@@ -1,0 +1,171 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.couchbase</groupId>
+    <artifactId>com.couchbase.cblite</artifactId>
+    <version>1.0</version>
+    <packaging>jar</packaging>
+    
+    <repositories>
+        <repository>
+            <id>couchbase.public.repo</id>
+            <url>http://files.couchbase.com/maven2</url>
+        </repository>
+    </repositories>
+    
+    <properties>
+        <local-m2dir>${basedir}/m2</local-m2dir>
+        
+        <jackson.version>    1.9.2 </jackson.version>
+        <commons-io.version> 2.0.1 </commons-io.version>
+        <rhino.version>      1.7R3 </rhino.version>
+        <servlet.version>    2-3   </servlet.version>
+        
+        <LICENSE_DIR>${basedir}</LICENSE_DIR>
+        <LICENSE_FILE>LICENSE.txt</LICENSE_FILE>
+        
+        <ZIP_HOME>${basedir}/staging</ZIP_HOME>
+    </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.mozilla</groupId>
+            <artifactId>rhino</artifactId>
+            <version>${rhino.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.couchbase.cblite</groupId>
+            <artifactId>servlet</artifactId>
+            <version>${servlet.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.couchbase.cblite</groupId>
+            <artifactId>webserver</artifactId>
+            <version>${servlet.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.1</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <id>validate_m2</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <echo>local-m2dir:   ${local-m2dir}</echo>
+                                <echo>${local-m2dir}/org/mozilla/rhino/${rhino.version}/rhino-${rhino.version}.jar</echo>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    
+                    <execution>
+                        <phase>clean</phase>
+                        <id>clean_m2</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <delete dir="${ZIP_HOME}" failonerror="true" verbose="true" />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <id>copy_from_m2</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                 <mkdir  dir="${ZIP_HOME}" />
+                                 <copy todir="${ZIP_HOME}" preservelastmodified="true" flatten="true">
+                                     <fileset dir="${LICENSE_DIR}">
+                                         <include name="${LICENSE_FILE}"                              />
+                                     </fileset>
+                                 </copy>
+
+                                 <copy todir="${ZIP_HOME}" preservelastmodified="true" flatten="true">
+                                     <fileset dir="${local-m2dir}">
+                                         <include name="**/rhino-${rhino.version}.jar"                />
+                                         <include name="**/commons-io-${commons-io.version}.jar"      />
+                                         <include name="**/jackson-core-asl-${jackson.version}.jar"   />
+                                         <include name="**/jackson-mapper-asl-${jackson.version}.jar" />
+                                         
+                                         <include name="**/servlet-${servlet.version}.jar"            />
+                                         <include name="**/webserver-${servlet.version}.jar"          />
+                                     </fileset>
+                                 </copy>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <distributionManagement>
+        <repository>
+            <id>couchbase.public.repo</id>
+            <name>Couchbase Release Repository</name>
+            <url>http://files.couchbase.com/maven2/</url>
+        </repository>
+    </distributionManagement>
+</project>
