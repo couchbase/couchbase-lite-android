@@ -187,7 +187,7 @@ public class RevTreeTest extends LiteTestCase {
                 assertEquals(DOCUMENT_ID, change.getDocumentId());
                 assertEquals(rev3.getRevId(), change.getRevisionId());
                 assertTrue(change.isCurrentRevision());
-                // assertFalse(change.isConflict()); commented - currently failing.  see https://github.com/couchbase/couchbase-lite-android-core/pull/27
+                assertFalse(change.isConflict());
 
                 Document doc = database.getDocument(change.getDocumentId());
                 assertEquals(rev3.getRevId(), doc.getCurrentRevisionId());
