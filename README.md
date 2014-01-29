@@ -8,7 +8,7 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 ## Getting Started with Couchbase Lite
 
-* Create your own Hello World Couchbase Lite by following the [tutorial](http://docs.couchbase.com/couchbase-lite/cbl-android/cbl-android-1.0b2/#tutorial) 
+* Create your own Hello World Couchbase Lite by following the [tutorial](http://docs.couchbase.com/couchbase-lite/cbl-android/cbl-android-1.0b2/#tutorial). The tutorial shows how to build a simple Couchbase Lite app in Android Studio and Eclipse. 
  
 * Download and run the [Grocery-Sync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
 
