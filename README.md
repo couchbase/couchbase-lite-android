@@ -4,13 +4,13 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 **Couchbase-Lite-Android** is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
 
-[Click here for **official documentation for Couchbase Lite Android**](http://docs.couchbase.com/couchbase-lite/cbl-android/)
+[Click here for the **official Couchbase Lite documentation**](http://docs.couchbase.com/couchbase-lite)
 
 ## Getting Started with Couchbase Lite
 
-* Download and run the  [Grocery-Sync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
-
-* Create your own Hello World Couchbase Lite via the [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) guide.
+* Create your own Hello World Couchbase Lite by following the [tutorial](http://docs.couchbase.com/couchbase-lite/cbl-android/cbl-android-1.0b2/#tutorial) 
+ 
+* Download and run the [Grocery-Sync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
 
 ## Developing / Contributing to Couchbase Lite
 
@@ -22,7 +22,7 @@ However, if you need to debug Couchbase Lite Android or otherwise hack on it, th
 
 * [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) 
 
-* Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
+* Under Tools / Android / Android SDK Manager, install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
 
 
 ## Clone the repository
@@ -89,7 +89,7 @@ If you want to host and deploy your own maven artifacts, see the `upload_android
 * [CBLiteConsole](https://github.com/couchbaselabs/CBLiteConsole)
 
 ## Current Status
-- Alpha / Developer Preview
+- Beta
 
 ## Requirements
 - Android 2.3 Gingerbread (API level 9) and above.
