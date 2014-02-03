@@ -543,12 +543,19 @@ public class ReplicationTest extends LiteTestCase {
         properties.put("source", DEFAULT_TEST_DB);
         properties.put("target", getReplicationURL().toExternalForm());
 
+        Map<String,Object> headers = new HashMap<String,Object>();
+        String coolieVal = "SyncGatewaySession=c38687c2696688a";
+        headers.put("Cookie", coolieVal);
+        properties.put("headers", headers);
+
         Replication replicator = manager.getReplicator(properties);
         assertNotNull(replicator);
         assertEquals(getReplicationURL().toExternalForm(), replicator.getRemoteUrl().toExternalForm());
         assertTrue(!replicator.isPull());
         assertFalse(replicator.isContinuous());
         assertFalse(replicator.isRunning());
+        assertTrue(replicator.getHeaders().containsKey("Cookie"));
+        assertEquals(replicator.getHeaders().get("Cookie"), coolieVal);
 
         // start the replicator
         replicator.start();
