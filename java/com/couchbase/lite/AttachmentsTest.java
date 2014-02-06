@@ -475,4 +475,40 @@ public class AttachmentsTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-android-core/issues/70
+     */
+    public void testAttachmentDisappearsAfterSave() throws CouchbaseLiteException, IOException {
+
+        // create a doc with an attachment
+        Document doc = database.createDocument();
+        String content  = "This is a test attachment!";
+        ByteArrayInputStream body = new ByteArrayInputStream(content.getBytes());
+        UnsavedRevision rev = doc.createRevision();
+        rev.setAttachment("index.html", "text/plain; charset=utf-8", body);
+        rev.save();
+
+        // make sure the doc's latest revision has the attachment
+        Map<String, Object> attachments = (Map) doc.getCurrentRevision().getProperty("_attachments");
+        assertNotNull(attachments);
+        assertEquals(1, attachments.size());
+
+        // make sure the rev has the attachment
+        attachments = (Map) rev.getProperty("_attachments");
+        assertNotNull(attachments);
+        assertEquals(1, attachments.size());
+
+        // create new properties to add
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("foo", "bar");
+
+        // make sure the new rev still has the attachment
+        UnsavedRevision rev2 = doc.createRevision();
+        rev2.getProperties().putAll(properties);
+        attachments = (Map) rev2.getProperty("_attachments");
+        assertNotNull(attachments);
+        assertEquals(1, attachments.size());
+
+    }
+
 }
