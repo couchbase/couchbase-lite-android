@@ -1,0 +1,1 @@
+include ':couchbase-lite-android', ':libraries:couchbase-lite-java-core'
