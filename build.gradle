@@ -59,3 +59,23 @@ dependencies {
     compile project(':libraries:couchbase-lite-java-core')
 
 }
+
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+
+task generateJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    List<File> pathList = new ArrayList<File>();
+    pathList.add(file('extra/doclet/doclet.jar'))
+    options.docletpath = pathList
+    options.doclet = "ExcludeDoclet"
+    options.showFromPublic()
+    exclude "org/apache/http/**", "com/couchbase/touchdb/**"
+}
+
+task wrapper(type: Wrapper) {
+	gradleVersion = '1.10'
+}
