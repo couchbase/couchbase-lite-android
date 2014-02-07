@@ -28,6 +28,15 @@ android {
         runProguard false
         proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
     }
+
+    // workaround for "duplicate files during packaging of APK" issue
+    // see https://groups.google.com/d/msg/adt-dev/bl5Rc4Szpzg/wC8cylTWuIEJ
+    packagingOptions {
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+    }
+
 }
 
 
