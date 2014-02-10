@@ -86,7 +86,7 @@ If you want to host and deploy your own maven artifacts, see the `upload_android
 ## Example Apps
 
 * [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)
-* [LiteServAndroid](https://github.com/couchbaselabs/LiteServAndroid)
+* [LiteServAndroid](https://github.com/couchbaselabs/couchbase-lite-android-liteserv)
 * [CouchChatAndroid](https://github.com/couchbaselabs/CouchChatAndroid) -- just a stub at this point.
 
 ## Utilities
