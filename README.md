@@ -6,6 +6,13 @@ by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
 [Click here for **official documentation for Couchbase Lite Android**](http://docs.couchbase.com/couchbase-lite/cbl-android/)
 
+## Documentation
+
+* This [README](https://github.com/couchbase/couchbase-lite-android/blob/master/README.md)
+* [Official Documentation](http://docs.couchbase.com/couchbase-lite/cbl-android/) for beta2 release
+* [Javadocs](http://www.couchbase.com/autodocs/couchbase-lite-android-1.0b2/index.html) for beta2 release
+* [Wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
+
 ## Getting Started with Couchbase Lite
 
 * Download and run the  [Grocery-Sync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
