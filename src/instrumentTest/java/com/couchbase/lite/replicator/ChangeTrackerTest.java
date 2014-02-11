@@ -46,7 +46,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.OneShot, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.OneShot, false, 0, client);
         changeTracker.start();
 
         try {
@@ -88,7 +88,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, false, 0, client);
         changeTracker.start();
 
         try {
@@ -146,7 +146,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0, client);
         changeTracker.start();
 
         try {
@@ -170,7 +170,7 @@ public class ChangeTrackerTest extends LiteTestCase {
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
-        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, null);
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, null);
 
         // set filter
         changeTracker.setFilterName("filter");
@@ -190,7 +190,7 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         URL testURL = getReplicationURL();
 
-        ChangeTracker changeTrackerDocIds = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, null);
+        ChangeTracker changeTrackerDocIds = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, null);
         List<String> docIds = new ArrayList<String>();
         docIds.add("doc1");
         docIds.add("doc2");
@@ -239,7 +239,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, client);
 
         BackgroundTask task = new BackgroundTask() {
             @Override
