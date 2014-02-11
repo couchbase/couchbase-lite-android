@@ -167,6 +167,15 @@ public class ChangeTrackerTest extends LiteTestCase {
 
     }
 
+    public void testChangeTrackerWithConflictsIncluded() {
+
+        URL testURL = getReplicationURL();
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, true, 0, null);
+
+        assertEquals("_changes?feed=longpoll&limit=50&heartbeat=300000&style=all_docs&since=0", changeTracker.getChangesFeedPath());
+
+    }
+
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
