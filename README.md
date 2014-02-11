@@ -2,7 +2,7 @@
 
 by Marty Schoch (marty@couchbase.com) + Traun Leyden (tleyden@couchbase.com)
 
-Couchbase-Lite-Android is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
+Couchbase-Lite-Android is a ightweight embedded NoSQL database engine for Android with the built-in ability to sync to a [Couchbase Server](http://www.couchbase.com/couchbase-server/overview) on the backend.  It is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
 
 **Update**: The project structure recently changed, here is a [mailing list post](https://groups.google.com/forum/#!topic/mobile-couchbase/Zsn8TG5F88o) describing the change, as well as [Project Structure](https://github.com/couchbase/couchbase-lite-android/wiki/Project-structure) wiki page that describes the new project structure.
 
