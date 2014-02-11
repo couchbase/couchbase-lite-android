@@ -377,6 +377,7 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(1, doc1.getProperties().get("foo"));
 
         Attachment attachment = doc1.getCurrentRevision().getAttachment(attachmentName);
+        assertTrue(attachment.getLength() > 0);
         assertTrue(attachment.getGZipped());
         byte[] receivedBytes = TextUtils.read(attachment.getContent());
 
