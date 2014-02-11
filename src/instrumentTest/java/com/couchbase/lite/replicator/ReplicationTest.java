@@ -24,7 +24,6 @@ import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -37,7 +36,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
-import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -45,6 +44,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -950,6 +950,56 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(revisionIds.contains(rev4a.getId()));
         assertTrue(revisionIds.contains(rev2b.getId()));
 
+    }
+
+    public void testRemoteConflictResolution() throws Exception {
+        // Create a document with two conflicting edits.
+        Document doc = database.createDocument();
+        SavedRevision rev1 = doc.createRevision().save();
+        SavedRevision rev2a = rev1.createRevision().save();
+        SavedRevision rev2b = rev1.createRevision().save(true);
+
+        // Push the conflicts to the remote DB.
+        Replication push = database.createPushReplication(getReplicationURL());
+        runReplication(push);
+
+        // Prepare a bulk docs request to resolve the conflict remotely. First, advance rev 2a.
+        JSONObject rev3aBody = new JSONObject();
+        rev3aBody.put("_id", doc.getId());
+        rev3aBody.put("_rev", rev2a.getId());
+        // Then, delete rev 2b.
+        JSONObject rev3bBody = new JSONObject();
+        rev3bBody.put("_id", doc.getId());
+        rev3bBody.put("_rev", rev2b.getId());
+        rev3bBody.put("_deleted", true);
+        // Combine into one _bulk_docs request.
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("docs", new JSONArray(Arrays.asList(rev3aBody, rev3bBody)));
+
+        // Make the _bulk_docs request.
+        HttpClient client = new DefaultHttpClient();
+        String bulkDocsUrl = getReplicationURL().toExternalForm() + "/_bulk_docs";
+        HttpPost request = new HttpPost(bulkDocsUrl);
+        request.setHeader("Content-Type", "application/json");
+        String json = requestBody.toString();
+        request.setEntity(new StringEntity(json));
+        HttpResponse response = client.execute(request);
+
+        // Check the response to make sure everything worked as it should.
+        assertEquals(201, response.getStatusLine().getStatusCode());
+        String rawResponse = IOUtils.toString(response.getEntity().getContent());
+        JSONArray resultArray = new JSONArray(rawResponse);
+        assertEquals(2, resultArray.length());
+        for (int i = 0; i < resultArray.length(); i++) {
+            assertTrue(((JSONObject) resultArray.get(i)).isNull("error"));
+        }
+
+        // Pull the remote changes.
+        Replication pull = database.createPullReplication(getReplicationURL());
+        runReplication(pull);
+
+        // Make sure the conflict was resolved locally.
+        assertEquals(1, doc.getConflictingRevisions().size());
     }
 
 
