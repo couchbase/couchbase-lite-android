@@ -513,11 +513,11 @@ public class ReplicationTest extends LiteTestCase {
             IOUtils.copy(attachmentStream, baos);
             if (gzipped == false) {
                 String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
-                docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentBase64);
+                docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"%s\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentName, attachmentBase64);
             } else {
                 byte[] bytes = baos.toByteArray();
                 String attachmentBase64 = Base64.encodeBytes(bytes, Base64.GZIP);
-                docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\", \"encoding\": \"gzip\", \"length\":%d } } }", attachmentBase64, bytes.length);
+                docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"%s\": { \"content_type\": \"image/png\", \"data\": \"%s\", \"encoding\": \"gzip\", \"length\":%d } } }", attachmentName, attachmentBase64, bytes.length);
             }
         }
         else {
