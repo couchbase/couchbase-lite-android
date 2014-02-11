@@ -1,5 +1,6 @@
 package com.couchbase.lite.replicator;
 
+import com.couchbase.lite.Attachment;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
@@ -18,6 +19,7 @@ import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.TextUtils;
 
 import junit.framework.Assert;
 
@@ -57,7 +59,7 @@ public class ReplicationTest extends LiteTestCase {
 
     // Reproduces issue #167
     // https://github.com/couchbase/couchbase-lite-android/issues/167
-    public void testPushPurgedDoc() throws Throwable {
+    public void DIStestPushPurgedDoc() throws Throwable {
 
         int numBulkDocRequests = 0;
         HttpPost lastBulkDocsRequest = null;
@@ -150,7 +152,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPusher() throws Throwable {
+    public void DIStestPusher() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
@@ -274,7 +276,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPusherDeletedDoc() throws Throwable {
+    public void DIStestPusherDeletedDoc() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
@@ -355,14 +357,44 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPuller() throws Throwable {
+    public void testPullerGzipped() throws Throwable {
+
+        String docIdTimestamp = Long.toString(System.currentTimeMillis());
+        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
+
+        String attachmentName = "attachment.png";
+        addDocWithId(doc1Id, attachmentName, true);
+
+        // workaround for https://github.com/couchbase/sync_gateway/issues/228
+        Thread.sleep(1000);
+
+        doPullReplication();
+
+        Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
+        Document doc1 = database.getDocument(doc1Id);
+        assertNotNull(doc1);
+        assertTrue(doc1.getCurrentRevisionId().startsWith("1-"));
+        assertEquals(1, doc1.getProperties().get("foo"));
+
+        Attachment attachment = doc1.getCurrentRevision().getAttachment(attachmentName);
+        assertTrue(attachment.getGZipped());
+        byte[] receivedBytes = TextUtils.read(attachment.getContent());
+
+        InputStream attachmentStream = getAsset(attachmentName);
+        byte[] actualBytes = TextUtils.read(attachmentStream);
+        Assert.assertEquals(actualBytes.length, receivedBytes.length);
+        Assert.assertEquals(actualBytes, receivedBytes);
+
+    }
+
+    public void DIStestPuller() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
         final String doc2Id = String.format("doc2-%s", docIdTimestamp);
 
-        addDocWithId(doc1Id, "attachment.png");
-        addDocWithId(doc2Id, "attachment2.png");
+        addDocWithId(doc1Id, "attachment.png", false);
+        addDocWithId(doc2Id, "attachment2.png", false);
 
         // workaround for https://github.com/couchbase/sync_gateway/issues/228
         Thread.sleep(1000);
@@ -402,7 +434,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPullerWithLiveQuery() throws Throwable {
+    public void DIStestPullerWithLiveQuery() throws Throwable {
 
         // This is essentially a regression test for a deadlock
         // that was happening when the LiveQuery#onDatabaseChanged()
@@ -416,8 +448,8 @@ public class ReplicationTest extends LiteTestCase {
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
         final String doc2Id = String.format("doc2-%s", docIdTimestamp);
 
-        addDocWithId(doc1Id, "attachment2.png");
-        addDocWithId(doc2Id, "attachment2.png");
+        addDocWithId(doc1Id, "attachment2.png", false);
+        addDocWithId(doc2Id, "attachment2.png", false);
 
         final int numDocsBeforePull = database.getDocumentCount();
 
@@ -470,7 +502,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-    private void addDocWithId(String docId, String attachmentName) throws IOException {
+    private void addDocWithId(String docId, String attachmentName, boolean gzipped) throws IOException {
 
         final String docJson;
 
@@ -479,8 +511,14 @@ public class ReplicationTest extends LiteTestCase {
             InputStream attachmentStream = getAsset(attachmentName);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             IOUtils.copy(attachmentStream, baos);
-            String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
-            docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentBase64);
+            if (gzipped == false) {
+                String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
+                docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentBase64);
+            } else {
+                byte[] bytes = baos.toByteArray();
+                String attachmentBase64 = Base64.encodeBytes(bytes, Base64.GZIP);
+                docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"i_use_couchdb.png\": { \"content_type\": \"image/png\", \"data\": \"%s\", \"encoding\": \"gzip\", \"length\":%d } } }", attachmentBase64, bytes.length);
+            }
         }
         else {
             docJson = "{\"foo\":1,\"bar\":false}";
@@ -537,7 +575,7 @@ public class ReplicationTest extends LiteTestCase {
         }
     }
 
-    public void testGetReplicator() throws Throwable {
+    public void DIStestGetReplicator() throws Throwable {
 
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", DEFAULT_TEST_DB);
@@ -568,7 +606,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testGetReplicatorWithAuth() throws Throwable {
+    public void DIStestGetReplicatorWithAuth() throws Throwable {
 
         Map<String, Object> properties = getPushReplicationParsedJson();
 
@@ -642,7 +680,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testRunReplicationWithError() throws Exception {
+    public void DIStestRunReplicationWithError() throws Exception {
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
@@ -670,7 +708,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testReplicatorErrorStatus() throws Exception {
+    public void DIStestReplicatorErrorStatus() throws Exception {
 
         // register bogus fb token
         Map<String,Object> facebookTokenInfo = new HashMap<String,Object>();
@@ -709,7 +747,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-    public void testFetchRemoteCheckpointDoc() throws Exception {
+    public void DIStestFetchRemoteCheckpointDoc() throws Exception {
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
@@ -747,7 +785,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testGoOffline() throws Exception {
+    public void DIStestGoOffline() throws Exception {
 
         URL remote = getReplicationURL();
 
@@ -793,7 +831,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testBuildRelativeURLString() throws Exception {
+    public void DIStestBuildRelativeURLString() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
@@ -804,7 +842,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
+    public void DIStestBuildRelativeURLStringWithLeadingSlash() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
@@ -815,7 +853,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testChannels() throws Exception {
+    public void DIStestChannels() throws Exception {
 
         URL remote = getReplicationURL();
         Replication replicator = database.createPullReplication(remote);
@@ -829,7 +867,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testChannelsMore() throws MalformedURLException, CouchbaseLiteException {
+    public void DIStestChannelsMore() throws MalformedURLException, CouchbaseLiteException {
 
         Database  db = startDatabase();
         URL fakeRemoteURL = new URL("http://couchbase.com/no_such_db");
@@ -864,7 +902,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-    public void testHeaders() throws Exception {
+    public void DIStestHeaders() throws Exception {
 
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderThrowExceptionAllRequests();
