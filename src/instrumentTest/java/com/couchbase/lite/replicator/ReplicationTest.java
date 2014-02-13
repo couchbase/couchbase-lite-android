@@ -365,9 +365,6 @@ public class ReplicationTest extends LiteTestCase {
         String attachmentName = "attachment.png";
         addDocWithId(doc1Id, attachmentName, true);
 
-        // workaround for https://github.com/couchbase/sync_gateway/issues/228
-        Thread.sleep(1000);
-
         doPullReplication();
 
         Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
@@ -397,9 +394,6 @@ public class ReplicationTest extends LiteTestCase {
         addDocWithId(doc1Id, "attachment.png", false);
         addDocWithId(doc2Id, "attachment2.png", false);
 
-        // workaround for https://github.com/couchbase/sync_gateway/issues/228
-        Thread.sleep(1000);
-
         doPullReplication();
 
         Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
@@ -418,8 +412,7 @@ public class ReplicationTest extends LiteTestCase {
         String docJson = String.format("{\"foo\":2,\"bar\":true,\"_rev\":\"%s\",\"_id\":\"%s\"}", doc1.getCurrentRevisionId(), doc1.getId());
         pushDocumentToSyncGateway(doc1.getId(), docJson);
 
-        // workaround for https://github.com/couchbase/sync_gateway/issues/228
-        Thread.sleep(1000);
+        workaroundSyncGatewayRaceCondition();
 
         // do another pull
         doPullReplication();
@@ -525,6 +518,8 @@ public class ReplicationTest extends LiteTestCase {
             docJson = "{\"foo\":1,\"bar\":false}";
         }
         pushDocumentToSyncGateway(docId, docJson);
+
+        workaroundSyncGatewayRaceCondition();
 
 
     }
@@ -1033,12 +1028,28 @@ public class ReplicationTest extends LiteTestCase {
             assertTrue(((JSONObject) resultArray.get(i)).isNull("error"));
         }
 
+        workaroundSyncGatewayRaceCondition();
+
         // Pull the remote changes.
         Replication pull = database.createPullReplication(getReplicationURL());
         runReplication(pull);
 
         // Make sure the conflict was resolved locally.
         assertEquals(1, doc.getConflictingRevisions().size());
+    }
+
+    /**
+     * Whenever posting information directly to sync gateway via HTTP, the client
+     * must pause briefly to give it a chance to achieve internal consistency.
+     *
+     * This is documented in https://github.com/couchbase/sync_gateway/issues/228
+     */
+    private void workaroundSyncGatewayRaceCondition() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
