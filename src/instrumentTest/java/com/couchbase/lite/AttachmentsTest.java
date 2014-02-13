@@ -476,9 +476,9 @@ public class AttachmentsTest extends LiteTestCase {
     }
 
     /**
-     * https://github.com/couchbase/couchbase-lite-android-core/issues/70
+     * Regression test for https://github.com/couchbase/couchbase-lite-android-core/issues/70
      */
-    public void failingTestAttachmentDisappearsAfterSave() throws CouchbaseLiteException, IOException {
+    public void testAttachmentDisappearsAfterSave() throws CouchbaseLiteException, IOException {
 
         // create a doc with an attachment
         Document doc = database.createDocument();
@@ -509,6 +509,24 @@ public class AttachmentsTest extends LiteTestCase {
         attachments = (Map) rev2.getProperty("_attachments");
         assertNotNull(attachments);
         assertEquals(1, attachments.size());
+
+    }
+
+    /**
+     * Regression test for https://github.com/couchbase/couchbase-lite-android-core/issues/70
+     */
+    public void testAttachmentInstallBodies() throws Exception {
+
+        Map<String, Object> attachmentsMap = new HashMap<String, Object>();
+        Map<String, Object> attachmentMap = new HashMap<String, Object>();
+        attachmentMap.put("length", 25);
+        String attachmentName = "index.html";
+        attachmentsMap.put(attachmentName, attachmentMap);
+
+        Map<String, Object> updatedAttachments = Attachment.installAttachmentBodies(attachmentsMap, database);
+        assertTrue(updatedAttachments.size() > 0);
+        assertTrue(updatedAttachments.containsKey(attachmentName));
+
 
     }
 
