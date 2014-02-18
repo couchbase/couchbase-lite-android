@@ -284,7 +284,8 @@ public class ReplicationTest extends LiteTestCase {
     public void testPusherBatching() throws Throwable {
 
         // create a bunch (INBOX_CAPACITY * 2) local documents
-        for (int i=0; i < (Replication.INBOX_CAPACITY * 2); i++) {
+        int numDocsToSend = Replication.INBOX_CAPACITY * 2;
+        for (int i=0; i < numDocsToSend; i++) {
             Map<String,Object> properties = new HashMap<String, Object>();
             properties.put("testPusherBatching", i);
             createDocumentWithProperties(database, properties);
@@ -306,6 +307,8 @@ public class ReplicationTest extends LiteTestCase {
         Replication pusher = database.createPushReplication(remote);
         runReplication(pusher);
 
+        int numDocsSent = 0;
+
         // verify that only INBOX_SIZE documents are included in any given bulk post request
         List<HttpRequest> capturedRequests = mockHttpClient.getCapturedRequests();
         for (HttpRequest capturedRequest : capturedRequests) {
@@ -318,9 +321,13 @@ public class ReplicationTest extends LiteTestCase {
                     ArrayList docs = (ArrayList) body.get("docs");
                     String msg = "# of bulk docs pushed should be <= INBOX_CAPACITY";
                     assertTrue(msg, docs.size() <= Replication.INBOX_CAPACITY);
+                    numDocsSent += docs.size();
                 }
             }
         }
+
+        assertEquals(numDocsToSend, numDocsSent);
+
 
 
     }
