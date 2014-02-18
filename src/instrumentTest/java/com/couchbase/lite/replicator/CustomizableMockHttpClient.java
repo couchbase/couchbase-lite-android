@@ -137,7 +137,9 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
 
 
     public List<HttpRequest> getCapturedRequests() {
-        return capturedRequests;
+        List<HttpRequest> snapshot = new ArrayList<HttpRequest>();
+        snapshot.addAll(capturedRequests);
+        return snapshot;
     }
 
     public void recordEntityConsumeCallback() {
