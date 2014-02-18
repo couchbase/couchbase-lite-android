@@ -7,6 +7,7 @@ import com.couchbase.lite.Document;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiveQuery;
+import com.couchbase.lite.Manager;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.Status;
@@ -35,6 +36,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -273,6 +275,53 @@ public class ReplicationTest extends LiteTestCase {
 
 
         Log.d(TAG, "testPusher() finished");
+
+    }
+
+    /**
+     * Regression test for https://github.com/couchbase/couchbase-lite-java-core/issues/72
+     */
+    public void testPusherBatching() throws Throwable {
+
+        // create a bunch (INBOX_CAPACITY * 2) local documents
+        for (int i=0; i < (Replication.INBOX_CAPACITY * 2); i++) {
+            Map<String,Object> properties = new HashMap<String, Object>();
+            properties.put("testPusherBatching", i);
+            createDocumentWithProperties(database, properties);
+        }
+
+        // kick off a one time push replication to a mock
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+
+        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() {
+                return mockHttpClient;
+            }
+        };
+
+        URL remote = getReplicationURL();
+
+        manager.setDefaultHttpClientFactory(mockHttpClientFactory);
+        Replication pusher = database.createPushReplication(remote);
+        runReplication(pusher);
+
+        // verify that only INBOX_SIZE documents are included in any given bulk post request
+        List<HttpRequest> capturedRequests = mockHttpClient.getCapturedRequests();
+        for (HttpRequest capturedRequest : capturedRequests) {
+            if (capturedRequest instanceof HttpPost) {
+                HttpPost capturedPostRequest = (HttpPost) capturedRequest;
+                if (capturedPostRequest.getURI().getPath().endsWith("_bulk_docs")) {
+                    ByteArrayEntity entity = (ByteArrayEntity) capturedPostRequest.getEntity();
+                    InputStream contentStream = entity.getContent();
+                    Map<String,Object> body = Manager.getObjectMapper().readValue(contentStream, Map.class);
+                    ArrayList docs = (ArrayList) body.get("docs");
+                    String msg = "# of bulk docs pushed should be <= INBOX_CAPACITY";
+                    assertTrue(msg, docs.size() <= Replication.INBOX_CAPACITY);
+                }
+            }
+        }
+
 
     }
 
