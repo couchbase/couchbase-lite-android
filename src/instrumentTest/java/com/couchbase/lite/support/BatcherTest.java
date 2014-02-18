@@ -22,7 +22,7 @@ public class BatcherTest extends LiteTestCase {
         int inboxCapacity = 10;
         int processorDelay = 1000;
 
-        Batcher2 batcher = new Batcher2<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+        Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
 
             @Override
             public void process(List<String> itemsToProcess) {
@@ -61,7 +61,7 @@ public class BatcherTest extends LiteTestCase {
         int inboxCapacity = 10;
         final int processorDelay = 1000;
 
-        Batcher2 batcher = new Batcher2<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+        Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
 
             @Override
             public void process(List<String> itemsToProcess) {
@@ -103,7 +103,7 @@ public class BatcherTest extends LiteTestCase {
         int inboxCapacity = 100;
         final int processorDelay = 1000;
 
-        Batcher2 batcher = new Batcher2<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+        Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
 
             @Override
             public void process(List<String> itemsToProcess) {
