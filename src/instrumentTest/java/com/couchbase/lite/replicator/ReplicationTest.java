@@ -648,6 +648,11 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(replicator.getHeaders().containsKey("Cookie"));
         assertEquals(replicator.getHeaders().get("Cookie"), coolieVal);
 
+        // add replication observer
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
+        replicator.addChangeListener(replicationObserver);
+
         // start the replicator
         replicator.start();
 
@@ -655,6 +660,11 @@ public class ReplicationTest extends LiteTestCase {
         properties.put("cancel", true);
         Replication activeReplicator = manager.getReplicator(properties);
         activeReplicator.stop();
+
+        // wait for replication to finish
+        boolean didNotTimeOut = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(didNotTimeOut);
+
         assertFalse(activeReplicator.isRunning());
 
     }
