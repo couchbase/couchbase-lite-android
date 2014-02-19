@@ -297,8 +297,12 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
     }
 
     public static HttpResponse generateHttpResponseObject(String responseJson) throws IOException {
+       return generateHttpResponseObject(200, "OK", responseJson);
+    }
+
+    public static HttpResponse generateHttpResponseObject(int statusCode, String statusString, String responseJson) throws IOException {
         DefaultHttpResponseFactory responseFactory = new DefaultHttpResponseFactory();
-        BasicStatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, 200, "OK");
+        BasicStatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode, statusString);
         HttpResponse response = responseFactory.newHttpResponse(statusLine, null);
         byte[] responseBytes = responseJson.getBytes();
         response.setEntity(new ByteArrayEntity(responseBytes));

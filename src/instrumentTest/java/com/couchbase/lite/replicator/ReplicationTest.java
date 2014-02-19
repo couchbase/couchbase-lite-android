@@ -36,6 +36,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -1002,6 +1003,13 @@ public class ReplicationTest extends LiteTestCase {
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderRevDiffsAllMissing();
         mockHttpClient.setResponseDelayMilliseconds(250);
+        mockHttpClient.setResponder("_local", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                String json = "{\"error\":\"not_found\",\"reason\":\"missing\"}";
+                return CustomizableMockHttpClient.generateHttpResponseObject(404, "NOT FOUND", json);
+            }
+        });
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
@@ -1026,19 +1034,29 @@ public class ReplicationTest extends LiteTestCase {
         runReplication(push);
 
         // find the _revs_diff captured request and decode into json
+        boolean foundRevsDiff = false;
         List<HttpRequest> captured = mockHttpClient.getCapturedRequests();
-        Log.d(TAG, "captured " + captured);
-        HttpRequest revsDiff = captured.get(0);
-        assertTrue(revsDiff instanceof HttpPost);
-        HttpPost revsDiffPost = (HttpPost) revsDiff;
-        assertTrue(revsDiffPost.getURI().toString().endsWith("_revs_diff"));
-        Map<String, Object> jsonMap = CustomizableMockHttpClient.getJsonMapFromRequest(revsDiffPost);
+        for (HttpRequest httpRequest : captured) {
 
-        // assert that it contains the expected revisions
-        List<String> revisionIds = (List) jsonMap.get(doc.getId());
-        assertEquals(2, revisionIds.size());
-        assertTrue(revisionIds.contains(rev4a.getId()));
-        assertTrue(revisionIds.contains(rev2b.getId()));
+            if (httpRequest instanceof HttpPost) {
+                HttpPost httpPost = (HttpPost) httpRequest;
+                if (httpPost.getURI().toString().endsWith("_revs_diff")) {
+                    foundRevsDiff = true;
+                    Map<String, Object> jsonMap = CustomizableMockHttpClient.getJsonMapFromRequest(httpPost);
+
+                    // assert that it contains the expected revisions
+                    List<String> revisionIds = (List) jsonMap.get(doc.getId());
+                    assertEquals(2, revisionIds.size());
+                    assertTrue(revisionIds.contains(rev4a.getId()));
+                    assertTrue(revisionIds.contains(rev2b.getId()));
+                }
+
+            }
+
+
+        }
+        assertTrue(foundRevsDiff);
+
 
     }
 
