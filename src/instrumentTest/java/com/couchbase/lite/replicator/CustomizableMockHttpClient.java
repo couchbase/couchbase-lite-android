@@ -61,7 +61,7 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
 
         addResponderFakeBulkDocs();
 
-        addResponderFakeLocalDocumentUpdate();
+        addResponderFakeLocalDocumentUpdateIOException();
 
     }
 
@@ -83,11 +83,21 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         });
     }
 
-    public void addResponderFakeLocalDocumentUpdate() {
+    public void addResponderFakeLocalDocumentUpdate404() {
+        responders.put("_local", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                String json = "{\"error\":\"not_found\",\"reason\":\"missing\"}";
+                return CustomizableMockHttpClient.generateHttpResponseObject(404, "NOT FOUND", json);
+            }
+        });
+    }
+
+    public void addResponderFakeLocalDocumentUpdateIOException() {
         responders.put("_local", new Responder() {
             @Override
             public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
-                return CustomizableMockHttpClient.fakeLocalDocumentUpdate(httpUriRequest);
+                return CustomizableMockHttpClient.fakeLocalDocumentUpdateIOException(httpUriRequest);
             }
         });
     }
@@ -110,6 +120,8 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         });
 
     }
+
+
 
     public void addResponderReturnInvalidChangesFeedJson() {
         setResponder("_changes", new CustomizableMockHttpClient.Responder() {
@@ -195,7 +207,7 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         }
 
      */
-    public static HttpResponse fakeLocalDocumentUpdate(HttpUriRequest httpUriRequest) throws IOException, ClientProtocolException {
+    public static HttpResponse fakeLocalDocumentUpdateIOException(HttpUriRequest httpUriRequest) throws IOException, ClientProtocolException {
         throw new IOException("Throw exception on purpose for purposes of testSaveRemoteCheckpointNoResponse()");
     }
 

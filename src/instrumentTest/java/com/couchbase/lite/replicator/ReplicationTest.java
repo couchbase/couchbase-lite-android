@@ -135,6 +135,7 @@ public class ReplicationTest extends LiteTestCase {
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderRevDiffsAllMissing();
         mockHttpClient.setResponseDelayMilliseconds(250);
+        mockHttpClient.addResponderFakeLocalDocumentUpdate404();
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
@@ -148,7 +149,6 @@ public class ReplicationTest extends LiteTestCase {
         manager.setDefaultHttpClientFactory(mockHttpClientFactory);
         Replication pusher = database.createPushReplication(remote);
         pusher.setContinuous(true);
-        pusher.start();
 
         final CountDownLatch replicationCaughtUpSignal = new CountDownLatch(1);
 
@@ -159,14 +159,16 @@ public class ReplicationTest extends LiteTestCase {
                 final int completedChangesCount = event.getSource().getCompletedChangesCount();
                 String msg = String.format("changes: %d completed changes: %d", changesCount, completedChangesCount);
                 Log.d(TAG, msg);
-                if (changesCount == completedChangesCount) {
+                if (changesCount == completedChangesCount && changesCount != 0) {
                     replicationCaughtUpSignal.countDown();
                 }
             }
         });
 
+        pusher.start();
+
         // wait until that doc is pushed
-        boolean didNotTimeOut = replicationCaughtUpSignal.await(5, TimeUnit.SECONDS);
+        boolean didNotTimeOut = replicationCaughtUpSignal.await(60, TimeUnit.SECONDS);
         assertTrue(didNotTimeOut);
 
         // at this point, we should have captured exactly 1 bulk docs request
@@ -1077,13 +1079,7 @@ public class ReplicationTest extends LiteTestCase {
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderRevDiffsAllMissing();
         mockHttpClient.setResponseDelayMilliseconds(250);
-        mockHttpClient.setResponder("_local", new CustomizableMockHttpClient.Responder() {
-            @Override
-            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
-                String json = "{\"error\":\"not_found\",\"reason\":\"missing\"}";
-                return CustomizableMockHttpClient.generateHttpResponseObject(404, "NOT FOUND", json);
-            }
-        });
+        mockHttpClient.addResponderFakeLocalDocumentUpdate404();
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
