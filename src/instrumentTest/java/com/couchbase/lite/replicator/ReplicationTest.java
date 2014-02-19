@@ -814,7 +814,7 @@ public class ReplicationTest extends LiteTestCase {
         Log.d("TEST", "testFetchRemoteCheckpointDoc() called");
         String dbUrlString = "http://fake.test-url.com:4984/fake/";
         URL remote = new URL(dbUrlString);
-        database.setLastSequence("1", remote, true);  // otherwise fetchRemoteCheckpoint won't contact remote
+        database.setLastSequence("1", "fake", true);  // otherwise fetchRemoteCheckpoint won't contact remote
         Replication replicator = new Pusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
 
         CountDownLatch doneSignal = new CountDownLatch(1);
