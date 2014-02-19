@@ -650,8 +650,8 @@ public class ReplicationTest extends LiteTestCase {
 
         // add replication observer
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
-        replicator.addChangeListener(replicationObserver);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+        replicator.addChangeListener(replicationFinishedObserver);
 
         // start the replicator
         replicator.start();
@@ -684,8 +684,8 @@ public class ReplicationTest extends LiteTestCase {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
-        ReplicationObserver replicationObserver = new ReplicationObserver(replicationDoneSignal);
-        replication.addChangeListener(replicationObserver);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+        replication.addChangeListener(replicationFinishedObserver);
 
         replication.start();
 
@@ -828,8 +828,8 @@ public class ReplicationTest extends LiteTestCase {
         Replication replicator = new Pusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
 
         CountDownLatch doneSignal = new CountDownLatch(1);
-        ReplicationObserver replicationObserver = new ReplicationObserver(doneSignal);
-        replicator.addChangeListener(replicationObserver);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(doneSignal);
+        replicator.addChangeListener(replicationFinishedObserver);
 
         replicator.fetchRemoteCheckpointDoc();
 
@@ -852,24 +852,31 @@ public class ReplicationTest extends LiteTestCase {
 
         URL remote = getReplicationURL();
 
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        Replication replicator = database.createPullReplication(remote);
+        replicator.setContinuous(true);
 
-        Replication repl = database.createPullReplication(remote);
-        repl.setContinuous(true);
-        repl.start();
+        // add replication observer
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        ReplicationRunningObserver replicationRunningObserver = new ReplicationRunningObserver(countDownLatch);
+        replicator.addChangeListener(replicationRunningObserver);
 
-        repl.goOffline();
-        Assert.assertTrue(repl.getStatus() == Replication.ReplicationStatus.REPLICATION_OFFLINE);
+        replicator.start();
+
+        boolean success = countDownLatch.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        replicator.goOffline();
+        Assert.assertTrue(replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_OFFLINE);
 
 
     }
 
-    class ReplicationObserver implements Replication.ChangeListener {
+    class ReplicationFinishedObserver implements Replication.ChangeListener {
 
         public boolean replicationFinished = false;
         private CountDownLatch doneSignal;
 
-        ReplicationObserver(CountDownLatch doneSignal) {
+        ReplicationFinishedObserver(CountDownLatch doneSignal) {
             this.doneSignal = doneSignal;
         }
 
@@ -890,6 +897,24 @@ public class ReplicationTest extends LiteTestCase {
 
         boolean isReplicationFinished() {
             return replicationFinished;
+        }
+
+    }
+
+    class ReplicationRunningObserver implements Replication.ChangeListener {
+
+        private CountDownLatch doneSignal;
+
+        ReplicationRunningObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+            Replication replicator = event.getSource();
+            if (replicator.isRunning()) {
+                doneSignal.countDown();
+            }
         }
 
     }
