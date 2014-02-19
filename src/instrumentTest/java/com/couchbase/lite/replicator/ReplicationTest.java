@@ -869,44 +869,6 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-    public void testFetchRemoteCheckpointDoc() throws Exception {
-
-        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
-            @Override
-            public HttpClient getHttpClient() {
-                CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
-                mockHttpClient.addResponderThrowExceptionAllRequests();
-                return mockHttpClient;
-            }
-        };
-
-        Log.d("TEST", "testFetchRemoteCheckpointDoc() called");
-        String dbUrlString = "http://fake.test-url.com:4984/fake/";
-        URL remote = new URL(dbUrlString);
-        database.setLastSequence("1", "fake", true);  // otherwise fetchRemoteCheckpoint won't contact remote
-        Replication replicator = new Pusher(database, remote, false, mockHttpClientFactory, manager.getWorkExecutor());
-
-        CountDownLatch doneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(doneSignal);
-        replicator.addChangeListener(replicationFinishedObserver);
-
-        replicator.fetchRemoteCheckpointDoc();
-
-        Log.d(TAG, "testFetchRemoteCheckpointDoc() Waiting for replicator to finish");
-        try {
-            boolean succeeded = doneSignal.await(300, TimeUnit.SECONDS);
-            assertTrue(succeeded);
-            Log.d(TAG, "testFetchRemoteCheckpointDoc() replicator finished");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        String errorMessage = "Since we are passing in a mock http client that always throws " +
-                "errors, we expect the replicator to be in an error state";
-        assertNotNull(errorMessage, replicator.getLastError());
-
-    }
-
     public void testGoOffline() throws Exception {
 
         URL remote = getReplicationURL();
