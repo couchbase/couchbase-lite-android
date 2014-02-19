@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -59,6 +60,64 @@ import java.util.concurrent.TimeUnit;
 public class ReplicationTest extends LiteTestCase {
 
     public static final String TAG = "Replicator";
+
+    /**
+     * Verify that running a one-shot push replication will complete when run against a
+     * mock server that returns 500 Internal Server errors on every request.
+     */
+    public void testOneShotReplicationErrorNotification() throws Throwable {
+
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderThrowExceptionAllRequests();
+
+        URL remote = getReplicationURL();
+
+        manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
+        Replication pusher = database.createPushReplication(remote);
+
+        runReplication(pusher);
+
+        assertTrue(pusher.getLastError() != null);
+
+    }
+
+    /**
+     * Verify that running a continuous push replication will emit a change while
+     * in an error state when run against a mock server that returns 500 Internal Server
+     * errors on every request.
+     */
+    public void testContinuousReplicationErrorNotification() throws Throwable {
+
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderThrowExceptionAllRequests();
+
+        URL remote = getReplicationURL();
+
+        manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
+        Replication pusher = database.createPushReplication(remote);
+        pusher.setContinuous(true);
+
+        // add replication observer
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        ReplicationErrorObserver replicationErrorObserver = new ReplicationErrorObserver(countDownLatch);
+        pusher.addChangeListener(replicationErrorObserver);
+
+        // start replication
+        pusher.start();
+
+        boolean success = countDownLatch.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+    }
+
+    private HttpClientFactory mockFactoryFactory(final CustomizableMockHttpClient mockHttpClient) {
+        return new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() {
+                return mockHttpClient;
+            }
+        };
+    }
 
     // Reproduces issue #167
     // https://github.com/couchbase/couchbase-lite-android/issues/167
@@ -913,6 +972,24 @@ public class ReplicationTest extends LiteTestCase {
         public void changed(Replication.ChangeEvent event) {
             Replication replicator = event.getSource();
             if (replicator.isRunning()) {
+                doneSignal.countDown();
+            }
+        }
+
+    }
+
+    class ReplicationErrorObserver implements Replication.ChangeListener {
+
+        private CountDownLatch doneSignal;
+
+        ReplicationErrorObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+            Replication replicator = event.getSource();
+            if (replicator.getLastError() != null) {
                 doneSignal.countDown();
             }
         }
