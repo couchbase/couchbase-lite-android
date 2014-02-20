@@ -878,6 +878,24 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
+    /**
+     * Test for the private goOffline() method, which still in "incubation".
+     * This test is brittle because it depends on the following observed behavior,
+     * which will probably change:
+     *
+     * - the replication will go into an "idle" state after starting the change listener
+     *
+     * Which does not match: https://github.com/couchbase/couchbase-lite-android/wiki/Replicator-State-Descriptions
+     *
+     * The reason we need to wait for it to go into the "idle" state, is otherwise the following sequence happens:
+     *
+     * 1) Call replicator.start()
+     * 2) Call replicator.goOffline()
+     * 3) Does not cancel changetracker, because changetracker is still null
+     * 4) After getting the remote sequence from http://sg/_local/.., it starts the ChangeTracker
+     * 5) Now the changetracker is running even though we've told it to go offline.
+     *
+     */
     public void testGoOffline() throws Exception {
 
         URL remote = getReplicationURL();
@@ -885,10 +903,11 @@ public class ReplicationTest extends LiteTestCase {
         Replication replicator = database.createPullReplication(remote);
         replicator.setContinuous(true);
 
-        // add replication observer
+        // add replication "idle" observer - exploit the fact that during observation,
+        // the replication will go into an "idle" state after starting the change listener.
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        ReplicationRunningObserver replicationRunningObserver = new ReplicationRunningObserver(countDownLatch);
-        replicator.addChangeListener(replicationRunningObserver);
+        ReplicationIdleObserver replicationObserver = new ReplicationIdleObserver(countDownLatch);
+        replicator.addChangeListener(replicationObserver);
 
         // add replication observer
         CountDownLatch countDownLatch2 = new CountDownLatch(1);
@@ -907,7 +926,6 @@ public class ReplicationTest extends LiteTestCase {
 
         boolean success2 = countDownLatch2.await(30, TimeUnit.SECONDS);
         assertTrue(success2);
-
 
     }
 
@@ -953,6 +971,24 @@ public class ReplicationTest extends LiteTestCase {
         public void changed(Replication.ChangeEvent event) {
             Replication replicator = event.getSource();
             if (replicator.isRunning()) {
+                doneSignal.countDown();
+            }
+        }
+
+    }
+
+    class ReplicationIdleObserver implements Replication.ChangeListener {
+
+        private CountDownLatch doneSignal;
+
+        ReplicationIdleObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+            Replication replicator = event.getSource();
+            if (replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
                 doneSignal.countDown();
             }
         }
