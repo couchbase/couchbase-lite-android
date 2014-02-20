@@ -355,6 +355,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // kick off a one time push replication to a mock
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderFakeLocalDocumentUpdate404();
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
