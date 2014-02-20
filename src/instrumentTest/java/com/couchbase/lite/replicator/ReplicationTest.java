@@ -1052,10 +1052,8 @@ public class ReplicationTest extends LiteTestCase {
         Map<String, Object> headers = new HashMap<String, Object>();
         headers.put("foo", "bar");
         puller.setHeaders(headers);
-        puller.start();
 
-        Thread.sleep(2000);
-        puller.stop();
+        runReplication(puller);
 
         boolean foundFooHeader = false;
         List<HttpRequest> requests = mockHttpClient.getCapturedRequests();
