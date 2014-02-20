@@ -890,6 +890,11 @@ public class ReplicationTest extends LiteTestCase {
         ReplicationRunningObserver replicationRunningObserver = new ReplicationRunningObserver(countDownLatch);
         replicator.addChangeListener(replicationRunningObserver);
 
+        // add replication observer
+        CountDownLatch countDownLatch2 = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(countDownLatch2);
+        replicator.addChangeListener(replicationFinishedObserver);
+
         replicator.start();
 
         boolean success = countDownLatch.await(30, TimeUnit.SECONDS);
@@ -897,11 +902,6 @@ public class ReplicationTest extends LiteTestCase {
 
         replicator.goOffline();
         Assert.assertTrue(replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_OFFLINE);
-
-        // add replication observer
-        CountDownLatch countDownLatch2 = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(countDownLatch2);
-        replicator.addChangeListener(replicationFinishedObserver);
 
         replicator.stop();
 
