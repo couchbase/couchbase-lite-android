@@ -108,6 +108,8 @@ public class ReplicationTest extends LiteTestCase {
         boolean success = countDownLatch.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
+        pusher.stop();
+
     }
 
     private HttpClientFactory mockFactoryFactory(final CustomizableMockHttpClient mockHttpClient) {
@@ -212,6 +214,8 @@ public class ReplicationTest extends LiteTestCase {
             }
         }
         assertEquals(1, numBulkDocRequests);
+
+        pusher.stop();
 
 
     }
@@ -599,6 +603,8 @@ public class ReplicationTest extends LiteTestCase {
         allDocsLiveQuery.start();
 
         doPullReplication();
+
+        allDocsLiveQuery.stop();
 
     }
 
