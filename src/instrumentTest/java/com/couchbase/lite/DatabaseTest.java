@@ -37,6 +37,30 @@ public class DatabaseTest extends LiteTestCase {
 
     }
 
+    public void testPruneRevsToMaxDepthViaCompact() throws Exception {
+
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("testName", "testDatabaseCompaction");
+        properties.put("tag", 1337);
+
+        Document doc=createDocumentWithProperties(database, properties);
+        SavedRevision rev = doc.getCurrentRevision();
+
+        database.setMaxRevTreeDepth(1);
+        for (int i=0; i<10; i++) {
+            Map<String,Object> properties2 = new HashMap<String,Object>(properties);
+            properties2.put("tag", i);
+            rev = rev.createRevision(properties2);
+        }
+
+        database.compact();
+
+        Document fetchedDoc = database.getDocument(doc.getId());
+        List<SavedRevision> revisions = fetchedDoc.getRevisionHistory();
+        assertEquals(1, revisions.size());
+
+    }
+
     /**
      * When making inserts in a transaction, the change notifications should
      * be batched into a single change notification (rather than a change notification
