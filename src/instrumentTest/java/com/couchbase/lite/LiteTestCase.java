@@ -284,6 +284,16 @@ public abstract class LiteTestCase extends TestCase {
         return sendBody(method, path, null, expectedStatus, expectedResult);
     }
 
+    public static void createDocuments(final Database db, final int n) {
+        //TODO should be changed to use db.runInTransaction
+        for (int i=0; i<n; i++) {
+            Map<String,Object> properties = new HashMap<String,Object>();
+            properties.put("testName", "testDatabase");
+            properties.put("sequence", i);
+            createDocumentWithProperties(db, properties);
+        }
+    };
+
     public static Document createDocumentWithProperties(Database db, Map<String,Object>  properties) {
         Document  doc = db.createDocument();
         Assert.assertNotNull(doc);

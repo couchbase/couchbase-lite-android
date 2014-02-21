@@ -43,15 +43,7 @@ public class ApiTest extends LiteTestCase {
 
     };
 
-    static void createDocuments(final Database db, final int n) {
-        //TODO should be changed to use db.runInTransaction
-        for (int i=0; i<n; i++) {
-            Map<String,Object> properties = new HashMap<String,Object>();
-            properties.put("testName", "testDatabase");
-            properties.put("sequence", i);
-            createDocumentWithProperties(db, properties);
-        }
-    };
+
 
     //SERVER & DOCUMENTS
 
