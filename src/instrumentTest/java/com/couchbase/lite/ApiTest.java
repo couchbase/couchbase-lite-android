@@ -793,20 +793,16 @@ public class ApiTest extends LiteTestCase {
         boolean success = doneSignal.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
-        Log.d(TAG, "call stop()");
-
         query.stop();
 
-        Log.d(TAG, "called stop()");
+        // after stopping the query, we should not get any more livequery callbacks, even
+        // if we add more docs to the database and pause (to give time for potential callbacks)
 
         int numTimesCallbackCalled = atomicInteger.get();
-        Log.d(TAG, "numTimesCallbackCalled: " + numTimesCallbackCalled);
-
         for (int i=0; i<10; i++) {
             createDocuments(db, 1);
             Thread.sleep(200);
         }
-
         assertEquals(numTimesCallbackCalled, atomicInteger.get());
 
 
