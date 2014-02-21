@@ -3,6 +3,9 @@ package com.couchbase.lite;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DatabaseTest extends LiteTestCase {
 
@@ -31,6 +34,65 @@ public class DatabaseTest extends LiteTestCase {
 
         numPruned = database.pruneRevsToMaxDepth(1);
         assertEquals(0, numPruned);
+
+    }
+
+    /**
+     * When making inserts in a transaction, the change notifications should
+     * be batched into a single change notification (rather than a change notification
+     * for each insert)
+     */
+    public void testChangeListenerNotificationBatching() throws Exception {
+
+        final int numDocs = 50;
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                atomicInteger.incrementAndGet();
+            }
+        });
+
+        database.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                createDocuments(database, numDocs);
+                countDownLatch.countDown();
+                return true;
+            }
+        });
+
+        boolean success = countDownLatch.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        assertEquals(1, atomicInteger.get());
+
+
+    }
+
+    /**
+     * When making inserts outside of a transaction, there should be a change notification
+     * for each insert (no batching)
+     */
+    public void testChangeListenerNotification() throws Exception {
+
+        final int numDocs = 50;
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                atomicInteger.incrementAndGet();
+            }
+        });
+
+        createDocuments(database, numDocs);
+
+        assertEquals(numDocs, atomicInteger.get());
+
 
     }
 
