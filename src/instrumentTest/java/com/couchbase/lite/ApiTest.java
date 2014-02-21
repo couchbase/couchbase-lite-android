@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import android.content.res.Resources;
+
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -19,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -741,6 +744,72 @@ public class ApiTest extends LiteTestCase {
 
     public void testLiveQueryStart() throws Exception {
         runLiveQuery("start");
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/84
+     */
+    public void testLiveQueryStop() throws Exception {
+
+        final int kNDocs = 100;
+
+        final CountDownLatch doneSignal = new CountDownLatch(1);
+
+        final Database db = startDatabase();
+
+        // run a live query
+        View view = db.getView("vu");
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("sequence"), null);
+            }
+        }, "1");
+        final LiveQuery query = view.createQuery().toLiveQuery();
+
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+
+        // install a change listener which decrements countdown latch when it sees a new
+        // key from the list of expected keys
+        final LiveQuery.ChangeListener changeListener = new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                Log.d(TAG, "changed called, atomicInteger.incrementAndGet");
+                atomicInteger.incrementAndGet();
+                assertNull(event.getError());
+                if (event.getRows().getCount() == kNDocs) {
+                    doneSignal.countDown();
+                }
+            }
+        };
+        query.addChangeListener(changeListener);
+
+        // create the docs that will cause the above change listener to decrement countdown latch
+        createDocumentsAsync(db, kNDocs);
+
+        query.start();
+
+        // wait until the livequery is called back with kNDocs docs
+        boolean success = doneSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        Log.d(TAG, "call stop()");
+
+        query.stop();
+
+        Log.d(TAG, "called stop()");
+
+        int numTimesCallbackCalled = atomicInteger.get();
+        Log.d(TAG, "numTimesCallbackCalled: " + numTimesCallbackCalled);
+
+        for (int i=0; i<10; i++) {
+            createDocuments(db, 1);
+            Thread.sleep(200);
+        }
+
+        assertEquals(numTimesCallbackCalled, atomicInteger.get());
+
+
     }
 
     public void runLiveQuery(String methodNameToCall) throws Exception {
