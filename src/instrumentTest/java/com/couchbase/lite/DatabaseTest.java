@@ -1,5 +1,8 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.replicator.Replication;
+
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +120,31 @@ public class DatabaseTest extends LiteTestCase {
 
         assertEquals(numDocs, atomicInteger.get());
 
+
+    }
+
+    public void testGetActiveReplications() throws Exception {
+
+        URL remote = getReplicationURL();
+        Replication replication = (Replication) database.createPullReplication(remote);
+
+        assertEquals(0, database.getAllReplications().size());
+        assertEquals(0, database.getActiveReplications().size());
+
+        replication.start();
+
+        assertEquals(1, database.getAllReplications().size());
+        assertEquals(1, database.getActiveReplications().size());
+
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+        replication.addChangeListener(replicationFinishedObserver);
+
+        boolean success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        assertEquals(1, database.getAllReplications().size());
+        assertEquals(0, database.getActiveReplications().size());
 
     }
 
