@@ -599,14 +599,38 @@ public class RouterTest extends LiteTestCase {
 
         send("PUT", "/db", Status.CREATED, null);
 
-
         Map<String, Object> replicateJsonMap = getPushReplicationParsedJson();
-
 
         Log.v(TAG, "map: " + replicateJsonMap);
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
         Log.v(TAG, "result: " + result);
         assertNotNull(result.get("session_id"));
+
+        boolean success = waitForReplicationToFinish();
+        assertTrue(success);
+
+    }
+
+    private boolean waitForReplicationToFinish() throws InterruptedException {
+        int maxTimeToWaitMs = 60 * 1000;
+        int timeWaited = 0;
+        boolean success = true;
+
+        ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
+        while (activeTasks.size() > 0 || timeWaited > maxTimeToWaitMs) {
+            int timeToWait = 1000;
+            Thread.sleep(timeToWait);
+            activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
+            timeWaited += timeToWait;
+        }
+
+        if (timeWaited > maxTimeToWaitMs) {
+            success = false;
+        }
+        return success;
+
+
+
 
     }
 
@@ -621,7 +645,8 @@ public class RouterTest extends LiteTestCase {
         Log.v(TAG, "result: " + result);
         assertNotNull(result.get("session_id"));
 
-
+        boolean success = waitForReplicationToFinish();
+        assertTrue(success);
 
     }
 
