@@ -1139,7 +1139,7 @@ public class ReplicationTest extends LiteTestCase {
                 if (capturedRequest instanceof HttpPost) {
                     HttpPost capturedPostRequest = (HttpPost) capturedRequest;
                     if (capturedPostRequest.getURI().getPath().endsWith("_bulk_docs")) {
-                        ArrayList docs = extractDocsFromBulkDocsPost(capturedRequest);
+                        ArrayList docs = CustomizableMockHttpClient.extractDocsFromBulkDocsPost(capturedRequest);
                         if (docs.size() != 1) {
                             Log.d(Database.TAG, "fails");
                         }
