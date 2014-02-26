@@ -360,14 +360,7 @@ public class ReplicationTest extends LiteTestCase {
         // kick off a one time push replication to a mock
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderFakeLocalDocumentUpdate404();
-
-        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
-            @Override
-            public HttpClient getHttpClient() {
-                return mockHttpClient;
-            }
-        };
-
+        HttpClientFactory mockHttpClientFactory = mockFactoryFactory(mockHttpClient);
         URL remote = getReplicationURL();
 
         manager.setDefaultHttpClientFactory(mockHttpClientFactory);
@@ -382,10 +375,7 @@ public class ReplicationTest extends LiteTestCase {
             if (capturedRequest instanceof HttpPost) {
                 HttpPost capturedPostRequest = (HttpPost) capturedRequest;
                 if (capturedPostRequest.getURI().getPath().endsWith("_bulk_docs")) {
-                    ByteArrayEntity entity = (ByteArrayEntity) capturedPostRequest.getEntity();
-                    InputStream contentStream = entity.getContent();
-                    Map<String,Object> body = Manager.getObjectMapper().readValue(contentStream, Map.class);
-                    ArrayList docs = (ArrayList) body.get("docs");
+                    ArrayList docs = CustomizableMockHttpClient.extractDocsFromBulkDocsPost(capturedRequest);
                     String msg = "# of bulk docs pushed should be <= INBOX_CAPACITY";
                     assertTrue(msg, docs.size() <= Replication.INBOX_CAPACITY);
                     numDocsSent += docs.size();
@@ -1087,6 +1077,133 @@ public class ReplicationTest extends LiteTestCase {
         // Make sure the conflict was resolved locally.
         assertEquals(1, doc.getConflictingRevisions().size());
     }
+
+    public void testOnlineOfflinePusher() throws Exception {
+
+        URL remote = getReplicationURL();
+
+        // mock sync gateway
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderFakeLocalDocumentUpdate404();
+        mockHttpClient.addResponderRevDiffsSmartResponder();
+
+        HttpClientFactory mockHttpClientFactory = mockFactoryFactory(mockHttpClient);
+        manager.setDefaultHttpClientFactory(mockHttpClientFactory);
+
+        // create a push replication
+        Replication pusher = database.createPushReplication(remote);
+        pusher.setContinuous(true);
+        pusher.start();
+
+
+        for (int i=0; i<5; i++) {
+
+            Log.d(Database.TAG, "testOnlineOfflinePusher, i: " + i);
+
+            // put the replication offline
+            putReplicationOffline(pusher);
+
+            // add a document
+            String docFieldName = "testOnlineOfflinePusher" + i;
+            String docFieldVal = "foo" + i;
+            Map<String,Object> properties = new HashMap<String, Object>();
+            properties.put(docFieldName, docFieldVal);
+            createDocumentWithProperties(database, properties);
+
+            // add a response listener to wait for a bulk_docs request from the pusher
+            final CountDownLatch gotBulkDocsRequest = new CountDownLatch(1);
+            CustomizableMockHttpClient.ResponseListener bulkDocsListener = new CustomizableMockHttpClient.ResponseListener() {
+                @Override
+                public void responseSent(HttpUriRequest httpUriRequest, HttpResponse response) {
+                    if (httpUriRequest.getURI().getPath().endsWith("_bulk_docs")) {
+                        gotBulkDocsRequest.countDown();
+                    }
+
+                }
+            };
+            mockHttpClient.addResponseListener(bulkDocsListener);
+
+            // put the replication online, which should trigger it to send outgoing bulk_docs request
+            putReplicationOnline(pusher);
+
+            // wait until we get a bulk docs request
+            boolean succeeded = gotBulkDocsRequest.await(30, TimeUnit.SECONDS);
+            assertTrue(succeeded);
+            mockHttpClient.removeResponseListener(bulkDocsListener);
+
+            // make sure that doc was pushed out in a bulk docs request
+            boolean foundExpectedDoc = false;
+            List<HttpRequest> capturedRequests = mockHttpClient.getCapturedRequests();
+            for (HttpRequest capturedRequest : capturedRequests) {
+                Log.d(Database.TAG, "captured request: " + capturedRequest);
+                if (capturedRequest instanceof HttpPost) {
+                    HttpPost capturedPostRequest = (HttpPost) capturedRequest;
+                    if (capturedPostRequest.getURI().getPath().endsWith("_bulk_docs")) {
+                        ArrayList docs = extractDocsFromBulkDocsPost(capturedRequest);
+                        if (docs.size() != 1) {
+                            Log.d(Database.TAG, "fails");
+                        }
+                        assertEquals(1, docs.size());
+                        Map<String, Object> doc = (Map) docs.get(0);
+                        assertEquals(docFieldVal, doc.get(docFieldName));
+                        foundExpectedDoc = true;
+                    }
+                }
+            }
+
+            assertTrue(foundExpectedDoc);
+
+            mockHttpClient.clearCapturedRequests();
+
+        }
+
+
+
+    }
+
+    private void putReplicationOffline(Replication replication) throws InterruptedException {
+
+        final CountDownLatch wentOffline = new CountDownLatch(1);
+        Replication.ChangeListener offlineChangeListener = new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (!event.getSource().online) {
+                    wentOffline.countDown();
+                }
+            }
+        };
+        replication.addChangeListener(offlineChangeListener);
+
+        replication.goOffline();
+        boolean succeeded = wentOffline.await(30, TimeUnit.SECONDS);
+        assertTrue(succeeded);
+
+        replication.removeChangeListener(offlineChangeListener);
+
+    }
+
+    private void putReplicationOnline(Replication replication) throws InterruptedException {
+
+        final CountDownLatch wentOnline = new CountDownLatch(1);
+        Replication.ChangeListener onlineChangeListener = new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().online) {
+                    wentOnline.countDown();
+                }
+            }
+        };
+        replication.addChangeListener(onlineChangeListener);
+
+        replication.goOnline();
+        boolean succeeded = wentOnline.await(30, TimeUnit.SECONDS);
+        assertTrue(succeeded);
+
+        replication.removeChangeListener(onlineChangeListener);
+
+    }
+
+
 
     /**
      * Whenever posting information directly to sync gateway via HTTP, the client
