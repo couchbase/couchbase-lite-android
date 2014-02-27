@@ -518,17 +518,26 @@ public class ReplicationTest extends LiteTestCase {
         addDocWithId(doc1Id, "attachment.png", false);
         addDocWithId(doc2Id, "attachment2.png", false);
 
+        Log.d(TAG, "Doing pull replication");
         doPullReplication();
+        Log.d(TAG, "Finished pull replication");
 
+        assertNotNull(database);
         Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
         Document doc1 = database.getDocument(doc1Id);
+        Log.d(TAG, "doc1" + doc1);
         assertNotNull(doc1);
+        assertNotNull(doc1.getCurrentRevisionId());
         assertTrue(doc1.getCurrentRevisionId().startsWith("1-"));
+        assertNotNull(doc1.getProperties());
         assertEquals(1, doc1.getProperties().get("foo"));
 
         Log.d(TAG, "Fetching doc2 via id: " + doc2Id);
                 Document doc2 = database.getDocument(doc2Id);
         assertNotNull(doc2);
+        assertNotNull(doc2.getCurrentRevisionId());
+        assertNotNull(doc2.getProperties());
+
         assertTrue(doc2.getCurrentRevisionId().startsWith("1-"));
         assertEquals(1, doc2.getProperties().get("foo"));
 
@@ -539,7 +548,9 @@ public class ReplicationTest extends LiteTestCase {
         workaroundSyncGatewayRaceCondition();
 
         // do another pull
+        Log.d(TAG, "Doing 2nd pull replication");
         doPullReplication();
+        Log.d(TAG, "Finished 2nd pull replication");
 
         // make sure it has the latest properties
         Document doc1Fetched = database.getDocument(doc1Id);
