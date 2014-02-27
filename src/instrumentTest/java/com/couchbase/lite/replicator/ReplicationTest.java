@@ -33,6 +33,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -787,30 +788,14 @@ public class ReplicationTest extends LiteTestCase {
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", destUrl, facebookTokenInfo, Status.OK, null);
         Log.v(TAG, String.format("result %s", result));
 
-        // start a replicator
+        // run replicator and make sure it has an error
         Map<String,Object> properties = getPullReplicationParsedJson();
         Replication replicator = manager.getReplicator(properties);
-        replicator.start();
+        runReplication(replicator);
+        assertNotNull(replicator.getLastError());
+        assertTrue(replicator.getLastError() instanceof HttpResponseException);
+        assertEquals(401 /* unauthorized */, ((HttpResponseException)replicator.getLastError()).getStatusCode());
 
-        boolean foundError = false;
-        for (int i=0; i<10; i++) {
-
-            // wait a few seconds
-            Thread.sleep(5 * 1000);
-
-            // expect an error since it will try to contact the sync gateway with this bogus login,
-            // and the sync gateway will reject it.
-            ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
-            Log.d(TAG, "activeTasks: " + activeTasks);
-            Map<String,Object> activeTaskReplication = (Map<String,Object>) activeTasks.get(0);
-            foundError = (activeTaskReplication.get("error") != null);
-            if (foundError == true) {
-                break;
-            }
-
-        }
-
-        assertTrue(foundError);
 
     }
 
