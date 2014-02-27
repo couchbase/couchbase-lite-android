@@ -518,9 +518,7 @@ public class ReplicationTest extends LiteTestCase {
         addDocWithId(doc1Id, "attachment.png", false);
         addDocWithId(doc2Id, "attachment2.png", false);
 
-        Log.d(TAG, "Doing pull replication");
         doPullReplication();
-        Log.d(TAG, "Finished pull replication");
 
         assertNotNull(database);
         Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
@@ -628,7 +626,10 @@ public class ReplicationTest extends LiteTestCase {
         final Replication repl = (Replication) database.createPullReplication(remote);
         repl.setContinuous(false);
 
+        Log.d(TAG, "Doing pull replication with: " + repl);
         runReplication(repl);
+        Log.d(TAG, "Finished pull replication with: " + repl);
+
 
     }
 

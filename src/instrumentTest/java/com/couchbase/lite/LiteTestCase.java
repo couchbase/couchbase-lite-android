@@ -398,12 +398,12 @@ public abstract class LiteTestCase extends TestCase {
             Replication replicator = event.getSource();
             if (!replicator.isRunning()) {
                 replicationFinished = true;
-                String msg = String.format("myobserver.update called, set replicationFinished to: %b", replicationFinished);
+                String msg = String.format("ReplicationFinishedObserver.changed called, set replicationFinished to: %b", replicationFinished);
                 Log.d(TAG, msg);
                 doneSignal.countDown();
             }
             else {
-                String msg = String.format("myobserver.update called, but replicator still running, so ignore it");
+                String msg = String.format("ReplicationFinishedObserver.changed called, but replicator still running, so ignore it");
                 Log.d(TAG, msg);
             }
         }
