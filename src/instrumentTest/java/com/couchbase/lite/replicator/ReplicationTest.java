@@ -1092,7 +1092,9 @@ public class ReplicationTest extends LiteTestCase {
      */
     private void workaroundSyncGatewayRaceCondition() {
         try {
-            Thread.sleep(7 * 1000);
+            // I had to up this to 20 seconds to (try to) work on the Jenkins server,
+            // no idea why it needs this much time.
+            Thread.sleep(20 * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
