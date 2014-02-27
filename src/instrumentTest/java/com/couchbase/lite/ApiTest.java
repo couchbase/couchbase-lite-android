@@ -777,22 +777,31 @@ public class ApiTest extends LiteTestCase {
         query.addChangeListener(changeListener);
 
         // create the docs that will cause the above change listener to decrement countdown latch
+        Log.d(Database.TAG, "testLiveQueryStop: createDocumentsAsync()");
+
         createDocumentsAsync(db, kNDocs);
 
+        Log.d(Database.TAG, "testLiveQueryStop: calling query.start()");
         query.start();
 
         // wait until the livequery is called back with kNDocs docs
-        boolean success = doneSignal.await(30, TimeUnit.SECONDS);
+        Log.d(Database.TAG, "testLiveQueryStop: waiting for doneSignal");
+        boolean success = doneSignal.await(120, TimeUnit.SECONDS);
         assertTrue(success);
 
+        Log.d(Database.TAG, "testLiveQueryStop: waiting for query.stop()");
         query.stop();
 
         // after stopping the query, we should not get any more livequery callbacks, even
         // if we add more docs to the database and pause (to give time for potential callbacks)
 
         int numTimesCallbackCalled = atomicInteger.get();
+        Log.d(Database.TAG, "testLiveQueryStop: numTimesCallbackCalled is: " + numTimesCallbackCalled + ".  Now adding docs");
+
         for (int i=0; i<10; i++) {
             createDocuments(db, 1);
+            Log.d(Database.TAG, "testLiveQueryStop: add a document.  atomicInteger.get(): " + atomicInteger.get());
+            assertEquals(numTimesCallbackCalled, atomicInteger.get());
             Thread.sleep(200);
         }
         assertEquals(numTimesCallbackCalled, atomicInteger.get());
