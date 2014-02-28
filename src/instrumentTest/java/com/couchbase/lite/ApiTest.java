@@ -31,18 +31,6 @@ public class ApiTest extends LiteTestCase {
 
     private int changeCount = 0;
 
-    static void createDocumentsAsync(final Database db, final int n) {
-        db.runAsync(new AsyncTask() {
-            @Override
-            public void run(Database database) {
-                db.beginTransaction();
-                createDocuments(db, n);
-                db.endTransaction(true);
-            }
-        });
-
-    };
-
 
 
     //SERVER & DOCUMENTS

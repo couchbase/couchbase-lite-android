@@ -297,6 +297,19 @@ public abstract class LiteTestCase extends TestCase {
         }
     };
 
+    static void createDocumentsAsync(final Database db, final int n) {
+        db.runAsync(new AsyncTask() {
+            @Override
+            public void run(Database database) {
+                db.beginTransaction();
+                createDocuments(db, n);
+                db.endTransaction(true);
+            }
+        });
+
+    };
+
+
     public static Document createDocumentWithProperties(Database db, Map<String,Object>  properties) {
         Document  doc = db.createDocument();
         Assert.assertNotNull(doc);
