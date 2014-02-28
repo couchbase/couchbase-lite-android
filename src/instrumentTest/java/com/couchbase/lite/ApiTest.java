@@ -726,6 +726,10 @@ public class ApiTest extends LiteTestCase {
         runLiveQuery("start");
     }
 
+    public void testLiveQueryStartWaitForRows() throws Exception {
+        runLiveQuery("startWaitForRows");
+    }
+
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/84
      */
@@ -797,6 +801,12 @@ public class ApiTest extends LiteTestCase {
 
     }
 
+    public void testLiveQueryRestart() throws Exception {
+
+        // kick something off that will s
+
+    }
+
     public void runLiveQuery(String methodNameToCall) throws Exception {
 
         final Database db = startDatabase();
@@ -846,6 +856,9 @@ public class ApiTest extends LiteTestCase {
         if (methodNameToCall.equals("start")) {
             // start the livequery running asynchronously
             query.start();
+        } else if (methodNameToCall.equals("startWaitForRows")) {
+            query.start();
+            query.waitForRows();
         } else {
             assertNull(query.getRows());
             query.run();  // this will block until the query completes
