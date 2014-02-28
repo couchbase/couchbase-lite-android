@@ -229,11 +229,14 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         URL testURL = getReplicationURL();
 
+        final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
+
         ChangeTrackerClient client = new ChangeTrackerClient() {
 
             @Override
             public void changeTrackerStopped(ChangeTracker tracker) {
                 Log.v(TAG, "changeTrackerStopped");
+                changeTrackerFinishedSignal.countDown();
             }
 
             @Override
@@ -250,15 +253,9 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, client);
 
-        BackgroundTask task = new BackgroundTask() {
-            @Override
-            public void run() {
-                changeTracker.start();
-            }
-        };
-        task.execute();
+        changeTracker.start();
 
-        // sleep for 10 seconds
+        // sleep for a few seconds
         Thread.sleep(5 * 1000);
 
         // make sure we got less than 10 requests in those 10 seconds (if it was hammering, we'd get a lot more)
@@ -284,6 +281,14 @@ public class ChangeTrackerTest extends LiteTestCase {
         // the backoff numAttempts should have been reset to 0
         assertTrue(changeTracker.backoff.getNumAttempts() == 0);
 
+        changeTracker.stop();
+
+        try {
+            boolean success = changeTrackerFinishedSignal.await(300, TimeUnit.SECONDS);
+            assertTrue(success);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
 
     }
