@@ -518,6 +518,9 @@ public class ReplicationTest extends LiteTestCase {
         addDocWithId(doc1Id, "attachment.png", false);
         addDocWithId(doc2Id, "attachment2.png", false);
 
+        workaroundSyncGatewayRaceCondition();
+        workaroundSyncGatewayRaceCondition();
+
         doPullReplication();
 
         assertNotNull(database);
@@ -543,6 +546,8 @@ public class ReplicationTest extends LiteTestCase {
         String docJson = String.format("{\"foo\":2,\"bar\":true,\"_rev\":\"%s\",\"_id\":\"%s\"}", doc1.getCurrentRevisionId(), doc1.getId());
         pushDocumentToSyncGateway(doc1.getId(), docJson);
 
+        workaroundSyncGatewayRaceCondition();
+        workaroundSyncGatewayRaceCondition();
         workaroundSyncGatewayRaceCondition();
 
         // do another pull
