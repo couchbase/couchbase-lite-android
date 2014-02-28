@@ -518,9 +518,6 @@ public class ReplicationTest extends LiteTestCase {
         addDocWithId(doc1Id, "attachment.png", false);
         addDocWithId(doc2Id, "attachment2.png", false);
 
-        workaroundSyncGatewayRaceCondition();
-        workaroundSyncGatewayRaceCondition();
-
         doPullReplication();
 
         assertNotNull(database);
@@ -545,10 +542,6 @@ public class ReplicationTest extends LiteTestCase {
         // update doc1 on sync gateway
         String docJson = String.format("{\"foo\":2,\"bar\":true,\"_rev\":\"%s\",\"_id\":\"%s\"}", doc1.getCurrentRevisionId(), doc1.getId());
         pushDocumentToSyncGateway(doc1.getId(), docJson);
-
-        workaroundSyncGatewayRaceCondition();
-        workaroundSyncGatewayRaceCondition();
-        workaroundSyncGatewayRaceCondition();
 
         // do another pull
         Log.d(TAG, "Doing 2nd pull replication");
@@ -1098,9 +1091,7 @@ public class ReplicationTest extends LiteTestCase {
      */
     private void workaroundSyncGatewayRaceCondition() {
         try {
-            // I had to up this to 20 seconds to (try to) work on the Jenkins server,
-            // no idea why it needs this much time.
-            Thread.sleep(20 * 1000);
+            Thread.sleep(5 * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
