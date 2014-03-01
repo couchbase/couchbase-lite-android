@@ -515,7 +515,9 @@ public class ReplicationTest extends LiteTestCase {
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
         final String doc2Id = String.format("doc2-%s", docIdTimestamp);
 
+        Log.d(TAG, "Adding " + doc1Id + " directly to sync gateway");
         addDocWithId(doc1Id, "attachment.png", false);
+        Log.d(TAG, "Adding " + doc2Id + " directly to sync gateway");
         addDocWithId(doc2Id, "attachment2.png", false);
 
         doPullReplication();
