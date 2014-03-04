@@ -14,7 +14,7 @@ dependencies {
     // because of a "compile" directive to explicitly include the jar.
     instrumentTestCompile fileTree(dir: 'libs', include: 'td_collator_so.jar')
 
-    compile 'com.couchbase.lite:java-core:1.0.0-beta3rc1'
+    compile 'com.couchbase.lite:java-core:' + System.getenv("UPLOAD_VERSION_CBLITE")
 
 
 }
