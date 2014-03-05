@@ -72,30 +72,13 @@ You should be able to import the project directly into Android Studio:
 
 After it's finished with the import, it should look [like this](http://cl.ly/image/3R3X0Q3o1H09)
 
-## Working around Import bugs
-
-At this point, unfortunately, if you open the `CBLServer` class, it will look like [this](http://cl.ly/image/2C1M0F1T330t).  Android Studio will say it cannot resolve some objects.  This seems to be due to a bug in the import process.  
-
-To fix this:
-
-* Go to File / Project Structure
-* Choose Modules
-* Choose the CBLite module
-* Change the jackson-core-asl-1.9.2 and jackson-mapper-asl-1.9.2 dependencies from "test" to "compile" [screenshot](http://cl.ly/image/16113r0M2J2G)
-* Hit Apply
-
-_Note_: you may need to do this in other places for other libraries if you run into situations where Android Studio cannot resolve code.
-
-_Note_: the above workarounds are only needed for Android Studio, and even without these the command line gradle builds should still work.
-
 ## Running tests
 
-See the [Running the Test Suite](https://github.com/couchbase/couchbase-lite-android/wiki/Running-the-test-suite) wiki page.
+There are two wiki pages which describe how to run the tests:
 
-## Building and deploying maven artifacts.
+* [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android)  (newer)
 
-If you want to host and deploy your own maven artifacts, see the `upload_android_artifacts.sh` script.
-
+* [Running the Test Suite](https://github.com/couchbase/couchbase-lite-android/wiki/Running-the-test-suite) wiki page.
 
 ## Example Apps
 
@@ -110,7 +93,6 @@ If you want to host and deploy your own maven artifacts, see the `upload_android
 ## Requirements
 
 - Android 2.3 Gingerbread (API level 9) and above.
-
 
 ## License
 - Apache License 2.0
