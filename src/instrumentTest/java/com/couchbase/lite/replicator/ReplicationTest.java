@@ -261,14 +261,16 @@ public class ReplicationTest extends LiteTestCase {
         final boolean continuous = false;
         final Replication repl = database.createPushReplication(remote);
         repl.setContinuous(continuous);
-        repl.setCreateTarget(true);
+        if (!isSyncGateway(remote)) {
+            repl.setCreateTarget(true);
+            Assert.assertTrue(repl.shouldCreateTarget());
+        }
 
         // Check the replication's properties:
         Assert.assertEquals(database, repl.getLocalDatabase());
         Assert.assertEquals(remote, repl.getRemoteUrl());
         Assert.assertFalse(repl.isPull());
         Assert.assertFalse(repl.isContinuous());
-        Assert.assertTrue(repl.shouldCreateTarget());
         Assert.assertNull(repl.getFilter());
         Assert.assertNull(repl.getFilterParams());
         // TODO: CAssertNil(r1.doc_ids);
@@ -296,7 +298,9 @@ public class ReplicationTest extends LiteTestCase {
         // re-run push replication
         final Replication repl2 = database.createPushReplication(remote);
         repl2.setContinuous(continuous);
-        repl2.setCreateTarget(true);
+        if (!isSyncGateway(remote)) {
+            repl2.setCreateTarget(true);
+        }
         runReplication(repl2);
 
         // make sure the doc has been added
@@ -304,6 +308,10 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "testPusher() finished");
 
+    }
+
+    private boolean isSyncGateway(URL remote) {
+        return (remote.getPort() == 4984 || remote.getPort() == 4984);
     }
 
     private void verifyRemoteDocExists(URL remote, final String doc1Id) throws MalformedURLException {
