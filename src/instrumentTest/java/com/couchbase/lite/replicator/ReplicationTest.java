@@ -261,7 +261,6 @@ public class ReplicationTest extends LiteTestCase {
         final boolean continuous = false;
         final Replication repl = database.createPushReplication(remote);
         repl.setContinuous(continuous);
-
         repl.setCreateTarget(true);
 
         // Check the replication's properties:
@@ -284,9 +283,30 @@ public class ReplicationTest extends LiteTestCase {
 
         runReplication(repl);
 
-
         // make sure doc1 is there
-        // TODO: make sure doc2 is there (refactoring needed)
+        verifyRemoteDocExists(remote, doc1Id);
+
+        // add doc3
+        documentProperties = new HashMap<String, Object>();
+        String doc3Id = String.format("doc3-%s", docIdTimestamp);
+        Document doc3 = database.getDocument(doc3Id);
+        documentProperties.put("bat", 677);
+        doc3.putProperties(documentProperties);
+
+        // re-run push replication
+        final Replication repl2 = database.createPushReplication(remote);
+        repl2.setContinuous(continuous);
+        repl2.setCreateTarget(true);
+        runReplication(repl2);
+
+        // make sure the doc has been added
+        verifyRemoteDocExists(remote, doc3Id);
+
+        Log.d(TAG, "testPusher() finished");
+
+    }
+
+    private void verifyRemoteDocExists(URL remote, final String doc1Id) throws MalformedURLException {
         URL replicationUrlTrailing = new URL(String.format("%s/", remote.toExternalForm()));
         final URL pathToDoc = new URL(replicationUrlTrailing, doc1Id);
         Log.d(TAG, "Send http request to " + pathToDoc);
@@ -297,7 +317,7 @@ public class ReplicationTest extends LiteTestCase {
             @Override
             public void run() {
 
-                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
+                HttpClient httpclient = new DefaultHttpClient();
 
                 HttpResponse response;
                 String responseString = null;
@@ -339,10 +359,6 @@ public class ReplicationTest extends LiteTestCase {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
-        Log.d(TAG, "testPusher() finished");
-
     }
 
     /**

@@ -338,6 +338,7 @@ public abstract class LiteTestCase extends TestCase {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
+
         ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
         replication.addChangeListener(replicationFinishedObserver);
 
@@ -357,6 +358,9 @@ public abstract class LiteTestCase extends TestCase {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        replication.removeChangeListener(replicationFinishedObserver);
+
 
 
     }
@@ -409,6 +413,11 @@ public abstract class LiteTestCase extends TestCase {
         @Override
         public void changed(Replication.ChangeEvent event) {
             Replication replicator = event.getSource();
+            Log.d(TAG, replicator + " changed.  " + replicator.getCompletedChangesCount() + " / " + replicator.getChangesCount());
+            Assert.assertTrue(replicator.getCompletedChangesCount() <= replicator.getChangesCount());
+            if (replicator.getCompletedChangesCount() > replicator.getChangesCount()) {
+                throw new RuntimeException("replicator.getCompletedChangesCount() > replicator.getChangesCount()");
+            }
             if (!replicator.isRunning()) {
                 replicationFinished = true;
                 String msg = String.format("ReplicationFinishedObserver.changed called, set replicationFinished to: %b", replicationFinished);
