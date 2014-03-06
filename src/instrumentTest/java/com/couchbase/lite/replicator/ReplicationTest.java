@@ -1156,8 +1156,10 @@ public class ReplicationTest extends LiteTestCase {
             putReplicationOnline(pusher);
 
             // wait until we get a bulk docs request
-            boolean succeeded = gotBulkDocsRequest.await(30, TimeUnit.SECONDS);
+            Log.d(Database.TAG, "waiting for bulk docs request");
+            boolean succeeded = gotBulkDocsRequest.await(120, TimeUnit.SECONDS);
             assertTrue(succeeded);
+            Log.d(Database.TAG, "got bulk docs request, verifying captured requests");
             mockHttpClient.removeResponseListener(bulkDocsListener);
 
             // make sure that doc was pushed out in a bulk docs request
@@ -1167,13 +1169,15 @@ public class ReplicationTest extends LiteTestCase {
                 Log.d(Database.TAG, "captured request: " + capturedRequest);
                 if (capturedRequest instanceof HttpPost) {
                     HttpPost capturedPostRequest = (HttpPost) capturedRequest;
+                    Log.d(Database.TAG, "capturedPostRequest: " + capturedPostRequest.getURI().getPath());
                     if (capturedPostRequest.getURI().getPath().endsWith("_bulk_docs")) {
                         ArrayList docs = CustomizableMockHttpClient.extractDocsFromBulkDocsPost(capturedRequest);
-                        if (docs.size() != 1) {
-                            Log.d(Database.TAG, "fails");
-                        }
                         assertEquals(1, docs.size());
                         Map<String, Object> doc = (Map) docs.get(0);
+                        Log.d(Database.TAG, "doc from captured request: " + doc);
+                        Log.d(Database.TAG, "docFieldName: " + docFieldName);
+                        Log.d(Database.TAG, "expected docFieldVal: " + docFieldVal);
+                        Log.d(Database.TAG, "actual doc.get(docFieldName): " + doc.get(docFieldName));
                         assertEquals(docFieldVal, doc.get(docFieldName));
                         foundExpectedDoc = true;
                     }
