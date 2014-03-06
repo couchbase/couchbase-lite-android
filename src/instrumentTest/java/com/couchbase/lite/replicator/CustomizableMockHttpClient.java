@@ -207,7 +207,6 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
             if (urlPattern.equals("*") || httpUriRequest.getURI().getPath().contains(urlPattern)) {
                 Responder responder = responders.get(urlPattern);
                 HttpResponse response = responder.execute(httpUriRequest);
-                Log.d(Database.TAG, "calling responder " + responder + " with request: " + httpUriRequest);
                 notifyResponseListeners(httpUriRequest, response);
                 return response;
             }
