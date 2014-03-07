@@ -875,7 +875,7 @@ public class ReplicationTest extends LiteTestCase {
         boolean success = countDownLatch.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
-        replicator.goOffline();
+        putReplicationOffline(replicator);
         Assert.assertTrue(replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_OFFLINE);
 
         replicator.stop();
@@ -1162,7 +1162,7 @@ public class ReplicationTest extends LiteTestCase {
             assertTrue(succeeded);
             Log.d(Database.TAG, "got bulk docs request, verifying captured requests");
             mockHttpClient.removeResponseListener(bulkDocsListener);
-            
+
             // make sure that doc was pushed out in a bulk docs request
             boolean foundExpectedDoc = false;
             List<HttpRequest> capturedRequests = mockHttpClient.getCapturedRequests();
