@@ -1162,10 +1162,7 @@ public class ReplicationTest extends LiteTestCase {
             assertTrue(succeeded);
             Log.d(Database.TAG, "got bulk docs request, verifying captured requests");
             mockHttpClient.removeResponseListener(bulkDocsListener);
-
-            // workaround bug https://github.com/couchbase/couchbase-lite-android/issues/219
-            Thread.sleep(2000);
-
+            
             // make sure that doc was pushed out in a bulk docs request
             boolean foundExpectedDoc = false;
             List<HttpRequest> capturedRequests = mockHttpClient.getCapturedRequests();
