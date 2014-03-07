@@ -767,7 +767,6 @@ public class ReplicationTest extends LiteTestCase {
         // wait for replication to finish
         boolean didNotTimeOut = replicationDoneSignal.await(30, TimeUnit.SECONDS);
         assertTrue(didNotTimeOut);
-
         assertFalse(activeReplicator.isRunning());
 
     }
@@ -1119,9 +1118,14 @@ public class ReplicationTest extends LiteTestCase {
         HttpClientFactory mockHttpClientFactory = mockFactoryFactory(mockHttpClient);
         manager.setDefaultHttpClientFactory(mockHttpClientFactory);
 
+        // create a replication observer
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+
         // create a push replication
         Replication pusher = database.createPushReplication(remote);
         Log.d(Database.TAG, "created pusher: " + pusher);
+        pusher.addChangeListener(replicationFinishedObserver);
         pusher.setContinuous(true);
         pusher.start();
 
@@ -1130,15 +1134,10 @@ public class ReplicationTest extends LiteTestCase {
 
             Log.d(Database.TAG, "testOnlineOfflinePusher, i: " + i);
 
+            final String docFieldName = "testOnlineOfflinePusher" + i;
+
             // put the replication offline
             putReplicationOffline(pusher);
-
-            // add a document
-            String docFieldName = "testOnlineOfflinePusher" + i;
-            String docFieldVal = "foo" + i;
-            Map<String,Object> properties = new HashMap<String, Object>();
-            properties.put(docFieldName, docFieldVal);
-            createDocumentWithProperties(database, properties);
 
             // add a response listener to wait for a bulk_docs request from the pusher
             final CountDownLatch gotBulkDocsRequest = new CountDownLatch(1);
@@ -1146,51 +1145,57 @@ public class ReplicationTest extends LiteTestCase {
                 @Override
                 public void responseSent(HttpUriRequest httpUriRequest, HttpResponse response) {
                     if (httpUriRequest.getURI().getPath().endsWith("_bulk_docs")) {
-                        gotBulkDocsRequest.countDown();
+                        Log.d(TAG, "testOnlineOfflinePusher responselistener called with _bulk_docs");
+
+                        ArrayList docs = CustomizableMockHttpClient.extractDocsFromBulkDocsPost(httpUriRequest);
+                        Log.d(TAG, "docs: " + docs);
+
+                        for (Object docObject : docs) {
+                            Map<String, Object> doc = (Map) docObject;
+                            if (doc.containsKey(docFieldName)) {
+                                Log.d(TAG, "Found expected doc in _bulk_docs: " + doc);
+                                gotBulkDocsRequest.countDown();
+                            } else {
+                                Log.d(TAG, "Ignore doc in _bulk_docs: " + doc);
+                            }
+                        }
+
                     }
 
                 }
             };
             mockHttpClient.addResponseListener(bulkDocsListener);
 
+            // add a document
+            String docFieldVal = "foo" + i;
+            Map<String,Object> properties = new HashMap<String, Object>();
+            properties.put(docFieldName, docFieldVal);
+            createDocumentWithProperties(database, properties);
+
             // put the replication online, which should trigger it to send outgoing bulk_docs request
             putReplicationOnline(pusher);
 
             // wait until we get a bulk docs request
-            Log.d(Database.TAG, "waiting for bulk docs request");
-            boolean succeeded = gotBulkDocsRequest.await(120, TimeUnit.SECONDS);
+            Log.d(Database.TAG, "waiting for bulk docs request with " + docFieldName);
+            boolean succeeded = gotBulkDocsRequest.await(30, TimeUnit.SECONDS);
             assertTrue(succeeded);
-            Log.d(Database.TAG, "got bulk docs request, verifying captured requests");
+            Log.d(Database.TAG, "got bulk docs request with " + docFieldName);
             mockHttpClient.removeResponseListener(bulkDocsListener);
-
-            // make sure that doc was pushed out in a bulk docs request
-            boolean foundExpectedDoc = false;
-            List<HttpRequest> capturedRequests = mockHttpClient.getCapturedRequests();
-            for (HttpRequest capturedRequest : capturedRequests) {
-                Log.d(Database.TAG, "captured request: " + capturedRequest);
-                if (capturedRequest instanceof HttpPost) {
-                    HttpPost capturedPostRequest = (HttpPost) capturedRequest;
-                    Log.d(Database.TAG, "capturedPostRequest: " + capturedPostRequest.getURI().getPath());
-                    if (capturedPostRequest.getURI().getPath().endsWith("_bulk_docs")) {
-                        ArrayList docs = CustomizableMockHttpClient.extractDocsFromBulkDocsPost(capturedRequest);
-                        assertEquals(1, docs.size());
-                        Map<String, Object> doc = (Map) docs.get(0);
-                        Log.d(Database.TAG, "doc from captured request: " + doc);
-                        Log.d(Database.TAG, "docFieldName: " + docFieldName);
-                        Log.d(Database.TAG, "expected docFieldVal: " + docFieldVal);
-                        Log.d(Database.TAG, "actual doc.get(docFieldName): " + doc.get(docFieldName));
-                        assertEquals(docFieldVal, doc.get(docFieldName));
-                        foundExpectedDoc = true;
-                    }
-                }
-            }
-
-            assertTrue(foundExpectedDoc);
 
             mockHttpClient.clearCapturedRequests();
 
         }
 
+        Log.d(Database.TAG, "calling pusher.stop()");
+        pusher.stop();
+        Log.d(Database.TAG, "called pusher.stop()");
+
+        // wait for replication to finish
+        Log.d(Database.TAG, "waiting for replicationDoneSignal");
+        boolean didNotTimeOut = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+        Log.d(Database.TAG, "done waiting for replicationDoneSignal.  didNotTimeOut: " + didNotTimeOut);
+        assertTrue(didNotTimeOut);
+        assertFalse(pusher.isRunning());
 
 
     }
