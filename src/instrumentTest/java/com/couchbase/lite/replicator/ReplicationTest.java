@@ -1213,6 +1213,7 @@ public class ReplicationTest extends LiteTestCase {
      */
     public void testPushReplicationCanMissDocs() throws Exception {
 
+        assertEquals(0, database.getLastSequenceNumber());
 
         Map<String,Object> properties1 = new HashMap<String,Object>();
         properties1.put("doc1", "testPushReplicationCanMissDocs");
@@ -1268,9 +1269,16 @@ public class ReplicationTest extends LiteTestCase {
         // we would expect it to have recorded an error
         assertNotNull(pusher.getLastError());
 
+        String localLastSequence = database.lastSequenceWithCheckpointId(pusher.remoteCheckpointDocID());
+
+        Log.d(TAG, "database.lastSequenceWithCheckpointId(): " + localLastSequence);
+        Log.d(TAG, "doc2.getCurrentRevision().getSequence(): " + doc2.getCurrentRevision().getSequence());
+
         String msg = "Since doc1 failed, the database should _not_ have had its lastSequence bumped" +
                 " to doc2's sequence number.  If it did, it's bug: github.com/couchbase/couchbase-lite-java-core/issues/95";
-        assertFalse(msg, database.getLastSequenceNumber() == doc2.getCurrentRevision().getSequence());
+        assertFalse(msg, Long.toString(doc2.getCurrentRevision().getSequence()).equals(localLastSequence));
+        assertNull(localLastSequence);
+        assertTrue(doc2.getCurrentRevision().getSequence() > 0);
 
 
     }
