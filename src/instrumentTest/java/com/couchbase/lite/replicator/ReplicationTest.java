@@ -1259,17 +1259,26 @@ public class ReplicationTest extends LiteTestCase {
         Replication pusher = database.createPushReplication(getReplicationURL());
         pusher.addChangeListener(replicationFinishedObserver);
 
+        // save the checkpoint id for later usage
+        String checkpointId = pusher.remoteCheckpointDocID();
+
         // kick off the replication
         pusher.start();
 
         // wait for it to finish
         boolean success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
         assertTrue(success);
+        Log.d(TAG, "replicationDoneSignal finished");
 
         // we would expect it to have recorded an error
         assertNotNull(pusher.getLastError());
 
-        String localLastSequence = database.lastSequenceWithCheckpointId(pusher.remoteCheckpointDocID());
+        // workaround for the fact that the replicationDoneSignal.wait() call will unblock before all
+        // the statements in Replication.stopped() have even had a chance to execute.
+        // (specifically the ones that come after the call to notifyChangeListeners())
+        Thread.sleep(500);
+
+        String localLastSequence = database.lastSequenceWithCheckpointId(checkpointId);
 
         Log.d(TAG, "database.lastSequenceWithCheckpointId(): " + localLastSequence);
         Log.d(TAG, "doc2.getCurrentRevision().getSequence(): " + doc2.getCurrentRevision().getSequence());
