@@ -82,6 +82,7 @@ There are two wiki pages which describe how to run the tests:
 
 ## Example Apps
 
+* [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android)
 * [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)
 * [LiteServAndroid](https://github.com/couchbaselabs/couchbase-lite-android-liteserv)
 * [CouchChatAndroid](https://github.com/couchbaselabs/CouchChatAndroid) -- just a stub at this point.
