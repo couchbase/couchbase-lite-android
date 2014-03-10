@@ -997,4 +997,65 @@ public class ApiTest extends LiteTestCase {
     }
 
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/220
+     */
+    public void failingTestDocumentUpdate() throws Exception {
+
+        final int numberOfDocuments = 10;
+        final int numberOfUpdates = 10;
+        final Document[] docs = new Document[numberOfDocuments];
+
+        database.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                for (int j = 0; j < numberOfDocuments; j++) {
+
+                    Map<String,Object> prop = new HashMap<String, Object>();
+                    prop.put("foo", "bar");
+                    prop.put("toogle", true);
+                    Document document = createDocumentWithProperties(database, prop);
+                    docs[j] = document;
+                }
+                return true;
+            }
+        });
+
+        final AtomicInteger numDocsUpdated = new AtomicInteger(0);
+        final AtomicInteger numExceptions = new AtomicInteger(0);
+
+        database.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                for (int j = 0; j < numberOfDocuments; j++) {
+
+                    Document doc = docs[j];
+
+                    for(int k=0; k < numberOfUpdates; k++)
+                    {
+                        Map<String, Object> contents = new HashMap(doc.getProperties());
+
+                        Boolean wasChecked = (Boolean) contents.get("toogle");
+
+                        //toggle value of check property
+                        contents.put("toogle",!wasChecked);
+
+                        try {
+                            doc.putProperties(contents);
+                            numDocsUpdated.incrementAndGet();
+                        } catch (CouchbaseLiteException cblex) {
+                            Log.e(TAG, "Document update failed", cblex);
+                            numExceptions.incrementAndGet();
+                        }
+                    }
+                }
+                return true;
+            }
+        });
+
+        assertEquals(numberOfDocuments * numberOfUpdates, numDocsUpdated.get());
+        assertEquals(0, numExceptions.get());
+
+    }
+
 }
