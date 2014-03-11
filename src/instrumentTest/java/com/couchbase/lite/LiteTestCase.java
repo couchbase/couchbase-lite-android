@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public abstract class LiteTestCase extends TestCase {
@@ -297,8 +298,8 @@ public abstract class LiteTestCase extends TestCase {
         }
     };
 
-    static void createDocumentsAsync(final Database db, final int n) {
-        db.runAsync(new AsyncTask() {
+    static Future createDocumentsAsync(final Database db, final int n) {
+        return db.runAsync(new AsyncTask() {
             @Override
             public void run(Database database) {
                 db.beginTransaction();
