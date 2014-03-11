@@ -1000,7 +1000,56 @@ public class ApiTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/220
      */
-    public void failingTestDocumentUpdate() throws Exception {
+    public void testMultiDocumentUpdate() throws Exception {
+
+        final int numberOfDocuments = 10;
+        final int numberOfUpdates = 10;
+        final Document[] docs = new Document[numberOfDocuments];
+
+        for (int j = 0; j < numberOfDocuments; j++) {
+
+            Map<String,Object> prop = new HashMap<String, Object>();
+            prop.put("foo", "bar");
+            prop.put("toogle", true);
+            Document document = createDocumentWithProperties(database, prop);
+            docs[j] = document;
+        }
+
+        final AtomicInteger numDocsUpdated = new AtomicInteger(0);
+        final AtomicInteger numExceptions = new AtomicInteger(0);
+
+        for (int j = 0; j < numberOfDocuments; j++) {
+
+            Document doc = docs[j];
+
+            for(int k=0; k < numberOfUpdates; k++)
+            {
+                Map<String, Object> contents = new HashMap(doc.getProperties());
+
+                Boolean wasChecked = (Boolean) contents.get("toogle");
+
+                //toggle value of check property
+                contents.put("toogle",!wasChecked);
+
+                try {
+                    doc.putProperties(contents);
+                    numDocsUpdated.incrementAndGet();
+                } catch (CouchbaseLiteException cblex) {
+                    Log.e(TAG, "Document update failed", cblex);
+                    numExceptions.incrementAndGet();
+                }
+            }
+        }
+
+        assertEquals(numberOfDocuments * numberOfUpdates, numDocsUpdated.get());
+        assertEquals(0, numExceptions.get());
+
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/220
+     */
+    public void failingestMultiDocumentUpdateInTransaction() throws Exception {
 
         final int numberOfDocuments = 10;
         final int numberOfUpdates = 10;
@@ -1030,10 +1079,17 @@ public class ApiTest extends LiteTestCase {
                 for (int j = 0; j < numberOfDocuments; j++) {
 
                     Document doc = docs[j];
+                    SavedRevision lastSavedRevision = null;
 
                     for(int k=0; k < numberOfUpdates; k++)
                     {
+
+                        if (lastSavedRevision != null) {
+                            assertEquals(lastSavedRevision.getId(), doc.getCurrentRevisionId());
+                        }
+
                         Map<String, Object> contents = new HashMap(doc.getProperties());
+                        Document docLatest = database.getDocument(doc.getId());
 
                         Boolean wasChecked = (Boolean) contents.get("toogle");
 
@@ -1041,8 +1097,9 @@ public class ApiTest extends LiteTestCase {
                         contents.put("toogle",!wasChecked);
 
                         try {
-                            doc.putProperties(contents);
+                            lastSavedRevision = doc.putProperties(contents);
                             numDocsUpdated.incrementAndGet();
+
                         } catch (CouchbaseLiteException cblex) {
                             Log.e(TAG, "Document update failed", cblex);
                             numExceptions.incrementAndGet();
