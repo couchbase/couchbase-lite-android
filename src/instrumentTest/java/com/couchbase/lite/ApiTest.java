@@ -778,7 +778,7 @@ public class ApiTest extends LiteTestCase {
 
         // wait until the livequery is called back with kNDocs docs
         Log.d(Database.TAG, "testLiveQueryStop: waiting for doneSignal");
-        boolean success = doneSignal.await(120, TimeUnit.SECONDS);
+        boolean success = doneSignal.await(45, TimeUnit.SECONDS);
         assertTrue(success);
 
         Log.d(Database.TAG, "testLiveQueryStop: waiting for query.stop()");
