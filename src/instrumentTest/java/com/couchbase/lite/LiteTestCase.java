@@ -327,8 +327,8 @@ public abstract class LiteTestCase extends TestCase {
         Assert.assertNotNull(doc.getCurrentRevisionId());
         Assert.assertNotNull(doc.getUserProperties());
 
-        // this won't work until the weakref hashmap is implemented which stores all docs
-        // Assert.assertEquals(db.getDocument(doc.getId()), doc);
+        // should be same doc instance, since there should only ever be a single Document instance for a given document
+        Assert.assertEquals(db.getDocument(doc.getId()), doc);
 
         Assert.assertEquals(db.getDocument(doc.getId()).getId(), doc.getId());
 
