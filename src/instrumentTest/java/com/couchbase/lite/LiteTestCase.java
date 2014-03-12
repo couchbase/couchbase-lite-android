@@ -418,10 +418,16 @@ public abstract class LiteTestCase extends TestCase {
 
             // TODO: re-enable this assertion and track down why it's failing
             // TODO: there's a ticket in github for this
-            /*Assert.assertTrue(replicator.getCompletedChangesCount() <= replicator.getChangesCount());
-            if (replicator.getCompletedChangesCount() > replicator.getChangesCount()) {
-                throw new RuntimeException("replicator.getCompletedChangesCount() > replicator.getChangesCount()");
-            }*/
+            /*Assert.assertTrue(replicator.getCompletedChangesCount() <= replicator.getChangesCount());*/
+            /*
+            if (!replicator.isRunning()) {
+                if (replicator.getCompletedChangesCount() > replicator.getChangesCount()) {
+                    String msg = String.format("replicator.getCompletedChangesCount() - %d > replicator.getChangesCount() - %d", replicator.getCompletedChangesCount(), replicator.getChangesCount());
+                    Log.d(TAG, msg);
+                    throw new RuntimeException(msg);
+                }
+            }
+            */
 
             if (!replicator.isRunning()) {
                 replicationFinished = true;
