@@ -259,6 +259,10 @@ public class ReplicationTest extends LiteTestCase {
 
         runReplication(repl);
 
+        // since we pushed two documents, should expect the changes count to be >= 2
+        assertTrue(repl.getChangesCount() >= 2);
+        assertTrue(repl.getCompletedChangesCount() >= 2);
+
         // make sure doc1 is there
         verifyRemoteDocExists(remote, doc1Id);
 
@@ -287,33 +291,33 @@ public class ReplicationTest extends LiteTestCase {
     private String createDocumentsForPushReplication(String docIdTimestamp) throws CouchbaseLiteException {
         String doc1Id;
         String doc2Id;// Create some documents:
-        Map<String, Object> documentProperties = new HashMap<String, Object>();
+        Map<String, Object> doc1Properties = new HashMap<String, Object>();
         doc1Id = String.format("doc1-%s", docIdTimestamp);
-        documentProperties.put("_id", doc1Id);
-        documentProperties.put("foo", 1);
-        documentProperties.put("bar", false);
+        doc1Properties.put("_id", doc1Id);
+        doc1Properties.put("foo", 1);
+        doc1Properties.put("bar", false);
 
-        Body body = new Body(documentProperties);
+        Body body = new Body(doc1Properties);
         RevisionInternal rev1 = new RevisionInternal(body, database);
 
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
         assertEquals(Status.CREATED, status.getCode());
 
-        documentProperties.put("_rev", rev1.getRevId());
-        documentProperties.put("UPDATED", true);
+        doc1Properties.put("_rev", rev1.getRevId());
+        doc1Properties.put("UPDATED", true);
 
         @SuppressWarnings("unused")
-        RevisionInternal rev2 = database.putRevision(new RevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
+        RevisionInternal rev2 = database.putRevision(new RevisionInternal(doc1Properties, database), rev1.getRevId(), false, status);
         assertEquals(Status.CREATED, status.getCode());
 
-        documentProperties = new HashMap<String, Object>();
+        Map<String, Object> doc2Properties = new HashMap<String, Object>();
         doc2Id = String.format("doc2-%s", docIdTimestamp);
-        documentProperties.put("_id", doc2Id);
-        documentProperties.put("baz", 666);
-        documentProperties.put("fnord", true);
+        doc2Properties.put("_id", doc2Id);
+        doc2Properties.put("baz", 666);
+        doc2Properties.put("fnord", true);
 
-        database.putRevision(new RevisionInternal(documentProperties, database), null, false, status);
+        database.putRevision(new RevisionInternal(doc2Properties, database), null, false, status);
         assertEquals(Status.CREATED, status.getCode());
 
         Document doc2 = database.getDocument(doc2Id);
