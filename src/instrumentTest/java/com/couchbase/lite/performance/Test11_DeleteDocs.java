@@ -18,6 +18,7 @@
 package com.couchbase.lite.performance;
 
 import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.Document;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.TransactionalTask;
@@ -35,10 +36,14 @@ public class Test11_DeleteDocs extends LiteTestCase {
 
     private static final String _propertyValue = "1234567";
 
+    private Document[] docs;
+
     @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "DeleteDocsPerformance setUp");
         super.setUp();
+
+        docs = new Document[getNumberOfDocuments()];
 
         //Create docs that will be deleted in test case
         assertTrue(database.runInTransaction(new TransactionalTask() {
@@ -56,14 +61,14 @@ public class Test11_DeleteDocs extends LiteTestCase {
                     Map<String, Object> props = new HashMap<String, Object>();
                     props.put("bigArray", bigObj);
 
-                    Body body = new Body(props);
-                    RevisionInternal rev1 = new RevisionInternal(body, database);
+                    Document doc = database.createDocument();
 
-                    Status status = new Status();
+                    docs[i] = doc;
+
                     try {
-                        rev1 = database.putRevision(rev1, null, false, status);
-                    } catch (Throwable t) {
-                        Log.e(TAG, "Document create failed", t);
+                        doc.putProperties(props);
+                    } catch (CouchbaseLiteException cblex) {
+                        Log.e(TAG, "Document creation failed", cblex);
                         return false;
                     }
                 }
@@ -79,23 +84,11 @@ public class Test11_DeleteDocs extends LiteTestCase {
 
             public boolean run() {
 
-                String[] bigObj = new String[getSizeOfDocument()];
-
-                for (int i = 0; i < getSizeOfDocument(); i++) {
-                    bigObj[i] = _propertyValue;
-                }
-
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
-                    //create a document
-                    Map<String, Object> props = new HashMap<String, Object>();
-                    props.put("bigArray", bigObj);
 
-                    Body body = new Body(props);
-                    RevisionInternal rev1 = new RevisionInternal(body, database);
-
-                    Status status = new Status();
+                    Document doc = docs[i];
                     try {
-                        rev1 = database.putRevision(rev1, null, false, status);
+                        doc.delete();
                     } catch (Throwable t) {
                         Log.e(TAG, "Document delete failed", t);
                         return false;

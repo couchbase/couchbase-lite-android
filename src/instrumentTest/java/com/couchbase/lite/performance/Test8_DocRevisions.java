@@ -57,8 +57,6 @@ public class Test8_DocRevisions extends LiteTestCase {
 
                     docs[i] = doc;
 
-                    System.err.println(doc.toString());
-
                     try {
                         doc.putProperties(props);
                     } catch (CouchbaseLiteException cblex) {
