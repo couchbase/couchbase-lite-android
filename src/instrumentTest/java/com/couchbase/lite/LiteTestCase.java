@@ -416,10 +416,6 @@ public abstract class LiteTestCase extends TestCase {
             Replication replicator = event.getSource();
             Log.d(TAG, replicator + " changed.  " + replicator.getCompletedChangesCount() + " / " + replicator.getChangesCount());
 
-            // TODO: re-enable this assertion and track down why it's failing
-            // TODO: there's a ticket in github for this
-            /*Assert.assertTrue(replicator.getCompletedChangesCount() <= replicator.getChangesCount());*/
-            /*
             if (!replicator.isRunning()) {
                 if (replicator.getCompletedChangesCount() > replicator.getChangesCount()) {
                     String msg = String.format("replicator.getCompletedChangesCount() - %d > replicator.getChangesCount() - %d", replicator.getCompletedChangesCount(), replicator.getChangesCount());
@@ -427,7 +423,6 @@ public abstract class LiteTestCase extends TestCase {
                     throw new RuntimeException(msg);
                 }
             }
-            */
 
             if (!replicator.isRunning()) {
                 replicationFinished = true;
