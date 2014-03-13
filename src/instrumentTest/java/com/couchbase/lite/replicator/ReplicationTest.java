@@ -262,6 +262,7 @@ public class ReplicationTest extends LiteTestCase {
         // since we pushed two documents, should expect the changes count to be >= 2
         assertTrue(repl.getChangesCount() >= 2);
         assertTrue(repl.getCompletedChangesCount() >= 2);
+        assertNull(repl.getLastError());
 
         // make sure doc1 is there
         verifyRemoteDocExists(remote, doc1Id);
@@ -280,6 +281,8 @@ public class ReplicationTest extends LiteTestCase {
             repl2.setCreateTarget(true);
         }
         runReplication(repl2);
+        assertNull(repl2.getLastError());
+
 
         // make sure the doc has been added
         verifyRemoteDocExists(remote, doc3Id);
@@ -411,6 +414,7 @@ public class ReplicationTest extends LiteTestCase {
         manager.setDefaultHttpClientFactory(mockHttpClientFactory);
         Replication pusher = database.createPushReplication(remote);
         runReplication(pusher);
+        assertNull(pusher.getLastError());
 
         int numDocsSent = 0;
 
@@ -464,9 +468,12 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(status.getCode() >= 200 && status.getCode() < 300);
 
         final Replication repl = database.createPushReplication(remote);
-        ((Pusher)repl).setCreateTarget(true);
+        if (!isSyncGateway(remote)) {
+            repl.setCreateTarget(true);
+        }
 
         runReplication(repl);
+        assertNull(repl.getLastError());
 
 
         // make sure doc1 is deleted
@@ -662,6 +669,7 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "Doing pull replication with: " + repl);
         runReplication(repl);
+        assertNull(repl.getLastError());
         Log.d(TAG, "Finished pull replication with: " + repl);
 
 
@@ -991,6 +999,7 @@ public class ReplicationTest extends LiteTestCase {
         puller.setHeaders(headers);
 
         runReplication(puller);
+        assertNotNull(puller.getLastError());
 
         boolean foundFooHeader = false;
         List<HttpRequest> requests = mockHttpClient.getCapturedRequests();
@@ -1038,6 +1047,7 @@ public class ReplicationTest extends LiteTestCase {
         // sync with remote DB -- should push both leaf revisions
         Replication push = database.createPushReplication(getReplicationURL());
         runReplication(push);
+        assertNull(push.getLastError());
 
         // find the _revs_diff captured request and decode into json
         boolean foundRevsDiff = false;
@@ -1076,6 +1086,7 @@ public class ReplicationTest extends LiteTestCase {
         // Push the conflicts to the remote DB.
         Replication push = database.createPushReplication(getReplicationURL());
         runReplication(push);
+        assertNull(push.getLastError());
 
         // Prepare a bulk docs request to resolve the conflict remotely. First, advance rev 2a.
         JSONObject rev3aBody = new JSONObject();
@@ -1113,6 +1124,7 @@ public class ReplicationTest extends LiteTestCase {
         // Pull the remote changes.
         Replication pull = database.createPullReplication(getReplicationURL());
         runReplication(pull);
+        assertNull(pull.getLastError());
 
         // Make sure the conflict was resolved locally.
         assertEquals(1, doc.getConflictingRevisions().size());
