@@ -349,10 +349,10 @@ public abstract class LiteTestCase extends TestCase {
 
         Log.d(TAG, "Waiting for replicator to finish");
         try {
-            boolean success = replicationDoneSignal.await(300, TimeUnit.SECONDS);
+            boolean success = replicationDoneSignal.await(120, TimeUnit.SECONDS);
             assertTrue(success);
 
-            success = replicationDoneSignalPolling.await(300, TimeUnit.SECONDS);
+            success = replicationDoneSignalPolling.await(120, TimeUnit.SECONDS);
             assertTrue(success);
 
             Log.d(TAG, "replicator finished");
