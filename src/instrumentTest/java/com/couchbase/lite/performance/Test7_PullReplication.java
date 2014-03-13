@@ -56,60 +56,64 @@ public class Test7_PullReplication extends LiteTestCase {
 
     private static final String _propertyValue = "1234567";
 
-    public void testPullReplicationPerformance() throws CouchbaseLiteException {
+    @Override
+    protected void setUp() throws Exception {
+        Log.v(TAG, "DeleteDBPerformance setUp");
+        super.setUp();
 
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
-        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
-        final String doc2Id = String.format("doc2-%s", docIdTimestamp);
 
-        Log.d(TAG, "Adding " + doc1Id + " directly to sync gateway");
+        for(int i=0; i < getNumberOfDocuments(); i++)
+        {
+            String docId = String.format("doc%d-%s", i, docIdTimestamp);
 
-        try {
-            addDocWithId(doc1Id, "attachment.png", false);
-        } catch (IOException ioex) {
-            Log.e(TAG, "Add document directly to sync gateway failed", ioex);
-            fail();
+            Log.d(TAG, "Adding " + docId + " directly to sync gateway");
+
+            try {
+                addDocWithId(docId, "attachment.png", false);
+            } catch (IOException ioex) {
+                Log.e(TAG, "Add document directly to sync gateway failed", ioex);
+                fail();
+            }
         }
+    }
 
-        Log.d(TAG, "Adding " + doc2Id + " directly to sync gateway");
-
-        try {
-            addDocWithId(doc2Id, "attachment2.png", false);
-        } catch (IOException ioex) {
-            Log.e(TAG, "Add document directly to sync gateway failed", ioex);
-            fail();
-        }
+    public void testPullReplicationPerformance() throws CouchbaseLiteException {
 
         doPullReplication();
 
         assertNotNull(database);
-        Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
-        Document doc1 = database.getDocument(doc1Id);
-        Log.d(TAG, "doc1" + doc1);
-        assertNotNull(doc1);
-        assertNotNull(doc1.getCurrentRevisionId());
-        assertTrue(doc1.getCurrentRevisionId().startsWith("1-"));
-        assertNotNull(doc1.getProperties());
-        assertEquals(1, doc1.getProperties().get("foo"));
 
-        Log.d(TAG, "Fetching doc2 via id: " + doc2Id);
-        Document doc2 = database.getDocument(doc2Id);
-        assertNotNull(doc2);
-        assertNotNull(doc2.getCurrentRevisionId());
-        assertNotNull(doc2.getProperties());
+        /*
+        for(int i=0; i < getNumberOfDocuments(); i++)
+        {
+            String docId = String.format("doc%d-%s", i, docIdTimestamp);
+            Log.d(TAG, "Fetching doc via id: " + docId);
+            Document doc = database.getDocument(docId);
+            Log.d(TAG, "doc" + doc);
+            assertNotNull(doc);
+            assertNotNull(doc.getCurrentRevisionId());
+            assertTrue(doc.getCurrentRevisionId().startsWith("1-"));
+            assertNotNull(doc.getProperties());
+            assertEquals(1, doc.getProperties().get("foo"));
+        }
 
-        assertTrue(doc2.getCurrentRevisionId().startsWith("1-"));
-        assertEquals(1, doc2.getProperties().get("foo"));
+        for(int i=0; i < getNumberOfDocuments(); i++)
+        {
+            String docId = String.format("doc%d-%s", i, docIdTimestamp);
+            Log.d(TAG, "Fetching doc via id: " + docId);
+            Document doc = database.getDocument(docId);
 
-        // update doc1 on sync gateway
-        String docJson = String.format("{\"foo\":2,\"bar\":true,\"_rev\":\"%s\",\"_id\":\"%s\"}", doc1.getCurrentRevisionId(), doc1.getId());
+            // update doc on sync gateway
+            String docJson = String.format("{\"foo\":2,\"bar\":true,\"_rev\":\"%s\",\"_id\":\"%s\"}", doc.getCurrentRevisionId(), doc.getId());
 
-        try {
-            pushDocumentToSyncGateway(doc1.getId(), docJson);
-        } catch (IOException ioex) {
-            Log.e(TAG, "Add document directly to sync gateway failed", ioex);
-            fail();
+            try {
+                pushDocumentToSyncGateway(doc.getId(), docJson);
+            } catch (IOException ioex) {
+                Log.e(TAG, "Add document directly to sync gateway failed", ioex);
+                fail();
+            }
         }
 
         // do another pull
@@ -117,11 +121,19 @@ public class Test7_PullReplication extends LiteTestCase {
         doPullReplication();
         Log.d(TAG, "Finished 2nd pull replication");
 
-        // make sure it has the latest properties
-        Document doc1Fetched = database.getDocument(doc1Id);
-        assertNotNull(doc1Fetched);
-        assertTrue(doc1Fetched.getCurrentRevisionId().startsWith("2-"));
-        assertEquals(2, doc1Fetched.getProperties().get("foo"));
+        for(int i=0; i < getNumberOfDocuments(); i++)
+        {
+            String docId = String.format("doc%d-%s", i, docIdTimestamp);
+            Log.d(TAG, "Fetching doc via id: " + docId);
+            Document doc = database.getDocument(docId);
+
+            // make sure it has the latest properties
+            Document docFetched = database.getDocument(docId);
+            assertNotNull(docFetched);
+            assertTrue(docFetched.getCurrentRevisionId().startsWith("2-"));
+            assertEquals(2, docFetched.getProperties().get("foo"));
+        }
+        */
 
         Log.d(TAG, "testPuller() finished");
     }
@@ -129,7 +141,7 @@ public class Test7_PullReplication extends LiteTestCase {
     private void doPullReplication() {
         URL remote = getReplicationURL();
 
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        //CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
         final Replication repl = (Replication) database.createPullReplication(remote);
         repl.setContinuous(false);
@@ -226,5 +238,9 @@ public class Test7_PullReplication extends LiteTestCase {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private int getNumberOfDocuments() {
+        return Integer.parseInt(System.getProperty("Test7_numberOfDocuments"));
     }
 }
