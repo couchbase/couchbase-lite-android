@@ -45,7 +45,7 @@ public class ApiTest extends LiteTestCase {
         ManagerOptions options= new ManagerOptions();
         options.setReadOnly(true);
 
-        Manager roManager=new Manager(new File(manager.getDirectory()), options);
+        Manager roManager=new Manager(new LiteTestContext(), options);
         Assert.assertTrue(roManager!=null);
 
         Database db =roManager.getDatabase("foo");
@@ -925,7 +925,7 @@ public class ApiTest extends LiteTestCase {
      * running in the background server.
      */
     public void testSharedMapBlocks() throws Exception {
-        Manager mgr = new Manager(new File(getRootDirectory(), "API_SharedMapBlocks"), Manager.DEFAULT_OPTIONS);
+        Manager mgr = new Manager(new LiteTestContext("API_SharedMapBlocks"), Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
         db.setFilter("phil", new ReplicationFilter() {
@@ -982,7 +982,7 @@ public class ApiTest extends LiteTestCase {
 
 
     public void testChangeUUID() throws Exception{
-        Manager mgr = new Manager(new File(getRootDirectory(), "ChangeUUID"), Manager.DEFAULT_OPTIONS);
+        Manager mgr = new Manager(new LiteTestContext("ChangeUUID"), Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
         String pub = db.publicUUID();

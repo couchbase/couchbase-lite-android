@@ -60,25 +60,14 @@ public abstract class LiteTestCase extends TestCase {
         return this.getClass().getResourceAsStream("/assets/" + name);
     }
 
-    protected File getRootDirectory() {
-        String rootDirectoryPath = System.getProperty("user.dir");
-        File rootDirectory = new File(rootDirectoryPath);
-        rootDirectory = new File(rootDirectory, "data/data/com.couchbase.cblite.test/files");
-
-        return rootDirectory;
-    }
-
-    protected String getServerPath() {
-        String filesDir = getRootDirectory().getAbsolutePath();
-        return filesDir;
-    }
 
     protected void startCBLite() throws IOException {
-        String serverPath = getServerPath();
+        LiteTestContext context = new LiteTestContext();
+        String serverPath = context.getRootDirectory().getAbsolutePath();
         File serverPathFile = new File(serverPath);
         FileDirUtils.deleteRecursive(serverPathFile);
         serverPathFile.mkdir();
-        manager = new Manager(new File(getRootDirectory(), "test"), Manager.DEFAULT_OPTIONS);
+        manager = new Manager(context, Manager.DEFAULT_OPTIONS);
     }
 
     protected void stopCBLite() {

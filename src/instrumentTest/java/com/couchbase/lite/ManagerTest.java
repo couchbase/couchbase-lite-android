@@ -30,7 +30,7 @@ public class ManagerTest extends LiteTestCase {
         Database db = manager.getDatabaseWithoutOpening("foo", mustExist);
         assertNotNull(db);
         assertEquals("foo", db.getName());
-        assertTrue(db.getPath().startsWith(getServerPath()));
+        assertTrue(db.getPath().startsWith(new LiteTestContext().getRootDirectory().getAbsolutePath()));
         assertFalse(db.exists());
 
 
@@ -50,11 +50,11 @@ public class ManagerTest extends LiteTestCase {
     }
 
     public void testUpgradeOldDatabaseFiles() throws Exception {
-        String directoryName = "test-directory-" + System.currentTimeMillis();
-        String normalFilesDir = getRootDirectory().getAbsolutePath();
-        String fakeFilesDir = String.format("%s/%s", normalFilesDir, directoryName);
 
-        File directory = new File(fakeFilesDir);
+        String directoryName = "test-directory-" + System.currentTimeMillis();
+        LiteTestContext context = new LiteTestContext(directoryName);
+
+        File directory = context.getFilesDir();
         if(!directory.exists()) {
             boolean result = directory.mkdir();
             if(!result) {
@@ -69,26 +69,24 @@ public class ManagerTest extends LiteTestCase {
         File migratedOldFile = new File(directory, String.format("old%s", Manager.DATABASE_SUFFIX));
         migratedOldFile.createNewFile();
         super.stopCBLite();
-        manager = new Manager(new File(getRootDirectory(), directoryName), Manager.DEFAULT_OPTIONS);
+        manager = new Manager(context, Manager.DEFAULT_OPTIONS);
 
         assertTrue(migratedOldFile.exists());
-        //cannot rename old.touchdb in old.cblite, old.cblite already exists
+        //cannot rename old.touchdb to old.cblite, because old.cblite already exists
         assertTrue(oldTouchDbFile.exists());
         assertTrue(newCbLiteFile.exists());
 
-        File dir=new File(getRootDirectory(), directoryName);
-        assertEquals(3, dir.listFiles().length);
+        assertEquals(3, directory.listFiles().length);
 
         super.stopCBLite();
         migratedOldFile.delete();
-        manager = new Manager(new File(getRootDirectory(), directoryName), Manager.DEFAULT_OPTIONS);
+        manager = new Manager(context, Manager.DEFAULT_OPTIONS);
 
         //rename old.touchdb in old.cblite, previous old.cblite already doesn't exist
         assertTrue(migratedOldFile.exists());
         assertTrue(oldTouchDbFile.exists() == false);
         assertTrue(newCbLiteFile.exists());
-        dir=new File(getRootDirectory(), directoryName);
-        assertEquals(2, dir.listFiles().length);
+        assertEquals(2, directory.listFiles().length);
 
     }
 
