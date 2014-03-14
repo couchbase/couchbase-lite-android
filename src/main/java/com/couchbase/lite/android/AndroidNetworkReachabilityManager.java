@@ -44,24 +44,20 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
     }
 
 
-    public void startListening() {
-        synchronized (this) {
-            if (!listening) {
-                IntentFilter filter = new IntentFilter();
-                filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-                wrappedContext.registerReceiver(receiver, filter);
-                listening = true;
-            }
+    public synchronized void startListening() {
+        if (!listening) {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+            wrappedContext.registerReceiver(receiver, filter);
+            listening = true;
         }
     }
 
-    public void stopListening() {
-        synchronized (this) {
-            if (listening) {
-                wrappedContext.unregisterReceiver(receiver);
-                context = null;
-                listening = false;
-            }
+    public synchronized void stopListening() {
+        if (listening) {
+            wrappedContext.unregisterReceiver(receiver);
+            context = null;
+            listening = false;
         }
     }
 
