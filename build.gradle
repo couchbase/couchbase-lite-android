@@ -41,9 +41,6 @@ android {
 
 }
 
-// apply from: 'dependencies-archive.gradle'    // <- enable this when building an .aar
-// apply from: 'dependencies-test.gradle'       // <- enable this when testing
-
 def buildAndroidWithArtifacts = System.getProperty("buildAndroidWithArtifacts")
 
 dependencies {
