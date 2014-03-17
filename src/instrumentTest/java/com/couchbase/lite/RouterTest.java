@@ -46,11 +46,21 @@ public class RouterTest extends LiteTestCase {
 
     public void testDatabase() {
         send("PUT", "/database", Status.CREATED, null);
+        Map entries = new HashMap<String, Map<String,Object>>();;
+        entries.put("results", new ArrayList<Object>());
+        entries.put("last_seq", 0);
+
+
+        send("GET", "/database/_changes?feed=normal&heartbeat=300000&style=all_docs", Status.OK, entries);
 
         Map<String,Object> dbInfo = (Map<String,Object>)send("GET", "/database", Status.OK, null);
+        assertEquals(6, dbInfo.size());
         assertEquals(0, dbInfo.get("doc_count"));
         assertEquals(0, dbInfo.get("update_seq"));
         assertTrue((Integer)dbInfo.get("disk_size") > 8000);
+        assertEquals("database", dbInfo.get("db_name"));
+        assertTrue(System.currentTimeMillis() * 1000 > (Long) dbInfo.get("instance_start_time"));
+        assertTrue(dbInfo.containsKey("db_uuid"));
 
         send("PUT", "/database", Status.PRECONDITION_FAILED, null);
         send("PUT", "/database2", Status.CREATED, null);
@@ -91,6 +101,21 @@ public class RouterTest extends LiteTestCase {
         docWithAttachment.put("_attachments", attachments);
 
         Map<String,Object> result = (Map<String,Object>)sendBody("PUT", "/db/docWithAttachment", docWithAttachment, Status.CREATED, null);
+
+        Map expChanges = new HashMap<String, Map<String,Object>>();
+        List changesResults = new ArrayList();
+        Map docChanges = new HashMap<String,Object>();
+        docChanges.put("id", "docWithAttachment");
+        docChanges.put("seq", 1);
+        List lChanges = new ArrayList<Map<String, Object>>();
+        HashMap mChanges = new HashMap<String, Object>();
+        mChanges.put("rev", result.get("rev"));
+        lChanges.add(mChanges);
+        docChanges.put("changes", lChanges);
+        changesResults.add(docChanges);
+        expChanges.put("results", changesResults);
+        expChanges.put("last_seq", 1);
+        send("GET", "/db/_changes?feed=normal&heartbeat=300000&style=all_docs", Status.OK, expChanges);
 
         result = (Map<String,Object>)send("GET", "/db/docWithAttachment", Status.OK, null);
         Map<String,Object> attachmentsResult = (Map<String,Object>) result.get("_attachments");
