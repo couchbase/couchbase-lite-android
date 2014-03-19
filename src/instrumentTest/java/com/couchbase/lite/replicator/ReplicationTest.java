@@ -283,6 +283,7 @@ public class ReplicationTest extends LiteTestCase {
         if (!isSyncGateway(remote)) {
             repl2.setCreateTarget(true);
         }
+        String repl2CheckpointId = repl2.remoteCheckpointDocID();
         runReplication(repl2);
         assertNull(repl2.getLastError());
 
@@ -291,17 +292,18 @@ public class ReplicationTest extends LiteTestCase {
         verifyRemoteDocExists(remote, doc3Id);
 
         // verify sequence stored in local db has been updated
-        String checkpointId = repl2.remoteCheckpointDocID();
         boolean isPush = true;
-        // TODO: re-enable assertEquals(repl2.getLastSequence(), repl2.getLocalDatabase().getLastSequenceStored(checkpointId, isPush));
+        assertEquals(repl2.getLastSequence(), database.getLastSequenceStored(repl2CheckpointId, isPush));
 
         // wait a few seconds in case reqeust to server to update checkpoint still in flight
         Thread.sleep(2000);
 
         // verify that the _local doc remote checkpoint has been updated and it matches
-        String pathToCheckpointDoc = String.format("%s/_local/%s", remote.toExternalForm(), checkpointId);
+        String pathToCheckpointDoc = String.format("%s/_local/%s", remote.toExternalForm(), repl2CheckpointId);
         HttpResponse response = getRemoteDoc(new URL(pathToCheckpointDoc));
         Map<String, Object> json = extractJsonFromResponse(response);
+        String remoteLastSequence = (String) json.get("lastSequence");
+        assertEquals(repl2.getLastSequence(), remoteLastSequence);
 
         Log.d(TAG, "testPusher() finished");
 
