@@ -9,6 +9,7 @@ import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.Mapper;
+import com.couchbase.lite.RevisionList;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.UnsavedRevision;
@@ -16,6 +17,8 @@ import com.couchbase.lite.View;
 import com.couchbase.lite.auth.FacebookAuthorizer;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.storage.Cursor;
+import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
@@ -287,8 +290,26 @@ public class ReplicationTest extends LiteTestCase {
         // make sure the doc has been added
         verifyRemoteDocExists(remote, doc3Id);
 
+        // verify sequence stored in local db has been updated
+        String checkpointId = repl2.remoteCheckpointDocID();
+        boolean isPush = true;
+        // TODO: re-enable assertEquals(repl2.getLastSequence(), repl2.getLocalDatabase().getLastSequenceStored(checkpointId, isPush));
+
+        // wait a few seconds in case reqeust to server to update checkpoint still in flight
+        Thread.sleep(2000);
+
+        // verify that the _local doc remote checkpoint has been updated and it matches
+        String pathToCheckpointDoc = String.format("%s/_local/%s", remote.toExternalForm(), checkpointId);
+        HttpResponse response = getRemoteDoc(new URL(pathToCheckpointDoc));
+        Map<String, Object> json = extractJsonFromResponse(response);
+
         Log.d(TAG, "testPusher() finished");
 
+    }
+
+    private Map<String, Object> extractJsonFromResponse(HttpResponse response) throws IOException{
+        InputStream is =  response.getEntity().getContent();
+        return Manager.getObjectMapper().readValue(is, Map.class);
     }
 
     private String createDocumentsForPushReplication(String docIdTimestamp) throws CouchbaseLiteException {
@@ -337,6 +358,29 @@ public class ReplicationTest extends LiteTestCase {
         return (remote.getPort() == 4984 || remote.getPort() == 4984);
     }
 
+    private HttpResponse getRemoteDoc(URL pathToDoc) throws MalformedURLException, IOException {
+
+        HttpClient httpclient = new DefaultHttpClient();
+
+        HttpResponse response = null;
+        String responseString = null;
+        response = httpclient.execute(new HttpGet(pathToDoc.toExternalForm()));
+        StatusLine statusLine = response.getStatusLine();
+        if (statusLine.getStatusCode() != HttpStatus.SC_OK) {
+            throw new RuntimeException("Did not get 200 status doing GET to URL: " + pathToDoc);
+        }
+        return response;
+
+    }
+
+    /**
+     * TODO: 1. refactor to use getRemoteDoc
+     * TODO: 2. can just make synchronous http call, no need for background task
+     *
+     * @param remote
+     * @param doc1Id
+     * @throws MalformedURLException
+     */
     private void verifyRemoteDocExists(URL remote, final String doc1Id) throws MalformedURLException {
         URL replicationUrlTrailing = new URL(String.format("%s/", remote.toExternalForm()));
         final URL pathToDoc = new URL(replicationUrlTrailing, doc1Id);
