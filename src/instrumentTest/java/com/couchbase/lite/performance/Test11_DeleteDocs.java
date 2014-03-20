@@ -80,6 +80,8 @@ public class Test11_DeleteDocs extends LiteTestCase {
 
     public void testDeleteDocsPerformance() throws CouchbaseLiteException {
 
+        long startMillis = System.currentTimeMillis();
+
         assertTrue(database.runInTransaction(new TransactionalTask() {
 
             public boolean run() {
@@ -98,6 +100,8 @@ public class Test11_DeleteDocs extends LiteTestCase {
                 return true;
             }
         }));
+
+        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments()+","+getSizeOfDocument());
 
     }
 

@@ -40,6 +40,8 @@ public class Test9_LoadDB extends LiteTestCase {
 
     public void testLoadDBPerformance() throws CouchbaseLiteException {
 
+        long startMillis = System.currentTimeMillis();
+
         String[] bigObj = new String[getSizeOfDocument()];
 
         for (int i = 0; i < getSizeOfDocument(); i++) {
@@ -80,6 +82,9 @@ public class Test9_LoadDB extends LiteTestCase {
                 }
             }
         }
+
+        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments()+","+getSizeOfDocument()+",,"+getNumberOfShutAndReloadCycles());
+
     }
 
     private int getSizeOfDocument() {

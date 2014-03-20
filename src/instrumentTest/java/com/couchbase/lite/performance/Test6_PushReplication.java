@@ -54,8 +54,6 @@ public class Test6_PushReplication extends LiteTestCase {
 
     public static final String TAG = "PushReplicationPerformance";
 
-    private static final String _propertyValue = "1234567";
-
     @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "DeleteDBPerformance setUp");
@@ -63,14 +61,12 @@ public class Test6_PushReplication extends LiteTestCase {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
-        for(int i=0; i < getNumberOfDocuments(); i++)
-        {
+        for (int i = 0; i < getNumberOfDocuments(); i++) {
             String docId = String.format("doc%d-%s", i, docIdTimestamp);
-
-            Log.d(TAG, "Adding " + docId + " directly to sync gateway");
 
             try {
                 addDocWithId(docId, "attachment.png", false);
+                //addDocWithId(docId, null, false);
             } catch (IOException ioex) {
                 Log.e(TAG, "Add document directly to sync gateway failed", ioex);
                 fail();
@@ -79,6 +75,8 @@ public class Test6_PushReplication extends LiteTestCase {
     }
 
     public void testPushReplicationPerformance() throws CouchbaseLiteException {
+
+        long startMillis = System.currentTimeMillis();
 
         URL remote = getReplicationURL();
 
@@ -92,6 +90,9 @@ public class Test6_PushReplication extends LiteTestCase {
         runReplication(repl);
 
         Log.d(TAG, "testPusher() finished");
+
+        Log.v("PerformanceStats", TAG + "," + Long.valueOf(System.currentTimeMillis() - startMillis).toString() + "," + getNumberOfDocuments());
+
     }
 
     private boolean isSyncGateway(URL remote) {
@@ -103,39 +104,42 @@ public class Test6_PushReplication extends LiteTestCase {
         final String docJson;
         final Map<String, Object> documentProperties = new HashMap<String, Object>();
 
-        if (attachmentName != null) {
+        if (attachmentName == null) {
+            documentProperties.put("foo", 1);
+            documentProperties.put("bar", false);
+            Document doc = database.getDocument(docId);
+            doc.putProperties(documentProperties);
+        } else {
             // add attachment to document
             InputStream attachmentStream = getAsset(attachmentName);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             IOUtils.copy(attachmentStream, baos);
             if (gzipped == false) {
                 String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
-                //docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"%s\": { \"content_type\": \"image/png\", \"data\": \"%s\" } } }", attachmentName, attachmentBase64);
-                documentProperties.put("foo",1);
-                documentProperties.put("bar",false);
+                documentProperties.put("foo", 1);
+                documentProperties.put("bar", false);
                 Map<String, Object> attachment = new HashMap<String, Object>();
-                attachment.put("content_type","image/png");
-                attachment.put("data",attachmentBase64);
+                attachment.put("content_type", "image/png");
+                attachment.put("data", attachmentBase64);
                 Map<String, Object> attachments = new HashMap<String, Object>();
-                attachments.put(attachmentName,attachment);
-                documentProperties.put("_attachments",attachments);
+                attachments.put(attachmentName, attachment);
+                documentProperties.put("_attachments", attachments);
                 Document doc = database.getDocument(docId);
                 doc.putProperties(documentProperties);
             } else {
                 byte[] bytes = baos.toByteArray();
                 String attachmentBase64 = Base64.encodeBytes(bytes, Base64.GZIP);
-                docJson = String.format("{\"foo\":1,\"bar\":false, \"_attachments\": { \"%s\": { \"content_type\": \"image/png\", \"data\": \"%s\", \"encoding\": \"gzip\", \"length\":%d } } }", attachmentName, attachmentBase64, bytes.length);
-                documentProperties.put("foo",1);
-                documentProperties.put("bar",false);
+                documentProperties.put("foo", 1);
+                documentProperties.put("bar", false);
                 Map<String, Object> attachment = new HashMap<String, Object>();
-                attachment.put("content_type","image/png");
-                attachment.put("data",attachmentBase64);
-                attachment.put("encoding","gzip");
-                attachment.put("length",bytes.length);
+                attachment.put("content_type", "image/png");
+                attachment.put("data", attachmentBase64);
+                attachment.put("encoding", "gzip");
+                attachment.put("length", bytes.length);
 
                 Map<String, Object> attachments = new HashMap<String, Object>();
-                attachments.put(attachmentName,attachment);
-                documentProperties.put("_attachments",attachments);
+                attachments.put(attachmentName, attachment);
+                documentProperties.put("_attachments", attachments);
                 Document doc = database.getDocument(docId);
                 doc.putProperties(documentProperties);
             }

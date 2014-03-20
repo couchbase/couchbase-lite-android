@@ -23,6 +23,7 @@ import com.couchbase.lite.Status;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +36,7 @@ public class Test2_CreateDocsUnoptimizedWay extends LiteTestCase {
 
     public void testCreateDocsUnoptimizedWayPerformance() throws CouchbaseLiteException {
 
+        long startMillis = System.currentTimeMillis();
 
         String[] bigObj = new String[getSizeOfDocument()];
 
@@ -54,6 +56,9 @@ public class Test2_CreateDocsUnoptimizedWay extends LiteTestCase {
 
             rev1 = database.putRevision(rev1, null, false, status);
         }
+
+        Log.v("PerformanceStats", TAG + "," + Long.valueOf(System.currentTimeMillis() - startMillis).toString()+ "," + getNumberOfDocuments() + "," + getSizeOfDocument() );
+
     }
 
 
