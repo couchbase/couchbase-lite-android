@@ -39,6 +39,8 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCase {
 
     public void testCreateDocsWithAttachmentsPerformance() throws CouchbaseLiteException {
 
+        long startMillis = System.currentTimeMillis();
+
         boolean success = database.runInTransaction(new TransactionalTask() {
 
             public boolean run() {
@@ -75,6 +77,9 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCase {
                 return true;
             }
         });
+
+        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments()+","+getSizeOfAttachment());
+
     }
 
     private int getSizeOfAttachment() {
@@ -82,6 +87,6 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCase {
     }
 
     private int getNumberOfDocuments() {
-        return Integer.parseInt(System.getProperty("Test1_numberOfDocuments"));
+        return Integer.parseInt(System.getProperty("Test3_numberOfDocuments"));
     }
 }

@@ -61,7 +61,6 @@ public class Test7_PullReplication extends LiteTestCase {
         Log.v(TAG, "DeleteDBPerformance setUp");
         super.setUp();
 
-
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
         for(int i=0; i < getNumberOfDocuments(); i++)
@@ -81,67 +80,19 @@ public class Test7_PullReplication extends LiteTestCase {
 
     public void testPullReplicationPerformance() throws CouchbaseLiteException {
 
-        doPullReplication();
+        long startMillis = System.currentTimeMillis();
 
+        Log.d(TAG, "testPullReplicationPerformance() started");
+        doPullReplication();
         assertNotNull(database);
+        Log.d(TAG, "testPullReplicationPerformance() finished");
 
-        /*
-        for(int i=0; i < getNumberOfDocuments(); i++)
-        {
-            String docId = String.format("doc%d-%s", i, docIdTimestamp);
-            Log.d(TAG, "Fetching doc via id: " + docId);
-            Document doc = database.getDocument(docId);
-            Log.d(TAG, "doc" + doc);
-            assertNotNull(doc);
-            assertNotNull(doc.getCurrentRevisionId());
-            assertTrue(doc.getCurrentRevisionId().startsWith("1-"));
-            assertNotNull(doc.getProperties());
-            assertEquals(1, doc.getProperties().get("foo"));
-        }
+        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments());
 
-        for(int i=0; i < getNumberOfDocuments(); i++)
-        {
-            String docId = String.format("doc%d-%s", i, docIdTimestamp);
-            Log.d(TAG, "Fetching doc via id: " + docId);
-            Document doc = database.getDocument(docId);
-
-            // update doc on sync gateway
-            String docJson = String.format("{\"foo\":2,\"bar\":true,\"_rev\":\"%s\",\"_id\":\"%s\"}", doc.getCurrentRevisionId(), doc.getId());
-
-            try {
-                pushDocumentToSyncGateway(doc.getId(), docJson);
-            } catch (IOException ioex) {
-                Log.e(TAG, "Add document directly to sync gateway failed", ioex);
-                fail();
-            }
-        }
-
-        // do another pull
-        Log.d(TAG, "Doing 2nd pull replication");
-        doPullReplication();
-        Log.d(TAG, "Finished 2nd pull replication");
-
-        for(int i=0; i < getNumberOfDocuments(); i++)
-        {
-            String docId = String.format("doc%d-%s", i, docIdTimestamp);
-            Log.d(TAG, "Fetching doc via id: " + docId);
-            Document doc = database.getDocument(docId);
-
-            // make sure it has the latest properties
-            Document docFetched = database.getDocument(docId);
-            assertNotNull(docFetched);
-            assertTrue(docFetched.getCurrentRevisionId().startsWith("2-"));
-            assertEquals(2, docFetched.getProperties().get("foo"));
-        }
-        */
-
-        Log.d(TAG, "testPuller() finished");
     }
 
     private void doPullReplication() {
         URL remote = getReplicationURL();
-
-        //CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
         final Replication repl = (Replication) database.createPullReplication(remote);
         repl.setContinuous(false);
@@ -149,7 +100,6 @@ public class Test7_PullReplication extends LiteTestCase {
         Log.d(TAG, "Doing pull replication with: " + repl);
         runReplication(repl);
         Log.d(TAG, "Finished pull replication with: " + repl);
-
 
     }
 

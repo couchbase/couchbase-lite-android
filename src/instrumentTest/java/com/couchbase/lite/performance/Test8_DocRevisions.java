@@ -73,10 +73,7 @@ public class Test8_DocRevisions extends LiteTestCase {
 
     public void testDocRevisionsPerformance() throws CouchbaseLiteException {
 
-        //Now update the documents the required number of times
-        //assertTrue(database.runInTransaction(new TransactionalTask() {
-
-        //    public boolean run() {
+        long startMillis = System.currentTimeMillis();
 
         for (int j = 0; j < getNumberOfDocuments(); j++) {
 
@@ -100,9 +97,8 @@ public class Test8_DocRevisions extends LiteTestCase {
             }
         }
 
-        //        return true;
-        //    }
-        //}));
+        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments()+",,,,"+getNumberOfUpdates());
+
     }
 
     private int getNumberOfDocuments() {

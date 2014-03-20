@@ -74,6 +74,8 @@ public class Test10_DeleteDB extends LiteTestCase {
 
     public void testDeleteDBPerformance() throws CouchbaseLiteException {
 
+        long startMillis = System.currentTimeMillis();
+
         try
         {
             for(int i=0; i<getNumberOfDBs(); i++)
@@ -89,6 +91,9 @@ public class Test10_DeleteDB extends LiteTestCase {
             Log.e(TAG, "DB Teardown/Setup failed", ex);
             fail();
         }
+
+        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments()+","+getSizeOfDocument()+","+getNumberOfDBs());
+
     }
 
     private int getSizeOfDocument() {

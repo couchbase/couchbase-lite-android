@@ -41,7 +41,11 @@ public class Test1_CreateDocs extends LiteTestCase {
 
     private static final String _propertyValue = "1234567";
 
+
+
     public void testCreateDocsPerformance() throws CouchbaseLiteException {
+
+        long startMillis = System.currentTimeMillis();
 
         boolean success = database.runInTransaction(new TransactionalTask() {
 
@@ -73,6 +77,8 @@ public class Test1_CreateDocs extends LiteTestCase {
                 return true;
             }
         });
+
+        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments()+","+getSizeOfDocument());
     }
 
     private int getSizeOfDocument() {
