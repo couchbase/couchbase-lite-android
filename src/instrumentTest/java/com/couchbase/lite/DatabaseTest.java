@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.support.FileDirUtils;
 
 import java.net.URL;
 import java.util.HashMap;
@@ -147,5 +148,13 @@ public class DatabaseTest extends LiteTestCase {
         assertEquals(0, database.getActiveReplications().size());
 
     }
+
+    public void testGetDatabaseNameFromPath() throws Exception {
+
+        assertEquals("baz", FileDirUtils.getDatabaseNameFromPath("foo/bar/baz.cblite"));
+
+
+    }
+
 
 }
