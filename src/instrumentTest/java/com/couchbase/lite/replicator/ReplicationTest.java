@@ -823,15 +823,22 @@ public class ReplicationTest extends LiteTestCase {
         replicator.addChangeListener(replicationFinishedObserver);
 
         // start the replicator
+        Log.d(TAG, "Starting replicator " + replicator);
         replicator.start();
 
         // now lets lookup existing replicator and stop it
+        Log.d(TAG, "Looking up replicator");
         properties.put("cancel", true);
         Replication activeReplicator = manager.getReplicator(properties);
+        Log.d(TAG, "Found replicator " + activeReplicator + " and calling stop()");
+
         activeReplicator.stop();
+        Log.d(TAG, "called stop(), waiting for it to finish");
 
         // wait for replication to finish
-        boolean didNotTimeOut = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+        boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
+        Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
+
         assertTrue(didNotTimeOut);
         assertFalse(activeReplicator.isRunning());
 
