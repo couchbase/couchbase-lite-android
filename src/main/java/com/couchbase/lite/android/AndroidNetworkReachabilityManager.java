@@ -41,6 +41,7 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
         this.context = context;
         this.wrappedContext = context.getWrappedContext();
         this.receiver = new ConnectivityBroadcastReceiver();
+        this.state = State.UNKNOWN;
     }
 
 
@@ -68,7 +69,6 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
             String action = intent.getAction();
 
             if (!action.equals(ConnectivityManager.CONNECTIVITY_ACTION) || listening == false) {
-                Log.w(Database.TAG, "onReceived() called with " + state.toString() + " and " + intent);
                 return;
             }
 
