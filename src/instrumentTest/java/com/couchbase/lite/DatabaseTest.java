@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.FileDirUtils;
 
@@ -153,7 +154,14 @@ public class DatabaseTest extends LiteTestCase {
 
         assertEquals("baz", FileDirUtils.getDatabaseNameFromPath("foo/bar/baz.cblite"));
 
+    }
 
+    public void testEncodeDocumentJSON() throws Exception {
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("_local_seq", "");
+        RevisionInternal revisionInternal = new RevisionInternal(props, database);
+        byte[] encoded = database.encodeDocumentJSON(revisionInternal);
+        assertNotNull(encoded);
     }
 
 
