@@ -1361,6 +1361,85 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/55
+     */
+    public void testContinuousPushReplicationGoesIdle() throws Exception {
+
+        // make sure we are starting empty
+        assertEquals(0, database.getLastSequenceNumber());
+
+        // add docs
+        Map<String,Object> properties1 = new HashMap<String,Object>();
+        properties1.put("doc1", "testContinuousPushReplicationGoesIdle");
+        final Document doc1 = createDocWithProperties(properties1);
+
+        // create a mock http client that serves as a mocked out sync gateway
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+
+        // replication to do initial sync up - has to be continuous replication so the checkpoint id
+        // matches the next continuous replication we're gonna do later.
+        manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
+        Replication firstPusher = database.createPushReplication(getReplicationURL());
+        firstPusher.setContinuous(true);
+        final String checkpointId = firstPusher.remoteCheckpointDocID();  // save the checkpoint id for later usage
+
+        // intercept checkpoint PUT request and return a 201 response with expected json
+        mockHttpClient.setResponder("_local", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                String id = String.format("_local/%s", checkpointId);
+                String json = String.format("{\"id\":\"%s\",\"ok\":true,\"rev\":\"0-2\"}", id);
+                return CustomizableMockHttpClient.generateHttpResponseObject(201, "OK", json);
+            }
+        });
+
+        // start the continuous replication
+        CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+        ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+        firstPusher.addChangeListener(replicationIdleObserver);
+        firstPusher.start();
+
+        // wait until we get an IDLE event
+        boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(successful);
+        stopReplication(firstPusher);
+
+        // the last sequence should be "1" at this point.  we will use this later
+        final String lastSequence = database.lastSequenceWithCheckpointId(checkpointId);
+        assertEquals("1", lastSequence);
+
+        // start a second continuous replication
+        Replication secondPusher = database.createPushReplication(getReplicationURL());
+        secondPusher.setContinuous(true);
+        final String secondPusherCheckpointId = secondPusher.remoteCheckpointDocID();
+        assertEquals(checkpointId, secondPusherCheckpointId);
+
+        // when this goes to fetch the checkpoint, return the last sequence from the previous replication
+        mockHttpClient.setResponder("_local", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                String id = String.format("_local/%s", secondPusherCheckpointId);
+                String json = String.format("{\"id\":\"%s\",\"ok\":true,\"rev\":\"0-2\",\"lastSequence\":\"%s\"}", id, lastSequence);
+                return CustomizableMockHttpClient.generateHttpResponseObject(200, "OK", json);
+            }
+        });
+
+        // start second replication
+        replicationIdleSignal = new CountDownLatch(1);
+        replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+        secondPusher.addChangeListener(replicationIdleObserver);
+        secondPusher.start();
+
+        // wait until we get an IDLE event
+        successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(successful);
+        stopReplication(secondPusher);
+
+
+    }
+
+
     private Document createDocWithProperties(Map<String, Object> properties1) throws CouchbaseLiteException {
         Document doc1 = database.createDocument();
         UnsavedRevision revUnsaved = doc1.createRevision();

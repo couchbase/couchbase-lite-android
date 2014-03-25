@@ -324,6 +324,22 @@ public abstract class LiteTestCase extends TestCase {
         return doc;
     }
 
+    public void stopReplication(Replication replication) throws Exception {
+
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationStoppedObserver replicationStoppedObserver = new ReplicationStoppedObserver(replicationDoneSignal);
+        replication.addChangeListener(replicationStoppedObserver);
+
+        replication.stop();
+
+        boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // give a little padding to give it a chance to save a checkpoint
+        Thread.sleep(2 * 1000);
+
+    }
+
     public void runReplication(Replication replication) {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
@@ -477,6 +493,25 @@ public abstract class LiteTestCase extends TestCase {
         }
 
     }
+
+    public static class ReplicationStoppedObserver implements Replication.ChangeListener {
+
+        private CountDownLatch doneSignal;
+
+        public ReplicationStoppedObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+            Replication replicator = event.getSource();
+            if (replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
+                doneSignal.countDown();
+            }
+        }
+
+    }
+
 
     public static class ReplicationErrorObserver implements Replication.ChangeListener {
 
