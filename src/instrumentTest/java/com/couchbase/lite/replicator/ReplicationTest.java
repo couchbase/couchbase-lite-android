@@ -9,6 +9,10 @@ import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.Mapper;
+import com.couchbase.lite.Query;
+import com.couchbase.lite.QueryEnumerator;
+import com.couchbase.lite.QueryOptions;
+import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.RevisionList;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.Status;
@@ -56,6 +60,7 @@ import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -1135,6 +1140,21 @@ public class ReplicationTest extends LiteTestCase {
         SavedRevision rev1 = doc.createRevision().save();
         SavedRevision rev2a = rev1.createRevision().save();
         SavedRevision rev2b = rev1.createRevision().save(true);
+
+        // make sure we can query the db to get the conflict
+        Query allDocsQuery = database.createAllDocumentsQuery();
+        allDocsQuery.setAllDocsMode(Query.AllDocsMode.ONLY_CONFLICTS);
+        QueryEnumerator rows = allDocsQuery.run();
+        boolean foundDoc = false;
+        assertEquals(1, rows.getCount());
+        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+            QueryRow row = it.next();
+            if (row.getDocument().getId().equals(doc.getId())) {
+                foundDoc = true;
+            }
+        }
+        assertTrue(foundDoc);
+
 
         // Push the conflicts to the remote DB.
         Replication push = database.createPushReplication(getReplicationURL());
