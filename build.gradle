@@ -45,8 +45,6 @@ def buildAndroidWithArtifacts = System.getProperty("buildAndroidWithArtifacts")
 
 dependencies {
 
-    compile 'com.android.support:appcompat-v7:+'
-
     // this library is only needed by test code (95% certain), and therefore
     // instrumentTestCompile is used rather than compile.
     instrumentTestCompile 'commons-io:commons-io:2.0.1'
