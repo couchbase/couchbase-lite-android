@@ -47,6 +47,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         };
 
         final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.OneShot, false, 0, client);
+        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
         changeTracker.start();
 
         try {
@@ -89,6 +90,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         };
 
         final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, false, 0, client);
+        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
         changeTracker.start();
 
         try {
@@ -147,6 +149,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         };
 
         final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0, client);
+        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
         changeTracker.start();
 
         try {
@@ -252,7 +255,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         };
 
         final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, client);
-
+        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
         changeTracker.start();
 
         // sleep for a few seconds

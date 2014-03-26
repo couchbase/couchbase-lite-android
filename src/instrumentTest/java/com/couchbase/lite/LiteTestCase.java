@@ -149,6 +149,10 @@ public abstract class LiteTestCase extends TestCase {
         }
     }
 
+    protected boolean isTestingAgainstSyncGateway() {
+        return getReplicationPort() == 4984;
+    }
+
     protected URL getReplicationURLWithoutCredentials() throws MalformedURLException {
         return new URL(String.format("%s://%s:%d/%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
     }
