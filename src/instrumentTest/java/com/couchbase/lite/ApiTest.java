@@ -82,8 +82,15 @@ public class ApiTest extends LiteTestCase {
     public void testDeleteDatabase() throws Exception {
         Database deleteme = manager.getDatabase("deleteme");
         assertTrue(deleteme.exists());
+        String dbPath =deleteme.getPath();
+        assertTrue(new File(dbPath).exists());
+        assertTrue(new File(dbPath + "-journal").exists());
+        assertTrue(new File(dbPath.substring(0, dbPath.lastIndexOf('.'))).exists());
         deleteme.delete();
         assertFalse(deleteme.exists());
+        assertFalse(new File(dbPath).exists());
+        assertFalse(new File(dbPath + "-journal").exists());
+        assertFalse(new File(dbPath.substring(0, dbPath.lastIndexOf('.'))).exists());
         deleteme.delete();  // delete again, even though already deleted
         Database deletemeFetched = manager.getExistingDatabase("deleteme");
         assertNull(deletemeFetched);
