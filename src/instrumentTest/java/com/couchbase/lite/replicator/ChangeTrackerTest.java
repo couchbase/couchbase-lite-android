@@ -208,10 +208,18 @@ public class ChangeTrackerTest extends LiteTestCase {
         docIds.add("doc2");
         changeTrackerDocIds.setDocIDs(docIds);
 
-        String docIdsEncoded = URLEncoder.encode("[\"doc1\",\"doc2\"]");
+        String docIdsUnencoded = "[\"doc1\",\"doc2\"]";
+        String docIdsEncoded = URLEncoder.encode(docIdsUnencoded);
         String expectedFeedPath = String.format("_changes?feed=longpoll&limit=50&heartbeat=300000&since=0&filter=_doc_ids&doc_ids=%s", docIdsEncoded);
         final String changesFeedPath = changeTrackerDocIds.getChangesFeedPath();
         assertEquals(expectedFeedPath, changesFeedPath);
+
+        changeTrackerDocIds.setUsePOST(true);
+        Map<String, Object> postBodyMap = changeTrackerDocIds.changesFeedPOSTBodyMap();
+        assertEquals("_doc_ids", postBodyMap.get("filter"));
+        assertEquals(docIds, postBodyMap.get("doc_ids"));
+        String postBody = changeTrackerDocIds.changesFeedPOSTBody();
+        assertTrue(postBody.contains(docIdsUnencoded));
 
     }
 
