@@ -1526,6 +1526,14 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    public void testServerIsSyncGatewayVersion() {
+        Replication pusher = database.createPushReplication(getReplicationURL());
+        assertFalse(pusher.serverIsSyncGatewayVersion("0.01"));
+        pusher.setServerType("Couchbase Sync Gateway/0.93");
+        assertTrue(pusher.serverIsSyncGatewayVersion("0.92"));
+        assertFalse(pusher.serverIsSyncGatewayVersion("0.94"));
+    }
+
     private void putReplicationOffline(Replication replication) throws InterruptedException {
 
         final CountDownLatch wentOffline = new CountDownLatch(1);
