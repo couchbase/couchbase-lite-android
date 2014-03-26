@@ -79,7 +79,7 @@ public class ApiTest extends LiteTestCase {
     }
 
 
-    public void failingTestDeleteDatabase() throws Exception {
+    public void testDeleteDatabase() throws Exception {
         Database deleteme = manager.getDatabase("deleteme");
         assertTrue(deleteme.exists());
         String dbPath =deleteme.getPath();
