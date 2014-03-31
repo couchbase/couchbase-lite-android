@@ -1576,6 +1576,25 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/243
+     */
+    public void testDifferentCheckpointsFilteredReplication() throws Exception {
+
+        Replication pullerNoFilter = database.createPullReplication(getReplicationURL());
+        String noFilterCheckpointDocId = pullerNoFilter.remoteCheckpointDocID();
+
+        Replication pullerWithFilter = database.createPullReplication(getReplicationURL());
+        pullerWithFilter.setFilter("foo/bar");
+        Map<String, Object> filterParams= new HashMap<String, Object>();
+        filterParams.put("a", "b");
+        pullerWithFilter.setFilterParams(filterParams);
+
+        String withFilterCheckpointDocId = pullerWithFilter.remoteCheckpointDocID();
+        assertFalse(withFilterCheckpointDocId.equals(noFilterCheckpointDocId));
+
+    }
+
 
 
     /**
