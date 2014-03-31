@@ -132,6 +132,30 @@ public class RevisionsTest extends LiteTestCase {
 
     }
 
+    public void testResolveConflict() throws Exception {
+
+        // Create a conflict on purpose
+        Document doc = database.createDocument();
+        SavedRevision rev1 = doc.createRevision().save();
+        SavedRevision rev2a = rev1.createRevision().save();
+        SavedRevision rev2b = rev1.createRevision().save(true);
+
+        assertEquals(rev2a.getId(), doc.getCurrentRevision().getId());
+
+        // rev2a will end up being picked as the winner, but let's manually
+        // choose rev2b as the winner.  First, delete rev2a, which will
+        // cause rev2b to be the current revision.
+        SavedRevision deleteRevision = rev2a.deleteDocument();
+
+        assertEquals(3, deleteRevision.getGeneration());
+        assertEquals(rev2b.getId(), doc.getCurrentRevision().getId());
+
+        // Finally create a new revision rev3 based on rev2b
+        SavedRevision rev3 = rev2b.createRevision().save(true);
+
+        assertEquals(rev3.getId(), doc.getCurrentRevisionId());
+    }
+
     private static RevisionInternal mkrev(String revID) {
         return new RevisionInternal("docid", revID, false, null);
     }
