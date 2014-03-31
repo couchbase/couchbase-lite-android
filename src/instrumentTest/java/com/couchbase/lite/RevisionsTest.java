@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
@@ -8,6 +9,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class RevisionsTest extends LiteTestCase {
 
@@ -140,20 +143,47 @@ public class RevisionsTest extends LiteTestCase {
         SavedRevision rev2a = rev1.createRevision().save();
         SavedRevision rev2b = rev1.createRevision().save(true);
 
-        assertEquals(rev2a.getId(), doc.getCurrentRevision().getId());
+        SavedRevision winningRev = null;
+        SavedRevision losingRev = null;
+        if (doc.getCurrentRevisionId().equals(rev2a.getId())) {
+            winningRev = rev2a;
+            losingRev = rev2b;
+        } else {
+            winningRev = rev2b;
+            losingRev = rev2a;
+        }
 
-        // rev2a will end up being picked as the winner, but let's manually
-        // choose rev2b as the winner.  First, delete rev2a, which will
-        // cause rev2b to be the current revision.
-        SavedRevision deleteRevision = rev2a.deleteDocument();
+        // let's manually choose the losing rev as the winner.  First, delete winner, which will
+        // cause losing rev to be the current revision.
+        SavedRevision deleteRevision = winningRev.deleteDocument();
 
         assertEquals(3, deleteRevision.getGeneration());
-        assertEquals(rev2b.getId(), doc.getCurrentRevision().getId());
+        assertEquals(losingRev.getId(), doc.getCurrentRevision().getId());
 
-        // Finally create a new revision rev3 based on rev2b
-        SavedRevision rev3 = rev2b.createRevision().save(true);
+        // Finally create a new revision rev3 based on losing rev
+        SavedRevision rev3 = losingRev.createRevision().save(true);
 
         assertEquals(rev3.getId(), doc.getCurrentRevisionId());
+    }
+
+    public void testDocumentChangeListener() throws Exception {
+
+        Document doc = database.createDocument();
+        final CountDownLatch documentChanged = new CountDownLatch(1);
+        doc.addChangeListener(new Document.ChangeListener() {
+            @Override
+            public void changed(Document.ChangeEvent event) {
+                DocumentChange docChange = event.getChange();
+                String msg = "New revision added: %s.  Conflict: %s";
+                msg = String.format(msg, docChange.getAddedRevision(), docChange.isConflict());
+                Log.d(TAG, msg);
+                documentChanged.countDown();
+            }
+        });
+        doc.createRevision().save();
+        boolean success = documentChanged.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
     }
 
     private static RevisionInternal mkrev(String revID) {
