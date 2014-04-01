@@ -148,7 +148,7 @@ public class ApiTest extends LiteTestCase {
 
     }
 
-    public void failingTestCreateRevisions() throws Exception{
+    public void testCreateRevisions() throws Exception{
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("testName", "testCreateRevisions");
         properties.put("tag", 1337);
@@ -298,7 +298,7 @@ public class ApiTest extends LiteTestCase {
     //API_DeleteMultipleDocuments commented on IOS
 
 
-    public void failingTestDeleteDocument() throws Exception{
+    public void testDeleteDocument() throws Exception{
         Map<String,Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testDeleteDocument");
 
