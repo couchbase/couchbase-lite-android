@@ -1,7 +1,5 @@
 package com.couchbase.lite;
 
-import android.content.res.Resources;
-
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -157,7 +155,7 @@ public class ApiTest extends LiteTestCase {
 
         Database db = startDatabase();
         Document doc=createDocumentWithProperties(db, properties);
-
+        assertFalse(doc.isDeleted());
         SavedRevision rev1 = doc.getCurrentRevision();
         assertTrue(rev1.getId().startsWith("1-"));
         assertEquals(1, rev1.getSequence());
@@ -172,7 +170,6 @@ public class ApiTest extends LiteTestCase {
 
         assertTrue("Document revision ID is still " + doc.getCurrentRevisionId(), doc.getCurrentRevisionId().startsWith("2-"));
 
-
         assertEquals(rev2.getId(), doc.getCurrentRevisionId());
         assertNotNull(rev2.arePropertiesAvailable());
         assertEquals(rev2.getUserProperties(), properties2);
@@ -185,6 +182,11 @@ public class ApiTest extends LiteTestCase {
         assertNull(newRev.getId());
         assertEquals(newRev.getParent(), rev2);
         assertEquals(newRev.getParentId(), rev2.getId());
+        assertEquals(doc.getCurrentRevision(), rev2);
+        assertFalse(doc.isDeleted());
+        //https://github.com/couchbase/couchbase-lite-java-core/issues/92
+        assertNull(doc.getCurrentRevision());
+        assertTrue(doc.getLeafRevisions()==null);
         List<SavedRevision> listRevs=new ArrayList<SavedRevision>();
         listRevs.add(rev1);
         listRevs.add(rev2);
@@ -306,6 +308,9 @@ public class ApiTest extends LiteTestCase {
         assertTrue(!doc.getCurrentRevision().isDeletion());
         assertTrue(doc.delete());
         assertTrue(doc.isDeleted());
+        //After deleting a document, its currentRevision is nil
+        //https://github.com/couchbase/couchbase-lite-java-core/issues/92
+        assertNull(doc.getCurrentRevision());
         assertNotNull(doc.getCurrentRevision().isDeletion());
     }
 
