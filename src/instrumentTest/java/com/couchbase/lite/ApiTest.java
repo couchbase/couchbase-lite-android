@@ -184,9 +184,6 @@ public class ApiTest extends LiteTestCase {
         assertEquals(newRev.getParentId(), rev2.getId());
         assertEquals(doc.getCurrentRevision(), rev2);
         assertFalse(doc.isDeleted());
-        //https://github.com/couchbase/couchbase-lite-java-core/issues/92
-        assertNull(doc.getCurrentRevision());
-        assertTrue(doc.getLeafRevisions()==null);
         List<SavedRevision> listRevs=new ArrayList<SavedRevision>();
         listRevs.add(rev1);
         listRevs.add(rev2);
