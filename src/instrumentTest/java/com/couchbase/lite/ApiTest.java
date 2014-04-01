@@ -277,7 +277,6 @@ public class ApiTest extends LiteTestCase {
         newRev.setIsDeletion(true);
         SavedRevision rev3 = newRev.save();
         assertNotNull("Save 3 failed", rev3);
-        assertEquals(doc.getCurrentRevision(), rev3);
         assertNotNull("Unexpected revID " + rev3.getId(), rev3.getId().startsWith("3-"));
         assertEquals(3, rev3.getSequence());
         assertTrue(rev3.isDeletion());
