@@ -725,6 +725,47 @@ public class RouterTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/106
+     */
+    public void failingTestResolveConflict() throws Exception {
+
+        Map<String,Object> result;
+
+        // Create a conflict on purpose
+        Document doc = database.createDocument();
+        SavedRevision rev1 = doc.createRevision().save();
+        SavedRevision rev2a = rev1.createRevision().save();
+        SavedRevision rev2b = rev1.createRevision().save(true);
+
+        SavedRevision winningRev = null;
+        SavedRevision losingRev = null;
+        if (doc.getCurrentRevisionId().equals(rev2a.getId())) {
+            winningRev = rev2a;
+            losingRev = rev2b;
+        } else {
+            winningRev = rev2b;
+            losingRev = rev2a;
+        }
+
+        assertEquals(2, doc.getConflictingRevisions().size());
+        assertEquals(2, doc.getLeafRevisions().size());
+
+        result = (Map<String,Object>)send("GET", String.format("/%s/%s?conflicts=true", DEFAULT_TEST_DB, doc.getId()), Status.OK, null);
+        List<String> conflicts = (List) result.get("_conflicts");
+        assertEquals(1, conflicts.size());
+        String conflictingRevId = conflicts.get(0);
+        assertEquals(losingRev.getId(), conflictingRevId);
+
+        result = (Map<String,Object>)send("DELETE", String.format("/%s/%s?rev=%s", DEFAULT_TEST_DB, doc.getId(), conflictingRevId), Status.OK, null);
+
+        result = (Map<String,Object>)send("GET", String.format("/%s/%s?conflicts=true", DEFAULT_TEST_DB, doc.getId()), Status.OK, null);
+
+        conflicts = (List) result.get("_conflicts");
+        assertEquals(0, conflicts.size());
+
+    }
+
 
 
 }
