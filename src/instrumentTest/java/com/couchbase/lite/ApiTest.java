@@ -305,10 +305,7 @@ public class ApiTest extends LiteTestCase {
         assertTrue(!doc.getCurrentRevision().isDeletion());
         assertTrue(doc.delete());
         assertTrue(doc.isDeleted());
-        //After deleting a document, its currentRevision is nil
-        //https://github.com/couchbase/couchbase-lite-java-core/issues/92
         assertNull(doc.getCurrentRevision());
-        assertNotNull(doc.getCurrentRevision().isDeletion());
     }
 
 
