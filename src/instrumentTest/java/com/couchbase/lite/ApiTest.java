@@ -282,6 +282,10 @@ public class ApiTest extends LiteTestCase {
         assertTrue(rev3.isDeletion());
 
         assertTrue(doc.isDeleted());
+        assertNull(doc.getCurrentRevision());
+        List<SavedRevision> leafRevs = new ArrayList<SavedRevision>();
+        leafRevs.add(rev3);
+        assertEquals(doc.getLeafRevisions(), leafRevs);
         db.getDocumentCount();
         Document doc2 = db.getDocument(doc.getId());
         assertEquals(doc, doc2);
@@ -697,7 +701,7 @@ public class ApiTest extends LiteTestCase {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
 
-                emitter.emit(document.get("sequence"), new Object[]{"_id" , document.get("prev") });
+                emitter.emit(document.get("sequence"), new Object[]{"_id", document.get("prev")});
 
             }
         });
