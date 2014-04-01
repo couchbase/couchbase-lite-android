@@ -153,9 +153,16 @@ public class RevisionsTest extends LiteTestCase {
             losingRev = rev2a;
         }
 
+        assertEquals(2,doc.getConflictingRevisions().size());
+        assertEquals(2, doc.getLeafRevisions().size());
+
         // let's manually choose the losing rev as the winner.  First, delete winner, which will
         // cause losing rev to be the current revision.
         SavedRevision deleteRevision = winningRev.deleteDocument();
+
+        List<SavedRevision> conflictingRevisions = doc.getConflictingRevisions();
+        assertEquals(1, conflictingRevisions.size());
+        assertEquals(2, doc.getLeafRevisions().size());
 
         assertEquals(3, deleteRevision.getGeneration());
         assertEquals(losingRev.getId(), doc.getCurrentRevision().getId());
@@ -164,6 +171,11 @@ public class RevisionsTest extends LiteTestCase {
         SavedRevision rev3 = losingRev.createRevision().save(true);
 
         assertEquals(rev3.getId(), doc.getCurrentRevisionId());
+
+        List<SavedRevision> conflictingRevisions1 = doc.getConflictingRevisions();
+        assertEquals(1, conflictingRevisions1.size());
+        assertEquals(2, doc.getLeafRevisions().size());
+
     }
 
     public void testDocumentChangeListener() throws Exception {
