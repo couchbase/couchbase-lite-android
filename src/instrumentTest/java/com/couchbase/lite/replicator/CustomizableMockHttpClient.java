@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class CustomizableMockHttpClient implements org.apache.http.client.HttpClient {
 
@@ -36,7 +37,7 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
     private Map<String, Responder> responders;
 
     // capture all request so that the test can verify expected requests were received.
-    private List<HttpRequest> capturedRequests = Collections.synchronizedList(new ArrayList<HttpRequest>());
+    private List<HttpRequest> capturedRequests = new CopyOnWriteArrayList<HttpRequest>();
 
     // if this is set, it will delay responses by this number of milliseconds
     private long responseDelayMilliseconds;
@@ -168,9 +169,7 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
 
 
     public List<HttpRequest> getCapturedRequests() {
-        List<HttpRequest> snapshot = new ArrayList<HttpRequest>();
-        snapshot.addAll(capturedRequests);
-        return snapshot;
+        return capturedRequests;
     }
 
     public void clearCapturedRequests() {
