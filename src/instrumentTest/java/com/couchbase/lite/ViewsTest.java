@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 
 public class ViewsTest extends LiteTestCase {
@@ -1141,6 +1143,94 @@ public class ViewsTest extends LiteTestCase {
             Assert.assertEquals(expected[i][4], doc.get("_id")); 
 
         }
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/29
+     */
+    public void testRunLiveQueriesWithReduce() throws Exception {
+
+        final Database db = startDatabase();
+        // run a live query
+        View view = db.getView("vu");
+        view.setMapReduce(new Mapper() {
+                              @Override
+                              public void map(Map<String, Object> document, Emitter emitter) {
+                                  emitter.emit(document.get("sequence"), 1);
+                              }
+                          }, new Reducer() {
+                              @Override
+                              public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                                  return View.totalValues(values);
+                              }
+                          },
+                "1"
+        );
+        final LiveQuery query = view.createQuery().toLiveQuery();
+
+        View view1 = db.getView("vu1");
+        view1.setMapReduce(new Mapper() {
+                               @Override
+                               public void map(Map<String, Object> document, Emitter emitter) {
+                                   emitter.emit(document.get("sequence"), 1);
+                               }
+                           }, new Reducer() {
+                               @Override
+                               public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                                   return View.totalValues(values);
+                               }
+                           },
+                "1"
+        );
+        final LiveQuery query1 = view1.createQuery().toLiveQuery();
+
+        final int kNDocs = 10;
+        createDocumentsAsync(db, kNDocs);
+
+        assertNull(query.getRows());
+        query.start();
+
+        final CountDownLatch gotExpectedQueryResult = new CountDownLatch(1);
+
+        query.addChangeListener(new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                if (event.getError() != null) {
+                    Log.e(TAG, "LiveQuery change event had error", event.getError());
+                } else if (event.getRows().getCount() == 1 && ((Double) event.getRows().getRow(0).getValue()).intValue() == kNDocs) {
+                    gotExpectedQueryResult.countDown();
+                }
+            }
+        });
+        boolean success = gotExpectedQueryResult.await(30, TimeUnit.SECONDS);
+        Assert.assertTrue(success);
+
+        query.stop();
+
+
+        query1.start();
+
+        createDocumentsAsync(db, kNDocs + 5);//10 + 10 + 5
+
+        final CountDownLatch gotExpectedQuery1Result = new CountDownLatch(1);
+        query1.addChangeListener(new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                if (event.getError() != null) {
+                    Log.e(TAG, "LiveQuery change event had error", event.getError());
+                } else if (event.getRows().getCount() == 1 && ((Double) event.getRows().getRow(0).getValue()).intValue() == 2*kNDocs + 5) {
+                    gotExpectedQuery1Result.countDown();
+                }
+            }
+        });
+        success = gotExpectedQuery1Result.await(30, TimeUnit.SECONDS);
+        Assert.assertTrue(success);
+
+        query1.stop();
+
+        assertEquals(2*kNDocs + 5, db.getDocumentCount()); // 25 - OK
+
+
     }
 
 }
