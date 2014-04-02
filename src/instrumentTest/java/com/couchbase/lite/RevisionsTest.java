@@ -6,6 +6,7 @@ import com.couchbase.lite.util.Log;
 import junit.framework.Assert;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +136,9 @@ public class RevisionsTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/106
+     */
     public void testResolveConflict() throws Exception {
 
         // Create a conflict on purpose
@@ -175,6 +179,68 @@ public class RevisionsTest extends LiteTestCase {
         List<SavedRevision> conflictingRevisions1 = doc.getConflictingRevisions();
         assertEquals(1, conflictingRevisions1.size());
         assertEquals(2, doc.getLeafRevisions().size());
+
+    }
+
+    public void testCorrectWinningRevisionTiebreaker() throws Exception {
+
+        // Create a conflict on purpose
+        Document doc = database.createDocument();
+        SavedRevision rev1 = doc.createRevision().save();
+        SavedRevision rev2a = rev1.createRevision().save();
+        SavedRevision rev2b = rev1.createRevision().save(true);
+
+        // the tiebreaker will happen based on which rev hash has lexicographically higher sort order
+        SavedRevision expectedWinner = null;
+        if (rev2a.getId().compareTo(rev2b.getId()) > 0) {
+            expectedWinner = rev2a;
+        } else if (rev2a.getId().compareTo(rev2b.getId()) < 0) {
+            expectedWinner = rev2b;
+        }
+
+        RevisionInternal revFound = database.getDocumentWithIDAndRev(doc.getId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
+        assertEquals(expectedWinner.getId(), revFound.getRevId());
+
+    }
+
+    public void testCorrectWinningRevisionLongerBranch() throws Exception {
+
+        // Create a conflict on purpose
+        Document doc = database.createDocument();
+        SavedRevision rev1 = doc.createRevision().save();
+        SavedRevision rev2a = rev1.createRevision().save();
+        SavedRevision rev2b = rev1.createRevision().save(true);
+        SavedRevision rev3b = rev2b.createRevision().save(true);
+
+        // rev3b should be picked as the winner since it has a longer branch
+        SavedRevision expectedWinner = rev3b;
+
+        RevisionInternal revFound = database.getDocumentWithIDAndRev(doc.getId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
+        assertEquals(expectedWinner.getId(), revFound.getRevId());
+
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/135
+     */
+    public void failingTestCorrectWinningRevisionHighRevisionNumber() throws Exception {
+
+        // Create a conflict on purpose
+        Document doc = database.createDocument();
+        SavedRevision rev1 = doc.createRevision().save();
+        SavedRevision rev2a = rev1.createRevision().save();
+        SavedRevision rev2b = rev1.createRevision().save(true);
+        SavedRevision rev3b = rev2b.createRevision().save(true);
+        SavedRevision rev4b = rev3b.createRevision().save(true);
+        SavedRevision rev5b = rev4b.createRevision().save(true);
+        SavedRevision rev6b = rev5b.createRevision().save(true);
+        SavedRevision rev7b = rev6b.createRevision().save(true);
+        SavedRevision rev8b = rev7b.createRevision().save(true);
+        SavedRevision rev9b = rev8b.createRevision().save(true);
+        SavedRevision rev10b = rev9b.createRevision().save(true);
+
+        RevisionInternal revFound = database.getDocumentWithIDAndRev(doc.getId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
+        assertEquals(rev10b.getId(), revFound.getRevId());
 
     }
 
