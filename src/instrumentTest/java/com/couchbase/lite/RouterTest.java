@@ -728,7 +728,7 @@ public class RouterTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/106
      */
-    public void failingTestResolveConflict() throws Exception {
+    public void testResolveConflict() throws Exception {
 
         Map<String,Object> result;
 
@@ -756,6 +756,12 @@ public class RouterTest extends LiteTestCase {
         assertEquals(1, conflicts.size());
         String conflictingRevId = conflicts.get(0);
         assertEquals(losingRev.getId(), conflictingRevId);
+
+        long docNumericID = database.getDocNumericID(doc.getId());
+        assertTrue(docNumericID != 0);
+        assertNotNull(database.getDocument(doc.getId()));
+
+        Log.d(TAG, "docNumericID for " + doc.getId() + " is: " + docNumericID);
 
         result = (Map<String,Object>)send("DELETE", String.format("/%s/%s?rev=%s", DEFAULT_TEST_DB, doc.getId(), conflictingRevId), Status.OK, null);
 
