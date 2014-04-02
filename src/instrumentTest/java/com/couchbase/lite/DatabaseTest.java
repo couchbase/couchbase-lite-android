@@ -5,6 +5,7 @@ import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.FileDirUtils;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -162,6 +163,35 @@ public class DatabaseTest extends LiteTestCase {
         RevisionInternal revisionInternal = new RevisionInternal(props, database);
         byte[] encoded = database.encodeDocumentJSON(revisionInternal);
         assertNotNull(encoded);
+    }
+
+    public void testWinningRevIDOfDoc() throws Exception {
+
+        List<Boolean> outIsDeleted = new ArrayList<Boolean>();
+        List<Boolean> outIsConflict = new ArrayList<Boolean>();
+
+        // Create a conflict on purpose
+        Document doc = database.createDocument();
+        SavedRevision rev1 = doc.createRevision().save();
+
+        long docNumericId = database.getDocNumericID(doc.getId());
+        assertTrue(docNumericId != 0);
+        assertEquals(rev1.getId(), database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict));
+        assertTrue(outIsConflict.size() == 0);
+
+        outIsDeleted = new ArrayList<Boolean>();
+        outIsConflict = new ArrayList<Boolean>();
+        SavedRevision rev2a = rev1.createRevision().save();
+        assertEquals(rev2a.getId(), database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict));
+        assertTrue(outIsConflict.size() == 0);
+
+        outIsDeleted = new ArrayList<Boolean>();
+        outIsConflict = new ArrayList<Boolean>();
+        SavedRevision rev2b = rev1.createRevision().save(true);
+        database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict);
+
+        assertTrue(outIsConflict.size() > 0);
+
     }
 
 
