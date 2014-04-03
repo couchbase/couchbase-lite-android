@@ -1,8 +1,8 @@
 # Couchbase-Lite-Android #
 
-Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend.  It is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
+Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend.  
 
-**Update**: The project structure recently changed, here is a [mailing list post](https://groups.google.com/forum/#!topic/mobile-couchbase/Zsn8TG5F88o) describing the change, as well as [Project Structure](https://github.com/couchbase/couchbase-lite-android/wiki/Project-structure) wiki page that describes the new project structure.
+It is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
 
 ## Architecture
 
@@ -86,9 +86,10 @@ There are two wiki pages which describe how to run the tests:
 * [LiteServAndroid](https://github.com/couchbaselabs/couchbase-lite-android-liteserv)
 * [CouchChatAndroid](https://github.com/couchbaselabs/CouchChatAndroid) -- just a stub at this point.
 
-## Utilities
+## Project Structure
 
-* [CBLiteConsole](https://github.com/couchbaselabs/CBLiteConsole)
+* [Project Structure](https://github.com/couchbase/couchbase-lite-android/wiki/Project-structure) wiki page that describes the new project structure.
+* A [mailing list post](https://groups.google.com/forum/#!topic/mobile-couchbase/Zsn8TG5F88o) describing the project structre
 
 ## Requirements
 
