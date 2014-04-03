@@ -223,7 +223,7 @@ public class RevisionsTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/135
      */
-    public void failingTestCorrectWinningRevisionHighRevisionNumber() throws Exception {
+    public void testCorrectWinningRevisionHighRevisionNumber() throws Exception {
 
         // Create a conflict on purpose
         Document doc = database.createDocument();

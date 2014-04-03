@@ -39,6 +39,12 @@ android {
         exclude 'META-INF/NOTICE'
     }
 
+    sourceSets {
+        main {
+            jni.srcDirs = []
+            jniLibs.srcDir file('jnilibs')
+        }
+    }
 }
 
 def buildAndroidWithArtifacts = System.getProperty("buildAndroidWithArtifacts")

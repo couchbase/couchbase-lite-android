@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.util.Log;
+import com.couchbase.touchdb.RevCollator;
 import com.couchbase.touchdb.TDCollateJSON;
 
 import junit.framework.Assert;
@@ -119,6 +120,30 @@ public class CollationTest extends LiteTestCase {
         Assert.assertEquals(7, TDCollateJSON.testDigitToInt('7'));
         Assert.assertEquals(0xc, TDCollateJSON.testDigitToInt('c'));
         Assert.assertEquals(0xc, TDCollateJSON.testDigitToInt('C'));
+    }
+
+    public void testCollateRevIds() {
+        Assert.assertEquals(RevCollator.testCollateRevIds("1-foo", "1-foo"), 0);
+        Assert.assertEquals(RevCollator.testCollateRevIds("2-bar", "1-foo"), 1);
+        Assert.assertEquals(RevCollator.testCollateRevIds("1-foo", "2-bar"), -1);
+        // Multi-digit:
+        Assert.assertEquals(RevCollator.testCollateRevIds("123-bar", "456-foo"), -1);
+        Assert.assertEquals(RevCollator.testCollateRevIds("456-foo", "123-bar"), 1);
+        Assert.assertEquals(RevCollator.testCollateRevIds("456-foo", "456-foo"), 0);
+        Assert.assertEquals(RevCollator.testCollateRevIds("456-foo", "456-foofoo"), -1);
+        // Different numbers of digits:
+        Assert.assertEquals(RevCollator.testCollateRevIds("89-foo", "123-bar"), -1);
+        Assert.assertEquals(RevCollator.testCollateRevIds("123-bar", "89-foo"), 1);
+        // Edge cases:
+        Assert.assertEquals(RevCollator.testCollateRevIds("123-", "89-"), 1);
+        Assert.assertEquals(RevCollator.testCollateRevIds("123-a", "123-a"), 0);
+        // Invalid rev IDs:
+        Assert.assertEquals(RevCollator.testCollateRevIds("-a", "-b"), -1);
+        Assert.assertEquals(RevCollator.testCollateRevIds("-", "-"), 0);
+        Assert.assertEquals(RevCollator.testCollateRevIds("", ""), 0);
+        Assert.assertEquals(RevCollator.testCollateRevIds("", "-b"), -1);
+        Assert.assertEquals(RevCollator.testCollateRevIds("bogus", "yo"), -1);
+        Assert.assertEquals(RevCollator.testCollateRevIds("bogus-x", "yo-y"), -1);
     }
 
 }

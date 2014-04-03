@@ -24,6 +24,7 @@ import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
+import com.couchbase.touchdb.RevCollator;
 import com.couchbase.touchdb.TDCollateJSON;
 
 import java.util.Map;
@@ -42,6 +43,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
         try {
             database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
             TDCollateJSON.registerCustomCollators(database);
+            RevCollator.register(database);
         } catch(SQLiteException e) {
             Log.e(TAG, "Error opening", e);
 
