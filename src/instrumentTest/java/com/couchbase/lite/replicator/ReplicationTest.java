@@ -1387,7 +1387,7 @@ public class ReplicationTest extends LiteTestCase {
      * NOTE: this test is currently failing and disabled due to:
      * https://github.com/couchbase/couchbase-lite-ios/issues/301
      */
-    public void failingTestContinuousPushReplicationGoesIdle() throws Exception {
+    public void testContinuousPushReplicationGoesIdle() throws Exception {
 
         // make sure we are starting empty
         assertEquals(0, database.getLastSequenceNumber());
