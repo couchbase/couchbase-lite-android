@@ -11,6 +11,7 @@ import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
+import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -327,6 +329,44 @@ public abstract class LiteTestCase extends TestCase {
 
         return doc;
     }
+
+    public static Document createDocWithAttachment(Database database, String attachmentName, String content) throws Exception {
+
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
+
+        Document doc = createDocumentWithProperties(database, properties);
+        SavedRevision rev = doc.getCurrentRevision();
+
+        assertEquals(rev.getAttachments().size(), 0);
+        assertEquals(rev.getAttachmentNames().size(), 0);
+        assertNull(rev.getAttachment(attachmentName));
+
+        ByteArrayInputStream body = new ByteArrayInputStream(content.getBytes());
+
+        UnsavedRevision rev2 = doc.createRevision();
+        rev2.setAttachment(attachmentName, "text/plain; charset=utf-8", body);
+
+        SavedRevision rev3 = rev2.save();
+        assertNotNull(rev3);
+        assertEquals(rev3.getAttachments().size(), 1);
+        assertEquals(rev3.getAttachmentNames().size(), 1);
+
+        Attachment attach = rev3.getAttachment(attachmentName);
+        assertNotNull(attach);
+        assertEquals(doc, attach.getDocument());
+        assertEquals(attachmentName, attach.getName());
+        List<String> attNames = new ArrayList<String>();
+        attNames.add(attachmentName);
+        assertEquals(rev3.getAttachmentNames(), attNames);
+
+        assertEquals("text/plain; charset=utf-8", attach.getContentType());
+        assertEquals(IOUtils.toString(attach.getContent(), "UTF-8"), content);
+        assertEquals(content.getBytes().length, attach.getLength());
+
+        return doc;
+    }
+
 
     public void stopReplication(Replication replication) throws Exception {
 
