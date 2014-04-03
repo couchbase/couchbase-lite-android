@@ -40,6 +40,7 @@ However, if you need to debug Couchbase Lite Android or otherwise hack on it, th
 
   * If you are using the master branch of Couchbase Lite, use the latest version in the canary channel (currently Android Studio 0.4.3)
 
+**Note** recent versions after Android Studio 0.4.3 are not able to import the project due to [Issue #65915](https://code.google.com/p/android/issues/detail?id=65915), so it's recommended to use Android Studio 0.4.3.
 
 * Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
 
