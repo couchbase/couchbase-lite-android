@@ -22,13 +22,13 @@ Couchbase Lite databases are able to sync with eachother via [Sync Gateway](http
 
 ## Getting Started with Couchbase Lite
 
-* Download and run the [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android) demo application
+* Download and run the [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
 
 * Create your own Hello World Couchbase Lite via the [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) guide.
 
 ## Developing / Contributing to Couchbase Lite
 
-If you are just building an application with Couchbase Lite, you can skip the rest of this document.  (see [Getting Started with Couchbase Lite](README.md#getting-started-with-couchbase-lite))
+If you are just building an application with Couchbase Lite, your best bet is to look at the [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android) and copy the same structure.
 
 However, if you need to debug Couchbase Lite Android or otherwise hack on it, these instructions will help you do that.
 
@@ -84,7 +84,7 @@ There are two wiki pages which describe how to run the tests:
 ## Example Apps
 
 * [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android)
-* [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)  (deprecated -- it's recommended to use [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android) instead)
+* [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)  
 * [LiteServAndroid](https://github.com/couchbaselabs/couchbase-lite-android-liteserv)
 * [CouchChatAndroid](https://github.com/couchbaselabs/CouchChatAndroid) -- just a stub at this point.
 
