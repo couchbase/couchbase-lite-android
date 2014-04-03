@@ -16,7 +16,7 @@ Couchbase Lite databases are able to sync with eachother via [Sync Gateway](http
 ## Documentation Overview
 
 * This [README](https://github.com/couchbase/couchbase-lite-android/blob/master/README.md)
-* [Official Documentation](http://docs.couchbase.com/couchbase-lite/cbl-android/) for beta2 release
+* [Official Documentation](http://docs.couchbase.com/couchbase-lite/cbl-android/) for [beta2](https://github.com/couchbase/couchbase-lite-android/blob/1.0-beta2) release
 * [Javadocs](http://www.couchbase.com/autodocs/couchbase-lite-android-1.0b2/index.html) 
 * [Wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 
