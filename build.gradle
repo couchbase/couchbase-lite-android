@@ -12,8 +12,9 @@ buildscript {
 }
 
 repositories {
-    maven { url 'http://files.couchbase.com/maven2/' }
     mavenCentral()
+    maven { url couchbaseMavenRepo }
+    maven { url localMavenRepo     }
 }
 
 android {
