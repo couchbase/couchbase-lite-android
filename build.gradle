@@ -1,6 +1,17 @@
 apply plugin: 'android-library'
 apply plugin: 'maven'
 
+def couchbaseMavenRepo = 'http://files.couchbase.com/maven2/'
+    
+def localMavenRepo     = System.getProperty('MAVEN_LOCAL_REPO') == null ?
+                         'file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath :
+                         'file://' + System.getProperty('MAVEN_LOCAL_REPO')
+repositories {
+    mavenCentral()
+    maven { url couchbaseMavenRepo }
+    maven { url localMavenRepo     }
+}
+
 buildscript {
     repositories {
         mavenCentral()
