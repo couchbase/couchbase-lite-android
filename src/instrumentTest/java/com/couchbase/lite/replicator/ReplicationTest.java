@@ -61,8 +61,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -1297,6 +1299,59 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/247
+     */
+    public void testPushReplicationTransientError() throws Exception {
+
+        Map<String,Object> properties1 = new HashMap<String,Object>();
+        properties1.put("doc1", "testPushReplicationTransientError");
+        createDocWithProperties(properties1);
+
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderFakeLocalDocumentUpdate404();
+
+        CustomizableMockHttpClient.Responder sentinal = CustomizableMockHttpClient.fakeBulkDocsResponder();
+        Queue<CustomizableMockHttpClient.Responder> responders = new LinkedList<CustomizableMockHttpClient.Responder>();
+        responders.add(CustomizableMockHttpClient.transientErrorResponder(503, "Transient Error"));
+        ResponderChain responderChain = new ResponderChain(responders, sentinal);
+        mockHttpClient.setResponder("_bulk_docs", responderChain);
+
+        // create a replication obeserver to wait until replication finishes
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+
+        // create replication and add observer
+        manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
+        Replication pusher = database.createPushReplication(getReplicationURL());
+        pusher.addChangeListener(replicationFinishedObserver);
+
+        // save the checkpoint id for later usage
+        String checkpointId = pusher.remoteCheckpointDocID();
+
+        // kick off the replication
+        pusher.start();
+
+        // wait for it to finish
+        boolean success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
+        assertTrue(success);
+        Log.d(TAG, "replicationDoneSignal finished");
+
+        assertNull(pusher.getLastError());
+
+        // workaround for the fact that the replicationDoneSignal.wait() call will unblock before all
+        // the statements in Replication.stopped() have even had a chance to execute.
+        // (specifically the ones that come after the call to notifyChangeListeners())
+        Thread.sleep(500);
+
+        String localLastSequence = database.lastSequenceWithCheckpointId(checkpointId);
+
+        assertNull(localLastSequence);
+
+    }
+
+
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/95
      */
@@ -1359,7 +1414,8 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(success);
         Log.d(TAG, "replicationDoneSignal finished");
 
-        // we would expect it to have recorded an error
+        // we would expect it to have recorded an error because one of the docs (the one without the attachment)
+        // will have failed.
         assertNotNull(pusher.getLastError());
 
         // workaround for the fact that the replicationDoneSignal.wait() call will unblock before all
@@ -1383,9 +1439,6 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/55
-     *
-     * NOTE: this test is currently failing and disabled due to:
-     * https://github.com/couchbase/couchbase-lite-ios/issues/301
      */
     public void testContinuousPushReplicationGoesIdle() throws Exception {
 

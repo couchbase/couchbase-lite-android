@@ -194,7 +194,7 @@ public class ChangeTrackerTest extends LiteTestCase {
                 CustomizableMockHttpClient.Responder sentinal = defaultChangesResponder();
                 Queue<CustomizableMockHttpClient.Responder> responders = new LinkedList<CustomizableMockHttpClient.Responder>();
                 responders.add(defaultChangesResponder());
-                responders.add(get503Responder());
+                responders.add(CustomizableMockHttpClient.transientErrorResponder(503, "Transient Error"));
                 ResponderChain responderChain = new ResponderChain(responders, sentinal);
                 mockHttpClient.setResponder("_changes", responderChain);
                 return mockHttpClient;
@@ -208,15 +208,6 @@ public class ChangeTrackerTest extends LiteTestCase {
                                 "{\"seq\":\"1\",\"id\":\"doc1-138\",\"changes\":[{\"rev\":\"1-82d\"}]}],\n" +
                                 "\"last_seq\":\"*:50\"}";
                         return CustomizableMockHttpClient.generateHttpResponseObject(json);
-                    }
-                };
-            }
-
-            private CustomizableMockHttpClient.Responder get503Responder() {
-                return new CustomizableMockHttpClient.Responder() {
-                    @Override
-                    public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
-                        return CustomizableMockHttpClient.generateHttpResponseObject(503, "Temporary Error", null);
                     }
                 };
             }
