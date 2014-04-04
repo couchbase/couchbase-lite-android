@@ -11,12 +11,6 @@ buildscript {
     }
 }
 
-repositories {
-    mavenCentral()
-    maven { url couchbaseMavenRepo }
-    maven { url localMavenRepo     }
-}
-
 android {
     compileSdkVersion 19
     buildToolsVersion "19.0.1"
