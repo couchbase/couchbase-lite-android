@@ -1302,7 +1302,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/247
      */
-    public void testPushReplicationRecoverabletError() throws Exception {
+    public void testPushReplicationRecoverableError() throws Exception {
         int statusCode = 503;
         String statusMsg = "Transient Error";
         boolean expectReplicatorError = false;
@@ -1312,7 +1312,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/247
      */
-    public void testPushReplicationNonRecoverabletError() throws Exception {
+    public void testPushReplicationNonRecoverableError() throws Exception {
         int statusCode = 404;
         String statusMsg = "NOT FOUND";
         boolean expectReplicatorError = true;
@@ -1370,7 +1370,11 @@ public class ReplicationTest extends LiteTestCase {
 
         String localLastSequence = database.lastSequenceWithCheckpointId(checkpointId);
 
-        assertNull(localLastSequence);
+        if (expectReplicatorError == true) {
+            assertNull(localLastSequence);
+        } else {
+            assertNotNull(localLastSequence);
+        }
 
     }
 
