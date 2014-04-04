@@ -166,13 +166,26 @@ public class ChangeTrackerTest extends LiteTestCase {
     }
 
     public void testChangeTrackerTransientError() throws Exception {
-        runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode.LongPoll);
+        int errorCode = 503;
+        String statusMessage = "Transient Error";
+        int numExpectedChangeCallbacks = 2;
+        runChangeTrackerFakeError(ChangeTracker.ChangeTrackerMode.LongPoll, errorCode, statusMessage, numExpectedChangeCallbacks );
     }
 
-    private void runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode mode) throws Exception {
+    public void testChangeTrackerNonTransientError() throws Exception {
+        int errorCode = 404;
+        String statusMessage = "NOT FOUND";
+        int numExpectedChangeCallbacks = 1;
+        runChangeTrackerFakeError(ChangeTracker.ChangeTrackerMode.LongPoll, errorCode, statusMessage, numExpectedChangeCallbacks );
+    }
+
+    private void runChangeTrackerFakeError(ChangeTracker.ChangeTrackerMode mode,
+                                           final int errorCode,
+                                           final String statusMessage,
+                                           int numExpectedChangeCallbacks) throws Exception {
 
         final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
-        final CountDownLatch changeReceivedSignal = new CountDownLatch(2);
+        final CountDownLatch changeReceivedSignal = new CountDownLatch(numExpectedChangeCallbacks);
 
         URL testURL = getReplicationURL();
 
@@ -194,7 +207,7 @@ public class ChangeTrackerTest extends LiteTestCase {
                 CustomizableMockHttpClient.Responder sentinal = defaultChangesResponder();
                 Queue<CustomizableMockHttpClient.Responder> responders = new LinkedList<CustomizableMockHttpClient.Responder>();
                 responders.add(defaultChangesResponder());
-                responders.add(CustomizableMockHttpClient.transientErrorResponder(503, "Transient Error"));
+                responders.add(CustomizableMockHttpClient.transientErrorResponder(errorCode, statusMessage));
                 ResponderChain responderChain = new ResponderChain(responders, sentinal);
                 mockHttpClient.setResponder("_changes", responderChain);
                 return mockHttpClient;
