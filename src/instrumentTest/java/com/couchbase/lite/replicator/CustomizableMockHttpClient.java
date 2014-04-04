@@ -134,7 +134,12 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         return new Responder() {
             @Override
             public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
-                return CustomizableMockHttpClient.generateHttpResponseObject(statusCode, statusMsg, null);
+                if (statusCode == -1) {
+                    throw new IOException("Fake IO Exception from transientErrorResponder");
+                } else {
+                    return CustomizableMockHttpClient.generateHttpResponseObject(statusCode, statusMsg, null);
+                }
+
             }
         };
     }

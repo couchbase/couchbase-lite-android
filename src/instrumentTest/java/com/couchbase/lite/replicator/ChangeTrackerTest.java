@@ -171,6 +171,13 @@ public class ChangeTrackerTest extends LiteTestCase {
         runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode.LongPoll, errorCode, statusMessage, numExpectedChangeCallbacks);
     }
 
+    public void testChangeTrackerRecoverableIOException() throws Exception {
+        int errorCode = -1;  // special code to tell it to throw an IOException
+        String statusMessage = null;
+        int numExpectedChangeCallbacks = 2;
+        runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode.LongPoll, errorCode, statusMessage, numExpectedChangeCallbacks);
+    }
+
     public void testChangeTrackerNonRecoverableError() throws Exception {
         int errorCode = 404;
         String statusMessage = "NOT FOUND";
