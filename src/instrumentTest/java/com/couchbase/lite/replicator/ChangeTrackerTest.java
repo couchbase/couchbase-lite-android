@@ -165,7 +165,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         testChangeTrackerBackoff(mockHttpClient);
     }
 
-    public void failingTestChangeTrackerTransientError() throws Exception {
+    public void testChangeTrackerTransientError() throws Exception {
         runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode.LongPoll);
     }
 
