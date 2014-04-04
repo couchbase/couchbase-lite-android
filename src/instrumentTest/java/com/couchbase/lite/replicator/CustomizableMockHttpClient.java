@@ -345,8 +345,10 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         DefaultHttpResponseFactory responseFactory = new DefaultHttpResponseFactory();
         BasicStatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode, statusString);
         HttpResponse response = responseFactory.newHttpResponse(statusLine, null);
-        byte[] responseBytes = responseJson.getBytes();
-        response.setEntity(new ByteArrayEntity(responseBytes));
+        if (responseJson != null) {
+            byte[] responseBytes = responseJson.getBytes();
+            response.setEntity(new ByteArrayEntity(responseBytes));
+        }
         return response;
     }
 

@@ -1,7 +1,6 @@
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 
 import org.apache.http.HttpResponse;
@@ -14,10 +13,13 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ChangeTrackerTest extends LiteTestCase {
 
@@ -29,7 +31,6 @@ public class ChangeTrackerTest extends LiteTestCase {
     }
 
     public void testChangeTrackerLongPoll() throws Throwable {
-        // changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.LongPoll, false);
         changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.LongPoll, true);
     }
 
@@ -162,6 +163,86 @@ public class ChangeTrackerTest extends LiteTestCase {
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderReturnInvalidChangesFeedJson();
         testChangeTrackerBackoff(mockHttpClient);
+    }
+
+    public void failingTestChangeTrackerTransientError() throws Exception {
+        runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode.LongPoll);
+    }
+
+    private void runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode mode) throws Exception {
+
+        final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
+        final CountDownLatch changeReceivedSignal = new CountDownLatch(2);
+
+        URL testURL = getReplicationURL();
+
+        ChangeTrackerClient client = new ChangeTrackerClient() {
+
+            @Override
+            public void changeTrackerStopped(ChangeTracker tracker) {
+                changeTrackerFinishedSignal.countDown();
+            }
+
+            @Override
+            public void changeTrackerReceivedChange(Map<String, Object> change) {
+                changeReceivedSignal.countDown();
+            }
+
+            @Override
+            public HttpClient getHttpClient() {
+                CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+                CustomizableMockHttpClient.Responder sentinal = defaultChangesResponder();
+                Queue<CustomizableMockHttpClient.Responder> responders = new LinkedList<CustomizableMockHttpClient.Responder>();
+                responders.add(defaultChangesResponder());
+                responders.add(get503Responder());
+                ResponderChain responderChain = new ResponderChain(responders, sentinal);
+                mockHttpClient.setResponder("_changes", responderChain);
+                return mockHttpClient;
+            }
+
+            private CustomizableMockHttpClient.Responder defaultChangesResponder() {
+                return new CustomizableMockHttpClient.Responder() {
+                    @Override
+                    public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                        String json = "{\"results\":[\n" +
+                                "{\"seq\":\"1\",\"id\":\"doc1-138\",\"changes\":[{\"rev\":\"1-82d\"}]}],\n" +
+                                "\"last_seq\":\"*:50\"}";
+                        return CustomizableMockHttpClient.generateHttpResponseObject(json);
+                    }
+                };
+            }
+
+            private CustomizableMockHttpClient.Responder get503Responder() {
+                return new CustomizableMockHttpClient.Responder() {
+                    @Override
+                    public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                        return CustomizableMockHttpClient.generateHttpResponseObject(503, "Temporary Error", null);
+                    }
+                };
+            }
+
+        };
+
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0, client);
+        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
+        changeTracker.start();
+
+        try {
+            boolean success = changeReceivedSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        changeTracker.stop();
+
+        try {
+            boolean success = changeTrackerFinishedSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void testChangeTrackerBackoff(final CustomizableMockHttpClient mockHttpClient) throws Throwable {
