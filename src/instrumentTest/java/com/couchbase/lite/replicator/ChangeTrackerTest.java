@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ChangeTrackerTest extends LiteTestCase {
 
@@ -165,24 +164,24 @@ public class ChangeTrackerTest extends LiteTestCase {
         testChangeTrackerBackoff(mockHttpClient);
     }
 
-    public void testChangeTrackerTransientError() throws Exception {
+    public void testChangeTrackerRecoverableError() throws Exception {
         int errorCode = 503;
         String statusMessage = "Transient Error";
         int numExpectedChangeCallbacks = 2;
-        runChangeTrackerFakeError(ChangeTracker.ChangeTrackerMode.LongPoll, errorCode, statusMessage, numExpectedChangeCallbacks );
+        runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode.LongPoll, errorCode, statusMessage, numExpectedChangeCallbacks);
     }
 
-    public void testChangeTrackerNonTransientError() throws Exception {
+    public void testChangeTrackerNonRecoverableError() throws Exception {
         int errorCode = 404;
         String statusMessage = "NOT FOUND";
         int numExpectedChangeCallbacks = 1;
-        runChangeTrackerFakeError(ChangeTracker.ChangeTrackerMode.LongPoll, errorCode, statusMessage, numExpectedChangeCallbacks );
+        runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode.LongPoll, errorCode, statusMessage, numExpectedChangeCallbacks);
     }
 
-    private void runChangeTrackerFakeError(ChangeTracker.ChangeTrackerMode mode,
-                                           final int errorCode,
-                                           final String statusMessage,
-                                           int numExpectedChangeCallbacks) throws Exception {
+    private void runChangeTrackerTransientError(ChangeTracker.ChangeTrackerMode mode,
+                                                final int errorCode,
+                                                final String statusMessage,
+                                                int numExpectedChangeCallbacks) throws Exception {
 
         final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
         final CountDownLatch changeReceivedSignal = new CountDownLatch(numExpectedChangeCallbacks);

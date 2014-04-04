@@ -1299,11 +1299,30 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/247
+     */
+    public void testPushReplicationRecoverabletError() throws Exception {
+        int statusCode = 503;
+        String statusMsg = "Transient Error";
+        boolean expectReplicatorError = false;
+        runPushReplicationWithTransientError(statusCode, statusMsg, expectReplicatorError);
+    }
 
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/247
      */
-    public void testPushReplicationTransientError() throws Exception {
+    public void testPushReplicationNonRecoverabletError() throws Exception {
+        int statusCode = 404;
+        String statusMsg = "NOT FOUND";
+        boolean expectReplicatorError = true;
+        runPushReplicationWithTransientError(statusCode, statusMsg, expectReplicatorError);
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/247
+     */
+    public void runPushReplicationWithTransientError(int statusCode, String statusMsg, boolean expectReplicatorError) throws Exception {
 
         Map<String,Object> properties1 = new HashMap<String,Object>();
         properties1.put("doc1", "testPushReplicationTransientError");
@@ -1314,7 +1333,7 @@ public class ReplicationTest extends LiteTestCase {
 
         CustomizableMockHttpClient.Responder sentinal = CustomizableMockHttpClient.fakeBulkDocsResponder();
         Queue<CustomizableMockHttpClient.Responder> responders = new LinkedList<CustomizableMockHttpClient.Responder>();
-        responders.add(CustomizableMockHttpClient.transientErrorResponder(503, "Transient Error"));
+        responders.add(CustomizableMockHttpClient.transientErrorResponder(statusCode, statusMsg));
         ResponderChain responderChain = new ResponderChain(responders, sentinal);
         mockHttpClient.setResponder("_bulk_docs", responderChain);
 
@@ -1338,7 +1357,11 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(success);
         Log.d(TAG, "replicationDoneSignal finished");
 
-        assertNull(pusher.getLastError());
+        if (expectReplicatorError == true) {
+            assertNotNull(pusher.getLastError());
+        } else {
+            assertNull(pusher.getLastError());
+        }
 
         // workaround for the fact that the replicationDoneSignal.wait() call will unblock before all
         // the statements in Replication.stopped() have even had a chance to execute.
