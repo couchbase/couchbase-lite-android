@@ -32,7 +32,7 @@ public class DatabaseTest extends LiteTestCase {
         }
 
         int numPruned = database.pruneRevsToMaxDepth(1);
-        assertEquals(9, numPruned);
+        assertEquals(10, numPruned);
 
         Document fetchedDoc = database.getDocument(doc.getId());
         List<SavedRevision> revisions = fetchedDoc.getRevisionHistory();
