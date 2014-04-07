@@ -118,12 +118,30 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
     }
 
     public void addResponderFakeBulkDocs() {
-        responders.put("_bulk_docs", new Responder() {
+        responders.put("_bulk_docs", fakeBulkDocsResponder());
+    }
+
+    public static Responder fakeBulkDocsResponder() {
+        return new Responder() {
             @Override
             public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
                 return CustomizableMockHttpClient.fakeBulkDocs(httpUriRequest);
             }
-        });
+        };
+    }
+
+    public static Responder transientErrorResponder(final int statusCode, final String statusMsg) {
+        return new Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                if (statusCode == -1) {
+                    throw new IOException("Fake IO Exception from transientErrorResponder");
+                } else {
+                    return CustomizableMockHttpClient.generateHttpResponseObject(statusCode, statusMsg, null);
+                }
+
+            }
+        };
     }
 
     public void addResponderRevDiffsAllMissing() {
@@ -345,8 +363,10 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         DefaultHttpResponseFactory responseFactory = new DefaultHttpResponseFactory();
         BasicStatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode, statusString);
         HttpResponse response = responseFactory.newHttpResponse(statusLine, null);
-        byte[] responseBytes = responseJson.getBytes();
-        response.setEntity(new ByteArrayEntity(responseBytes));
+        if (responseJson != null) {
+            byte[] responseBytes = responseJson.getBytes();
+            response.setEntity(new ByteArrayEntity(responseBytes));
+        }
         return response;
     }
 
