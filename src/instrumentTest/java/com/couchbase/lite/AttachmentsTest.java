@@ -17,6 +17,7 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.AttachmentInternal;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.util.TextUtils;
@@ -307,8 +308,13 @@ public class AttachmentsTest extends LiteTestCase {
         // Update the attachment directly:
         byte[] attachv2 = "Replaced body of attach".getBytes();
         boolean gotExpectedErrorCode = false;
+
+        BlobStoreWriter blobWriter = new BlobStoreWriter(database.getAttachments());
+        blobWriter.appendData(attachv2);
+        blobWriter.finish();
+
         try {
-            database.updateAttachment(testAttachmentName, new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), null);
+            database.updateAttachment(testAttachmentName, blobWriter, "application/foo", AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone, rev1.getDocId(), null);
         } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.CONFLICT);
         }
@@ -316,7 +322,7 @@ public class AttachmentsTest extends LiteTestCase {
 
         gotExpectedErrorCode = false;
         try {
-            database.updateAttachment(testAttachmentName, new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), "1-bogus");
+            database.updateAttachment(testAttachmentName, blobWriter, "application/foo", AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone, rev1.getDocId(), "1-bogus");
         } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.CONFLICT);
         }
@@ -325,7 +331,7 @@ public class AttachmentsTest extends LiteTestCase {
         gotExpectedErrorCode = false;
         RevisionInternal rev2 = null;
         try {
-            rev2 = database.updateAttachment(testAttachmentName, new ByteArrayInputStream(attachv2), "application/foo", rev1.getDocId(), rev1.getRevId());
+            rev2 = database.updateAttachment(testAttachmentName, blobWriter, "application/foo", AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone, rev1.getDocId(), rev1.getRevId());
         } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = true;
         }
@@ -333,6 +339,9 @@ public class AttachmentsTest extends LiteTestCase {
 
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertEquals(2, rev2.getGeneration());
+
+        // Examine the attachment store:
+       // Assert.assertEquals(2, attachments.count());
 
         // Get the updated revision:
         RevisionInternal gotRev2 = database.getDocumentWithIDAndRev(rev2.getDocId(), rev2.getRevId(), EnumSet.noneOf(Database.TDContentOptions.class));
@@ -352,7 +361,7 @@ public class AttachmentsTest extends LiteTestCase {
         // Delete the attachment:
         gotExpectedErrorCode = false;
         try {
-            database.updateAttachment("nosuchattach", null, null, rev2.getDocId(), rev2.getRevId());
+            database.updateAttachment("nosuchattach", null, null, AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone, rev2.getDocId(), rev2.getRevId());
         } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.NOT_FOUND);
         }
@@ -360,14 +369,14 @@ public class AttachmentsTest extends LiteTestCase {
 
         gotExpectedErrorCode = false;
         try {
-            database.updateAttachment("nosuchattach", null, null, "nosuchdoc", "nosuchrev");
+            database.updateAttachment("nosuchattach", null, null, AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone, "nosuchdoc", "nosuchrev");
         } catch (CouchbaseLiteException e) {
             gotExpectedErrorCode = (e.getCBLStatus().getCode() == Status.NOT_FOUND);
         }
         Assert.assertTrue(gotExpectedErrorCode);
 
 
-        RevisionInternal rev3 = database.updateAttachment(testAttachmentName, null, null, rev2.getDocId(), rev2.getRevId());
+        RevisionInternal rev3 = database.updateAttachment(testAttachmentName, null, null, AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone, rev2.getDocId(), rev2.getRevId());
         Assert.assertEquals(rev2.getDocId(), rev3.getDocId());
         Assert.assertEquals(3, rev3.getGeneration());
 
