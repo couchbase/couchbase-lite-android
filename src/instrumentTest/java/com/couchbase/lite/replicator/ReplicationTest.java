@@ -76,7 +76,7 @@ public class ReplicationTest extends LiteTestCase {
      * Verify that running a one-shot push replication will complete when run against a
      * mock server that returns 500 Internal Server errors on every request.
      */
-    public void DIStestOneShotReplicationErrorNotification() throws Throwable {
+    public void testOneShotReplicationErrorNotification() throws Throwable {
 
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderThrowExceptionAllRequests();
@@ -97,7 +97,7 @@ public class ReplicationTest extends LiteTestCase {
      * in an error state when run against a mock server that returns 500 Internal Server
      * errors on every request.
      */
-    public void DIStestContinuousReplicationErrorNotification() throws Throwable {
+    public void testContinuousReplicationErrorNotification() throws Throwable {
 
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderThrowExceptionAllRequests();
@@ -134,7 +134,7 @@ public class ReplicationTest extends LiteTestCase {
 
     // Reproduces issue #167
     // https://github.com/couchbase/couchbase-lite-android/issues/167
-    public void DIStestPushPurgedDoc() throws Throwable {
+    public void testPushPurgedDoc() throws Throwable {
 
         int numBulkDocRequests = 0;
         HttpPost lastBulkDocsRequest = null;
@@ -231,7 +231,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestPusher() throws Throwable {
+    public void testPusher() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         String doc1Id;
@@ -448,7 +448,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Regression test for https://github.com/couchbase/couchbase-lite-java-core/issues/72
      */
-    public void DIStestPusherBatching() throws Throwable {
+    public void testPusherBatching() throws Throwable {
 
         // create a bunch (INBOX_CAPACITY * 2) local documents
         int numDocsToSend = Replication.INBOX_CAPACITY * 2;
@@ -491,7 +491,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestPusherDeletedDoc() throws Throwable {
+    public void testPusherDeletedDoc() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
@@ -603,7 +603,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestPuller() throws Throwable {
+    public void testPuller() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
@@ -655,7 +655,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestPullerWithLiveQuery() throws Throwable {
+    public void testPullerWithLiveQuery() throws Throwable {
 
         // This is essentially a regression test for a deadlock
         // that was happening when the LiveQuery#onDatabaseChanged()
@@ -804,7 +804,7 @@ public class ReplicationTest extends LiteTestCase {
         }
     }
 
-    public void DIStestGetReplicator() throws Throwable {
+    public void testGetReplicator() throws Throwable {
 
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", DEFAULT_TEST_DB);
@@ -851,7 +851,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestGetReplicatorWithAuth() throws Throwable {
+    public void testGetReplicatorWithAuth() throws Throwable {
 
         Map<String, Object> properties = getPushReplicationParsedJson();
 
@@ -862,7 +862,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestRunReplicationWithError() throws Exception {
+    public void testRunReplicationWithError() throws Exception {
 
         HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
             @Override
@@ -890,7 +890,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestReplicatorErrorStatus() throws Exception {
+    public void testReplicatorErrorStatus() throws Exception {
 
         // register bogus fb token
         Map<String,Object> facebookTokenInfo = new HashMap<String,Object>();
@@ -931,7 +931,7 @@ public class ReplicationTest extends LiteTestCase {
      * 5) Now the changetracker is running even though we've told it to go offline.
      *
      */
-    public void DIStestGoOffline() throws Exception {
+    public void testGoOffline() throws Exception {
 
         URL remote = getReplicationURL();
 
@@ -966,7 +966,7 @@ public class ReplicationTest extends LiteTestCase {
 
 
 
-    public void DIStestBuildRelativeURLString() throws Exception {
+    public void testBuildRelativeURLString() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
@@ -977,7 +977,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestBuildRelativeURLStringWithLeadingSlash() throws Exception {
+    public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
         Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
@@ -988,7 +988,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestChannels() throws Exception {
+    public void testChannels() throws Exception {
 
         URL remote = getReplicationURL();
         Replication replicator = database.createPullReplication(remote);
@@ -1002,7 +1002,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestChannelsMore() throws MalformedURLException, CouchbaseLiteException {
+    public void testChannelsMore() throws MalformedURLException, CouchbaseLiteException {
 
         Database  db = startDatabase();
         URL fakeRemoteURL = new URL("http://couchbase.com/no_such_db");
@@ -1037,7 +1037,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-    public void DIStestHeaders() throws Exception {
+    public void testHeaders() throws Exception {
 
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderThrowExceptionAllRequests();
@@ -1079,7 +1079,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Regression test for issue couchbase/couchbase-lite-android#174
      */
-    public void DIStestAllLeafRevisionsArePushed() throws Exception {
+    public void testAllLeafRevisionsArePushed() throws Exception {
 
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderRevDiffsAllMissing();
@@ -1136,7 +1136,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestRemoteConflictResolution() throws Exception {
+    public void testRemoteConflictResolution() throws Exception {
         // Create a document with two conflicting edits.
         Document doc = database.createDocument();
         SavedRevision rev1 = doc.createRevision().save();
@@ -1205,7 +1205,7 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(1, doc.getConflictingRevisions().size());
     }
 
-    public void DIStestOnlineOfflinePusher() throws Exception {
+    public void testOnlineOfflinePusher() throws Exception {
 
         URL remote = getReplicationURL();
 
@@ -1392,7 +1392,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/95
      */
-    public void DIStestPushReplicationCanMissDocs() throws Exception {
+    public void testPushReplicationCanMissDocs() throws Exception {
 
         assertEquals(0, database.getLastSequenceNumber());
 
@@ -1477,7 +1477,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/55
      */
-    public void DIStestContinuousPushReplicationGoesIdle() throws Exception {
+    public void testContinuousPushReplicationGoesIdle() throws Exception {
 
         // make sure we are starting empty
         assertEquals(0, database.getLastSequenceNumber());
@@ -1619,7 +1619,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void DIStestServerIsSyncGatewayVersion() {
+    public void testServerIsSyncGatewayVersion() {
         Replication pusher = database.createPushReplication(getReplicationURL());
         assertFalse(pusher.serverIsSyncGatewayVersion("0.01"));
         pusher.setServerType("Couchbase Sync Gateway/0.93");
@@ -1672,7 +1672,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/243
      */
-    public void DIStestDifferentCheckpointsFilteredReplication() throws Exception {
+    public void testDifferentCheckpointsFilteredReplication() throws Exception {
 
         Replication pullerNoFilter = database.createPullReplication(getReplicationURL());
         String noFilterCheckpointDocId = pullerNoFilter.remoteCheckpointDocID();
