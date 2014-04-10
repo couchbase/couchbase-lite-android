@@ -6,6 +6,7 @@ import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.router.*;
 import com.couchbase.lite.router.Router;
+import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
 
@@ -575,5 +576,46 @@ public abstract class LiteTestCase extends TestCase {
 
     }
 
+    public void dumpTableMaps() throws Exception {
+        Cursor cursor = database.getDatabase().rawQuery(
+                "SELECT * FROM maps", null);
+        while (cursor.moveToNext()) {
+            int viewId = cursor.getInt(0);
+            int sequence = cursor.getInt(1);
+            byte[] key = cursor.getBlob(2);
+            String keyStr = null;
+            if (key != null) {
+                keyStr = new String(key);
+            }
+            byte[] value = cursor.getBlob(3);
+            String valueStr = null;
+            if (value != null) {
+                valueStr = new String(value);
+            }
+            Log.d(TAG, String.format("Maps row viewId: %s seq: %s, key: %s, val: %s",
+                    viewId, sequence, keyStr, valueStr));
+        }
+    }
+
+    public void dumpTableRevs() throws Exception {
+        Cursor cursor = database.getDatabase().rawQuery(
+                "SELECT * FROM revs", null);
+        while (cursor.moveToNext()) {
+            int sequence = cursor.getInt(0);
+            int doc_id = cursor.getInt(1);
+            byte[] revid = cursor.getBlob(2);
+            String revIdStr = null;
+            if (revid != null) {
+                revIdStr = new String(revid);
+            }
+            int parent = cursor.getInt(3);
+            int current = cursor.getInt(4);
+            int deleted = cursor.getInt(5);
+            Log.d(TAG, String.format("Revs row seq: %s doc_id: %s, revIdStr: %s, parent: %s, current: %s, deleted: %s",
+                    sequence, doc_id, revIdStr, parent, current, deleted));
+
+        }
+
+    }
 
 }
