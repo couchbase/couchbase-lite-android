@@ -84,7 +84,6 @@ public class ApiTest extends LiteTestCase {
         assertTrue(deleteme.exists());
         String dbPath =deleteme.getPath();
         assertTrue(new File(dbPath).exists());
-        assertTrue(new File(dbPath + "-journal").exists());
         assertTrue(new File(dbPath.substring(0, dbPath.lastIndexOf('.'))).exists());
         deleteme.delete();
         assertFalse(deleteme.exists());
