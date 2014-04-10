@@ -25,6 +25,7 @@ import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -1230,6 +1231,53 @@ public class ViewsTest extends LiteTestCase {
 
         assertEquals(2*kNDocs + 5, db.getDocumentCount()); // 25 - OK
 
+
+    }
+
+    private SavedRevision createTestRevisionNoConflicts(Document doc, String val) throws Exception {
+        UnsavedRevision unsavedRev = doc.createRevision();
+        Map<String,Object> props = new HashMap<String,Object>();
+        props.put("key", val);
+        unsavedRev.setUserProperties(props);
+        return unsavedRev.save();
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/131
+     */
+    public void failingTestViewWithConflict() throws Exception {
+
+        // Create doc and add some revs
+        Document doc = database.createDocument();
+        SavedRevision rev1 = createTestRevisionNoConflicts(doc, "1");
+        SavedRevision rev2a = createTestRevisionNoConflicts(doc, "2a");
+        SavedRevision rev3 = createTestRevisionNoConflicts(doc, "3");
+
+        // index the view
+        View view = createView(database);
+        QueryEnumerator rows = view.createQuery().run();
+
+        assertEquals(1, rows.getCount());
+        QueryRow row = rows.next();
+        assertEquals(row.getKey(), "3");
+        // assertNotNull(row.getDocumentRevisionId()); -- TODO: why is this null?
+
+        // Create a conflict
+        UnsavedRevision rev2bUnsaved = rev1.createRevision();
+        Map<String,Object> props = new HashMap<String,Object>();
+        props.put("key", "2b");
+        rev2bUnsaved.setUserProperties(props);
+        SavedRevision rev2b = rev2bUnsaved.save(true);
+
+        // re-run query
+        view.updateIndex();
+        rows = view.createQuery().run();
+
+        // we should only see one row, with key=3.
+        // if we see key=2b then it's a bug.
+        assertEquals(1, rows.getCount());
+        row = rows.next();
+        assertEquals(row.getKey(), "3");
 
     }
 
