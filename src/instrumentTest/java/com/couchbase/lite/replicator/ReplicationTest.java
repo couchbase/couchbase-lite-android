@@ -52,6 +52,7 @@ import org.apache.http.message.BasicHeader;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -322,6 +323,10 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     private String createDocumentsForPushReplication(String docIdTimestamp) throws CouchbaseLiteException {
+        return createDocumentsForPushReplication(docIdTimestamp, "png");
+    }
+
+    private String createDocumentsForPushReplication(String docIdTimestamp, String attachmentType) throws CouchbaseLiteException {
         String doc1Id;
         String doc2Id;// Create some documents:
         Map<String, Object> doc1Properties = new HashMap<String, Object>();
@@ -355,8 +360,19 @@ public class ReplicationTest extends LiteTestCase {
 
         Document doc2 = database.getDocument(doc2Id);
         UnsavedRevision doc2UnsavedRev = doc2.createRevision();
-        InputStream attachmentStream = getAsset("attachment.png");
-        doc2UnsavedRev.setAttachment("attachment.png", "image/png", attachmentStream);
+        if (attachmentType.equals("png")) {
+            InputStream attachmentStream = getAsset("attachment.png");
+            doc2UnsavedRev.setAttachment("attachment.png", "image/png", attachmentStream);
+        } else if (attachmentType.equals("txt")) {
+            StringBuffer sb = new StringBuffer();
+            for (int i=0; i<1000; i++) {
+                sb.append("This is a large attachemnt.");
+            }
+            ByteArrayInputStream attachmentStream = new ByteArrayInputStream(sb.toString().getBytes());
+            doc2UnsavedRev.setAttachment("attachment.txt", "text/plain", attachmentStream);
+        } else {
+            throw new RuntimeException("invalid attachment type: " + attachmentType);
+        }
         SavedRevision doc2Rev = doc2UnsavedRev.save();
         assertNotNull(doc2Rev);
 
