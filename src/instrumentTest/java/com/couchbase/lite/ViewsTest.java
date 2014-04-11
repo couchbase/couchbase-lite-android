@@ -25,7 +25,6 @@ import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -505,6 +504,36 @@ public class ViewsTest extends LiteTestCase {
         expectedRows.add(dict1);
 
         assertEquals(expectedRows, rows);
+    }
+
+
+    public void testViewNumericKeys() throws CouchbaseLiteException {
+        Map<String,Object> dict = new HashMap<String,Object>();
+        dict.put("_id", "22222");
+        dict.put("referenceNumber", "33547239");
+        dict.put("title", "this is the title");
+        putDoc(database, dict);
+
+        View view = createView(database);
+
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                if (document.containsKey("referenceNumber")){
+                    emitter.emit(document.get("referenceNumber"), document);
+                }
+
+            }
+        }, "1");
+
+        Query query = view.createQuery();
+        query.setStartKey(33547239);
+        query.setEndKey(33547239);
+        QueryEnumerator rows = query.run();
+        assertEquals(1, rows.getCount());
+        rows = query.run();
+
+        assertEquals(33547239, rows.getRow(0).getKey());
     }
 
     public void testAllDocsQuery() throws CouchbaseLiteException {
