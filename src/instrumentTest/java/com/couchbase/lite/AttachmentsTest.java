@@ -355,8 +355,6 @@ public class AttachmentsTest extends LiteTestCase {
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertEquals(2, rev2.getGeneration());
 
-        // Examine the attachment store:
-       // Assert.assertEquals(2, attachments.count());
 
         // Get the updated revision:
         RevisionInternal gotRev2 = database.getDocumentWithIDAndRev(rev2.getDocId(), rev2.getRevId(), EnumSet.noneOf(Database.TDContentOptions.class));
