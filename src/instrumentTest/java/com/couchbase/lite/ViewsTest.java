@@ -1347,7 +1347,7 @@ public class ViewsTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/131
      */
-    public void failingTestViewWithConflict() throws Exception {
+    public void testViewWithConflict() throws Exception {
 
         // Create doc and add some revs
         Document doc = database.createDocument();
