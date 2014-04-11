@@ -5,9 +5,6 @@ import com.couchbase.lite.util.TextUtils;
 
 import junit.framework.Assert;
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1060,7 +1057,7 @@ public class ApiTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/220
      */
-    public void failingestMultiDocumentUpdateInTransaction() throws Exception {
+    public void failingTestMultiDocumentUpdateInTransaction() throws Exception {
 
         final int numberOfDocuments = 10;
         final int numberOfUpdates = 10;
