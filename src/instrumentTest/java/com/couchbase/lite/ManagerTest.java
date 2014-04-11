@@ -1,10 +1,16 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.storage.ContentValues;
+import com.couchbase.lite.storage.SQLException;
+import com.couchbase.lite.util.Log;
+
 import junit.framework.Assert;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +113,8 @@ public class ManagerTest extends LiteTestCase {
         String[] attachmentlist = null;
 
         Map<String, InputStream> attachments = new HashMap<String, InputStream>();
-        InputStream blobStream = getAsset("attachments/2e6b28a8927a2ce9f8612eb4a589efaca6c177ae.blob");
+        InputStream blobStream = getAsset("attachments/356a192b7913b04c54574d18c28d46e6395428ab.blob");
+        attachments.put("356a192b7913b04c54574d18c28d46e6395428ab.blob",blobStream);
 
         manager.replaceDatabase("replaced2", dbStream, attachments);
 
@@ -115,13 +122,12 @@ public class ManagerTest extends LiteTestCase {
         assertEquals(1,manager.getDatabase("replaced2").getDocumentCount());
 
         //get the attachment from the document
-        Document doc = manager.getDatabase("replaced2").getExistingDocument("doc0-1394815387949");
+        Document doc = manager.getDatabase("replaced2").getExistingDocument("168e0c56-4588-4df4-8700-4d5115fa9c74");
 
         assertNotNull(doc);
 
-        Attachment attachment = doc.getCurrentRevision().getAttachment("attachment.png");
+        RevisionInternal gotRev1 = database.getDocumentWithIDAndRev(doc.getId(), doc.getCurrentRevisionId(), EnumSet.noneOf(Database.TDContentOptions.class));
 
-        Assert.assertEquals(519173L, attachment.getLength());
     }
 
 }

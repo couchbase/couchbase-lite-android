@@ -19,7 +19,10 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.AttachmentInternal;
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.storage.ContentValues;
+import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.support.Base64;
+import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
 
 import junit.framework.Assert;
@@ -63,6 +66,18 @@ public class AttachmentsTest extends LiteTestCase {
         byte[] attach1 = "This is the body of attach1".getBytes();
         database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), testAttachmentName, "text/plain", rev1.getGeneration());
         Assert.assertEquals(Status.CREATED, status.getCode());
+
+        //We must set the no_attachments column for the rev to false, as we are using an internal
+        //private API call above (database.insertAttachmentForSequenceWithNameAndType) which does
+        //not set the no_attachments column on revs table
+        try {
+            ContentValues args = new ContentValues();
+            args.put("no_attachments=", false);
+            database.getDatabase().update("revs", args, "sequence=?", new String[] {String.valueOf(rev1.getSequence())});
+        } catch (SQLException e) {
+            Log.e(Database.TAG, "Error setting rev1 no_attachments to false", e);
+            throw new CouchbaseLiteException(Status.INTERNAL_SERVER_ERROR);
+        }
 
         Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), testAttachmentName);
         Assert.assertEquals("text/plain", attachment.getContentType());
@@ -340,8 +355,6 @@ public class AttachmentsTest extends LiteTestCase {
         Assert.assertEquals(rev1.getDocId(), rev2.getDocId());
         Assert.assertEquals(2, rev2.getGeneration());
 
-        // Examine the attachment store:
-       // Assert.assertEquals(2, attachments.count());
 
         // Get the updated revision:
         RevisionInternal gotRev2 = database.getDocumentWithIDAndRev(rev2.getDocId(), rev2.getRevId(), EnumSet.noneOf(Database.TDContentOptions.class));
