@@ -436,6 +436,77 @@ public class ViewsTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/139
+     * test based on https://github.com/couchbase/couchbase-lite-ios/blob/master/Source/CBL_View_Tests.m#L358
+     */
+    public void failingTestViewQueryStartKeyDocID() throws CouchbaseLiteException {
+
+        putDocs(database);
+        List<RevisionInternal> result = new ArrayList<RevisionInternal>();
+        Map<String,Object> dict = new HashMap<String,Object>();
+        dict.put("_id", "11112");
+        dict.put("key", "one");
+        result.add(putDoc(database, dict));
+        View view = createView(database);
+//        https://github.com/couchbase/couchbase-lite-android/issues/258
+//        assertEquals(Status.OK, view.updateIndex());
+        QueryOptions options = new QueryOptions();
+        options.setStartKey("one");
+//        options.setStartKeyDocID("11112");
+        options.setEndKey("three");
+        List<QueryRow> rows = view.queryWithOptions(options);
+
+        List<Object> expectedRows = new ArrayList<Object>();
+        Map<String,Object> dict1 = new HashMap<String,Object>();
+        dict1.put("id", "11112");
+        dict1.put("key", "one");
+        expectedRows.add(dict1);
+
+        Map<String,Object> dict2 = new HashMap<String,Object>();
+        dict2.put("id", "33333");
+        dict2.put("key", "three");
+        expectedRows.add(dict2);
+
+        assertEquals(expectedRows, rows);
+
+        options = new QueryOptions();
+        options.setEndKey("one");
+//        options.setEndKeyDocID("11111");
+        options.setEndKey("three");
+        rows = view.queryWithOptions(options);
+
+        expectedRows = new ArrayList<Object>();
+        dict1 = new HashMap<String,Object>();
+        dict1.put("id", "55555");
+        dict1.put("key", "five");
+        expectedRows.add(dict1);
+
+        dict2 = new HashMap<String,Object>();
+        dict2.put("id", "44444");
+        dict2.put("key", "four");
+        expectedRows.add(dict2);
+
+        Map<String,Object> dict3 = new HashMap<String,Object>();
+        dict2.put("id", "11111");
+        dict2.put("key", "one");
+        expectedRows.add(dict2);
+
+        assertEquals(expectedRows, rows);
+
+        options.setStartKey("one");
+//        options.setStartKeyDocID("11111");
+        rows = view.queryWithOptions(options);
+
+        expectedRows = new ArrayList<Object>();
+        dict1 = new HashMap<String,Object>();
+        dict1.put("id", "11111");
+        dict1.put("key", "one");
+        expectedRows.add(dict1);
+
+        assertEquals(expectedRows, rows);
+    }
+
     public void testAllDocsQuery() throws CouchbaseLiteException {
 
         List<RevisionInternal> docs = putDocs(database);
