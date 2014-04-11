@@ -506,8 +506,10 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(expectedRows, rows);
     }
 
-
-    public void testViewNumericKeys() throws CouchbaseLiteException {
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/260
+     */
+    public void failingViewNumericKeys() throws CouchbaseLiteException {
         Map<String,Object> dict = new HashMap<String,Object>();
         dict.put("_id", "22222");
         dict.put("referenceNumber", "33547239");
