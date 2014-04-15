@@ -324,6 +324,23 @@ public class ApiTest extends LiteTestCase {
 
     }
 
+    public void testDeleteDocumentViaTombstoneRevision() throws Exception{
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testDeleteDocument");
+
+        Database db = startDatabase();
+        Document doc=createDocumentWithProperties(db, properties);
+        assertTrue(!doc.isDeleted());
+        assertTrue(!doc.getCurrentRevision().isDeletion());
+
+        Map<String, Object> props = new HashMap<String, Object>(doc.getProperties());
+        props.put("_deleted", true);
+        doc.putProperties(props);
+
+        assertTrue(doc.isDeleted());
+        assertNotNull(doc.getCurrentRevision().isDeletion());
+    }
+
 
 
     public void testAllDocuments() throws Exception{
