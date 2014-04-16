@@ -873,8 +873,8 @@ public class ReplicationTest extends LiteTestCase {
 
         Replication replicator = manager.getReplicator(properties);
         assertNotNull(replicator);
-        assertNotNull(replicator.getAuthorizer());
-        assertTrue(replicator.getAuthorizer() instanceof FacebookAuthorizer);
+        assertNotNull(replicator.getAuthenticator());
+        assertTrue(replicator.getAuthenticator() instanceof FacebookAuthorizer);
 
     }
 
