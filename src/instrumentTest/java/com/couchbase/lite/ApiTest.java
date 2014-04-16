@@ -333,12 +333,15 @@ public class ApiTest extends LiteTestCase {
         assertTrue(!doc.isDeleted());
         assertTrue(!doc.getCurrentRevision().isDeletion());
 
+
         Map<String, Object> props = new HashMap<String, Object>(doc.getProperties());
         props.put("_deleted", true);
-        doc.putProperties(props);
+        SavedRevision deletedRevision = doc.putProperties(props);
 
         assertTrue(doc.isDeleted());
-        assertNotNull(doc.getCurrentRevision().isDeletion());
+        assertTrue(deletedRevision.isDeletion());
+        assertNull(doc.getCurrentRevision());
+
     }
 
 
