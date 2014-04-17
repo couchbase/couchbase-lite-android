@@ -33,19 +33,18 @@ import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Test12_QueryView extends LiteTestCase {
+public class Test12_IndexView extends LiteTestCase {
 
-    public static final String TAG = "QueryViewPerformance";
-
-    private static final String _propertyValue = "1234567";
+    public static final String TAG = "IndexViewPerformance";
 
     public void setUp() throws Exception {
 
-        Log.v(TAG, "DeleteDBPerformance setUp");
+        Log.v(TAG, "IndexViewPerformance setUp");
         super.setUp();
 
         View view = database.getView("vacant");
@@ -108,44 +107,6 @@ public class Test12_QueryView extends LiteTestCase {
         view.updateIndex();
 
         Log.v("PerformanceStats",TAG+":testViewIndexPerformance,"+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments());
-
-    }
-
-    public void testViewQueryPerformance() throws CouchbaseLiteException {
-
-        long startMillis = System.currentTimeMillis();
-
-        Query query = database.getView("vacant").createQuery();
-        query.setDescending(false);
-        query.setMapOnly(true);
-
-        QueryEnumerator rowEnum = query.run();
-
-        Object key;
-        Object value;
-
-        while (rowEnum.hasNext()) {
-            QueryRow row = rowEnum.next();
-            key = row.getKey();
-            value = row.getValue();
-        }
-
-        Log.v("PerformanceStats",TAG+":testViewQueryPerformance,"+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments());
-
-    }
-
-    public void testViewReducePerformance() throws CouchbaseLiteException {
-
-        long startMillis = System.currentTimeMillis();
-
-        Query query = database.getView("vacant").createQuery();
-        query.setMapOnly(false);
-
-        QueryEnumerator rowEnum = query.run();
-
-        QueryRow row = rowEnum.getRow(0);
-
-        Log.v("PerformanceStats",TAG+":testViewReducePerformance,"+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments());
 
     }
 
