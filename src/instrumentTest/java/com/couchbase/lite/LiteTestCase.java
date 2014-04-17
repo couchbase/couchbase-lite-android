@@ -70,6 +70,17 @@ public abstract class LiteTestCase extends TestCase {
         File serverPathFile = new File(serverPath);
         FileDirUtils.deleteRecursive(serverPathFile);
         serverPathFile.mkdir();
+        Manager.enableLogging(Log.TAG, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_SYNC, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_QUERY, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_VIEW, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_CHANGE_TRACKER, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_BLOB_STORE, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_DATABASE, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_LISTENER, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_MULTI_STREAM_WRITER, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_REMOTE_REQUEST, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_ROUTER, Log.VERBOSE);
         manager = new Manager(context, Manager.DEFAULT_OPTIONS);
     }
 
