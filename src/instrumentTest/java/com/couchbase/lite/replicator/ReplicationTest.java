@@ -24,6 +24,7 @@ import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.support.Base64;
+import com.couchbase.lite.support.CouchbaseLiteHttpClientFactory;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
@@ -39,12 +40,14 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -60,6 +63,8 @@ import java.net.URL;
 import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -1718,6 +1723,87 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    public void testSetReplicationCookie() throws Exception {
+
+        URL replicationUrl = getReplicationURL();
+        Replication puller = database.createPullReplication(replicationUrl);
+        String cookieName = "foo";
+        String cookieVal = "bar";
+        boolean isSecure = false;
+
+        // expiration date - 1 day from now
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+        int numDaysToAdd = 1;
+        cal.add(Calendar.DATE, numDaysToAdd);
+        Date expirationDate = cal.getTime();
+
+        // set the cookie
+        puller.setCookie(cookieName, cookieVal, "", expirationDate, isSecure, false);
+
+        // make sure it made it into cookie store and has expected params
+        CookieStore cookieStore = CouchbaseLiteHttpClientFactory.INSTANCE.getCookieStore();
+        List<Cookie> cookies = cookieStore.getCookies();
+        assertEquals(1, cookies.size());
+        Cookie cookie = cookies.get(0);
+        assertEquals(cookieName, cookie.getName());
+        assertEquals(cookieVal, cookie.getValue());
+        assertEquals(replicationUrl.getHost(), cookie.getDomain());
+        assertEquals(replicationUrl.getPath(), cookie.getPath());
+        assertEquals(expirationDate, cookie.getExpiryDate());
+        assertEquals(isSecure, cookie.isSecure());
+
+        // add a second cookie
+        String cookieName2 = "foo2";
+        puller.setCookie(cookieName2, cookieVal, "", expirationDate, isSecure, false);
+        assertEquals(2, cookieStore.getCookies().size());
+
+        // delete cookie
+        puller.deleteCookie(cookieName2);
+
+        // should only have the original cookie left
+        assertEquals(1, cookieStore.getCookies().size());
+        assertEquals(cookieName, cookieStore.getCookies().get(0).getName());
+
+        /*// make sure we are starting empty
+        assertEquals(0, database.getLastSequenceNumber());
+
+        // create a mock http client that serves as a mocked out sync gateway
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+
+        // replication to do initial sync up - has to be continuous replication so the checkpoint id
+        // matches the next continuous replication we're gonna do later.
+        manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
+        Replication puller = database.createPullReplication(getReplicationURL());
+        final String checkpointId = puller.remoteCheckpointDocID();  // save the checkpoint id for later usage
+
+        // setup a responder chain for _local doc requests:
+        // - respond with 401 auth challenge
+        // - respond with a 404
+        CustomizableMockHttpClient.Responder sentinal = mockHttpClient.getFakeLocalDocumentUpdate404();
+        Queue<CustomizableMockHttpClient.Responder> responders = new LinkedList<CustomizableMockHttpClient.Responder>();
+        responders.add(mockHttpClient.getFakeLocalDocumentUpdate401());
+        ResponderChain responderChain = new ResponderChain(responders, sentinal);
+        mockHttpClient.setResponder("_local", responderChain);
+        mockHttpClient.addResponderReturnEmptyChangesFeed();
+
+        puller.setCookie("foo", "bar", "", new Date(), false, false);
+
+        // start replication
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+        puller.addChangeListener(replicationFinishedObserver);
+        runReplication(puller);
+
+        // check requests to make sure cookie was sent
+
+        for (HttpRequest capturedRequest : mockHttpClient.getCapturedRequests()) {
+           Log.d(TAG, "request: " + capturedRequest);
+        }
+        */
+
+
+    }
 
 
     /**
