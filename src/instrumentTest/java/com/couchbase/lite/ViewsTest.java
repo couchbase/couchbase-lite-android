@@ -509,10 +509,10 @@ public class ViewsTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/260
      */
-    public void failingViewNumericKeys() throws CouchbaseLiteException {
+    public void testViewNumericKeys() throws CouchbaseLiteException {
         Map<String,Object> dict = new HashMap<String,Object>();
         dict.put("_id", "22222");
-        dict.put("referenceNumber", "33547239");
+        dict.put("referenceNumber", 33547239);
         dict.put("title", "this is the title");
         putDoc(database, dict);
 
