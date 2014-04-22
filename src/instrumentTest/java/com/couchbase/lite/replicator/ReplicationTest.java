@@ -135,6 +135,21 @@ public class ReplicationTest extends LiteTestCase {
             public HttpClient getHttpClient() {
                 return mockHttpClient;
             }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
+            }
         };
     }
 
@@ -160,6 +175,21 @@ public class ReplicationTest extends LiteTestCase {
             @Override
             public HttpClient getHttpClient() {
                 return mockHttpClient;
+            }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
             }
         };
 
@@ -893,6 +923,21 @@ public class ReplicationTest extends LiteTestCase {
                 mockHttpClient.addResponderFailAllRequests(statusCode);
                 return mockHttpClient;
             }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
+            }
         };
 
         String dbUrlString = "http://fake.test-url.com:4984/fake/";
@@ -990,7 +1035,7 @@ public class ReplicationTest extends LiteTestCase {
     public void testBuildRelativeURLString() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
-        Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
+        Replication replicator = new Pusher(database, new URL(dbUrlString), false, null);
         String relativeUrlString = replicator.buildRelativeURLString("foo");
 
         String expected = "http://10.0.0.3:4984/todos/foo";
@@ -1001,7 +1046,7 @@ public class ReplicationTest extends LiteTestCase {
     public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
-        Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
+        Replication replicator = new Pusher(database, new URL(dbUrlString), false, null);
         String relativeUrlString = replicator.buildRelativeURLString("/foo");
 
         String expected = "http://10.0.0.3:4984/todos/foo";
@@ -1068,6 +1113,21 @@ public class ReplicationTest extends LiteTestCase {
             public HttpClient getHttpClient() {
                 return mockHttpClient;
             }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
+            }
         };
 
         URL remote = getReplicationURL();
@@ -1111,6 +1171,21 @@ public class ReplicationTest extends LiteTestCase {
             @Override
             public HttpClient getHttpClient() {
                 return mockHttpClient;
+            }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
             }
         };
         manager.setDefaultHttpClientFactory(mockHttpClientFactory);
@@ -1743,7 +1818,7 @@ public class ReplicationTest extends LiteTestCase {
         puller.setCookie(cookieName, cookieVal, "", expirationDate, isSecure, httpOnly);
 
         // make sure it made it into cookie store and has expected params
-        CookieStore cookieStore = CouchbaseLiteHttpClientFactory.INSTANCE.getCookieStore();
+        CookieStore cookieStore = puller.getClientFactory().getCookieStore();
         List<Cookie> cookies = cookieStore.getCookies();
         assertEquals(1, cookies.size());
         Cookie cookie = cookies.get(0);
@@ -1765,43 +1840,6 @@ public class ReplicationTest extends LiteTestCase {
         // should only have the original cookie left
         assertEquals(1, cookieStore.getCookies().size());
         assertEquals(cookieName, cookieStore.getCookies().get(0).getName());
-
-        /*// make sure we are starting empty
-        assertEquals(0, database.getLastSequenceNumber());
-
-        // create a mock http client that serves as a mocked out sync gateway
-        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
-
-        // replication to do initial sync up - has to be continuous replication so the checkpoint id
-        // matches the next continuous replication we're gonna do later.
-        manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
-        Replication puller = database.createPullReplication(getReplicationURL());
-        final String checkpointId = puller.remoteCheckpointDocID();  // save the checkpoint id for later usage
-
-        // setup a responder chain for _local doc requests:
-        // - respond with 401 auth challenge
-        // - respond with a 404
-        CustomizableMockHttpClient.Responder sentinal = mockHttpClient.getFakeLocalDocumentUpdate404();
-        Queue<CustomizableMockHttpClient.Responder> responders = new LinkedList<CustomizableMockHttpClient.Responder>();
-        responders.add(mockHttpClient.getFakeLocalDocumentUpdate401());
-        ResponderChain responderChain = new ResponderChain(responders, sentinal);
-        mockHttpClient.setResponder("_local", responderChain);
-        mockHttpClient.addResponderReturnEmptyChangesFeed();
-
-        puller.setCookie("foo", "bar", "", new Date(), false, false);
-
-        // start replication
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-        puller.addChangeListener(replicationFinishedObserver);
-        runReplication(puller);
-
-        // check requests to make sure cookie was sent
-
-        for (HttpRequest capturedRequest : mockHttpClient.getCapturedRequests()) {
-           Log.d(TAG, "request: " + capturedRequest);
-        }
-        */
 
 
     }
