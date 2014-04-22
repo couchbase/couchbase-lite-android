@@ -1730,6 +1730,7 @@ public class ReplicationTest extends LiteTestCase {
         String cookieName = "foo";
         String cookieVal = "bar";
         boolean isSecure = false;
+        boolean httpOnly = false;
 
         // expiration date - 1 day from now
         Calendar cal = Calendar.getInstance();
@@ -1739,7 +1740,7 @@ public class ReplicationTest extends LiteTestCase {
         Date expirationDate = cal.getTime();
 
         // set the cookie
-        puller.setCookie(cookieName, cookieVal, "", expirationDate, isSecure, false);
+        puller.setCookie(cookieName, cookieVal, "", expirationDate, isSecure, httpOnly);
 
         // make sure it made it into cookie store and has expected params
         CookieStore cookieStore = CouchbaseLiteHttpClientFactory.INSTANCE.getCookieStore();
