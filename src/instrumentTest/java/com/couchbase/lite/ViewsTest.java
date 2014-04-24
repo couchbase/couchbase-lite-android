@@ -299,6 +299,19 @@ public class ViewsTest extends LiteTestCase {
         view.deleteIndex();
     }
 
+    public void testViewIndexSkipsDesignDocs() throws CouchbaseLiteException {
+        View view = createView(database);
+
+        Map<String, Object> designDoc = new HashMap<String, Object>();
+        designDoc.put("_id", "_design/test");
+        designDoc.put("key", "value");
+        putDoc(database, designDoc);
+
+        view.updateIndex();
+        List<QueryRow> rows = view.queryWithOptions(null);
+        assertEquals(0, rows.size());
+    }
+
     public void testViewQuery() throws CouchbaseLiteException {
 
         putDocs(database);
