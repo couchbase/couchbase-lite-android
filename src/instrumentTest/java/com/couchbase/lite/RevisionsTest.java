@@ -10,6 +10,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -137,15 +139,84 @@ public class RevisionsTest extends LiteTestCase {
     }
 
     /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/164
+     */
+    public void testRevisionIdDifferentRevisions() throws Exception {
+
+        // two revisions with different json should have different rev-id's
+        // because their content will have a different hash (even though
+        // they have the same generation number)
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testCreateRevisions");
+        properties.put("tag", 1337);
+
+        Document doc = database.createDocument();
+        UnsavedRevision newRev = doc.createRevision();
+        newRev.setUserProperties(properties);
+        SavedRevision rev1 = newRev.save();
+
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1, false);
+
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
+
+        assertNotSame(rev2a.getId(), rev2b.getId());
+
+
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/164
+     */
+    public void testRevisionIdEquivalentRevisions() throws Exception {
+
+        // two revisions with the same content and the same json
+        // should have the exact same revision id, because their content
+        // will have an identical hash
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testCreateRevisions");
+        properties.put("tag", 1337);
+
+        Map<String, Object> properties2 = new HashMap<String, Object>();
+        properties2.put("testName", "testCreateRevisions");
+        properties2.put("tag", 1338);
+
+        Document doc = database.createDocument();
+        UnsavedRevision newRev = doc.createRevision();
+        newRev.setUserProperties(properties);
+        SavedRevision rev1 = newRev.save();
+
+        UnsavedRevision newRev2a = rev1.createRevision();
+        newRev2a.setUserProperties(properties2);
+        SavedRevision rev2a = newRev2a.save();
+
+        UnsavedRevision newRev2b = rev1.createRevision();
+        newRev2b.setUserProperties(properties2);
+        SavedRevision rev2b = newRev2b.save(true);
+
+        assertEquals(rev2a.getId(), rev2b.getId());
+
+    }
+
+    /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/106
      */
     public void testResolveConflict() throws Exception {
 
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testCreateRevisions");
+        properties.put("tag", 1337);
+
         // Create a conflict on purpose
         Document doc = database.createDocument();
-        SavedRevision rev1 = doc.createRevision().save();
-        SavedRevision rev2a = rev1.createRevision().save();
-        SavedRevision rev2b = rev1.createRevision().save(true);
+
+        UnsavedRevision newRev1 = doc.createRevision();
+        newRev1.setUserProperties(properties);
+        SavedRevision rev1 = newRev1.save();
+
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1, false);
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
 
         SavedRevision winningRev = null;
         SavedRevision losingRev = null;
@@ -172,7 +243,7 @@ public class RevisionsTest extends LiteTestCase {
         assertEquals(losingRev.getId(), doc.getCurrentRevision().getId());
 
         // Finally create a new revision rev3 based on losing rev
-        SavedRevision rev3 = losingRev.createRevision().save(true);
+        SavedRevision rev3 = createRevisionWithRandomProps(losingRev, true);
 
         assertEquals(rev3.getId(), doc.getCurrentRevisionId());
 
@@ -187,8 +258,8 @@ public class RevisionsTest extends LiteTestCase {
         // Create a conflict on purpose
         Document doc = database.createDocument();
         SavedRevision rev1 = doc.createRevision().save();
-        SavedRevision rev2a = rev1.createRevision().save();
-        SavedRevision rev2b = rev1.createRevision().save(true);
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1, false);
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
 
         // the tiebreaker will happen based on which rev hash has lexicographically higher sort order
         SavedRevision expectedWinner = null;
@@ -208,9 +279,9 @@ public class RevisionsTest extends LiteTestCase {
         // Create a conflict on purpose
         Document doc = database.createDocument();
         SavedRevision rev1 = doc.createRevision().save();
-        SavedRevision rev2a = rev1.createRevision().save();
-        SavedRevision rev2b = rev1.createRevision().save(true);
-        SavedRevision rev3b = rev2b.createRevision().save(true);
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1, false);
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
+        SavedRevision rev3b = createRevisionWithRandomProps(rev2b, true);
 
         // rev3b should be picked as the winner since it has a longer branch
         SavedRevision expectedWinner = rev3b;
@@ -228,21 +299,23 @@ public class RevisionsTest extends LiteTestCase {
         // Create a conflict on purpose
         Document doc = database.createDocument();
         SavedRevision rev1 = doc.createRevision().save();
-        SavedRevision rev2a = rev1.createRevision().save();
-        SavedRevision rev2b = rev1.createRevision().save(true);
-        SavedRevision rev3b = rev2b.createRevision().save(true);
-        SavedRevision rev4b = rev3b.createRevision().save(true);
-        SavedRevision rev5b = rev4b.createRevision().save(true);
-        SavedRevision rev6b = rev5b.createRevision().save(true);
-        SavedRevision rev7b = rev6b.createRevision().save(true);
-        SavedRevision rev8b = rev7b.createRevision().save(true);
-        SavedRevision rev9b = rev8b.createRevision().save(true);
-        SavedRevision rev10b = rev9b.createRevision().save(true);
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1, false);
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
+        SavedRevision rev3b = createRevisionWithRandomProps(rev2b, true);
+        SavedRevision rev4b = createRevisionWithRandomProps(rev3b, true);
+        SavedRevision rev5b = createRevisionWithRandomProps(rev4b, true);
+        SavedRevision rev6b = createRevisionWithRandomProps(rev5b, true);
+        SavedRevision rev7b = createRevisionWithRandomProps(rev6b, true);
+        SavedRevision rev8b = createRevisionWithRandomProps(rev7b, true);
+        SavedRevision rev9b = createRevisionWithRandomProps(rev8b, true);
+        SavedRevision rev10b = createRevisionWithRandomProps(rev9b, true);
 
         RevisionInternal revFound = database.getDocumentWithIDAndRev(doc.getId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
         assertEquals(rev10b.getId(), revFound.getRevId());
 
     }
+
+
 
     public void testDocumentChangeListener() throws Exception {
 

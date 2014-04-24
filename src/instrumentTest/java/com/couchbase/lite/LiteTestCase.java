@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -627,6 +628,14 @@ public abstract class LiteTestCase extends TestCase {
 
         }
 
+    }
+
+    public static SavedRevision createRevisionWithRandomProps(SavedRevision createRevFrom, boolean allowConflict) throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put(UUID.randomUUID().toString(), "val");
+        UnsavedRevision unsavedRevision = createRevFrom.createRevision();
+        unsavedRevision.setUserProperties(properties);
+        return unsavedRevision.save(allowConflict);
     }
 
 }
