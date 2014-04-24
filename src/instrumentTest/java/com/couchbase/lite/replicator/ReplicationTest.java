@@ -11,9 +11,7 @@ import com.couchbase.lite.Manager;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
-import com.couchbase.lite.QueryOptions;
 import com.couchbase.lite.QueryRow;
-import com.couchbase.lite.RevisionList;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.UnsavedRevision;
@@ -21,10 +19,7 @@ import com.couchbase.lite.View;
 import com.couchbase.lite.auth.FacebookAuthorizer;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.storage.Cursor;
-import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.support.Base64;
-import com.couchbase.lite.support.CouchbaseLiteHttpClientFactory;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
@@ -35,6 +30,7 @@ import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -48,8 +44,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.json.JSONArray;
@@ -60,7 +56,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -293,8 +288,8 @@ public class ReplicationTest extends LiteTestCase {
         Assert.assertFalse(repl.isContinuous());
         Assert.assertNull(repl.getFilter());
         Assert.assertNull(repl.getFilterParams());
-        // TODO: CAssertNil(r1.doc_ids);
-        // TODO: CAssertNil(r1.headers);
+        Assert.assertNull(repl.getDocIds());
+        // TODO: CAssertNil(r1.headers); still not null!
 
         // Check that the replication hasn't started running:
         Assert.assertFalse(repl.isRunning());
@@ -1443,7 +1438,7 @@ public class ReplicationTest extends LiteTestCase {
         ResponderChain responderChain = new ResponderChain(responders, sentinal);
         mockHttpClient.setResponder("_bulk_docs", responderChain);
 
-        // create a replication obeserver to wait until replication finishes
+        // create a replication observer to wait until replication finishes
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
 
@@ -1569,6 +1564,115 @@ public class ReplicationTest extends LiteTestCase {
 
 
     }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/66
+     */
+
+    public void failingTestPushUpdatedDocWithoutReSendingAttachments() throws Exception {
+
+        assertEquals(0, database.getLastSequenceNumber());
+
+        Map<String,Object> properties1 = new HashMap<String,Object>();
+        properties1.put("dynamic", 1);
+        final Document doc = createDocWithProperties(properties1);
+
+        // Add attachment to document
+        UnsavedRevision doc2UnsavedRev = doc.createRevision();
+        InputStream attachmentStream = getAsset("attachment.png");
+        doc2UnsavedRev.setAttachment("attachment.png", "image/png", attachmentStream);
+        SavedRevision doc2Rev = doc2UnsavedRev.save();
+        assertNotNull(doc2Rev);
+
+
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+
+        mockHttpClient.addResponderFakeLocalDocumentUpdate404();
+
+        mockHttpClient.setResponder(doc.getId(), new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                Map<String, Object> responseObject = new HashMap<String, Object>();
+                responseObject.put("id", doc.getId());
+                responseObject.put("ok", true);
+                responseObject.put("rev", doc.getCurrentRevisionId());
+                return CustomizableMockHttpClient.generateHttpResponseObject(responseObject);
+            }
+        });
+
+
+        // create a replication observer to wait until replication finishes
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+
+        // create replication and add observer
+        manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
+        Replication pusher = database.createPushReplication(getReplicationURL());
+        pusher.addChangeListener(replicationFinishedObserver);
+
+        // kick off the replication
+        pusher.start();
+
+        boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+
+
+        mockHttpClient.clearCapturedRequests();
+        replicationDoneSignal = new CountDownLatch(1);
+        replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+
+
+        Document oldDoc =database.getDocument(doc.getId());
+        UnsavedRevision aUnsavedRev = oldDoc.createRevision();
+        Map<String,Object> prop = new HashMap<String,Object>();
+        prop.putAll(oldDoc.getProperties());
+        prop.put("dynamic", (Integer) oldDoc.getProperty("dynamic") +1);
+        aUnsavedRev.setProperties(prop);
+        final SavedRevision savedRev=aUnsavedRev.save();
+
+
+        mockHttpClient.setResponder(doc.getId(), new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                Map<String, Object> responseObject = new HashMap<String, Object>();
+                responseObject.put("id", doc.getId());
+                responseObject.put("ok", true);
+                responseObject.put("rev", savedRev.getId());
+                return CustomizableMockHttpClient.generateHttpResponseObject(responseObject);
+            }
+        });
+
+        pusher = database.createPushReplication(getReplicationURL());
+        pusher.start();
+
+        // wait for it to finish
+        success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+
+        List<HttpRequest> captured = mockHttpClient.getCapturedRequests();
+        for (HttpRequest httpRequest : captured) {
+            // verify that there are no PUT requests with attachments
+            if (httpRequest instanceof HttpPut) {
+                HttpPut httpPut = (HttpPut) httpRequest;
+                HttpEntity entity=httpPut.getEntity();
+                assertFalse("PUT request with updated doc properties contains attachment", entity instanceof MultipartEntity);
+            }
+
+        }
+
+        assertTrue(success);
+        Log.d(TAG, "replicationDoneSignal finished");
+
+        // we would expect it to have recorded an error because one of the docs (the one without the attachment)
+        // will have failed.
+        assertNotNull(pusher.getLastError());
+
+        // workaround for the fact that the replicationDoneSignal.wait() call will unblock before all
+        // the statements in Replication.stopped() have even had a chance to execute.
+        // (specifically the ones that come after the call to notifyChangeListeners())
+        Thread.sleep(500);
+
+
+    }
+
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/55
