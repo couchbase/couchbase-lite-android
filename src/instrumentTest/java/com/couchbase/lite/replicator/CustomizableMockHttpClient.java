@@ -98,14 +98,32 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         });
     }
 
+    public void addResponderFakeLocalDocumentUpdate401() {
+        responders.put("_local", getFakeLocalDocumentUpdate401());
+    }
+
+    public Responder getFakeLocalDocumentUpdate401() {
+        return new Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                String json = "{\"error\":\"Unauthorized\",\"reason\":\"Login required\"}";
+                return CustomizableMockHttpClient.generateHttpResponseObject(401, "Unauthorized", json);
+            }
+        };
+    }
+
     public void addResponderFakeLocalDocumentUpdate404() {
-        responders.put("_local", new CustomizableMockHttpClient.Responder() {
+        responders.put("_local", getFakeLocalDocumentUpdate404());
+    }
+
+    public Responder getFakeLocalDocumentUpdate404() {
+        return new Responder() {
             @Override
             public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
                 String json = "{\"error\":\"not_found\",\"reason\":\"missing\"}";
                 return CustomizableMockHttpClient.generateHttpResponseObject(404, "NOT FOUND", json);
             }
-        });
+        };
     }
 
     public void addResponderFakeLocalDocumentUpdateIOException() {

@@ -24,6 +24,7 @@ import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.support.Base64;
+import com.couchbase.lite.support.CouchbaseLiteHttpClientFactory;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
@@ -39,12 +40,14 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -60,6 +63,8 @@ import java.net.URL;
 import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -130,6 +135,21 @@ public class ReplicationTest extends LiteTestCase {
             public HttpClient getHttpClient() {
                 return mockHttpClient;
             }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
+            }
         };
     }
 
@@ -155,6 +175,21 @@ public class ReplicationTest extends LiteTestCase {
             @Override
             public HttpClient getHttpClient() {
                 return mockHttpClient;
+            }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
             }
         };
 
@@ -888,6 +923,21 @@ public class ReplicationTest extends LiteTestCase {
                 mockHttpClient.addResponderFailAllRequests(statusCode);
                 return mockHttpClient;
             }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
+            }
         };
 
         String dbUrlString = "http://fake.test-url.com:4984/fake/";
@@ -985,7 +1035,7 @@ public class ReplicationTest extends LiteTestCase {
     public void testBuildRelativeURLString() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
-        Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
+        Replication replicator = new Pusher(database, new URL(dbUrlString), false, null);
         String relativeUrlString = replicator.buildRelativeURLString("foo");
 
         String expected = "http://10.0.0.3:4984/todos/foo";
@@ -996,7 +1046,7 @@ public class ReplicationTest extends LiteTestCase {
     public void testBuildRelativeURLStringWithLeadingSlash() throws Exception {
 
         String dbUrlString = "http://10.0.0.3:4984/todos/";
-        Replication replicator = new Pusher(null, new URL(dbUrlString), false, null);
+        Replication replicator = new Pusher(database, new URL(dbUrlString), false, null);
         String relativeUrlString = replicator.buildRelativeURLString("/foo");
 
         String expected = "http://10.0.0.3:4984/todos/foo";
@@ -1063,6 +1113,21 @@ public class ReplicationTest extends LiteTestCase {
             public HttpClient getHttpClient() {
                 return mockHttpClient;
             }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
+            }
         };
 
         URL remote = getReplicationURL();
@@ -1106,6 +1171,21 @@ public class ReplicationTest extends LiteTestCase {
             @Override
             public HttpClient getHttpClient() {
                 return mockHttpClient;
+            }
+
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
             }
         };
         manager.setDefaultHttpClientFactory(mockHttpClientFactory);
@@ -1718,6 +1798,51 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    public void testSetReplicationCookie() throws Exception {
+
+        URL replicationUrl = getReplicationURL();
+        Replication puller = database.createPullReplication(replicationUrl);
+        String cookieName = "foo";
+        String cookieVal = "bar";
+        boolean isSecure = false;
+        boolean httpOnly = false;
+
+        // expiration date - 1 day from now
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+        int numDaysToAdd = 1;
+        cal.add(Calendar.DATE, numDaysToAdd);
+        Date expirationDate = cal.getTime();
+
+        // set the cookie
+        puller.setCookie(cookieName, cookieVal, "", expirationDate, isSecure, httpOnly);
+
+        // make sure it made it into cookie store and has expected params
+        CookieStore cookieStore = puller.getClientFactory().getCookieStore();
+        List<Cookie> cookies = cookieStore.getCookies();
+        assertEquals(1, cookies.size());
+        Cookie cookie = cookies.get(0);
+        assertEquals(cookieName, cookie.getName());
+        assertEquals(cookieVal, cookie.getValue());
+        assertEquals(replicationUrl.getHost(), cookie.getDomain());
+        assertEquals(replicationUrl.getPath(), cookie.getPath());
+        assertEquals(expirationDate, cookie.getExpiryDate());
+        assertEquals(isSecure, cookie.isSecure());
+
+        // add a second cookie
+        String cookieName2 = "foo2";
+        puller.setCookie(cookieName2, cookieVal, "", expirationDate, isSecure, false);
+        assertEquals(2, cookieStore.getCookies().size());
+
+        // delete cookie
+        puller.deleteCookie(cookieName2);
+
+        // should only have the original cookie left
+        assertEquals(1, cookieStore.getCookies().size());
+        assertEquals(cookieName, cookieStore.getCookies().get(0).getName());
+
+
+    }
 
 
     /**
