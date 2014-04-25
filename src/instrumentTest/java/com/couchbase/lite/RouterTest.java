@@ -735,8 +735,8 @@ public class RouterTest extends LiteTestCase {
         // Create a conflict on purpose
         Document doc = database.createDocument();
         SavedRevision rev1 = doc.createRevision().save();
-        SavedRevision rev2a = rev1.createRevision().save();
-        SavedRevision rev2b = rev1.createRevision().save(true);
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1, false);
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
 
         SavedRevision winningRev = null;
         SavedRevision losingRev = null;

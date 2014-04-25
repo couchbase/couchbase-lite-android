@@ -1187,12 +1187,12 @@ public class ReplicationTest extends LiteTestCase {
 
         Document doc = database.createDocument();
         SavedRevision rev1a = doc.createRevision().save();
-        SavedRevision rev2a = rev1a.createRevision().save();
-        SavedRevision rev3a = rev2a.createRevision().save();
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1a, false);
+        SavedRevision rev3a = createRevisionWithRandomProps(rev2a, false);
 
         // delete the branch we've been using, then create a new one to replace it
         SavedRevision rev4a = rev3a.deleteDocument();
-        SavedRevision rev2b = rev1a.createRevision().save(true);
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1a, true);
         assertEquals(rev2b.getId(), doc.getCurrentRevisionId());
 
         // sync with remote DB -- should push both leaf revisions
@@ -1231,8 +1231,8 @@ public class ReplicationTest extends LiteTestCase {
         // Create a document with two conflicting edits.
         Document doc = database.createDocument();
         SavedRevision rev1 = doc.createRevision().save();
-        SavedRevision rev2a = rev1.createRevision().save();
-        SavedRevision rev2b = rev1.createRevision().save(true);
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1, false);
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
 
         // make sure we can query the db to get the conflict
         Query allDocsQuery = database.createAllDocumentsQuery();
