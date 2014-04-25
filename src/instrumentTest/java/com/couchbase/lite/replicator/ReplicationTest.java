@@ -1584,7 +1584,6 @@ public class ReplicationTest extends LiteTestCase {
         SavedRevision doc2Rev = doc2UnsavedRev.save();
         assertNotNull(doc2Rev);
 
-
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
 
         mockHttpClient.addResponderFakeLocalDocumentUpdate404();
@@ -1601,25 +1600,13 @@ public class ReplicationTest extends LiteTestCase {
         });
 
 
-        // create a replication observer to wait until replication finishes
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-
         // create replication and add observer
         manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
         Replication pusher = database.createPushReplication(getReplicationURL());
-        pusher.addChangeListener(replicationFinishedObserver);
 
-        // kick off the replication
-        pusher.start();
-
-        boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
-
+        runReplication(pusher);
 
         mockHttpClient.clearCapturedRequests();
-        replicationDoneSignal = new CountDownLatch(1);
-        replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-
 
         Document oldDoc =database.getDocument(doc.getId());
         UnsavedRevision aUnsavedRev = oldDoc.createRevision();
@@ -1628,7 +1615,6 @@ public class ReplicationTest extends LiteTestCase {
         prop.put("dynamic", (Integer) oldDoc.getProperty("dynamic") +1);
         aUnsavedRev.setProperties(prop);
         final SavedRevision savedRev=aUnsavedRev.save();
-
 
         mockHttpClient.setResponder(doc.getId(), new CustomizableMockHttpClient.Responder() {
             @Override
@@ -1642,10 +1628,8 @@ public class ReplicationTest extends LiteTestCase {
         });
 
         pusher = database.createPushReplication(getReplicationURL());
-        pusher.start();
+        runReplication(pusher);
 
-        // wait for it to finish
-        success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
 
         List<HttpRequest> captured = mockHttpClient.getCapturedRequests();
         for (HttpRequest httpRequest : captured) {
@@ -1657,18 +1641,6 @@ public class ReplicationTest extends LiteTestCase {
             }
 
         }
-
-        assertTrue(success);
-        Log.d(TAG, "replicationDoneSignal finished");
-
-        // we would expect it to have recorded an error because one of the docs (the one without the attachment)
-        // will have failed.
-        assertNotNull(pusher.getLastError());
-
-        // workaround for the fact that the replicationDoneSignal.wait() call will unblock before all
-        // the statements in Replication.stopped() have even had a chance to execute.
-        // (specifically the ones that come after the call to notifyChangeListeners())
-        Thread.sleep(500);
 
 
     }
