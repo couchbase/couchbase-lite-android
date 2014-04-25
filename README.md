@@ -18,19 +18,54 @@ Couchbase Lite databases are able to sync with eachother via [Sync Gateway](http
 * [Javadocs](http://www.couchbase.com/autodocs/couchbase-lite-android-1.0b2/index.html) for [beta2](https://github.com/couchbase/couchbase-lite-android/blob/1.0-beta2) release
 * [Wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 
-## Getting Started with Couchbase Lite
+## Getting started with Couchbase Lite
 
 * Download and run the [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
 
 * Create your own Hello World Couchbase Lite via the [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) guide.
 
-## Developing / Contributing to Couchbase Lite
 
-If you are just building an application with Couchbase Lite, your best bet is to look at the [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android) and copy the same structure.
+## Getting the pre-built jars / maven artifacts
 
-However, if you need to debug Couchbase Lite Android or otherwise hack on it, these instructions will help you do that.
+### Maven master branch
 
-## Prerequisites
+Maven repo URL: `http://files.couchbase.com/maven2/`
+
+```
+<dependency>
+  <groupId>com.couchbase.lite</groupId>
+  <artifactId>android</artifactId>
+  <version>0.0.0-272</version>
+</dependency>
+```
+
+To get the latest build number (eg, the "272" part of the version above), see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
+
+To see an example gradle configuration, see [GrocerySync's build.gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle)
+
+### Maven beta2 release
+
+Maven repo URL: `http://files.couchbase.com/maven2/`
+
+```
+<dependency>
+  <groupId>com.couchbase.cblite</groupId>
+  <artifactId>CBLite</artifactId>
+  <version>1.0.0-beta2</version>
+</dependency>
+```
+
+### Zipfile that includes jars
+
+For Eclipse and Phonegap users, here are links to the zip file which includes the jars:
+
+* [Master Branch build #272 zipfile](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/272/artifact/cblite_android_javadocs_0.0.0-272.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
+* [Beta2 zipfile](http://packages.couchbase.com/releases/couchbase-lite/android/1.0-beta/couchbase-lite-community-android_1.0-beta2.zip)
+
+
+## Building Couchbase Lite from source
+
+### Pre-requisites
 
 * [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) 
 
@@ -42,7 +77,7 @@ However, if you need to debug Couchbase Lite Android or otherwise hack on it, th
 
 **Note** recent versions after Android Studio 0.4.3 are not able to import the project due to [Issue #65915](https://code.google.com/p/android/issues/detail?id=65915), so it's recommended to use Android Studio 0.4.3.
 
-## Clone the repository
+### Clone the git repository
 
 Use Git to clone the Couchbase Lite repository to your local disk: 
 
@@ -52,13 +87,13 @@ cd couchbase-lite-android
 $ git submodule init && git submodule update
 ```
 
-## Configure Android Studio SDK location
+### Configure Android Studio SDK location
 
 * `cp local.properties.example local.properties`
 * Customize `local.properties` according to your SDK installation directory
 
 
-## Importing Project into Android Studio
+### Importing Project into Android Studio
 
 You should be able to import the project directly into Android Studio:
 
@@ -70,7 +105,7 @@ You should be able to import the project directly into Android Studio:
 
 After it's finished with the import, it should look [like this](http://cl.ly/image/3R3X0Q3o1H09)
 
-## Running tests
+### Running tests
 
 There are two wiki pages which describe how to run the tests:
 
