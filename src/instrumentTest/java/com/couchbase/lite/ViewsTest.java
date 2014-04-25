@@ -439,7 +439,7 @@ public class ViewsTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-android/issues/139
      * test based on https://github.com/couchbase/couchbase-lite-ios/blob/master/Source/CBL_View_Tests.m#L358
      */
-    public void failingTestViewQueryStartKeyDocID() throws CouchbaseLiteException {
+    public void testViewQueryStartKeyDocID() throws CouchbaseLiteException {
 
         putDocs(database);
         List<RevisionInternal> result = new ArrayList<RevisionInternal>();
@@ -448,62 +448,41 @@ public class ViewsTest extends LiteTestCase {
         dict.put("key", "one");
         result.add(putDoc(database, dict));
         View view = createView(database);
-//        https://github.com/couchbase/couchbase-lite-android/issues/258
-//        assertEquals(Status.OK, view.updateIndex());
+
+        view.updateIndex();
         QueryOptions options = new QueryOptions();
         options.setStartKey("one");
-//        options.setStartKeyDocID("11112");
+        options.setStartKeyDocId("11112");
         options.setEndKey("three");
         List<QueryRow> rows = view.queryWithOptions(options);
 
-        List<Object> expectedRows = new ArrayList<Object>();
-        Map<String,Object> dict1 = new HashMap<String,Object>();
-        dict1.put("id", "11112");
-        dict1.put("key", "one");
-        expectedRows.add(dict1);
-
-        Map<String,Object> dict2 = new HashMap<String,Object>();
-        dict2.put("id", "33333");
-        dict2.put("key", "three");
-        expectedRows.add(dict2);
-
-        assertEquals(expectedRows, rows);
+        assertEquals(2, rows.size());
+        assertEquals("11112", rows.get(0).getDocumentId());
+        assertEquals("one", rows.get(0).getKey());
+        assertEquals("33333", rows.get(1).getDocumentId());
+        assertEquals("three", rows.get(1).getKey());
 
         options = new QueryOptions();
         options.setEndKey("one");
-//        options.setEndKeyDocID("11111");
-        options.setEndKey("three");
+        options.setEndKeyDocId("11111");
         rows = view.queryWithOptions(options);
 
-        expectedRows = new ArrayList<Object>();
-        dict1 = new HashMap<String,Object>();
-        dict1.put("id", "55555");
-        dict1.put("key", "five");
-        expectedRows.add(dict1);
-
-        dict2 = new HashMap<String,Object>();
-        dict2.put("id", "44444");
-        dict2.put("key", "four");
-        expectedRows.add(dict2);
-
-        Map<String,Object> dict3 = new HashMap<String,Object>();
-        dict2.put("id", "11111");
-        dict2.put("key", "one");
-        expectedRows.add(dict2);
-
-        assertEquals(expectedRows, rows);
+        Log.d(TAG, "rows: " + rows);
+        assertEquals(3, rows.size());
+        assertEquals("55555", rows.get(0).getDocumentId());
+        assertEquals("five", rows.get(0).getKey());
+        assertEquals("44444", rows.get(1).getDocumentId());
+        assertEquals("four", rows.get(1).getKey());
+        assertEquals("11111", rows.get(2).getDocumentId());
+        assertEquals("one", rows.get(2).getKey());
 
         options.setStartKey("one");
-//        options.setStartKeyDocID("11111");
+        options.setStartKeyDocId("11111");
         rows = view.queryWithOptions(options);
+        assertEquals(1, rows.size());
+        assertEquals("11111", rows.get(0).getDocumentId());
+        assertEquals("one", rows.get(0).getKey());
 
-        expectedRows = new ArrayList<Object>();
-        dict1 = new HashMap<String,Object>();
-        dict1.put("id", "11111");
-        dict1.put("key", "one");
-        expectedRows.add(dict1);
-
-        assertEquals(expectedRows, rows);
     }
 
     /**
