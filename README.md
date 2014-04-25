@@ -59,7 +59,7 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 
 For Eclipse and Phonegap users, here are links to the zip file which includes the jars:
 
-* [Master Branch build #272 zipfile](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/272/artifact/cblite_android_javadocs_0.0.0-272.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
+* [Master Branch build #272 zipfile](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/lastSuccessfulBuild/artifact/couchbase-lite-0.0.0-273-android-community.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
 * [Beta2 zipfile](http://packages.couchbase.com/releases/couchbase-lite/android/1.0-beta/couchbase-lite-community-android_1.0-beta2.zip)
 
 
