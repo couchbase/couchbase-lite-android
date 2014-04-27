@@ -512,7 +512,6 @@ public class ViewsTest extends LiteTestCase {
         query.setEndKey(33547239);
         QueryEnumerator rows = query.run();
         assertEquals(1, rows.getCount());
-        rows = query.run();
 
         assertEquals(33547239, rows.getRow(0).getKey());
     }
