@@ -100,4 +100,24 @@ public class DocumentTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/281
+     */
+    public void testDocumentWithRemovedProperty() {
+
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("_id", "fakeid");
+        props.put("_removed", true);
+        props.put("foo", "bar");
+
+        Document doc = createDocumentWithProperties(database, props);
+        assertNotNull(doc);
+
+        Document docFetched = database.getDocument(doc.getId());
+        Map<String, Object> fetchedProps = docFetched.getCurrentRevision().getProperties();
+        assertNotNull(fetchedProps.get("_removed"));
+        assertTrue(docFetched.getCurrentRevision().isGone());
+
+    }
+
 }
