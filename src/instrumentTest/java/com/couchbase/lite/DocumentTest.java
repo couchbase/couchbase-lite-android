@@ -84,7 +84,7 @@ public class DocumentTest extends LiteTestCase {
         database.loadRevisionBody(revisionInternal, contentOptions);
 
         // now lets purge the document, and then try to load the revision body again
-        assertTrue(document.purge());
+        document.purge();
 
         boolean gotExpectedException = false;
         try {

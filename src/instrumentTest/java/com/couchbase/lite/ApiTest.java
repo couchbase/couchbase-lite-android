@@ -317,7 +317,7 @@ public class ApiTest extends LiteTestCase {
         Database db = startDatabase();
         Document doc=createDocumentWithProperties(db, properties);
         assertNotNull(doc);
-        assertNotNull(doc.purge());
+        doc.purge();
 
         Document redoc = db.getCachedDocument(doc.getId());
         assertNull(redoc);

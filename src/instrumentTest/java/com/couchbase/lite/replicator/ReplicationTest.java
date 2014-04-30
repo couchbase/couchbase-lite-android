@@ -240,7 +240,7 @@ public class ReplicationTest extends LiteTestCase {
         unsavedRevision.save();
 
         // but then immediately purge it
-        assertTrue(doc.purge());
+        doc.purge();
 
         // wait for a while to give the replicator a chance to push it
         // (it should not actually push anything)
