@@ -699,7 +699,7 @@ public class RouterTest extends LiteTestCase {
             timeWaited += timeToWait;
         }
 
-        if (timeWaited > maxTimeToWaitMs) {
+        if (timeWaited >= maxTimeToWaitMs) {
             success = false;
         }
         return success;
