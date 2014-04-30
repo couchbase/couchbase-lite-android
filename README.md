@@ -65,7 +65,7 @@ For Eclipse and Phonegap users, here are links to the zip file which includes th
 
 ## Building Couchbase Lite from source
 
-### Pre-requisites
+### Prerequisites
 
 * [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) 
 
