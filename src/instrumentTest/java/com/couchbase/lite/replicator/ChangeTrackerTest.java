@@ -25,7 +25,6 @@ public class ChangeTrackerTest extends LiteTestCase {
     public static final String TAG = "ChangeTracker";
 
     public void testChangeTrackerOneShot() throws Throwable {
-        changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.OneShot, false);
         changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.OneShot, true);
     }
 
