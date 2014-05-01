@@ -145,6 +145,15 @@ public class AttachmentsTest extends LiteTestCase {
         data = IOUtils.toByteArray(attachment3.getContent());
         Assert.assertTrue(Arrays.equals(attach2, data));
 
+        Map<String,Object> attachmentDictForRev3 = (Map<String,Object>)database.getAttachmentsDictForSequenceWithContent(rev3.getSequence(), EnumSet.noneOf(Database.TDContentOptions.class)).get(testAttachmentName);
+        if (attachmentDictForRev3.containsKey("follows")) {
+            if (((Boolean)attachmentDictForRev3.get("follows")).booleanValue() == true) {
+                throw new RuntimeException("Did not expected attachment dict 'follows' key to be true");
+            } else {
+                throw new RuntimeException("Did not expected attachment dict to have 'follows' key");
+            }
+        }
+
         // Examine the attachment store:
         Assert.assertEquals(2, attachments.count());
         Set<BlobKey> expected = new HashSet<BlobKey>();
@@ -206,12 +215,12 @@ public class AttachmentsTest extends LiteTestCase {
 
         Map<String,Object> innerDict = (Map<String,Object>) attachmentDictForSequence.get(testAttachmentName);
 
-        if (!innerDict.containsKey("stub")) {
-            throw new RuntimeException("Expected attachment dict to have 'stub' key");
-        }
-
-        if (((Boolean)innerDict.get("stub")).booleanValue() == false) {
-            throw new RuntimeException("Expected attachment dict 'stub' key to be true");
+        if (innerDict.containsKey("stub")) {
+            if (((Boolean)innerDict.get("stub")).booleanValue() == true) {
+                throw new RuntimeException("Did not expected attachment dict 'stub' key to be true");
+            } else {
+                throw new RuntimeException("Did not expected attachment dict to have 'stub' key");
+            }
         }
 
         if (!innerDict.containsKey("follows")) {
@@ -422,8 +431,6 @@ public class AttachmentsTest extends LiteTestCase {
         BlobKey blobKey = new BlobKey(sha1Base64Digest);
         byte[] blob = attachments.blobForKey(blobKey);
         Assert.assertTrue(Arrays.equals(testBlob.getBytes(Charset.forName("UTF-8")), blob));
-
-
     }
 
     /**
