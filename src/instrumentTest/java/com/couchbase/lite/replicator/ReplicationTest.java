@@ -1569,13 +1569,14 @@ public class ReplicationTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-android/issues/66
      */
 
-    public void failingTestPushUpdatedDocWithoutReSendingAttachments() throws Exception {
+    public void testPushUpdatedDocWithoutReSendingAttachments() throws Exception {
 
         assertEquals(0, database.getLastSequenceNumber());
 
         Map<String,Object> properties1 = new HashMap<String,Object>();
         properties1.put("dynamic", 1);
         final Document doc = createDocWithProperties(properties1);
+        SavedRevision doc1Rev = doc.getCurrentRevision();
 
         // Add attachment to document
         UnsavedRevision doc2UnsavedRev = doc.createRevision();
@@ -1588,6 +1589,7 @@ public class ReplicationTest extends LiteTestCase {
 
         mockHttpClient.addResponderFakeLocalDocumentUpdate404();
 
+        // http://url/db/foo (foo==docid)
         mockHttpClient.setResponder(doc.getId(), new CustomizableMockHttpClient.Responder() {
             @Override
             public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
@@ -1599,12 +1601,21 @@ public class ReplicationTest extends LiteTestCase {
             }
         });
 
-
         // create replication and add observer
         manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
         Replication pusher = database.createPushReplication(getReplicationURL());
 
         runReplication(pusher);
+
+        List<HttpRequest> captured = mockHttpClient.getCapturedRequests();
+        for (HttpRequest httpRequest : captured) {
+            // verify that there are no PUT requests with attachments
+            if (httpRequest instanceof HttpPut) {
+                HttpPut httpPut = (HttpPut) httpRequest;
+                HttpEntity entity=httpPut.getEntity();
+                //assertFalse("PUT request with updated doc properties contains attachment", entity instanceof MultipartEntity);
+            }
+        }
 
         mockHttpClient.clearCapturedRequests();
 
@@ -1627,11 +1638,22 @@ public class ReplicationTest extends LiteTestCase {
             }
         });
 
+        final String json = String.format("{\"%s\":{\"missing\":[\"%s\"],\"possible_ancestors\":[\"%s\",\"%s\"]}}",doc.getId(),savedRev.getId(),doc1Rev.getId(), doc2Rev.getId());
+        mockHttpClient.setResponder("_revs_diff", new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                return mockHttpClient.generateHttpResponseObject(json);
+            }
+        });
+
+        //TODO: Can we add assert to make sure we don't get both follows and stub properties
+        //in attachment data?
+
         pusher = database.createPushReplication(getReplicationURL());
         runReplication(pusher);
 
 
-        List<HttpRequest> captured = mockHttpClient.getCapturedRequests();
+        captured = mockHttpClient.getCapturedRequests();
         for (HttpRequest httpRequest : captured) {
             // verify that there are no PUT requests with attachments
             if (httpRequest instanceof HttpPut) {
@@ -1639,10 +1661,7 @@ public class ReplicationTest extends LiteTestCase {
                 HttpEntity entity=httpPut.getEntity();
                 assertFalse("PUT request with updated doc properties contains attachment", entity instanceof MultipartEntity);
             }
-
         }
-
-
     }
 
 
