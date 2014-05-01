@@ -1646,9 +1646,6 @@ public class ReplicationTest extends LiteTestCase {
             }
         });
 
-        //TODO: Can we add assert to make sure we don't get both follows and stub properties
-        //in attachment data?
-
         pusher = database.createPushReplication(getReplicationURL());
         runReplication(pusher);
 
