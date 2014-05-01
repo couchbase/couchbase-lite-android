@@ -290,6 +290,26 @@ static int compareStringsUnicode(const char** in1, const char** in2) {
 	return result;
 }
 
+static double readNumber(const char* start, const char* end, char** endOfNumber) {
+    // First copy the string into a zero-terminated buffer so we can safely call strtod:
+    size_t len = end - start;
+    char buf[50];
+    char* str = (len < sizeof(buf)) ? buf : (char*) malloc(len + 1);
+    if (!str) {
+        return 0.0;
+    }
+    memcpy(str, start, len);
+    str[len] = '\0';
+
+    char* endInStr;
+    double result = strtod(str, &endInStr);
+    *endOfNumber = (char*)start + (endInStr - str);
+    if (str != buf) {
+        free(str);
+    }
+    return result;
+}
+
 /** SQLite collation function for JSON-formatted strings.
  The "context" parameter should be one of the three collation mode constants below.
  WARNING: This function *only* works on valid JSON with no whitespace.
@@ -302,6 +322,7 @@ int TDCollateJSON(void *context, int len1, const void * chars1, int len2,
 	int depth = 0;
 
 	do {
+
 		// Get the types of the next token in each string:
 		ValueType type1 = valueTypeOf(*str1);
 		ValueType type2 = valueTypeOf(*str2);
@@ -327,9 +348,16 @@ int TDCollateJSON(void *context, int len1, const void * chars1, int len2,
 				break;
 			case kNumber: {
 				char* next1, *next2;
-				int diff = dcmp(strtod(str1, &next1), strtod(str2, &next2));
-				if (diff)
-					return diff; // Numbers don't match
+				int diff;
+                if (depth == 0) {
+                    diff = dcmp( readNumber(str1, str1 + len1, &next1),
+                                 readNumber(str2, str2 + len2, &next2) );
+                } else {
+                	diff = dcmp(strtod(str1, &next1), strtod(str2, &next2));
+                }
+                if (diff) {
+                    return diff; // Numbers don't match
+                }
 				str1 = next1;
 				str2 = next2;
 				break;
@@ -496,7 +524,7 @@ jboolean isCopy;
 const char* cstring1 = env->GetStringUTFChars(string1, &isCopy);
 const char* cstring2 = env->GetStringUTFChars(string2, &isCopy);
 
-int result = TDCollateJSON((void *) mode, 0, cstring1, 0, cstring2);
+int result = TDCollateJSON((void *) mode, (int)len1, cstring1, (int)len2, cstring2);
 
 env->ReleaseStringUTFChars(string1, cstring1);
 env->ReleaseStringUTFChars(string2, cstring2);
