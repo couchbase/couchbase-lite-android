@@ -13,3 +13,4 @@ local.properties
 .DS_Store
 
 local-test.properties
+settings.gradle
