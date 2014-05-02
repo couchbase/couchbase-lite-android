@@ -1661,6 +1661,79 @@ public class ReplicationTest extends LiteTestCase {
         }
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/188
+     */
+    public void testServerDoesNotSupportMultipart() throws Exception {
+
+        assertEquals(0, database.getLastSequenceNumber());
+
+        Map<String,Object> properties1 = new HashMap<String,Object>();
+        properties1.put("dynamic", 1);
+        final Document doc = createDocWithProperties(properties1);
+        SavedRevision doc1Rev = doc.getCurrentRevision();
+
+        // Add attachment to document
+        UnsavedRevision doc2UnsavedRev = doc.createRevision();
+        InputStream attachmentStream = getAsset("attachment.png");
+        doc2UnsavedRev.setAttachment("attachment.png", "image/png", attachmentStream);
+        SavedRevision doc2Rev = doc2UnsavedRev.save();
+        assertNotNull(doc2Rev);
+
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+
+        mockHttpClient.addResponderFakeLocalDocumentUpdate404();
+
+        Queue<CustomizableMockHttpClient.Responder> responders = new LinkedList<CustomizableMockHttpClient.Responder>();
+
+        //first http://url/db/foo (foo==docid)
+        //Reject multipart PUT with response code 415
+        responders.add(new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                String json = "{\"error\":\"Unsupported Media Type\",\"reason\":\"missing\"}";
+                return CustomizableMockHttpClient.generateHttpResponseObject(415, "Unsupported Media Type", json);
+            }
+        });
+
+        // second http://url/db/foo (foo==docid)
+        // second call should be plain json, return good response
+        responders.add(new CustomizableMockHttpClient.Responder() {
+            @Override
+            public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
+                Map<String, Object> responseObject = new HashMap<String, Object>();
+                responseObject.put("id", doc.getId());
+                responseObject.put("ok", true);
+                responseObject.put("rev", doc.getCurrentRevisionId());
+                return CustomizableMockHttpClient.generateHttpResponseObject(responseObject);
+            }
+        });
+
+        ResponderChain responderChain = new ResponderChain(responders);
+        mockHttpClient.setResponder(doc.getId(), responderChain);
+
+        // create replication and add observer
+        manager.setDefaultHttpClientFactory(mockFactoryFactory(mockHttpClient));
+        Replication pusher = database.createPushReplication(getReplicationURL());
+
+        runReplication(pusher);
+
+        List<HttpRequest> captured = mockHttpClient.getCapturedRequests();
+        int entityIndex =0;
+        for (HttpRequest httpRequest : captured) {
+            // verify that there are no PUT requests with attachments
+            if (httpRequest instanceof HttpPut) {
+                HttpPut httpPut = (HttpPut) httpRequest;
+                HttpEntity entity=httpPut.getEntity();
+                if(entityIndex++ == 0) {
+                    assertTrue("PUT request with attachment is not multipart", entity instanceof MultipartEntity);
+                } else {
+                    assertFalse("PUT request with attachment is multipart", entity instanceof MultipartEntity);
+                }
+            }
+        }
+    }
+
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/55
