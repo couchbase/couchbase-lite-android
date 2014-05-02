@@ -42,6 +42,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 
         try {
             database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
+            Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
             TDCollateJSON.registerCustomCollators(database);
             RevCollator.register(database);
         } catch(SQLiteException e) {
@@ -133,6 +134,14 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     @Override
     public void close() {
         database.close();
+        Log.v(Log.TAG_DATABASE, "%s: Closed Android sqlite db", this);
+    }
+
+    @Override
+    public String toString() {
+        return "AndroidSQLiteStorageEngine{" +
+                "database=" + Integer.toHexString(System.identityHashCode(database)) +
+                '}';
     }
 
     private android.content.ContentValues _toAndroidContentValues(ContentValues values) {
