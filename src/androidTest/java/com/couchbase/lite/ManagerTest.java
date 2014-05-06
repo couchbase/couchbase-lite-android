@@ -1,19 +1,19 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.storage.ContentValues;
-import com.couchbase.lite.storage.SQLException;
-import com.couchbase.lite.util.Log;
-
-import junit.framework.Assert;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ManagerTest extends LiteTestCase {
 
@@ -128,6 +128,36 @@ public class ManagerTest extends LiteTestCase {
 
         RevisionInternal gotRev1 = database.getDocumentWithIDAndRev(doc.getId(), doc.getCurrentRevisionId(), EnumSet.noneOf(Database.TDContentOptions.class));
 
+    }
+
+    public void testGetDatabaseConcurrently() throws Exception {
+        final String DATABASE_NAME = "test";
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        try {
+            List<Callable<Void>> callables = new ArrayList<Callable<Void>>(2);
+            for (int i = 0; i < 2; i++) {
+                callables.add(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        manager.getDatabase(DATABASE_NAME);
+                        return null;
+                    }
+                });
+            }
+
+            List<Future<Void>> results = executorService.invokeAll(callables);
+            for (Future<Void> future : results) {
+                // Will throw an exception, thus failing the test, if anything went wrong.
+                future.get();
+            }
+        } finally {
+            // Cleanup
+            Database a = manager.getExistingDatabase(DATABASE_NAME);
+            if (a != null) {
+                a.delete();
+            }
+            executorService.shutdown();
+        }
     }
 
 }
