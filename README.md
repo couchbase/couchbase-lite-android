@@ -88,7 +88,7 @@ $ git submodule init && git submodule update
 * `cp local.properties.example local.properties`
 * Customize `local.properties` according to your SDK installation directory
 
-## Enable settings.gradle file
+### Enable settings.gradle file
 
 * `cp settings.gradle.example settings.gradle`
 
