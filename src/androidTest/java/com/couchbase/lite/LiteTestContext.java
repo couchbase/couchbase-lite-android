@@ -1,8 +1,10 @@
 package com.couchbase.lite;
 
+import com.couchbase.test.lite.*;
+
 import java.io.File;
 
-public class LiteTestContext implements Context {
+public class LiteTestContext extends LiteTestContextBase implements Context {
 
     private String subdir;
 
@@ -27,14 +29,6 @@ public class LiteTestContext implements Context {
     @Override
     public NetworkReachabilityManager getNetworkReachabilityManager() {
         return new TestNetworkReachabilityManager();
-    }
-
-    public File getRootDirectory() {
-        String rootDirectoryPath = System.getProperty("user.dir");
-        File rootDirectory = new File(rootDirectoryPath);
-        rootDirectory = new File(rootDirectory, "data/data/com.couchbase.lite.test/files");
-
-        return rootDirectory;
     }
 
     class TestNetworkReachabilityManager extends NetworkReachabilityManager {
