@@ -4,7 +4,6 @@ apply plugin: 'maven'
 buildscript {
     repositories {
         mavenCentral()
-        mavenLocal()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.9.+'
@@ -12,6 +11,7 @@ buildscript {
 }
 
 repositories {
+    mavenLocal()
     maven { url 'http://files.couchbase.com/maven2/' }
     mavenCentral()
 }
@@ -55,6 +55,7 @@ dependencies {
 
     // this library is only needed by test code (95% certain), and therefore
     // instrumentTestCompile is used rather than compile.
+    androidTestCompile 'com.couchbase.lite:java-listener:' + System.getenv("MAVEN_UPLOAD_VERSION")
     androidTestCompile 'commons-io:commons-io:2.0.1'
 
     compile buildAndroidWithArtifacts == null ?
