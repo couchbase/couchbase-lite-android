@@ -1296,11 +1296,7 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(1, doc.getConflictingRevisions().size());
     }
 
-    /**
-     * Sporadically failing on jenkins
-     * http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/321/artifact/02_android_unit_test.log
-     */
-    public void failingTestOnlineOfflinePusher() throws Exception {
+    public void testOnlineOfflinePusher() throws Exception {
 
         URL remote = getReplicationURL();
 
