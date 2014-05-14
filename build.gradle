@@ -59,7 +59,7 @@ dependencies {
 
     compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-core') :
-            'com.couchbase.lite:java-core:' + System.getenv("MAVEN_UPLOAD_VERSION")
+            'com.couchbase.lite:couchbase-lite-java-core:' + System.getenv("MAVEN_UPLOAD_VERSION")
 
 }
 
@@ -82,7 +82,7 @@ task createMavenDirectory(type: Exec) {
 
     ext {
         uploadUser = System.getenv("MAVEN_UPLOAD_USERNAME") + ":" + System.getenv("MAVEN_UPLOAD_PASSWORD")
-        mkcolPath  = System.getenv("MAVEN_UPLOAD_REPO_URL") + "com/couchbase/lite/android/" + System.getenv("MAVEN_UPLOAD_VERSION") + "/"
+        mkcolPath  = System.getenv("MAVEN_UPLOAD_REPO_URL") + "com/couchbase/lite/couchbase-lite-android/" + System.getenv("MAVEN_UPLOAD_VERSION") + "/"
     }
     commandLine "curl", "--user", uploadUser, "-X", "MKCOL", mkcolPath
 }
@@ -104,7 +104,7 @@ uploadArchives {
             }
             pom.version = System.getenv("MAVEN_UPLOAD_VERSION")
             pom.groupId = 'com.couchbase.lite'
-            pom.artifactId = 'android'
+            pom.artifactId = 'couchbase-lite-android'
             pom.project {
                 licenses {
                     license {
