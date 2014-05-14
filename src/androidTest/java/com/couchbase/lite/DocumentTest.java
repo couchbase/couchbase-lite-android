@@ -40,6 +40,7 @@ public class DocumentTest extends LiteTestCase {
         properties.put("_deleted", true);
         properties.put("mykey", "myval");
         SavedRevision newRev = document.putProperties(properties);
+        newRev.loadProperties();
         assertTrue( newRev.getProperties().containsKey("mykey") );
 
         Assert.assertTrue(document.isDeleted());
