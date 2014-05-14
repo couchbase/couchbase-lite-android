@@ -49,6 +49,7 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
         if (!listening) {
             IntentFilter filter = new IntentFilter();
             filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+            Log.v(Log.TAG_SYNC, "%s: startListening() registering %s with context %s", this, receiver, wrappedContext);
             wrappedContext.registerReceiver(receiver, filter);
             listening = true;
         }
@@ -56,7 +57,12 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
 
     public synchronized void stopListening() {
         if (listening) {
-            wrappedContext.unregisterReceiver(receiver);
+            try {
+                Log.v(Log.TAG_SYNC, "%s: stopListening() unregistering %s with context %s", this, receiver, wrappedContext);
+                wrappedContext.unregisterReceiver(receiver);
+            } catch (Exception e) {
+                Log.e(Log.TAG_SYNC, "%s: stopListening() exception unregistering %s with context %s", e, this, receiver, wrappedContext);
+            }
             context = null;
             listening = false;
         }
