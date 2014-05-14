@@ -47,7 +47,7 @@ public class BatcherTest extends LiteTestCase {
         }
         batcher.queueObjects(objectsToQueue);
 
-        boolean didNotTimeOut = doneSignal.await(5, TimeUnit.SECONDS);
+        boolean didNotTimeOut = doneSignal.await(35, TimeUnit.SECONDS);
         assertTrue(didNotTimeOut);
 
     }
