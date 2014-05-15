@@ -64,7 +64,7 @@ public class BatcherTest extends LiteTestCase {
         // there is some overhead, rather than using a hardcoded number
         // express it as a ratio of the processor delay, asserting
         // that the entire processor delay never kicked in.
-        int acceptableDelta = 350;
+        int acceptableDelta = processorDelay - 1;
 
         Log.v(Log.TAG, "delta: %d", delta);
 
@@ -126,7 +126,7 @@ public class BatcherTest extends LiteTestCase {
         // there is some overhead, rather than using a hardcoded number
         // express it as a ratio of 1/4th the processor delay, asserting
         // that the entire processor delay never kicked in.
-        int acceptableMaxDelta = 350;
+        int acceptableMaxDelta = processorDelay -1;
 
         Log.v(Log.TAG, "maxObservedDelta: %d", maxObservedDelta.get());
 
