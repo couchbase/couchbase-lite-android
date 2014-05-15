@@ -62,9 +62,9 @@ public class BatcherTest extends LiteTestCase {
         // we want the delta between the time it was queued until the
         // time it was processed to be as small as possible.  since
         // there is some overhead, rather than using a hardcoded number
-        // express it as a ratio of 1/4th the processor delay, asserting
+        // express it as a ratio of the processor delay, asserting
         // that the entire processor delay never kicked in.
-        int acceptableDelta = processorDelay / 4;
+        int acceptableDelta = 350;
 
         Log.v(Log.TAG, "delta: %d", delta);
 
@@ -126,7 +126,7 @@ public class BatcherTest extends LiteTestCase {
         // there is some overhead, rather than using a hardcoded number
         // express it as a ratio of 1/4th the processor delay, asserting
         // that the entire processor delay never kicked in.
-        int acceptableMaxDelta = processorDelay / 4;
+        int acceptableMaxDelta = 350;
 
         Log.v(Log.TAG, "maxObservedDelta: %d", maxObservedDelta.get());
 
