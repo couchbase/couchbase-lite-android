@@ -55,13 +55,15 @@ dependencies {
 
     // this library is only needed by test code (95% certain), and therefore
     // instrumentTestCompile is used rather than compile.
-    androidTestCompile 'com.couchbase.lite:java-listener:' + System.getenv("MAVEN_UPLOAD_VERSION")
     androidTestCompile 'commons-io:commons-io:2.0.1'
 
     compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-core') :
             'com.couchbase.lite:java-core:' + System.getenv("MAVEN_UPLOAD_VERSION")
 
+    androidTestCompile buildAndroidWithArtifacts == null ?
+            project(':libraries:couchbase-lite-java-listener') :
+            'com.couchbase.lite:java-listener:' + System.getenv("MAVEN_UPLOAD_VERSION") 
 }
 
 
