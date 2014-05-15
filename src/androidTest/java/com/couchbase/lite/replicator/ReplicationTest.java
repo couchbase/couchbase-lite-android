@@ -410,7 +410,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     private boolean isSyncGateway(URL remote) {
-        return (remote.getPort() == 4984 || remote.getPort() == 4984);
+        return (remote.getPort() == 4984 || remote.getPort() == 80);
     }
 
     private HttpResponse getRemoteDoc(URL pathToDoc) throws MalformedURLException, IOException {
