@@ -674,7 +674,7 @@ public class ReplicationTest extends LiteTestCase {
         database.setValidation("foo_not_1", new Validator() {
             @Override
             public void validate(Revision newRevision, ValidationContext context) {
-                if ("1".equals(newRevision.getProperty("foo"))) {
+                if (new Integer(1).equals(newRevision.getProperty("foo"))) {
                     context.reject("Reject because foo is 1");
                 }
             }
@@ -688,7 +688,18 @@ public class ReplicationTest extends LiteTestCase {
         Log.d(TAG, "Fetching doc2 via id: " + doc2Id);
         Document doc2 = database.getDocument(doc2Id);
         Log.d(TAG, "doc2" + doc2);
-        assertNull(doc2);
+        assertNotNull(doc2);
+        assertNull(doc2.getCurrentRevision());
+
+        // Remove the Validation and ensure that the pull was successful
+        database.setValidation("foo_not_1", null);
+
+        doPullReplication();
+        Log.d(TAG, "Fetching doc2 via id (after removing validation): " + doc2Id);
+        doc2 = database.getDocument(doc2Id);
+        assertNotNull(doc2);
+        assertNotNull(doc2.getCurrentRevision());
+        assertEquals(1, doc2.getProperties().get("foo"));
     }
 
     public void testPuller() throws Throwable {
