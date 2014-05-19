@@ -67,15 +67,11 @@ For Eclipse and Phonegap users, here are links to the zip file which includes th
 
 ### Prerequisites
 
-* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) 
+* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) versions:
 
-  * If you are using the beta2 release or stable branch of Couchbase Lite, use the latest version in the stable channel (currently Android Studio 0.3.X)
-
-  * If you are using the master branch of Couchbase Lite, use the latest version in the canary channel (currently Android Studio 0.4.3)
+  * 0.5.7 is the only known working version.  Anything older will almost certainly not work.  Newer versions may or may not work.
 
 * Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
-
-**Note** recent versions after Android Studio 0.4.3 are not able to import the project due to [Issue #65915](https://code.google.com/p/android/issues/detail?id=65915), so it's recommended to use Android Studio 0.4.3.
 
 ### Clone the git repository
 
@@ -91,6 +87,12 @@ $ git submodule init && git submodule update
 
 * `cp local.properties.example local.properties`
 * Customize `local.properties` according to your SDK installation directory
+
+### Enable settings.gradle file
+
+* `cp settings.gradle.example settings.gradle`
+
+**Note** it is checked in as `settings.gradle.example` as a workaround to [Issue #65915](https://code.google.com/p/android/issues/detail?id=65915), which prevents embedding this project into [couchbase-lite-android-liteserv](https://github.com/couchbase/couchbase-lite-android-liteserv).
 
 
 ### Importing Project into Android Studio
