@@ -315,6 +315,30 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(0, rows.size());
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/214
+     */
+    public void testViewIndexSkipsConflictingDesignDocs() throws CouchbaseLiteException {
+        View view = createView(database);
+
+        Map<String, Object> designDoc = new HashMap<String, Object>();
+        designDoc.put("_id", "_design/test");
+        designDoc.put("key", "value");
+        RevisionInternal rev1 = putDoc(database, designDoc);
+
+        designDoc.put("_rev", rev1.getRevId());
+        designDoc.put("key", "value2a");
+        RevisionInternal rev2a = new RevisionInternal(designDoc, database);
+        database.putRevision(rev2a, rev1.getRevId(), true);
+        designDoc.put("key", "value2b");
+        RevisionInternal rev2b = new RevisionInternal(designDoc, database);
+        database.putRevision(rev2b, rev1.getRevId(), true);
+
+        view.updateIndex();
+        List<QueryRow> rows = view.queryWithOptions(null);
+        assertEquals(0, rows.size());
+    }
+
     public void testViewQuery() throws CouchbaseLiteException {
 
         putDocs(database);
