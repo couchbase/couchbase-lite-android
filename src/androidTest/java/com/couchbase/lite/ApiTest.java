@@ -42,9 +42,7 @@ public class ApiTest extends LiteTestCase {
         ManagerOptions options= new ManagerOptions();
         options.setReadOnly(true);
 
-        // We want to create two different managers reading from the same directory so we
-        // create LiteTestContext(false) to make sure we don't delete the directory
-        Manager roManager=new Manager(new LiteTestContext(false), options);
+        Manager roManager=new Manager(new LiteTestContext(), options);
         Assert.assertTrue(roManager!=null);
 
         Database db =roManager.getDatabase("foo");

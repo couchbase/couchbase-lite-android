@@ -1,44 +1,24 @@
 package com.couchbase.lite;
 
 import com.couchbase.test.lite.*;
-import org.apache.commons.io.*;
 
-import java.io.*;
+import java.io.File;
 
 public class LiteTestContext extends LiteTestContextBase implements Context {
-    private File filesDir;
 
-    public LiteTestContext(String subdir, boolean deleteSubdirectory) {
-        filesDir = new File(getRootDirectory(), subdir);
-
-        if (deleteSubdirectory) {
-            try {
-                FileUtils.deleteDirectory(filesDir);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        if (filesDir.exists() == false && filesDir.mkdir() == false) {
-            throw new RuntimeException("Couldn't create directory " + filesDir.getAbsolutePath());
-        }
-    }
+    private String subdir;
 
     public LiteTestContext(String subdir) {
-        this(subdir, true);
+        this.subdir = subdir;
     }
 
     public LiteTestContext() {
-        this(true);
-    }
-
-    public LiteTestContext(boolean deleteSubdirectory) {
-        this("test", deleteSubdirectory);
+        this.subdir = "test";
     }
 
     @Override
     public File getFilesDir() {
-        return filesDir;
+        return new File(getRootDirectory(), subdir);
     }
 
     @Override
