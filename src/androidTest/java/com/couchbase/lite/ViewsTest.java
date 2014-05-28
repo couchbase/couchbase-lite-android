@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -528,7 +527,7 @@ public class ViewsTest extends LiteTestCase {
         // Start/end key query:
         options = new QueryOptions();
         options.setStartKey("a");
-        options.setEndKey(Arrays.asList("red", new HashMap<String, Objects>()));
+        options.setEndKey(Arrays.asList("red", new HashMap<String, Object>()));
         rows = view.queryWithOptions(options);
         Assert.assertEquals(3, rows.size());
         Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
@@ -544,7 +543,7 @@ public class ViewsTest extends LiteTestCase {
         // Reversed:
         options.setDescending(true);
         options.setStartKey("red");
-        options.setEndKey(Arrays.asList("green", new HashMap<String, Objects>()));
+        options.setEndKey(Arrays.asList("green", new HashMap<String, Object>()));
         options.setInclusiveEnd(true);
         rows = view.queryWithOptions(options);
         Assert.assertEquals(3, rows.size()); //0
