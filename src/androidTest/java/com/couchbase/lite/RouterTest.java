@@ -692,7 +692,7 @@ public class RouterTest extends LiteTestCase {
         boolean success = true;
 
         ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
-        while (activeTasks.size() > 0 && timeWaited < maxTimeToWaitMs) {
+        while (activeTasks.size() > 0 || timeWaited > maxTimeToWaitMs) {
             int timeToWait = 1000;
             Thread.sleep(timeToWait);
             activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
