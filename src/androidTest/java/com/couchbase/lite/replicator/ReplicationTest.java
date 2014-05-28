@@ -413,7 +413,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     private boolean isSyncGateway(URL remote) {
-        return (remote.getPort() == 4984 || remote.getPort() == 4984);
+        return (remote.getPort() == 4984 || remote.getPort() == 80);
     }
 
     private HttpResponse getRemoteDoc(URL pathToDoc) throws MalformedURLException, IOException {
@@ -654,6 +654,8 @@ public class ReplicationTest extends LiteTestCase {
 
     public void testValidationBlockCalled() throws Throwable {
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
+
+
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
 
         Log.d(TAG, "Adding " + doc1Id + " directly to sync gateway");
@@ -670,11 +672,12 @@ public class ReplicationTest extends LiteTestCase {
         assertNotNull(doc1.getProperties());
         assertEquals(1, doc1.getProperties().get("foo"));
 
+
         // Add Validation block to reject documents with foo:1
         database.setValidation("foo_not_1", new Validator() {
             @Override
             public void validate(Revision newRevision, ValidationContext context) {
-                if ("1".equals(newRevision.getProperty("foo"))) {
+                if (new Integer(1).equals(newRevision.getProperty("foo"))) {
                     context.reject("Reject because foo is 1");
                 }
             }
@@ -688,7 +691,9 @@ public class ReplicationTest extends LiteTestCase {
         Log.d(TAG, "Fetching doc2 via id: " + doc2Id);
         Document doc2 = database.getDocument(doc2Id);
         Log.d(TAG, "doc2" + doc2);
-        assertNull(doc2);
+        assertNotNull(doc2);
+        assertNull(doc2.getCurrentRevision());  // doc2 should have been rejected by validation, and therefore not present
+
     }
 
     public void testPuller() throws Throwable {
