@@ -654,6 +654,8 @@ public class ReplicationTest extends LiteTestCase {
 
     public void testValidationBlockCalled() throws Throwable {
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
+
+
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
 
         Log.d(TAG, "Adding " + doc1Id + " directly to sync gateway");
@@ -669,6 +671,7 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(doc1.getCurrentRevisionId().startsWith("1-"));
         assertNotNull(doc1.getProperties());
         assertEquals(1, doc1.getProperties().get("foo"));
+
 
         // Add Validation block to reject documents with foo:1
         database.setValidation("foo_not_1", new Validator() {
@@ -689,17 +692,8 @@ public class ReplicationTest extends LiteTestCase {
         Document doc2 = database.getDocument(doc2Id);
         Log.d(TAG, "doc2" + doc2);
         assertNotNull(doc2);
-        assertNull(doc2.getCurrentRevision());
+        assertNull(doc2.getCurrentRevision());  // doc2 should have been rejected by validation, and therefore not present
 
-        // Remove the Validation and ensure that the pull was successful
-        database.setValidation("foo_not_1", null);
-
-        doPullReplication();
-        Log.d(TAG, "Fetching doc2 via id (after removing validation): " + doc2Id);
-        doc2 = database.getDocument(doc2Id);
-        assertNotNull(doc2);
-        assertNotNull(doc2.getCurrentRevision());
-        assertEquals(1, doc2.getProperties().get("foo"));
     }
 
     public void testPuller() throws Throwable {
