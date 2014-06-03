@@ -998,25 +998,31 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * This test simulates a condition in which the replication will fail due to an authentication
+     * error by using a FacebookAuthorizor with an invalid token.
+     *
+     * When the sync gateway tries to contact the facebook API, it will see that the token is invalid.
+     *
+     * The replicator should then stop and the getLastError() should contain a HttpResponseException
+     * with a 401 error code.
+     */
     public void testReplicatorErrorStatus() throws Exception {
 
-        // register bogus fb token
-        Map<String,Object> facebookTokenInfo = new HashMap<String,Object>();
-        facebookTokenInfo.put("email", "jchris@couchbase.com");
-        facebookTokenInfo.put("remote_url", getReplicationURL().toExternalForm());
-        facebookTokenInfo.put("access_token", "fake_access_token");
-        String destUrl = "/_facebook_token";
-        Map<String,Object> result = (Map<String,Object>)sendBody("POST", destUrl, facebookTokenInfo, Status.OK, null);
-        Log.v(TAG, String.format("result %s", result));
+        if (isTestingAgainstSyncGateway()) {
 
-        // run replicator and make sure it has an error
-        Map<String,Object> properties = getPullReplicationParsedJson();
-        Replication replicator = manager.getReplicator(properties);
-        runReplication(replicator);
-        assertNotNull(replicator.getLastError());
-        assertTrue(replicator.getLastError() instanceof HttpResponseException);
-        assertEquals(401 /* unauthorized */, ((HttpResponseException)replicator.getLastError()).getStatusCode());
+            // register bogus fb token
+            FacebookAuthorizer.registerAccessToken("fake_access_token", "jchris@couchbase.com", getReplicationURL().toExternalForm());
 
+            // run replicator and make sure it has an error
+            Map<String,Object> properties = getPullReplicationParsedJson();
+            Replication replicator = manager.getReplicator(properties);
+            runReplication(replicator);
+            assertNotNull(replicator.getLastError());
+            assertTrue(replicator.getLastError() instanceof HttpResponseException);
+            assertEquals(401 /* unauthorized */, ((HttpResponseException)replicator.getLastError()).getStatusCode());
+
+        }
 
     }
 
