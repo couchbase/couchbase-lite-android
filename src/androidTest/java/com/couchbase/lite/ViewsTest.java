@@ -89,6 +89,49 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertTrue(changed);
     }
 
+    //https://github.com/couchbase/couchbase-lite-java-core/issues/219
+    public void failingTestDeleteView() {
+        List<View> views = database.getAllViews();
+        for (View view : views) {
+            database.deleteViewNamed(view.getName());
+        }
+
+        Assert.assertEquals(0, database.getAllViews().size());
+        Assert.assertEquals(null, database.getExistingView("viewToDelete"));
+
+
+        View view = database.getView("viewToDelete");
+        Assert.assertNotNull(view);
+        Assert.assertEquals(database, view.getDatabase());
+        Assert.assertEquals("viewToDelete", view.getName());
+        Assert.assertNull(view.getMap());
+        Assert.assertEquals(view, database.getExistingView("viewToDelete"));
+
+        Assert.assertEquals(0, database.getAllViews().size());
+        boolean changed = view.setMapReduce(new Mapper() {
+
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                //no-op
+            }
+        }, null, "1");
+
+        Assert.assertTrue(changed);
+        Assert.assertEquals(1, database.getAllViews().size());
+        Assert.assertEquals(view, database.getAllViews().get(0));
+
+        Status status = database.deleteViewNamed("viewToDelete");
+        Assert.assertEquals(Status.OK, status.getCode());
+        views = database.getAllViews();
+        Assert.assertEquals(0, database.getAllViews().size());
+
+        View nullView = database.getExistingView("viewToDelete");
+        Assert.assertNull("cached View is not deleted", view);
+
+        status = database.deleteViewNamed("viewToDelete");
+        Assert.assertEquals(Status.NOT_FOUND, status.getCode());
+    }
+
     private RevisionInternal putDoc(Database db, Map<String,Object> props) throws CouchbaseLiteException {
         RevisionInternal rev = new RevisionInternal(props, db);
         Status status = new Status();
