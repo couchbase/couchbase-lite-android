@@ -505,6 +505,41 @@ public class AttachmentsTest extends LiteTestCase {
     }
 
     /**
+     * Regression test for https://github.com/couchbase/couchbase-lite-java-core/issues/218
+     */
+
+    public void failingTestGetAttachmentAfterItDeleted() throws CouchbaseLiteException, IOException {
+
+        // add a doc with an attachment
+        Document doc = database.createDocument();
+        UnsavedRevision rev = doc.createRevision();
+
+        final byte[] attachBodyBytes = "attach body".getBytes();
+        Attachment attachment = new Attachment(
+                new ByteArrayInputStream(attachBodyBytes),
+                "text/plain"
+        );
+
+        String attachmentName = "test_delete_attachment.txt";
+        rev.addAttachment(attachment, attachmentName);
+        rev.save();
+
+        UnsavedRevision rev1 = doc.createRevision();
+        Attachment currentAttachment =rev1.getAttachment(attachmentName);
+        assertNotNull(currentAttachment);
+
+        rev1.removeAttachment(attachmentName);
+        currentAttachment = rev1.getAttachment(attachmentName);
+        assertNull(currentAttachment); // otherwise NullPointerException when currentAttachment.getMetadata()
+        rev1.save();
+
+        currentAttachment = doc.getCurrentRevision().getAttachment(attachmentName);
+        assertNull(currentAttachment); // otherwise NullPointerException when currentAttachment.getMetadata()
+    }
+
+
+
+    /**
      * Regression test for https://github.com/couchbase/couchbase-lite-android-core/issues/70
      */
     public void testAttachmentDisappearsAfterSave() throws CouchbaseLiteException, IOException {
