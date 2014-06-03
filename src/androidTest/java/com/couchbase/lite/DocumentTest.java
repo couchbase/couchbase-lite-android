@@ -26,7 +26,7 @@ public class DocumentTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/301
      */
-    public void failingTestPutDeletedDocument() throws CouchbaseLiteException {
+    public void testPutDeletedDocument() throws CouchbaseLiteException {
 
         Document document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();
