@@ -1005,7 +1005,7 @@ public class ReplicationTest extends LiteTestCase {
         facebookTokenInfo.put("email", "jchris@couchbase.com");
         facebookTokenInfo.put("remote_url", getReplicationURL().toExternalForm());
         facebookTokenInfo.put("access_token", "fake_access_token");
-        String destUrl = String.format("/_facebook_token", DEFAULT_TEST_DB);
+        String destUrl = "/_facebook_token";
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", destUrl, facebookTokenInfo, Status.OK, null);
         Log.v(TAG, String.format("result %s", result));
 
