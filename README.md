@@ -128,7 +128,7 @@ There are two wiki pages which describe how to run the tests:
 
 ## Getting Help
 
-* [Couchbase Mobile Google Group](groups.google.com/group/mobile-couchbase/)
+* [Couchbase Mobile Google Group](http://groups.google.com/group/mobile-couchbase/)
 * [File a github issue](https://github.com/couchbase/couchbase-lite-android/issues)
 
 ## Credits
