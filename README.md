@@ -14,8 +14,8 @@ Couchbase Lite databases are able to sync with eachother via [Sync Gateway](http
 ## Documentation Overview
 
 * This [README](https://github.com/couchbase/couchbase-lite-android/blob/master/README.md)
-* [Official Documentation](http://docs.couchbase.com/couchbase-lite/cbl-android/) for [beta2](https://github.com/couchbase/couchbase-lite-android/blob/1.0-beta2) release
-* [Javadocs](http://www.couchbase.com/autodocs/couchbase-lite-android-1.0b2/index.html) for [beta2](https://github.com/couchbase/couchbase-lite-android/blob/1.0-beta2) release
+* [Official Documentation](http://developer.couchbase.com/mobile/develop/guides/couchbase-lite/index.html) for [1.0](https://github.com/couchbase/couchbase-lite-android/tree/1.0.0) release
+* [Javadocs](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_100/74/artifact/cblite_android_javadocs_1.0.0-74.zip) for [1.0](https://github.com/couchbase/couchbase-lite-android/tree/1.0.0) release
 * [Wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 
 ## Getting started with Couchbase Lite
@@ -35,23 +35,23 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 <dependency>
   <groupId>com.couchbase.lite</groupId>
   <artifactId>android</artifactId>
-  <version>0.0.0-272</version>
+  <version>0.0.0-396</version>
 </dependency>
 ```
 
-To get the latest build number (eg, the "272" part of the version above), see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
+While `0.0.0-396` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "396" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `0.0.0-` and is later than `0.0.0-396`
 
-To see an example gradle configuration, see [GrocerySync's build.gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle)
+Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle) that uses this maven artifact.
 
-### Maven beta2 release
+### Maven 1.0 release
 
 Maven repo URL: `http://files.couchbase.com/maven2/`
 
 ```
 <dependency>
-  <groupId>com.couchbase.cblite</groupId>
-  <artifactId>CBLite</artifactId>
-  <version>1.0.0-beta2</version>
+  <groupId>com.couchbase.lite</groupId>
+  <artifactId>android</artifactId>
+  <version>1.0.0-75</version>
 </dependency>
 ```
 
@@ -59,17 +59,15 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 
 For Eclipse and Phonegap users, here are links to the zip file which includes the jars:
 
-* [Master Branch build #272 zipfile](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/lastSuccessfulBuild/artifact/couchbase-lite-0.0.0-272-android-community.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
-* [Beta2 zipfile](http://packages.couchbase.com/releases/couchbase-lite/android/1.0-beta/couchbase-lite-community-android_1.0-beta2.zip)
+* [Master Branch build #396 zipfile](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/396/artifact/couchbase-lite-0.0.0-396-android-community.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
+* [1.0.0 zipfile](http://www.couchbase.com/dl/releases/couchbase-lite/android/1.0.0/couchbase-lite-android-community_1.0.0.zip/download)
 
 
 ## Building Couchbase Lite from source
 
 ### Prerequisites
 
-* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html) versions:
-
-  * 0.5.7 is the only known working version.  Anything older will almost certainly not work.  Newer versions may or may not work.
+* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  Versions 0.5.7 and 0.5.8 are known to work.  Anything older will almost certainly not work.  Newer versions after 0.5.8 may or may not work.  (if not, please report an issue)
 
 * Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
 
@@ -117,19 +115,28 @@ There are two wiki pages which describe how to run the tests:
 
 ## Example Apps
 
-* [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android)
 * [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)  
+    * Simplest example
+* [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android)
+    * Facebook auth
+    * Replication with channels
+    * Image attachments
+    * Ability for users to share data
 * [LiteServAndroid](https://github.com/couchbaselabs/couchbase-lite-android-liteserv)
-* [CouchChatAndroid](https://github.com/couchbaselabs/CouchChatAndroid) -- just a stub at this point.
+    * REST API example
 
 ## Project Structure
 
 * [Project Structure](https://github.com/couchbase/couchbase-lite-android/wiki/Project-structure) wiki page that describes the new project structure.
-* A [mailing list post](https://groups.google.com/forum/#!topic/mobile-couchbase/Zsn8TG5F88o) describing the project structre
 
 ## Requirements
 
 - Android 2.3 Gingerbread (API level 9) and above.
+
+## Getting Help
+
+* [Couchbase Mobile Google Group](groups.google.com/group/mobile-couchbase/)
+* [File a github issue](https://github.com/couchbase/couchbase-lite-android/issues)
 
 ## Credits
 
