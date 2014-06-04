@@ -90,9 +90,6 @@ $ git submodule init && git submodule update
 
 * `cp settings.gradle.example settings.gradle`
 
-**Note** it is checked in as `settings.gradle.example` as a workaround to [Issue #65915](https://code.google.com/p/android/issues/detail?id=65915), which prevents embedding this project into [couchbase-lite-android-liteserv](https://github.com/couchbase/couchbase-lite-android-liteserv).
-
-
 ### Importing Project into Android Studio
 
 You should be able to import the project directly into Android Studio:
