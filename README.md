@@ -95,12 +95,8 @@ $ git submodule init && git submodule update
 You should be able to import the project directly into Android Studio:
 
 * Start Android Studio
-* Choose File / Import and choose the couchbase-lite-android/CouchbaseLiteProject directory [screenshot](http://cl.ly/image/1d0w0J0H0x1u)
-* Choose Import from External Model and make sure Gradle is selected [screenshot](http://cl.ly/image/2Y1m0O3U1Q2I)
-* Check the *auto-import* and the *Use gradle wrapper (recommended)* checkboxes [screenshot](http://cl.ly/image/1I0r1x2J032i)
+* Choose File / Import and choose the settings.gradle file in the couchbase-lite-android directory you cloned earlier
 * Hit Finish and wait for all tasks to finish (may take a while)
-
-After it's finished with the import, it should look [like this](http://cl.ly/image/3R3X0Q3o1H09)
 
 ### Running tests
 
