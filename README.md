@@ -22,7 +22,7 @@ Couchbase Lite databases are able to sync with eachother via [Sync Gateway](http
 
 * Download and run the [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
 
-* Create your own Hello World Couchbase Lite via the [Getting Started](https://github.com/couchbase/couchbase-lite-android/wiki/Getting-Started) guide.
+* Create your own Hello World Couchbase Lite via the [Getting Started](http://developer.couchbase.com/mobile/develop/training/build-first-android-app/index.html) guide.
 
 
 ## Getting the pre-built jars / maven artifacts
