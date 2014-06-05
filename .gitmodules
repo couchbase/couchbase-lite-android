@@ -1,3 +1,6 @@
 [submodule "libraries/couchbase-lite-java-core"]
 	path = libraries/couchbase-lite-java-core
 	url = https://github.com/couchbase/couchbase-lite-java-core.git
+[submodule "libraries/couchbase-lite-java-listener"]
+	path = libraries/couchbase-lite-java-listener
+	url = https://github.com/couchbase/couchbase-lite-java-listener.git
