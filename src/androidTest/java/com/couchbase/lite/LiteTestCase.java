@@ -72,10 +72,6 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
 
     protected void startCBLite() throws IOException {
         LiteTestContext context = new LiteTestContext();
-        String serverPath = context.getRootDirectory().getAbsolutePath();
-        File serverPathFile = new File(serverPath);
-        FileDirUtils.deleteRecursive(serverPathFile);
-        serverPathFile.mkdir();
         Manager.enableLogging(Log.TAG, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_SYNC, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_QUERY, Log.VERBOSE);
@@ -104,9 +100,9 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
         // keeps the listener from stopping even when you tell it to stop.
         if (testListener == null) {
             LiteTestContext context = new LiteTestContext("testlistener");
-            Manager manager = new Manager(context, Manager.DEFAULT_OPTIONS);
-            manager.getDatabase(getReplicationDatabase());
-            testListener = new LiteListener(manager, getReplicationPort(), null);
+            Manager listenerManager = new Manager(context, Manager.DEFAULT_OPTIONS);
+            listenerManager.getDatabase(getReplicationDatabase());
+            testListener = new LiteListener(listenerManager, getReplicationPort(), null);
             testListener.start();
         }
     }
@@ -116,7 +112,7 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
         return database;
     }
 
-    protected void stopDatabse() {
+    protected void stopDatabase() {
         if(database != null) {
             database.close();
         }
@@ -196,7 +192,7 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
     protected void tearDown() throws Exception {
         Log.v(TAG, "tearDown");
         super.tearDown();
-        stopDatabse();
+        stopDatabase();
         stopCBLite();
     }
 
