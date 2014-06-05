@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
-import junit.framework.TestCase;
+import com.couchbase.lite.listener.LiteListener;
+import com.couchbase.test.lite.*;
 
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.replicator.Replication;
@@ -32,11 +33,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public abstract class LiteTestCase extends TestCase {
+public abstract class LiteTestCase extends LiteTestCaseBase {
 
     public static final String TAG = "LiteTestCase";
 
     private static boolean initializedUrlHandler = false;
+
+    protected static LiteListener testListener = null;
 
     protected ObjectMapper mapper = new ObjectMapper();
 
@@ -58,19 +61,17 @@ public abstract class LiteTestCase extends TestCase {
         loadCustomProperties();
         startCBLite();
         startDatabase();
+        if (Boolean.parseBoolean(System.getProperty("LiteListener"))) {
+            startListener();
+        }
     }
 
     protected InputStream getAsset(String name) {
         return this.getClass().getResourceAsStream("/assets/" + name);
     }
 
-
     protected void startCBLite() throws IOException {
         LiteTestContext context = new LiteTestContext();
-        String serverPath = context.getRootDirectory().getAbsolutePath();
-        File serverPathFile = new File(serverPath);
-        FileDirUtils.deleteRecursive(serverPathFile);
-        serverPathFile.mkdir();
         Manager.enableLogging(Log.TAG, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_SYNC, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_QUERY, Log.VERBOSE);
@@ -91,12 +92,27 @@ public abstract class LiteTestCase extends TestCase {
         }
     }
 
+    protected void startListener() throws IOException, CouchbaseLiteException {
+        // In theory we only set up the listener once across all tests because this mimics the behavior
+        // of the sync gateway which was the original server these tests are run against which has a single
+        // instance used all the time. But the other reason we only start the listener once is that
+        // there is a bug in TJWS (https://github.com/couchbase/couchbase-lite-java-listener/issues/43) that
+        // keeps the listener from stopping even when you tell it to stop.
+        if (testListener == null) {
+            LiteTestContext context = new LiteTestContext("testlistener");
+            Manager listenerManager = new Manager(context, Manager.DEFAULT_OPTIONS);
+            listenerManager.getDatabase(getReplicationDatabase());
+            testListener = new LiteListener(listenerManager, getReplicationPort(), null);
+            testListener.start();
+        }
+    }
+
     protected Database startDatabase() throws CouchbaseLiteException {
         database = ensureEmptyDatabase(DEFAULT_TEST_DB);
         return database;
     }
 
-    protected void stopDatabse() {
+    protected void stopDatabase() {
         if(database != null) {
             database.close();
         }
@@ -176,7 +192,7 @@ public abstract class LiteTestCase extends TestCase {
     protected void tearDown() throws Exception {
         Log.v(TAG, "tearDown");
         super.tearDown();
-        stopDatabse();
+        stopDatabase();
         stopCBLite();
     }
 

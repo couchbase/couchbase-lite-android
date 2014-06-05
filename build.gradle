@@ -4,7 +4,6 @@ apply plugin: 'maven'
 buildscript {
     repositories {
         mavenCentral()
-        mavenLocal()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.9.+'
@@ -12,6 +11,7 @@ buildscript {
 }
 
 repositories {
+    mavenLocal()
     maven { url 'http://files.couchbase.com/maven2/' }
     mavenCentral()
 }
@@ -61,6 +61,9 @@ dependencies {
             project(':libraries:couchbase-lite-java-core') :
             'com.couchbase.lite:couchbase-lite-java-core:' + System.getenv("MAVEN_UPLOAD_VERSION")
 
+    androidTestCompile buildAndroidWithArtifacts == null ?
+            project(':libraries:couchbase-lite-java-listener') :
+            'com.couchbase.lite:java-listener:' + System.getenv("MAVEN_UPLOAD_VERSION") 
 }
 
 
