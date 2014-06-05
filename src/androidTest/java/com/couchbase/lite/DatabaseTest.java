@@ -126,6 +126,23 @@ public class DatabaseTest extends LiteTestCase {
 
     }
 
+    /**
+     * Change listeners should only be called once no matter how many times they're added.
+     */
+    public void testAddChangeListenerIsIdempotent() throws Exception {
+        final AtomicInteger count = new AtomicInteger(0);
+        Database.ChangeListener listener = new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                count.incrementAndGet();
+            }
+        };
+        database.addChangeListener(listener);
+        database.addChangeListener(listener);
+        createDocuments(database, 1);
+        assertEquals(1, count.intValue());
+    }
+
     public void testGetActiveReplications() throws Exception {
 
         URL remote = getReplicationURL();
