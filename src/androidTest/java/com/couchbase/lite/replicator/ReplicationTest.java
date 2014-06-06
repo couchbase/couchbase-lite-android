@@ -706,7 +706,7 @@ public class ReplicationTest extends LiteTestCase {
      * - Start puller
      * - Verify that 10 docs are pulled w/ 10 successful restarts
      */
-    public void testPullerRestartNewMockServer() throws Exception {
+    public void testPullerRestart() throws Exception {
 
         MockWebServer server = new MockWebServer();
 
