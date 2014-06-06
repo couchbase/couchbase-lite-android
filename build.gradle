@@ -101,11 +101,17 @@ task uploadArchivesWrapper(dependsOn: createMavenDirectory) << {
     uploadArchives.execute()
 }
 
+def mavenPath() {
+    System.getenv("MAVEN_BUILD_LOCAL") == "true" ?
+            'file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath :
+            System.getenv("MAVEN_UPLOAD_REPO_URL")
+}
+
 // this will upload, but will not first create a directory (which is needed on some servers)
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: System.getenv("MAVEN_UPLOAD_REPO_URL")) {
+            repository(url: mavenPath()) {
                 authentication(userName: System.getenv("MAVEN_UPLOAD_USERNAME"), password: System.getenv("MAVEN_UPLOAD_PASSWORD"))
             }
             pom.version = System.getenv("MAVEN_UPLOAD_VERSION")
