@@ -27,6 +27,8 @@ import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
+import com.squareup.okhttp.mockwebserver.MockWebServer;
+import com.squareup.okhttp.mockwebserver.MockResponse;
 
 import junit.framework.Assert;
 
@@ -693,6 +695,75 @@ public class ReplicationTest extends LiteTestCase {
         Log.d(TAG, "doc2" + doc2);
         assertNotNull(doc2);
         assertNull(doc2.getCurrentRevision());  // doc2 should have been rejected by validation, and therefore not present
+
+    }
+
+    /**
+     * Attempting to reproduce couchtalk issue:
+     *
+     * - Add db docs change listener, whenever doc changes, restart replication
+     * - Mock webserver that always returns new docs to be pulled
+     * - Start puller
+     * - Verify that 10 docs are pulled w/ 10 successful restarts
+     */
+    public void testPullerRestartNewMockServer() throws Exception {
+
+        MockWebServer server = new MockWebServer();
+
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        fakeCheckpointResponse.setStatus("HTTP/1.1 404 NOT FOUND").setHeader("Content-Type", "application/json");
+        server.enqueue(fakeCheckpointResponse);
+
+        MockResponse fakeChangesResponse = new MockResponse();
+        fakeCheckpointResponse.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
+        String changesBody = "{\"results\":[{\"seq\":2,\"id\":\"doc2\",\"changes\":[{\"rev\":\"1-5e38\"}]},{\"seq\":3,\"id\":\"doc3\",\"changes\":[{\"rev\":\"1-563b\"}]}],\"last_seq\":3}";
+        fakeChangesResponse.setBody(changesBody);
+        server.enqueue(fakeChangesResponse);
+
+        MockResponse fakeDoc2 = new MockResponse();
+        fakeDoc2.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
+        String doc2Body = "{\"_id\":\"doc2\",\"_rev\":\"1-5e38\",\"_revisions\":{\"ids\":[\"5e38\"],\"start\":1},\"fakefield1\":false,\"fakefield2\":1, \"fakefield3\":\"blah\"}";
+        fakeDoc2.setBody(doc2Body);
+        server.enqueue(fakeDoc2);
+
+        MockResponse fakeDoc3 = new MockResponse();
+        fakeDoc3.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
+        String doc3Body = "{\"_id\":\"doc3\",\"_rev\":\"1-5e48\",\"_revisions\":{\"ids\":[\"5e48\"],\"start\":1},\"fakefield1\":false,\"fakefield2\":1, \"fakefield3\":\"blah\"}";
+        fakeDoc3.setBody(doc3Body);
+        server.enqueue(fakeDoc3);
+
+        server.play();
+
+        URL baseUrl = server.getUrl("/db");
+        Log.d(TAG, "baseUrl: " + baseUrl);
+
+        final Replication repl = (Replication) database.createPullReplication(baseUrl);
+        repl.setContinuous(false);
+
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                if (event.getChanges().size() > 0) {
+                    repl.restart();
+                }
+            }
+        });
+
+        Log.d(TAG, "Doing pull replication with: " + repl);
+        repl.start();
+        waitForReplicationFinishedXTimes(repl, 2);
+
+        assertNull(repl.getLastError());
+        Log.d(TAG, "Finished pull replication with: " + repl);
+
+        Document doc2Fetched = database.getDocument("doc2");
+        assertNotNull(doc2Fetched);
+        assertTrue(doc2Fetched.getCurrentRevisionId().startsWith("1-5e38"));
+
+        Document doc3Fetched = database.getDocument("doc3");
+        assertNotNull(doc3Fetched);
+        assertTrue(doc3Fetched.getCurrentRevisionId().startsWith("1-5e48"));
+
 
     }
 

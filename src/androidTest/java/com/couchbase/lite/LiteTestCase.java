@@ -413,6 +413,37 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
 
     }
 
+    public void waitForReplicationFinishedXTimes(Replication replication, int numTimes) {
+
+        for (int i=0; i<numTimes; i++) {
+
+            CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+
+            ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+            replication.addChangeListener(replicationFinishedObserver);
+
+            CountDownLatch replicationDoneSignalPolling = replicationWatcherThread(replication);
+
+            Log.d(TAG, "Waiting for replicator to finish");
+            try {
+                boolean success = replicationDoneSignal.await(120, TimeUnit.SECONDS);
+                assertTrue(success);
+
+                success = replicationDoneSignalPolling.await(120, TimeUnit.SECONDS);
+                assertTrue(success);
+
+                Log.d(TAG, "replicator finished");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            replication.removeChangeListener(replicationFinishedObserver);
+
+        }
+
+
+    }
+
     public void runReplication(Replication replication) {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
