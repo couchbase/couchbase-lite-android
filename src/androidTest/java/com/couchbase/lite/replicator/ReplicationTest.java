@@ -726,6 +726,9 @@ public class ReplicationTest extends LiteTestCase {
         fakeDoc2.setBody(doc2Body);
         server.enqueue(fakeDoc2);
 
+        server.enqueue(fakeCheckpointResponse);
+        server.enqueue(fakeChangesResponse);  // will query changes again
+
         MockResponse fakeDoc3 = new MockResponse();
         fakeDoc3.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
         String doc3Body = "{\"_id\":\"doc3\",\"_rev\":\"1-5e48\",\"_revisions\":{\"ids\":[\"5e48\"],\"start\":1},\"fakefield1\":false,\"fakefield2\":1, \"fakefield3\":\"blah\"}";
@@ -744,7 +747,17 @@ public class ReplicationTest extends LiteTestCase {
             @Override
             public void changed(Database.ChangeEvent event) {
                 if (event.getChanges().size() > 0) {
-                    repl.restart();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            repl.restart();
+                        }
+                    }).start();
                 }
             }
         });
