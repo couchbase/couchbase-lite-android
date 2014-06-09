@@ -1169,6 +1169,114 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(row3.get("value"), rows.get(2).getValue());
 
     }
+    
+    public void testViewGroupedVariableLengthKey() throws CouchbaseLiteException {
+        Map<String,Object> docProperties1 = new HashMap<String,Object>();
+        docProperties1.put("_id", "H");
+        docProperties1.put("atomic_number", 1);
+        docProperties1.put("name", "Hydrogen");
+        docProperties1.put("electrons", new Integer[] {1});
+        putDoc(database, docProperties1);
+
+        Map<String,Object> docProperties2 = new HashMap<String,Object>();
+        docProperties2.put("_id", "He");
+        docProperties2.put("atomic_number", 2);
+        docProperties2.put("name", "Helium");
+        docProperties2.put("electrons", new Integer[] {2});
+        putDoc(database, docProperties2);
+
+        Map<String,Object> docProperties3 = new HashMap<String,Object>();
+        docProperties3.put("_id", "Ne");
+        docProperties3.put("atomic_number", 10);
+        docProperties3.put("name", "Neon");
+        docProperties3.put("electrons", new Integer[] {2, 8});
+        putDoc(database, docProperties3);
+
+        Map<String,Object> docProperties4 = new HashMap<String,Object>();
+        docProperties4.put("_id", "Na");
+        docProperties4.put("atomic_number", 11);
+        docProperties4.put("name", "Sodium");
+        docProperties4.put("electrons", new Integer[] {2, 8, 1});
+        putDoc(database, docProperties4);
+
+        Map<String,Object> docProperties5 = new HashMap<String,Object>();
+        docProperties5.put("_id", "Mg");
+        docProperties5.put("atomic_number", 12);
+        docProperties5.put("name", "Magnesium");
+        docProperties5.put("electrons", new Integer[] {2, 8, 2});
+        putDoc(database, docProperties5);
+        
+        Map<String,Object> docProperties6 = new HashMap<String,Object>();
+        docProperties6.put("_id", "Cr");
+        docProperties6.put("atomic_number", 24);
+        docProperties6.put("name", "Chromium");
+        docProperties6.put("electrons", new Integer[] {2, 8, 13, 1});
+        putDoc(database, docProperties6);
+        
+        Map<String,Object> docProperties7 = new HashMap<String,Object>();
+        docProperties7.put("_id", "Zn");
+        docProperties7.put("atomic_number", 30);
+        docProperties7.put("name", "Zinc");
+        docProperties7.put("electrons", new Integer[] {2, 8, 18, 2});
+        putDoc(database, docProperties7);
+        
+        /*
+            expected key-value pairs at group level 2:
+              [1] -> 1
+              [2] -> 1
+              [2, 8] -> 5
+        */
+        
+        View view = database.getView("electrons");
+        view.setMapReduce(new Mapper() {
+
+                              @Override
+                              public void map(Map<String, Object> document, Emitter emitter) {
+                                  emitter.emit(document.get("electrons"), 1);
+                              }
+                          }, new Reducer() {
+
+                              @Override
+                              public Object reduce(List<Object> keys, List<Object> values,
+                                                   boolean rereduce) {
+                                  return View.totalValues(values);
+                              }
+                          }, "1"
+        );
+                          
+        Status status = new Status();
+        view.updateIndex();
+
+        QueryOptions options = new QueryOptions();
+        options.setReduce(true);
+        options.setGroupLevel(2);
+        List<QueryRow> rows = view.queryWithOptions(options);
+
+        assertEquals(3, rows.size());
+        
+        List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
+        Map<String,Object> row1 = new HashMap<String,Object>();
+        row1.put("key", Arrays.asList(new Integer[] {1}));
+        row1.put("value", 1.0);
+        expectedRows.add(row1);
+        Map<String,Object> row2 = new HashMap<String,Object>();
+        row2.put("key", Arrays.asList(new Integer[] {2}));
+        row2.put("value", 1.0);
+        expectedRows.add(row2);
+        Map<String,Object> row3 = new HashMap<String,Object>();
+        row3.put("key", Arrays.asList(new Integer[] {2,8}));
+        row3.put("value", 5.0);
+        expectedRows.add(row3);
+        
+        Assert.assertEquals(row1.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(row1.get("value"), rows.get(0).getValue());
+        Assert.assertEquals(row2.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(row2.get("value"), rows.get(1).getValue());
+        Assert.assertEquals(row3.get("key"), rows.get(2).getKey());
+        Assert.assertEquals(row3.get("value"), rows.get(2).getValue());
+    }
+
+    
 
     public void testViewCollation() throws CouchbaseLiteException {
         List<Object> list1 = new ArrayList<Object>();
