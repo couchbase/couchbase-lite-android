@@ -27,6 +27,7 @@ import junit.framework.Assert;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -1538,6 +1539,63 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(1, rows.getCount());
         row = rows.next();
         assertEquals(row.getKey(), "3");
+
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/226
+     */
+    public void testViewSecondQuery() throws Exception {
+
+        // Create doc and add some revs
+        final Document doc = database.createDocument();
+        String jsonString = "{\n" +
+                "    \"name\":\"praying mantis\",\n" +
+                "    \"wikipedia\":{\n" +
+                "        \"behavior\":{\n" +
+                "            \"style\":\"predatory\",\n" +
+                "            \"attack\":\"ambush\"\n" +
+                "        },\n" +
+                "        \"evolution\":{\n" +
+                "            \"ancestor\":\"proto-roaches\",\n" +
+                "            \"cousin\":\"termite\"\n" +
+                "        }       \n" +
+                "    }   \n" +
+                "\n" +
+                "}";
+
+        Map jsonObject = (Map) Manager.getObjectMapper().readValue(jsonString, Object.class);
+        doc.putProperties(jsonObject);
+
+        View view = database.getView("testViewSecondQueryView");
+        view.setMapReduce(new Mapper() {
+
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                if (document.get("name") != null) {
+                    emitter.emit(document.get("name"), document);
+                }
+            }
+        }, null, "1");
+
+
+        for (int i=0; i<2; i++) {
+
+            Query query = view.createQuery();
+            QueryEnumerator rows = query.run();
+
+            for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
+                QueryRow row = it.next();
+                Map wikipediaField = (Map) row.getDocument().getProperty("wikipedia");
+                assertTrue(wikipediaField.containsKey("behavior"));
+                assertTrue(wikipediaField.containsKey("evolution"));
+                Map behaviorField = (Map) wikipediaField.get("behavior");
+                assertTrue(behaviorField.containsKey("style"));
+                assertTrue(behaviorField.containsKey("attack"));
+            }
+
+        }
+
 
     }
 
