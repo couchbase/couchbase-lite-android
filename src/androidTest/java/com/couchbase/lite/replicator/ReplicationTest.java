@@ -701,6 +701,8 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Attempting to reproduce couchtalk issue:
      *
+     * https://github.com/couchbase/couchbase-lite-android/issues/312
+     *
      * - Add db docs change listener, whenever doc changes, restart replication
      * - Mock webserver that always returns new docs to be pulled
      * - Start puller
@@ -715,7 +717,7 @@ public class ReplicationTest extends LiteTestCase {
         server.enqueue(fakeCheckpointResponse);
 
         MockResponse fakeChangesResponse = new MockResponse();
-        fakeCheckpointResponse.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
+        fakeChangesResponse.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
         String changesBody = "{\"results\":[{\"seq\":2,\"id\":\"doc2\",\"changes\":[{\"rev\":\"1-5e38\"}]},{\"seq\":3,\"id\":\"doc3\",\"changes\":[{\"rev\":\"1-563b\"}]}],\"last_seq\":3}";
         fakeChangesResponse.setBody(changesBody);
         server.enqueue(fakeChangesResponse);
@@ -776,6 +778,80 @@ public class ReplicationTest extends LiteTestCase {
         Document doc3Fetched = database.getDocument("doc3");
         assertNotNull(doc3Fetched);
         assertTrue(doc3Fetched.getCurrentRevisionId().startsWith("1-5e48"));
+
+
+    }
+
+
+
+    public void testPullerNoAttachments() throws Throwable {
+
+        MockWebServer server = MockHelper.getMockWebServer();
+
+
+
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        MockChangedDoc mockChangedDoc = new MockChangedDoc();
+        mockChangedDoc.setSeq(1);
+        String doc1Id = "doc1";
+        mockChangedDoc.setDocId(doc1Id);
+        mockChangedDoc.setChangedRevIds(Arrays.asList("1-5e38"));
+        mockChangesFeed.add(mockChangedDoc);
+        mockChangedDoc = new MockChangedDoc();
+        mockChangedDoc.setSeq(2);
+        String doc2Id = "doc2";
+        mockChangedDoc.setDocId(doc2Id);
+        mockChangedDoc.setChangedRevIds(Arrays.asList("1-563b"));
+        mockChangesFeed.add(mockChangedDoc);
+        MockResponse fakeChangesResponse = mockChangesFeed.generateMockResponse();
+        server.enqueue(fakeChangesResponse);
+
+        MockResponse fakeDocResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeDocResponse);
+        server.enqueue(fakeDocResponse);
+        server.enqueue(fakeDocResponse);
+
+        server.play();
+
+        URL baseUrl = server.getUrl("/db");
+
+        doPullReplication(baseUrl);
+
+        assertNotNull(database);
+        Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
+        Document doc1 = database.getDocument(doc1Id);
+        Log.d(TAG, doc1Id + doc1);
+        assertNotNull(doc1);
+        assertNotNull(doc1.getCurrentRevisionId());
+        assertTrue(doc1.getCurrentRevisionId().startsWith("1-"));
+        assertNotNull(doc1.getProperties());
+        assertEquals(1, doc1.getProperties().get("foo"));
+
+        Log.d(TAG, "Fetching doc2 via id: " + doc2Id);
+        Document doc2 = database.getDocument(doc2Id);
+        assertNotNull(doc2);
+        assertNotNull(doc2.getCurrentRevisionId());
+        assertNotNull(doc2.getProperties());
+
+        assertTrue(doc2.getCurrentRevisionId().startsWith("1-"));
+        assertEquals(1, doc2.getProperties().get("foo"));
+
+        // update doc1 on sync gateway
+        // String docJson = String.format("{\"foo\":2,\"bar\":true,\"_rev\":\"%s\",\"_id\":\"%s\"}", doc1.getCurrentRevisionId(), doc1.getId());
+        // pushDocumentToSyncGateway(doc1.getId(), docJson);
+
+        // do another pull
+        Log.d(TAG, "Doing 2nd pull replication");
+        doPullReplication(baseUrl);
+        Log.d(TAG, "Finished 2nd pull replication");
+
+        // make sure it has the latest properties
+        Document doc1Fetched = database.getDocument(doc1Id);
+        assertNotNull(doc1Fetched);
+        assertTrue(doc1Fetched.getCurrentRevisionId().startsWith("2-"));
+        assertEquals(2, doc1Fetched.getProperties().get("foo"));
+
+        Log.d(TAG, "testPuller() finished");
 
 
     }
@@ -891,10 +967,14 @@ public class ReplicationTest extends LiteTestCase {
 
     private void doPullReplication() {
         URL remote = getReplicationURL();
+        doPullReplication(remote);
+    }
+
+    private void doPullReplication(URL url) {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
-        final Replication repl = (Replication) database.createPullReplication(remote);
+        final Replication repl = (Replication) database.createPullReplication(url);
         repl.setContinuous(false);
 
         Log.d(TAG, "Doing pull replication with: " + repl);
@@ -902,9 +982,7 @@ public class ReplicationTest extends LiteTestCase {
         assertNull(repl.getLastError());
         Log.d(TAG, "Finished pull replication with: " + repl);
 
-
     }
-
 
     private void addDocWithId(String docId, String attachmentName, boolean gzipped) throws IOException {
 
