@@ -576,6 +576,55 @@ public class AttachmentsTest extends LiteTestCase {
 
     }
 
+
+    /**
+     * attempt to reproduce https://github.com/couchbase/couchbase-lite-android/issues/328 &
+     * https://github.com/couchbase/couchbase-lite-android/issues/325
+     */
+    public void testSetAttachmentsSequentially() throws CouchbaseLiteException, IOException {
+
+        // add a doc with an attachment
+        Document doc = database.createDocument();
+        String id = doc.getId();
+        Map<String, Object> newProperties = new HashMap<String, Object>();
+        newProperties.put("Iteration", 0);
+
+        doc.putProperties(newProperties);
+        UnsavedRevision rev = null;
+
+        Map<String, Object> curProperties;
+
+        InputStream attachmentStream = getAsset("attachment.png");
+
+        for(int i=0; i<50; i++) {
+
+            Log.e(Database.TAG, "TEST ITERATION " + i);
+            doc = database.getDocument(id);//not required
+            rev=doc.getCurrentRevision().createRevision();
+            rev.setAttachment("attachment" + i*2, "image/png", attachmentStream);
+            rev.save();
+
+            doc = database.getDocument(id);//not required
+            rev = doc.getCurrentRevision().createRevision();
+            rev.setAttachment("attachment" + i*2 + 1, "image/png", attachmentStream);
+            rev.save();
+
+            //doc = database.getDocument(id);//not required
+            curProperties =doc.getProperties();
+            assertEquals(4, curProperties.size());
+            assertEquals(i*2, curProperties.get("Iteration"));
+            newProperties = new HashMap<String, Object>();
+            newProperties.putAll(curProperties);
+            newProperties.put("Iteration", (i + 1) * 2);
+            doc.putProperties(newProperties);
+
+        }
+
+        Map<String, Object> attachments = (Map<String, Object>) doc.getCurrentRevision().getProperty("_attachments");
+        assertNotNull(attachments);
+        assertEquals(100, attachments.size());
+    }
+
     /**
      * Regression test for https://github.com/couchbase/couchbase-lite-android-core/issues/70
      */
