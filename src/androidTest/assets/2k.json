@@ -1,0 +1,56 @@
+{
+    "checklistId": "ffdf1ef6-a0e7-4518-946c-3deadc333f48",
+    "sectionResults": [
+        {
+            "name": "Login Activity",
+            "itemResults": [
+                {
+                    "attachmentName": "",
+                    "attachmentNameList": [
+
+                    ],
+                    "gpsLocation": "",
+                    "latitude": "",
+                    "longitude": "",
+                    "audioCount": 0,
+                    "imageCount": 0,
+                    "videoCount": 0,
+                    "Audios": [
+
+                    ],
+                    "CaptionList": [
+
+                    ],
+                    "DataBounded": "",
+                    "FormField": "",
+                    "Images": [
+
+                    ],
+                    "Info": "",
+                    "InspectionItem": "Date",
+                    "ItemInfo": "",
+                    "ItemMailBound": "true",
+                    "ItemName": "Date",
+                    "ItemType": "Date Type",
+                    "Mandatory": "false",
+                    "MaxRange": "",
+                    "MinRange": "",
+                    "Note": "",
+                    "QuickMultiSelection": "",
+                    "QuickNote": "",
+                    "ReportMapping": "",
+                    "Result": "",
+                    "SignaturePath": "",
+                    "Validation": "",
+                    "Value": "06-09-2014",
+                    "Values": [
+
+                    ],
+                    "Videos": [
+
+                    ]
+                }
+            ]
+        }
+    ]
+}

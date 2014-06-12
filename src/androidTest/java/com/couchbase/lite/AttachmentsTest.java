@@ -586,37 +586,57 @@ public class AttachmentsTest extends LiteTestCase {
         // add a doc with an attachment
         Document doc = database.createDocument();
         String id = doc.getId();
-        Map<String, Object> newProperties = new HashMap<String, Object>();
-        newProperties.put("Iteration", 0);
 
-        doc.putProperties(newProperties);
+        InputStream jsonStream = getAsset("5k.json");
+
+        Map<String, Object> docProperties = null;
+        try {
+            docProperties = Manager.getObjectMapper().readValue(jsonStream, Map.class);
+        } catch (Exception e) {
+            Log.e(Database.TAG, "Error deserializing properties from JSON", e);
+        } finally {
+            jsonStream.close();
+        }
+
+        docProperties.put("Iteration", 0);
+
+        doc.putProperties(docProperties);
         UnsavedRevision rev = null;
 
         Map<String, Object> curProperties;
 
-        InputStream attachmentStream = getAsset("attachment.png");
+
 
         for(int i=0; i<50; i++) {
+
+            InputStream attachmentStream1 = getAsset("attachment.png");
 
             Log.e(Database.TAG, "TEST ITERATION " + i);
             doc = database.getDocument(id);//not required
             rev=doc.getCurrentRevision().createRevision();
-            rev.setAttachment("attachment" + i*2, "image/png", attachmentStream);
+            rev.setAttachment("attachment" + i*2, "image/png", attachmentStream1);
             rev.save();
 
+            attachmentStream1.close();
+
+
+            InputStream attachmentStream2 = getAsset("attachment.png");
             doc = database.getDocument(id);//not required
             rev = doc.getCurrentRevision().createRevision();
-            rev.setAttachment("attachment" + i*2 + 1, "image/png", attachmentStream);
+            rev.setAttachment("attachment" + i*2 + 1, "image/png", attachmentStream2);
             rev.save();
+
+            attachmentStream2.close();
 
             //doc = database.getDocument(id);//not required
             curProperties =doc.getProperties();
-            assertEquals(4, curProperties.size());
+            assertEquals(6, curProperties.size());
             assertEquals(i*2, curProperties.get("Iteration"));
-            newProperties = new HashMap<String, Object>();
-            newProperties.putAll(curProperties);
-            newProperties.put("Iteration", (i + 1) * 2);
-            doc.putProperties(newProperties);
+            docProperties = new HashMap<String, Object>();
+            docProperties.putAll(curProperties);
+            docProperties.put("Iteration", (i + 1) * 2);
+            doc.putProperties(docProperties);
+
 
         }
 
@@ -642,5 +662,7 @@ public class AttachmentsTest extends LiteTestCase {
 
 
     }
+
+
 
 }
