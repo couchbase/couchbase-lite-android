@@ -201,4 +201,18 @@ public class DocumentTest extends LiteTestCase {
         assertTrue(thirdLevelImmutable);
     }
 
+    public void testProvidedMapChangesAreSafe() throws Exception {
+        Map<String, Object> originalProps = new HashMap<String, Object>();
+        Document doc = createDocumentWithProperties(database, originalProps);
+
+        Map<String, Object> nestedProps = new HashMap<String, Object>();
+        nestedProps.put("version", "original");
+        UnsavedRevision rev = doc.createRevision();
+        rev.getProperties().put("nested", nestedProps);
+        rev.save();
+
+        nestedProps.put("version", "changed");
+        assertEquals("original", ((Map) doc.getProperty("nested")).get("version"));
+    }
+
 }
