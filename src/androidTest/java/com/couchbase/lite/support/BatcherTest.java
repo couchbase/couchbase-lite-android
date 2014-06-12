@@ -57,7 +57,7 @@ public class BatcherTest extends LiteTestCase {
         assertTrue(didNotTimeOut);
 
         long delta = timeProcessed.get() - timeQueued;
-        assertTrue(delta > 0);
+        assertTrue(delta >= 0);
 
         // we want the delta between the time it was queued until the
         // time it was processed to be as small as possible.  since
