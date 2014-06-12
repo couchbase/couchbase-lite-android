@@ -11,16 +11,19 @@ public class MockChangedDoc {
     private String docId;
     private List<String> changedRevIds;
 
-    public void setSeq(int seq) {
+    public MockChangedDoc setSeq(int seq) {
         this.seq = seq;
+        return this;
     }
 
-    public void setDocId(String docId) {
+    public MockChangedDoc setDocId(String docId) {
         this.docId = docId;
+        return this;
     }
 
-    public void setChangedRevIds(List<String> changedRevIds) {
+    public MockChangedDoc setChangedRevIds(List<String> changedRevIds) {
         this.changedRevIds = changedRevIds;
+        return this;
     }
 
     public int getSeq() {

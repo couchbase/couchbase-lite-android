@@ -9,6 +9,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/*
+
+    Generate mock changes feed, eg:
+
+    {
+       "results":[
+          {
+             "seq":1,
+             "id":"doc1-1402588904847",
+             "changes":[
+                {
+                   "rev":"1-d57b1bc60eb9273c3349d932e15f9949"
+                }
+             ]
+          },
+          {
+             "seq":2,
+             "id":"doc2-1402588904847",
+             "changes":[
+                {
+                   "rev":"1-d57b1bc60eb9273c3349d932e15f9949"
+                }
+             ]
+          }
+       ],
+       "last_seq":2
+    }
+
+ */
 public class MockChangesFeed {
 
     private List<MockChangedDoc> mockChangedDocs;
