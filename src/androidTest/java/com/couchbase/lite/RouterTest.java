@@ -7,6 +7,7 @@ import com.couchbase.lite.util.Log;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -134,7 +135,9 @@ public class RouterTest extends LiteTestCase {
         assertTrue(contentType.contains("text/plain"));
 
         StringWriter writer = new StringWriter();
-        IOUtils.copy(conn.getInputStream(), writer, "UTF-8");
+        InputStream is = conn.getInputStream();
+        IOUtils.copy(is, writer, "UTF-8");
+        is.close();
         String responseString = writer.toString();
         assertTrue(responseString.contains(inlineTextString));
 
