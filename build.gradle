@@ -79,10 +79,6 @@ task generateJavadocs(type: Javadoc) {
     exclude "org/apache/http/**", "com/couchbase/touchdb/**"
 }
 
-task wrapper(type: Wrapper) {
-	gradleVersion = '1.10'
-}
-
 task createMavenDirectory(type: Exec) {
 
     ext {
