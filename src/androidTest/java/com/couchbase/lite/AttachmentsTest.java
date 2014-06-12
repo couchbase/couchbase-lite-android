@@ -200,7 +200,9 @@ public class AttachmentsTest extends LiteTestCase {
 
         Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), testAttachmentName);
         Assert.assertEquals("text/plain", attachment.getContentType());
-        byte[] data = IOUtils.toByteArray(attachment.getContent());
+        InputStream is = attachment.getContent();
+        byte[] data = IOUtils.toByteArray(is);
+        is.close();
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         EnumSet<Database.TDContentOptions> contentOptions = EnumSet.of(
@@ -270,7 +272,9 @@ public class AttachmentsTest extends LiteTestCase {
         // Check the 3rd revision's attachment:
         Attachment rev3FetchedAttachment =  database.getAttachmentForSequence(rev3.getSequence(), testAttachmentName);
 
-        data = IOUtils.toByteArray(rev3FetchedAttachment.getContent());
+        InputStream isRev3 = rev3FetchedAttachment.getContent();
+        data = IOUtils.toByteArray(isRev3);
+        isRev3.close();
         Assert.assertTrue(Arrays.equals(attach3, data));
         Assert.assertEquals("text/html", rev3FetchedAttachment.getContentType());
 
@@ -496,6 +500,7 @@ public class AttachmentsTest extends LiteTestCase {
             InputStream is = attachmentRetrieved.getContent();
             assertNotNull(is);
             byte[] attachmentDataRetrieved = TextUtils.read(is);
+            is.close();
             String attachmentDataRetrievedString = new String(attachmentDataRetrieved);
             String attachBodyString = new String(attachBodyBytes);
             assertEquals(attachBodyString, attachmentDataRetrievedString);
