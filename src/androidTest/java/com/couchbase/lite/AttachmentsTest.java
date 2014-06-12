@@ -254,7 +254,7 @@ public class AttachmentsTest extends LiteTestCase {
         Assert.assertEquals(attachment.getLength(), rev2FetchedAttachment.getLength());
         Assert.assertEquals(attachment.getMetadata(), rev2FetchedAttachment.getMetadata());
         Assert.assertEquals(attachment.getContentType(), rev2FetchedAttachment.getContentType());
-        // Because of how getAttachmentForSequence works rev2FEtchedAttachment has an open stream as a body, we have to close it.
+        // Because of how getAttachmentForSequence works rev2FetchedAttachment has an open stream as a body, we have to close it.
         rev2FetchedAttachment.getContent().close();
 
         // Add a third revision of the same document:
