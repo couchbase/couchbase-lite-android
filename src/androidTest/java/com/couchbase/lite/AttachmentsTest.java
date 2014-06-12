@@ -81,7 +81,9 @@ public class AttachmentsTest extends LiteTestCase {
 
         Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), testAttachmentName);
         Assert.assertEquals("text/plain", attachment.getContentType());
-        byte[] data = IOUtils.toByteArray(attachment.getContent());
+        InputStream is = attachment.getContent();
+        byte[] data = IOUtils.toByteArray(is);
+        is.close();
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         Map<String,Object> innerDict = new HashMap<String,Object>();
@@ -136,13 +138,17 @@ public class AttachmentsTest extends LiteTestCase {
         Attachment attachment2 = database.getAttachmentForSequence(rev2.getSequence(), testAttachmentName);
 
         Assert.assertEquals("text/plain", attachment2.getContentType());
-        data = IOUtils.toByteArray(attachment2.getContent());
+        InputStream is2 = attachment2.getContent();
+        data = IOUtils.toByteArray(is2);
+        is2.close();
         Assert.assertTrue(Arrays.equals(attach1, data));
 
         // Check the 3rd revision's attachment:
         Attachment attachment3 = database.getAttachmentForSequence(rev3.getSequence(), testAttachmentName);
         Assert.assertEquals("text/html", attachment3.getContentType());
-        data = IOUtils.toByteArray(attachment3.getContent());
+        InputStream is3 = attachment3.getContent();
+        data = IOUtils.toByteArray(is3);
+        is3.close();
         Assert.assertTrue(Arrays.equals(attach2, data));
 
         Map<String,Object> attachmentDictForRev3 = (Map<String,Object>)database.getAttachmentsDictForSequenceWithContent(rev3.getSequence(), EnumSet.noneOf(Database.TDContentOptions.class)).get(testAttachmentName);
