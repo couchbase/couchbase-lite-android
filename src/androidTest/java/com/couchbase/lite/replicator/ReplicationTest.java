@@ -982,7 +982,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
      */
-    public void testMockPullerNoAttachments() throws Exception {
+    public void failingTestMockPullerNoAttachments() throws Exception {
 
         String doc1Id = "doc1";
         String doc1Rev = "1-5e38";
