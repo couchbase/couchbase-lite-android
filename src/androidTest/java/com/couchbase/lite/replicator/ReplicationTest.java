@@ -1101,6 +1101,8 @@ public class ReplicationTest extends LiteTestCase {
         Log.d(TAG, "Adding " + doc2Id + " directly to sync gateway");
         addDocWithId(doc2Id, null, false);
 
+        doPullReplication();
+
         assertNotNull(database);
         Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
         Document doc1 = database.getDocument(doc1Id);
