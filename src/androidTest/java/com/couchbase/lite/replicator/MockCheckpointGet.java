@@ -7,6 +7,8 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
 
@@ -80,9 +82,30 @@ public class MockCheckpointGet implements SmartMockResponse {
 
     @Override
     public MockResponse generateMockResponse(RecordedRequest request) {
+
+        if (!request.getMethod().equals("GET")) {
+            throw new RuntimeException("Expected GET, but was not a GET");
+        }
+
         MockResponse mockResponse = new MockResponse();
+
+        // extract id from request
+        // /db/_local/e11a8567a2ecaf27c52d02899fa82258a343d720 -> _local/e11a8567a2ecaf27c52d02899fa82258a343d720
+        String path = request.getPath();
+        String localDocId = "";
+        Pattern pattern = Pattern.compile("/db/_local/(.*)");
+        Matcher matcher = pattern.matcher(path);
+        if (matcher.find()) {
+            localDocId = matcher.group(1);
+        } else {
+            throw new RuntimeException(String.format("Could not extract local doc id from: %s", path));
+        }
+
+        // call setId
+        setId(String.format("_local/%s", localDocId));
         mockResponse.setBody(generateBody());
         MockHelper.set200OKJson(mockResponse);
         return mockResponse;
     }
+
 }

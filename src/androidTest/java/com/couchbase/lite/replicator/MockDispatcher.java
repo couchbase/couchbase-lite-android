@@ -31,11 +31,15 @@ public class MockDispatcher extends Dispatcher {
                     String msg = String.format("No queue found for pathRegex: %s", pathRegex);
                     throw new RuntimeException(msg);
                 }
-                SmartMockResponse smartMockResponse = responseQueue.take();
-                return smartMockResponse.generateMockResponse(request);
+                if (!responseQueue.isEmpty()) {
+                    SmartMockResponse smartMockResponse = responseQueue.take();
+                    return smartMockResponse.generateMockResponse(request);
+                } else {
+                    return new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE); // fail fast
+                }
             }
         }
-        return new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_FOUND); // fail fast
+        return new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE); // fail fast
     }
 
     public void enqueueResponse(String pathRegex, SmartMockResponse response) {
