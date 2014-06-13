@@ -700,6 +700,9 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
+     *
+     * Under construction, ignore this
+     *
      * Attempting to reproduce couchtalk issue:
      *
      * https://github.com/couchbase/couchbase-lite-android/issues/312
@@ -709,7 +712,7 @@ public class ReplicationTest extends LiteTestCase {
      * - Start puller
      * - Verify that 10 docs are pulled w/ 10 successful restarts
      */
-    public void testPullerRestart() throws Exception {
+    public void underConstructionTestPullerRestart() throws Exception {
 
         MockWebServer server = new MockWebServer();
 
