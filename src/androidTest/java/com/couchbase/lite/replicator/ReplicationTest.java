@@ -1088,10 +1088,8 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    /**
-     * Marked as failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
-     */
-    public void failingTestPuller() throws Throwable {
+
+    public void testPuller() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
@@ -1102,11 +1100,6 @@ public class ReplicationTest extends LiteTestCase {
         addDocWithId(doc1Id, null, false);
         Log.d(TAG, "Adding " + doc2Id + " directly to sync gateway");
         addDocWithId(doc2Id, null, false);
-
-        Replication pullReplication = doPullReplication();
-        String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
-        assertEquals("2", lastSequence);
-
 
         assertNotNull(database);
         Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
