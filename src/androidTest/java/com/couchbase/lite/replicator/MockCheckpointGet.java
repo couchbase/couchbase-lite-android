@@ -21,7 +21,7 @@ import java.util.Map;
     }
 
  */
-public class MockCheckpointGet {
+public class MockCheckpointGet implements SmartMockResponse {
 
     private String id;
     private String ok;
@@ -78,12 +78,11 @@ public class MockCheckpointGet {
         }
     }
 
-    public MockResponse generateMockResponse() {
+    @Override
+    public MockResponse generateMockResponse(RecordedRequest request) {
         MockResponse mockResponse = new MockResponse();
         mockResponse.setBody(generateBody());
         MockHelper.set200OKJson(mockResponse);
         return mockResponse;
     }
-
-
 }

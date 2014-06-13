@@ -816,7 +816,7 @@ public class ReplicationTest extends LiteTestCase {
         mockCheckpointGet.setOk("true");
         mockCheckpointGet.setRev("0-1");
         mockCheckpointGet.setLastSequence("2");
-        dispatcher.enqueueResponse("/db/_local.*", mockCheckpointGet.generateMockResponse());
+        dispatcher.enqueueResponse("/db/_local.*", mockCheckpointGet);
 
         // _changes response
         MockChangesFeed mockChangesFeed = new MockChangesFeed();
