@@ -52,6 +52,10 @@ public class MockHelper {
         return randomJsonMap;
     }
 
+    public static SmartMockResponse wrap(MockResponse mockResponse) {
+        return new WrappedSmartMockResponse(mockResponse);
+    }
+
 
 
 }

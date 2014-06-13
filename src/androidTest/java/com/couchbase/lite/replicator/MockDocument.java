@@ -2,6 +2,7 @@ package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.Manager;
 import com.squareup.okhttp.mockwebserver.MockResponse;
+import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -103,5 +104,7 @@ public class MockDocument {
         MockHelper.set200OKJson(mockResponse);
         return mockResponse;
     }
+
+
 
 }

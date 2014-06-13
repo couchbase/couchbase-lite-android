@@ -918,8 +918,7 @@ public class ReplicationTest extends LiteTestCase {
                 .setDocId(doc2Id)
                 .setChangedRevIds(Arrays.asList(doc2Rev));
         mockChangesFeed.add(mockChangedDoc2);
-        MockResponse fakeChangesResponse = mockChangesFeed.generateMockResponse();
-        dispatcher.enqueueResponse("/db/_changes.*", fakeChangesResponse);
+        dispatcher.enqueueResponse("/db/_changes.*", mockChangesFeed.generateMockResponse());
 
         // doc1 response
         Map<String, Object> doc1JsonMap = MockHelper.generateRandomJsonMap();
