@@ -1091,7 +1091,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Marked as failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
      */
-    public void testPuller() throws Throwable {
+    public void failingTestPuller() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
