@@ -155,4 +155,64 @@ public class DocumentTest extends LiteTestCase {
 
     }
 
+    public void testDocumentPropertiesAreImmutable() throws Exception {
+        String jsonString = "{\n" +
+                "    \"name\":\"praying mantis\",\n" +
+                "    \"wikipedia\":{\n" +
+                "        \"behavior\":{\n" +
+                "            \"style\":\"predatory\",\n" +
+                "            \"attack\":\"ambush\"\n" +
+                "        },\n" +
+                "        \"evolution\":{\n" +
+                "            \"ancestor\":\"proto-roaches\",\n" +
+                "            \"cousin\":\"termite\"\n" +
+                "        }       \n" +
+                "    }   \n" +
+                "\n" +
+                "}";
+        Map map = (Map) Manager.getObjectMapper().readValue(jsonString, Object.class);
+        Document doc = createDocumentWithProperties(database, map);
+
+        boolean firstLevelImmutable = false;
+        Map<String, Object> props = doc.getProperties();
+        try {
+            props.put("name", "bug");
+        } catch (UnsupportedOperationException e) {
+            firstLevelImmutable = true;
+        }
+        assertTrue(firstLevelImmutable);
+
+        boolean secondLevelImmutable = false;
+        Map wikiProps = (Map) props.get("wikipedia");
+        try {
+            wikiProps.put("behavior", "unknown");
+        } catch (UnsupportedOperationException e) {
+            secondLevelImmutable = true;
+        }
+        assertTrue(secondLevelImmutable);
+
+        boolean thirdLevelImmutable = false;
+        Map evolutionProps = (Map) wikiProps.get("behavior");
+        try {
+            evolutionProps.put("movement", "flight");
+        } catch (UnsupportedOperationException e) {
+            thirdLevelImmutable = true;
+        }
+        assertTrue(thirdLevelImmutable);
+    }
+
+    public void testProvidedMapChangesAreSafe() throws Exception {
+        Map<String, Object> originalProps = new HashMap<String, Object>();
+        Document doc = createDocumentWithProperties(database, originalProps);
+
+        Map<String, Object> nestedProps = new HashMap<String, Object>();
+        nestedProps.put("version", "original");
+        UnsavedRevision rev = doc.createRevision();
+        rev.getProperties().put("nested", nestedProps);
+        rev.save();
+
+        nestedProps.put("version", "changed");
+        assertEquals("original", ((Map) doc.getProperty("nested")).get("version"));
+    }
+
 }
