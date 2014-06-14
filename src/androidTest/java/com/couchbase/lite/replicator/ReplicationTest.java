@@ -79,6 +79,117 @@ public class ReplicationTest extends LiteTestCase {
 
     public static final String TAG = "Replicator";
 
+	public void testChangeTrackerStopsReplication() throws Exception {
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderReturnChangesFeed404();
+		mockHttpClient.addResponderFakeLocalDocumentUpdate404();
+        HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() { return mockHttpClient; }
+            @Override
+            public void addCookies(List<Cookie> cookies) { }
+            @Override
+            public void deleteCookie(String name) { }
+            @Override
+            public CookieStore getCookieStore() { return null; }
+        };
+        manager.setDefaultHttpClientFactory(mockHttpClientFactory);
+
+		// Start checking the number of threads currently active
+		int numthreads_before=Thread.activeCount();
+        Log.d(TAG, String.format("Number of threads before start: %d",numthreads_before));
+
+        Replication pull = database.createPullReplication(getReplicationURL());
+        pull.setContinuous(true);
+		
+        Log.d(TAG, "Starting test with incorrect changes feed that returns a 404");
+        runReplication(pull);
+		// Should stop properly on the incorrect changes feed - rather than stay idle?
+		Thread.sleep(500); // Allow threads to terminate.
+		int numthreads_after=Thread.activeCount();
+        Log.d(TAG, String.format("Number of threads after idle or timeout: %d",numthreads_after));
+		String msg=String.format("%d Threads have leaked",numthreads_after-numthreads_before);
+		assertEquals(msg,numthreads_before,numthreads_after);
+    }
+	
+	public void testSingleChangeTracker() throws Exception {
+        final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
+        mockHttpClient.addResponderReturnEmptyChangesFeed();
+		mockHttpClient.addResponderFakeLocalDocumentUpdate404();
+        mockHttpClient.setResponseDelayMilliseconds(1000);
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+		HttpClientFactory mockHttpClientFactory = new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() { return mockHttpClient; }
+            @Override
+            public void addCookies(List<Cookie> cookies) { }
+            @Override
+            public void deleteCookie(String name) { }
+            @Override
+            public CookieStore getCookieStore() { return null; }
+        };
+        manager.setDefaultHttpClientFactory(mockHttpClientFactory);
+
+		// Start checking the number of threads currently active
+		int numThreadsBefore=Thread.getAllStackTraces().keySet().size();
+        Log.d(TAG, String.format("Number of threads before start using stacktraces: %d",numThreadsBefore));
+		int numActiveCountBefore=Thread.activeCount();
+        Log.d(TAG, String.format("Number of threads before start using activecount: %d",numActiveCountBefore));
+        Replication pull = database.createPullReplication(getReplicationURL());
+        pull.setContinuous(true);
+        Log.d(TAG, "Starting test with 10 goOnline calls");
+		pull.start();
+		// Should be enough to have the changetracker start.
+		Thread.sleep(3100);
+		putReplicationOffline(pull);
+		// Wait a little bit more.
+		Thread.sleep(100);
+        pull.addChangeListener(replicationFinishedObserver);
+		
+		// NOTE: This test *passes* if the workExecutor is empty!
+		// It appears that the pull.goOnline's calls to schedule additional work, can
+		// also fire off a thread switch if the workExecutor was already empty.
+        Log.d(TAG, "Put some work in the workExecutor  - without this, this test passes in v1.0.0");
+		manager.getWorkExecutor().submit(new Runnable() {
+			public void run() {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) { }
+			}
+		});
+        Log.d(TAG, "goOnline 10x");
+		pull.goOnline();
+		pull.goOnline();
+		pull.goOnline();
+		pull.goOnline();
+		pull.goOnline();
+		pull.goOnline();
+		pull.goOnline();
+		pull.goOnline();
+		pull.goOnline();
+		pull.goOnline();
+		// Should be enough to have the changetracker start.
+		Thread.sleep(3100);
+		int numThreadsMiddle=Thread.getAllStackTraces().keySet().size();
+        Log.d(TAG, String.format("Number of threads after 10x goOnline using stacktraces: %d",numThreadsMiddle));
+		int numActiveCountMiddle=Thread.activeCount();
+        Log.d(TAG, String.format("Number of threads after 10x goOnline using activeCount: %d",numActiveCountMiddle));
+
+        pull.stop();
+        // wait for it to finish
+        boolean success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
+        pull.removeChangeListener(replicationFinishedObserver);
+        assertTrue(success);
+        Log.d(TAG, "replicationDoneSignal finished");
+        
+		Thread.sleep(500); // Allow threads to terminate
+		int numThreadsAfter=Thread.getAllStackTraces().keySet().size();
+		int numActiveCountAfter=Thread.activeCount();
+		String msg=String.format("%d Threads have leaked",numThreadsAfter-numThreadsBefore);
+		assertEquals(msg,numThreadsBefore,numThreadsAfter);
+	}
+
     /**
      * Verify that running a one-shot push replication will complete when run against a
      * mock server that returns 500 Internal Server errors on every request.
