@@ -1,5 +1,6 @@
 package com.couchbase.lite.replicator;
 
+import com.couchbase.lite.Misc;
 import com.squareup.okhttp.mockwebserver.Dispatcher;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
@@ -45,10 +46,10 @@ public class MockHelper {
 
 
     public static Map<String, Object> generateRandomJsonMap() {
-        // "bar":false,"foo":1
+
         Map<String, Object> randomJsonMap = new HashMap<String, Object>();
-        randomJsonMap.put("bar", false);
-        randomJsonMap.put("foo", 1);
+        randomJsonMap.put(Misc.TDCreateUUID(), false);
+        randomJsonMap.put("uuid", Misc.TDCreateUUID());
         return randomJsonMap;
     }
 
