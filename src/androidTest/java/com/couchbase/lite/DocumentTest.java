@@ -4,6 +4,7 @@ import com.couchbase.lite.internal.RevisionInternal;
 
 import junit.framework.Assert;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -154,6 +155,25 @@ public class DocumentTest extends LiteTestCase {
         assertTrue(docFetched.getCurrentRevision().isGone());
 
     }
+
+    public void failingTestGetDocumentWithLargeJSON() {
+
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("_id", "laaargeJSON");
+        char[] chars = new char[2500000];//~5MB
+        Arrays.fill(chars, 'a');
+        props.put("foo", new String(chars));
+
+        Document doc = createDocumentWithProperties(database, props);
+        assertNotNull(doc);
+
+        Document docFetched = database.getDocument(doc.getId());
+        Map<String, Object> fetchedProps = docFetched.getCurrentRevision().getProperties();
+        assertEquals(fetchedProps.get("foo"), new String(chars));
+
+    }
+
+
 
     public void failingTestDocumentPropertiesAreImmutable() throws Exception {
         String jsonString = "{\n" +
