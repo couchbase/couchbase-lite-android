@@ -802,24 +802,22 @@ public class ReplicationTest extends LiteTestCase {
 
         String doc1Id = "doc1";
 
-
         // create mockwebserver and custom dispatcher
         Map<String, Object> serverAndDispatcher = mockPullerNoAttachments(false);
 
         MockWebServer server = (MockWebServer) serverAndDispatcher.get("server");
         MockDispatcher dispatcher = (MockDispatcher) serverAndDispatcher.get("dispatcher");
 
-        // Thread.sleep(10000);
-
         String doc1Rev = "2-2e38";
         int doc1Seq = 3;
+        String checkpointRev = "0-1";
+        String checkpointLastSequence = "2";
 
         // checkpoint GET response w/ seq = 2
-        // 	return fmt.Sprintf(`{"_id":"_local/%s","ok":true,"_rev":"0-1","lastSequence":"%v"}`, checkpointAddress, lastSequence)
         MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
         mockCheckpointGet.setOk("true");
-        mockCheckpointGet.setRev("0-1");
-        mockCheckpointGet.setLastSequence("2");
+        mockCheckpointGet.setRev(checkpointRev);
+        mockCheckpointGet.setLastSequence(checkpointLastSequence);
         dispatcher.enqueueResponse("/db/_local.*", mockCheckpointGet);
 
         // _changes response
@@ -861,15 +859,19 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(getCheckpointRequest.getPath().matches("/db/_local.*"));
         RecordedRequest getChangesFeedRequest = server.takeRequest();
         assertTrue(getChangesFeedRequest.getMethod().equals("GET") || getChangesFeedRequest.getMethod().equals("POST"));
+        // TODO: the mock server should pretend to be a sync gateway, and then the changes feed request will be a POST.
         assertTrue(getChangesFeedRequest.getPath().matches("/db/_changes.*")); // TODO: verify since param -- waiting on fix for https://github.com/couchbase/couchbase-lite-java-core/issues/231
         Log.d(TAG, "changes feed request: %s", getChangesFeedRequest.getPath());
         RecordedRequest doc1Request = server.takeRequest();
         assertTrue(doc1Request.getMethod().equals("GET"));
-        assertTrue(doc1Request.getPath().matches("/db/doc1\\?rev=2-2e38.*"));  // /db/doc1?rev=2-2e38&revs=true&attachments=true&atts_since=%5B%221-5e38%22%5D
+        assertTrue(doc1Request.getPath().matches("/db/doc1\\?rev=2-2e38.*"));
         RecordedRequest putCheckpointRequest = server.takeRequest();
         assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
-        assertTrue(putCheckpointRequest.getPath().matches("/db/_local.*")); // TODO: verify that the _rev field has the right value
-        assertTrue(putCheckpointRequest.getUtf8Body().contains("\"lastSequence\":\"3\""));
+        assertTrue(putCheckpointRequest.getPath().matches("/db/_local.*"));
+        String utf8Body = putCheckpointRequest.getUtf8Body();
+        Map <String, Object> checkpointJson = Manager.getObjectMapper().readValue(utf8Body, Map.class);
+        assertEquals("3", checkpointJson.get("lastSequence"));
+        assertEquals("0-1", checkpointJson.get("_rev"));
 
         server.shutdown();
 
@@ -967,6 +969,11 @@ public class ReplicationTest extends LiteTestCase {
         RecordedRequest doc2Request = server.takeRequest();
         assertTrue(doc2Request.getMethod().equals("GET"));
         assertTrue(doc2Request.getPath().matches("/db/doc2.*"));
+
+        // assertions regarding PUT checkpoint request.
+        // these should be updated once the confusion in https://github.com/couchbase/couchbase-lite-java-core/issues/231#issuecomment-46199630
+        // is resolved. also, there should be assertions added regarding the _rev field
+        // passed in the PUT checkpoint body.
         RecordedRequest putCheckpointRequest = server.takeRequest();
         assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
         assertTrue(putCheckpointRequest.getPath().matches("/db/_local.*"));
@@ -976,8 +983,8 @@ public class ReplicationTest extends LiteTestCase {
 
         // make assertion about our local sequence
         // assertion failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
-        // String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
-        // assertEquals(Integer.toString(doc2Seq), lastSequence);
+        String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
+        assertEquals(Integer.toString(doc2Seq), lastSequence);
 
         // Shut down the server. Instances cannot be reused.
         if (shutdownMockWebserver) {
