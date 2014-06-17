@@ -38,6 +38,13 @@ public class MockHelper {
         mockResponse.setStatus("HTTP/1.1 404 NOT FOUND").setHeader("Content-Type", "application/json");
     }
 
+    public static void setSyncGwServerType(MockResponse mockResponse, boolean syncGwServerType) {
+        if (syncGwServerType == true) {
+            mockResponse.setHeader("Server", "Couchbase Sync Gateway/1.0.0");
+        }
+    }
+
+
     public static void addFake404CheckpointResponse(MockWebServer mockWebServer) {
         MockResponse fakeCheckpointResponse = new MockResponse();
         MockHelper.set404NotFoundJson(fakeCheckpointResponse);

@@ -16,6 +16,9 @@ public class MockDispatcher extends Dispatcher {
     // the value is a Queue of MockResponse objects
     private Map<String, BlockingQueue<SmartMockResponse>> queueMap;
 
+    // add these extra headers
+    // private Map<String, String> extraHeaders;
+
     public MockDispatcher() {
         super();
         queueMap = new HashMap<String, BlockingQueue<SmartMockResponse>>();
@@ -52,11 +55,15 @@ public class MockDispatcher extends Dispatcher {
     }
 
     public void enqueueResponse(String pathRegex, MockResponse response) {
+
+        // get the response queue for this path regex
         BlockingQueue<SmartMockResponse> responseQueue = queueMap.get(pathRegex);
         if (responseQueue == null) {
+            // create one on demand if it doesn't already exist
             responseQueue = new LinkedBlockingDeque<SmartMockResponse>();
             queueMap.put(pathRegex, responseQueue);
         }
+        // add the response to the queue.  since it's not a smart mock response, wrap it
         responseQueue.add(MockHelper.wrap(response));
     }
 
