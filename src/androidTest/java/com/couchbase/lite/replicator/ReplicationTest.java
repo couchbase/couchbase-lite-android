@@ -27,8 +27,8 @@ import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.MockResponse;
+import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import junit.framework.Assert;
@@ -787,24 +787,68 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
-     * Failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
+     * Pull replication test:
+     *
+     * - Single one-shot pull replication
+     * - Against simulated sync gateway
+     * - Remote docs have attachments
      */
-    public void testMockSinglePullSyncGw() throws Exception {
+    public void testMockSinglePullSyncGwAttachments() throws Exception {
 
         boolean shutdownMockWebserver = true;
+        boolean addAttachments = true;
 
-        mockSinglePull(shutdownMockWebserver, MockDispatcher.ServerType.SYNC_GW);
+        mockSinglePull(shutdownMockWebserver, MockDispatcher.ServerType.SYNC_GW, addAttachments);
 
     }
 
     /**
-     * Failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
+     * Pull replication test:
+     *
+     * - Single one-shot pull replication
+     * - Against simulated sync gateway
+     * - Remote docs do not have attachments
+     */
+    public void testMockSinglePullSyncGw() throws Exception {
+
+        boolean shutdownMockWebserver = true;
+        boolean addAttachments = false;
+
+        mockSinglePull(shutdownMockWebserver, MockDispatcher.ServerType.SYNC_GW, addAttachments);
+
+    }
+
+    /**
+     * Pull replication test:
+     *
+     * - Single one-shot pull replication
+     * - Against simulated couchdb
+     * - Remote docs have attachments
+     */
+    public void testMockSinglePullCouchDbAttachments() throws Exception {
+
+        boolean shutdownMockWebserver = true;
+        boolean addAttachments = true;
+
+
+        mockSinglePull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB, addAttachments);
+
+    }
+
+    /**
+     * Pull replication test:
+     *
+     * - Single one-shot pull replication
+     * - Against simulated couchdb
+     * - Remote docs do not have attachments
      */
     public void testMockSinglePullCouchDb() throws Exception {
 
         boolean shutdownMockWebserver = true;
+        boolean addAttachments = false;
 
-        mockSinglePull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB);
+
+        mockSinglePull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB, addAttachments);
 
     }
 
@@ -820,15 +864,18 @@ public class ReplicationTest extends LiteTestCase {
      * @param serverType - should the mock return the Sync Gateway server type in
      *                   the "Server" HTTP Header?  this changes the behavior of the
      *                   replicator to use bulk_get and POST reqeusts for _changes feeds.
+     * @param addAttachments - should the mock sync gateway return docs with attachments?
      * @return a map that contains the mockwebserver (key="server") and the mock dispatcher
      *         (key="dispatcher")
      */
-    public Map<String, Object> mockSinglePull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType) throws Exception {
+    public Map<String, Object> mockSinglePull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType, boolean addAttachments) throws Exception {
 
         String doc1Id = "doc1";
         String doc1Rev = "1-5e38";
         String doc2Id = "doc2";
         String doc2Rev = "1-563b";
+        String doc1AttachName = "attachment.png";
+        String doc2AttachName = "attachment2.png";
         int doc1Seq = 1;
         int doc2Seq = 2;
 
@@ -863,6 +910,9 @@ public class ReplicationTest extends LiteTestCase {
                 .setDocId(doc1Id)
                 .setRev(doc1Rev)
                 .setJsonMap(doc1JsonMap);
+        if (addAttachments) {
+            mockDocument.addAttachmentFilename(doc1AttachName);
+        }
         dispatcher.enqueueResponse("/db/doc1.*", mockDocument.generateMockResponse());
 
         // doc2 response
@@ -871,6 +921,9 @@ public class ReplicationTest extends LiteTestCase {
                 .setDocId(doc2Id)
                 .setRev(doc2Rev)
                 .setJsonMap(doc2JsonMap);
+        if (addAttachments) {
+            mockDocument.addAttachmentFilename(doc2AttachName);
+        }
         dispatcher.enqueueResponse("/db/doc2.*", mockDocument.generateMockResponse());
 
         // checkpoint PUT responses
@@ -900,6 +953,13 @@ public class ReplicationTest extends LiteTestCase {
         assertNotNull(doc2.getProperties());
         assertTrue(doc2.getCurrentRevisionId().startsWith("1-"));
         assertEquals(doc2JsonMap, doc2.getUserProperties());
+
+
+        // assert that docs have attachments (if applicable)
+        if (addAttachments) {
+            attachmentAsserts(doc1AttachName, doc1);
+            attachmentAsserts(doc2AttachName, doc2);
+        }
 
         // make assertions about outgoing requests from replicator -> mock
         RecordedRequest getCheckpointRequest = server.takeRequest();
@@ -931,6 +991,7 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
         assertTrue(putCheckpointRequest.getPath().matches("/db/_local.*"));
 
+        // TODO: re-enable this assertion when 231 is fixed!!
         // make assertion about our local sequence
         // assertion failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
         // String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
@@ -947,6 +1008,25 @@ public class ReplicationTest extends LiteTestCase {
 
         return returnVal;
 
+    }
+
+    private void attachmentAsserts(String docAttachName, Document doc) throws IOException, CouchbaseLiteException {
+        Attachment attachment = doc.getCurrentRevision().getAttachment(docAttachName);
+        assertNotNull(attachment);
+        byte[] testAttachBytes = MockDocument.getAssetByteArray(docAttachName);
+        int attachLength = testAttachBytes.length;
+        assertEquals(attachLength, attachment.getLength());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(attachment.getContent());
+        byte[] actualAttachBytes = baos.toByteArray();
+        assertEquals(testAttachBytes.length, actualAttachBytes.length);
+        for (int i=0; i<actualAttachBytes.length; i++) {
+            boolean ithByteEqual = actualAttachBytes[i] == testAttachBytes[i];
+            if (!ithByteEqual) {
+                Log.d(Log.TAG, "mismatch");
+            }
+            assertTrue(ithByteEqual);
+        }
     }
 
 
@@ -982,7 +1062,8 @@ public class ReplicationTest extends LiteTestCase {
         String doc1Id = "doc1";
 
         // create mockwebserver and custom dispatcher
-        Map<String, Object> serverAndDispatcher = mockSinglePull(false, serverType);
+        boolean addAttachments = false;
+        Map<String, Object> serverAndDispatcher = mockSinglePull(false, serverType, addAttachments);
 
         MockWebServer server = (MockWebServer) serverAndDispatcher.get("server");
         MockDispatcher dispatcher = (MockDispatcher) serverAndDispatcher.get("dispatcher");
