@@ -592,6 +592,7 @@ public class ApiTest extends LiteTestCase {
         Attachment fetched = doc.getCurrentRevision().getAttachment(attachmentName);
         InputStream is = fetched.getContent();
         byte[] attachmentBytes = TextUtils.read(is);
+        is.close();
         assertEquals(content, new String(attachmentBytes));
         assertNotNull(fetched);
 
