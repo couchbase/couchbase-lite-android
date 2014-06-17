@@ -1096,10 +1096,9 @@ public class ReplicationTest extends LiteTestCase {
         final String doc2Id = String.format("doc2-%s", docIdTimestamp);
 
         Log.d(TAG, "Adding " + doc1Id + " directly to sync gateway");
-        // addDocWithId(doc1Id, "attachment.png", false);
-        addDocWithId(doc1Id, null, false);
+        addDocWithId(doc1Id, "attachment.png", false);
         Log.d(TAG, "Adding " + doc2Id + " directly to sync gateway");
-        addDocWithId(doc2Id, null, false);
+        addDocWithId(doc2Id, "attachment2.png", false);
 
         doPullReplication();
 
@@ -1136,6 +1135,8 @@ public class ReplicationTest extends LiteTestCase {
         assertNotNull(doc1Fetched);
         assertTrue(doc1Fetched.getCurrentRevisionId().startsWith("2-"));
         assertEquals(2, doc1Fetched.getProperties().get("foo"));
+
+
 
         Log.d(TAG, "testPuller() finished");
 
