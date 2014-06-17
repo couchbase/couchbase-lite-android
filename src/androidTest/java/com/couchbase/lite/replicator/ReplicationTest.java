@@ -787,110 +787,43 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
-     *
-     * Simulate the following:
-     *
-     * - Add a few docs and do a pull replication
-     * - One doc on sync gateway is now updated
-     * - Do a second pull replication
-     * - Assert we get the updated doc and save it locally
-     *
+     * Failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
      */
-    public void testPullerNoAttachmentsWithSecondPull() throws Throwable {
+    public void testMockSinglePullSyncGw() throws Exception {
 
-        String doc1Id = "doc1";
+        boolean shutdownMockWebserver = true;
 
-        // create mockwebserver and custom dispatcher
-        boolean shutdownMockWebserver = false;
-        boolean syncGwServerType = true;
-        Map<String, Object> serverAndDispatcher = mockPullerNoAttachments(shutdownMockWebserver, syncGwServerType);
+        mockSinglePull(shutdownMockWebserver, MockDispatcher.ServerType.SYNC_GW);
 
-        MockWebServer server = (MockWebServer) serverAndDispatcher.get("server");
-        MockDispatcher dispatcher = (MockDispatcher) serverAndDispatcher.get("dispatcher");
+    }
 
-        String doc1Rev = "2-2e38";
-        int doc1Seq = 3;
-        String checkpointRev = "0-1";
-        String checkpointLastSequence = "2";
+    /**
+     * Failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
+     */
+    public void testMockSinglePullCouchDb() throws Exception {
 
-        // checkpoint GET response w/ seq = 2
-        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
-        mockCheckpointGet.setOk("true");
-        mockCheckpointGet.setRev(checkpointRev);
-        mockCheckpointGet.setLastSequence(checkpointLastSequence);
-        dispatcher.enqueueResponse("/db/_local.*", mockCheckpointGet);
+        boolean shutdownMockWebserver = true;
 
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        MockChangedDoc mockChangedDoc1 = new MockChangedDoc()
-                .setSeq(doc1Seq)
-                .setDocId(doc1Id)
-                .setChangedRevIds(Arrays.asList(doc1Rev));
-        mockChangesFeed.add(mockChangedDoc1);
-        MockResponse fakeChangesResponse = mockChangesFeed.generateMockResponse();
-        dispatcher.enqueueResponse("/db/_changes.*", fakeChangesResponse);
-
-        // doc1 response
-        Map<String, Object> doc1JsonMap = MockHelper.generateRandomJsonMap();
-        MockDocument mockDocument = new MockDocument()
-                .setDocId(doc1Id)
-                .setRev(doc1Rev)
-                .setJsonMap(doc1JsonMap);
-        dispatcher.enqueueResponse("/db/doc1.*", mockDocument.generateMockResponse());
-
-        // checkpoint PUT response
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        dispatcher.enqueueResponse("/db/_local.*", mockCheckpointPut);
-
-        // run pull replication
-        doPullReplication(server.getUrl("/db"));
-
-        // assert that we now have both docs in local db
-        assertNotNull(database);
-        Document doc1 = database.getDocument(doc1Id);
-        assertNotNull(doc1);
-        assertNotNull(doc1.getCurrentRevisionId());
-        assertTrue(doc1.getCurrentRevisionId().startsWith("2-"));
-        assertEquals(doc1JsonMap, doc1.getUserProperties());
-
-        // make assertions about outgoing requests from replicator -> mock
-        RecordedRequest getCheckpointRequest = server.takeRequest();
-        assertTrue(getCheckpointRequest.getMethod().equals("GET"));
-        assertTrue(getCheckpointRequest.getPath().matches("/db/_local.*"));
-        RecordedRequest getChangesFeedRequest = server.takeRequest();
-        assertTrue(getChangesFeedRequest.getMethod().equals("GET") || getChangesFeedRequest.getMethod().equals("POST"));
-        // TODO: the mock server should pretend to be a sync gateway, and then the changes feed request will be a POST.
-        assertTrue(getChangesFeedRequest.getPath().matches("/db/_changes.*")); // TODO: verify since param -- waiting on fix for https://github.com/couchbase/couchbase-lite-java-core/issues/231
-        Log.d(TAG, "changes feed request: %s", getChangesFeedRequest.getPath());
-        RecordedRequest doc1Request = server.takeRequest();
-        assertTrue(doc1Request.getMethod().equals("GET"));
-        assertTrue(doc1Request.getPath().matches("/db/doc1\\?rev=2-2e38.*"));
-        RecordedRequest putCheckpointRequest = server.takeRequest();
-        assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
-        assertTrue(putCheckpointRequest.getPath().matches("/db/_local.*"));
-        String utf8Body = putCheckpointRequest.getUtf8Body();
-        Map <String, Object> checkpointJson = Manager.getObjectMapper().readValue(utf8Body, Map.class);
-        assertEquals("3", checkpointJson.get("lastSequence"));
-        assertEquals("0-1", checkpointJson.get("_rev"));
-
-        server.shutdown();
+        mockSinglePull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB);
 
     }
 
 
     /**
-     * Do a pull replication w/ no attachments
+     * Do a pull replication
+     *
+     * // TODO: add attachments!
      *
      * @param shutdownMockWebserver - should this test shutdown the mockwebserver
      *                              when done?  if another test wants to pick up
      *                              where this left off, you should pass false.
-     * @param syncGwServerType - should the mock return the Sync Gateway server type in
-     *                         the "Server" HTTP Header?  this changes the behavior of the
-     *                         replicator to use bulk_get and POST reqeusts for _changes feeds.
+     * @param serverType - should the mock return the Sync Gateway server type in
+     *                   the "Server" HTTP Header?  this changes the behavior of the
+     *                   replicator to use bulk_get and POST reqeusts for _changes feeds.
      * @return a map that contains the mockwebserver (key="server") and the mock dispatcher
      *         (key="dispatcher")
      */
-    public Map<String, Object> mockPullerNoAttachments(boolean shutdownMockWebserver, boolean syncGwServerType) throws Exception {
+    public Map<String, Object> mockSinglePull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType) throws Exception {
 
         String doc1Id = "doc1";
         String doc1Rev = "1-5e38";
@@ -902,12 +835,12 @@ public class ReplicationTest extends LiteTestCase {
         // create mockwebserver and custom dispatcher
         MockWebServer server = MockHelper.getMockWebServer();
         MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(serverType);
         server.setDispatcher(dispatcher);
 
         // checkpoint GET response w/ 404
         MockResponse fakeCheckpointResponse = new MockResponse();
         MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        MockHelper.setSyncGwServerType(fakeCheckpointResponse, syncGwServerType);
         dispatcher.enqueueResponse("/db/_local.*", fakeCheckpointResponse);
 
         // _changes response
@@ -973,7 +906,7 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(getCheckpointRequest.getMethod().equals("GET"));
         assertTrue(getCheckpointRequest.getPath().matches("/db/_local.*"));
         RecordedRequest getChangesFeedRequest = server.takeRequest();
-        if (syncGwServerType) {
+        if (serverType == MockDispatcher.ServerType.SYNC_GW) {
             assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
 
         } else {
@@ -1016,27 +949,122 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    /**
-     * Failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
-     */
-    public void testMockPullerNoAttachmentsSyncGw() throws Exception {
+
+    public void testMockMultiplePullSyncGw() throws Exception {
 
         boolean shutdownMockWebserver = true;
-        boolean syncGwServerType = true;
 
-        mockPullerNoAttachments(shutdownMockWebserver, syncGwServerType);
+        mockMultiplePull(shutdownMockWebserver, MockDispatcher.ServerType.SYNC_GW);
 
     }
 
-    /**
-     * Failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
-     */
-    public void testMockPullerNoAttachmentsCouchDb() throws Exception {
+    public void testMockMultiplePullCouchDb() throws Exception {
 
         boolean shutdownMockWebserver = true;
-        boolean syncGwServerType = false;
 
-        mockPullerNoAttachments(shutdownMockWebserver, syncGwServerType);
+        mockMultiplePull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB);
+
+    }
+
+
+    /**
+     *
+     * Simulate the following:
+     *
+     * - Add a few docs and do a pull replication
+     * - One doc on sync gateway is now updated
+     * - Do a second pull replication
+     * - Assert we get the updated doc and save it locally
+     *
+     */
+    public Map<String, Object> mockMultiplePull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType) throws Exception {
+
+        String doc1Id = "doc1";
+
+        // create mockwebserver and custom dispatcher
+        Map<String, Object> serverAndDispatcher = mockSinglePull(false, serverType);
+
+        MockWebServer server = (MockWebServer) serverAndDispatcher.get("server");
+        MockDispatcher dispatcher = (MockDispatcher) serverAndDispatcher.get("dispatcher");
+
+        String doc1Rev = "2-2e38";
+        int doc1Seq = 3;
+        String checkpointRev = "0-1";
+        String checkpointLastSequence = "2";
+
+        // checkpoint GET response w/ seq = 2
+        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
+        mockCheckpointGet.setOk("true");
+        mockCheckpointGet.setRev(checkpointRev);
+        mockCheckpointGet.setLastSequence(checkpointLastSequence);
+        dispatcher.enqueueResponse("/db/_local.*", mockCheckpointGet);
+
+        // _changes response
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        MockChangedDoc mockChangedDoc1 = new MockChangedDoc()
+                .setSeq(doc1Seq)
+                .setDocId(doc1Id)
+                .setChangedRevIds(Arrays.asList(doc1Rev));
+        mockChangesFeed.add(mockChangedDoc1);
+        MockResponse fakeChangesResponse = mockChangesFeed.generateMockResponse();
+        dispatcher.enqueueResponse("/db/_changes.*", fakeChangesResponse);
+
+        // doc1 response
+        Map<String, Object> doc1JsonMap = MockHelper.generateRandomJsonMap();
+        MockDocument mockDocument = new MockDocument()
+                .setDocId(doc1Id)
+                .setRev(doc1Rev)
+                .setJsonMap(doc1JsonMap);
+        dispatcher.enqueueResponse("/db/doc1.*", mockDocument.generateMockResponse());
+
+        // checkpoint PUT response
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        dispatcher.enqueueResponse("/db/_local.*", mockCheckpointPut);
+
+        // run pull replication
+        doPullReplication(server.getUrl("/db"));
+
+        // assert that we now have both docs in local db
+        assertNotNull(database);
+        Document doc1 = database.getDocument(doc1Id);
+        assertNotNull(doc1);
+        assertNotNull(doc1.getCurrentRevisionId());
+        assertTrue(doc1.getCurrentRevisionId().startsWith("2-"));
+        assertEquals(doc1JsonMap, doc1.getUserProperties());
+
+        // make assertions about outgoing requests from replicator -> mock
+        RecordedRequest getCheckpointRequest = server.takeRequest();
+        assertTrue(getCheckpointRequest.getMethod().equals("GET"));
+        assertTrue(getCheckpointRequest.getPath().matches("/db/_local.*"));
+        RecordedRequest getChangesFeedRequest = server.takeRequest();
+        if (serverType == MockDispatcher.ServerType.SYNC_GW) {
+            assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
+
+        } else {
+            assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
+        }
+        assertTrue(getChangesFeedRequest.getPath().matches("/db/_changes.*")); // TODO: verify since param -- waiting on fix for https://github.com/couchbase/couchbase-lite-java-core/issues/231
+        Log.d(TAG, "changes feed request: %s", getChangesFeedRequest.getPath());
+        RecordedRequest doc1Request = server.takeRequest();
+        assertTrue(doc1Request.getMethod().equals("GET"));
+        assertTrue(doc1Request.getPath().matches("/db/doc1\\?rev=2-2e38.*"));
+        RecordedRequest putCheckpointRequest = server.takeRequest();
+        assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
+        assertTrue(putCheckpointRequest.getPath().matches("/db/_local.*"));
+        String utf8Body = putCheckpointRequest.getUtf8Body();
+        Map <String, Object> checkpointJson = Manager.getObjectMapper().readValue(utf8Body, Map.class);
+        assertEquals("3", checkpointJson.get("lastSequence"));
+        assertEquals("0-1", checkpointJson.get("_rev"));
+
+        if (shutdownMockWebserver) {
+            server.shutdown();
+        }
+
+        Map<String, Object> returnVal = new HashMap<String, Object>();
+        returnVal.put("server", server);
+        returnVal.put("dispatcher", dispatcher);
+
+        return returnVal;
 
     }
 

@@ -16,12 +16,33 @@ public class MockDispatcher extends Dispatcher {
     // the value is a Queue of MockResponse objects
     private Map<String, BlockingQueue<SmartMockResponse>> queueMap;
 
-    // add these extra headers
-    // private Map<String, String> extraHeaders;
+    // add these headers to every request
+    private Map<String, String> headers;
+
+    public enum ServerType { SYNC_GW, COUCHDB }
 
     public MockDispatcher() {
         super();
         queueMap = new HashMap<String, BlockingQueue<SmartMockResponse>>();
+        headers = new HashMap<String, String>();
+    }
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
+    }
+
+    public void setServerType(ServerType serverType) {
+        switch (serverType) {
+            case SYNC_GW:
+                headers.put("Server", "Couchbase Sync Gateway/1.0.0");
+                break;
+            default:
+                headers.remove("Server");
+        }
     }
 
     @Override
@@ -36,7 +57,9 @@ public class MockDispatcher extends Dispatcher {
                 }
                 if (!responseQueue.isEmpty()) {
                     SmartMockResponse smartMockResponse = responseQueue.take();
-                    return smartMockResponse.generateMockResponse(request);
+                    MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
+                    addHeaders(mockResponse);
+                    return mockResponse;
                 } else {
                     return new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE); // fail fast
                 }
@@ -65,6 +88,15 @@ public class MockDispatcher extends Dispatcher {
         }
         // add the response to the queue.  since it's not a smart mock response, wrap it
         responseQueue.add(MockHelper.wrap(response));
+    }
+
+    private void addHeaders(MockResponse mockResponse) {
+        if (!headers.isEmpty()) {
+            for (String headerKey : headers.keySet()) {
+                String headerVal = headers.get(headerKey);
+                mockResponse.setHeader(headerKey, headerVal);
+            }
+        }
     }
 
     private boolean regexMatches(String pathRegex, String actualPath) {
