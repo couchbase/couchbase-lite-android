@@ -9,12 +9,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * Custom dispatcher which allows to queue up MockResponse objects
+ * based on the request path.  Eg, there will be a separate response
+ * queue for requests to /db/_changes.
+ */
 public class MockDispatcher extends Dispatcher {
 
     // Map where the key is a path regex, (eg, "/_changes/*), and
     // the value is a Queue of MockResponse objects
     private Map<String, BlockingQueue<SmartMockResponse>> queueMap;
+
+    // Map where the key is a path regex, (eg, "/_changes/*), and
+    // the value is a Queue of RecordedRequest objects this dispatcher has dispatched.
+    private Map<String, BlockingQueue<RecordedRequest>> recordedRequestQueueMap;
 
     // add these headers to every request
     private Map<String, String> headers;
@@ -24,6 +34,7 @@ public class MockDispatcher extends Dispatcher {
     public MockDispatcher() {
         super();
         queueMap = new HashMap<String, BlockingQueue<SmartMockResponse>>();
+        recordedRequestQueueMap = new HashMap<String, BlockingQueue<RecordedRequest>>();
         headers = new HashMap<String, String>();
     }
 
@@ -50,6 +61,7 @@ public class MockDispatcher extends Dispatcher {
         System.out.println(String.format("Request: %s", request));
         for(String pathRegex: queueMap.keySet()){
             if (regexMatches(pathRegex, request.getPath())) {
+                recordRequest(pathRegex, request);
                 BlockingQueue<SmartMockResponse> responseQueue = queueMap.get(pathRegex);
                 if (responseQueue == null) {
                     String msg = String.format("No queue found for pathRegex: %s", pathRegex);
@@ -88,6 +100,43 @@ public class MockDispatcher extends Dispatcher {
         }
         // add the response to the queue.  since it's not a smart mock response, wrap it
         responseQueue.add(MockHelper.wrap(response));
+    }
+
+    public RecordedRequest takeRequest(String pathRegex) {
+        BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
+        if (queue == null) {
+            return null;
+        }
+        if (queue.isEmpty()) {
+            return null;
+        }
+        try {
+            return queue.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean verifyAllRecordedRequestsTaken() {
+        for (String pathRegex : recordedRequestQueueMap.keySet()) {
+            BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
+            if (queue == null) {
+                continue;
+            }
+            if (!queue.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void recordRequest(String pathRegex, RecordedRequest request) {
+        BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
+        if (queue == null) {
+            queue = new LinkedBlockingQueue<RecordedRequest>();
+            recordedRequestQueueMap.put(pathRegex, queue);
+        }
+        queue.add(request);
     }
 
     private void addHeaders(MockResponse mockResponse) {

@@ -1,15 +1,26 @@
 package com.couchbase.lite.replicator;
 
+import com.couchbase.lite.Manager;
 import com.couchbase.lite.Misc;
 import com.squareup.okhttp.mockwebserver.Dispatcher;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Misc helper methods for MockWebserver-based Mock objects
+ */
 public class MockHelper {
+
+    public static final String PATH_REGEX_CHECKPOINT = "/db/_local.*";
+    public static final String PATH_REGEX_CHANGES = "/db/_changes.*";
+    public static final String PATH_REGEX_REVS_DIFF = "/db/_revs_diff.*";
+    public static final String PATH_REGEX_BULK_DOCS = "/db/_bulk_docs.*";
+
 
     public static MockWebServer getMockWebServer() {
 
@@ -56,6 +67,11 @@ public class MockHelper {
     public static SmartMockResponse wrap(MockResponse mockResponse) {
         return new WrappedSmartMockResponse(mockResponse);
     }
+
+    public static Map<String, Object> getJsonMapFromRequest(byte[] requestBody) throws IOException {
+        return Manager.getObjectMapper().readValue(requestBody, Map.class);
+    }
+
 
 
 

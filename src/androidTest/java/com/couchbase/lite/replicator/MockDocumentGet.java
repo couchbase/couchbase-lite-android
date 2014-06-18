@@ -3,12 +3,8 @@ package com.couchbase.lite.replicator;
 import com.couchbase.lite.BlobKey;
 import com.couchbase.lite.BlobStore;
 import com.couchbase.lite.Manager;
-import com.couchbase.lite.Misc;
 import com.couchbase.lite.support.Base64;
-import com.couchbase.lite.util.Log;
-import com.couchbase.lite.util.TextUtils;
 import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.mime.MultipartEntity;
@@ -19,18 +15,16 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 
 /*
 
-    Generate mock document, eg
+    Generate mock document GET response, eg
 
     {
        "_id":"doc1-1402588904847",
@@ -49,7 +43,7 @@ import java.util.Objects;
     than one rev.
 
  */
-public class MockDocument {
+public class MockDocumentGet {
 
     private String docId;
     private String rev;
@@ -58,7 +52,7 @@ public class MockDocument {
     // a corresponding file must be in the /assets/ directory
     private List<String> attachmentFileNames;
 
-    public MockDocument() {
+    public MockDocumentGet() {
         attachmentFileNames = new ArrayList<String>();
     }
 
@@ -66,7 +60,7 @@ public class MockDocument {
         return docId;
     }
 
-    public MockDocument setDocId(String docId) {
+    public MockDocumentGet setDocId(String docId) {
         this.docId = docId;
         return this;
     }
@@ -75,7 +69,7 @@ public class MockDocument {
         return rev;
     }
 
-    public MockDocument setRev(String rev) {
+    public MockDocumentGet setRev(String rev) {
         this.rev = rev;
         return this;
     }
@@ -88,7 +82,7 @@ public class MockDocument {
         return jsonMap;
     }
 
-    public MockDocument setJsonMap(Map<String, Object> jsonMap) {
+    public MockDocumentGet setJsonMap(Map<String, Object> jsonMap) {
         this.jsonMap = jsonMap;
         return this;
     }
@@ -145,7 +139,7 @@ public class MockDocument {
             }
             attachmentMap.put("digest", calculateSha1Digest(attachmentName));
             attachmentMap.put("follows", true);
-            attachmentMap.put("length", MockDocument.getAssetByteArray(attachmentName).length);
+            attachmentMap.put("length", MockDocumentGet.getAssetByteArray(attachmentName).length);
             attachmentMap.put("revpos", 1);
 
             attachmentsMap.put(attachmentName, attachmentMap);
@@ -155,13 +149,11 @@ public class MockDocument {
     }
 
     private String calculateSha1Digest(String attachmentAssetName) {
-        byte[] attachmentBytes = MockDocument.getAssetByteArray(attachmentAssetName);
+        byte[] attachmentBytes = MockDocumentGet.getAssetByteArray(attachmentAssetName);
         BlobKey blobKey = BlobStore.keyForBlob(attachmentBytes);
         String base64Sha1Digest = Base64.encodeBytes(blobKey.getBytes());
         String sha1 = String.format("sha1-%s", base64Sha1Digest);
-        String otherSha1 = String.format("sha1-%s", Misc.TDHexSHA1Digest(attachmentBytes));
         return sha1;
-        // return String.format("sha1-%s", Misc.TDHexSHA1Digest(attachmentBytes));
     }
 
     private String generateDocumentBody() {
@@ -172,8 +164,6 @@ public class MockDocument {
             throw new RuntimeException(e);
         }
     }
-
-
 
     public MockResponse generateMockResponse() {
 
@@ -231,7 +221,7 @@ public class MockDocument {
     }
 
     private static InputStream getAsset(String name) {
-        MockDocument o = new MockDocument();
+        MockDocumentGet o = new MockDocumentGet();
         return o.getClass().getResourceAsStream("/assets/" + name);
     }
 
