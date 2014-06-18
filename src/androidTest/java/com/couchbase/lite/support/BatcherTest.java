@@ -134,6 +134,11 @@ public class BatcherTest extends LiteTestCase {
 
     }
 
+    /**
+     * Add 100 items in a batcher and make sure that the processor
+     * is correctly called back with the first batch.
+     *
+     */
     public void testBatcherSingleBatch() throws Exception {
 
         final CountDownLatch doneSignal = new CountDownLatch(10);
@@ -149,11 +154,7 @@ public class BatcherTest extends LiteTestCase {
             public void process(List<String> itemsToProcess) {
                 Log.v(Database.TAG, "process called with: " + itemsToProcess);
 
-                try {
-                    Thread.sleep(100);  // add this to make it a bit more realistic
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                assertEquals(10, itemsToProcess.size());
 
                 assertNumbersConsecutive(itemsToProcess);
 
@@ -173,6 +174,11 @@ public class BatcherTest extends LiteTestCase {
 
     }
 
+    /**
+     * With a batcher that has an inbox of size 10, add 100 items in batches
+     * of 5.  Make sure that the processor is called back with all 100 items.
+     * Also make sure that they appear in the correct order within a batch.
+     */
     public void testBatcherBatchSize5() throws Exception {
 
         final CountDownLatch doneSignal = new CountDownLatch(10);
@@ -187,11 +193,8 @@ public class BatcherTest extends LiteTestCase {
             @Override
             public void process(List<String> itemsToProcess) {
                 Log.v(Database.TAG, "process called with: " + itemsToProcess);
-                try {
-                    Thread.sleep(processorDelay * 2); // add this to make it a bit more realistic
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
+                assertEquals(10, itemsToProcess.size());
 
                 assertNumbersConsecutive(itemsToProcess);
 
@@ -214,49 +217,6 @@ public class BatcherTest extends LiteTestCase {
         assertTrue(didNotTimeOut);
 
     }
-
-    public void testBatcherBatchSize1() throws Exception {
-
-        final CountDownLatch doneSignal = new CountDownLatch(1);
-
-        ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
-
-        int inboxCapacity = 100;
-        final int processorDelay = 1000;
-
-        Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
-
-            @Override
-            public void process(List<String> itemsToProcess) {
-                Log.v(Database.TAG, "process called with: " + itemsToProcess);
-                try {
-                    Thread.sleep(processorDelay * 2); // add this to make it a bit more realistic
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                assertNumbersConsecutive(itemsToProcess);
-
-                doneSignal.countDown();
-            }
-
-        });
-
-        ArrayList<String> objectsToQueue = new ArrayList<String>();
-        for (int i=0; i<inboxCapacity; i++) {
-            objectsToQueue.add(Integer.toString(i));
-            if (objectsToQueue.size() == 5) {
-                batcher.queueObjects(objectsToQueue);
-                objectsToQueue = new ArrayList<String>();
-            }
-
-        }
-
-        boolean didNotTimeOut = doneSignal.await(35, TimeUnit.SECONDS);
-        assertTrue(didNotTimeOut);
-
-    }
-
 
 
     private static void assertNumbersConsecutive(List<String> itemsToProcess) {
