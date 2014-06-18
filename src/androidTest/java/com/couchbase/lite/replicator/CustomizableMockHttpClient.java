@@ -30,6 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * This is the _old_ mocking framework.  Use mockwebserver instead.
+ *
+ * (see MockDocumentGet and usages)
+ */
 public class CustomizableMockHttpClient implements org.apache.http.client.HttpClient {
 
     // tests can register custom responders per url.  the key is the URL pattern to match,
