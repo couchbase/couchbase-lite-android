@@ -60,6 +60,7 @@ public class MockDocumentGet {
         this();
         this.docId = mockDocument.getDocId();
         this.rev = mockDocument.getDocRev();
+        this.jsonMap = mockDocument.getJsonMap();
     }
 
     public String getDocId() {
@@ -251,11 +252,29 @@ public class MockDocumentGet {
         private String docId;
         private String docRev;
         private int docSeq;
+        private String attachmentName;
+        private Map<String, Object> jsonMap;
 
         public MockDocument(String docId, String docRev, int docSeq) {
             this.docId = docId;
             this.docRev = docRev;
             this.docSeq = docSeq;
+        }
+
+        public Map<String, Object> getJsonMap() {
+            return jsonMap;
+        }
+
+        public void setJsonMap(Map<String, Object> jsonMap) {
+            this.jsonMap = jsonMap;
+        }
+
+        public String getAttachmentName() {
+            return attachmentName;
+        }
+
+        public void setAttachmentName(String attachmentName) {
+            this.attachmentName = attachmentName;
         }
 
         public String getDocPathRegex() {

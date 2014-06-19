@@ -607,6 +607,7 @@ public class ReplicationTest extends LiteTestCase {
     public void testValidationBlockCalled() throws Throwable {
 
         final MockDocumentGet.MockDocument mockDocument = new MockDocumentGet.MockDocument("doc1", "1-3e28", 1);
+        mockDocument.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
         MockWebServer server = MockHelper.getMockWebServer();
@@ -625,9 +626,7 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
         // doc response
-        Map<String, Object> docJsonMap = MockHelper.generateRandomJsonMap();
         MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
-        mockDocumentGet.setJsonMap(docJsonMap);
         dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
         // checkpoint PUT response
@@ -830,14 +829,13 @@ public class ReplicationTest extends LiteTestCase {
      */
     public Map<String, Object> mockSinglePull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType, boolean addAttachments) throws Exception {
 
-        String doc1Id = "doc1";
-        String doc1Rev = "1-5e38";
-        String doc2Id = "doc2";
-        String doc2Rev = "1-563b";
-        String doc1AttachName = "attachment.png";
-        String doc2AttachName = "attachment2.png";
-        int doc1Seq = 1;
-        int doc2Seq = 2;
+        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+        mockDoc1.setAttachmentName("attachment.png");
+
+        MockDocumentGet.MockDocument mockDoc2 = new MockDocumentGet.MockDocument("doc2", "1-563b", 2);
+        mockDoc2.setJsonMap(MockHelper.generateRandomJsonMap());
+        mockDoc2.setAttachmentName("attachment2.png");
 
         // create mockwebserver and custom dispatcher
         MockWebServer server = MockHelper.getMockWebServer();
@@ -852,41 +850,23 @@ public class ReplicationTest extends LiteTestCase {
 
         // _changes response
         MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        MockChangesFeed.MockChangedDoc mockChangedDoc1 = new MockChangesFeed.MockChangedDoc()
-                .setSeq(doc1Seq)
-                .setDocId(doc1Id)
-                .setChangedRevIds(Arrays.asList(doc1Rev));
-        mockChangesFeed.add(mockChangedDoc1);
-        MockChangesFeed.MockChangedDoc mockChangedDoc2 = new MockChangesFeed.MockChangedDoc()
-                .setSeq(doc2Seq)
-                .setDocId(doc2Id)
-                .setChangedRevIds(Arrays.asList(doc2Rev));
-        mockChangesFeed.add(mockChangedDoc2);
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
         // doc1 response
-        Map<String, Object> doc1JsonMap = MockHelper.generateRandomJsonMap();
-        MockDocumentGet mockDocumentGet = new MockDocumentGet()
-                .setDocId(doc1Id)
-                .setRev(doc1Rev)
-                .setJsonMap(doc1JsonMap);
+        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
         if (addAttachments) {
-            mockDocumentGet.addAttachmentFilename(doc1AttachName);
+            mockDocumentGet.addAttachmentFilename(mockDoc1.getAttachmentName());
         }
-        String doc1PathRegex = "/db/doc1.*";
-        dispatcher.enqueueResponse(doc1PathRegex, mockDocumentGet.generateMockResponse());
+        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
         // doc2 response
-        Map<String, Object> doc2JsonMap = MockHelper.generateRandomJsonMap();
-        mockDocumentGet = new MockDocumentGet()
-                .setDocId(doc2Id)
-                .setRev(doc2Rev)
-                .setJsonMap(doc2JsonMap);
+        mockDocumentGet = new MockDocumentGet(mockDoc2);
         if (addAttachments) {
-            mockDocumentGet.addAttachmentFilename(doc2AttachName);
+            mockDocumentGet.addAttachmentFilename(mockDoc2.getAttachmentName());
         }
-        String doc2PathRegex = "/db/doc2.*";
-        dispatcher.enqueueResponse(doc2PathRegex, mockDocumentGet.generateMockResponse());
+        dispatcher.enqueueResponse(mockDoc2.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
         // TODO: only expect one checkpoint PUT request after #231 is fixed
         // checkpoint PUT responses
@@ -904,24 +884,24 @@ public class ReplicationTest extends LiteTestCase {
 
         // assert that we now have both docs in local db
         assertNotNull(database);
-        Document doc1 = database.getDocument(doc1Id);
+        Document doc1 = database.getDocument(mockDoc1.getDocId());
         assertNotNull(doc1);
         assertNotNull(doc1.getCurrentRevisionId());
-        assertTrue(doc1.getCurrentRevisionId().startsWith("1-"));
+        assertTrue(doc1.getCurrentRevisionId().equals(mockDoc1.getDocRev()));
         assertNotNull(doc1.getProperties());
-        assertEquals(doc1JsonMap, doc1.getUserProperties());
-        Document doc2 = database.getDocument(doc2Id);
+        assertEquals(mockDoc1.getJsonMap(), doc1.getUserProperties());
+        Document doc2 = database.getDocument(mockDoc2.getDocId());
         assertNotNull(doc2);
         assertNotNull(doc2.getCurrentRevisionId());
         assertNotNull(doc2.getProperties());
-        assertTrue(doc2.getCurrentRevisionId().startsWith("1-"));
-        assertEquals(doc2JsonMap, doc2.getUserProperties());
+        assertTrue(doc2.getCurrentRevisionId().equals(mockDoc2.getDocRev()));
+        assertEquals(mockDoc2.getJsonMap(), doc2.getUserProperties());
 
 
         // assert that docs have attachments (if applicable)
         if (addAttachments) {
-            attachmentAsserts(doc1AttachName, doc1);
-            attachmentAsserts(doc2AttachName, doc2);
+            attachmentAsserts(mockDoc1.getAttachmentName(), doc1);
+            attachmentAsserts(mockDoc2.getAttachmentName(), doc2);
         }
 
         // make assertions about outgoing requests from replicator -> mock
@@ -936,12 +916,12 @@ public class ReplicationTest extends LiteTestCase {
             assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
         }
         assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
-        RecordedRequest doc1Request = dispatcher.takeRequest(doc1PathRegex);
+        RecordedRequest doc1Request = dispatcher.takeRequest(mockDoc1.getDocPathRegex());
         assertTrue(doc1Request.getMethod().equals("GET"));
-        assertTrue(doc1Request.getPath().matches(doc1PathRegex));
-        RecordedRequest doc2Request = dispatcher.takeRequest(doc2PathRegex);
+        assertTrue(doc1Request.getPath().matches(mockDoc1.getDocPathRegex()));
+        RecordedRequest doc2Request = dispatcher.takeRequest(mockDoc2.getDocPathRegex());
         assertTrue(doc2Request.getMethod().equals("GET"));
-        assertTrue(doc2Request.getPath().matches(doc2PathRegex));
+        assertTrue(doc2Request.getPath().matches(mockDoc2.getDocPathRegex()));
 
         // assertions regarding PUT checkpoint request.
         // these should be updated once the confusion in https://github.com/couchbase/couchbase-lite-java-core/issues/231#issuecomment-46199630
