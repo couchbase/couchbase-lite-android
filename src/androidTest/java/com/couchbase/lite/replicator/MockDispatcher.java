@@ -130,6 +130,11 @@ public class MockDispatcher extends Dispatcher {
         return true;
     }
 
+    public void reset() {
+        recordedRequestQueueMap.clear();
+        queueMap.clear();
+    }
+
     private void recordRequest(String pathRegex, RecordedRequest request) {
         BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
         if (queue == null) {

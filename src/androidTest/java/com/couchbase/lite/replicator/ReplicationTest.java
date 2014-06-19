@@ -936,7 +936,8 @@ public class ReplicationTest extends LiteTestCase {
         if (addAttachments) {
             mockDocumentGet.addAttachmentFilename(doc1AttachName);
         }
-        dispatcher.enqueueResponse("/db/doc1.*", mockDocumentGet.generateMockResponse());
+        String doc1PathRegex = "/db/doc1.*";
+        dispatcher.enqueueResponse(doc1PathRegex, mockDocumentGet.generateMockResponse());
 
         // doc2 response
         Map<String, Object> doc2JsonMap = MockHelper.generateRandomJsonMap();
@@ -947,7 +948,8 @@ public class ReplicationTest extends LiteTestCase {
         if (addAttachments) {
             mockDocumentGet.addAttachmentFilename(doc2AttachName);
         }
-        dispatcher.enqueueResponse("/db/doc2.*", mockDocumentGet.generateMockResponse());
+        String doc2PathRegex = "/db/doc2.*";
+        dispatcher.enqueueResponse(doc2PathRegex, mockDocumentGet.generateMockResponse());
 
         // checkpoint PUT responses
         // it currently sends two checkpoint PUT responses back to back,
@@ -985,10 +987,10 @@ public class ReplicationTest extends LiteTestCase {
         }
 
         // make assertions about outgoing requests from replicator -> mock
-        RecordedRequest getCheckpointRequest = server.takeRequest();
+        RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
         assertTrue(getCheckpointRequest.getMethod().equals("GET"));
         assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
-        RecordedRequest getChangesFeedRequest = server.takeRequest();
+        RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
         if (serverType == MockDispatcher.ServerType.SYNC_GW) {
             assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
 
@@ -996,29 +998,33 @@ public class ReplicationTest extends LiteTestCase {
             assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
         }
         assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
-        RecordedRequest doc1Request = server.takeRequest();
+        RecordedRequest doc1Request = dispatcher.takeRequest(doc1PathRegex);
         assertTrue(doc1Request.getMethod().equals("GET"));
-        assertTrue(doc1Request.getPath().matches("/db/doc1.*"));
-        RecordedRequest doc2Request = server.takeRequest();
+        assertTrue(doc1Request.getPath().matches(doc1PathRegex));
+        RecordedRequest doc2Request = dispatcher.takeRequest(doc2PathRegex);
         assertTrue(doc2Request.getMethod().equals("GET"));
-        assertTrue(doc2Request.getPath().matches("/db/doc2.*"));
+        assertTrue(doc2Request.getPath().matches(doc2PathRegex));
+
+        // workaround attempt for putCheckpointRequest being null
+        // Thread.sleep(2000);
 
         // assertions regarding PUT checkpoint request.
         // these should be updated once the confusion in https://github.com/couchbase/couchbase-lite-java-core/issues/231#issuecomment-46199630
         // is resolved. also, there should be assertions added regarding the _rev field
         // passed in the PUT checkpoint body.
-        RecordedRequest putCheckpointRequest = server.takeRequest();
-        assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
-        assertTrue(putCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
-        putCheckpointRequest = server.takeRequest();
+        RecordedRequest putCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
+        assertNotNull(putCheckpointRequest);
         assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
         assertTrue(putCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
 
         // TODO: re-enable this assertion when 231 is fixed!!
+        // make assertion about outgoing PUT checkpoint request.
         // make assertion about our local sequence
         // assertion failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
         // String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
         // assertEquals(Integer.toString(doc2Seq), lastSequence);
+        // dispatcher.verifyAllRecordedRequestsTaken();
+
 
         // Shut down the server. Instances cannot be reused.
         if (shutdownMockWebserver) {
@@ -1201,6 +1207,12 @@ public class ReplicationTest extends LiteTestCase {
         MockWebServer server = (MockWebServer) serverAndDispatcher.get("server");
         MockDispatcher dispatcher = (MockDispatcher) serverAndDispatcher.get("dispatcher");
 
+        // this is needed because currently the upstream test does not assert that the
+        // dispatcher recorded requests queues are empty, so we need to clear all residue first.
+        // when the upstream test is changed to call dispatcher.verifyAllRecordedRequestsTaken(),
+        // this call should no longer be necessary.
+        dispatcher.reset();
+
         String doc1Rev = "2-2e38";
         int doc1Seq = 3;
         String checkpointRev = "0-1";
@@ -1229,7 +1241,8 @@ public class ReplicationTest extends LiteTestCase {
                 .setDocId(doc1Id)
                 .setRev(doc1Rev)
                 .setJsonMap(doc1JsonMap);
-        dispatcher.enqueueResponse("/db/doc1.*", mockDocumentGet.generateMockResponse());
+        String doc1PathRegex = "/db/doc1.*";
+        dispatcher.enqueueResponse(doc1PathRegex, mockDocumentGet.generateMockResponse());
 
         // checkpoint PUT response
         MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
@@ -1247,10 +1260,12 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(doc1JsonMap, doc1.getUserProperties());
 
         // make assertions about outgoing requests from replicator -> mock
-        RecordedRequest getCheckpointRequest = server.takeRequest();
+        RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
+        assertNotNull(getCheckpointRequest);
         assertTrue(getCheckpointRequest.getMethod().equals("GET"));
         assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
-        RecordedRequest getChangesFeedRequest = server.takeRequest();
+        RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+
         if (serverType == MockDispatcher.ServerType.SYNC_GW) {
             assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
 
@@ -1259,10 +1274,15 @@ public class ReplicationTest extends LiteTestCase {
         }
         assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES)); // TODO: verify since param -- waiting on fix for https://github.com/couchbase/couchbase-lite-java-core/issues/231
         Log.d(TAG, "changes feed request: %s", getChangesFeedRequest.getPath());
-        RecordedRequest doc1Request = server.takeRequest();
+        RecordedRequest doc1Request = dispatcher.takeRequest(doc1PathRegex);
         assertTrue(doc1Request.getMethod().equals("GET"));
         assertTrue(doc1Request.getPath().matches("/db/doc1\\?rev=2-2e38.*"));
-        RecordedRequest putCheckpointRequest = server.takeRequest();
+
+        // workaround for putCheckpointRequest being null ..
+        Thread.sleep(2000);
+
+        RecordedRequest putCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
+        assertNotNull(putCheckpointRequest);
         assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
         assertTrue(putCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
         String utf8Body = putCheckpointRequest.getUtf8Body();
@@ -1415,6 +1435,7 @@ public class ReplicationTest extends LiteTestCase {
         runReplication(repl);
         assertNull(repl.getLastError());
         Log.d(TAG, "Finished pull replication with: " + repl);
+
         return repl;
 
     }
