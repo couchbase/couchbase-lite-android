@@ -1362,24 +1362,15 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * This is essentially a regression test for a deadlock
+     * that was happening when the LiveQuery#onDatabaseChanged()
+     * was calling waitForUpdateThread(), but that thread was
+     * waiting on connection to be released by the thread calling
+     * waitForUpdateThread().  When the deadlock bug was present,
+     * this test would trigger the deadlock and never finish.
+     */
     public void testPullerWithLiveQuery() throws Throwable {
-
-        // This is essentially a regression test for a deadlock
-        // that was happening when the LiveQuery#onDatabaseChanged()
-        // was calling waitForUpdateThread(), but that thread was
-        // waiting on connection to be released by the thread calling
-        // waitForUpdateThread().  When the deadlock bug was present,
-        // this test would trigger the deadlock and never finish.
-
-        Log.d(Database.TAG, "testPullerWithLiveQuery");
-        String docIdTimestamp = Long.toString(System.currentTimeMillis());
-        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
-        final String doc2Id = String.format("doc2-%s", docIdTimestamp);
-
-        addDocWithId(doc1Id, "attachment2.png", false);
-        addDocWithId(doc2Id, "attachment2.png", false);
-
-        final int numDocsBeforePull = database.getDocumentCount();
 
         View view = database.getView("testPullerWithLiveQueryView");
         view.setMapReduce(new Mapper() {
@@ -1391,6 +1382,8 @@ public class ReplicationTest extends LiteTestCase {
             }
         }, null, "1");
 
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+
         LiveQuery allDocsLiveQuery = view.createQuery().toLiveQuery();
         allDocsLiveQuery.addChangeListener(new LiveQuery.ChangeListener() {
             @Override
@@ -1399,25 +1392,27 @@ public class ReplicationTest extends LiteTestCase {
                 if (event.getError() != null) {
                     throw new RuntimeException(event.getError());
                 }
-                // the first time this is called back, the rows will be empty.
-                // but on subsequent times we should expect to get a non empty
-                // row set.
-                if (numTimesCalled++ > 0) {
-
-                    assertTrue(event.getRows().getCount() > numDocsBeforePull);
+                if (event.getRows().getCount() == 2) {
+                    countDownLatch.countDown();
                 }
-                Log.d(Database.TAG, "rows " + event.getRows());
-
             }
         });
 
+        // kick off live query
         allDocsLiveQuery.start();
 
-        doPullReplication();
+        // do pull replication against mock
+        mockSinglePull(true, MockDispatcher.ServerType.SYNC_GW, true);
 
+        // make sure we were called back with both docs
+        boolean success = countDownLatch.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // clean up
         allDocsLiveQuery.stop();
 
     }
+    
 
     private Replication doPullReplication() {
         URL remote = getReplicationURL();
