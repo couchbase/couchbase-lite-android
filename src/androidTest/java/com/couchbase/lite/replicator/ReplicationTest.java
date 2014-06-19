@@ -19,6 +19,8 @@ import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.ValidationContext;
 import com.couchbase.lite.Validator;
 import com.couchbase.lite.View;
+import com.couchbase.lite.auth.Authenticator;
+import com.couchbase.lite.auth.AuthenticatorFactory;
 import com.couchbase.lite.auth.FacebookAuthorizer;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
@@ -829,12 +831,12 @@ public class ReplicationTest extends LiteTestCase {
 
         // _changes response
         MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        MockChangedDoc mockChangedDoc1 = new MockChangedDoc()
+        MockChangesFeed.MockChangedDoc mockChangedDoc1 = new MockChangesFeed.MockChangedDoc()
                 .setSeq(doc1Seq)
                 .setDocId(doc1Id)
                 .setChangedRevIds(Arrays.asList(doc1Rev));
         mockChangesFeed.add(mockChangedDoc1);
-        MockChangedDoc mockChangedDoc2 = new MockChangedDoc()
+        MockChangesFeed.MockChangedDoc mockChangedDoc2 = new MockChangesFeed.MockChangedDoc()
                 .setSeq(doc2Seq)
                 .setDocId(doc2Id)
                 .setChangedRevIds(Arrays.asList(doc2Rev));
@@ -1145,7 +1147,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // _changes response
         MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        MockChangedDoc mockChangedDoc1 = new MockChangedDoc()
+        MockChangesFeed.MockChangedDoc mockChangedDoc1 = new MockChangesFeed.MockChangedDoc()
                 .setSeq(doc1Seq)
                 .setDocId(doc1Id)
                 .setChangedRevIds(Arrays.asList(doc1Rev));
@@ -1344,6 +1346,10 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     private Replication doPullReplication(URL url) {
+        return doPullReplication(url, false);
+    }
+
+    private Replication doPullReplication(URL url, boolean allowError) {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
@@ -1352,7 +1358,9 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "Doing pull replication with: " + repl);
         runReplication(repl);
-        assertNull(repl.getLastError());
+        if (!allowError) {
+            assertNull(repl.getLastError());
+        }
         Log.d(TAG, "Finished pull replication with: " + repl);
 
         return repl;
@@ -1536,30 +1544,49 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
-     * This test simulates a condition in which the replication will fail due to an authentication
-     * error by using a FacebookAuthorizor with an invalid token.
-     *
-     * When the sync gateway tries to contact the facebook API, it will see that the token is invalid.
-     *
-     * The replicator should then stop and the getLastError() should contain a HttpResponseException
-     * with a 401 error code.
+     * Verify that when a replication runs into an auth error, it stops
+     * and the lastError() method returns that error.
      */
-    public void integrationTestReplicatorErrorStatus() throws Exception {
+    public void testReplicatorErrorStatus() throws Exception {
 
-        if (isTestingAgainstSyncGateway()) {
+        // create mockwebserver and custom dispatcher
+        MockWebServer server = MockHelper.getMockWebServer();
+        MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        server.setDispatcher(dispatcher);
 
-            // register bogus fb token
-            FacebookAuthorizer.registerAccessToken("fake_access_token", "jchris@couchbase.com", getReplicationURL().toExternalForm());
+        // fake _session response
+        MockSessionGet mockSessionGet = new MockSessionGet();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
 
-            // run replicator and make sure it has an error
-            Map<String,Object> properties = getPullReplicationParsedJson();
-            Replication replicator = manager.getReplicator(properties);
-            runReplication(replicator);
-            assertNotNull(replicator.getLastError());
-            assertTrue(replicator.getLastError() instanceof HttpResponseException);
-            assertEquals(401 /* unauthorized */, ((HttpResponseException)replicator.getLastError()).getStatusCode());
+        // fake _facebook response
+        MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponse());
 
-        }
+        // start mock server
+        server.play();
+
+        // register bogus fb token
+        Authenticator facebookAuthenticator = AuthenticatorFactory.createFacebookAuthenticator("fake_access_token");
+
+        // run pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setAuthenticator(facebookAuthenticator);
+        pullReplication.setContinuous(false);
+        runReplication(pullReplication, true);
+
+        // run replicator and make sure it has an error
+        assertNotNull(pullReplication.getLastError());
+        assertTrue(pullReplication.getLastError() instanceof HttpResponseException);
+        assertEquals(401 /* unauthorized */, ((HttpResponseException)pullReplication.getLastError()).getStatusCode());
+
+        // assert that the replicator sent the requests we expected it to send
+        RecordedRequest sessionReqeust = dispatcher.takeRequest(MockHelper.PATH_REGEX_SESSION);
+        assertNotNull(sessionReqeust);
+        RecordedRequest facebookRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
+        assertNotNull(facebookRequest);
+        dispatcher.verifyAllRecordedRequestsTaken();
+
 
     }
 

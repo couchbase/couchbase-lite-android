@@ -447,9 +447,12 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
     }
 
     public void runReplication(Replication replication) {
+        runReplication(replication, true);
+    }
+
+    public void runReplication(Replication replication, boolean allowError) {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-
 
         ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
         replication.addChangeListener(replicationFinishedObserver);
@@ -471,8 +474,13 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
             e.printStackTrace();
         }
 
-        replication.removeChangeListener(replicationFinishedObserver);
+        if (!allowError) {
+            if (replication.getLastError() != null) {
+                throw new RuntimeException("Replication had unexpected error: %s", replication.getLastError());
+            }
+        }
 
+        replication.removeChangeListener(replicationFinishedObserver);
 
 
     }
