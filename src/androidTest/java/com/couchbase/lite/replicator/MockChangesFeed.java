@@ -5,6 +5,7 @@ import com.squareup.okhttp.mockwebserver.MockResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +97,16 @@ public class MockChangesFeed {
         private int seq;
         private String docId;
         private List<String> changedRevIds;
+
+        public MockChangedDoc() {
+        }
+
+        public MockChangedDoc(MockDocumentGet.MockDocument mockDocument) {
+            this();
+            this.seq = mockDocument.getDocSeq();
+            this.docId = mockDocument.getDocId();
+            this.changedRevIds = Arrays.asList(mockDocument.getDocRev());
+        }
 
         public MockChangedDoc setSeq(int seq) {
             this.seq = seq;

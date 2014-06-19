@@ -594,49 +594,70 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void integrationTestValidationBlockCalled() throws Throwable {
-        String docIdTimestamp = Long.toString(System.currentTimeMillis());
+    /**
+     * Verify that validation blocks are called correctly for docs
+     * pulled from the sync gateway.
+     *
+     * - Add doc to (mock) sync gateway
+     * - Add validation function that will reject that doc
+     * - Do a pull replication
+     * - Assert that the doc does _not_ make it into the db
+     *
+     */
+    public void testValidationBlockCalled() throws Throwable {
 
+        final MockDocumentGet.MockDocument mockDocument = new MockDocumentGet.MockDocument("doc1", "1-3e28", 1);
 
-        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
+        // create mockwebserver and custom dispatcher
+        MockWebServer server = MockHelper.getMockWebServer();
+        MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        server.setDispatcher(dispatcher);
 
-        Log.d(TAG, "Adding " + doc1Id + " directly to sync gateway");
-        addDocWithId(doc1Id, null, false);
-        doPullReplication();
+        // checkpoint GET response w/ 404
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        assertNotNull(database);
-        Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
-        Document doc1 = database.getDocument(doc1Id);
-        Log.d(TAG, "doc1" + doc1);
-        assertNotNull(doc1);
-        assertNotNull(doc1.getCurrentRevisionId());
-        assertTrue(doc1.getCurrentRevisionId().startsWith("1-"));
-        assertNotNull(doc1.getProperties());
-        assertEquals(1, doc1.getProperties().get("foo"));
+        // _changes response
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument));
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
+        // doc response
+        Map<String, Object> docJsonMap = MockHelper.generateRandomJsonMap();
+        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
+        mockDocumentGet.setJsonMap(docJsonMap);
+        dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // Add Validation block to reject documents with foo:1
-        database.setValidation("foo_not_1", new Validator() {
+        // checkpoint PUT response
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, new MockCheckpointPut());
+
+        // start mock server
+        server.play();
+
+        // Add Validation block
+        database.setValidation("testValidationBlockCalled", new Validator() {
             @Override
             public void validate(Revision newRevision, ValidationContext context) {
-                if (new Integer(1).equals(newRevision.getProperty("foo"))) {
-                    context.reject("Reject because foo is 1");
+                if (newRevision.getDocument().getId().equals(mockDocument.getDocId())) {
+                    context.reject("Reject");
                 }
             }
         });
 
-        final String doc2Id = String.format("doc2-%s", docIdTimestamp);
-        Log.d(TAG, "Adding " + doc2Id + " directly to sync gateway");
-        addDocWithId(doc2Id, null, false);
-        doPullReplication();
+        // run pull replication
+        Replication pullReplication = doPullReplication(server.getUrl("/db"));
 
-        Log.d(TAG, "Fetching doc2 via id: " + doc2Id);
-        Document doc2 = database.getDocument(doc2Id);
-        Log.d(TAG, "doc2" + doc2);
-        assertNotNull(doc2);
-        assertNull(doc2.getCurrentRevision());  // doc2 should have been rejected by validation, and therefore not present
+        // assert doc is not in local db
+        Document doc = database.getDocument(mockDocument.getDocId());
+        assertNull(doc.getCurrentRevision());  // doc should have been rejected by validation, and therefore not present
+
+        server.shutdown();
+
 
     }
+
 
     /**
      *
@@ -867,8 +888,9 @@ public class ReplicationTest extends LiteTestCase {
         String doc2PathRegex = "/db/doc2.*";
         dispatcher.enqueueResponse(doc2PathRegex, mockDocumentGet.generateMockResponse());
 
+        // TODO: only expect one checkpoint PUT request after #231 is fixed
         // checkpoint PUT responses
-        // it currently sends two checkpoint PUT responses back to back,
+        // it currently sends two checkpoint PUT requests back to back,
         // which may be related to https://github.com/couchbase/couchbase-lite-java-core/issues/231
         MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);

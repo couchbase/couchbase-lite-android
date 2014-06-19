@@ -56,6 +56,12 @@ public class MockDocumentGet {
         attachmentFileNames = new ArrayList<String>();
     }
 
+    public MockDocumentGet(MockDocument mockDocument) {
+        this();
+        this.docId = mockDocument.getDocId();
+        this.rev = mockDocument.getDocRev();
+    }
+
     public String getDocId() {
         return docId;
     }
@@ -240,7 +246,46 @@ public class MockDocumentGet {
     }
 
 
+    public static class MockDocument {
 
+        private String docId;
+        private String docRev;
+        private int docSeq;
+
+        public MockDocument(String docId, String docRev, int docSeq) {
+            this.docId = docId;
+            this.docRev = docRev;
+            this.docSeq = docSeq;
+        }
+
+        public String getDocPathRegex() {
+            return String.format("/db/%s.*", getDocId());
+        }
+
+        public String getDocId() {
+            return docId;
+        }
+
+        public void setDocId(String docId) {
+            this.docId = docId;
+        }
+
+        public String getDocRev() {
+            return docRev;
+        }
+
+        public void setDocRev(String docRev) {
+            this.docRev = docRev;
+        }
+
+        public int getDocSeq() {
+            return docSeq;
+        }
+
+        public void setDocSeq(int docSeq) {
+            this.docSeq = docSeq;
+        }
+    }
 
 
 }
