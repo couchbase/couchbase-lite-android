@@ -86,4 +86,17 @@ public class MockBulkDocs implements SmartMockResponse {
 
     }
 
+    public static Map<String, Object> findDocById(Map<String, Object> bulkDocsJson, String doc4Id) {
+        List<Map> docs = (List) bulkDocsJson.get("docs");
+        for (Map doc : docs) {
+            String id = (String) doc.get("_id");
+            if (id.equals(doc4Id)) {
+                return doc;
+            }
+        }
+
+        throw new RuntimeException(String.format("Can't find doc w/ id: %s in %s", doc4Id, bulkDocsJson));
+    }
+
+
 }
