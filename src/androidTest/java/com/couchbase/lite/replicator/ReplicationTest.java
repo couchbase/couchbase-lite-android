@@ -268,7 +268,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPusher() throws Throwable {
+    public void integrationTestPusher() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         String doc1Id;
@@ -562,92 +562,6 @@ public class ReplicationTest extends LiteTestCase {
 
         assertEquals(numDocsToSend, numDocsSent);
 
-
-
-    }
-
-    public void testPusherDeletedDoc() throws Throwable {
-
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-
-        URL remote = getReplicationURL();
-        String docIdTimestamp = Long.toString(System.currentTimeMillis());
-
-        // Create some documents:
-        Map<String, Object> documentProperties = new HashMap<String, Object>();
-        final String doc1Id = String.format("doc1-%s", docIdTimestamp);
-        documentProperties.put("_id", doc1Id);
-        documentProperties.put("foo", 1);
-        documentProperties.put("bar", false);
-
-        Body body = new Body(documentProperties);
-        RevisionInternal rev1 = new RevisionInternal(body, database);
-
-        Status status = new Status();
-        rev1 = database.putRevision(rev1, null, false, status);
-        assertEquals(Status.CREATED, status.getCode());
-
-        documentProperties.put("_rev", rev1.getRevId());
-        documentProperties.put("UPDATED", true);
-        documentProperties.put("_deleted", true);
-
-        @SuppressWarnings("unused")
-        RevisionInternal rev2 = database.putRevision(new RevisionInternal(documentProperties, database), rev1.getRevId(), false, status);
-        assertTrue(status.getCode() >= 200 && status.getCode() < 300);
-
-        final Replication repl = database.createPushReplication(remote);
-        if (!isSyncGateway(remote)) {
-            repl.setCreateTarget(true);
-        }
-
-        runReplication(repl);
-        assertNull(repl.getLastError());
-
-
-        // make sure doc1 is deleted
-        URL replicationUrlTrailing = new URL(String.format("%s/", remote.toExternalForm()));
-        final URL pathToDoc = new URL(replicationUrlTrailing, doc1Id);
-        Log.d(TAG, "Send http request to " + pathToDoc);
-
-        final CountDownLatch httpRequestDoneSignal = new CountDownLatch(1);
-        BackgroundTask getDocTask = new BackgroundTask() {
-
-            @Override
-            public void run() {
-
-                org.apache.http.client.HttpClient httpclient = new DefaultHttpClient();
-
-                HttpResponse response;
-                String responseString = null;
-                try {
-                    response = httpclient.execute(new HttpGet(pathToDoc.toExternalForm()));
-                    StatusLine statusLine = response.getStatusLine();
-                    Log.d(TAG, "statusLine " + statusLine);
-
-                    assertEquals(HttpStatus.SC_NOT_FOUND, statusLine.getStatusCode());
-                } catch (ClientProtocolException e) {
-                    assertNull("Got ClientProtocolException: " + e.getLocalizedMessage(), e);
-                } catch (IOException e) {
-                    assertNull("Got IOException: " + e.getLocalizedMessage(), e);
-                } finally {
-                    httpRequestDoneSignal.countDown();
-                }
-            }
-        };
-        getDocTask.execute();
-
-
-        Log.d(TAG, "Waiting for http request to finish");
-        try {
-            httpRequestDoneSignal.await(300, TimeUnit.SECONDS);
-            Log.d(TAG, "http request finished");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
-        Log.d(TAG, "testPusherDeletedDoc() finished");
-
     }
 
     public void failingTestPullerGzipped() throws Throwable {
@@ -678,7 +592,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testValidationBlockCalled() throws Throwable {
+    public void integrationTestValidationBlockCalled() throws Throwable {
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
 
@@ -1005,9 +919,6 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(doc2Request.getMethod().equals("GET"));
         assertTrue(doc2Request.getPath().matches(doc2PathRegex));
 
-        // workaround attempt for putCheckpointRequest being null
-        // Thread.sleep(2000);
-
         // assertions regarding PUT checkpoint request.
         // these should be updated once the confusion in https://github.com/couchbase/couchbase-lite-java-core/issues/231#issuecomment-46199630
         // is resolved. also, there should be assertions added regarding the _rev field
@@ -1063,6 +974,7 @@ public class ReplicationTest extends LiteTestCase {
         String doc1Id = "doc1";
         String doc2Id = "doc2";
         String doc3Id = "doc3";
+        String doc4Id = "doc4";
         String doc2PathRegex = String.format("/db/%s.*", doc2Id);
         String doc3PathRegex = String.format("/db/%s.*", doc3Id);
         String doc2AttachName = "attachment.png";
@@ -1080,6 +992,8 @@ public class ReplicationTest extends LiteTestCase {
         Document doc1 = createDocumentForPushReplication(doc1Id, null, null);
         Document doc2 = createDocumentForPushReplication(doc2Id, doc2AttachName, contentType);
         Document doc3 = createDocumentForPushReplication(doc3Id, doc3AttachName, contentType);
+        Document doc4 = createDocumentForPushReplication(doc4Id, null, null);
+        doc4.delete();
 
         // checkpoint GET response w/ 404
         MockResponse fakeCheckpointResponse = new MockResponse();
@@ -1094,7 +1008,7 @@ public class ReplicationTest extends LiteTestCase {
         MockBulkDocs mockBulkDocs = new MockBulkDocs();
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        // doc PUT responses
+        // doc PUT responses for docs with attachments
         MockDocumentPut mockDoc2Put = new MockDocumentPut()
                 .setDocId(doc2Id)
                 .setRev(doc2.getCurrentRevisionId());
@@ -1121,6 +1035,10 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(revsDiffRequest.getUtf8Body().contains(doc1Id));
         RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
         assertTrue(bulkDocsRequest.getUtf8Body().contains(doc1Id));
+        Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(bulkDocsRequest.getUtf8Body(), Map.class);
+        Map <String, Object> doc4Map = MockBulkDocs.findDocById(bulkDocsJson, doc4Id);
+        assertTrue(((Boolean)doc4Map.get("_deleted")).booleanValue() == true);
+
         assertFalse(bulkDocsRequest.getUtf8Body().contains(doc2Id));
         RecordedRequest doc2putRequest = dispatcher.takeRequest(doc2PathRegex);
         assertTrue(doc2putRequest.getUtf8Body().contains(doc2Id));
@@ -1308,7 +1226,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPuller() throws Throwable {
+    public void integrationTestPuller() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
@@ -1418,7 +1336,7 @@ public class ReplicationTest extends LiteTestCase {
         allDocsLiveQuery.stop();
 
     }
-    
+
 
     private Replication doPullReplication() {
         URL remote = getReplicationURL();
@@ -1626,7 +1544,7 @@ public class ReplicationTest extends LiteTestCase {
      * The replicator should then stop and the getLastError() should contain a HttpResponseException
      * with a 401 error code.
      */
-    public void testReplicatorErrorStatus() throws Exception {
+    public void integrationTestReplicatorErrorStatus() throws Exception {
 
         if (isTestingAgainstSyncGateway()) {
 
@@ -1664,7 +1582,7 @@ public class ReplicationTest extends LiteTestCase {
      * 5) Now the changetracker is running even though we've told it to go offline.
      *
      */
-    public void testGoOffline() throws Exception {
+    public void integrationTestGoOffline() throws Exception {
 
         URL remote = getReplicationURL();
 
@@ -1899,7 +1817,8 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testRemoteConflictResolution() throws Exception {
+    public void integrationTestRemoteConflictResolution() throws Exception {
+
         // Create a document with two conflicting edits.
         Document doc = database.createDocument();
         SavedRevision rev1 = doc.createRevision().save();
