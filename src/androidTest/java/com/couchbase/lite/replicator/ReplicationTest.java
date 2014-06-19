@@ -1050,7 +1050,7 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
         String utf8Body = putCheckpointRequest.getUtf8Body();
         Map <String, Object> checkpointJson = Manager.getObjectMapper().readValue(utf8Body, Map.class);
-        assertEquals("3", checkpointJson.get("lastSequence"));
+        assertEquals("5", checkpointJson.get("lastSequence"));
 
         dispatcher.verifyAllRecordedRequestsTaken();
 
