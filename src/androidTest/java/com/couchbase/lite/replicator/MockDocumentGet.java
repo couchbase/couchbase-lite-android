@@ -49,6 +49,10 @@ public class MockDocumentGet {
     private String rev;
     private Map<String, Object> jsonMap;
 
+    // you can optionally supply a revHistoryMap, otherwise
+    // a simple default rev history will be generated.
+    private Map<String, Object> revHistoryMap;
+
     // a corresponding file must be in the /assets/ directory
     private List<String> attachmentFileNames;
 
@@ -61,6 +65,16 @@ public class MockDocumentGet {
         this.docId = mockDocument.getDocId();
         this.rev = mockDocument.getDocRev();
         this.jsonMap = mockDocument.getJsonMap();
+        this.revHistoryMap = new HashMap<String, Object>();
+
+    }
+
+    public Map<String, Object> getRevHistoryMap() {
+        return revHistoryMap;
+    }
+
+    public void setRevHistoryMap(Map<String, Object> revHistoryMap) {
+        this.revHistoryMap = revHistoryMap;
     }
 
     public String getDocId() {
@@ -95,17 +109,21 @@ public class MockDocumentGet {
     }
 
     private Map<String, Object> generateRevHistoryMap() {
-        Map<String, Object> revHistoryMap = new HashMap<String, Object>();
-        // parse rev into components, eg
-        String[] revComponents = rev.split("-");
-        String numericPrefixStr = revComponents[0];  // eg, "1"
-        String digest = revComponents[1]; // eg, "d57b1bc60eb9273c3349d932e15f9949"
-        int numericPrefix = Integer.parseInt(numericPrefixStr);
-        List<String> revHistoryDigestIds = new ArrayList<String>();
-        revHistoryDigestIds.add(digest);
-        revHistoryMap.put("ids", revHistoryDigestIds);
-        revHistoryMap.put("start", numericPrefix);
-        return revHistoryMap;
+        if (revHistoryMap.isEmpty()) {
+            Map<String, Object> simpleRevHIstoryMap = new HashMap<String, Object>();
+            // parse rev into components, eg
+            String[] revComponents = rev.split("-");
+            String numericPrefixStr = revComponents[0];  // eg, "1"
+            String digest = revComponents[1]; // eg, "d57b1bc60eb9273c3349d932e15f9949"
+            int numericPrefix = Integer.parseInt(numericPrefixStr);
+            List<String> revHistoryDigestIds = new ArrayList<String>();
+            revHistoryDigestIds.add(digest);
+            simpleRevHIstoryMap.put("ids", revHistoryDigestIds);
+            simpleRevHIstoryMap.put("start", numericPrefix);
+            return simpleRevHIstoryMap;
+        } else {
+            return revHistoryMap;
+        }
     }
 
     private Map<String, Object> generateDocumentMap() {
