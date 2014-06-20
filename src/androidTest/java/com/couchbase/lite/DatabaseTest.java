@@ -1,8 +1,11 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.replicator.MockDispatcher;
+import com.couchbase.lite.replicator.MockHelper;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.FileDirUtils;
+import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -145,8 +148,15 @@ public class DatabaseTest extends LiteTestCase {
 
     public void testGetActiveReplications() throws Exception {
 
-        URL remote = getReplicationURL();
-        Replication replication = (Replication) database.createPullReplication(remote);
+        // create mock sync gateway that will serve as a pull target and return random docs
+        int numMockDocsToServe = 0;
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getPreloadedPullTargetServer(dispatcher, numMockDocsToServe, 1);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        server.setDispatcher(dispatcher);
+        server.play();
+
+        Replication replication = database.createPullReplication(server.getUrl("/db"));
 
         assertEquals(0, database.getAllReplications().size());
         assertEquals(0, database.getActiveReplications().size());
@@ -165,6 +175,8 @@ public class DatabaseTest extends LiteTestCase {
 
         assertEquals(1, database.getAllReplications().size());
         assertEquals(0, database.getActiveReplications().size());
+
+        server.shutdown();
 
     }
 
