@@ -1,5 +1,6 @@
 package com.couchbase.lite.replicator;
 
+import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.Dispatcher;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
@@ -70,6 +71,7 @@ public class MockDispatcher extends Dispatcher {
                 if (!responseQueue.isEmpty()) {
                     SmartMockResponse smartMockResponse = responseQueue.take();
                     MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
+                    System.out.println(String.format("Response: %s", mockResponse.getBody()));
                     addHeaders(mockResponse);
                     return mockResponse;
                 } else {

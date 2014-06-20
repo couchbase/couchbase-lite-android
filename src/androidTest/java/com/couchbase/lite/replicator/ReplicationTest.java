@@ -11,6 +11,7 @@ import com.couchbase.lite.Manager;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
+import com.couchbase.lite.QueryOptions;
 import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.Revision;
 import com.couchbase.lite.SavedRevision;
@@ -610,10 +611,10 @@ public class ReplicationTest extends LiteTestCase {
         mockDocument.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
-        MockWebServer server = MockHelper.getMockWebServer();
         MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.setDispatcher(dispatcher);
+
 
         // checkpoint GET response w/ 404
         MockResponse fakeCheckpointResponse = new MockResponse();
@@ -829,19 +830,18 @@ public class ReplicationTest extends LiteTestCase {
      */
     public Map<String, Object> mockSinglePull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType, boolean addAttachments) throws Exception {
 
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(serverType);
+
+        // mock documents to be pulled
         MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
         mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
         mockDoc1.setAttachmentName("attachment.png");
-
         MockDocumentGet.MockDocument mockDoc2 = new MockDocumentGet.MockDocument("doc2", "1-563b", 2);
         mockDoc2.setJsonMap(MockHelper.generateRandomJsonMap());
         mockDoc2.setAttachmentName("attachment2.png");
-
-        // create mockwebserver and custom dispatcher
-        MockWebServer server = MockHelper.getMockWebServer();
-        MockDispatcher dispatcher = new MockDispatcher();
-        dispatcher.setServerType(serverType);
-        server.setDispatcher(dispatcher);
 
         // checkpoint GET response w/ 404
         MockResponse fakeCheckpointResponse = new MockResponse();
@@ -986,10 +986,9 @@ public class ReplicationTest extends LiteTestCase {
         String contentType = "image/png";
 
         // create mockwebserver and custom dispatcher
-        MockWebServer server = MockHelper.getMockWebServer();
         MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(serverType);
-        server.setDispatcher(dispatcher);
         server.play();
 
         // add some documents
@@ -1352,11 +1351,15 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     private Replication doPullReplication(URL url, boolean allowError) {
+        return doPullReplication(url, allowError, false);
+    }
+
+    private Replication doPullReplication(URL url, boolean allowError, boolean continuous) {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
         final Replication repl = (Replication) database.createPullReplication(url);
-        repl.setContinuous(false);
+        repl.setContinuous(continuous);
 
         Log.d(TAG, "Doing pull replication with: " + repl);
         runReplication(repl);
@@ -1558,10 +1561,9 @@ public class ReplicationTest extends LiteTestCase {
     public void testReplicatorErrorStatus() throws Exception {
 
         // create mockwebserver and custom dispatcher
-        MockWebServer server = MockHelper.getMockWebServer();
         MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.setDispatcher(dispatcher);
 
         // fake _session response
         MockSessionGet mockSessionGet = new MockSessionGet();
@@ -1598,9 +1600,53 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    public void testMockBulkPullSyngGw() throws Exception {
+        mockBulkPull(MockDispatcher.ServerType.SYNC_GW);
+    }
+
+
+    public void failingTestMockBulkPullCouchDb() throws Exception {
+        mockBulkPull(MockDispatcher.ServerType.COUCHDB);
+    }
 
     /**
-     * Test for the private goOffline() method, which still in "incubation".
+     *
+     * TODO: finish this test and close https://github.com/couchbase/couchbase-lite-android/issues/360
+     *
+     * When the pull replication needs to pull more than MAX_REVS_TO_GET_IN_BULK, it
+     * uses a different strategy.
+     *
+     * - Against CouchDB it calls _all_docs
+     * - Against Sync Gw it calls _bulk_get
+     *
+     */
+    public void mockBulkPull(MockDispatcher.ServerType serverType) throws Exception {
+
+        // TODO: the preloadedPullTargetServer needs to handle _all_docs requests in the
+        // TODO: case of CouchDB, and _bulk_get in the case of Sync GW
+
+        // create mock sync gateway that will serve as a pull target and return random docs
+        int numMockDocsToServe = Puller.MAX_REVS_TO_GET_IN_BULK + 5;
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getPreloadedPullTargetServer(dispatcher, numMockDocsToServe, Integer.MAX_VALUE);
+        dispatcher.setServerType(serverType);
+        server.setDispatcher(dispatcher);
+        server.play();
+
+        // run pull replication
+        Replication pullReplication = doPullReplication(server.getUrl("/db"), false);
+
+        // assertions
+        Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
+        assertEquals(numMockDocsToServe, allDocs.size());
+
+        server.shutdown();
+
+    }
+
+    /**
+     * Test for the goOffline() method.
+     *
      * This test is brittle because it depends on the following observed behavior,
      * which will probably change:
      *
@@ -1615,13 +1661,18 @@ public class ReplicationTest extends LiteTestCase {
      * 3) Does not cancel changetracker, because changetracker is still null
      * 4) After getting the remote sequence from http://sg/_local/.., it starts the ChangeTracker
      * 5) Now the changetracker is running even though we've told it to go offline.
-     *
      */
-    public void integrationTestGoOffline() throws Exception {
+    public void testGoOffline() throws Exception {
 
-        URL remote = getReplicationURL();
+        // create mock sync gateway that will serve as a pull target and return random docs
+        int numMockDocsToServe = 50;
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getPreloadedPullTargetServer(dispatcher, numMockDocsToServe, 1);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        server.setDispatcher(dispatcher);
+        server.play();
 
-        Replication replicator = database.createPullReplication(remote);
+        Replication replicator = database.createPullReplication(server.getUrl("/db"));
         replicator.setContinuous(true);
 
         // add replication "idle" observer - exploit the fact that during observation,
@@ -1648,8 +1699,10 @@ public class ReplicationTest extends LiteTestCase {
         boolean success2 = countDownLatch2.await(30, TimeUnit.SECONDS);
         assertTrue(success2);
 
-    }
+        server.shutdown();
 
+
+    }
 
 
     public void testBuildRelativeURLString() throws Exception {
@@ -1888,10 +1941,9 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(doc.getConflictingRevisions().size() > 1);
 
         // create mockwebserver and custom dispatcher
-        MockWebServer server = MockHelper.getMockWebServer();
         MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.setDispatcher(dispatcher);
 
         // checkpoint GET response w/ 404
         MockResponse fakeCheckpointResponse = new MockResponse();
