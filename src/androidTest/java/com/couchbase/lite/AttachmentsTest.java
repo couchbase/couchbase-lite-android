@@ -583,6 +583,73 @@ public class AttachmentsTest extends LiteTestCase {
      */
     public void testSetAttachmentsSequentially() throws CouchbaseLiteException, IOException {
 
+        try {
+            //Create rev1 of document with just properties
+            Document doc = database.createDocument();
+            String id = doc.getId();
+            Map<String, Object> docProperties = new HashMap<String, Object>();
+            docProperties.put("Iteration", 0);
+            doc.putProperties(docProperties);
+
+            UnsavedRevision rev = null;
+
+            //Create a new revision with attachment1
+            InputStream attachmentStream1 = getAsset("attachment.png");
+            doc = database.getDocument(id);//not required
+            byte[] jsonb = Manager.getObjectMapper().writeValueAsBytes(doc.getProperties().get("_attachments"));
+            Log.d(Database.TAG,"Doc _rev = %s",doc.getProperties().get("_rev"));
+            Log.d(Database.TAG,"Doc properties = %s",new String(jsonb));
+            rev = doc.createRevision();
+            rev.setAttachment("attachment1", "image/png", attachmentStream1);
+            rev.save();
+            attachmentStream1.close();
+
+            //Create a new revision updated properties
+            doc = database.getDocument(id);//not required
+            jsonb = Manager.getObjectMapper().writeValueAsBytes(doc.getProperties().get("_attachments"));
+            Log.d(Database.TAG,"Doc _rev = %s",doc.getProperties().get("_rev"));
+            Log.d(Database.TAG,"Doc properties = %s",new String(jsonb));
+            Map<String, Object> curProperties;
+            curProperties = doc.getProperties();
+            docProperties = new HashMap<String, Object>();
+            docProperties.putAll(curProperties);
+            docProperties.put("Iteration", 1);
+            doc.putProperties(docProperties);
+
+
+            //Create a new revision with attachment2
+            InputStream attachmentStream2 = getAsset("attachment.png");
+            doc = database.getDocument(id);//not required
+            jsonb = Manager.getObjectMapper().writeValueAsBytes(doc.getProperties().get("_attachments"));
+            Log.d(Database.TAG,"Doc _rev = %s",doc.getProperties().get("_rev"));
+            Log.d(Database.TAG,"Doc properties = %s",new String(jsonb));
+            rev = doc.createRevision();
+            rev.setAttachment("attachment2", "image/png", attachmentStream2);
+            rev.save();
+            attachmentStream2.close();
+
+            //Assert final document revision
+            doc = database.getDocument(id);
+            curProperties = doc.getProperties();
+            assertEquals(4, curProperties.size());
+            Map<String, Object> attachments = (Map<String, Object>) doc.getCurrentRevision().getProperty("_attachments");
+            assertNotNull(attachments);
+            assertEquals(2, attachments.size());
+        } catch (CouchbaseLiteException e) {
+            Log.e(Database.TAG, "Error adding attachment: "+e.getMessage(), e);
+            fail();
+        }
+
+    }
+
+
+
+    /**
+     * attempt to reproduce https://github.com/couchbase/couchbase-lite-android/issues/328 &
+     * https://github.com/couchbase/couchbase-lite-android/issues/325
+     */
+    public void failingTestSetAttachmentsSequentiallyInTransaction() throws CouchbaseLiteException, IOException {
+
         boolean success = database.runInTransaction(new TransactionalTask() {
 
             public boolean run() {
@@ -613,16 +680,15 @@ public class AttachmentsTest extends LiteTestCase {
 
                         Log.e(Database.TAG, "TEST ITERATION " + i);
                         doc = database.getDocument(id);//not required
-                        rev = doc.getCurrentRevision().createRevision();
+                        rev = doc.createRevision();
                         rev.setAttachment("attachment " + i * 5, "image/png", attachmentStream1);
                         rev.save();
 
                         attachmentStream1.close();
 
-
                         InputStream attachmentStream2 = getAsset("attachment.png");
                         doc = database.getDocument(id);//not required
-                        rev = doc.getCurrentRevision().createRevision();
+                        rev = doc.createRevision();
                         rev.setAttachment("attachment " + i * 5 + 1, "image/png", attachmentStream2);
                         rev.save();
 
@@ -630,24 +696,24 @@ public class AttachmentsTest extends LiteTestCase {
 
                         InputStream attachmentStream3 = getAsset("attachment.png");
                         doc = database.getDocument(id);//not required
-                        rev = doc.getCurrentRevision().createRevision();
-                        rev.setAttachment("attachment " + i * 5 + 2, "image/png", attachmentStream2);
+                        rev = doc.createRevision();
+                        rev.setAttachment("attachment " + i * 5 + 2, "image/png", attachmentStream3);
                         rev.save();
 
                         attachmentStream3.close();
 
                         InputStream attachmentStream4 = getAsset("attachment.png");
                         doc = database.getDocument(id);//not required
-                        rev = doc.getCurrentRevision().createRevision();
-                        rev.setAttachment("attachment " + i * 5 + 3, "image/png", attachmentStream2);
+                        rev = doc.createRevision();
+                        rev.setAttachment("attachment " + i * 5 + 3, "image/png", attachmentStream4);
                         rev.save();
 
                         attachmentStream4.close();
 
                         InputStream attachmentStream5 = getAsset("attachment.png");
                         doc = database.getDocument(id);//not required
-                        rev = doc.getCurrentRevision().createRevision();
-                        rev.setAttachment("attachment " + i * 5 + 4, "image/png", attachmentStream2);
+                        rev = doc.createRevision();
+                        rev.setAttachment("attachment " + i * 5 + 4, "image/png", attachmentStream5);
                         rev.save();
 
                         attachmentStream5.close();
@@ -656,19 +722,19 @@ public class AttachmentsTest extends LiteTestCase {
 
                         doc = database.getDocument(id);//not required
                         curProperties = doc.getProperties();
-                        assertEquals(42, curProperties.size());
-                        assertEquals(i * 2, curProperties.get("Iteration"));
                         docProperties = new HashMap<String, Object>();
                         docProperties.putAll(curProperties);
-                        docProperties.put("Iteration", (i + 1) * 2);
+                        docProperties.put("Iteration", (i + 1) * 5);
                         doc.putProperties(docProperties);
-
-
-                        Map<String, Object> attachments = (Map<String, Object>) doc.getCurrentRevision().getProperty("_attachments");
-                        assertNotNull(attachments);
-                        assertEquals(100, attachments.size());
-
                     }
+
+                    Map<String, Object> curProperties;
+                    doc = database.getDocument(id);//not required
+                    curProperties = doc.getProperties();
+                    assertEquals(22, curProperties.size());
+                    Map<String, Object> attachments = (Map<String, Object>) doc.getCurrentRevision().getProperty("_attachments");
+                    assertNotNull(attachments);
+                    assertEquals(100, attachments.size());
                 } catch (Exception e) {
                     Log.e(Database.TAG, "Error deserializing properties from JSON", e);
                     return false;
@@ -678,6 +744,7 @@ public class AttachmentsTest extends LiteTestCase {
             }
 
         });
+        assertTrue("transaction with set attachments sequentially failed", success);
     }
 
     /**
