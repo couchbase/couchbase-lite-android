@@ -235,13 +235,10 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
         return properties;
     }
 
-    public Map<String, Object> getPullReplicationParsedJson() throws IOException {
-
-        Map<String,Object> authProperties = getReplicationAuthParsedJson();
+    public Map<String, Object> getPullReplicationParsedJson(URL url) throws IOException {
 
         Map<String,Object> sourceProperties = new HashMap<String,Object>();
-        sourceProperties.put("url", getReplicationURL().toExternalForm());
-        sourceProperties.put("auth", authProperties);
+        sourceProperties.put("url", url.toExternalForm());
 
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", sourceProperties);

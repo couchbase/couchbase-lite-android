@@ -72,6 +72,7 @@ public class MockHelper {
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
         // _changes response
+        int numChangeResponses = 0;
         Batcher<MockDocumentGet.MockDocument> batcher =
                 new Batcher<MockDocumentGet.MockDocument>(mockDocs, numDocsPerChangesResponse);
         while (batcher.hasMoreBatches()) {
@@ -83,6 +84,11 @@ public class MockHelper {
             MockResponse mockResponse = mockChangesFeed.generateMockResponse();
             String body = new String(mockResponse.getBody());
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockResponse);
+            numChangeResponses += 1;
+        }
+        if (numChangeResponses == 0) {
+            // in the degenerate case, add empty changes response
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, new MockChangesFeed().generateMockResponse());
         }
 
         // doc responses
