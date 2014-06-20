@@ -58,6 +58,7 @@ public class MockDocumentGet {
 
     public MockDocumentGet() {
         attachmentFileNames = new ArrayList<String>();
+        this.revHistoryMap = new HashMap<String, Object>();
     }
 
     public MockDocumentGet(MockDocument mockDocument) {
@@ -65,8 +66,6 @@ public class MockDocumentGet {
         this.docId = mockDocument.getDocId();
         this.rev = mockDocument.getDocRev();
         this.jsonMap = mockDocument.getJsonMap();
-        this.revHistoryMap = new HashMap<String, Object>();
-
     }
 
     public Map<String, Object> getRevHistoryMap() {
