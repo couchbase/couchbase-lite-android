@@ -1,3 +1,5 @@
+
+[![Stories in Ready](https://badge.waffle.io/couchbase/couchbase-lite-android.png?label=ready&title=Ready)](https://waffle.io/couchbase/couchbase-lite-android)
 # Couchbase-Lite-Android #
 
 Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend.  
