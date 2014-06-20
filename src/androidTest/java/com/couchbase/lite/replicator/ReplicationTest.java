@@ -1500,9 +1500,18 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+
     public void testGetReplicatorWithAuth() throws Throwable {
 
-        Map<String, Object> properties = getPushReplicationParsedJson();
+        Map<String,Object> authProperties = getReplicationAuthParsedJson();
+
+        Map<String,Object> targetProperties = new HashMap<String,Object>();
+        targetProperties.put("url", getReplicationURL().toExternalForm());
+        targetProperties.put("auth", authProperties);
+
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("source", DEFAULT_TEST_DB);
+        properties.put("target", targetProperties);
 
         Replication replicator = manager.getReplicator(properties);
         assertNotNull(replicator);

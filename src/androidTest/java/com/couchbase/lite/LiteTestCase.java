@@ -221,13 +221,10 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
 
     }
 
-    public Map<String, Object> getPushReplicationParsedJson() throws IOException {
-
-        Map<String,Object> authProperties = getReplicationAuthParsedJson();
+    public Map<String, Object> getPushReplicationParsedJson(URL url) throws IOException {
 
         Map<String,Object> targetProperties = new HashMap<String,Object>();
-        targetProperties.put("url", getReplicationURL().toExternalForm());
-        targetProperties.put("auth", authProperties);
+        targetProperties.put("url", url.toExternalForm());
 
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", DEFAULT_TEST_DB);

@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 
+import com.couchbase.lite.replicator.MockCheckpointGet;
 import com.couchbase.lite.replicator.MockDispatcher;
 import com.couchbase.lite.replicator.MockHelper;
 import com.couchbase.lite.router.URLConnection;
@@ -678,9 +679,18 @@ public class RouterTest extends LiteTestCase {
 
     public void testPushReplicate() throws Exception {
 
-        send("PUT", "/db", Status.CREATED, null);
+        // create mock sync gateway that will serve as a pull target and return random docs
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
 
-        Map<String, Object> replicateJsonMap = getPushReplicationParsedJson();
+        // fake checkpoint response 404
+        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
+
+        server.play();
+
+        Map<String, Object> replicateJsonMap = getPushReplicationParsedJson(server.getUrl("/db"));
 
         Log.v(TAG, "map: " + replicateJsonMap);
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
@@ -689,6 +699,8 @@ public class RouterTest extends LiteTestCase {
 
         boolean success = waitForReplicationToFinish();
         assertTrue(success);
+
+        server.shutdown();
 
     }
 
