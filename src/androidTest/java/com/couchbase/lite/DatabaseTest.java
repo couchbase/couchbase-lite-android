@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DatabaseTest extends LiteTestCase {
@@ -208,8 +209,8 @@ public class DatabaseTest extends LiteTestCase {
         properties2b.put("testName", "testCreateRevisions");
         properties2b.put("tag", 1339);
 
-        List<Boolean> outIsDeleted = new ArrayList<Boolean>();
-        List<Boolean> outIsConflict = new ArrayList<Boolean>();
+        AtomicBoolean outIsDeleted = new AtomicBoolean(false);
+        AtomicBoolean outIsConflict = new AtomicBoolean(false);
 
         // Create a conflict on purpose
         Document doc = database.createDocument();
@@ -220,26 +221,24 @@ public class DatabaseTest extends LiteTestCase {
         long docNumericId = database.getDocNumericID(doc.getId());
         assertTrue(docNumericId != 0);
         assertEquals(rev1.getId(), database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict));
-        assertTrue(outIsConflict.size() == 0);
+        assertFalse(outIsConflict.get());
 
-        outIsDeleted = new ArrayList<Boolean>();
-        outIsConflict = new ArrayList<Boolean>();
+        outIsDeleted.set(false);
+        outIsConflict.set(false);
         UnsavedRevision newRev2a = rev1.createRevision();
         newRev2a.setUserProperties(properties2a);
         SavedRevision rev2a = newRev2a.save();
         assertEquals(rev2a.getId(), database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict));
-        assertTrue(outIsConflict.size() == 0);
+        assertFalse(outIsConflict.get());
 
-        outIsDeleted = new ArrayList<Boolean>();
-        outIsConflict = new ArrayList<Boolean>();
+        outIsDeleted.set(false);
+        outIsConflict.set(false);
         UnsavedRevision newRev2b = rev1.createRevision();
         newRev2b.setUserProperties(properties2b);
         SavedRevision rev2b = newRev2b.save(true);
         database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict);
 
-        assertTrue(outIsConflict.size() > 0);
+        assertTrue(outIsConflict.get());
 
     }
-
-
 }
