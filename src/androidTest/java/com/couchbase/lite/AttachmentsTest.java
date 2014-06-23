@@ -593,7 +593,7 @@ public class AttachmentsTest extends LiteTestCase {
      * attempt to reproduce https://github.com/couchbase/couchbase-lite-android/issues/328 &
      * https://github.com/couchbase/couchbase-lite-android/issues/325
      */
-    public void failingTestSetAttachmentsSequentially() throws CouchbaseLiteException, IOException {
+    public void testSetAttachmentsSequentially() throws CouchbaseLiteException, IOException {
 
         try {
             //Create rev1 of document with just properties
