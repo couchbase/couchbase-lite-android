@@ -982,7 +982,7 @@ public class ReplicationTest extends LiteTestCase {
         String doc2PathRegex = String.format("/db/%s.*", doc2Id);
         String doc3PathRegex = String.format("/db/%s.*", doc3Id);
         String doc2AttachName = "attachment.png";
-        String doc3AttachName = "attachment5.png";
+        String doc3AttachName = "attachment2.png";
         String contentType = "image/png";
 
         // create mockwebserver and custom dispatcher
