@@ -91,7 +91,7 @@ public class ViewsTest extends LiteTestCase {
     }
 
     //https://github.com/couchbase/couchbase-lite-java-core/issues/219
-    public void failingTestDeleteView() {
+    public void testDeleteView() {
         List<View> views = database.getAllViews();
         for (View view : views) {
             database.deleteViewNamed(view.getName());
@@ -123,11 +123,10 @@ public class ViewsTest extends LiteTestCase {
 
         Status status = database.deleteViewNamed("viewToDelete");
         Assert.assertEquals(Status.OK, status.getCode());
-        views = database.getAllViews();
         Assert.assertEquals(0, database.getAllViews().size());
 
         View nullView = database.getExistingView("viewToDelete");
-        Assert.assertNull("cached View is not deleted", view);
+        Assert.assertNull("cached View is not deleted", nullView);
 
         status = database.deleteViewNamed("viewToDelete");
         Assert.assertEquals(Status.NOT_FOUND, status.getCode());
