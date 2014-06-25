@@ -107,9 +107,9 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
         // mock _changes response
-        MockResponse mockChangesFeed = new MockResponse();
-        MockHelper.set404NotFoundJson(mockChangesFeed);
         for (int i=0; i<100; i++) {
+            MockResponse mockChangesFeed = new MockResponse();
+            MockHelper.set404NotFoundJson(mockChangesFeed);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed);
         }
 
@@ -129,7 +129,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // sleep in order to give the replication some time to retry
         // and send multiple _changes requests.
-        Thread.sleep(retryDelaySeconds * 5 * 1000);
+        Thread.sleep(5 * 1000 * retryDelaySeconds);
 
         // the replication should still be running
         assertEquals(1, replicationDoneSignal.getCount());
