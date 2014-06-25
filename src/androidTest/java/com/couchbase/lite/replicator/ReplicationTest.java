@@ -83,6 +83,74 @@ public class ReplicationTest extends LiteTestCase {
     public static final String TAG = "Replicator";
 
     /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/241
+     *
+     * - Set the "retry time" to a short number
+     * - Setup mock server to return 404 for all _changes requests
+     * - Start continuous replication
+     * - Sleep for 5X retry time
+     * - Assert that we've received at least two requests to _changes feed
+     * - Stop replication + cleanup
+     *
+     */
+    public void failingTestContinuousReplication404Changes() throws Exception {
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        server.play();
+
+        // mock checkpoint GET response w/ 404
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+        // mock _changes response
+        MockResponse mockChangesFeed = new MockResponse();
+        MockHelper.set404NotFoundJson(mockChangesFeed);
+        for (int i=0; i<100; i++) {
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed);
+        }
+
+        // create new replication
+        int retryDelaySeconds = 1;
+        Replication pull = database.createPullReplication(server.getUrl("/db"));
+        pull.setContinuous(true);
+        pull.setRetryDelay(retryDelaySeconds);
+
+        // add done listener to replication
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+        pull.addChangeListener(replicationFinishedObserver);
+
+        // start the replication
+        pull.start();
+
+        // sleep in order to give the replication some time to retry
+        // and send multiple _changes requests.
+        Thread.sleep(retryDelaySeconds * 5 * 1000);
+
+        // the replication should still be running
+        assertEquals(1, replicationDoneSignal.getCount());
+
+        // assert that we've received at least two requests to the _changes feed
+        RecordedRequest changesReq = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+        assertNotNull(changesReq);
+        changesReq = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+        assertNotNull(changesReq);
+
+        // cleanup
+        pull.stop();
+        boolean success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
+        assertTrue(success);
+        server.shutdown();
+
+
+    }
+
+
+    /**
      * Verify that running a one-shot push replication will complete when run against a
      * mock server that returns 500 Internal Server errors on every request.
      */
