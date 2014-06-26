@@ -39,15 +39,17 @@ public class MockHelper {
     }
 
     /**
-     * Get a "preloaded" mock sync gateway suitable to be used as a pull replication target.
+     * Get a "preloaded" mock CouchDB suitable to be used as a pull replication target.
      * It's preloaded in the sense that it is ready serve up mock documents.
+     *
+     * This can't be used to simulate a Sync Gateway, because it does not support _bulk_get
      *
      * @param dispatcher the MockDispatcher
      * @param numMockDocsToServe how many docs should be served to pull replicator?
      * @param numDocsPerChangesResponse how many docs to add to each _changes response?  MAXINT for all.
      *
      */
-    public static MockWebServer getPreloadedPullTargetServer(MockDispatcher dispatcher, int numMockDocsToServe, int numDocsPerChangesResponse) {
+    public static MockWebServer getPreloadedPullTargetMockCouchDB(MockDispatcher dispatcher, int numMockDocsToServe, int numDocsPerChangesResponse) {
 
         MockWebServer server = getMockWebServer(dispatcher);
 

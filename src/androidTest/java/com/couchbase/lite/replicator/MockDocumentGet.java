@@ -295,7 +295,7 @@ public class MockDocumentGet {
         }
 
         public String getDocPathRegex() {
-            return String.format("/db/%s.*", getDocId());
+            return String.format("/db/%s\\?.*", getDocId());
         }
 
         public String getDocId() {
