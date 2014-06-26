@@ -51,6 +51,11 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
 
             @Override
+            public void changeTrackerCaughtUp() {
+
+            }
+
+            @Override
             public void changeTrackerReceivedChange(Map<String, Object> change) {
                 Object seq = change.get("seq");
                 if (useMockReplicator) {
@@ -210,6 +215,11 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
 
             @Override
+            public void changeTrackerCaughtUp() {
+
+            }
+
+            @Override
             public void changeTrackerReceivedChange(Map<String, Object> change) {
                 changeReceivedSignal.countDown();
             }
@@ -279,6 +289,11 @@ public class ChangeTrackerTest extends LiteTestCase {
             @Override
             public void changeTrackerFinished(ChangeTracker tracker) {
                 Log.v(TAG, "changeTrackerFinished");
+            }
+
+            @Override
+            public void changeTrackerCaughtUp() {
+
             }
 
             @Override
@@ -352,6 +367,11 @@ public class ChangeTrackerTest extends LiteTestCase {
 
             @Override
             public void changeTrackerFinished(ChangeTracker tracker) {
+            }
+
+            @Override
+            public void changeTrackerCaughtUp() {
+
             }
 
             @Override
