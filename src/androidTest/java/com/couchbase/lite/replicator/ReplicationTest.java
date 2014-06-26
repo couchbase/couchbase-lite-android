@@ -1028,6 +1028,55 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    public void testMockContinuousPullSyncGw() throws Exception {
+        boolean shutdownMockWebserver = true;
+
+        mockContinuousPull(shutdownMockWebserver, MockDispatcher.ServerType.SYNC_GW, false);
+
+    }
+
+
+    public Map<String, Object> mockContinuousPull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType, boolean addAttachments) throws Exception {
+
+        final int numMockRemoteDocs = 20;  // must be multiple of 10!
+        final AtomicInteger numDocsPulledLocally = new AtomicInteger(0);
+
+        MockDispatcher dispatcher = new MockDispatcher();
+        int numDocsPerChangesResponse = numMockRemoteDocs / 10;
+        MockWebServer server = MockHelper.getPreloadedPullTargetServer(dispatcher, numMockRemoteDocs, numDocsPerChangesResponse);
+        server.play();
+
+        final CountDownLatch receivedAllDocs = new CountDownLatch(1);
+
+        // run pull replication
+        Replication pullReplication = doPullReplication(server.getUrl("/db"), false, true);
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                List<DocumentChange> changes = event.getChanges();
+                for (DocumentChange change : changes) {
+                    numDocsPulledLocally.addAndGet(1);
+                }
+                if (numDocsPulledLocally.get() == numMockRemoteDocs) {
+                    receivedAllDocs.countDown();
+                }
+            }
+        });
+
+        boolean success = receivedAllDocs.await(120, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        server.shutdown();
+
+        Map<String, Object> returnVal = new HashMap<String, Object>();
+        returnVal.put("server", server);
+        returnVal.put("dispatcher", dispatcher);
+        return returnVal;
+
+    }
+
+
+
     public void testMockSinglePush() throws Exception {
 
         boolean shutdownMockWebserver = true;
