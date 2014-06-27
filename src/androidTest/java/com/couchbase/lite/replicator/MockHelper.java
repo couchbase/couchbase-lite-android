@@ -51,55 +51,7 @@ public class MockHelper {
      */
     public static MockWebServer getPreloadedPullTargetMockCouchDB(MockDispatcher dispatcher, int numMockDocsToServe, int numDocsPerChangesResponse) {
 
-        MockWebServer server = getMockWebServer(dispatcher);
-
-        List<MockDocumentGet.MockDocument> mockDocs = new ArrayList<MockDocumentGet.MockDocument>();
-        for (int i=0; i<numMockDocsToServe; i++) {
-
-            String docId = String.format("doc%s", i);
-            String revIdHash = Misc.TDCreateUUID().substring(0, 3);
-            String revId = String.format("1-%s", revIdHash);
-            int seq = i;
-
-            // mock documents to be pulled
-            MockDocumentGet.MockDocument mockDoc = new MockDocumentGet.MockDocument(docId, revId, seq);
-            mockDoc.setJsonMap(MockHelper.generateRandomJsonMap());
-            mockDocs.add(mockDoc);
-
-        }
-
-        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
-
-
-        // _changes response
-        int numChangeResponses = 0;
-        Batcher<MockDocumentGet.MockDocument> batcher =
-                new Batcher<MockDocumentGet.MockDocument>(mockDocs, numDocsPerChangesResponse);
-        while (batcher.hasMoreBatches()) {
-            List<MockDocumentGet.MockDocument> batch = batcher.nextBatch();
-            MockChangesFeed mockChangesFeed = new MockChangesFeed();
-            for (MockDocumentGet.MockDocument mockDoc : batch) {
-                mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc));
-            }
-            MockResponse mockResponse = mockChangesFeed.generateMockResponse();
-            String body = new String(mockResponse.getBody());
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockResponse);
-            numChangeResponses += 1;
-        }
-        if (numChangeResponses == 0) {
-            // in the degenerate case, add empty changes response
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, new MockChangesFeed().generateMockResponse());
-        }
-
-        // doc responses
-        for (MockDocumentGet.MockDocument mockDoc : mockDocs) {
-            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc);
-            dispatcher.enqueueResponse(mockDoc.getDocPathRegex(), mockDocumentGet.generateMockResponse());
-        }
-
-        return server;
+        return new MockPreloadedPullTarget(dispatcher, numMockDocsToServe, numDocsPerChangesResponse).getMockWebServer();
 
     }
 
