@@ -732,7 +732,7 @@ public class RouterTest extends LiteTestCase {
         // create mock sync gateway that will serve as a pull target and return random docs
         int numMockDocsToServe = 0;
         MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getPreloadedPullTargetServer(dispatcher, numMockDocsToServe, 1);
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         server.play();

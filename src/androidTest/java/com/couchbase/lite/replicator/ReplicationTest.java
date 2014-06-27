@@ -4,6 +4,7 @@ import com.couchbase.lite.Attachment;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
+import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiveQuery;
@@ -57,8 +58,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -77,6 +76,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReplicationTest extends LiteTestCase {
 
@@ -1028,28 +1028,32 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testMockContinuousPullSyncGw() throws Exception {
+    public void testMockContinuousPullCouchDb() throws Exception {
         boolean shutdownMockWebserver = true;
-
-        mockContinuousPull(shutdownMockWebserver, MockDispatcher.ServerType.SYNC_GW, false);
-
+        mockContinuousPull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB);
     }
 
+    public Map<String, Object> mockContinuousPull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType) throws Exception {
 
-    public Map<String, Object> mockContinuousPull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType, boolean addAttachments) throws Exception {
+        assertTrue(serverType == MockDispatcher.ServerType.COUCHDB);
 
-        final int numMockRemoteDocs = 20;  // must be multiple of 10!
+        final int numMockRemoteDocs = 200;  // must be multiple of 10!
         final AtomicInteger numDocsPulledLocally = new AtomicInteger(0);
 
         MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(serverType);
         int numDocsPerChangesResponse = numMockRemoteDocs / 10;
-        MockWebServer server = MockHelper.getPreloadedPullTargetServer(dispatcher, numMockRemoteDocs, numDocsPerChangesResponse);
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockRemoteDocs, numDocsPerChangesResponse);
+
         server.play();
 
         final CountDownLatch receivedAllDocs = new CountDownLatch(1);
 
         // run pull replication
-        Replication pullReplication = doPullReplication(server.getUrl("/db"), false, true);
+        final Replication repl = (Replication) database.createPullReplication(server.getUrl("/db"));
+        repl.setContinuous(true);
+        repl.start();
+
         database.addChangeListener(new Database.ChangeListener() {
             @Override
             public void changed(Database.ChangeEvent event) {
@@ -1063,10 +1067,22 @@ public class ReplicationTest extends LiteTestCase {
             }
         });
 
-        boolean success = receivedAllDocs.await(120, TimeUnit.SECONDS);
+        // wait until we received all mock docs or timeout occurs
+        boolean success = receivedAllDocs.await(60, TimeUnit.SECONDS);
         assertTrue(success);
 
-        server.shutdown();
+        // make sure all docs in local db
+        Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
+        Integer totalRows = (Integer) allDocs.get("total_rows");
+        List rows = (List) allDocs.get("rows");
+        assertEquals(numMockRemoteDocs, totalRows.intValue());
+        assertEquals(numMockRemoteDocs, rows.size());
+
+        // cleanup / shutdown
+        stopReplication(repl);
+        if (shutdownMockWebserver) {
+            server.shutdown();
+        }
 
         Map<String, Object> returnVal = new HashMap<String, Object>();
         returnVal.put("server", server);
@@ -1774,7 +1790,7 @@ public class ReplicationTest extends LiteTestCase {
         // create mock sync gateway that will serve as a pull target and return random docs
         int numMockDocsToServe = Puller.MAX_REVS_TO_GET_IN_BULK + 5;
         MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getPreloadedPullTargetServer(dispatcher, numMockDocsToServe, Integer.MAX_VALUE);
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, Integer.MAX_VALUE);
         dispatcher.setServerType(serverType);
         server.setDispatcher(dispatcher);
         server.play();
@@ -1813,7 +1829,7 @@ public class ReplicationTest extends LiteTestCase {
         // create mock sync gateway that will serve as a pull target and return random docs
         int numMockDocsToServe = 50;
         MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getPreloadedPullTargetServer(dispatcher, numMockDocsToServe, 1);
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         server.play();
