@@ -92,8 +92,8 @@ public class ReplicationTest extends LiteTestCase {
      * - Assert that we've received at least two requests to _changes feed
      * - Stop replication + cleanup
      *
-
-    public void failingTestContinuousReplication404Changes() throws Exception {
+     */
+    public void testContinuousReplication404Changes() throws Exception {
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
@@ -148,7 +148,7 @@ public class ReplicationTest extends LiteTestCase {
 
 
     }
-     */
+
 
     /**
      * Verify that running a one-shot push replication will complete when run against a
