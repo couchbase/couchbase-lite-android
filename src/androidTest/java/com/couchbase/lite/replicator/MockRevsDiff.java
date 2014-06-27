@@ -85,4 +85,9 @@ public class MockRevsDiff implements SmartMockResponse {
 
     }
 
+    @Override
+    public boolean isSticky() {
+        return false;
+    }
+
 }

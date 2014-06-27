@@ -98,5 +98,9 @@ public class MockBulkDocs implements SmartMockResponse {
         throw new RuntimeException(String.format("Can't find doc w/ id: %s in %s", doc4Id, bulkDocsJson));
     }
 
+    @Override
+    public boolean isSticky() {
+        return false;
+    }
 
 }

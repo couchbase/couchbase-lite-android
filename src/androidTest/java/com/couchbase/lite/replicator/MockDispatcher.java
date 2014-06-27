@@ -70,6 +70,9 @@ public class MockDispatcher extends Dispatcher {
                 }
                 if (!responseQueue.isEmpty()) {
                     SmartMockResponse smartMockResponse = responseQueue.take();
+                    if (smartMockResponse.isSticky()) {
+                        responseQueue.put(smartMockResponse); // if it's sticky, put it back in queue
+                    }
                     MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
                     System.out.println(String.format("Response: %s", mockResponse.getBody()));
                     addHeaders(mockResponse);

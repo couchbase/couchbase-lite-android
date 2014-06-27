@@ -12,4 +12,6 @@ public interface SmartMockResponse {
 
     public MockResponse generateMockResponse(RecordedRequest request);
 
+    public boolean isSticky();
+
 }

@@ -1809,26 +1809,18 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Test for the goOffline() method.
      *
-     * This test is brittle because it depends on the following observed behavior,
-     * which will probably change:
-     *
-     * - the replication will go into an "idle" state after starting the change listener
-     *
-     * Which does not match: https://github.com/couchbase/couchbase-lite-android/wiki/Replicator-State-Descriptions
-     *
-     * The reason we need to wait for it to go into the "idle" state, is otherwise the following sequence happens:
-     *
-     * 1) Call replicator.start()
-     * 2) Call replicator.goOffline()
-     * 3) Does not cancel changetracker, because changetracker is still null
-     * 4) After getting the remote sequence from http://sg/_local/.., it starts the ChangeTracker
-     * 5) Now the changetracker is running even though we've told it to go offline.
+     * - Kick off one-shot pull replication
+     * - After first doc(s) received, put replication offline
+     * - Wait for a few seconds
+     * - Put replication back online
+     * - Make sure replication finishes
      */
     public void testGoOffline() throws Exception {
 
         // create mock sync gateway that will serve as a pull target and return random docs
         int numMockDocsToServe = 50;
         MockDispatcher dispatcher = new MockDispatcher();
+
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
@@ -1837,30 +1829,45 @@ public class ReplicationTest extends LiteTestCase {
         Replication replicator = database.createPullReplication(server.getUrl("/db"));
         replicator.setContinuous(true);
 
-        // add replication "idle" observer - exploit the fact that during observation,
-        // the replication will go into an "idle" state after starting the change listener.
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-        ReplicationIdleObserver replicationObserver = new ReplicationIdleObserver(countDownLatch);
-        replicator.addChangeListener(replicationObserver);
+        final CountDownLatch firstDocReceived = new CountDownLatch(1);
+        final CountDownLatch allDocsReceived = new CountDownLatch(numMockDocsToServe);
 
-        // add replication observer
-        CountDownLatch countDownLatch2 = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(countDownLatch2);
-        replicator.addChangeListener(replicationFinishedObserver);
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                List<DocumentChange> changes = event.getChanges();
+                for (DocumentChange change : changes) {
+                    if (change.getDocumentId().startsWith("doc")) {
+                        firstDocReceived.countDown();
+                        allDocsReceived.countDown();
+                    }
+                }
+            }
+        });
 
         replicator.start();
 
-        boolean success = countDownLatch.await(30, TimeUnit.SECONDS);
+        boolean success = firstDocReceived.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
         putReplicationOffline(replicator);
         Assert.assertTrue(replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_OFFLINE);
 
-        replicator.stop();
+        Thread.sleep(5 * 1000);
+        putReplicationOnline(replicator);
 
-        boolean success2 = countDownLatch2.await(30, TimeUnit.SECONDS);
-        assertTrue(success2);
+        success = allDocsReceived.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
 
+        // make sure all docs in local db
+        Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
+        Integer totalRows = (Integer) allDocs.get("total_rows");
+        List rows = (List) allDocs.get("rows");
+        assertEquals(numMockDocsToServe, totalRows.intValue());
+        assertEquals(numMockDocsToServe, rows.size());
+
+        // cleanup
+        stopReplication(replicator);
         server.shutdown();
 
 

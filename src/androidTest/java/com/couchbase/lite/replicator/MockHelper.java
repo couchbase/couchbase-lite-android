@@ -68,10 +68,10 @@ public class MockHelper {
 
         }
 
-        // checkpoint GET response w/ 404
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
 
         // _changes response
         int numChangeResponses = 0;
@@ -97,13 +97,6 @@ public class MockHelper {
         for (MockDocumentGet.MockDocument mockDoc : mockDocs) {
             MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc);
             dispatcher.enqueueResponse(mockDoc.getDocPathRegex(), mockDocumentGet.generateMockResponse());
-        }
-
-        // put checkpoint response -- add enough to cover the max amount of PUT checkpoints
-        // we might expect to see (with some overkill)
-        for (int i=0; i<numMockDocsToServe; i++) {
-            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
         }
 
         return server;

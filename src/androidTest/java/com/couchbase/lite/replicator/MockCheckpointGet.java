@@ -108,4 +108,8 @@ public class MockCheckpointGet implements SmartMockResponse {
         return mockResponse;
     }
 
+    @Override
+    public boolean isSticky() {
+        return false;
+    }
 }

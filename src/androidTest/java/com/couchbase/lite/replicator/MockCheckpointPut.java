@@ -26,11 +26,11 @@ public class MockCheckpointPut implements SmartMockResponse {
 
     private String id;
 
-    public String getId() {
+    private String getId() {
         return id;
     }
 
-    public void setId(String id) {
+    private void setId(String id) {
         this.id = id;
     }
 
@@ -54,29 +54,43 @@ public class MockCheckpointPut implements SmartMockResponse {
     @Override
     public MockResponse generateMockResponse(RecordedRequest request) {
 
-        if (!request.getMethod().equals("PUT")) {
-            throw new RuntimeException("Expected PUT, but was not a PUT");
-        }
-
         MockResponse mockResponse = new MockResponse();
 
-        // extract id from request
-        // /db/_local/e11a8567a2ecaf27c52d02899fa82258a343d720 -> _local/e11a8567a2ecaf27c52d02899fa82258a343d720
-        String path = request.getPath();
-        String localDocId = "";
-        Pattern pattern = Pattern.compile("/db/_local/(.*)");
-        Matcher matcher = pattern.matcher(path);
-        if (matcher.find()) {
-            localDocId = matcher.group(1);
+        if (request.getMethod().equals("PUT")) {
+
+            // extract id from request
+            // /db/_local/e11a8567a2ecaf27c52d02899fa82258a343d720 -> _local/e11a8567a2ecaf27c52d02899fa82258a343d720
+            String path = request.getPath();
+            String localDocId = "";
+            Pattern pattern = Pattern.compile("/db/_local/(.*)");
+            Matcher matcher = pattern.matcher(path);
+            if (matcher.find()) {
+                localDocId = matcher.group(1);
+            } else {
+                throw new RuntimeException(String.format("Could not extract local doc id from: %s", path));
+            }
+
+            // call setId
+            setId(String.format("_local/%s", localDocId));
+            mockResponse.setBody(generateBody());
+            MockHelper.set201OKJson(mockResponse);
+            return mockResponse;
+
+        } else if (request.getMethod().equals("GET")) {
+
+            MockHelper.set404NotFoundJson(mockResponse);
+
         } else {
-            throw new RuntimeException(String.format("Could not extract local doc id from: %s", path));
+            throw new RuntimeException(String.format("Unexpected method: %s", request.getMethod()));
         }
 
-        // call setId
-        setId(String.format("_local/%s", localDocId));
-        mockResponse.setBody(generateBody());
-        MockHelper.set201OKJson(mockResponse);
         return mockResponse;
+
+    }
+
+    @Override
+    public boolean isSticky() {
+        return true;
     }
 
 }
