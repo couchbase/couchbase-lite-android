@@ -747,8 +747,7 @@ public class ReplicationTest extends LiteTestCase {
 
         MockDispatcher dispatcher = new MockDispatcher();
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
-        int numDocsPerChangesResponse = numMockRemoteDocs / 10;
-        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockRemoteDocs, numDocsPerChangesResponse);
+        MockWebServer server = new GoOfflinePreloadedPullTarget(dispatcher, numMockRemoteDocs, 1).getMockWebServer();
 
         server.play();
 
@@ -780,7 +779,9 @@ public class ReplicationTest extends LiteTestCase {
         boolean success = receivedSomeDocs.await(60, TimeUnit.SECONDS);
         assertTrue(success);
 
-        repl.restart();
+        stopReplication(repl);
+
+        repl.start();
 
         // wait until we received all mock docs or timeout occurs
         success = receivedAllDocs.await(60, TimeUnit.SECONDS);
