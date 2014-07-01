@@ -339,7 +339,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void integrationTestPusher() throws Throwable {
+    public void testPusherIntegration() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         String doc1Id;
@@ -726,93 +726,81 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-
     /**
-     *
-     * Under construction, ignore this
-     *
      * Attempting to reproduce couchtalk issue:
      *
      * https://github.com/couchbase/couchbase-lite-android/issues/312
      *
-     * - Add db docs change listener, whenever doc changes, restart replication
-     * - Mock webserver that always returns new docs to be pulled
-     * - Start puller
-     * - Verify that 10 docs are pulled w/ 10 successful restarts
+     * - Start continuous puller against mock SG w/ 50 docs
+     * - After every 10 docs received, restart replication
+     * - Make sure all 50 docs are received and stored in local db
+     *
+     * @throws Exception
      */
-    public void underConstructionTestPullerRestart() throws Exception {
+    public void failingTestMockPullerRestart() throws Exception {
 
-        MockWebServer server = new MockWebServer();
 
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        fakeCheckpointResponse.setStatus("HTTP/1.1 404 NOT FOUND").setHeader("Content-Type", "application/json");
-        server.enqueue(fakeCheckpointResponse);
+        final int numMockRemoteDocs = 50;  // must be multiple of 10!
+        final int numDocsReceivedRestart = 10;  // when we've received this many docs, restart replicator
 
-        MockResponse fakeChangesResponse = new MockResponse();
-        fakeChangesResponse.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
-        String changesBody = "{\"results\":[{\"seq\":2,\"id\":\"doc2\",\"changes\":[{\"rev\":\"1-5e38\"}]},{\"seq\":3,\"id\":\"doc3\",\"changes\":[{\"rev\":\"1-563b\"}]}],\"last_seq\":3}";
-        fakeChangesResponse.setBody(changesBody);
-        server.enqueue(fakeChangesResponse);
+        final AtomicInteger numDocsPulledLocally = new AtomicInteger(0);
 
-        MockResponse fakeDoc2 = new MockResponse();
-        fakeDoc2.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
-        String doc2Body = "{\"_id\":\"doc2\",\"_rev\":\"1-5e38\",\"_revisions\":{\"ids\":[\"5e38\"],\"start\":1},\"fakefield1\":false,\"fakefield2\":1, \"fakefield3\":\"blah\"}";
-        fakeDoc2.setBody(doc2Body);
-        server.enqueue(fakeDoc2);
-
-        server.enqueue(fakeCheckpointResponse);
-        server.enqueue(fakeChangesResponse);  // will query changes again
-
-        MockResponse fakeDoc3 = new MockResponse();
-        fakeDoc3.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
-        String doc3Body = "{\"_id\":\"doc3\",\"_rev\":\"1-5e48\",\"_revisions\":{\"ids\":[\"5e48\"],\"start\":1},\"fakefield1\":false,\"fakefield2\":1, \"fakefield3\":\"blah\"}";
-        fakeDoc3.setBody(doc3Body);
-        server.enqueue(fakeDoc3);
+        MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        int numDocsPerChangesResponse = numMockRemoteDocs / 10;
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockRemoteDocs, numDocsPerChangesResponse);
 
         server.play();
 
-        URL baseUrl = server.getUrl("/db");
-        Log.d(TAG, "baseUrl: " + baseUrl);
+        final CountDownLatch receivedAllDocs = new CountDownLatch(1);
+        final CountDownLatch receivedSomeDocs = new CountDownLatch(1);
 
-        final Replication repl = (Replication) database.createPullReplication(baseUrl);
-        repl.setContinuous(false);
+        // run pull replication
+        final Replication repl = (Replication) database.createPullReplication(server.getUrl("/db"));
+        repl.setContinuous(true);
+        repl.start();
 
         database.addChangeListener(new Database.ChangeListener() {
             @Override
             public void changed(Database.ChangeEvent event) {
-                if (event.getChanges().size() > 0) {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            repl.restart();
-                        }
-                    }).start();
+                List<DocumentChange> changes = event.getChanges();
+                for (DocumentChange change : changes) {
+                    numDocsPulledLocally.addAndGet(1);
+                }
+                if (numDocsPulledLocally.get() > numDocsReceivedRestart) {
+                    receivedSomeDocs.countDown();
+                }
+                if (numDocsPulledLocally.get() == numMockRemoteDocs) {
+                    receivedAllDocs.countDown();
                 }
             }
         });
 
-        Log.d(TAG, "Doing pull replication with: " + repl);
-        repl.start();
-        waitForReplicationFinishedXTimes(repl, 2);
+        // wait until we received a few docs
+        boolean success = receivedSomeDocs.await(60, TimeUnit.SECONDS);
+        assertTrue(success);
 
-        assertNull(repl.getLastError());
-        Log.d(TAG, "Finished pull replication with: " + repl);
+        repl.restart();
 
-        Document doc2Fetched = database.getDocument("doc2");
-        assertNotNull(doc2Fetched);
-        assertTrue(doc2Fetched.getCurrentRevisionId().startsWith("1-5e38"));
+        // wait until we received all mock docs or timeout occurs
+        success = receivedAllDocs.await(60, TimeUnit.SECONDS);
+        assertTrue(success);
 
-        Document doc3Fetched = database.getDocument("doc3");
-        assertNotNull(doc3Fetched);
-        assertTrue(doc3Fetched.getCurrentRevisionId().startsWith("1-5e48"));
+        // make sure all docs in local db
+        Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
+        Integer totalRows = (Integer) allDocs.get("total_rows");
+        List rows = (List) allDocs.get("rows");
+        assertEquals(numMockRemoteDocs, totalRows.intValue());
+        assertEquals(numMockRemoteDocs, rows.size());
+
+        // cleanup / shutdown
+        stopReplication(repl);
+        server.shutdown();
 
 
     }
+
+
 
     /**
      * Pull replication test:
