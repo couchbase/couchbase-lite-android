@@ -61,13 +61,6 @@ dependencies {
             project(':libraries:couchbase-lite-java-core') :
             'com.couchbase.lite:couchbase-lite-java-core:' + System.getenv("MAVEN_UPLOAD_VERSION")
 
-    // temporary workaround to enable running tests against Couchbase Lite Listener.
-    // once tests are converted over to use mockwebserver, this can be ripped out.
-    // see https://github.com/couchbase/couchbase-lite-android/pull/300
-    androidTestCompile buildAndroidWithArtifacts == null ?
-            project(':libraries:couchbase-lite-java-listener') :
-            'com.couchbase.lite:couchbase-lite-java-listener:' + System.getenv("MAVEN_UPLOAD_VERSION")
-
     androidTestCompile 'com.squareup.okhttp:mockwebserver:1.2.1'
 
 }
