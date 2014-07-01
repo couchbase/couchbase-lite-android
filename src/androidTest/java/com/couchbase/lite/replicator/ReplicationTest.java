@@ -1037,7 +1037,7 @@ public class ReplicationTest extends LiteTestCase {
 
         assertTrue(serverType == MockDispatcher.ServerType.COUCHDB);
 
-        final int numMockRemoteDocs = 200;  // must be multiple of 10!
+        final int numMockRemoteDocs = 20;  // must be multiple of 10!
         final AtomicInteger numDocsPulledLocally = new AtomicInteger(0);
 
         MockDispatcher dispatcher = new MockDispatcher();
