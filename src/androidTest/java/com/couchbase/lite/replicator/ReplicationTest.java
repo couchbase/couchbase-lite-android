@@ -339,7 +339,7 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
-    public void testPusherIntegration() throws Throwable {
+    public void disabledTestPusherIntegration() throws Throwable {
 
         CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         String doc1Id;
