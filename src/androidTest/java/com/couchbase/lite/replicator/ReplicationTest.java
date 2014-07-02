@@ -83,6 +83,111 @@ public class ReplicationTest extends LiteTestCase {
     public static final String TAG = "Replicator";
 
     /**
+     * This test aims to demonstrate that when the changes feed returns purged documents the
+     * replicator is able to fetch all other documents but unable to finish the replication
+     * (STOPPED OR IDLE STATE)
+     */
+    public void testChangesFeedWithPurgedDoc() throws Exception {
+        //generate documents ids
+        String doc1Id = "doc1" + System.currentTimeMillis();
+        String doc2Id = "doc2" + System.currentTimeMillis();
+        String doc3Id = "doc3" + System.currentTimeMillis();
+
+        //generate mock documents
+        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(
+                doc1Id, "1-a", 2);
+        mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
+        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(
+                doc2Id, "1-b", 3);
+        mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
+        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(
+                doc3Id, "1-c", 4);
+        mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+
+        //add response to _local request
+        // checkpoint GET response w/ 404
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+        //add response to _changes request
+        // _changes response
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // doc1 response
+        MockDocumentGet mockDocumentGet1 = new MockDocumentGet(mockDocument1);
+        dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet1.generateMockResponse());
+
+        // doc2 missing reponse
+        MockResponse missingDocumentMockResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(missingDocumentMockResponse);
+        dispatcher.enqueueResponse(mockDocument2.getDocPathRegex(), missingDocumentMockResponse);
+
+        // doc3 response
+        MockDocumentGet mockDocumentGet3 = new MockDocumentGet(mockDocument3);
+        dispatcher.enqueueResponse(mockDocument3.getDocPathRegex(), mockDocumentGet3.generateMockResponse());
+
+        // checkpoint PUT response
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, new MockCheckpointPut());
+
+        // start mock server
+        server.play();
+
+        //create url for replication
+        URL baseUrl = server.getUrl("/db");
+
+        //create replication
+        Replication pullReplication = (Replication) database.createPullReplication(baseUrl);
+        pullReplication.setContinuous(false);
+        //add change listener no notify when the replication is finished
+        CountDownLatch replicationFinishedContCountDownLatch = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver =
+                new ReplicationFinishedObserver(replicationFinishedContCountDownLatch);
+        pullReplication.addChangeListener(replicationFinishedObserver);
+        //start replication
+        pullReplication.start();
+
+        replicationFinishedContCountDownLatch.await(100, TimeUnit.SECONDS);
+
+        if (pullReplication.getLastError() != null) {
+            Log.d(TAG, "error code: " + ((HttpResponseException) pullReplication.getLastError()).getStatusCode());
+        }
+
+        //assert document 1 was correctly pulled
+        Document doc1 = database.getDocument(doc1Id);
+        assertNotNull(doc1);
+        assertNotNull(doc1.getCurrentRevision());
+
+        //assert it was impossible to pull doc2
+        Document doc2 = database.getDocument(doc2Id);
+        assertNotNull(doc2);
+        assertNull(doc2.getCurrentRevision());
+
+        //assert it was possible to pull doc3
+        Document doc3 = database.getDocument(doc3Id);
+        assertNotNull(doc3);
+        assertNotNull(doc3.getCurrentRevision());
+
+        //assert the replicator was able to finish
+        assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, pullReplication.getStatus());
+
+
+        //stop mock server
+        server.shutdown();
+        pullReplication.stop();
+    }
+
+
+    /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/241
      *
      * - Set the "retry time" to a short number
