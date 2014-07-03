@@ -89,11 +89,11 @@ public class ReplicationTest extends LiteTestCase {
      * replicator is able to fetch all other documents but unable to finish the replication
      * (STOPPED OR IDLE STATE)
      */
-    public void failingTestChangesFeedWithPurgedDoc() throws Exception {
+    public void testChangesFeedWithPurgedDoc() throws Exception {
         //generate documents ids
-        String doc1Id = "doc1" + System.currentTimeMillis();
-        String doc2Id = "doc2" + System.currentTimeMillis();
-        String doc3Id = "doc3" + System.currentTimeMillis();
+        String doc1Id = "doc1-" + System.currentTimeMillis();
+        String doc2Id = "doc2-" + System.currentTimeMillis();
+        String doc3Id = "doc3-" + System.currentTimeMillis();
 
         //generate mock documents
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(
@@ -158,7 +158,8 @@ public class ReplicationTest extends LiteTestCase {
         //start replication
         pullReplication.start();
 
-        replicationFinishedContCountDownLatch.await(100, TimeUnit.SECONDS);
+        boolean success = replicationFinishedContCountDownLatch.await(100, TimeUnit.SECONDS);
+        assertTrue(success);
 
         if (pullReplication.getLastError() != null) {
             Log.d(TAG, "error code: " + ((HttpResponseException) pullReplication.getLastError()).getStatusCode());
