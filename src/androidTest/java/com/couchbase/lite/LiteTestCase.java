@@ -161,6 +161,18 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
         }
     }
 
+    protected URL getReplicationSubURL(String subIndex)  {
+        try {
+            if(getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
+                return new URL(String.format("%s://%s:%s@%s:%d/%s%s", getReplicationProtocol(), getReplicationAdminUser(), getReplicationAdminPassword(), getReplicationServer(), getReplicationPort(), getReplicationDatabase(),subIndex));
+            } else {
+                return new URL(String.format("%s://%s:%d/%s%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase(),subIndex));
+            }
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
     protected boolean isTestingAgainstSyncGateway() {
         return getReplicationPort() == 4984;
     }
