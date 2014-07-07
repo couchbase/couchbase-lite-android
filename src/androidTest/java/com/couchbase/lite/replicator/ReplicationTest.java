@@ -97,13 +97,13 @@ public class ReplicationTest extends LiteTestCase {
 
         //generate mock documents
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(
-                doc1Id, "1-a", 2);
+                doc1Id, "1-a", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
         final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(
-                doc2Id, "1-b", 3);
+                doc2Id, "1-b", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
         final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(
-                doc3Id, "1-c", 4);
+                doc3Id, "1-c", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -184,10 +184,12 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, pullReplication.getStatus());
 
         //give time for Replication.setLastSequence(String lastSequenceIn) to run save task
-        Thread.sleep(3000);
+        Thread.sleep(10 * 1000);
 
         //last saved seq must be equal to last pulled document seq
-        assertEquals("4", pullReplication.getLastSequence());
+        String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
+        assertEquals(doc3Seq, pullReplication.getLastSequence());
+        assertEquals(doc3Seq, database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID()));
 
         //stop mock server
         server.shutdown();
