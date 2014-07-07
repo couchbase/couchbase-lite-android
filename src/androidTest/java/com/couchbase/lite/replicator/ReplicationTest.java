@@ -183,6 +183,11 @@ public class ReplicationTest extends LiteTestCase {
         //assert the replicator was able to finish
         assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, pullReplication.getStatus());
 
+        //give time for Replication.setLastSequence(String lastSequenceIn) to run save task
+        Thread.sleep(3000);
+
+        //last saved seq must be equal to last pulled document seq
+        assertEquals("4", pullReplication.getLastSequence());
 
         //stop mock server
         server.shutdown();
