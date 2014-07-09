@@ -81,13 +81,38 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ReplicationTest extends LiteTestCase {
 
     public static final String TAG = "Replicator";
+
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/224
      *
      * This test aims to reproduce the issue of concurrent change trackers running for the same replication
      */
     public void testConcurrentChangeTrackers() throws Exception {
-        URL url = getReplicationURL();
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+
+        //add responses  to _local request
+        // checkpoint GET response w/ 404
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+        for (int i = 0; i < 11; i++) {
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+        }
+
+        //add permanent changes feed
+        MockEmptyChangesFeed mockEmptyChangesFeed = new MockEmptyChangesFeed();
+        mockEmptyChangesFeed.setPermanentResponse(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockEmptyChangesFeed);
+
+        // start mock server
+        server.play();
+
+        //create url for replication
+        URL url = server.getUrl("/db");
+
+        //instantiate replication
         Replication pullReplication = database.createPullReplication(url);
         pullReplication.setContinuous(true);
 
@@ -117,6 +142,7 @@ public class ReplicationTest extends LiteTestCase {
 
         //stop replication
         putReplicationOffline(pullReplication);
+        Thread.sleep(2000);
 
         assertEquals(0, getChangeTrackerThreads());
 
@@ -125,11 +151,11 @@ public class ReplicationTest extends LiteTestCase {
         }
 
         //sleep for a while so all change tracker threads start
-        Thread.sleep(30000);
+        Thread.sleep(2000);
 
         //after call goOnline 10x
         //there should be only one change tracker thread but after calling go online 10x
-        //we end up with 10 change tracker threads
+        //we end up with 10 change tracker threads(if no 406 is returned from the changes feed)
         //(sometimes we get 9 change trackers as in the last goOnline() call one of the change trackers might already started)
         assertEquals(1, getChangeTrackerThreads());
 
@@ -146,7 +172,31 @@ public class ReplicationTest extends LiteTestCase {
      * the replicator to become IDLE after being able to call the goOnline() method again
      */
     public void testConcurrentChangeTrackersWithStateControl() throws Exception {
-        URL url = getReplicationURL();
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+
+        //add responses  to _local request
+        // checkpoint GET response w/ 404
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+        for (int i = 0; i < 11; i++) {
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+        }
+
+        //add permanent changes feed
+        MockEmptyChangesFeed mockEmptyChangesFeed = new MockEmptyChangesFeed();
+        mockEmptyChangesFeed.setPermanentResponse(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockEmptyChangesFeed);
+
+        // start mock server
+        server.play();
+
+        //create url for replication
+        URL url = server.getUrl("/db");
+
+        //instantiate replication
         Replication pullReplication = database.createPullReplication(url);
         pullReplication.setContinuous(true);
 
@@ -168,12 +218,16 @@ public class ReplicationTest extends LiteTestCase {
         //wait for replication to perform work and become idle
         boolean success = activeCountDownLatch.await(10, TimeUnit.SECONDS);
         assertTrue(success);
+        success = idleCountDownLatch.await(10, TimeUnit.SECONDS);
+        assertTrue(success);
 
         //while continuous replication is running there must be a changeTracker thread
         assertEquals(1, getChangeTrackerThreads());
+        Thread.sleep(30000);
 
         //stop replication
         putReplicationOffline(pullReplication);
+        Thread.sleep(2000);
 
         assertEquals(0, getChangeTrackerThreads());
 
@@ -200,7 +254,7 @@ public class ReplicationTest extends LiteTestCase {
         }
 
         //sleep for a while before verify if no other change tracker threads were created
-        Thread.sleep(30000);
+        Thread.sleep(2000);
 
         //only one change tracker per replication
         assertEquals(1, getChangeTrackerThreads());
