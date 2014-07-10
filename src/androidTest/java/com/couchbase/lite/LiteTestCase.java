@@ -69,6 +69,7 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
         LiteTestContext context = new LiteTestContext();
         Manager.enableLogging(Log.TAG, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_SYNC, Log.VERBOSE);
+        Manager.enableLogging(Log.TAG_SYNC_ASYNC_TASK, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_QUERY, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_VIEW, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_CHANGE_TRACKER, Log.VERBOSE);
