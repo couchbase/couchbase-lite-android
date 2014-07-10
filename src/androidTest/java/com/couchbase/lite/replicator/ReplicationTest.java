@@ -106,7 +106,6 @@ public class ReplicationTest extends LiteTestCase {
         mockChangesFeedNoResponse.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
-
         // start mock server
         server.play();
 
@@ -114,11 +113,35 @@ public class ReplicationTest extends LiteTestCase {
         URL baseUrl = server.getUrl("/db");
 
         //create replication
-        Replication pullReplication = (Replication) database.createPullReplication(baseUrl);
+        final Replication pullReplication = (Replication) database.createPullReplication(baseUrl);
         pullReplication.setContinuous(true);
+        pullReplication.start();
 
-        runReplication(pullReplication);
+        // wait until we get a request to the _changes feed
+        RecordedRequest changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
+        assertNotNull(changesReq);
 
+        putReplicationOffline(pullReplication);
+
+        for (int i = 0; i < 10; i++) {
+            pullReplication.goOnline();
+        }
+
+        // sleep for a while to give things a chance to start
+        Thread.sleep(5 * 1000);
+
+        // how many _changes feed requests has the replicator made
+        int numChangesRequests = 0;
+        while ((changesReq = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES)) != null) {
+            Log.d(TAG, "changesReq: %s", changesReq);
+            numChangesRequests += 1;
+        }
+
+        // assert that there was only one
+        assertEquals(1, numChangesRequests);
+
+        // shutdown
+        stopReplication(pullReplication);
         server.shutdown();
 
 
