@@ -70,13 +70,13 @@ public class MockDispatcher extends Dispatcher {
                 }
                 if (!responseQueue.isEmpty()) {
                     SmartMockResponse smartMockResponse = responseQueue.take();
+                    if (smartMockResponse.isSticky()) {
+                        responseQueue.put(smartMockResponse); // if it's sticky, put it back in queue
+                    }
                     if (smartMockResponse.delayMs() > 0) {
                         System.out.println(String.format("Delaying response for: %d", smartMockResponse.delayMs()));
                         Thread.sleep(smartMockResponse.delayMs());
                         System.out.println("Finished delaying response");
-                    }
-                    if (smartMockResponse.isSticky()) {
-                        responseQueue.put(smartMockResponse); // if it's sticky, put it back in queue
                     }
                     MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
                     System.out.println(String.format("Response: %s", mockResponse.getBody()));
