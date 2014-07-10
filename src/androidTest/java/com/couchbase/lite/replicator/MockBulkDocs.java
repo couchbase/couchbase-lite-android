@@ -103,4 +103,8 @@ public class MockBulkDocs implements SmartMockResponse {
         return false;
     }
 
+    @Override
+    public long delayMs() {
+        return 0;
+    }
 }

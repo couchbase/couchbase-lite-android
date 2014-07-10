@@ -83,6 +83,48 @@ public class ReplicationTest extends LiteTestCase {
     public static final String TAG = "ReplicationTest";
 
     /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/253
+     */
+    public void testReplicationOnlineExtraneousChangeTrackers() throws Exception {
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+
+        //add response to _local request
+        // checkpoint GET response w/ 404
+        MockCheckpointGet fakeCheckpointResponse = new MockCheckpointGet();
+        fakeCheckpointResponse.set404(true);
+        fakeCheckpointResponse.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+        //add response to _changes request
+        // _changes response
+        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+        mockChangesFeedNoResponse.setDelayMs(20 * 1000);
+        mockChangesFeedNoResponse.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+
+
+        // start mock server
+        server.play();
+
+        //create url for replication
+        URL baseUrl = server.getUrl("/db");
+
+        //create replication
+        Replication pullReplication = (Replication) database.createPullReplication(baseUrl);
+        pullReplication.setContinuous(true);
+
+        runReplication(pullReplication);
+
+        server.shutdown();
+
+
+    }
+
+    /**
      * https://github.com/couchbase/couchbase-lite-android/issues/376
      *
      * This test aims to demonstrate that when the changes feed returns purged documents the

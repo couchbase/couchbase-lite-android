@@ -90,4 +90,8 @@ public class MockRevsDiff implements SmartMockResponse {
         return false;
     }
 
+    @Override
+    public long delayMs() {
+        return 0;
+    }
 }

@@ -93,4 +93,8 @@ public class MockCheckpointPut implements SmartMockResponse {
         return true;
     }
 
+    @Override
+    public long delayMs() {
+        return 0;
+    }
 }

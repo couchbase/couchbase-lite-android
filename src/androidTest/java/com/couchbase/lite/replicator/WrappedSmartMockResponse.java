@@ -21,4 +21,8 @@ public class WrappedSmartMockResponse implements SmartMockResponse {
         return false;
     }
 
+    @Override
+    public long delayMs() {
+        return 0;
+    }
 }

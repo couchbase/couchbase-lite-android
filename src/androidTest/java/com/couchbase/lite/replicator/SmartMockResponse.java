@@ -14,4 +14,10 @@ public interface SmartMockResponse {
 
     public boolean isSticky();
 
+    /**
+     * @return the delay, in milliseconds, before the MockDispatcher should
+     * return this response.
+     */
+    public long delayMs();
+
 }
