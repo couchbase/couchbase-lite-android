@@ -92,17 +92,16 @@ public class ReplicationTest extends LiteTestCase {
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
 
-        //add response to _local request
-        // checkpoint GET response w/ 404
+        // add sticky checkpoint GET response w/ 404
         MockCheckpointGet fakeCheckpointResponse = new MockCheckpointGet();
         fakeCheckpointResponse.set404(true);
         fakeCheckpointResponse.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        //add response to _changes request
-        // _changes response
+        // add sticky _changes response that just blocks for 60 seconds to emulate
+        // server that doesn't have any new changes
         MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse.setDelayMs(20 * 1000);
+        mockChangesFeedNoResponse.setDelayMs(60 * 1000);
         mockChangesFeedNoResponse.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
@@ -123,6 +122,10 @@ public class ReplicationTest extends LiteTestCase {
 
         putReplicationOffline(pullReplication);
 
+        // at this point since we called takeRequest earlier, our recorded _changes request queue should be empty
+        assertNull(dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES));
+
+        // put replication online 10 times
         for (int i = 0; i < 10; i++) {
             pullReplication.goOnline();
         }
@@ -130,14 +133,14 @@ public class ReplicationTest extends LiteTestCase {
         // sleep for a while to give things a chance to start
         Thread.sleep(5 * 1000);
 
-        // how many _changes feed requests has the replicator made
+        // how many _changes feed requests has the replicator made since going online?
         int numChangesRequests = 0;
         while ((changesReq = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES)) != null) {
             Log.d(TAG, "changesReq: %s", changesReq);
             numChangesRequests += 1;
         }
 
-        // assert that there was only one
+        // assert that there was only one _changes feed request
         assertEquals(1, numChangesRequests);
 
         // shutdown
