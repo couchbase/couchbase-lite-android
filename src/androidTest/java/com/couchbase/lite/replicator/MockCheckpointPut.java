@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 public class MockCheckpointPut implements SmartMockResponse {
 
     private String id;
+    private boolean isSticky;
 
     private String getId() {
         return id;
@@ -90,11 +91,15 @@ public class MockCheckpointPut implements SmartMockResponse {
 
     @Override
     public boolean isSticky() {
-        return true;
+        return this.isSticky;
     }
 
     @Override
     public long delayMs() {
         return 0;
+    }
+
+    public void setSticky(boolean isSticky) {
+        this.isSticky = isSticky;
     }
 }

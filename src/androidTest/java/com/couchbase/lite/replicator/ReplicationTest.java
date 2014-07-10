@@ -207,7 +207,9 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.enqueueResponse(mockDocument3.getDocPathRegex(), mockDocumentGet3.generateMockResponse());
 
         // checkpoint PUT response
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, new MockCheckpointPut());
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
         // start mock server
         server.play();
@@ -218,11 +220,13 @@ public class ReplicationTest extends LiteTestCase {
         //create replication
         Replication pullReplication = (Replication) database.createPullReplication(baseUrl);
         pullReplication.setContinuous(false);
-        //add change listener no notify when the replication is finished
+
+        //add change listener to notify when the replication is finished
         CountDownLatch replicationFinishedContCountDownLatch = new CountDownLatch(1);
         ReplicationFinishedObserver replicationFinishedObserver =
                 new ReplicationFinishedObserver(replicationFinishedContCountDownLatch);
         pullReplication.addChangeListener(replicationFinishedObserver);
+
         //start replication
         pullReplication.start();
 
@@ -251,19 +255,31 @@ public class ReplicationTest extends LiteTestCase {
         //assert the replicator was able to finish
         assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, pullReplication.getStatus());
 
-        //give time for Replication.setLastSequence(String lastSequenceIn) to run save task
-        Thread.sleep(120 * 1000);
+        // wait until the replicator PUT's checkpoint with mockDocument3's sequence
+        waitForPutCheckpointRequestWithSeq(dispatcher, mockDocument3.getDocSeq());
 
         //last saved seq must be equal to last pulled document seq
         String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
         assertEquals(doc3Seq, pullReplication.getLastSequence());
 
         // TODO: fix https://github.com/couchbase/couchbase-lite-java-core/issues/252 and re-enable assertion
-        // assertEquals(doc3Seq, database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID()));
+        // assertEquals(doc3Seq, database.lastSequenceWithCheckpointId(mockDocument3.getDocSeq()));
 
         //stop mock server
         server.shutdown();
 
+    }
+
+    public void waitForPutCheckpointRequestWithSeq(MockDispatcher dispatcher, int seq) {
+        while (true) {
+            RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            if (request.getMethod().equals("PUT")) {
+                String body = request.getUtf8Body();
+                if (body.indexOf(Integer.toString(seq)) != -1) {
+                    return;
+                }
+            }
+        }
     }
 
 
