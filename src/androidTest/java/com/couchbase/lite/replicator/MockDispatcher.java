@@ -127,6 +127,28 @@ public class MockDispatcher extends Dispatcher {
         }
     }
 
+    public RecordedRequest takeRequestBlocking(String pathRegex) {
+
+        BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
+
+        // since the queue itself will be created lazily, we need to do a silly
+        // polling loop until the queue appears (if ever -- otherwise this will never return)
+        while (queue == null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            queue = recordedRequestQueueMap.get(pathRegex);
+        }
+
+        try {
+            return queue.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public boolean verifyAllRecordedRequestsTaken() {
         for (String pathRegex : recordedRequestQueueMap.keySet()) {
             BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
