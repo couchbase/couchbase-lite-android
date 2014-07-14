@@ -23,6 +23,8 @@ public class MockHelper {
 
     public static final String PATH_REGEX_CHECKPOINT = "/db/_local.*";
     public static final String PATH_REGEX_CHANGES = "/db/_changes.*";
+    public static final String PATH_REGEX_CHANGES_NORMAL = "/db/_changes\\?feed=normal.*";
+    public static final String PATH_REGEX_CHANGES_LONGPOLL = "/db/_changes\\?feed=longpoll.*";
     public static final String PATH_REGEX_REVS_DIFF = "/db/_revs_diff.*";
     public static final String PATH_REGEX_BULK_DOCS = "/db/_bulk_docs.*";
     public static final String PATH_REGEX_SESSION = "/db/_session.*";

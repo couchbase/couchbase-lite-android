@@ -98,12 +98,20 @@ public class ReplicationTest extends LiteTestCase {
         fakeCheckpointResponse.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        // add sticky _changes response that just blocks for 60 seconds to emulate
+
+        // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
         // server that doesn't have any new changes
         MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
         mockChangesFeedNoResponse.setDelayMs(60 * 1000);
         mockChangesFeedNoResponse.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_LONGPOLL, mockChangesFeedNoResponse);
+
+        // add _changes response to feed=normal that returns empty _changes feed immediately
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        MockResponse mockResponse = mockChangesFeed.generateMockResponse();
+        for (int i=0; i<500; i++) {  // TODO: use setSticky instead of workaround to add a ton of mock responses
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_NORMAL, new WrappedSmartMockResponse(mockResponse));
+        }
 
         // start mock server
         server.play();
@@ -117,13 +125,13 @@ public class ReplicationTest extends LiteTestCase {
         pullReplication.start();
 
         // wait until we get a request to the _changes feed
-        RecordedRequest changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
+        RecordedRequest changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES_LONGPOLL);
         assertNotNull(changesReq);
 
         putReplicationOffline(pullReplication);
 
         // at this point since we called takeRequest earlier, our recorded _changes request queue should be empty
-        assertNull(dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES));
+        assertNull(dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES_LONGPOLL));
 
         // put replication online 10 times
         for (int i = 0; i < 10; i++) {
@@ -135,7 +143,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // how many _changes feed requests has the replicator made since going online?
         int numChangesRequests = 0;
-        while ((changesReq = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES)) != null) {
+        while ((changesReq = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES_LONGPOLL)) != null) {
             Log.d(TAG, "changesReq: %s", changesReq);
             numChangesRequests += 1;
         }
