@@ -595,6 +595,24 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
 
     }
 
+    public static class ReplicationActiveObserver implements Replication.ChangeListener {
+        private CountDownLatch doneSignal;
+
+        public ReplicationActiveObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+            Replication replicator = event.getSource();
+            if (replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
+                Log.d("FhpLibTests", "active observer");
+                doneSignal.countDown();
+            }
+        }
+
+    }
+
     public static class ReplicationStoppedObserver implements Replication.ChangeListener {
 
         private CountDownLatch doneSignal;
@@ -630,6 +648,17 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
             }
         }
 
+    }
+
+    public int getChangeTrackerThreads() {
+        int nrOfChangeTrackerThreads = 0;
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (thread.getName().startsWith("ChangeTracker")) {
+                nrOfChangeTrackerThreads++;
+            }
+        }
+
+        return  nrOfChangeTrackerThreads;
     }
 
     public void dumpTableMaps() throws Exception {
