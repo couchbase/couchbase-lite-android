@@ -9,6 +9,7 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -27,6 +28,10 @@ public class MockDispatcher extends Dispatcher {
     // the value is a Queue of RecordedRequest objects this dispatcher has dispatched.
     private Map<String, BlockingQueue<RecordedRequest>> recordedRequestQueueMap;
 
+    // Map where key is RecordedReqeust instance, and value is the MockResponse that
+    // was returned for that RecordedRequest.
+    private Map<RecordedRequest, MockResponse> recordedReponseMap;
+
     // add these headers to every request
     private Map<String, String> headers;
 
@@ -36,6 +41,7 @@ public class MockDispatcher extends Dispatcher {
         super();
         queueMap = new HashMap<String, BlockingQueue<SmartMockResponse>>();
         recordedRequestQueueMap = new HashMap<String, BlockingQueue<RecordedRequest>>();
+        recordedReponseMap = new ConcurrentHashMap<RecordedRequest, MockResponse>();
         headers = new HashMap<String, String>();
     }
 
@@ -81,13 +87,18 @@ public class MockDispatcher extends Dispatcher {
                     MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
                     System.out.println(String.format("Response: %s", mockResponse.getBody()));
                     addHeaders(mockResponse);
+                    recordedReponseMap.put(request, mockResponse);
                     return mockResponse;
                 } else {
-                    return new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE); // fail fast
+                    MockResponse mockResponse = new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE);
+                    recordedReponseMap.put(request, mockResponse);
+                    return mockResponse; // fail fast
                 }
             }
         }
-        return new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE); // fail fast
+        MockResponse mockResponse = new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE);
+        recordedReponseMap.put(request, mockResponse);
+        return mockResponse; // fail fast
     }
 
     public void enqueueResponse(String pathRegex, SmartMockResponse response) {
@@ -124,6 +135,25 @@ public class MockDispatcher extends Dispatcher {
             return queue.take();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public MockResponse takeRecordedResponseBlocking(RecordedRequest request) {
+        while (true) {
+            if (!recordedReponseMap.containsKey(request)) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            } else {
+                MockResponse response = recordedReponseMap.get(request);
+                if (response != null) {
+                    return response;
+                }
+            }
+
         }
     }
 

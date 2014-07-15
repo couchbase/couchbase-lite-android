@@ -48,6 +48,8 @@ import java.util.Map;
  */
 public class MockRevsDiff implements SmartMockResponse {
 
+    private boolean isSticky;
+
     @Override
     public MockResponse generateMockResponse(RecordedRequest request) {
 
@@ -87,11 +89,15 @@ public class MockRevsDiff implements SmartMockResponse {
 
     @Override
     public boolean isSticky() {
-        return false;
+        return this.isSticky;
     }
 
     @Override
     public long delayMs() {
         return 0;
+    }
+
+    public void setSticky(boolean isSticky) {
+        this.isSticky = isSticky;
     }
 }
