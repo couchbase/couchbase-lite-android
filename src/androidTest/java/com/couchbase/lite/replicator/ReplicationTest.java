@@ -2200,7 +2200,7 @@ public class ReplicationTest extends LiteTestCase {
 
         replicator.start();
 
-        boolean success = firstDocReceived.await(30, TimeUnit.SECONDS);
+        boolean success = firstDocReceived.await(120, TimeUnit.SECONDS);
         assertTrue(success);
 
         putReplicationOffline(replicator);
@@ -2209,7 +2209,7 @@ public class ReplicationTest extends LiteTestCase {
         Thread.sleep(5 * 1000);
         putReplicationOnline(replicator);
 
-        success = allDocsReceived.await(30, TimeUnit.SECONDS);
+        success = allDocsReceived.await(120, TimeUnit.SECONDS);
         assertTrue(success);
 
         // make sure all docs in local db
