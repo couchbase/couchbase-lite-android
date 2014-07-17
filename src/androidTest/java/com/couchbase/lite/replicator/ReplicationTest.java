@@ -164,7 +164,9 @@ public class ReplicationTest extends LiteTestCase {
 
         // wait for the next PUT checkpoint request/response
         waitForPutCheckpointRequestWithSeq(dispatcher, 1);
+        Log.d(TAG, "Sleeping ..");
         Thread.sleep(10 * 1000);  // TODO: block until response returned
+        Log.d(TAG, "Done sleeping ..");
 
         stopReplication(pullReplication);
 
