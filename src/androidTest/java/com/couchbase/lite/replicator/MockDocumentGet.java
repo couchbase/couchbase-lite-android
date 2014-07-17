@@ -48,6 +48,7 @@ public class MockDocumentGet {
     private String docId;
     private String rev;
     private Map<String, Object> jsonMap;
+    private boolean includeAttachmentPart;
 
     // you can optionally supply a revHistoryMap, otherwise
     // a simple default rev history will be generated.
@@ -59,6 +60,7 @@ public class MockDocumentGet {
     public MockDocumentGet() {
         attachmentFileNames = new ArrayList<String>();
         this.revHistoryMap = new HashMap<String, Object>();
+        this.includeAttachmentPart = true;
     }
 
     public MockDocumentGet(MockDocument mockDocument) {
@@ -162,7 +164,11 @@ public class MockDocumentGet {
                 throw new RuntimeException("Only png files are supported as test attachemnts");
             }
             attachmentMap.put("digest", calculateSha1Digest(attachmentName));
-            attachmentMap.put("follows", true);
+            if (this.isIncludeAttachmentPart()) {
+                attachmentMap.put("follows", true);
+            } else {
+                attachmentMap.put("stub", true);
+            }
             attachmentMap.put("length", MockDocumentGet.getAssetByteArray(attachmentName).length);
             attachmentMap.put("revpos", 1);
 
@@ -216,13 +222,17 @@ public class MockDocumentGet {
             String partNameIgnored = "part";  // this never seems to appear anywhere in response
             multiPart.addPart(partNameIgnored, new StringBody(generateDocumentBody(), "application/json", Charset.forName("UTF-8")));
 
+
+
             for (String attachmentName : attachmentFileNames) {
 
                 byte[] attachmentBytes = getAssetByteArray(attachmentName);
 
                 int contentLength = attachmentBytes.length;
 
-                multiPart.addPart(attachmentName, new InputStreamBody(new ByteArrayInputStream(attachmentBytes), "image/png", attachmentName, contentLength));
+                if (this.isIncludeAttachmentPart()) {
+                    multiPart.addPart(attachmentName, new InputStreamBody(new ByteArrayInputStream(attachmentBytes), "image/png", attachmentName, contentLength));
+                }
 
                 baos = new ByteArrayOutputStream();
                 multiPart.writeTo(baos);
@@ -237,6 +247,8 @@ public class MockDocumentGet {
                 baos.close();
 
             }
+
+
 
 
         } catch (Exception e) {
@@ -263,6 +275,14 @@ public class MockDocumentGet {
         }
     }
 
+
+    public boolean isIncludeAttachmentPart() {
+        return includeAttachmentPart;
+    }
+
+    public void setIncludeAttachmentPart(boolean includeAttachmentPart) {  // TOO: rename to isStubbed()
+        this.includeAttachmentPart = includeAttachmentPart;
+    }
 
     public static class MockDocument {
 
