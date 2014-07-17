@@ -110,9 +110,12 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         server.play();
 
-        // add some documents
+        // add some documents - verify it has an attachment
         Document doc1 = createDocumentForPushReplication(doc1Id, doc1AttachName, contentType);
         String doc1Rev1 = doc1.getCurrentRevisionId();
+        database.clearDocumentCache();
+        doc1 = database.getDocument(doc1.getId());
+        assertTrue(doc1.getCurrentRevision().getAttachments().size() > 0);
 
         // checkpoint GET response w/ 404
         MockResponse fakeCheckpointResponse = new MockResponse();
@@ -164,9 +167,6 @@ public class ReplicationTest extends LiteTestCase {
 
         // wait for the next PUT checkpoint request/response
         waitForPutCheckpointRequestWithSeq(dispatcher, 1);
-        Log.d(TAG, "Sleeping ..");
-        Thread.sleep(10 * 1000);  // TODO: block until response returned
-        Log.d(TAG, "Done sleeping ..");
 
         stopReplication(pullReplication);
 
@@ -384,6 +384,8 @@ public class ReplicationTest extends LiteTestCase {
             if (request.getMethod().equals("PUT")) {
                 String body = request.getUtf8Body();
                 if (body.indexOf(Integer.toString(seq)) != -1) {
+                    // block until response returned
+                    dispatcher.takeRecordedResponseBlocking(request);
                     return;
                 }
             }
