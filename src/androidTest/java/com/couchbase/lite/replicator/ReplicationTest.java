@@ -82,6 +82,87 @@ public class ReplicationTest extends LiteTestCase {
 
     public static final String TAG = "ReplicationTest";
 
+
+    /**
+     * This test demonstrates that when the replication finished observer is called the replicator
+     * might have not processed all changes.
+     * This test fails intermittently.
+     */
+    public void testReplicationStoppedAfterProcessAllRequests() throws Exception {
+        //create changes feed with 3 mock documents
+        //each mock document must have a delay to guarantee it is not the MockerServer response that is too fast
+        //verify there isn't any change to process after stopped is invoked
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+
+        // add sticky checkpoint GET response w/ 404
+        MockCheckpointGet fakeCheckpointResponse = new MockCheckpointGet();
+        fakeCheckpointResponse.set404(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+        //generate mock document gets responses with delay
+        List<MockDocumentGet.MockDocument> mockGetDocuments =  new ArrayList<MockDocumentGet.MockDocument>();
+        for (int i = 0; i < 20; i++) {
+            final MockDocumentGet.MockDocument mockDocument = new MockDocumentGet.MockDocument(
+                    "doc-" + String.valueOf(i) + String.valueOf(System.currentTimeMillis()),
+                    "1-a",
+                    i + 1
+            );
+            mockDocument.setJsonMap(MockHelper.generateRandomJsonMap());
+            mockGetDocuments.add(mockDocument);
+        }
+
+        //add response to _changes request
+        // _changes feed with mock documents to fetch
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        for (MockDocumentGet.MockDocument mockDocument: mockGetDocuments) {
+            //add document to changes feed
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument));
+
+            //generate response for document fetch
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
+            dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+        }
+        //add changes feed to server
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // checkpoint PUT response
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        //start mock server
+        server.play();
+
+        //create url for replication
+        URL baseUrl = server.getUrl("/db");
+
+        //create replication
+        final Replication pullReplication = (Replication) database.createPullReplication(baseUrl);
+        pullReplication.setContinuous(false);
+
+        //add change listener to notify when the replication is finished
+        CountDownLatch replicationFinishedContCountDownLatch = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver =
+                new ReplicationFinishedObserver(replicationFinishedContCountDownLatch);
+        pullReplication.addChangeListener(replicationFinishedObserver);
+
+        //start replication
+        pullReplication.start();
+
+        boolean success = replicationFinishedContCountDownLatch.await(20, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        //verify all changes were processed before stopped is called
+        assertEquals(pullReplication.getChangesCount(), pullReplication.getCompletedChangesCount());
+
+        pullReplication.stop();
+        server.shutdown();
+    }
+
+
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/257
      *
