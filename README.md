@@ -37,11 +37,11 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 <dependency>
   <groupId>com.couchbase.lite</groupId>
   <artifactId>android</artifactId>
-  <version>0.0.0-396</version>
+  <version>0.0.0-426</version>
 </dependency>
 ```
 
-While `0.0.0-396` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "396" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `0.0.0-` and is later than `0.0.0-396`
+While `0.0.0-426` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "426" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `0.0.0-` and is later than `0.0.0-426`
 
 Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle) that uses this maven artifact.
 
@@ -61,7 +61,7 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 
 For Eclipse and Phonegap users, here are links to the zip file which includes the jars:
 
-* [Master Branch build #396 zipfile](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/396/artifact/couchbase-lite-0.0.0-396-android-community.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
+* [Master Branch build #426 zipfile](http://factory.couchbase.com/job/build_cblite_android_master-community/13/artifact/couchbase-lite-android-community_0.0.0-426.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
 * [1.0.0 zipfile](http://www.couchbase.com/dl/releases/couchbase-lite/android/1.0.0/couchbase-lite-android-community_1.0.0.zip/download)
 
 
