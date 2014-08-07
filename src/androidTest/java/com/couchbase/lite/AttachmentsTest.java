@@ -521,7 +521,7 @@ public class AttachmentsTest extends LiteTestCase {
      * Regression test for https://github.com/couchbase/couchbase-lite-java-core/issues/218
      */
 
-    public void failingTestGetAttachmentAfterItDeleted() throws CouchbaseLiteException, IOException {
+    public void testGetAttachmentAfterItDeleted() throws CouchbaseLiteException, IOException {
 
         // add a doc with an attachment
         Document doc = database.createDocument();
