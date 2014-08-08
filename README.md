@@ -100,6 +100,8 @@ You should be able to import the project directly into Android Studio:
 * Choose File / Import and choose the settings.gradle file in the couchbase-lite-android directory you cloned earlier
 * Hit Finish and wait for all tasks to finish (may take a while)
 
+**Warning** when importing, you will probably see an error like [Wrong offset: 290. Should be in range: 0, 230](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work after that
+
 ### Running tests
 
 There are two wiki pages which describe how to run the tests:
