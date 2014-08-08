@@ -65,11 +65,11 @@ For Eclipse and Phonegap users, here are links to the zip file which includes th
 * [1.0.0 zipfile](http://www.couchbase.com/dl/releases/couchbase-lite/android/1.0.0/couchbase-lite-android-community_1.0.0.zip/download)
 
 
-## Building Couchbase Lite from source
+## Building Couchbase Lite master branch from source
 
 ### Prerequisites
 
-* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  Versions 0.5.7 and 0.5.8 are known to work.  Anything older will almost certainly not work.  Newer versions after 0.5.8 may or may not work.  (if not, please report an issue)
+* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  Versions 0.8.2 is known to work, with the following caveat: when importing, you will see [this error](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work after that.  If you are trying to build the 1.0.x release branch, you will need to use Android Studio version 0.5.7.
 
 * Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
 
