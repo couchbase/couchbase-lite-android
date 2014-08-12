@@ -8,6 +8,7 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +26,7 @@ import java.util.regex.Pattern;
 public class MockCheckpointPut implements SmartMockResponse {
 
     private String id;
+    private String rev;
     private boolean isSticky;
 
     private String getId() {
@@ -39,7 +41,7 @@ public class MockCheckpointPut implements SmartMockResponse {
         Map<String, Object> docMap = new HashMap<String, Object>();
         docMap.put("id", getId());
         docMap.put("ok", true); // ditto
-        docMap.put("rev", "0-1"); // ditto
+        docMap.put("rev", generateNextRev());
         return docMap;
     }
 
@@ -49,6 +51,27 @@ public class MockCheckpointPut implements SmartMockResponse {
             return Manager.getObjectMapper().writeValueAsString(documentMap);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * If the rev is empty, then generate rev "0-1"
+     * If the rev is "0-1", then generate rev "0-2"
+     * etc..
+     *
+     * @return the next rev to use, with respect to this.rev
+     */
+    private String generateNextRev() {
+        if (getRev() == null) {
+            return "0-1";
+        } else {
+            StringTokenizer st = new StringTokenizer(getRev(), "-");
+            String beforeDash = st.nextToken();
+            String afterDash = st.nextToken();
+            int afterDashInt = Integer.parseInt(afterDash);
+            afterDashInt += 1;
+            afterDash = String.format("%s", afterDashInt);
+            return String.format("%s-%s", beforeDash, afterDash);
         }
     }
 
@@ -73,6 +96,17 @@ public class MockCheckpointPut implements SmartMockResponse {
 
             // call setId
             setId(String.format("_local/%s", localDocId));
+
+            // extract the _rev field from the request
+            try {
+                Map <String, Object> jsonMap = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+                if (jsonMap.containsKey("_rev")) {
+                    setRev((String)jsonMap.get("_rev"));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
             mockResponse.setBody(generateBody());
             MockHelper.set201OKJson(mockResponse);
             return mockResponse;
@@ -101,5 +135,13 @@ public class MockCheckpointPut implements SmartMockResponse {
 
     public void setSticky(boolean isSticky) {
         this.isSticky = isSticky;
+    }
+
+    public String getRev() {
+        return rev;
+    }
+
+    public void setRev(String rev) {
+        this.rev = rev;
     }
 }
