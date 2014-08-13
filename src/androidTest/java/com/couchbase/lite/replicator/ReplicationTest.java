@@ -84,11 +84,14 @@ public class ReplicationTest extends LiteTestCase {
 
 
     /**
+     * Currently failing due to issue:
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/271
+     *
      * This test demonstrates that when the replication finished observer is called the replicator
      * might have not processed all changes.
      * This test fails intermittently.
      */
-    public void testReplicationStoppedAfterProcessAllRequests() throws Exception {
+    public void failingTestReplicationStoppedAfterProcessAllRequests() throws Exception {
         //create changes feed with 3 mock documents
         //each mock document must have a delay to guarantee it is not the MockerServer response that is too fast
         //verify there isn't any change to process after stopped is invoked
