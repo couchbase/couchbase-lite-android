@@ -1292,9 +1292,6 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(1, checkpointRequests.size());
 
         // assert our local sequence matches what is expected
-        // This is failing due to a bug.  The replicator has already been stopped by the time the response
-        // to the second PUT checkpoint comes back.  I believe the root cause of that is the delta in
-        // runloop / batcher behavior described in https://github.com/couchbase/couchbase-lite-java-core/issues/244
         String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
         assertEquals(Integer.toString(mockDoc2.getDocSeq()), lastSequence);
 
@@ -1523,15 +1520,14 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(doc3putRequest.getUtf8Body().contains(doc3Id));
         assertFalse(doc3putRequest.getUtf8Body().contains(doc2Id));
 
-        // TODO: re-enable this assertion when 231 is fixed!!
-        // assertion failing possibly due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
-        // RecordedRequest putCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
-        // assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
-        // String utf8Body = putCheckpointRequest.getUtf8Body();
-        // Map <String, Object> checkpointJson = Manager.getObjectMapper().readValue(utf8Body, Map.class);
-        // assertEquals("5", checkpointJson.get("lastSequence"));
+        // wait until the mock webserver receives a PUT checkpoint request
+        int expectedLastSequence = 5;
+        List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, expectedLastSequence);
+        assertEquals(1, checkpointRequests.size());
 
-        // dispatcher.verifyAllRecordedRequestsTaken();
+        // assert our local sequence matches what is expected
+        String lastSequence = database.lastSequenceWithCheckpointId(replication.remoteCheckpointDocID());
+        assertEquals(Integer.toString(expectedLastSequence), lastSequence);
 
         // Shut down the server. Instances cannot be reused.
         if (shutdownMockWebserver) {
@@ -1599,9 +1595,9 @@ public class ReplicationTest extends LiteTestCase {
 
         // create mockwebserver and custom dispatcher
         boolean addAttachments = false;
-        Log.d(TAG, "Starting mockSinglePull.");
+
+        // do a pull replication
         Map<String, Object> serverAndDispatcher = mockSinglePull(false, serverType, addAttachments);
-        Log.d(TAG, "Finished mockSinglePull.");
 
         MockWebServer server = (MockWebServer) serverAndDispatcher.get("server");
         MockDispatcher dispatcher = (MockDispatcher) serverAndDispatcher.get("dispatcher");
@@ -1643,16 +1639,14 @@ public class ReplicationTest extends LiteTestCase {
 
         // checkpoint PUT response
         MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointGet.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
         // run pull replication
-        Log.d(TAG, "Starting 2nd pull replication.");
-        doPullReplication(server.getUrl("/db"));
-        Log.d(TAG, "Finished 2nd pull replication.");
-
+        Replication repl = (Replication) database.createPullReplication(server.getUrl("/db"));
+        runReplication(repl);
 
         // assert that we now have both docs in local db
-        Log.d(TAG, "assert that we now have both docs in local db");
         assertNotNull(database);
         Document doc1 = database.getDocument(doc1Id);
         assertNotNull(doc1);
@@ -1661,7 +1655,6 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(doc1JsonMap, doc1.getUserProperties());
 
         // make assertions about outgoing requests from replicator -> mock
-            Log.d(TAG, "make assertions about outgoing requests from replicator -> mock");
         RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
         assertNotNull(getCheckpointRequest);
         assertTrue(getCheckpointRequest.getMethod().equals("GET"));
@@ -1674,36 +1667,28 @@ public class ReplicationTest extends LiteTestCase {
         } else {
             assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
         }
-        assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES)); // TODO: verify since param -- waiting on fix for https://github.com/couchbase/couchbase-lite-java-core/issues/231
-        Log.d(TAG, "changes feed request: %s", getChangesFeedRequest.getPath());
+        assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
+        if (serverType == MockDispatcher.ServerType.SYNC_GW) {
+            Map <String, Object> jsonMap = Manager.getObjectMapper().readValue(getChangesFeedRequest.getUtf8Body(), Map.class);
+            assertTrue(jsonMap.containsKey("since"));
+            Integer since = (Integer) jsonMap.get("since");
+            assertEquals(2, since.intValue());
+        }
+
         RecordedRequest doc1Request = dispatcher.takeRequest(doc1PathRegex);
         assertTrue(doc1Request.getMethod().equals("GET"));
         assertTrue(doc1Request.getPath().matches("/db/doc1\\?rev=2-2e38.*"));
 
-        // TODO: re-enable this assertion when 231 is fixed!!
-        // RecordedRequest putCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
-        // assertNotNull(putCheckpointRequest);
-        // assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
-        // assertTrue(putCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
+        // wait until the mock webserver receives a PUT checkpoint request with doc #2's sequence
+        int expectedLastSequence = doc1Seq;
+        List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, expectedLastSequence);
+        assertEquals(1, checkpointRequests.size());
 
-        // TODO: re-enable this assertion when 231 is fixed!!
-        // make assertion about outgoing PUT checkpoint request.
-        // make assertion about our local sequence
-        // assertion failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
-        // String utf8Body = putCheckpointRequest.getUtf8Body();
-        // Map <String, Object> checkpointJson = Manager.getObjectMapper().readValue(utf8Body, Map.class);
-        // assertEquals("3", checkpointJson.get("lastSequence"));
-        // assertEquals("0-1", checkpointJson.get("_rev"));
-        // dispatcher.verifyAllRecordedRequestsTaken();
-
-        // workaround the fact that even though the replication is done, it's not "done done"
-        // and will still try to put the checkpoint, which will cause ECONNREFUSED errors to
-        // appear in logs
-        Log.d(TAG, "Sleeping for 10 seconds ..");
-        Thread.sleep(10 * 1000);
+        // assert our local sequence matches what is expected
+        String lastSequence = database.lastSequenceWithCheckpointId(repl.remoteCheckpointDocID());
+        assertEquals(Integer.toString(expectedLastSequence), lastSequence);
 
         if (shutdownMockWebserver) {
-            Log.d(TAG, "shutdownMockWebserver()");
             server.shutdown();
         }
 
@@ -1711,12 +1696,15 @@ public class ReplicationTest extends LiteTestCase {
         returnVal.put("server", server);
         returnVal.put("dispatcher", dispatcher);
 
-        Log.d(TAG, "return returnVal");
         return returnVal;
 
     }
 
-    public void integrationTestPuller() throws Throwable {
+    /**
+     * Note: db should be empty for this to work
+     * Note: this test should be disabled by default
+     */
+    public void pullerIntegrationTest() throws Throwable {
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
         final String doc1Id = String.format("doc1-%s", docIdTimestamp);
@@ -1729,10 +1717,12 @@ public class ReplicationTest extends LiteTestCase {
 
         Replication pullReplication = doPullReplication();
 
-        // TODO: re-enable this assertion when 231 is fixed!!
-        // assertion failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
-        // String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
-        // assertEquals("2", lastSequence);
+        // allow time for replication to be "done done"
+        Thread.sleep(5 * 1000);
+
+        // assertions regarding locally saved last sequence
+        String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
+        assertEquals("3", lastSequence);
 
         assertNotNull(database);
         Log.d(TAG, "Fetching doc1 via id: " + doc1Id);
