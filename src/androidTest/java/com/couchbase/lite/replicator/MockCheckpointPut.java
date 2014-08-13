@@ -1,7 +1,6 @@
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.Manager;
-import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
@@ -28,6 +27,7 @@ public class MockCheckpointPut implements SmartMockResponse {
     private String id;
     private String rev;
     private boolean isSticky;
+    private long delayMs;
 
     private String getId() {
         return id;
@@ -130,7 +130,7 @@ public class MockCheckpointPut implements SmartMockResponse {
 
     @Override
     public long delayMs() {
-        return 0;
+        return delayMs;
     }
 
     public void setSticky(boolean isSticky) {
@@ -143,5 +143,13 @@ public class MockCheckpointPut implements SmartMockResponse {
 
     public void setRev(String rev) {
         this.rev = rev;
+    }
+
+    public long getDelayMs() {
+        return delayMs;
+    }
+
+    public void setDelayMs(long delayMs) {
+        this.delayMs = delayMs;
     }
 }
