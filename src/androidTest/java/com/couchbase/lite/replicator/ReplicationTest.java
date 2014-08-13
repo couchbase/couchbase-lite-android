@@ -1291,10 +1291,6 @@ public class ReplicationTest extends LiteTestCase {
         validateCheckpointRequestsRevisions(checkpointRequests);
         assertEquals(1, checkpointRequests.size());
 
-        // allow some time for the replicator to update the locally stored checkpoint
-        Log.d(TAG, "Sleeping for 5 seconds ..");
-        Thread.sleep(5 * 1000);
-
         // assert our local sequence matches what is expected
         // This is failing due to a bug.  The replicator has already been stopped by the time the response
         // to the second PUT checkpoint comes back.  I believe the root cause of that is the delta in
