@@ -1184,8 +1184,6 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Do a pull replication
      *
-     * TODO - instead calling server.takeRequest, call dispatcher.takeRequest and pass a path regex
-     *
      * @param shutdownMockWebserver - should this test shutdown the mockwebserver
      *                              when done?  if another test wants to pick up
      *                              where this left off, you should pass false.
@@ -1236,12 +1234,10 @@ public class ReplicationTest extends LiteTestCase {
         }
         dispatcher.enqueueResponse(mockDoc2.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // TODO: only expect one checkpoint PUT request after #231 is fixed
-        // checkpoint PUT responses
-        // it currently sends two checkpoint PUT requests back to back,
-        // which may be related to https://github.com/couchbase/couchbase-lite-java-core/issues/231
+        // respond to all PUT Checkpoint requests
         MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+        mockCheckpointPut.setSticky(true);
+        mockCheckpointPut.setDelayMs(500);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
         // start mock server
@@ -1264,7 +1260,6 @@ public class ReplicationTest extends LiteTestCase {
         assertNotNull(doc2.getProperties());
         assertTrue(doc2.getCurrentRevisionId().equals(mockDoc2.getDocRev()));
         assertEquals(mockDoc2.getJsonMap(), doc2.getUserProperties());
-
 
         // assert that docs have attachments (if applicable)
         if (addAttachments) {
@@ -1291,29 +1286,21 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(doc2Request.getMethod().equals("GET"));
         assertTrue(doc2Request.getPath().matches(mockDoc2.getDocPathRegex()));
 
-        // TODO: re-enable this assertion when 231 is fixed!!
-        // assertions regarding PUT checkpoint request.
-        // these should be updated once the confusion in https://github.com/couchbase/couchbase-lite-java-core/issues/231#issuecomment-46199630
-        // is resolved. also, there should be assertions added regarding the _rev field
-        // passed in the PUT checkpoint body.
-        // RecordedRequest putCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
-        // assertNotNull(putCheckpointRequest);
-        // assertTrue(putCheckpointRequest.getMethod().equals("PUT"));
-        // assertTrue(putCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
+        // wait until the mock webserver receives a PUT checkpoint request with doc #2's sequence
+        List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, mockDoc2.getDocSeq());
+        validateCheckpointRequestsRevisions(checkpointRequests);
+        assertEquals(1, checkpointRequests.size());
 
-        // TODO: re-enable this assertion when 231 is fixed!!
-        // make assertion about outgoing PUT checkpoint request.
-        // make assertion about our local sequence
-        // assertion failing due to https://github.com/couchbase/couchbase-lite-java-core/issues/231
-        // String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
-        // assertEquals(Integer.toString(doc2Seq), lastSequence);
-        // dispatcher.verifyAllRecordedRequestsTaken();
+        // allow some time for the replicator to update the locally stored checkpoint
+        Log.d(TAG, "Sleeping for 5 seconds ..");
+        Thread.sleep(5 * 1000);
 
-        // workaround the fact that even though the replication is done, it's not "done done"
-        // and will still try to put the checkpoint, which will cause ECONNREFUSED errors to
-        // appear in logs
-        Log.d(TAG, "Sleeping for 10 seconds ..");
-        Thread.sleep(10 * 1000);
+        // assert our local sequence matches what is expected
+        // This is failing due to a bug.  The replicator has already been stopped by the time the response
+        // to the second PUT checkpoint comes back.  I believe the root cause of that is the delta in
+        // runloop / batcher behavior described in https://github.com/couchbase/couchbase-lite-java-core/issues/244
+        String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
+        assertEquals(Integer.toString(mockDoc2.getDocSeq()), lastSequence);
 
         // Shut down the server. Instances cannot be reused.
         if (shutdownMockWebserver) {
@@ -1325,6 +1312,57 @@ public class ReplicationTest extends LiteTestCase {
         returnVal.put("dispatcher", dispatcher);
 
         return returnVal;
+
+    }
+
+
+    private void validateCheckpointRequestsRevisions(List<RecordedRequest> checkpointRequests) {
+        try {
+            int i = 0;
+            for (RecordedRequest request : checkpointRequests) {
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+                if (i == 0) {
+                    // the first request is not expected to have a _rev field
+                    assertFalse(jsonMap.containsKey("_rev"));
+                } else {
+                    assertTrue(jsonMap.containsKey("_rev"));
+                    // TODO: make sure that each _rev is in sequential order, eg: "0-1", "0-2", etc..
+                }
+                i += 1;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private List<RecordedRequest> waitForPutCheckpointRequestWithSequence(MockDispatcher dispatcher, int expectedLastSequence) throws IOException {
+
+        List<RecordedRequest> recordedRequests = new ArrayList<RecordedRequest>();
+
+        // wait until mock server gets a checkpoint PUT request with expected lastSequence
+        boolean foundExpectedLastSeq = false;
+        String expectedLastSequenceStr = String.format("%s", expectedLastSequence);
+
+        while (!foundExpectedLastSeq) {
+
+            RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            if (request.getMethod().equals("PUT")) {
+
+                recordedRequests.add(request);
+
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+                if (jsonMap.containsKey("lastSequence") && ((String)jsonMap.get("lastSequence")).equals(expectedLastSequenceStr)) {
+                    foundExpectedLastSeq = true;
+                }
+
+                // wait until mock server responds to the checkpoint PUT request.
+                // not sure if this is strictly necessary, but might prevent race conditions.
+                dispatcher.takeRecordedResponseBlocking(request);
+            }
+        }
+
+        return recordedRequests;
 
     }
 
