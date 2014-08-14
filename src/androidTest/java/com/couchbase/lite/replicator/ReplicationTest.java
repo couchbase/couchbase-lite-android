@@ -91,8 +91,9 @@ public class ReplicationTest extends LiteTestCase {
      * might have not processed all changes.
      * This test fails intermittently.
      */
-    public void failingTestReplicationStoppedAfterProcessAllRequests() throws Exception {
-        //create changes feed with 3 mock documents
+    public void failingTestReplicationChangesCount() throws Exception {
+
+        //create changes feed with mock documents
         //each mock document must have a delay to guarantee it is not the MockerServer response that is too fast
         //verify there isn't any change to process after stopped is invoked
 
@@ -108,12 +109,16 @@ public class ReplicationTest extends LiteTestCase {
 
         //generate mock document gets responses with delay
         List<MockDocumentGet.MockDocument> mockGetDocuments =  new ArrayList<MockDocumentGet.MockDocument>();
-        for (int i = 0; i < 20; i++) {
+        int lastDocSequence = 0;
+        int numDocsToAdd = 20;
+        for (int i = 0; i < numDocsToAdd; i++) {
+            int docSeq = i + 1;
             final MockDocumentGet.MockDocument mockDocument = new MockDocumentGet.MockDocument(
                     "doc-" + String.valueOf(i) + String.valueOf(System.currentTimeMillis()),
                     "1-a",
-                    i + 1
+                    docSeq
             );
+            lastDocSequence = docSeq;
             mockDocument.setJsonMap(MockHelper.generateRandomJsonMap());
             mockGetDocuments.add(mockDocument);
         }
@@ -134,6 +139,8 @@ public class ReplicationTest extends LiteTestCase {
 
         // checkpoint PUT response
         MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        mockCheckpointPut.setDelayMs(200);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
         //start mock server
@@ -155,10 +162,23 @@ public class ReplicationTest extends LiteTestCase {
         //start replication
         pullReplication.start();
 
-        boolean success = replicationFinishedContCountDownLatch.await(20, TimeUnit.SECONDS);
+        boolean success = replicationFinishedContCountDownLatch.await(200, TimeUnit.SECONDS);
         assertTrue(success);
 
-        //verify all changes were processed before stopped is called
+        // wait until mock server gets a PUT checkpoint with last doc seq
+        List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, lastDocSequence);
+        validateCheckpointRequestsRevisions(checkpointRequests);
+
+        // assert our local sequence matches what is expected
+        String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
+        assertEquals(Integer.toString(lastDocSequence), lastSequence);
+
+        // assert we have number of expected docs in local db
+        Query queryAllDocs = database.createAllDocumentsQuery();
+        QueryEnumerator queryEnumerator = queryAllDocs.run();
+        assertEquals(numDocsToAdd, queryEnumerator.getCount());
+
+        // verify change counts are what they are expected to be
         assertEquals(pullReplication.getChangesCount(), pullReplication.getCompletedChangesCount());
 
         pullReplication.stop();
