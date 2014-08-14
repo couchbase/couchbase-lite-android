@@ -90,13 +90,15 @@ public class MockDispatcher extends Dispatcher {
                     recordedReponseMap.put(request, mockResponse);
                     return mockResponse;
                 } else {
-                    MockResponse mockResponse = new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE);
+                    MockResponse mockResponse = new MockResponse();
+                    mockResponse.setStatus("HTTP/1.1 406 NOT ACCEPTABLE");
                     recordedReponseMap.put(request, mockResponse);
                     return mockResponse; // fail fast
                 }
             }
         }
-        MockResponse mockResponse = new MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_ACCEPTABLE);
+        MockResponse mockResponse = new MockResponse();
+        mockResponse.setStatus("HTTP/1.1 406 NOT ACCEPTABLE");
         recordedReponseMap.put(request, mockResponse);
         return mockResponse; // fail fast
     }
