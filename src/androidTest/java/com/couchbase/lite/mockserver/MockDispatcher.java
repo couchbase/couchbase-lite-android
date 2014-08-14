@@ -1,11 +1,9 @@
-package com.couchbase.lite.replicator;
+package com.couchbase.lite.mockserver;
 
-import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.Dispatcher;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
-import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -39,8 +37,8 @@ public class MockDispatcher extends Dispatcher {
 
     public MockDispatcher() {
         super();
-        queueMap = new HashMap<String, BlockingQueue<SmartMockResponse>>();
-        recordedRequestQueueMap = new HashMap<String, BlockingQueue<RecordedRequest>>();
+        queueMap = new ConcurrentHashMap<String, BlockingQueue<SmartMockResponse>>();
+        recordedRequestQueueMap = new ConcurrentHashMap<String, BlockingQueue<RecordedRequest>>();
         recordedReponseMap = new ConcurrentHashMap<RecordedRequest, MockResponse>();
         headers = new HashMap<String, String>();
     }
@@ -123,6 +121,21 @@ public class MockDispatcher extends Dispatcher {
         }
         // add the response to the queue.  since it's not a smart mock response, wrap it
         responseQueue.add(MockHelper.wrap(response));
+    }
+
+    public void clearQueuedResponse(String pathRegex) {
+        // get the response queue for this path regex
+        BlockingQueue<SmartMockResponse> responseQueue = queueMap.get(pathRegex);
+        if (responseQueue != null) {
+            responseQueue.clear();
+        }
+    }
+
+    public void clearRecordedRequests(String pathRegex) {
+        BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
+        if (queue != null) {
+            queue.clear();
+        }
     }
 
     public RecordedRequest takeRequest(String pathRegex) {

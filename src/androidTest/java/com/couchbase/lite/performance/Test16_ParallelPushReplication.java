@@ -62,7 +62,7 @@ public class Test16_ParallelPushReplication extends LiteTestCase {
     /*
      * Test expects 4 remote datbases named db0, db1, db2, db3
      */
-    public void testPushReplicationPerformance() throws CouchbaseLiteException {
+    public void testPushReplicationPerformance() throws Exception {
 
         long startMillis = System.currentTimeMillis();
 
@@ -101,19 +101,31 @@ public class Test16_ParallelPushReplication extends LiteTestCase {
 
         Thread t0 = new Thread() {
             public void run() {
-                runReplication(repl0);
+                try {
+                    runReplication(repl0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         };
 
         Thread t1 = new Thread() {
             public void run() {
-                runReplication(repl1);
+                try {
+                    runReplication(repl1);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         };
 
         Thread t2 = new Thread() {
             public void run() {
-                runReplication(repl2);
+                try {
+                    runReplication(repl2);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         };
 

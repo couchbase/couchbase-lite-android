@@ -1,4 +1,4 @@
-package com.couchbase.lite.replicator;
+package com.couchbase.lite.mockserver;
 
 import com.couchbase.lite.Misc;
 import com.squareup.okhttp.mockwebserver.MockResponse;
@@ -67,6 +67,7 @@ public class MockPreloadedPullTarget {
     protected void addCheckpointResponse() {
         // checkpoint GET response w/ 404.  also receives checkpoint PUT's
         MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
     }
 

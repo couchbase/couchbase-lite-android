@@ -1,9 +1,9 @@
 package com.couchbase.lite;
 
 
-import com.couchbase.lite.replicator.MockCheckpointGet;
-import com.couchbase.lite.replicator.MockDispatcher;
-import com.couchbase.lite.replicator.MockHelper;
+import com.couchbase.lite.mockserver.MockCheckpointGet;
+import com.couchbase.lite.mockserver.MockDispatcher;
+import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockWebServer;

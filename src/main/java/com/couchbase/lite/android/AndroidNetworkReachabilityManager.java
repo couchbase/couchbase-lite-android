@@ -5,11 +5,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 
-import com.couchbase.lite.AsyncTask;
 import com.couchbase.lite.Context;
-import com.couchbase.lite.Database;
 import com.couchbase.lite.NetworkReachabilityManager;
-import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.util.Log;
 
 public class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {

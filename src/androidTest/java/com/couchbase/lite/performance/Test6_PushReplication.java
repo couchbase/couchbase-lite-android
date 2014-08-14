@@ -20,35 +20,20 @@ package com.couchbase.lite.performance;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.Status;
-import com.couchbase.lite.TransactionalTask;
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
-import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class Test6_PushReplication extends LiteTestCase {
 
@@ -74,7 +59,7 @@ public class Test6_PushReplication extends LiteTestCase {
         }
     }
 
-    public void testPushReplicationPerformance() throws CouchbaseLiteException {
+    public void testPushReplicationPerformance() throws Exception {
 
         long startMillis = System.currentTimeMillis();
 

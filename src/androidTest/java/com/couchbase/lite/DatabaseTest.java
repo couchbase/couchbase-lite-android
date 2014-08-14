@@ -1,9 +1,10 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.replicator.MockDispatcher;
-import com.couchbase.lite.replicator.MockHelper;
+import com.couchbase.lite.mockserver.MockDispatcher;
+import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.replicator.ReplicationState;
 import com.couchbase.lite.support.FileDirUtils;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
@@ -155,21 +156,26 @@ public class DatabaseTest extends LiteTestCase {
         server.setDispatcher(dispatcher);
         server.play();
 
-        Replication replication = database.createPullReplication(server.getUrl("/db"));
+        final Replication replication = database.createPullReplication(server.getUrl("/db"));
 
         assertEquals(0, database.getAllReplications().size());
         assertEquals(0, database.getActiveReplications().size());
 
+        final CountDownLatch replicationRunning = new CountDownLatch(1);
+        replication.addChangeListener(new ReplicationActiveObserver(replicationRunning));
+
         replication.start();
+
+        boolean success = replicationRunning.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
 
         assertEquals(1, database.getAllReplications().size());
         assertEquals(1, database.getActiveReplications().size());
 
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-        replication.addChangeListener(replicationFinishedObserver);
+        final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
 
-        boolean success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
+        success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
         assertTrue(success);
 
         assertEquals(1, database.getAllReplications().size());
