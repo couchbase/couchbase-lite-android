@@ -1379,6 +1379,9 @@ public class ReplicationTest extends LiteTestCase {
         String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
         assertEquals(Integer.toString(mockDoc2.getDocSeq()), lastSequence);
 
+        // assert completed count makes sense
+        assertEquals(pullReplication.getChangesCount(), pullReplication.getCompletedChangesCount());
+
         // Shut down the server. Instances cannot be reused.
         if (shutdownMockWebserver) {
             server.shutdown();
@@ -1613,6 +1616,9 @@ public class ReplicationTest extends LiteTestCase {
         String lastSequence = database.lastSequenceWithCheckpointId(replication.remoteCheckpointDocID());
         assertEquals(Integer.toString(expectedLastSequence), lastSequence);
 
+        // assert completed count makes sense
+        assertEquals(replication.getChangesCount(), replication.getCompletedChangesCount());
+
         // Shut down the server. Instances cannot be reused.
         if (shutdownMockWebserver) {
             server.shutdown();
@@ -1771,6 +1777,9 @@ public class ReplicationTest extends LiteTestCase {
         // assert our local sequence matches what is expected
         String lastSequence = database.lastSequenceWithCheckpointId(repl.remoteCheckpointDocID());
         assertEquals(Integer.toString(expectedLastSequence), lastSequence);
+
+        // assert completed count makes sense
+        assertEquals(repl.getChangesCount(), repl.getCompletedChangesCount());
 
         if (shutdownMockWebserver) {
             server.shutdown();
