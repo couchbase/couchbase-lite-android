@@ -556,6 +556,7 @@ public class ReplicationTest extends LiteTestCase {
         assertNotNull(changesReq);
 
         // cleanup
+        Log.d(TAG, "Calling pull.stop()");
         pull.stop();
         boolean success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
         assertTrue(success);
