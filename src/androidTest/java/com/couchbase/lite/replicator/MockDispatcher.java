@@ -80,9 +80,9 @@ public class MockDispatcher extends Dispatcher {
                         responseQueue.put(smartMockResponse); // if it's sticky, put it back in queue
                     }
                     if (smartMockResponse.delayMs() > 0) {
-                        System.out.println(String.format("Delaying response for: %d", smartMockResponse.delayMs()));
+                        System.out.println(String.format("Delaying response %s for %d ms (path: %s)", smartMockResponse, smartMockResponse.delayMs(), pathRegex));
                         Thread.sleep(smartMockResponse.delayMs());
-                        System.out.println("Finished delaying response");
+                        System.out.println(String.format("Finished delaying response %s for %d (path: %s)", smartMockResponse, smartMockResponse.delayMs(), pathRegex));
                     }
                     MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
                     System.out.println(String.format("Response: %s", mockResponse.getBody()));
