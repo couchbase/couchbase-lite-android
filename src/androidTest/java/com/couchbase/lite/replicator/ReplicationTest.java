@@ -165,6 +165,12 @@ public class ReplicationTest extends LiteTestCase {
         boolean success = replicationFinishedContCountDownLatch.await(200, TimeUnit.SECONDS);
         assertTrue(success);
 
+        // we should expect to see a GET request for each document
+        for (MockDocumentGet.MockDocument mockDocument: mockGetDocuments) {
+            dispatcher.takeRequestBlocking(mockDocument.getDocPathRegex());
+            Log.d(TAG, "Capture request for document: %s", mockDocument.getDocPathRegex());
+        }
+
         // wait until mock server gets a PUT checkpoint with last doc seq
         List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, lastDocSequence);
         validateCheckpointRequestsRevisions(checkpointRequests);
