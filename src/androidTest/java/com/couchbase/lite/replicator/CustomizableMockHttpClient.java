@@ -208,7 +208,9 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         });
     }
 
-
+    public void addResponderReturnChangesFeed404() {
+        responders.put("_changes", getFakeLocalDocumentUpdate404());
+    }
     public List<HttpRequest> getCapturedRequests() {
         return capturedRequests;
     }
