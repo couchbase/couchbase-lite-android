@@ -57,6 +57,9 @@ public class MockHelper {
 
     }
 
+    public static void set503ServiceUnavailable(MockResponse mockResponse) {
+        mockResponse.setStatus("HTTP/1.1 503 Service Unavailable").setHeader("Content-Type", "application/json");
+    }
 
     public static void set200OKJson(MockResponse mockResponse) {
         mockResponse.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
