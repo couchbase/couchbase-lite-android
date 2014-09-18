@@ -130,7 +130,7 @@ public class Test16_ParallelPushReplication extends LiteTestCase {
     }
 
     private boolean isSyncGateway(URL remote) {
-        return (remote.getPort() == 4984 || remote.getPort() == 4984);
+        return (remote.getPort() == 4984);
     }
 
     private void addDocWithId(String docId, String attachmentName, boolean gzipped) throws IOException, CouchbaseLiteException {
