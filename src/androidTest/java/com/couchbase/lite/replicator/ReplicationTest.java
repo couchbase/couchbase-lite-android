@@ -82,8 +82,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ReplicationTest extends LiteTestCase {
 
-    public static final String TAG = "ReplicationTest";
-
     /**
      * Continuous puller starts offline
      * Wait for a while .. (til what?)
@@ -2986,6 +2984,87 @@ public class ReplicationTest extends LiteTestCase {
         assertNotNull(replicator);
         assertNotNull(replicator.getAuthenticator());
         assertTrue(replicator.getAuthenticator() instanceof FacebookAuthorizer);
+
+    }
+
+    /**
+     *
+     * When the server returns a 409 error to a PUT checkpoint response, make
+     * sure it does the right thing:
+     * - Pull latest remote checkpoint
+     * - Try to push checkpiont again (this time passing latest rev)
+     *
+     * @throws Exception
+     */
+    public void testPutCheckpoint409Recovery() throws Exception {
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // mock documents to be pulled
+        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+
+        // checkpoint GET response w/ 404
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+        // _changes response
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // doc1 response
+        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+        // respond with 409 error to mock checkpoint PUT
+        MockResponse checkpointResponse409 = new MockResponse();
+        checkpointResponse409.setStatus("HTTP/1.1 409 CONFLICT");
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, checkpointResponse409);
+
+        // the replicator should then try to do a checkpoint GET, and in this case
+        // it should return a value with a rev id
+        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
+        mockCheckpointGet.setOk("true");
+        mockCheckpointGet.setRev("0-1");
+        mockCheckpointGet.setLastSequence("0");
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
+
+        // the replicator should then try a checkpoint PUT again
+        // and we should respond with a 201
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // start mock server
+        server.play();
+
+        // run pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+
+        // I had to set this to continuous, because in a one-shot replication it tries to
+        // save the checkpoint asynchronously as the replicator is shutting down, which
+        // breaks the retry logic in the case a 409 conflict is returned by server.
+        pullReplication.setContinuous(true);
+
+        pullReplication.start();
+
+        // we should have gotten two requests to PATH_REGEX_CHECKPOINT:
+        // PUT -> 409 Conflict
+        // PUT -> 201 Created
+        for (int i=1; i<=2; i++) {
+            Log.v(TAG, "waiting for PUT checkpoint: %d", i);
+            waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc1.getDocSeq());
+            Log.d(TAG, "got PUT checkpoint: %d", i);
+        }
+
+        stopReplication(pullReplication);
+
+        server.shutdown();
+
 
     }
 
