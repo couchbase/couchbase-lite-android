@@ -1076,10 +1076,13 @@ public class ReplicationTest extends LiteTestCase {
         Attachment attachment = doc1.getCurrentRevision().getAttachment(attachmentName);
         assertTrue(attachment.getLength() > 0);
         assertTrue(attachment.getGZipped());
-        byte[] receivedBytes = TextUtils.read(attachment.getContent());
+        InputStream is = attachment.getContent();
+        byte[] receivedBytes = TextUtils.read(is);
+        is.close();
 
         InputStream attachmentStream = getAsset(attachmentName);
         byte[] actualBytes = TextUtils.read(attachmentStream);
+        attachmentStream.close();
         Assert.assertEquals(actualBytes.length, receivedBytes.length);
         Assert.assertEquals(actualBytes, receivedBytes);
 
@@ -1666,7 +1669,9 @@ public class ReplicationTest extends LiteTestCase {
         int attachLength = testAttachBytes.length;
         assertEquals(attachLength, attachment.getLength());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(attachment.getContent());
+        InputStream is = attachment.getContent();
+        baos.write(is);
+        is.close();
         byte[] actualAttachBytes = baos.toByteArray();
         assertEquals(testAttachBytes.length, actualAttachBytes.length);
         for (int i=0; i<actualAttachBytes.length; i++) {
