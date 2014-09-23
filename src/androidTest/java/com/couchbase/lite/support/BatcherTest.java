@@ -223,6 +223,12 @@ public class BatcherTest extends LiteTestCase {
 
     }
 
+    /**
+     * Reproduce issue:
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/283
+     *
+     * This sporadically fails on the genymotion emulator and Nexus 5 device.
+     */
     public void testBatcherThreadSafe() throws Exception {
 
         // 10 threads using the same batcher
@@ -245,7 +251,8 @@ public class BatcherTest extends LiteTestCase {
             @Override
             public void process(List<String> itemsToProcess) {
                 for (String item : itemsToProcess) {
-                    numItemsProcessed.getAndIncrement();
+                    int curVal = numItemsProcessed.incrementAndGet();
+                    Log.d(Log.TAG, "%d items processed so far", curVal);
                     try {
                         Thread.sleep(5);
                     } catch (InterruptedException e) {
@@ -273,7 +280,6 @@ public class BatcherTest extends LiteTestCase {
                         String item = String.format("%s-item:%d", iStr, j);
                         batcher.queueObject(item);
                     }
-                    batcher.waitForPendingFutures();
                 }
             };
             new Thread(runnable).start();
@@ -281,12 +287,17 @@ public class BatcherTest extends LiteTestCase {
 
         }
 
-        boolean success = allItemsProcessed.await(360, TimeUnit.SECONDS);
+        Log.d(TAG, "waiting for allItemsProcessed");
+        boolean success = allItemsProcessed.await(120, TimeUnit.SECONDS);
         assertTrue(success);
+        Log.d(TAG, "/waiting for allItemsProcessed");
+
         assertEquals(numItemsTotal, numItemsProcessed.get());
         assertEquals(0, batcher.count());
 
-
+        Log.d(TAG, "waiting for pending futures");
+        batcher.waitForPendingFutures();
+        Log.d(TAG, "/waiting for pending futures");
 
 
     }
