@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BatcherTest extends LiteTestCase {
@@ -219,6 +220,74 @@ public class BatcherTest extends LiteTestCase {
 
         boolean didNotTimeOut = doneSignal.await(35, TimeUnit.SECONDS);
         assertTrue(didNotTimeOut);
+
+    }
+
+    public void testBatcherThreadSafe() throws Exception {
+
+        // 10 threads using the same batcher
+
+        // each thread queues a bunch of items and makes sure they were all processed
+
+        ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
+        int inboxCapacity = 10;
+        final int processorDelay = 1000;
+
+        int numThreads = 5;
+        final int numItemsPerThread = 200;
+        int numItemsTotal = numThreads * numItemsPerThread;
+        final AtomicInteger numItemsProcessed = new AtomicInteger(0);
+
+        final CountDownLatch allItemsProcessed = new CountDownLatch(numItemsTotal);
+
+        final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+
+            @Override
+            public void process(List<String> itemsToProcess) {
+                for (String item : itemsToProcess) {
+                    numItemsProcessed.getAndIncrement();
+                    try {
+                        Thread.sleep(5);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    allItemsProcessed.countDown();
+                }
+            }
+
+        });
+
+
+        for (int i=0; i<numThreads; i++) {
+            final String iStr = Integer.toString(i);
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+
+                    for (int j=0; j<numItemsPerThread; j++) {
+                        try {
+                            Thread.sleep(5);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        String item = String.format("%s-item:%d", iStr, j);
+                        batcher.queueObject(item);
+                    }
+                    batcher.waitForPendingFutures();
+                }
+            };
+            new Thread(runnable).start();
+
+
+        }
+
+        boolean success = allItemsProcessed.await(360, TimeUnit.SECONDS);
+        assertTrue(success);
+        assertEquals(numItemsTotal, numItemsProcessed.get());
+        assertEquals(0, batcher.count());
+
+
+
 
     }
 
