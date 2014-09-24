@@ -84,8 +84,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0, client);
-        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0, client, isTestingAgainstSyncGateway());
         changeTracker.start();
 
         try {
@@ -109,26 +108,24 @@ public class ChangeTrackerTest extends LiteTestCase {
     public void testChangeTrackerWithConflictsIncluded() {
 
         URL testURL = getReplicationURL();
-        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, true, 0, null);
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, true, 0, getDummyChangeTrackerClient(), false);
 
         assertEquals("_changes?feed=longpoll&limit=50&heartbeat=300000&style=all_docs&since=0", changeTracker.getChangesFeedPath());
 
     }
 
     public void testChangeTrackerWithFilterURL() throws Throwable {
-
-        URL testURL = getReplicationURL();
-        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, null);
-
         // set filter
-        changeTracker.setFilterName("filter");
+        String filterName = "filter";
 
         // build filter map
         Map<String,Object> filterMap = new HashMap<String,Object>();
         filterMap.put("param", "value");
 
-        // set filter map
-        changeTracker.setFilterParams(filterMap);
+        URL testURL = getReplicationURL();
+        ChangeTracker changeTracker =
+                new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, getDummyChangeTrackerClient(), false, filterName,
+                        filterMap, null, null, false);
 
         assertEquals("_changes?feed=longpoll&limit=50&heartbeat=300000&since=0&filter=filter&param=value", changeTracker.getChangesFeedPath());
 
@@ -138,11 +135,14 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         URL testURL = getReplicationURL();
 
-        ChangeTracker changeTrackerDocIds = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, null);
         List<String> docIds = new ArrayList<String>();
         docIds.add("doc1");
         docIds.add("doc2");
-        changeTrackerDocIds.setDocIDs(docIds);
+
+        boolean usePost = false;
+        ChangeTracker changeTrackerDocIds =
+                new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, getDummyChangeTrackerClient(), usePost, docIds, null,
+                        null, false);
 
         String docIdsUnencoded = "[\"doc1\",\"doc2\"]";
         String docIdsEncoded = URLEncoder.encode(docIdsUnencoded);
@@ -150,7 +150,11 @@ public class ChangeTrackerTest extends LiteTestCase {
         final String changesFeedPath = changeTrackerDocIds.getChangesFeedPath();
         assertEquals(expectedFeedPath, changesFeedPath);
 
-        changeTrackerDocIds.setUsePOST(true);
+        usePost = true;
+        changeTrackerDocIds =
+                new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, getDummyChangeTrackerClient(), usePost, docIds, null,
+                        null, false);
+
         Map<String, Object> postBodyMap = changeTrackerDocIds.changesFeedPOSTBodyMap();
         assertEquals("_doc_ids", postBodyMap.get("filter"));
         assertEquals(docIds, postBodyMap.get("doc_ids"));
@@ -250,8 +254,7 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0, client);
-        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0, client, isTestingAgainstSyncGateway());
         changeTracker.start();
 
         try {
@@ -308,8 +311,8 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, client);
-        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
+        final ChangeTracker changeTracker =
+                new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, client, isTestingAgainstSyncGateway());
         changeTracker.start();
 
         // sleep for a few seconds
@@ -317,7 +320,7 @@ public class ChangeTrackerTest extends LiteTestCase {
 
         // make sure we got less than 10 requests in those 10 seconds (if it was hammering, we'd get a lot more)
         assertTrue(mockHttpClient.getCapturedRequests().size() < 25);
-        assertTrue(changeTracker.backoff.getNumAttempts() > 0);
+        assertTrue(changeTracker.getBackoff().getNumAttempts() > 0);
 
         mockHttpClient.clearResponders();
         mockHttpClient.addResponderReturnEmptyChangesFeed();
@@ -336,7 +339,7 @@ public class ChangeTrackerTest extends LiteTestCase {
         assertTrue((after - before) > 25);
 
         // the backoff numAttempts should have been reset to 0
-        assertTrue(changeTracker.backoff.getNumAttempts() == 0);
+        assertTrue(changeTracker.getBackoff().getNumAttempts() == 0);
 
         changeTracker.stop();
 
@@ -386,8 +389,8 @@ public class ChangeTrackerTest extends LiteTestCase {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, false, 0, client);
-        changeTracker.setUsePOST(isTestingAgainstSyncGateway());
+        final ChangeTracker changeTracker =
+                new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, false, 0, client, isTestingAgainstSyncGateway());
         changeTracker.start();
 
         try {
@@ -408,6 +411,33 @@ public class ChangeTrackerTest extends LiteTestCase {
 
     }
 
+    public static ChangeTrackerClient getDummyChangeTrackerClient() {
+        return new ChangeTrackerClient() {
+            @Override
+            public HttpClient getHttpClient() {
+                throw new RuntimeException("Shouldn't be called, this is a dummy");
+            }
 
+            @Override
+            public void changeTrackerReceivedChange(Map<String, Object> change) {
+                throw new RuntimeException("Shouldn't be called, this is a dummy");
+            }
+
+            @Override
+            public void changeTrackerStopped(ChangeTracker tracker) {
+                throw new RuntimeException("Shouldn't be called, this is a dummy");
+            }
+
+            @Override
+            public void changeTrackerFinished(ChangeTracker tracker) {
+                throw new RuntimeException("Shouldn't be called, this is a dummy");
+            }
+
+            @Override
+            public void changeTrackerCaughtUp() {
+                throw new RuntimeException("Shouldn't be called, this is a dummy");
+            }
+        };
+    }
 
 }
