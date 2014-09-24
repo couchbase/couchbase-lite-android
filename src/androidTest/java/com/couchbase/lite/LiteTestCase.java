@@ -635,7 +635,9 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
         int attachLength = testAttachBytes.length;
         assertEquals(attachLength, attachment.getLength());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(attachment.getContent());
+        InputStream is = attachment.getContent();
+        baos.write(is);
+        is.close();
         byte[] actualAttachBytes = baos.toByteArray();
         assertEquals(testAttachBytes.length, actualAttachBytes.length);
         for (int i=0; i<actualAttachBytes.length; i++) {
