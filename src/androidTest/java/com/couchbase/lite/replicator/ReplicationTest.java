@@ -102,10 +102,10 @@ public class ReplicationTest extends LiteTestCase {
         MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
         mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
 
-        // checkpoint response 503 error (sticky)
-        WrappedSmartMockResponse wrapped = new WrappedSmartMockResponse(new MockResponse().setResponseCode(503));
-        wrapped.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, wrapped);
+        // checkpoint PUT or GET response (sticky)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
         // _changes response 503 error (sticky)
         WrappedSmartMockResponse wrapped2 = new WrappedSmartMockResponse(new MockResponse().setResponseCode(503));
@@ -137,13 +137,7 @@ public class ReplicationTest extends LiteTestCase {
         putReplicationOffline(pullReplication);
 
         // clear out existing queued mock responses to make room for new ones
-        dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHECKPOINT);
         dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHANGES);
-
-        // checkpoint PUT or GET response (sticky)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
         // real _changes response with doc1
         MockChangesFeed mockChangesFeed = new MockChangesFeed();
