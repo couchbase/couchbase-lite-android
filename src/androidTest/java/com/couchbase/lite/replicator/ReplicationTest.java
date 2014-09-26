@@ -82,6 +82,66 @@ public class ReplicationTest extends LiteTestCase {
 
     public static final String TAG = "ReplicationTest";
 
+    /**
+     * This test demonstrates that when continuous replications get 3x an error other than 404
+     * while fetching the _local checkpoint document for the first time the replication fails to
+     * start.
+     * The replication state never changes to STOPPED/OFFLINE, but doesn't try
+     * to make new requests also.
+     * A backoff mechanism should be implemented to correct this behaviour and guarantee the
+     * replicator doesn't stay IDLE forever after failing to get the remote checkpoint.
+     */
+    public void testFetchLocalCheckpoint3xNon404Error() throws Exception {
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+
+        //add 3x response to _local request
+        //checkpoint GET response w/ 503
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        fakeCheckpointResponse.setResponseCode(503);
+        MockHelper.set503ServiceUnavailable(fakeCheckpointResponse);
+        for (int i = 0; i < 3; i++) {
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+        }
+
+        //start mock server
+        server.play();
+
+        //create url for replication
+        URL baseUrl = server.getUrl("/db");
+
+        //create replication
+        Replication pullReplication = (Replication) database.createPullReplication(baseUrl);
+        pullReplication.setContinuous(true);
+
+        //add change listener to notify when the replication is idle
+        CountDownLatch replicationIdleCountDownLatch = new CountDownLatch(1);
+        ReplicationIdleObserver replicationIdleObserver =
+                new ReplicationIdleObserver(replicationIdleCountDownLatch);
+        pullReplication.addChangeListener(replicationIdleObserver);
+
+        //start replication
+        pullReplication.start();
+
+        boolean success = replicationIdleCountDownLatch.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        //Puller tries to fetch the checkpoint 3 times before becoming idle
+        assertEquals(3, server.getRequestCount());
+
+        //wait for a while to give the replicator a chance to make new requests
+        Thread.sleep(30000);
+
+        //verify if the replicator made new requests
+        assertTrue(server.getRequestCount() > 3);
+
+        //shutdown everything
+        pullReplication.stop();
+        server.shutdown();
+    }
+
 
     /**
      * Currently failing due to issue:
