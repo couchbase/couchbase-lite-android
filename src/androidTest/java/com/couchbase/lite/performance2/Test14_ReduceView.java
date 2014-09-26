@@ -27,7 +27,7 @@ public class Test14_ReduceView extends LitePerfTestCase {
     public static final String TAG = "Test14_ReduceView";
     private static final String _propertyValue = "1";
 
-    public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws CouchbaseLiteException {
+    public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws Exception {
         final StringBuffer bigObj = new StringBuffer(sizeOfDocuments);
         for (int i = 0; i < sizeOfDocuments; i++) {
             bigObj.append(_propertyValue);

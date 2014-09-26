@@ -35,7 +35,7 @@ public class Test08_DocRevisions extends LitePerfTestCase {
     private static final String _propertyValue = "1";
     private Document[] docs;
 
-    public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws CouchbaseLiteException {
+    public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws Exception {
 
         docs = new Document[numberOfDocuments];
         //Create docs that will be updated in test case

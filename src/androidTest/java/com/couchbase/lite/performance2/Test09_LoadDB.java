@@ -39,7 +39,7 @@ public class Test09_LoadDB extends LitePerfTestCase {
 
     private static final String _propertyValue = "1";
 
-    public double runOne(final int numberOfDocuments, int sizeOfDocuments) throws CouchbaseLiteException {
+    public double runOne(final int numberOfDocuments, int sizeOfDocuments) throws Exception {
         String[] bigObj = new String[sizeOfDocuments];
         for (int i = 0; i < sizeOfDocuments; i++) {
             bigObj[i] = _propertyValue;

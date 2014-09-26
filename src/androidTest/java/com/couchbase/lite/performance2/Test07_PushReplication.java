@@ -55,7 +55,7 @@ public class Test07_PushReplication extends LitePerfTestCase {
     public static final String TAG = "Test6_PushReplication";
     private static final String _propertyValue = "1";
 
-    public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws CouchbaseLiteException {
+    public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws Exception {
         String[] bigObj = new String[sizeOfDocuments];
         for (int i = 0; i < sizeOfDocuments; i++) {
             bigObj[i] = _propertyValue;

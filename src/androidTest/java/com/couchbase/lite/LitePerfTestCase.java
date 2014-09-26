@@ -55,7 +55,7 @@ public abstract class LitePerfTestCase extends LiteTestCase {
         runMultiple();
     }
 
-    public double runOne(int numberOfDocuments, int sizeOfDocuments)  throws CouchbaseLiteException {
+    public double runOne(int numberOfDocuments, int sizeOfDocuments)  throws Exception {
         return 0;
     };
 

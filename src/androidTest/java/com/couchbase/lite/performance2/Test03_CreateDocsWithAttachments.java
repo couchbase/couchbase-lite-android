@@ -38,7 +38,7 @@ public class Test03_CreateDocsWithAttachments extends LitePerfTestCase {
 
     private static final String _propertyValue = "1";
 
-    public double runOne(final int numberOfDocuments, final int sizeOfAttachments) throws CouchbaseLiteException {
+    public double runOne(final int numberOfDocuments, final int sizeOfAttachments) throws Exception {
 
         final StringBuilder sb = new StringBuilder(sizeOfAttachments);
         for (int i = 0; i < sizeOfAttachments; i++) {
