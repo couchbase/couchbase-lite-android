@@ -61,7 +61,7 @@ dependencies {
             project(':libraries:couchbase-lite-java-core') :
             'com.couchbase.lite:couchbase-lite-java-core:' + System.getenv("MAVEN_UPLOAD_VERSION")
 
-    androidTestCompile 'com.squareup.okhttp:mockwebserver:1.2.1'
+    androidTestCompile 'com.squareup.okhttp:mockwebserver:2.0.0'
 
 }
 

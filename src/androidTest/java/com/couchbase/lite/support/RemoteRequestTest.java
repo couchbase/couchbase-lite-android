@@ -216,7 +216,7 @@ public class RemoteRequestTest extends LiteTestCase {
         // respond with 503 error for all requests
         MockResponse response = new MockResponse().setResponseCode(503);
         WrappedSmartMockResponse wrapped = new WrappedSmartMockResponse(response);
-        wrapped.setDelayMs(50);
+        wrapped.setDelayMs(5);
         wrapped.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, wrapped);
 
@@ -276,7 +276,7 @@ public class RemoteRequestTest extends LiteTestCase {
             future.get();
         }
 
-        boolean success = received503Error.await(60, TimeUnit.SECONDS);
+        boolean success = received503Error.await(120, TimeUnit.SECONDS);
         assertTrue(success);
 
 
