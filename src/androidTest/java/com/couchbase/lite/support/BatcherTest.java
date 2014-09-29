@@ -186,12 +186,14 @@ public class BatcherTest extends LiteTestCase {
      */
     public void testBatcherBatchSize5() throws Exception {
 
-        final CountDownLatch doneSignal = new CountDownLatch(10);
 
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
 
         int inboxCapacity = 10;
-        final int processorDelay = 1000;
+        int numItemsToSubmit = inboxCapacity * 10;
+        final int processorDelay = 0;
+
+        final CountDownLatch doneSignal = new CountDownLatch(numItemsToSubmit);
 
         Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
 
@@ -199,17 +201,20 @@ public class BatcherTest extends LiteTestCase {
             public void process(List<String> itemsToProcess) {
                 Log.v(Database.TAG, "process called with: " + itemsToProcess);
 
-                assertEquals(10, itemsToProcess.size());
-
                 assertNumbersConsecutive(itemsToProcess);
 
-                doneSignal.countDown();
+                for (String item : itemsToProcess) {
+                    doneSignal.countDown();
+                }
+
+                Log.v(Database.TAG, "doneSignal: " + doneSignal.getCount());
+
             }
 
         });
 
         ArrayList<String> objectsToQueue = new ArrayList<String>();
-        for (int i=0; i<inboxCapacity * 10; i++) {
+        for (int i=0; i<numItemsToSubmit; i++) {
             objectsToQueue.add(Integer.toString(i));
             if (objectsToQueue.size() == 5) {
                 batcher.queueObjects(objectsToQueue);
