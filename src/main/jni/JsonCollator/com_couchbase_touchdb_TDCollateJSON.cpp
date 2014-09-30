@@ -483,13 +483,13 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 			return;
 		}
 
-		jfieldID offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "I");
+		jfieldID offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "J");
 		if(offset_db_handle == NULL) {
 			LOGE("Can't find SQLiteConnection.mConnectionPtr");
 			return;
 		}
 
-		jint connectionPtr = env->GetIntField(mc, offset_db_handle);
+		jlong connectionPtr = env->GetLongField(mc, offset_db_handle);
 
 		SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
 
