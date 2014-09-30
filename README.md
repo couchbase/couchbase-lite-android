@@ -70,7 +70,7 @@ For Eclipse and Phonegap users, here are links to the zip file which includes th
 
 ### Prerequisites
 
-* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  Versions 0.8.2 is known to work, with the following caveat: when importing, you will see [this error](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work after that.  If you are trying to build the 1.0.x release branch, you will need to use Android Studio version 0.5.7.
+* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  Versions 0.8.2 is known to work on the master branch, with the following caveat: when importing, you will probably see [this error](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work after that.  Later versions after 0.8.2 probably work as well, and if you get it to work on a later version please post to the [Couchbase Mobile Google Group](groups.google.com/group/mobile-couchbase/) and mention which version.  Older versions of Couchbase Lite required Android Studio version 0.5.7.
 
 * Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
 
