@@ -226,15 +226,40 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_RevCollator_nativeRegister
 			return;
 		}
 
+        SQLiteConnection* connection;
+
+        // On Android-L and later, mConnectionPtr is a long
+        LOGV("mConnectionPtr\n");
 		jfieldID offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "J");
-		if(offset_db_handle == NULL) {
-			LOGE("Can't find SQLiteConnection.mConnectionPtr");
-			return;
+		LOGV("/mConnectionPtr\n");
+		if(offset_db_handle != NULL) {
+
+			LOGV("GetLongField\n");
+            jlong connectionPtr = env->GetLongField(mc, offset_db_handle);
+            LOGV("/GetLongField\n");
+
+            LOGV("reinterpret_castd\n");
+            connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+            LOGV("/reinterpret_castd\n");
+
+		} else {
+
+          // trying to get mConnectionPtr as a long will cause an exception,
+          // so we must clear it before doing anything else.
+          env->ExceptionClear();
+
+		  // On previous versions of Android, it's, an int
+		  offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "I");
+
+		  LOGV("GetIntFieldd\n");
+          jint connectionPtr = env->GetIntField(mc, offset_db_handle);
+          LOGV("/GetIntField\n");
+
+          LOGV("reinterpret_castd\n");
+          connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+          LOGV("/reinterpret_castd\n");
+
 		}
-
-		jlong connectionPtr = env->GetLongField(mc, offset_db_handle);
-
-		SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
 
 		sqliteHandle = connection->db;
 	}
