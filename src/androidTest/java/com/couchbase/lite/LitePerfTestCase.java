@@ -46,6 +46,10 @@ public abstract class LitePerfTestCase extends LiteTestCase {
     public String replicationServer;
     public int replicationPort;
     public String replicationDatabase;
+    public static final String _propertyValue = "1";
+    //If a test return this number, it means the test completed, but there is an error
+    //For example, if the replication tests does not get the same number of document as created
+    public static final int failingPerfNumber = 999999;
 
     @Override
     protected void setUp() throws Exception {
@@ -55,7 +59,7 @@ public abstract class LitePerfTestCase extends LiteTestCase {
         runMultiple();
     }
 
-    public double runOne(int numberOfDocuments, int sizeOfDocuments)  throws Exception {
+    public double runOne(int numberOfDocuments, int sizeOfDocuments)  throws CouchbaseLiteException {
         return 0;
     };
 
@@ -211,13 +215,16 @@ public abstract class LitePerfTestCase extends LiteTestCase {
                         if (ExecutionTime < min) min = ExecutionTime;
                         if (ExecutionTime > max) max = ExecutionTime;
                     } catch (CouchbaseLiteException ex) {
+                        Log.v("PerformanceStats", "Got CouchbaseLiteException. " + ex);
                         ex.printStackTrace();
                         fail();
                     } catch(InterruptedException ex) {
-                        Log.e(TAG, "Fail in Thread.sleep()", ex);
+                        Log.v("PerformanceStats", "Got InterruptedException. " + ex);
+                        ex.printStackTrace();
                         fail();
                     } catch(Exception ex) {
-                        Log.e(TAG, "Fail to teardown and restart db", ex);
+                        Log.v("PerformanceStats", "Got Exception. " + ex);
+                        ex.printStackTrace();
                         fail();
                     }
                 }
