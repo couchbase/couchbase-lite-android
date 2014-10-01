@@ -1287,6 +1287,8 @@ public class ReplicationTest extends LiteTestCase {
      * - Do pull replication
      * - Assert conflict is resolved locally
      *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/77
+     *
      */
     public void testRemoteConflictResolution() throws Exception {
 
