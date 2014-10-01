@@ -399,8 +399,6 @@ int TDCollateJSON(void *context, int len1, const void * chars1, int len2,
 JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCustomCollators
 (JNIEnv *env, jclass cls, jobject sqliteDatabase, jint version) {
 
-    LOGV("****nativeRegisterCustomCollatorsd*****\n");
-
 	int (*sqlite3_create_collation)(sqlite3*,const char *,int,void *,int (*)(void*, int, const void*, int, const void*)) = NULL;
 
 	void* handle = dlopen("/system/lib/libsqlite.so", RTLD_LAZY);
@@ -488,18 +486,11 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
         SQLiteConnection* connection;
 
         // On Android-L and later, mConnectionPtr is a long
-        LOGV("mConnectionPtr\n");
 		jfieldID offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "J");
-		LOGV("/mConnectionPtr\n");
 		if(offset_db_handle != NULL) {
 
-			LOGV("GetLongField\n");
             jlong connectionPtr = env->GetLongField(mc, offset_db_handle);
-            LOGV("/GetLongField\n");
-
-            LOGV("reinterpret_castd\n");
             connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
-            LOGV("/reinterpret_castd\n");
 
 		} else {
 
@@ -510,20 +501,14 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 		  // On previous versions of Android, it's, an int
 		  offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "I");
 
-		  LOGV("GetIntFieldd\n");
           jint connectionPtr = env->GetIntField(mc, offset_db_handle);
-          LOGV("/GetIntField\n");
 
-          LOGV("reinterpret_castd\n");
           connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
-          LOGV("/reinterpret_castd\n");
 
 		}
 
-
-        LOGV("sqliteHandled\n");
 		sqliteHandle = connection->db;
-		LOGV("/sqliteHandled\n");
+
 	}
 
 
