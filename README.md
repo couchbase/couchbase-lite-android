@@ -16,7 +16,7 @@ Couchbase Lite databases are able to sync with eachother via [Sync Gateway](http
 ## Documentation Overview
 
 * This [README](https://github.com/couchbase/couchbase-lite-android/blob/master/README.md)
-* [Official Documentation](http://developer.couchbase.com/mobile/develop/guides/couchbase-lite/index.html) for [1.0](https://github.com/couchbase/couchbase-lite-android/tree/1.0.0) release
+* [Official Documentation](http://developer.couchbase.com/mobile/develop/guides/couchbase-lite/index.html) for the latest release
 * [Javadocs](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_100/74/artifact/cblite_android_javadocs_1.0.0-74.zip) for [1.0](https://github.com/couchbase/couchbase-lite-android/tree/1.0.0) release
 * [Wiki](https://github.com/couchbase/couchbase-lite-android/wiki)
 
@@ -45,7 +45,7 @@ While `0.0.0-426` was the latest build at the time of writing, it's probably out
 
 Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle) that uses this maven artifact.
 
-### Maven 1.0 release
+### Latest Maven release
 
 Maven repo URL: `http://files.couchbase.com/maven2/`
 
@@ -53,23 +53,24 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 <dependency>
   <groupId>com.couchbase.lite</groupId>
   <artifactId>android</artifactId>
-  <version>1.0.0-75</version>
+  <version>${latest_version}</version>
 </dependency>
 ```
+
+Where ${latest_version} should be replaced by something that looks like `1.0.2`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.2-239` because they aren't official releases).
 
 ### Zipfile that includes jars
 
 For Eclipse and Phonegap users, here are links to the zip file which includes the jars:
 
 * [Master Branch build #426 zipfile](http://factory.couchbase.com/job/build_cblite_android_master-community/13/artifact/couchbase-lite-android-community_0.0.0-426.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
-* [1.0.0 zipfile](http://www.couchbase.com/dl/releases/couchbase-lite/android/1.0.0/couchbase-lite-android-community_1.0.0.zip/download)
-
+* To get the latest released zipfile, go to [the official download site](http://www.couchbase.com/download#cb-mobile) and download the latest release.
 
 ## Building Couchbase Lite master branch from source
 
 ### Prerequisites
 
-* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  Versions 0.8.2 is known to work, with the following caveat: when importing, you will see [this error](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work after that.  If you are trying to build the 1.0.x release branch, you will need to use Android Studio version 0.5.7.
+* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  Versions 0.8.2 is known to work on the master branch, with the following caveat: when importing, you will probably see [this error](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work after that.  Later versions after 0.8.2 probably work as well, and if you get it to work on a later version please post to the [Couchbase Mobile Google Group](groups.google.com/group/mobile-couchbase/) and mention which version.  Older versions of Couchbase Lite required Android Studio version 0.5.7.
 
 * Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
 

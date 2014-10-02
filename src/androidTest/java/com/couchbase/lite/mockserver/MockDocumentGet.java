@@ -1,4 +1,4 @@
-package com.couchbase.lite.replicator;
+package com.couchbase.lite.mockserver;
 
 import com.couchbase.lite.BlobKey;
 import com.couchbase.lite.BlobStore;
@@ -178,7 +178,7 @@ public class MockDocumentGet {
         return attachmentsMap;
     }
 
-    private String calculateSha1Digest(String attachmentAssetName) {
+    public static String calculateSha1Digest(String attachmentAssetName) {
         byte[] attachmentBytes = MockDocumentGet.getAssetByteArray(attachmentAssetName);
         BlobKey blobKey = BlobStore.keyForBlob(attachmentBytes);
         String base64Sha1Digest = Base64.encodeBytes(blobKey.getBytes());
@@ -298,6 +298,63 @@ public class MockDocumentGet {
             this.docSeq = docSeq;
         }
 
+        /**
+         * TODO: the MockDocumentGet.generateDocumentMap() method should
+         * TODO: be refactored to use this, but first the revision history
+         * TODO: will need to be moved to this object.
+         */
+        private Map<String, Object> generateDocumentMap(boolean attachmentFollows) {
+            Map<String, Object> docMap = new HashMap<String, Object>();
+            docMap.put("_id", getDocId());
+            docMap.put("_rev", getDocRev());
+
+            if (hasAttachment()) {
+                docMap.put("_attachments", generateAttachmentsMap(attachmentFollows));
+            }
+            docMap.putAll(jsonMap);
+            return docMap;
+        }
+
+        /**
+         * TODO: the MockDocumentGet.generateDocumentMap() method should
+         * TODO: be refactored to use this.
+         */
+        public String generateDocumentBody(boolean attachmentFollows) {
+            Map documentMap = generateDocumentMap(attachmentFollows);
+            try {
+                return Manager.getObjectMapper().writeValueAsString(documentMap);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        /**
+         * TODO: the MockDocumentGet.generateDocumentMap() method should
+         * TODO: be refactored to use this, but first need to remove
+         * TODO: attachmentFileNames field from MockDocumentGet
+         */
+        private Map<String, Object> generateAttachmentsMap(boolean attachmentFollows) {
+            Map<String, Object> attachmentsMap = new HashMap<String, Object>();
+            Map<String, Object> attachmentMap = new HashMap<String, Object>();
+            if (attachmentName.endsWith("png")) {
+                attachmentMap.put("content_type", "image/png");
+            } else {
+                throw new RuntimeException("Only png files are supported as test attachemnts");
+            }
+            attachmentMap.put("digest", calculateSha1Digest(attachmentName));
+            if (attachmentFollows) {
+                attachmentMap.put("follows", true);
+            } else {
+                attachmentMap.put("stub", true);
+            }
+            attachmentMap.put("length", MockDocumentGet.getAssetByteArray(attachmentName).length);
+            attachmentMap.put("revpos", 1);
+
+            attachmentsMap.put(attachmentName, attachmentMap);
+            return attachmentsMap;
+        }
+
+
         public Map<String, Object> getJsonMap() {
             return jsonMap;
         }
@@ -312,6 +369,13 @@ public class MockDocumentGet {
 
         public void setAttachmentName(String attachmentName) {
             this.attachmentName = attachmentName;
+        }
+
+        public boolean hasAttachment() {
+            if (this.attachmentName != null && this.attachmentName.length() > 0) {
+                return true;
+            }
+            return false;
         }
 
         public String getDocPathRegex() {

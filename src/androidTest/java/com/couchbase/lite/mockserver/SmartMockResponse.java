@@ -1,4 +1,4 @@
-package com.couchbase.lite.replicator;
+package com.couchbase.lite.mockserver;
 
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;

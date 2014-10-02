@@ -1,23 +1,35 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.mockserver.MockDispatcher;
+import com.couchbase.lite.mockserver.MockDocumentGet;
+import com.couchbase.lite.mockserver.MockHelper;
+import com.couchbase.lite.mockserver.MockPreloadedPullTarget;
+import com.couchbase.lite.replicator.CustomizableMockHttpClient;
+import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.replicator.ReplicationState;
+import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.test.lite.*;
 
 import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.router.*;
 import com.couchbase.lite.router.Router;
 import com.couchbase.lite.storage.Cursor;
-import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
+import com.squareup.okhttp.mockwebserver.MockWebServer;
+import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpClient;
+import org.apache.http.cookie.Cookie;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -389,248 +401,255 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
 
     public void stopReplication(Replication replication) throws Exception {
 
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationStoppedObserver replicationStoppedObserver = new ReplicationStoppedObserver(replicationDoneSignal);
-        replication.addChangeListener(replicationStoppedObserver);
+        final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
 
         replication.stop();
 
         boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
-        // give a little padding to give it a chance to save a checkpoint
-        Thread.sleep(2 * 1000);
-
     }
 
-    public void waitForReplicationFinishedXTimes(Replication replication, int numTimes) {
+    protected String createDocumentsForPushReplication(String docIdTimestamp) throws CouchbaseLiteException {
+        return createDocumentsForPushReplication(docIdTimestamp, "png");
+    }
 
-        for (int i=0; i<numTimes; i++) {
+    protected Document createDocumentForPushReplication(String docId, String attachmentFileName, String attachmentContentType) throws CouchbaseLiteException {
 
-            CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        Map<String, Object> docJsonMap = MockHelper.generateRandomJsonMap();
+        Map<String, Object> docProperties = new HashMap<String, Object>();
+        docProperties.put("_id", docId);
+        docProperties.putAll(docJsonMap);
+        Document document = database.getDocument(docId);
+        UnsavedRevision revision = document.createRevision();
+        revision.setProperties(docProperties);
 
-            ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-            replication.addChangeListener(replicationFinishedObserver);
-
-            CountDownLatch replicationDoneSignalPolling = replicationWatcherThread(replication);
-
-            Log.d(TAG, "Waiting for replicator to finish");
-            try {
-                boolean success = replicationDoneSignal.await(120, TimeUnit.SECONDS);
-                assertTrue(success);
-
-                success = replicationDoneSignalPolling.await(120, TimeUnit.SECONDS);
-                assertTrue(success);
-
-                Log.d(TAG, "replicator finished");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            replication.removeChangeListener(replicationFinishedObserver);
-
+        if (attachmentFileName != null) {
+            revision.setAttachment(
+                    attachmentFileName,
+                    attachmentContentType,
+                    getAsset(attachmentFileName)
+            );
         }
 
+        revision.save();
+        return document;
 
     }
 
-    public void runReplication(Replication replication) {
-        runReplication(replication, true);
+    protected String createDocumentsForPushReplication(String docIdTimestamp, String attachmentType) throws CouchbaseLiteException {
+        String doc1Id;
+        String doc2Id;// Create some documents:
+        Map<String, Object> doc1Properties = new HashMap<String, Object>();
+        doc1Id = String.format("doc1-%s", docIdTimestamp);
+        doc1Properties.put("_id", doc1Id);
+        doc1Properties.put("foo", 1);
+        doc1Properties.put("bar", false);
+
+        Body body = new Body(doc1Properties);
+        RevisionInternal rev1 = new RevisionInternal(body, database);
+
+        Status status = new Status();
+        rev1 = database.putRevision(rev1, null, false, status);
+        assertEquals(Status.CREATED, status.getCode());
+
+        doc1Properties.put("_rev", rev1.getRevId());
+        doc1Properties.put("UPDATED", true);
+
+        @SuppressWarnings("unused")
+        RevisionInternal rev2 = database.putRevision(new RevisionInternal(doc1Properties, database), rev1.getRevId(), false, status);
+        assertEquals(Status.CREATED, status.getCode());
+
+        Map<String, Object> doc2Properties = new HashMap<String, Object>();
+        doc2Id = String.format("doc2-%s", docIdTimestamp);
+        doc2Properties.put("_id", doc2Id);
+        doc2Properties.put("baz", 666);
+        doc2Properties.put("fnord", true);
+
+        database.putRevision(new RevisionInternal(doc2Properties, database), null, false, status);
+        assertEquals(Status.CREATED, status.getCode());
+
+        Document doc2 = database.getDocument(doc2Id);
+        UnsavedRevision doc2UnsavedRev = doc2.createRevision();
+        if (attachmentType.equals("png")) {
+            InputStream attachmentStream = getAsset("attachment.png");
+            doc2UnsavedRev.setAttachment("attachment.png", "image/png", attachmentStream);
+        } else if (attachmentType.equals("txt")) {
+            StringBuffer sb = new StringBuffer();
+            for (int i=0; i<1000; i++) {
+                sb.append("This is a large attachemnt.");
+            }
+            ByteArrayInputStream attachmentStream = new ByteArrayInputStream(sb.toString().getBytes());
+            doc2UnsavedRev.setAttachment("attachment.txt", "text/plain", attachmentStream);
+        } else {
+            throw new RuntimeException("invalid attachment type: " + attachmentType);
+        }
+        SavedRevision doc2Rev = doc2UnsavedRev.save();
+        assertNotNull(doc2Rev);
+
+        return doc1Id;
     }
 
-    public void runReplication(Replication replication, boolean allowError) {
 
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
 
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-        replication.addChangeListener(replicationFinishedObserver);
+    public void runReplication(Replication replication) throws Exception {
 
+        final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
         replication.start();
-
-        CountDownLatch replicationDoneSignalPolling = replicationWatcherThread(replication);
-
-        Log.d(TAG, "Waiting for replicator to finish");
-        try {
-            boolean success = replicationDoneSignal.await(120, TimeUnit.SECONDS);
-            assertTrue(success);
-
-            success = replicationDoneSignalPolling.await(120, TimeUnit.SECONDS);
-            assertTrue(success);
-
-            Log.d(TAG, "replicator finished");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        if (!allowError) {
-            if (replication.getLastError() != null) {
-                throw new RuntimeException("Replication had unexpected error: %s", replication.getLastError());
-            }
-        }
-
-        replication.removeChangeListener(replicationFinishedObserver);
-
+        boolean success = replicationDoneSignal.await(300, TimeUnit.SECONDS);
+        assertTrue(success);
 
     }
 
-    public CountDownLatch replicationWatcherThread(final Replication replication) {
+    public void waitForPutCheckpointRequestWithSeq(MockDispatcher dispatcher, int seq) {
+        while (true) {
+            RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            if (request.getMethod().equals("PUT")) {
+                String body = request.getUtf8Body();
+                if (body.indexOf(Integer.toString(seq)) != -1) {
+                    // block until response returned
+                    dispatcher.takeRecordedResponseBlocking(request);
+                    return;
+                }
+            }
+        }
+    }
 
-        final CountDownLatch doneSignal = new CountDownLatch(1);
+    protected List<RecordedRequest> waitForPutCheckpointRequestWithSequence(MockDispatcher dispatcher, int expectedLastSequence) throws IOException {
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean started = false;
-                boolean done = false;
-                while (!done) {
+        Log.d(TAG, "Wait for PUT checkpoint request with lastSequence: %s", expectedLastSequence);
 
-                    if (replication.isRunning()) {
-                        started = true;
-                    }
-                    final boolean statusIsDone = (replication.getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED ||
-                            replication.getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE);
-                    if (started && statusIsDone) {
-                        done = true;
-                    }
+        List<RecordedRequest> recordedRequests = new ArrayList<RecordedRequest>();
 
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+        // wait until mock server gets a checkpoint PUT request with expected lastSequence
+        boolean foundExpectedLastSeq = false;
+        String expectedLastSequenceStr = String.format("%s", expectedLastSequence);
 
+        while (!foundExpectedLastSeq) {
+
+            RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            if (request.getMethod().equals("PUT")) {
+
+                recordedRequests.add(request);
+
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+                if (jsonMap.containsKey("lastSequence") && ((String)jsonMap.get("lastSequence")).equals(expectedLastSequenceStr)) {
+                    foundExpectedLastSeq = true;
                 }
 
-                doneSignal.countDown();
-
+                // wait until mock server responds to the checkpoint PUT request.
+                // not sure if this is strictly necessary, but might prevent race conditions.
+                dispatcher.takeRecordedResponseBlocking(request);
             }
-        }).start();
-        return doneSignal;
+        }
+
+        return recordedRequests;
 
     }
 
-    public static class ReplicationFinishedObserver implements Replication.ChangeListener {
+    protected void validateCheckpointRequestsRevisions(List<RecordedRequest> checkpointRequests) {
+        try {
+            int i = 0;
+            for (RecordedRequest request : checkpointRequests) {
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+                if (i == 0) {
+                    // the first request is not expected to have a _rev field
+                    assertFalse(jsonMap.containsKey("_rev"));
+                } else {
+                    assertTrue(jsonMap.containsKey("_rev"));
+                    // TODO: make sure that each _rev is in sequential order, eg: "0-1", "0-2", etc..
+                }
+                i += 1;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-        public boolean replicationFinished = false;
-        private CountDownLatch doneSignal;
+    }
 
-        public ReplicationFinishedObserver(CountDownLatch doneSignal) {
-            this.doneSignal = doneSignal;
+    public static class GoOfflinePreloadedPullTarget extends MockPreloadedPullTarget {
+
+        public GoOfflinePreloadedPullTarget(MockDispatcher dispatcher, int numMockDocsToServe, int numDocsPerChangesResponse) {
+            super(dispatcher, numMockDocsToServe, numDocsPerChangesResponse);
         }
 
         @Override
-        public void changed(Replication.ChangeEvent event) {
-            Replication replicator = event.getSource();
-            Log.d(TAG, replicator + " changed.  " + replicator.getCompletedChangesCount() + " / " + replicator.getChangesCount());
+        public MockWebServer getMockWebServer() {
+            MockWebServer server = MockHelper.getMockWebServer(dispatcher);
 
-            if (replicator.getCompletedChangesCount() < 0) {
-                String msg = String.format("%s: replicator.getCompletedChangesCount() < 0", replicator);
-                Log.d(TAG, msg);
-                throw new RuntimeException(msg);
-            }
+            List<MockDocumentGet.MockDocument> mockDocs = getMockDocuments();
 
-            if (replicator.getChangesCount() < 0) {
-                String msg = String.format("%s: replicator.getChangesCount() < 0", replicator);
-                Log.d(TAG, msg);
-                throw new RuntimeException(msg);
-            }
+            addCheckpointResponse();
 
-            // see https://github.com/couchbase/couchbase-lite-java-core/issues/100
-            if (replicator.getCompletedChangesCount() > replicator.getChangesCount()) {
-                String msg = String.format("invalid changes count: replicator.getCompletedChangesCount() - %d > replicator.getChangesCount() - %d", replicator.getCompletedChangesCount(), replicator.getChangesCount());
-                Log.w(TAG, msg);
-            }
+            // add this a few times to be robust against cases where it
+            // doesn't make _changes requests in exactly expected order
+            addChangesResponse(mockDocs);
+            addChangesResponse(mockDocs);
+            addChangesResponse(mockDocs);
 
-            if (!replicator.isRunning()) {
-                replicationFinished = true;
-                String msg = String.format("ReplicationFinishedObserver.changed called, set replicationFinished to: %b", replicationFinished);
-                Log.d(TAG, msg);
-                doneSignal.countDown();
-            }
-            else {
-                String msg = String.format("ReplicationFinishedObserver.changed called, but replicator still running, so ignore it");
-                Log.d(TAG, msg);
-            }
+            addMockDocuments(mockDocs);
+
+            return server;
         }
-
-        boolean isReplicationFinished() {
-            return replicationFinished;
-        }
-
     }
 
-    public static class ReplicationRunningObserver implements Replication.ChangeListener {
-
-        private CountDownLatch doneSignal;
-
-        public ReplicationRunningObserver(CountDownLatch doneSignal) {
-            this.doneSignal = doneSignal;
-        }
-
-        @Override
-        public void changed(Replication.ChangeEvent event) {
-            Replication replicator = event.getSource();
-            if (replicator.isRunning()) {
-                doneSignal.countDown();
-            }
-        }
-
+    protected Document createDocWithProperties(Map<String, Object> properties1) throws CouchbaseLiteException {
+        Document doc1 = database.createDocument();
+        UnsavedRevision revUnsaved = doc1.createRevision();
+        revUnsaved.setUserProperties(properties1);
+        SavedRevision rev = revUnsaved.save();
+        assertNotNull(rev);
+        return doc1;
     }
 
-    public static class ReplicationIdleObserver implements Replication.ChangeListener {
-
-        private CountDownLatch doneSignal;
-
-        public ReplicationIdleObserver(CountDownLatch doneSignal) {
-            this.doneSignal = doneSignal;
-        }
-
-        @Override
-        public void changed(Replication.ChangeEvent event) {
-            Replication replicator = event.getSource();
-            if (replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                doneSignal.countDown();
+    protected HttpClientFactory mockFactoryFactory(final CustomizableMockHttpClient mockHttpClient) {
+        return new HttpClientFactory() {
+            @Override
+            public HttpClient getHttpClient() {
+                return mockHttpClient;
             }
-        }
 
+            @Override
+            public void addCookies(List<Cookie> cookies) {
+
+            }
+
+            @Override
+            public void deleteCookie(String name) {
+
+            }
+
+            @Override
+            public CookieStore getCookieStore() {
+                return null;
+            }
+        };
     }
 
-    public static class ReplicationStoppedObserver implements Replication.ChangeListener {
-
-        private CountDownLatch doneSignal;
-
-        public ReplicationStoppedObserver(CountDownLatch doneSignal) {
-            this.doneSignal = doneSignal;
-        }
-
-        @Override
-        public void changed(Replication.ChangeEvent event) {
-            Replication replicator = event.getSource();
-            if (replicator.getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
-                doneSignal.countDown();
+    protected void attachmentAsserts(String docAttachName, Document doc) throws IOException, CouchbaseLiteException {
+        Attachment attachment = doc.getCurrentRevision().getAttachment(docAttachName);
+        assertNotNull(attachment);
+        byte[] testAttachBytes = MockDocumentGet.getAssetByteArray(docAttachName);
+        int attachLength = testAttachBytes.length;
+        assertEquals(attachLength, attachment.getLength());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        InputStream is = attachment.getContent();
+        baos.write(is);
+        is.close();
+        byte[] actualAttachBytes = baos.toByteArray();
+        assertEquals(testAttachBytes.length, actualAttachBytes.length);
+        for (int i=0; i<actualAttachBytes.length; i++) {
+            boolean ithByteEqual = actualAttachBytes[i] == testAttachBytes[i];
+            if (!ithByteEqual) {
+                Log.d(Log.TAG, "mismatch");
             }
+            assertTrue(ithByteEqual);
         }
-
     }
 
 
-    public static class ReplicationErrorObserver implements Replication.ChangeListener {
-
-        private CountDownLatch doneSignal;
-
-        public ReplicationErrorObserver(CountDownLatch doneSignal) {
-            this.doneSignal = doneSignal;
-        }
-
-        @Override
-        public void changed(Replication.ChangeEvent event) {
-            Replication replicator = event.getSource();
-            if (replicator.getLastError() != null) {
-                doneSignal.countDown();
-            }
-        }
-
-    }
 
     public void dumpTableMaps() throws Exception {
         Cursor cursor = database.getDatabase().rawQuery(
@@ -681,5 +700,107 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
         unsavedRevision.setUserProperties(properties);
         return unsavedRevision.save(allowConflict);
     }
+
+    /*
+
+    Assert that the bulk docs json in request contains given doc.
+
+    Example bulk docs json.
+
+     {
+       "docs":[
+         {
+           "_id":"b7f5664c-7f84-4ddf-9abc-de4e3f376ae4",
+           ..
+         }
+       ]
+     }
+     */
+    protected void assertBulkDocJsonContainsDoc(RecordedRequest request, Document doc) throws Exception {
+
+        Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+        List docs = (List) bulkDocsJson.get("docs");
+        Map<String, Object> firstDoc = (Map<String, Object>) docs.get(0);
+        assertEquals(doc.getId(), firstDoc.get("_id"));
+
+
+
+    }
+
+    public static class ReplicationIdleObserver implements Replication.ChangeListener {
+
+        private CountDownLatch doneSignal;
+
+        public ReplicationIdleObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+
+            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                doneSignal.countDown();
+            }
+        }
+
+    }
+
+    public static class ReplicationFinishedObserver implements Replication.ChangeListener {
+
+        private CountDownLatch doneSignal;
+
+        public ReplicationFinishedObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+
+            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
+                doneSignal.countDown();
+                assertEquals(event.getChangeCount(), event.getCompletedChangeCount());
+            }
+        }
+
+    }
+
+    public static class ReplicationOfflineObserver implements Replication.ChangeListener {
+
+        private CountDownLatch doneSignal;
+
+        public ReplicationOfflineObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+
+            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_OFFLINE) {
+                doneSignal.countDown();
+            }
+        }
+
+    }
+
+    public static class ReplicationActiveObserver implements Replication.ChangeListener {
+
+        private CountDownLatch doneSignal;
+
+        public ReplicationActiveObserver(CountDownLatch doneSignal) {
+            this.doneSignal = doneSignal;
+        }
+
+        @Override
+        public void changed(Replication.ChangeEvent event) {
+
+            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
+                doneSignal.countDown();
+            }
+        }
+
+    }
+
+
+
 
 }
