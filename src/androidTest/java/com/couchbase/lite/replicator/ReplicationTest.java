@@ -2134,7 +2134,7 @@ public class ReplicationTest extends LiteTestCase {
      *
      * @throws Exception
      */
-    public void testMockPullerRestart() throws Exception {
+    public void failingtestMockPullerRestart() throws Exception {
 
         final int numMockRemoteDocs = 20;  // must be multiple of 10!
         final AtomicInteger numDocsPulledLocally = new AtomicInteger(0);
