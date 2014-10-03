@@ -3104,7 +3104,53 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * Make sure calling puller.setChannels() causes the changetracker to send the correct
+     * request to the sync gateway.
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/292
+     */
+    public void testChannelsFilter() throws Exception {
 
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
 
+        // checkpoint PUT or GET response (sticky)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // _changes response
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // start mock server
+        server.play();
+
+        // run pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setChannels(Arrays.asList("foo", "bar"));
+
+        runReplication(pullReplication);
+
+        // make assertions about outgoing requests from replicator -> mock
+        RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+        assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
+        String body = getChangesFeedRequest.getUtf8Body();
+        Map <String, Object> jsonMap = Manager.getObjectMapper().readValue(body, Map.class);
+        assertTrue(jsonMap.containsKey("filter"));
+        String filter = (String) jsonMap.get("filter");
+        assertEquals("sync_gateway/bychannel", filter);
+
+        assertTrue(jsonMap.containsKey("channels"));
+        String channels = (String) jsonMap.get("channels");
+        assertTrue(channels.contains("foo"));
+        assertTrue(channels.contains("bar"));
+
+        server.shutdown();
+
+    }
 
 }
