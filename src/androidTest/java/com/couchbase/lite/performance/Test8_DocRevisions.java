@@ -72,7 +72,7 @@ public class Test8_DocRevisions extends LiteTestCase {
     }
 
     public void testDocRevisionsPerformance() throws CouchbaseLiteException {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         for (int j = 0; j < getNumberOfDocuments(); j++) {

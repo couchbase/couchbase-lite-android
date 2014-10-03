@@ -97,7 +97,7 @@ public class Test13_QueryView extends LiteTestCase {
     }
 
     public void testViewQueryPerformance() throws CouchbaseLiteException {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         Query query = database.getView("vacant").createQuery();

@@ -100,7 +100,7 @@ public class Test12_IndexView extends LiteTestCase {
 
 
     public void testViewIndexPerformance() throws CouchbaseLiteException {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         View view = database.getView("vacant");

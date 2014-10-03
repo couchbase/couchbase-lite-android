@@ -38,7 +38,7 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCase {
     private static final String _testAttachmentName = "test_attachment";
 
     public void testCreateDocsWithAttachmentsPerformance() throws CouchbaseLiteException {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         boolean success = database.runInTransaction(new TransactionalTask() {

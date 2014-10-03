@@ -71,7 +71,7 @@ public class Test7_PullReplication extends LiteTestCase {
     }
 
     public void testPullReplicationPerformance() throws Exception {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         Log.d(TAG, "testPullReplicationPerformance() started");
