@@ -63,7 +63,7 @@ public class Test16_ParallelPushReplication extends LiteTestCase {
      * Test expects 4 remote datbases named db0, db1, db2, db3
      */
     public void testPushReplicationPerformance() throws Exception {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         URL remote0 = getReplicationSubURL("0");

@@ -60,7 +60,7 @@ public class Test6_PushReplication extends LiteTestCase {
     }
 
     public void testPushReplicationPerformance() throws Exception {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         URL remote = getReplicationURL();

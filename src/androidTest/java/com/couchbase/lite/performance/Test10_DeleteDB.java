@@ -73,7 +73,7 @@ public class Test10_DeleteDB extends LiteTestCase {
     }
 
     public void testDeleteDBPerformance() throws CouchbaseLiteException {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         try

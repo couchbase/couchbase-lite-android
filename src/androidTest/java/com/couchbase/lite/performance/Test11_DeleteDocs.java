@@ -79,7 +79,7 @@ public class Test11_DeleteDocs extends LiteTestCase {
     }
 
     public void testDeleteDocsPerformance() throws CouchbaseLiteException {
-
+        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
         long startMillis = System.currentTimeMillis();
 
         assertTrue(database.runInTransaction(new TransactionalTask() {
