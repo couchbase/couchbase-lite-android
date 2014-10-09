@@ -4,14 +4,20 @@
 
 Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend.  
 
-It is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).  
+It is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).    
 
 ## Architecture
 
 ![](http://tleyden-misc.s3.amazonaws.com/couchbase-lite/couchbase-lite-architecture.png)
 
-Couchbase Lite databases are able to sync with eachother via [Sync Gateway](https://github.com/couchbase/sync_gateway/) backed by [Couchbase Server](http://www.couchbase.com/couchbase-server/overview)
+Couchbase Lite databases are able to sync with each other via [Sync Gateway](https://github.com/couchbase/sync_gateway/) backed by [Couchbase Server](http://www.couchbase.com/couchbase-server/overview)
 
+This is just the most typical architecture, and there are many other possible architectures:
+
+* No replication -- just local data store.
+* Peer-to-peer repolication between Couchbase Lite instances.
+* Replication to multiple Sync Gateway instances rather than a single Sync Gateway.
+* Etc ..
 
 ## Documentation Overview
 
