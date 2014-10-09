@@ -28,10 +28,9 @@ This is just the most typical architecture, and there are many other possible ar
 
 ## Getting started with Couchbase Lite
 
-* Download and run the [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android) demo application
+* Download and run the [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android) and [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android) demo applications.
 
-* Create your own Hello World Couchbase Lite via the [Getting Started](http://developer.couchbase.com/mobile/develop/training/build-first-android-app/index.html) guide.
-
+* Create your own Hello World Couchbase Lite via the [Getting Started](http://developer.couchbase.com/mobile/develop/training/build-first-android-app/index.html) guide.  *(warning: these docs correspond to the 1.0.0 release of Couchbase Lite, so you may run into issues with later releases.)*
 
 ## Getting the pre-built jars / maven artifacts
 
@@ -63,7 +62,7 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 </dependency>
 ```
 
-Where ${latest_version} should be replaced by something that looks like `1.0.2`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.2-239` because they aren't official releases).
+Where ${latest_version} should be replaced by something that looks like `1.0.3`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
 
 ### Zipfile that includes jars
 
@@ -74,11 +73,26 @@ For Eclipse and Phonegap users, here are links to the zip file which includes th
 
 ## Building Couchbase Lite master branch from source
 
+### Android Studio compatibility table
+
+These are known working versions.  Other versions might be compatible (eg, later versions are likely to be compatible)
+
+Couchbase Lite Version  | Android Studio Version
+------------- | -------------
+1.0.0  | Android Studio 0.5.7
+1.0.1  | Android Studio 0.5.7
+1.0.2  | Android Studio 0.8.2
+1.0.3  | Android Studio 0.8.2 - 0.8.9
+Master  | Android Studio 0.8.2 - 0.8.9
+
+Caveat: when importing, you may see [this error](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work.
+ 
+
 ### Prerequisites
 
-* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  Versions 0.8.2 is known to work on the master branch, with the following caveat: when importing, you will probably see [this error](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work after that.  Later versions after 0.8.2 probably work as well, and if you get it to work on a later version please post to the [Couchbase Mobile Google Group](groups.google.com/group/mobile-couchbase/) and mention which version.  Older versions of Couchbase Lite required Android Studio version 0.5.7.
+* [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  
 
-* Under Tools / Android / Android SDK Manager and install "Extras/Google Repository" and "Extras/Android Support Repository" (future versions of Android Studio may make this step unnecessary)
+* Under Tools / Android / Android SDK Manager make sure "Extras/Google Repository" and "Extras/Android Support Repository" are installed.
 
 ### Clone the git repository
 
