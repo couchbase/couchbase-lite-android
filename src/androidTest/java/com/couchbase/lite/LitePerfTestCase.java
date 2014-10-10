@@ -54,7 +54,7 @@ public abstract class LitePerfTestCase extends LiteTestCase {
     @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp in LitePerfTestCase");
-        loadCustomProperties();
+        super.setUp();
         loadConfigs();
         runMultiple();
     }
@@ -111,8 +111,7 @@ public abstract class LitePerfTestCase extends LiteTestCase {
         return replicationDatabase;
     }
 
-    void runMultiple() {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+     void runMultiple() {
         JSONObject testConfig;
         Integer repeat_count;
         ArrayList<Integer> arrayNumberOfDocuments, arraySizeofDocuments;

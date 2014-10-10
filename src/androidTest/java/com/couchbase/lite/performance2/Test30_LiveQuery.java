@@ -56,7 +56,7 @@ public class Test30_LiveQuery extends LitePerfTestCase {
     public static final String TAG = "Test30_LiveQuery";
 
     public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws CouchbaseLiteException {
-        final CountDownLatch doneSignal = new CountDownLatch(numberOfDocuments);
+        final CountDownLatch doneSignal = new CountDownLatch(1);
 
         // run a live query
         View view = database.getView("vu");
@@ -84,17 +84,17 @@ public class Test30_LiveQuery extends LitePerfTestCase {
         };
         query.addChangeListener(changeListener);
 
+        query.start();  //Start live query
+
         //Start measurement, including create docs, define view, and do query
         long startMillis = System.currentTimeMillis();
 
         // create the docs that will cause the above change listener to decrement countdown latch
         createDocumentsAsync(database, numberOfDocuments, sizeOfDocuments);
 
-        query.run();  // this will block until the query completes
-
         // wait for the doneSignal to be finished
         try {
-            boolean success = doneSignal.await(5, TimeUnit.SECONDS);  //??? 300
+            boolean success = doneSignal.await(300, TimeUnit.SECONDS);
         }
         catch(InterruptedException ex)
         {
@@ -102,11 +102,12 @@ public class Test30_LiveQuery extends LitePerfTestCase {
             return 0;
         }
 
-        // stop the live query since we are done with it
-        query.removeChangeListener(changeListener);
-        query.stop();
-
         double executionTime = Long.valueOf(System.currentTimeMillis()-startMillis);
+
+        // stop the live query since we are done with it
+        //query.removeChangeListener(changeListener);
+        //query.stop();
+
         Log.v("PerformanceStats",TAG+","+executionTime+","+numberOfDocuments+","+sizeOfDocuments);
         if (query.getRows().getCount() == numberOfDocuments) {
             return executionTime;
