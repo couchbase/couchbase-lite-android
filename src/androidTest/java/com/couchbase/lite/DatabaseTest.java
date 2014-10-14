@@ -178,6 +178,11 @@ public class DatabaseTest extends LiteTestCase {
         success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
         assertTrue(success);
 
+        // workaround race condition.  Since our replication change listener will get triggered
+        // _before_ the internal change listener that updates the activeReplications map, we
+        // need to pause briefly to let the internal change listener to update activeReplications.
+        Thread.sleep(500);
+
         assertEquals(1, database.getAllReplications().size());
         assertEquals(0, database.getActiveReplications().size());
 
