@@ -47,6 +47,10 @@ public class Test12_IndexView extends LiteTestCase {
         Log.v(TAG, "IndexViewPerformance setUp");
         super.setUp();
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         View view = database.getView("vacant");
 
         view.setMapReduce(
@@ -100,7 +104,11 @@ public class Test12_IndexView extends LiteTestCase {
 
 
     public void testViewIndexPerformance() throws CouchbaseLiteException {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         View view = database.getView("vacant");

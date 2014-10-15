@@ -112,7 +112,11 @@ public abstract class LitePerfTestCase extends LiteTestCase {
     }
 
     void runMultiple() {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         JSONObject testConfig;
         Integer repeat_count;
         ArrayList<Integer> arrayNumberOfDocuments, arraySizeofDocuments;

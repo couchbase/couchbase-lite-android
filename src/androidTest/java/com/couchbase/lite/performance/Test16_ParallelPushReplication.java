@@ -44,6 +44,10 @@ public class Test16_ParallelPushReplication extends LiteTestCase {
         Log.v(TAG, "DeleteDBPerformance setUp");
         super.setUp();
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
         for (int i = 0; i < getNumberOfDocuments(); i++) {
@@ -63,7 +67,11 @@ public class Test16_ParallelPushReplication extends LiteTestCase {
      * Test expects 4 remote datbases named db0, db1, db2, db3
      */
     public void testPushReplicationPerformance() throws Exception {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         URL remote0 = getReplicationSubURL("0");
