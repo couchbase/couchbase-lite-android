@@ -30,7 +30,7 @@ This is just the most typical architecture, and there are many other possible ar
 
 * Download and run the [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android) and [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android) demo applications.
 
-* Create your own Hello World Couchbase Lite via the [Getting Started](http://developer.couchbase.com/mobile/develop/training/build-first-android-app/index.html) guide.  *(warning: these docs correspond to the 1.0.0 release of Couchbase Lite, so you may run into issues with later releases.)*
+* Create your own Hello World Couchbase Lite via the [Getting Started](http://developer.couchbase.com/mobile/develop/training/build-first-android-app/index.html) guide.  *(warning: these Getting Started guide correspond to the 1.0.0 release of Couchbase Lite, so you may run into issues with later releases.)*
 
 ## Getting the pre-built jars / maven artifacts
 
