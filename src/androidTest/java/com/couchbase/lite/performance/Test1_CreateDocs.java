@@ -42,7 +42,11 @@ public class Test1_CreateDocs extends LiteTestCase {
     private static final String _propertyValue = "1234567";
 
     public void testCreateDocsPerformance() throws CouchbaseLiteException {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         boolean success = database.runInTransaction(new TransactionalTask() {

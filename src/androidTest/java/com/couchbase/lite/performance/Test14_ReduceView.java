@@ -43,6 +43,10 @@ public class Test14_ReduceView extends LiteTestCase {
         Log.v(TAG, "ReduceViewPerformance setUp");
         super.setUp();
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         View view = database.getView("vacant");
 
         view.setMapReduce(
@@ -98,7 +102,11 @@ public class Test14_ReduceView extends LiteTestCase {
     }
 
     public void testViewReducePerformance() throws CouchbaseLiteException {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         Query query = database.getView("vacant").createQuery();

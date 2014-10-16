@@ -39,6 +39,10 @@ public class Test10_DeleteDB extends LiteTestCase {
         Log.v(TAG, "DeleteDBPerformance setUp");
         super.setUp();
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         //Create docs that will be deleted in test case
         assertTrue(database.runInTransaction(new TransactionalTask() {
 
@@ -73,7 +77,11 @@ public class Test10_DeleteDB extends LiteTestCase {
     }
 
     public void testDeleteDBPerformance() throws CouchbaseLiteException {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         try

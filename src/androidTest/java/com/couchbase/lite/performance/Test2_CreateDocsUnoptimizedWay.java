@@ -35,7 +35,11 @@ public class Test2_CreateDocsUnoptimizedWay extends LiteTestCase {
     private static final String _propertyValue = "1234567";
 
     public void testCreateDocsUnoptimizedWayPerformance() throws CouchbaseLiteException {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         String[] bigObj = new String[getSizeOfDocument()];

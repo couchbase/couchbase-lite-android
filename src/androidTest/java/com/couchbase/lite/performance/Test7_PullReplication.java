@@ -53,6 +53,10 @@ public class Test7_PullReplication extends LiteTestCase {
         Log.v(TAG, "DeleteDBPerformance setUp");
         super.setUp();
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
         for(int i=0; i < getNumberOfDocuments(); i++)
@@ -71,7 +75,11 @@ public class Test7_PullReplication extends LiteTestCase {
     }
 
     public void testPullReplicationPerformance() throws Exception {
-        if (!Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"))) return;
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         Log.d(TAG, "testPullReplicationPerformance() started");
@@ -82,6 +90,7 @@ public class Test7_PullReplication extends LiteTestCase {
         Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments());
 
     }
+
 
     private void doPullReplication() throws Exception {
         URL remote = getReplicationURL();

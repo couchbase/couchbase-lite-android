@@ -73,6 +73,10 @@ public abstract class LiteTestCase extends LiteTestCaseBase {
 
     }
 
+    protected static boolean performanceTestsEnabled() {
+        return Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"));
+    }
+
     protected InputStream getAsset(String name) {
         return this.getClass().getResourceAsStream("/assets/" + name);
     }
