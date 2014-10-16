@@ -85,9 +85,6 @@ Couchbase Lite Version  | Android Studio Version
 1.0.3  | Android Studio 0.8.2 - 0.8.9
 Master  | Android Studio 0.8.2 - 0.8.9
 
-Caveat: when importing, you may see [this error](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work.
- 
-
 ### Prerequisites
 
 * [Download Android Studio](http://developer.android.com/sdk/installing/studio.html).  
@@ -121,7 +118,7 @@ You should be able to import the project directly into Android Studio:
 * Choose File / Import and choose the settings.gradle file in the couchbase-lite-android directory you cloned earlier
 * Hit Finish and wait for all tasks to finish (may take a while)
 
-**Warning** when importing, you will probably see an error like [Wrong offset: 290. Should be in range: 0, 230](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work after that
+Caveat: when importing, you may see [Wrong offset: 290. Should be in range: 0, 230](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work.
 
 ### Running tests
 
