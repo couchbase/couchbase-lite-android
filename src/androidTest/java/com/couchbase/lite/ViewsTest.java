@@ -19,12 +19,15 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.View.TDViewCollation;
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.support.LazyJsonArray;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -85,6 +88,48 @@ public class ViewsTest extends LiteTestCase {
         }, null, "2");
 
         Assert.assertTrue(changed);
+    }
+
+    //https://github.com/couchbase/couchbase-lite-java-core/issues/219
+    public void testDeleteView() {
+        List<View> views = database.getAllViews();
+        for (View view : views) {
+            database.deleteViewNamed(view.getName());
+        }
+
+        Assert.assertEquals(0, database.getAllViews().size());
+        Assert.assertEquals(null, database.getExistingView("viewToDelete"));
+
+
+        View view = database.getView("viewToDelete");
+        Assert.assertNotNull(view);
+        Assert.assertEquals(database, view.getDatabase());
+        Assert.assertEquals("viewToDelete", view.getName());
+        Assert.assertNull(view.getMap());
+        Assert.assertEquals(view, database.getExistingView("viewToDelete"));
+
+        Assert.assertEquals(0, database.getAllViews().size());
+        boolean changed = view.setMapReduce(new Mapper() {
+
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                //no-op
+            }
+        }, null, "1");
+
+        Assert.assertTrue(changed);
+        Assert.assertEquals(1, database.getAllViews().size());
+        Assert.assertEquals(view, database.getAllViews().get(0));
+
+        Status status = database.deleteViewNamed("viewToDelete");
+        Assert.assertEquals(Status.OK, status.getCode());
+        Assert.assertEquals(0, database.getAllViews().size());
+
+        View nullView = database.getExistingView("viewToDelete");
+        Assert.assertNull("cached View is not deleted", nullView);
+
+        status = database.deleteViewNamed("viewToDelete");
+        Assert.assertEquals(Status.NOT_FOUND, status.getCode());
     }
 
     private RevisionInternal putDoc(Database db, Map<String,Object> props) throws CouchbaseLiteException {
@@ -312,6 +357,30 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(0, rows.size());
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/214
+     */
+    public void testViewIndexSkipsConflictingDesignDocs() throws CouchbaseLiteException {
+        View view = createView(database);
+
+        Map<String, Object> designDoc = new HashMap<String, Object>();
+        designDoc.put("_id", "_design/test");
+        designDoc.put("key", "value");
+        RevisionInternal rev1 = putDoc(database, designDoc);
+
+        designDoc.put("_rev", rev1.getRevId());
+        designDoc.put("key", "value2a");
+        RevisionInternal rev2a = new RevisionInternal(designDoc, database);
+        database.putRevision(rev2a, rev1.getRevId(), true);
+        designDoc.put("key", "value2b");
+        RevisionInternal rev2b = new RevisionInternal(designDoc, database);
+        database.putRevision(rev2b, rev1.getRevId(), true);
+
+        view.updateIndex();
+        List<QueryRow> rows = view.queryWithOptions(null);
+        assertEquals(0, rows.size());
+    }
+
     public void testViewQuery() throws CouchbaseLiteException {
 
         putDocs(database);
@@ -447,6 +516,104 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(dict2.get("value"), rows.get(1).getValue());
 
     }
+
+    //https://github.com/couchbase/couchbase-lite-android/issues/314
+    public void failingTestViewQueryWithDictSentinel() throws CouchbaseLiteException {
+
+        List<String> key1 = new ArrayList<String>();
+        key1.add("red");
+        key1.add("model1");
+        Map<String,Object> dict1 = new HashMap<String,Object>();
+        dict1.put("id", "11");
+        dict1.put("key", key1);
+        putDoc(database, dict1);
+
+        List<String> key2 = new ArrayList<String>();
+        key2.add("red");
+        key2.add("model2");
+        Map<String,Object> dict2 = new HashMap<String,Object>();
+        dict2.put("id", "12");
+        dict2.put("key", key2);
+        putDoc(database, dict2);
+
+        List<String> key3 = new ArrayList<String>();
+        key3.add("green");
+        key3.add("model1");
+        Map<String,Object> dict3 = new HashMap<String,Object>();
+        dict3.put("id", "21");
+        dict3.put("key", key3);
+        putDoc(database, dict3);
+
+        List<String> key4 = new ArrayList<String>();
+        key4.add("yellow");
+        key4.add("model2");
+        Map<String,Object> dict4 = new HashMap<String,Object>();
+        dict4.put("id", "31");
+        dict4.put("key", key4);
+        putDoc(database, dict4);
+
+        View view = createView(database);
+
+        view.updateIndex();
+
+        // Query all rows:
+        QueryOptions options = new QueryOptions();
+        List<QueryRow> rows = view.queryWithOptions(options);
+
+        Assert.assertEquals(4, rows.size());
+        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"yellow", "model2"}, ((LazyJsonArray) rows.get(3).getKey()).toArray()));
+
+
+        // Start/end key query:
+        options = new QueryOptions();
+        options.setStartKey("a");
+        options.setEndKey(Arrays.asList("red", new HashMap<String, Object>()));
+        rows = view.queryWithOptions(options);
+        Assert.assertEquals(3, rows.size());
+        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
+
+        // Start/end query without inclusive end:
+        options.setInclusiveEnd(false);
+        rows = view.queryWithOptions(options);
+        Assert.assertEquals(1, rows.size()); //3
+        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
+
+        // Reversed:
+        options.setDescending(true);
+        options.setStartKey("red");
+        options.setEndKey(Arrays.asList("green", new HashMap<String, Object>()));
+        options.setInclusiveEnd(true);
+        rows = view.queryWithOptions(options);
+        Assert.assertEquals(3, rows.size()); //0
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
+
+        // Reversed, no inclusive end:
+        options.setInclusiveEnd(false);
+        rows = view.queryWithOptions(options);
+        Assert.assertEquals(2, rows.size()); //0
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
+
+        // Specific keys:
+        options = new QueryOptions();
+        List<Object> keys = new ArrayList<Object>();
+        keys.add(new Object[]{"red", "model1"});
+        keys.add(new Object[]{"red", "model2"});
+        options.setKeys(keys);
+        rows = view.queryWithOptions(options);
+        Assert.assertEquals(2, rows.size());
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
+
+    }
+
 
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/139
@@ -1002,6 +1169,114 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(row3.get("value"), rows.get(2).getValue());
 
     }
+    
+    public void testViewGroupedVariableLengthKey() throws CouchbaseLiteException {
+        Map<String,Object> docProperties1 = new HashMap<String,Object>();
+        docProperties1.put("_id", "H");
+        docProperties1.put("atomic_number", 1);
+        docProperties1.put("name", "Hydrogen");
+        docProperties1.put("electrons", new Integer[] {1});
+        putDoc(database, docProperties1);
+
+        Map<String,Object> docProperties2 = new HashMap<String,Object>();
+        docProperties2.put("_id", "He");
+        docProperties2.put("atomic_number", 2);
+        docProperties2.put("name", "Helium");
+        docProperties2.put("electrons", new Integer[] {2});
+        putDoc(database, docProperties2);
+
+        Map<String,Object> docProperties3 = new HashMap<String,Object>();
+        docProperties3.put("_id", "Ne");
+        docProperties3.put("atomic_number", 10);
+        docProperties3.put("name", "Neon");
+        docProperties3.put("electrons", new Integer[] {2, 8});
+        putDoc(database, docProperties3);
+
+        Map<String,Object> docProperties4 = new HashMap<String,Object>();
+        docProperties4.put("_id", "Na");
+        docProperties4.put("atomic_number", 11);
+        docProperties4.put("name", "Sodium");
+        docProperties4.put("electrons", new Integer[] {2, 8, 1});
+        putDoc(database, docProperties4);
+
+        Map<String,Object> docProperties5 = new HashMap<String,Object>();
+        docProperties5.put("_id", "Mg");
+        docProperties5.put("atomic_number", 12);
+        docProperties5.put("name", "Magnesium");
+        docProperties5.put("electrons", new Integer[] {2, 8, 2});
+        putDoc(database, docProperties5);
+        
+        Map<String,Object> docProperties6 = new HashMap<String,Object>();
+        docProperties6.put("_id", "Cr");
+        docProperties6.put("atomic_number", 24);
+        docProperties6.put("name", "Chromium");
+        docProperties6.put("electrons", new Integer[] {2, 8, 13, 1});
+        putDoc(database, docProperties6);
+        
+        Map<String,Object> docProperties7 = new HashMap<String,Object>();
+        docProperties7.put("_id", "Zn");
+        docProperties7.put("atomic_number", 30);
+        docProperties7.put("name", "Zinc");
+        docProperties7.put("electrons", new Integer[] {2, 8, 18, 2});
+        putDoc(database, docProperties7);
+        
+        /*
+            expected key-value pairs at group level 2:
+              [1] -> 1
+              [2] -> 1
+              [2, 8] -> 5
+        */
+        
+        View view = database.getView("electrons");
+        view.setMapReduce(new Mapper() {
+
+                              @Override
+                              public void map(Map<String, Object> document, Emitter emitter) {
+                                  emitter.emit(document.get("electrons"), 1);
+                              }
+                          }, new Reducer() {
+
+                              @Override
+                              public Object reduce(List<Object> keys, List<Object> values,
+                                                   boolean rereduce) {
+                                  return View.totalValues(values);
+                              }
+                          }, "1"
+        );
+                          
+        Status status = new Status();
+        view.updateIndex();
+
+        QueryOptions options = new QueryOptions();
+        options.setReduce(true);
+        options.setGroupLevel(2);
+        List<QueryRow> rows = view.queryWithOptions(options);
+
+        assertEquals(3, rows.size());
+        
+        List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
+        Map<String,Object> row1 = new HashMap<String,Object>();
+        row1.put("key", Arrays.asList(new Integer[] {1}));
+        row1.put("value", 1.0);
+        expectedRows.add(row1);
+        Map<String,Object> row2 = new HashMap<String,Object>();
+        row2.put("key", Arrays.asList(new Integer[] {2}));
+        row2.put("value", 1.0);
+        expectedRows.add(row2);
+        Map<String,Object> row3 = new HashMap<String,Object>();
+        row3.put("key", Arrays.asList(new Integer[] {2,8}));
+        row3.put("value", 5.0);
+        expectedRows.add(row3);
+        
+        Assert.assertEquals(row1.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(row1.get("value"), rows.get(0).getValue());
+        Assert.assertEquals(row2.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(row2.get("value"), rows.get(1).getValue());
+        Assert.assertEquals(row3.get("key"), rows.get(2).getKey());
+        Assert.assertEquals(row3.get("value"), rows.get(2).getValue());
+    }
+
+    
 
     public void testViewCollation() throws CouchbaseLiteException {
         List<Object> list1 = new ArrayList<Object>();
@@ -1371,6 +1646,63 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(1, rows.getCount());
         row = rows.next();
         assertEquals(row.getKey(), "3");
+
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/226
+     */
+    public void testViewSecondQuery() throws Exception {
+
+        // Create doc and add some revs
+        final Document doc = database.createDocument();
+        String jsonString = "{\n" +
+                "    \"name\":\"praying mantis\",\n" +
+                "    \"wikipedia\":{\n" +
+                "        \"behavior\":{\n" +
+                "            \"style\":\"predatory\",\n" +
+                "            \"attack\":\"ambush\"\n" +
+                "        },\n" +
+                "        \"evolution\":{\n" +
+                "            \"ancestor\":\"proto-roaches\",\n" +
+                "            \"cousin\":\"termite\"\n" +
+                "        }       \n" +
+                "    }   \n" +
+                "\n" +
+                "}";
+
+        Map jsonObject = (Map) Manager.getObjectMapper().readValue(jsonString, Object.class);
+        doc.putProperties(jsonObject);
+
+        View view = database.getView("testViewSecondQueryView");
+        view.setMapReduce(new Mapper() {
+
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                if (document.get("name") != null) {
+                    emitter.emit(document.get("name"), document);
+                }
+            }
+        }, null, "1");
+
+
+        for (int i=0; i<2; i++) {
+
+            Query query = view.createQuery();
+            QueryEnumerator rows = query.run();
+
+            for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
+                QueryRow row = it.next();
+                Map wikipediaField = (Map) row.getDocument().getProperty("wikipedia");
+                assertTrue(wikipediaField.containsKey("behavior"));
+                assertTrue(wikipediaField.containsKey("evolution"));
+                Map behaviorField = (Map) wikipediaField.get("behavior");
+                assertTrue(behaviorField.containsKey("style"));
+                assertTrue(behaviorField.containsKey("attack"));
+            }
+
+        }
+
 
     }
 

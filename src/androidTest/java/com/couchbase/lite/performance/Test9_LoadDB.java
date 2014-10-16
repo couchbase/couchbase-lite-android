@@ -40,6 +40,10 @@ public class Test9_LoadDB extends LiteTestCase {
 
     public void testLoadDBPerformance() throws CouchbaseLiteException {
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         String[] bigObj = new String[getSizeOfDocument()];
@@ -57,7 +61,7 @@ public class Test9_LoadDB extends LiteTestCase {
                 tearDown();
 
                 manager = new Manager(new LiteTestContext(), Manager.DEFAULT_OPTIONS);
-                database = manager.getExistingDatabase(DEFAULT_TEST_DB);
+                database = manager.getDatabase(DEFAULT_TEST_DB);
             }
             catch(Exception ex)
             {

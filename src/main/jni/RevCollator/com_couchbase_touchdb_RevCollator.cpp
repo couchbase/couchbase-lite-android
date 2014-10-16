@@ -226,15 +226,29 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_RevCollator_nativeRegister
 			return;
 		}
 
-		jfieldID offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "I");
-		if(offset_db_handle == NULL) {
-			LOGE("Can't find SQLiteConnection.mConnectionPtr");
-			return;
+        SQLiteConnection* connection;
+
+        // On Android-L and later, mConnectionPtr is a long
+		jfieldID offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "J");
+		if(offset_db_handle != NULL) {
+
+            jlong connectionPtr = env->GetLongField(mc, offset_db_handle);
+            connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+
+		} else {
+
+          // trying to get mConnectionPtr as a long will cause an exception,
+          // so we must clear it before doing anything else.
+          env->ExceptionClear();
+
+		  // On previous versions of Android, it's, an int
+		  offset_db_handle = env->GetFieldID(sqlc_clazz, "mConnectionPtr", "I");
+
+          jint connectionPtr = env->GetIntField(mc, offset_db_handle);
+
+          connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
+
 		}
-
-		jint connectionPtr = env->GetIntField(mc, offset_db_handle);
-
-		SQLiteConnection* connection = reinterpret_cast<SQLiteConnection*>(connectionPtr);
 
 		sqliteHandle = connection->db;
 	}

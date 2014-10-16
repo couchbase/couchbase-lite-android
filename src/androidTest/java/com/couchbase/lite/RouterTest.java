@@ -1,12 +1,17 @@
 package com.couchbase.lite;
 
 
+import com.couchbase.lite.mockserver.MockCheckpointGet;
+import com.couchbase.lite.mockserver.MockDispatcher;
+import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
+import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,8 +45,8 @@ public class RouterTest extends LiteTestCase {
 
         send("GET", "/non-existant", Status.NOT_FOUND, null);
         send("GET", "/BadName", Status.BAD_REQUEST, null);
-        send("PUT", "/", Status.BAD_REQUEST, null);
-        send("POST", "/", Status.BAD_REQUEST, null);
+        send("PUT", "/", Status.NOT_FOUND, null);
+        send("POST", "/", Status.NOT_FOUND, null);
     }
 
     public void testDatabase() {
@@ -134,7 +139,9 @@ public class RouterTest extends LiteTestCase {
         assertTrue(contentType.contains("text/plain"));
 
         StringWriter writer = new StringWriter();
-        IOUtils.copy(conn.getInputStream(), writer, "UTF-8");
+        InputStream is = conn.getInputStream();
+        IOUtils.copy(is, writer, "UTF-8");
+        is.close();
         String responseString = writer.toString();
         assertTrue(responseString.contains(inlineTextString));
 
@@ -672,9 +679,18 @@ public class RouterTest extends LiteTestCase {
 
     public void testPushReplicate() throws Exception {
 
-        send("PUT", "/db", Status.CREATED, null);
+        // create mock sync gateway that will serve as a pull target and return random docs
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
 
-        Map<String, Object> replicateJsonMap = getPushReplicationParsedJson();
+        // fake checkpoint response 404
+        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
+
+        server.play();
+
+        Map<String, Object> replicateJsonMap = getPushReplicationParsedJson(server.getUrl("/db"));
 
         Log.v(TAG, "map: " + replicateJsonMap);
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
@@ -684,6 +700,8 @@ public class RouterTest extends LiteTestCase {
         boolean success = waitForReplicationToFinish();
         assertTrue(success);
 
+        server.shutdown();
+
     }
 
     private boolean waitForReplicationToFinish() throws InterruptedException {
@@ -692,7 +710,7 @@ public class RouterTest extends LiteTestCase {
         boolean success = true;
 
         ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
-        while (activeTasks.size() > 0 || timeWaited > maxTimeToWaitMs) {
+        while (activeTasks.size() > 0 && timeWaited < maxTimeToWaitMs) {
             int timeToWait = 1000;
             Thread.sleep(timeToWait);
             activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
@@ -711,17 +729,27 @@ public class RouterTest extends LiteTestCase {
 
     public void testPullReplicate() throws Exception {
 
-        send("PUT", "/db", Status.CREATED, null);
+        // create mock sync gateway that will serve as a pull target and return random docs
+        int numMockDocsToServe = 0;
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        server.setDispatcher(dispatcher);
+        server.play();
 
-        Map<String, Object> replicateJsonMap = getPullReplicationParsedJson();
-
+        // kick off replication via REST api
+        Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
         Log.v(TAG, "map: " + replicateJsonMap);
         Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
         Log.v(TAG, "result: " + result);
         assertNotNull(result.get("session_id"));
 
+        // wait for replication to finish
         boolean success = waitForReplicationToFinish();
         assertTrue(success);
+
+        // cleanup
+        server.shutdown();
 
     }
 

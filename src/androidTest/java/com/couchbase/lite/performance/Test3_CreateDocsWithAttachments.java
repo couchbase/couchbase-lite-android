@@ -39,6 +39,10 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCase {
 
     public void testCreateDocsWithAttachmentsPerformance() throws CouchbaseLiteException {
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         long startMillis = System.currentTimeMillis();
 
         boolean success = database.runInTransaction(new TransactionalTask() {

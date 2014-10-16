@@ -43,6 +43,10 @@ public class Test13_QueryView extends LiteTestCase {
         Log.v(TAG, "QueryViewPerformance setUp");
         super.setUp();
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         View view = database.getView("vacant");
 
         view.setMapReduce(
@@ -97,6 +101,10 @@ public class Test13_QueryView extends LiteTestCase {
     }
 
     public void testViewQueryPerformance() throws CouchbaseLiteException {
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
 
         long startMillis = System.currentTimeMillis();
 

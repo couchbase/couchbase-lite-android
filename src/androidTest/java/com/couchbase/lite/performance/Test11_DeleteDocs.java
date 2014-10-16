@@ -43,6 +43,10 @@ public class Test11_DeleteDocs extends LiteTestCase {
         Log.v(TAG, "DeleteDocsPerformance setUp");
         super.setUp();
 
+        if (!performanceTestsEnabled()) {
+            return;
+        }
+
         docs = new Document[getNumberOfDocuments()];
 
         //Create docs that will be deleted in test case
@@ -79,6 +83,10 @@ public class Test11_DeleteDocs extends LiteTestCase {
     }
 
     public void testDeleteDocsPerformance() throws CouchbaseLiteException {
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
 
         long startMillis = System.currentTimeMillis();
 

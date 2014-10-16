@@ -30,6 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * This is the _old_ mocking framework.  Use mockwebserver instead.
+ *
+ * (see MockDocumentGet and usages)
+ */
 public class CustomizableMockHttpClient implements org.apache.http.client.HttpClient {
 
     // tests can register custom responders per url.  the key is the URL pattern to match,
@@ -460,11 +465,11 @@ public class CustomizableMockHttpClient implements org.apache.http.client.HttpCl
         throw new RuntimeException("Mock Http Client does not know how to handle this request.  It should be fixed");
     }
 
-    static interface Responder {
+    public static interface Responder {
         public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException;
     }
 
-    static interface ResponseListener {
+    public static interface ResponseListener {
         public void responseSent(HttpUriRequest httpUriRequest, HttpResponse response);
     }
 

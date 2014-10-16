@@ -42,7 +42,9 @@ public class ApiTest extends LiteTestCase {
         ManagerOptions options= new ManagerOptions();
         options.setReadOnly(true);
 
-        Manager roManager=new Manager(new LiteTestContext(), options);
+        // We want to create two different managers reading from the same directory so we
+        // create LiteTestContext(false) to make sure we don't delete the directory
+        Manager roManager=new Manager(new LiteTestContext(false), options);
         Assert.assertTrue(roManager!=null);
 
         Database db =roManager.getDatabase("foo");
@@ -590,6 +592,7 @@ public class ApiTest extends LiteTestCase {
         Attachment fetched = doc.getCurrentRevision().getAttachment(attachmentName);
         InputStream is = fetched.getContent();
         byte[] attachmentBytes = TextUtils.read(is);
+        is.close();
         assertEquals(content, new String(attachmentBytes));
         assertNotNull(fetched);
 
@@ -901,6 +904,10 @@ public class ApiTest extends LiteTestCase {
         query.removeChangeListener(changeListener);
         query.stop();
 
+        // Workaround:
+        // Putting a small sleep to ensure that the liveQuery is done its async update operation.
+        // https://github.com/couchbase/couchbase-lite-java-core/issues/296
+        Thread.sleep(500);
     }
 
     public void testAsyncViewQuery() throws Exception {

@@ -17,13 +17,7 @@
 
 package com.couchbase.lite.performance;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Document;
 import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.Status;
-import com.couchbase.lite.TransactionalTask;
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.threading.BackgroundTask;
@@ -45,8 +39,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -60,6 +52,10 @@ public class Test7_PullReplication extends LiteTestCase {
     protected void setUp() throws Exception {
         Log.v(TAG, "DeleteDBPerformance setUp");
         super.setUp();
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
@@ -78,7 +74,11 @@ public class Test7_PullReplication extends LiteTestCase {
         }
     }
 
-    public void testPullReplicationPerformance() throws CouchbaseLiteException {
+    public void testPullReplicationPerformance() throws Exception {
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
 
         long startMillis = System.currentTimeMillis();
 
@@ -91,7 +91,8 @@ public class Test7_PullReplication extends LiteTestCase {
 
     }
 
-    private void doPullReplication() {
+
+    private void doPullReplication() throws Exception {
         URL remote = getReplicationURL();
 
         final Replication repl = (Replication) database.createPullReplication(remote);

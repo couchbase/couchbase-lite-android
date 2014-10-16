@@ -41,9 +41,11 @@ public class Test1_CreateDocs extends LiteTestCase {
 
     private static final String _propertyValue = "1234567";
 
-
-
     public void testCreateDocsPerformance() throws CouchbaseLiteException {
+
+        if (!performanceTestsEnabled()) {
+            return;
+        }
 
         long startMillis = System.currentTimeMillis();
 

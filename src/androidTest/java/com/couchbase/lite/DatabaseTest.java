@@ -1,16 +1,19 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.mockserver.MockDispatcher;
+import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.replicator.ReplicationState;
 import com.couchbase.lite.support.FileDirUtils;
+import com.squareup.okhttp.mockwebserver.MockWebServer;
 
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DatabaseTest extends LiteTestCase {
@@ -126,28 +129,64 @@ public class DatabaseTest extends LiteTestCase {
 
     }
 
+    /**
+     * Change listeners should only be called once no matter how many times they're added.
+     */
+    public void testAddChangeListenerIsIdempotent() throws Exception {
+        final AtomicInteger count = new AtomicInteger(0);
+        Database.ChangeListener listener = new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                count.incrementAndGet();
+            }
+        };
+        database.addChangeListener(listener);
+        database.addChangeListener(listener);
+        createDocuments(database, 1);
+        assertEquals(1, count.intValue());
+    }
+
     public void testGetActiveReplications() throws Exception {
 
-        URL remote = getReplicationURL();
-        Replication replication = (Replication) database.createPullReplication(remote);
+        // create mock sync gateway that will serve as a pull target and return random docs
+        int numMockDocsToServe = 0;
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        server.setDispatcher(dispatcher);
+        server.play();
+
+        final Replication replication = database.createPullReplication(server.getUrl("/db"));
 
         assertEquals(0, database.getAllReplications().size());
         assertEquals(0, database.getActiveReplications().size());
 
+        final CountDownLatch replicationRunning = new CountDownLatch(1);
+        replication.addChangeListener(new ReplicationActiveObserver(replicationRunning));
+
         replication.start();
+
+        boolean success = replicationRunning.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
 
         assertEquals(1, database.getAllReplications().size());
         assertEquals(1, database.getActiveReplications().size());
 
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-        replication.addChangeListener(replicationFinishedObserver);
+        final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
 
-        boolean success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
+        success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
         assertTrue(success);
+
+        // workaround race condition.  Since our replication change listener will get triggered
+        // _before_ the internal change listener that updates the activeReplications map, we
+        // need to pause briefly to let the internal change listener to update activeReplications.
+        Thread.sleep(500);
 
         assertEquals(1, database.getAllReplications().size());
         assertEquals(0, database.getActiveReplications().size());
+
+        server.shutdown();
 
     }
 
@@ -179,8 +218,8 @@ public class DatabaseTest extends LiteTestCase {
         properties2b.put("testName", "testCreateRevisions");
         properties2b.put("tag", 1339);
 
-        List<Boolean> outIsDeleted = new ArrayList<Boolean>();
-        List<Boolean> outIsConflict = new ArrayList<Boolean>();
+        AtomicBoolean outIsDeleted = new AtomicBoolean(false);
+        AtomicBoolean outIsConflict = new AtomicBoolean(false);
 
         // Create a conflict on purpose
         Document doc = database.createDocument();
@@ -191,26 +230,24 @@ public class DatabaseTest extends LiteTestCase {
         long docNumericId = database.getDocNumericID(doc.getId());
         assertTrue(docNumericId != 0);
         assertEquals(rev1.getId(), database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict));
-        assertTrue(outIsConflict.size() == 0);
+        assertFalse(outIsConflict.get());
 
-        outIsDeleted = new ArrayList<Boolean>();
-        outIsConflict = new ArrayList<Boolean>();
+        outIsDeleted.set(false);
+        outIsConflict.set(false);
         UnsavedRevision newRev2a = rev1.createRevision();
         newRev2a.setUserProperties(properties2a);
         SavedRevision rev2a = newRev2a.save();
         assertEquals(rev2a.getId(), database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict));
-        assertTrue(outIsConflict.size() == 0);
+        assertFalse(outIsConflict.get());
 
-        outIsDeleted = new ArrayList<Boolean>();
-        outIsConflict = new ArrayList<Boolean>();
+        outIsDeleted.set(false);
+        outIsConflict.set(false);
         UnsavedRevision newRev2b = rev1.createRevision();
         newRev2b.setUserProperties(properties2b);
         SavedRevision rev2b = newRev2b.save(true);
         database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict);
 
-        assertTrue(outIsConflict.size() > 0);
+        assertTrue(outIsConflict.get());
 
     }
-
-
 }
