@@ -127,7 +127,7 @@ You should be able to import the project directly into Android Studio:
 
 There are two wiki pages which describe how to run the tests:
 
-* [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android)  (newer)
+* [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android) 
 
 ## Example Apps
 
