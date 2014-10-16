@@ -129,8 +129,6 @@ There are two wiki pages which describe how to run the tests:
 
 * [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android)  (newer)
 
-* [Running the Test Suite](https://github.com/couchbase/couchbase-lite-android/wiki/Running-the-test-suite) wiki page.
-
 ## Example Apps
 
 * [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)  
