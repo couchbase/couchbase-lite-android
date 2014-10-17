@@ -51,7 +51,7 @@ import com.couchbase.lite.Document;
 
 public class Test31_CompactDB extends LitePerfTestCase {
 
-    public static final String TAG = "Test1_CreateDocs";
+    public static final String TAG = "Test31_CompactDB";
 
     private static final String _propertyValue = "1";
 
@@ -88,7 +88,7 @@ public class Test31_CompactDB extends LitePerfTestCase {
         double executionTime = Long.valueOf(System.currentTimeMillis()-startMillis);
         double executionTime2 = Long.valueOf(System.currentTimeMillis()-startMillis2);
         Log.v("PerformanceStats",TAG+",total="+executionTime+",compact="+executionTime2+","+numberOfDocuments+","+sizeOfDocuments);
-        return executionTime;
+        return executionTime2;
     }
 
 }
