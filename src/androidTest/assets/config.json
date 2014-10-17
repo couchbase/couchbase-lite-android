@@ -208,6 +208,15 @@
         "sum_kpi_baseline": 25450
     },
 
+    "Test31_CompactDB": {
+        "numbers_of_documents":[400],
+        "sizes_of_document":   [2500000],
+        "kpi": [[100000]],
+        "baseline": [[100000]],
+        "repeat_count": 1,
+        "sum_kpi_baseline": 1160
+    },
+
     "environment": {
    		"sync_gateway_ip":"192.168.0.16",
    		"sync_gateway_port":"4984",
