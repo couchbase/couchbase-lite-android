@@ -101,14 +101,11 @@ $ cd couchbase-lite-android
 $ git submodule init && git submodule update
 ```
 
-### Configure Android Studio SDK location
-
-* `cp local.properties.example local.properties`
-* Customize `local.properties` according to your SDK installation directory
-
 ### Enable settings.gradle file
 
 * `cp settings.gradle.example settings.gradle`
+
+*Note: settings.gradle cannot be checked in directly due to Android Studio issue #[65915](https://code.google.com/p/android/issues/detail?id=65915)*
 
 ### Importing Project into Android Studio
 
@@ -125,6 +122,12 @@ Caveat: when importing, you may see [Wrong offset: 290. Should be in range: 0, 2
 There are two wiki pages which describe how to run the tests:
 
 * [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android) 
+
+### Running project
+
+If you've checked out this project directly, you might notice there is *nothing to run*.  That is correct, as this project is a library.
+
+If you want to run something (aside from the tests), you should get one of the sample apps listed below.
 
 ## Example Apps
 
