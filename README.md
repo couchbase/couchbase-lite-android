@@ -42,11 +42,11 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 <dependency>
   <groupId>com.couchbase.lite</groupId>
   <artifactId>android</artifactId>
-  <version>0.0.0-426</version>
+  <version>0.0.0-473</version>
 </dependency>
 ```
 
-While `0.0.0-426` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "426" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `0.0.0-` and is later than `0.0.0-426`
+While `0.0.0-473` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "473" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `0.0.0-` and is later than `0.0.0-473`
 
 Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle) that uses this maven artifact.
 
@@ -68,10 +68,14 @@ Where ${latest_version} should be replaced by something that looks like `1.0.3`.
 
 For Eclipse and Phonegap users, here are links to the zip file which includes the jars:
 
-* [Master Branch build #426 zipfile](http://factory.couchbase.com/job/build_cblite_android_master-community/13/artifact/couchbase-lite-android-community_0.0.0-426.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
+* [Master Branch build #473 zipfile](http://factory.couchbase.com/job/build_cblite_android_master-community/lastSuccessfulBuild/artifact/couchbase-lite-android-community_0.0.0-473.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
 * To get the latest released zipfile, go to [the official download site](http://www.couchbase.com/download#cb-mobile) and download the latest release.
 
-## Building Couchbase Lite master branch from source
+
+## Building Couchbase Lite via Android Studio
+
+If you just want the pre-built binaries, see instructions above.  The instructions that follow explain how to build Couchbase Lite from source.
+
 
 ### Android Studio compatibility table
 
@@ -117,17 +121,30 @@ You should be able to import the project directly into Android Studio:
 
 Caveat: when importing, you may see [Wrong offset: 290. Should be in range: 0, 230](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work.
 
-### Running tests
+### Running tests in Android Studio
 
 There are two wiki pages which describe how to run the tests:
 
 * [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android) 
 
-### Running project
+### Running project in Android Studio
 
 If you've checked out this project directly, you might notice there is *nothing to run*.  That is correct, as this project is a library.
 
 If you want to run something (aside from the tests), you should get one of the sample apps listed below.
+
+
+## Building Couchbase Lite on command line via gradle
+
+* Clone the git repository
+    * See details above
+* Enable settings.gradle file
+    * See details above
+* Configure Android Studio SDK location
+    * `cp local.properties.example local.properties`
+    * Customize `local.properties` according to your SDK installation directory
+* Build and test
+    * `$ ./gradlew build`
 
 ## Example Apps
 
@@ -141,11 +158,7 @@ If you want to run something (aside from the tests), you should get one of the s
 * [LiteServAndroid](https://github.com/couchbaselabs/couchbase-lite-android-liteserv)
     * REST API example
 
-## Project Structure
-
-* [Project Structure](https://github.com/couchbase/couchbase-lite-android/wiki/Project-structure) wiki page that describes the new project structure.
-
-## Requirements
+## System Requirements
 
 - Android 2.3 Gingerbread (API level 9) and above.
 
