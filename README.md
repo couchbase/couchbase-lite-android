@@ -32,7 +32,7 @@ This is just the most typical architecture, and there are many other possible ar
 
 * Create your own Hello World Couchbase Lite via the [Getting Started](http://developer.couchbase.com/mobile/develop/training/build-first-android-app/index.html) guide.  *(warning: these Getting Started guide correspond to the 1.0.0 release of Couchbase Lite, so you may run into issues with later releases.)*
 
-## Adding Couchbase Lite to your gradle project
+## Adding Couchbase Lite to your Gradle project
 
 Using pre-built Maven artifacts is easiest way to add Couchbase Lite is to your project.  
 
