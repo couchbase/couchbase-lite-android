@@ -161,6 +161,11 @@ If you want to run something (aside from the tests), you should get one of the s
 
 - Android 2.3 Gingerbread (API level 9) and above.
 
+## Limitations
+
+- Docs are limited to 2MB [issue 357](https://github.com/couchbase/couchbase-lite-android/issues/357)
+- Attachments are limited to 20MB if using Sync Gateway
+
 ## Getting Help
 
 * [Couchbase Mobile Google Group](http://groups.google.com/group/mobile-couchbase/)
