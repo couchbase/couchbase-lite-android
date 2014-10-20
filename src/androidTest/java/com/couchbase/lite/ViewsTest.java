@@ -1706,4 +1706,52 @@ public class ViewsTest extends LiteTestCase {
 
     }
 
-}
+    public void testStringPrefixMatch() throws Exception {
+        putDocs(database);
+        View view = createView(database);
+
+        view.updateIndex();
+
+        QueryOptions options = new QueryOptions();
+        options.setPrefixMatchLevel(1);
+        options.setStartKey("f");
+        options.setEndKey("f");
+        List<QueryRow> rows = view.queryWithOptions(options);
+
+        Assert.assertEquals(2, rows.size());
+        Assert.assertEquals("five", rows.get(0).getKey());
+        Assert.assertEquals("four", rows.get(1).getKey());
+    }
+
+    public void testArrayPrefixMatch() throws Exception {
+        putDocs(database);
+
+        View view = database.getView("aview");
+        view.setMapReduce(new Mapper() {
+
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Assert.assertNotNull(document.get("_id"));
+                Assert.assertNotNull(document.get("_rev"));
+                String key = (String)document.get("key");
+                if (key != null) {
+                    String first = key.substring(0, 1);
+                    emitter.emit(Arrays.asList(first, key), null);
+                }
+            }
+        }, null, "1");
+
+        view.updateIndex();
+
+        QueryOptions options = new QueryOptions();
+        options.setPrefixMatchLevel(1);
+        options.setStartKey(Arrays.asList("f"));
+        options.setEndKey(options.getStartKey());
+        List<QueryRow> rows = view.queryWithOptions(options);
+
+        Assert.assertEquals(2, rows.size());
+        Assert.assertEquals(Arrays.asList("f", "five"), rows.get(0).getKey());
+        Assert.assertEquals(Arrays.asList("f", "four"), rows.get(1).getKey());
+    }
+
+    }
