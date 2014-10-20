@@ -123,9 +123,8 @@ Caveat: when importing, you may see [Wrong offset: 290. Should be in range: 0, 2
 
 ### Running tests in Android Studio
 
-There are two wiki pages which describe how to run the tests:
 
-* [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android) 
+See [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android) 
 
 ### Running project in Android Studio
 
