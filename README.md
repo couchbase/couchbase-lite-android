@@ -38,7 +38,7 @@ Using pre-built Maven artifacts is easiest way to add Couchbase Lite is to your 
 
 **Important note**: Maven artifacts can only be included with **gradle** builds, since the **mvn** tool does not know how to resolve and build `.aar` dependencies.  
 
-### How to use latest official Couchbase Lite release
+### Using latest official Couchbase Lite release
 
 Maven repo URL: `http://files.couchbase.com/maven2/`
 
@@ -52,7 +52,7 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 
 Where ${latest_version} should be replaced by something that looks like `1.0.3`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
 
-### How to use Couchbase Lite latest master branch version
+### Using Couchbase Lite latest master branch version
 
 Maven repo URL: `http://files.couchbase.com/maven2/`
 
