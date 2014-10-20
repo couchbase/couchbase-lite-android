@@ -32,13 +32,27 @@ This is just the most typical architecture, and there are many other possible ar
 
 * Create your own Hello World Couchbase Lite via the [Getting Started](http://developer.couchbase.com/mobile/develop/training/build-first-android-app/index.html) guide.  *(warning: these Getting Started guide correspond to the 1.0.0 release of Couchbase Lite, so you may run into issues with later releases.)*
 
-## Getting the pre-built jars / maven artifacts
+## Adding Couchbase Lite to your gradle project
 
 Using pre-built Maven artifacts is easiest way to add Couchbase Lite is to your project.  
 
 **Important note**: Maven artifacts can only be included with **gradle** builds, since the **mvn** tool does not know how to resolve and build `.aar` dependencies.  
 
-### Maven master branch
+### How to use latest official Couchbase Lite release
+
+Maven repo URL: `http://files.couchbase.com/maven2/`
+
+```
+<dependency>
+  <groupId>com.couchbase.lite</groupId>
+  <artifactId>android</artifactId>
+  <version>${latest_version}</version>
+</dependency>
+```
+
+Where ${latest_version} should be replaced by something that looks like `1.0.3`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
+
+### How to use Couchbase Lite latest master branch version
 
 Maven repo URL: `http://files.couchbase.com/maven2/`
 
@@ -54,19 +68,6 @@ While `0.0.0-473` was the latest build at the time of writing, it's probably out
 
 Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle) that uses this maven artifact.
 
-### Latest Maven release
-
-Maven repo URL: `http://files.couchbase.com/maven2/`
-
-```
-<dependency>
-  <groupId>com.couchbase.lite</groupId>
-  <artifactId>android</artifactId>
-  <version>${latest_version}</version>
-</dependency>
-```
-
-Where ${latest_version} should be replaced by something that looks like `1.0.3`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
 
 ### Zipfile that includes jars
 
