@@ -1674,7 +1674,9 @@ public class ReplicationTest extends LiteTestCase {
         Map<String, Object> filterParams= new HashMap<String, Object>();
         filterParams.put("a", "aval");
         filterParams.put("b", "bval");
-        pullerWithFilter1.setDocIds(Arrays.asList("doc3", "doc1", "doc2"));
+        List<String> docIds = Arrays.asList("doc3", "doc1", "doc2");
+        pullerWithFilter1.setDocIds(docIds);
+        assertEquals(docIds, pullerWithFilter1.getDocIds());
         pullerWithFilter1.setFilterParams(filterParams);
 
         String withFilterCheckpointDocId = pullerWithFilter1.remoteCheckpointDocID();
