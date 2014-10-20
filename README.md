@@ -34,9 +34,9 @@ This is just the most typical architecture, and there are many other possible ar
 
 ## Getting the pre-built jars / maven artifacts
 
-The easiest way to add Couchbase Lite is to your project is via Maven Artifacts.  
+Using pre-built Maven artifacts is easiest way to add Couchbase Lite is to your project.  
 
-*Important note*: Maven artifacts can only be included with **gradle** builds, since the **mvn** tool does not know how to resolve and build `.aar` dependencies.  
+**Important note**: Maven artifacts can only be included with **gradle** builds, since the **mvn** tool does not know how to resolve and build `.aar` dependencies.  
 
 ### Maven master branch
 
