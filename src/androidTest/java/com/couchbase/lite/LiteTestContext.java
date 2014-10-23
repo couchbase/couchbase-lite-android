@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.storage.DefaultSQLiteStorageEngineFactory;
 import com.couchbase.lite.storage.SQLiteStorageEngineFactory;
 import com.couchbase.test.lite.*;
 import org.apache.commons.io.*;
@@ -51,7 +50,7 @@ public class LiteTestContext extends LiteTestContextBase implements Context {
 
     @Override
     public SQLiteStorageEngineFactory getSQLiteStorageEngineFactory() {
-        return new DefaultSQLiteStorageEngineFactory();
+        return super.getSQLiteStorageEngineFactory();
     }
 
     @Override
