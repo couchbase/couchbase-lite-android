@@ -57,7 +57,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.entity.mime.MultipartEntity;
+import com.couchbase.org.apache.http.entity.mime.MultipartEntity;
 
 import java.io.IOException;
 import java.io.InputStream;
