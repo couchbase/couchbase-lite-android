@@ -87,6 +87,7 @@ public class RemoteRequestTest extends LiteTestCase {
 
         // ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(4);
         RemoteRequestRetry request = new RemoteRequestRetry(
+                RemoteRequestRetry.RemoteRequestType.REMOTE_REQUEST,
                 requestExecutorService,
                 workExecutorService,
                 factory,
@@ -164,6 +165,7 @@ public class RemoteRequestTest extends LiteTestCase {
 
         // ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(4);
         RemoteRequestRetry request = new RemoteRequestRetry(
+                RemoteRequestRetry.RemoteRequestType.REMOTE_REQUEST,
                 requestExecutorService,
                 workExecutorService,
                 factory,
@@ -259,6 +261,7 @@ public class RemoteRequestTest extends LiteTestCase {
 
             // ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(4);
             RemoteRequestRetry request = new RemoteRequestRetry(
+                    RemoteRequestRetry.RemoteRequestType.REMOTE_REQUEST,
                     requestExecutorService,
                     workExecutorService,
                     factory,
