@@ -57,7 +57,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.entity.mime.MultipartEntity;
+import com.couchbase.org.apache.http.entity.mime.MultipartEntity;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -636,6 +636,10 @@ public class ReplicationTest extends LiteTestCase {
         final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         pullReplication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
 
+        final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+        pullReplication.addChangeListener(idleObserver);
+
         database.addChangeListener(new Database.ChangeListener() {
             @Override
             public void changed(Database.ChangeEvent event) {
@@ -661,6 +665,10 @@ public class ReplicationTest extends LiteTestCase {
         List rows = (List) allDocs.get("rows");
         assertEquals(numMockRemoteDocs, totalRows.intValue());
         assertEquals(numMockRemoteDocs, rows.size());
+
+        // wait until idle
+        success = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
 
         // cleanup / shutdown
         pullReplication.stop();
@@ -1674,7 +1682,9 @@ public class ReplicationTest extends LiteTestCase {
         Map<String, Object> filterParams= new HashMap<String, Object>();
         filterParams.put("a", "aval");
         filterParams.put("b", "bval");
-        pullerWithFilter1.setDocIds(Arrays.asList("doc3", "doc1", "doc2"));
+        List<String> docIds = Arrays.asList("doc3", "doc1", "doc2");
+        pullerWithFilter1.setDocIds(docIds);
+        assertEquals(docIds, pullerWithFilter1.getDocIds());
         pullerWithFilter1.setFilterParams(filterParams);
 
         String withFilterCheckpointDocId = pullerWithFilter1.remoteCheckpointDocID();

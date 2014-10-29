@@ -10,7 +10,7 @@ It is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couc
 
 ![](http://tleyden-misc.s3.amazonaws.com/couchbase-lite/couchbase-lite-architecture.png)
 
-Couchbase Lite databases are able to sync with each other via [Sync Gateway](https://github.com/couchbase/sync_gateway/) backed by [Couchbase Server](http://www.couchbase.com/couchbase-server/overview)
+Couchbase Lite databases are able to sync with each other via [Sync Gateway](https://github.com/couchbase/sync_gateway/) backed by [Couchbase Server](http://www.couchbase.com/couchbase-server/overview).
 
 This is just the most typical architecture, and there are many other possible architectures:
 
@@ -32,9 +32,27 @@ This is just the most typical architecture, and there are many other possible ar
 
 * Create your own Hello World Couchbase Lite via the [Getting Started](http://developer.couchbase.com/mobile/develop/training/build-first-android-app/index.html) guide.  *(warning: these Getting Started guide correspond to the 1.0.0 release of Couchbase Lite, so you may run into issues with later releases.)*
 
-## Getting the pre-built jars / maven artifacts
+## Adding Couchbase Lite to your Gradle project
 
-### Maven master branch
+Using Gradle is the easiest way to automate Couchbase Lite builds in your project.
+
+**Important note**: Maven artifacts can only be included with **gradle** builds, since the **mvn** tool does not know how to resolve and build `.aar` dependencies.  
+
+### Using latest official release
+
+Maven repo URL: `http://files.couchbase.com/maven2/`
+
+```
+<dependency>
+  <groupId>com.couchbase.lite</groupId>
+  <artifactId>android</artifactId>
+  <version>${latest_version}</version>
+</dependency>
+```
+
+Where ${latest_version} should be replaced by something that looks like `1.0.3`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
+
+### Using master branch version (bleeding edge)
 
 Maven repo URL: `http://files.couchbase.com/maven2/`
 
@@ -50,19 +68,6 @@ While `0.0.0-473` was the latest build at the time of writing, it's probably out
 
 Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle) that uses this maven artifact.
 
-### Latest Maven release
-
-Maven repo URL: `http://files.couchbase.com/maven2/`
-
-```
-<dependency>
-  <groupId>com.couchbase.lite</groupId>
-  <artifactId>android</artifactId>
-  <version>${latest_version}</version>
-</dependency>
-```
-
-Where ${latest_version} should be replaced by something that looks like `1.0.3`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
 
 ### Zipfile that includes jars
 
@@ -123,9 +128,8 @@ Caveat: when importing, you may see [Wrong offset: 290. Should be in range: 0, 2
 
 ### Running tests in Android Studio
 
-There are two wiki pages which describe how to run the tests:
 
-* [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android) 
+See [Running unit tests for couchbase lite android](https://github.com/couchbase/couchbase-lite-android/wiki/Running-unit-tests-for-couchbase-lite-android) 
 
 ### Running project in Android Studio
 
@@ -161,6 +165,11 @@ If you want to run something (aside from the tests), you should get one of the s
 ## System Requirements
 
 - Android 2.3 Gingerbread (API level 9) and above.
+
+## Limitations
+
+- Docs are limited to 2MB - see [issue 357](https://github.com/couchbase/couchbase-lite-android/issues/357)
+- Attachments are limited to 20MB if using Sync Gateway
 
 ## Getting Help
 

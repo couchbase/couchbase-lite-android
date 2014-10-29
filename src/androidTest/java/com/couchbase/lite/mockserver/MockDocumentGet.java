@@ -7,9 +7,9 @@ import com.couchbase.lite.support.Base64;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.InputStreamBody;
-import org.apache.http.entity.mime.content.StringBody;
+import com.couchbase.org.apache.http.entity.mime.MultipartEntity;
+import com.couchbase.org.apache.http.entity.mime.content.InputStreamBody;
+import com.couchbase.org.apache.http.entity.mime.content.StringBody;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
