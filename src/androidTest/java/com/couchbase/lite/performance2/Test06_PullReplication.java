@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Test06_PullReplication extends LitePerfTestCase {
 
-    public static final String TAG = "Test7_PullReplication";
+    public static final String TAG = "Test6_PullReplication";
     private static final String _propertyValue = "1";
 
     public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws Exception {

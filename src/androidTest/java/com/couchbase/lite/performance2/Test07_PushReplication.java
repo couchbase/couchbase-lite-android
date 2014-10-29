@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Test07_PushReplication extends LitePerfTestCase {
 
-    public static final String TAG = "Test6_PushReplication";
+    public static final String TAG = "Test7_PushReplication";
     private static final String _propertyValue = "1";
 
     public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws Exception {
