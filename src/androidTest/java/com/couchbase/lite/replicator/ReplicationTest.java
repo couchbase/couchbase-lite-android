@@ -3201,7 +3201,9 @@ public class ReplicationTest extends LiteTestCase {
         boolean success = enteredIdleState.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
-        pullReplication.stop();
+        Log.d(TAG, "Got IDLE event, stopping replication");
+
+        stopReplication(pullReplication);
         server.shutdown();
 
     }
