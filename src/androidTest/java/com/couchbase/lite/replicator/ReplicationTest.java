@@ -3149,4 +3149,61 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * - Start continuous pull
+     * - Mockwebserver responds that there are no changes
+     * - Assert that puller goes into IDLE state
+     *
+     * https://github.com/couchbase/couchbase-lite-android/issues/445
+     */
+    public void testContinuousPullEntersIdleState() throws Exception {
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint GET response w/ 404
+        MockResponse fakeCheckpointResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+        // add non-sticky changes response that returns no changes
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // add sticky _changes response that just blocks for 60 seconds to emulate
+        // server that doesn't have any new changes
+        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+        mockChangesFeedNoResponse.setDelayMs(60 * 1000);
+        mockChangesFeedNoResponse.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+
+        server.play();
+
+        // create pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(true);
+
+        final CountDownLatch enteredIdleState = new CountDownLatch(1);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    enteredIdleState.countDown();
+                }
+            }
+        });
+
+        // start pull replication
+        pullReplication.start();
+
+        boolean success = enteredIdleState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        pullReplication.stop();
+        server.shutdown();
+
+    }
+
 }
