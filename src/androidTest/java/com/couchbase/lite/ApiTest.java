@@ -552,6 +552,35 @@ public class ApiTest extends LiteTestCase {
 
     }
 
+    public void failingTestCreateIdenticalParentContentRevisions() throws Exception {
+        Document doc = database.createDocument();
+        SavedRevision rev = doc.createRevision().save();
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
+
+        UnsavedRevision unsavedRev1 = rev.createRevision();
+        unsavedRev1.setProperties(properties);
+        SavedRevision savedRev1 = unsavedRev1.save(true);
+        assertNotNull(savedRev1);
+
+        UnsavedRevision unsavedRev2 = rev.createRevision();
+        unsavedRev2.setProperties(properties);
+        SavedRevision savedRev2 = unsavedRev2.save(true);
+        assertNotNull(savedRev2);
+        
+        assertEquals(savedRev1.getId(), savedRev2.getId());
+
+        List<SavedRevision> conflicts = doc.getConflictingRevisions();
+        assertEquals(1, conflicts.size());
+
+        Query query = database.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.ONLY_CONFLICTS);
+        QueryEnumerator result = query.run();
+        assertNotNull(result);
+        assertEquals(0, result.getCount());
+    }
+
     //ATTACHMENTS
 
     public void testAttachments() throws Exception, IOException {
