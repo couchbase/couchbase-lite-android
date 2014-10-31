@@ -91,6 +91,8 @@ public class ReplicationTest extends LiteTestCase {
      */
     public void testGoOnlinePuller() throws Exception {
 
+        Log.d(Log.TAG, "testGoOnlinePuller");
+
         // create mock server
         MockDispatcher dispatcher = new MockDispatcher();
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
@@ -130,9 +132,13 @@ public class ReplicationTest extends LiteTestCase {
         Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
         pullReplication.setContinuous(true);
         pullReplication.start();
+        Log.d(Log.TAG, "Started pullReplication: %s", pullReplication);
 
         // wait until a _checkpoint request have been sent
         dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+
+        // wait until a _changes request has been sent
+        dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
 
         putReplicationOffline(pullReplication);
 
@@ -151,10 +157,13 @@ public class ReplicationTest extends LiteTestCase {
 
         putReplicationOnline(pullReplication);
 
+        Log.d(Log.TAG, "Waiting for PUT checkpoint request with seq: %d", mockDoc1.getDocSeq());
         waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc1.getDocSeq());
+        Log.d(Log.TAG, "Got PUT checkpoint request with seq: %d", mockDoc1.getDocSeq());
 
         stopReplication(pullReplication);
         server.shutdown();
+
 
     }
 
@@ -2591,6 +2600,9 @@ public class ReplicationTest extends LiteTestCase {
 
     private void putReplicationOffline(Replication replication) throws InterruptedException {
 
+        Log.d(Log.TAG, "putReplicationOffline: %s", replication);
+
+
         // this was a useless test, the replication wasn't even started
         final CountDownLatch wentOffline = new CountDownLatch(1);
         Replication.ChangeListener changeListener = new ReplicationOfflineObserver(wentOffline);
@@ -2602,10 +2614,16 @@ public class ReplicationTest extends LiteTestCase {
 
         replication.removeChangeListener(changeListener);
 
+        Log.d(Log.TAG, "/ putReplicationOffline: %s", replication);
+
+
     }
 
 
     private void putReplicationOnline(Replication replication) throws InterruptedException {
+
+        Log.d(Log.TAG, "putReplicationOnline: %s", replication);
+
 
         // this was a useless test, the replication wasn't even started
         final CountDownLatch wentOnline = new CountDownLatch(1);
@@ -2618,6 +2636,8 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(succeeded);
 
         replication.removeChangeListener(changeListener);
+
+        Log.d(Log.TAG, "/putReplicationOnline: %s", replication);
 
     }
 

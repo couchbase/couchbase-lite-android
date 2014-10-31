@@ -299,7 +299,7 @@ public class ChangeTrackerTest extends LiteTestCase {
             @Override
             public void changeTrackerReceivedChange(Map<String, Object> change) {
                 Object seq = change.get("seq");
-                Log.v(TAG, "changeTrackerReceivedChange: " + seq.toString());
+                Log.v(TAG, "changeTrackerReceivedChange: %d" + seq.toString());
             }
 
             @Override
