@@ -209,7 +209,7 @@
     },
 
     "environment": {
-   		"sync_gateway_ip":"10.17.58.191",
+		"sync_gateway_ip":"127.0.0.1",
    		"sync_gateway_port":"4984",
         "sync_gateway_db":"db"
     }
