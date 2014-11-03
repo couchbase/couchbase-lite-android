@@ -2,6 +2,7 @@ package com.couchbase.lite.android;
 
 import com.couchbase.lite.Context;
 import com.couchbase.lite.NetworkReachabilityManager;
+import com.couchbase.lite.storage.SQLiteStorageEngineFactory;
 
 import java.io.File;
 
@@ -35,5 +36,11 @@ public class AndroidContext implements Context {
     public android.content.Context getWrappedContext() {
         return wrappedContext;
     }
+
+    @Override
+    public SQLiteStorageEngineFactory getSQLiteStorageEngineFactory() {
+        return new AndroidSQLiteStorageEngineFactory();
+    }
+
 
 }

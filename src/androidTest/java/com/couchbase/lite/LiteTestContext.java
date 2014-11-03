@@ -1,11 +1,13 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.storage.SQLiteStorageEngineFactory;
 import com.couchbase.test.lite.*;
 import org.apache.commons.io.*;
 
 import java.io.*;
 
 public class LiteTestContext extends LiteTestContextBase implements Context {
+
     private File filesDir;
 
     public LiteTestContext(String subdir, boolean deleteSubdirectory) {
@@ -44,6 +46,11 @@ public class LiteTestContext extends LiteTestContextBase implements Context {
     @Override
     public void setNetworkReachabilityManager(NetworkReachabilityManager networkReachabilityManager) {
 
+    }
+
+    @Override
+    public SQLiteStorageEngineFactory getSQLiteStorageEngineFactory() {
+        return super.getSQLiteStorageEngineFactory();
     }
 
     @Override
