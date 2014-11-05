@@ -44,7 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public abstract class LiteTestCase extends LiteTestCaseBase {
+public class LiteTestCase extends LiteTestCaseBase {
 
     public static final String TAG = "LiteTestCase";
 
