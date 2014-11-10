@@ -55,6 +55,7 @@ public class LitePerfTestCase extends LiteTestCase {
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp in LitePerfTestCase");
         super.setUp();
+        Log.enableLogging("PerformanceStats",Log.VERBOSE);
         loadCustomProperties();
         loadConfigs();
         runMultiple();
