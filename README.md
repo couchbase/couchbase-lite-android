@@ -12,7 +12,7 @@ It is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couc
 
 Couchbase Lite databases are able to sync with each other via [Sync Gateway](https://github.com/couchbase/sync_gateway/) backed by [Couchbase Server](http://www.couchbase.com/couchbase-server/overview).
 
-This is just the most typical architecture, and there are many other possible architectures:
+Other ways to setup replication:
 
 * No replication -- just local data store.
 * Peer-to-peer repolication between Couchbase Lite instances.
