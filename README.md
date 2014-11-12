@@ -184,3 +184,5 @@ If you want to run something (aside from the tests), you should get one of the s
 - Apache License 2.0
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/bc53967fe3191ba75b4a62c9372d9928 "githalytics.com")](http://githalytics.com/couchbase/couchbase-lite-android)
+
+
