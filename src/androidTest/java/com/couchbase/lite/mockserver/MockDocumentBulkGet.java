@@ -1,12 +1,16 @@
 package com.couchbase.lite.mockserver;
 
 
+import com.couchbase.lite.Manager;
+import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
 
@@ -55,16 +59,21 @@ import java.util.List;
  */
 public class MockDocumentBulkGet implements SmartMockResponse {
 
-    private List<MockDocumentGet.MockDocument> documents;
+    private Map<String, MockDocumentGet.MockDocument> documents;
+    private boolean isSticky;
+    private long delayMs;
 
     public MockDocumentBulkGet() {
-        this.documents = new ArrayList<MockDocumentGet.MockDocument>();
+        this.documents = new HashMap<String, MockDocumentGet.MockDocument>();
     }
 
     @Override
     public MockResponse generateMockResponse(RecordedRequest request) {
 
         try {
+
+            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+            List docs = (List) bulkDocsJson.get("docs");
 
             MockResponse mockResponse = new MockResponse();
 
@@ -74,7 +83,6 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
             ByteArrayOutputStream o = new ByteArrayOutputStream();
 
-            boolean attachmentFollows = true;
 
             /*
                     byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
@@ -82,62 +90,17 @@ public class MockDocumentBulkGet implements SmartMockResponse {
              */
 
             int i = 0;
-            for (MockDocumentGet.MockDocument mockDocument : this.documents) {
+            for (Object doc : docs) {
+                Map<String, Object> documentMap = (Map) doc;
+                String docId = (String) documentMap.get("id");
+                MockDocumentGet.MockDocument mockDocument = documents.get(docId);
 
+                boolean addEmptyLine = false;
                 if (i > 0) {
-                    append(o, "\r\n");
+                    addEmptyLine = true;
                 }
-
-                append(o, "--").append(o, boundary).append(o, "\r\n");
-
-                if (!mockDocument.hasAttachment()) {
-                    // no attachment, add json part
-                    append(o, "Content-Type: application/json");
-                    append(o, "\r\n\r\n");
-                    append(o, mockDocument.generateDocumentBody(attachmentFollows));
-                    append(o, "\r\n");
-
-                } else {
-                    // has attachment
-
-                    // headers
-                    append(o, "X-Doc-Id: ").append(o, mockDocument.getDocId()).append(o, "\r\n");
-                    append(o, "X-Rev-Id: ").append(o, mockDocument.getDocRev()).append(o, "\r\n");
-                    String innerBoundary = "aff16d5e5921568ad8fab41b9ec3c2dc86390da4f9dbbc2cec7bf5e2655f";
-                    String innerContentType = String.format("multipart/related; boundary=\"%s\"", innerBoundary);
-                    append(o, "Content-Type: ").append(o, innerContentType);
-                    append(o, "\r\n\r\n");
-
-                    // boundary
-                    append(o, "--").append(o, innerBoundary).append(o, "\r\n");
-
-                    // json part
-                    append(o, "Content-Type: application/json");
-                    append(o, "\r\n\r\n");
-                    append(o, mockDocument.generateDocumentBody(attachmentFollows));
-                    append(o, "\r\n");
-
-                    // boundary
-                    append(o, "--").append(o, innerBoundary).append(o, "\r\n");
-
-                    // image part
-                    append(o, "Content-Type: image/png");
-                    append(o, "\r\n");
-                    String contentDisposition = String.format("Content-Disposition: attachment; filename=\"%s\"", mockDocument.getAttachmentName());
-                    append(o, contentDisposition);
-                    append(o, "\r\n\r\n");
-
-                    // image data
-                    byte[] attachmentBytes = MockDocumentGet.getAssetByteArray(mockDocument.getAttachmentName());
-                    o.write(attachmentBytes);
-
-                    // final boundary to mark end of part
-                    append(o, "\r\n").append(o, "--").append(o, innerBoundary).append(o, "--");
-
-                }
-
+                addMockDocument(o, mockDocument, boundary, addEmptyLine);
                 i += 1;
-
             }
 
             // final boundary to mark end
@@ -159,23 +122,96 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
     }
 
+    private void addMockDocument(ByteArrayOutputStream o, MockDocumentGet.MockDocument mockDocument, String boundary, boolean addEmptyLine) throws Exception {
+
+        boolean attachmentFollows = true;
+
+        if (addEmptyLine) {
+            append(o, "\r\n");
+        }
+
+        append(o, "--").append(o, boundary).append(o, "\r\n");
+
+        if (!mockDocument.hasAttachment()) {
+            // no attachment, add json part
+            append(o, "Content-Type: application/json");
+            append(o, "\r\n\r\n");
+            append(o, mockDocument.generateDocumentBody(attachmentFollows));
+            append(o, "\r\n");
+
+        } else {
+            // has attachment
+
+            // headers
+            append(o, "X-Doc-Id: ").append(o, mockDocument.getDocId()).append(o, "\r\n");
+            append(o, "X-Rev-Id: ").append(o, mockDocument.getDocRev()).append(o, "\r\n");
+            String innerBoundary = "aff16d5e5921568ad8fab41b9ec3c2dc86390da4f9dbbc2cec7bf5e2655f";
+            String innerContentType = String.format("multipart/related; boundary=\"%s\"", innerBoundary);
+            append(o, "Content-Type: ").append(o, innerContentType);
+            append(o, "\r\n\r\n");
+
+            // boundary
+            append(o, "--").append(o, innerBoundary).append(o, "\r\n");
+
+            // json part
+            append(o, "Content-Type: application/json");
+            append(o, "\r\n\r\n");
+            append(o, mockDocument.generateDocumentBody(attachmentFollows));
+            append(o, "\r\n");
+
+            // boundary
+            append(o, "--").append(o, innerBoundary).append(o, "\r\n");
+
+            // image part
+            append(o, "Content-Type: image/png");
+            append(o, "\r\n");
+            String contentDisposition = String.format("Content-Disposition: attachment; filename=\"%s\"", mockDocument.getAttachmentName());
+            append(o, contentDisposition);
+            append(o, "\r\n\r\n");
+
+            // image data
+            byte[] attachmentBytes = MockDocumentGet.getAssetByteArray(mockDocument.getAttachmentName());
+            o.write(attachmentBytes);
+
+            // final boundary to mark end of part
+            append(o, "\r\n").append(o, "--").append(o, innerBoundary).append(o, "--");
+
+        }
+
+
+
+    }
+
     private MockDocumentBulkGet append(ByteArrayOutputStream baos, String string) throws Exception {
         baos.write(string.getBytes("UTF-8"));
         return this;
     }
 
     public void addDocument(MockDocumentGet.MockDocument mockDocument) {
-        this.documents.add(mockDocument);
+        this.documents.put(mockDocument.getDocId(), mockDocument);
     }
 
     @Override
     public boolean isSticky() {
-        return false;
+        return this.isSticky;
     }
 
     @Override
     public long delayMs() {
-        return 0;
+        return delayMs;
     }
+
+    public void setSticky(boolean isSticky) {
+        this.isSticky = isSticky;
+    }
+
+    public long getDelayMs() {
+        return delayMs;
+    }
+
+    public void setDelayMs(long delayMs) {
+        this.delayMs = delayMs;
+    }
+
 
 }

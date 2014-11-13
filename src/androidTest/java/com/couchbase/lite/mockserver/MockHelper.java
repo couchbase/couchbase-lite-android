@@ -123,5 +123,23 @@ public class MockHelper {
 
     }
 
+    public static List<MockDocumentGet.MockDocument> getMockDocuments(int numDocs) {
+        List<MockDocumentGet.MockDocument> mockDocs = new ArrayList<MockDocumentGet.MockDocument>();
+        for (int i=0; i<numDocs; i++) {
+
+            String docId = String.format("doc%s", i);
+            String revIdHash = Misc.TDCreateUUID().substring(0, 3);
+            String revId = String.format("1-%s", revIdHash);
+            int seq = i;
+
+            // mock documents to be pulled
+            MockDocumentGet.MockDocument mockDoc = new MockDocumentGet.MockDocument(docId, revId, seq);
+            mockDoc.setJsonMap(MockHelper.generateRandomJsonMap());
+            mockDocs.add(mockDoc);
+
+        }
+        return mockDocs;
+    }
+
 
 }

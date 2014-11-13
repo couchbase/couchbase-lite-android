@@ -2,12 +2,16 @@ package com.couchbase.lite.support;
 
 import com.couchbase.lite.Database;
 import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.SystemLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -17,147 +21,25 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BatcherTest extends LiteTestCase {
 
     /**
-     * Submit 101 objects to batcher, and make sure that batch
-     * of first 100 are processed "immediately" (as opposed to being
-     * subjected to a delay which would add latency)
-     *
-     * Disabled because this is failing on Jenkins.  Needs investigation.
-     * https://github.com/couchbase/couchbase-lite-android/issues/388
-     *
-     */
-    public void disabledTestBatcherLatencyInitialBatch() throws Exception {
-
-        final CountDownLatch doneSignal = new CountDownLatch(1);
-
-        ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
-
-        int inboxCapacity = 100;
-        int processorDelay = 500;
-
-        final AtomicLong timeProcessed = new AtomicLong();
-
-        Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
-
-            @Override
-            public void process(List<String> itemsToProcess) {
-                Log.v(Database.TAG, "process called with: " + itemsToProcess);
-
-                timeProcessed.set(System.currentTimeMillis());
-
-                doneSignal.countDown();
-            }
-
-        });
-
-        ArrayList<String> objectsToQueue = new ArrayList<String>();
-        for (int i=0; i < inboxCapacity + 1; i++) {
-            objectsToQueue.add(Integer.toString(i));
-        }
-
-        long timeQueued = System.currentTimeMillis();
-        batcher.queueObjects(objectsToQueue);
-
-
-        boolean didNotTimeOut = doneSignal.await(35, TimeUnit.SECONDS);
-        assertTrue(didNotTimeOut);
-
-        long delta = timeProcessed.get() - timeQueued;
-        assertTrue(delta >= 0);
-
-        // we want the delta between the time it was queued until the
-        // time it was processed to be as small as possible.  since
-        // there is some overhead, rather than using a hardcoded number
-        // express it as a ratio of the processor delay, asserting
-        // that the entire processor delay never kicked in.
-        int acceptableDelta = processorDelay - 1;
-
-        Log.v(Log.TAG, "delta: %d", delta);
-
-        assertTrue(delta < acceptableDelta);
-
-
-    }
-
-    /**
-     * Set batch processing delay to 500 ms, and every second, add a new item
-     * to the batcher queue.  Make sure that each item is processed immediately.
-     */
-    public void testBatcherLatencyTrickleIn() throws Exception {
-
-        final CountDownLatch doneSignal = new CountDownLatch(10);
-
-        ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
-
-        int inboxCapacity = 100;
-        int processorDelay = 500;
-
-        final AtomicLong maxObservedDelta = new AtomicLong(-1);
-
-        Batcher batcher = new Batcher<Long>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<Long>() {
-
-            @Override
-            public void process(List<Long> itemsToProcess) {
-
-                if (itemsToProcess.size() != 1) {
-                    throw new RuntimeException("Unexpected itemsToProcess");
-                }
-
-                Long timeSubmitted = itemsToProcess.get(0);
-                long delta = System.currentTimeMillis() - timeSubmitted.longValue();
-                if (delta > maxObservedDelta.get()) {
-                    maxObservedDelta.set(delta);
-                }
-
-                doneSignal.countDown();
-
-            }
-
-        });
-
-
-        ArrayList<Long> objectsToQueue = new ArrayList<Long>();
-        for (int i=0; i < 10; i++) {
-            batcher.queueObjects(Arrays.asList(System.currentTimeMillis()));
-            Thread.sleep(1000);
-        }
-
-        boolean didNotTimeOut = doneSignal.await(35, TimeUnit.SECONDS);
-        assertTrue(didNotTimeOut);
-
-        Log.v(Log.TAG, "maxDelta: %d", maxObservedDelta.get());
-
-        // we want the max observed delta between the time it was queued until the
-        // time it was processed to be as small as possible.  since
-        // there is some overhead, rather than using a hardcoded number
-        // express it as a ratio of 1/4th the processor delay, asserting
-        // that the entire processor delay never kicked in.
-        int acceptableMaxDelta = processorDelay -1;
-
-        Log.v(Log.TAG, "maxObservedDelta: %d", maxObservedDelta.get());
-
-        assertTrue((maxObservedDelta.get() < acceptableMaxDelta));
-
-    }
-
-    /**
      * Add 100 items in a batcher and make sure that the processor
      * is correctly called back with the first batch.
      *
      */
     public void testBatcherSingleBatch() throws Exception {
 
-        final CountDownLatch doneSignal = new CountDownLatch(10);
+        int numBatches = 3;
+        final CountDownLatch doneSignal = new CountDownLatch(numBatches);
 
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
 
         int inboxCapacity = 10;
-        int processorDelay = 1000;
+        int processorDelay = 200;
 
         Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
 
             @Override
             public void process(List<String> itemsToProcess) {
-                Log.v(Database.TAG, "process called with: " + itemsToProcess);
+                Log.v(TAG, "process called with: " + itemsToProcess);
 
                 assertEquals(10, itemsToProcess.size());
 
@@ -169,7 +51,7 @@ public class BatcherTest extends LiteTestCase {
         });
 
         ArrayList<String> objectsToQueue = new ArrayList<String>();
-        for (int i=0; i<inboxCapacity * 10; i++) {
+        for (int i=0; i<inboxCapacity * numBatches; i++) {
             objectsToQueue.add(Integer.toString(i));
         }
         batcher.queueObjects(objectsToQueue);
@@ -180,8 +62,8 @@ public class BatcherTest extends LiteTestCase {
     }
 
     /**
-     * With a batcher that has an inbox of size 10, add 100 items in batches
-     * of 5.  Make sure that the processor is called back with all 100 items.
+     * With a batcher that has an inbox of size 10, add 10 * x items in batches
+     * of 5.  Make sure that the processor is called back with all 10 * x items.
      * Also make sure that they appear in the correct order within a batch.
      */
     public void testBatcherBatchSize5() throws Exception {
@@ -190,7 +72,7 @@ public class BatcherTest extends LiteTestCase {
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
 
         int inboxCapacity = 10;
-        int numItemsToSubmit = inboxCapacity * 10;
+        int numItemsToSubmit = inboxCapacity * 2;
         final int processorDelay = 0;
 
         final CountDownLatch doneSignal = new CountDownLatch(numItemsToSubmit);
@@ -242,10 +124,10 @@ public class BatcherTest extends LiteTestCase {
 
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
         int inboxCapacity = 10;
-        final int processorDelay = 1000;
+        final int processorDelay = 200;
 
         int numThreads = 5;
-        final int numItemsPerThread = 200;
+        final int numItemsPerThread = 20;
         int numItemsTotal = numThreads * numItemsPerThread;
         final AtomicInteger numItemsProcessed = new AtomicInteger(0);
 
@@ -306,6 +188,231 @@ public class BatcherTest extends LiteTestCase {
 
 
     }
+
+    /**
+     * - Fill batcher up to capacity
+     * - Expected behavior: should invoke BatchProcessor almost immediately
+     * - Add a single element to batcher
+     * - Expected behavior: after processing delay has expired, should invoke BatchProcessor
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/329
+     */
+    public void testBatcherWaitsForProcessorDelay1() throws Exception {
+
+        long timeBeforeQueue;
+        long timeAfterCallback;
+        long delta;
+        boolean success;
+
+        for (int k=0; k<5; k++) {
+
+            ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
+            int inboxCapacity = 5;
+            int processorDelay = 1000;
+
+            final CountDownLatch latch = new CountDownLatch(1);
+
+
+            final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+                @Override
+                public void process(List<String> itemsToProcess) {
+                    Log.d(TAG, "process() called with %d items", itemsToProcess.size());
+                    latch.countDown();
+                }
+            });
+
+            // add a single object
+            timeBeforeQueue = System.currentTimeMillis();
+            batcher.queueObject(new String());
+
+            // we shouldn't see latch close until processorDelay milliseconds has passed
+            success = latch.await(5, TimeUnit.SECONDS);
+            assertTrue(success);
+            timeAfterCallback = System.currentTimeMillis();
+            delta = timeAfterCallback - timeBeforeQueue;
+            assertTrue(delta > 0);
+            assertTrue(delta >= processorDelay);
+
+        }
+
+
+    }
+
+
+    /**
+     * - Fill batcher up to capacity
+     * - Expected behavior: should invoke BatchProcessor almost immediately
+     * - Add a single element to batcher
+     * - Expected behavior: after processing delay has expired, should invoke BatchProcessor
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/329
+     */
+    public void testBatcherWaitsForProcessorDelay2() throws Exception {
+
+        long timeBeforeQueue;
+        long timeAfterCallback;
+        long delta;
+        boolean success;
+
+        for (int k=0; k<5; k++) {
+
+            ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
+            int inboxCapacity = 5;
+            int processorDelay = 1000;
+
+            final BlockingQueue<CountDownLatch> latches = new LinkedBlockingQueue<CountDownLatch>();
+            CountDownLatch latch1 = new CountDownLatch(1);
+            CountDownLatch latch2 = new CountDownLatch(1);
+            latches.add(latch1);
+            latches.add(latch2);
+
+            final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+                @Override
+                public void process(List<String> itemsToProcess) {
+                    try {
+                        Log.d(TAG, "process() called with %d items", itemsToProcess.size());
+                        CountDownLatch latch = latches.take();
+                        latch.countDown();
+                    } catch (InterruptedException e) {
+                        assertFalse(true);
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            // fill up batcher capacity
+            for (int i = 0; i < inboxCapacity; i++) {
+                batcher.queueObject(new String());
+            }
+
+            // latch should have been closed nearly immediately
+            success = latch1.await(50, TimeUnit.MILLISECONDS);
+            assertTrue(success);
+
+            // add another object
+            timeBeforeQueue = System.currentTimeMillis();
+            batcher.queueObject(new String());
+
+            // we shouldn't see latch close until processorDelay milliseconds has passed
+            success = latch2.await(5, TimeUnit.SECONDS);
+            assertTrue(success);
+            timeAfterCallback = System.currentTimeMillis();
+            delta = timeAfterCallback - timeBeforeQueue;
+            assertTrue(delta > 0);
+            assertTrue(delta >= processorDelay);
+        }
+
+
+    }
+
+    /**
+     * - Add jobs with 10x the capacity
+     * - Call waitForPendingFutures
+     * - Make sure all jobs are processed before waitForPendingFutures returns
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/329
+     */
+    public void testWaitForPendingFutures() throws Exception {
+
+        ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
+        int inboxCapacity = 3;
+        int processorDelay = 100;
+        int numItemsToSubmit = 30;
+
+        final CountDownLatch latch = new CountDownLatch(numItemsToSubmit);
+
+
+        final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+            @Override
+            public void process(List<String> itemsToProcess) {
+                Log.d(TAG, "process() called with %d items", itemsToProcess.size());
+                for (String item : itemsToProcess) {
+                    latch.countDown();
+                }
+            }
+        });
+
+        // add numItemsToSubmit to batcher in one swoop
+        ArrayList<String> objectsToQueue = new ArrayList<String>();
+        for (int i=0; i<numItemsToSubmit; i++) {
+            objectsToQueue.add(Integer.toString(i));
+        }
+        batcher.queueObjects(objectsToQueue);
+
+        // wait until all work drains
+        batcher.waitForPendingFutures();
+
+        // at this point, the countdown latch should be 0
+        assertEquals(0, latch.getCount());
+
+    }
+
+
+    /**
+     * - Call batcher to queue a single item in a fast loop
+     * - As soon as we've hit capacity, it should call processor shortly after
+     */
+    public void testInvokeProcessorAfterReachingCapacity() throws Exception {
+
+        ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
+        final int inboxCapacity = 10;
+        final int processorDelay = 500;
+        final int numItemsToSubmit = inboxCapacity * 100;
+        final int jobDelay = 50;
+
+        final CountDownLatch latchFirstProcess = new CountDownLatch(1);
+        final CountDownLatch latchSubmittedCapacity = new CountDownLatch(1);
+        final CountDownLatch latchInterrupted = new CountDownLatch(1);
+
+        final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+            @Override
+            public void process(List<String> itemsToProcess) {
+                Log.d(TAG, "process() called with %d items", itemsToProcess.size());
+                try {
+                    Thread.sleep(jobDelay);
+                    latchFirstProcess.countDown();
+                    Log.d(TAG, "/process() called with %d items", itemsToProcess.size());
+                } catch (InterruptedException e) {
+                    latchInterrupted.countDown();
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i=0; i<numItemsToSubmit; i++) {
+
+                    if (i == inboxCapacity) {
+                        latchSubmittedCapacity.countDown();
+                    }
+
+                    ArrayList<String> objectsToQueue = new ArrayList<String>();
+                    objectsToQueue.add(Integer.toString(i));
+                    batcher.queueObjects(objectsToQueue);
+                    Log.d(TAG, "Submitted object %d", i);
+
+                }
+            }
+        });
+        t.start();
+
+        boolean success = latchSubmittedCapacity.await(5, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // since we've already submitted up to capacity, our processor should
+        // be called nearly immediately afterwards
+        success = latchFirstProcess.await(jobDelay * 2, TimeUnit.MILLISECONDS);
+        assertTrue(success);
+
+        // we should not have been interrupted either
+        assertEquals(latchInterrupted.getCount(), 1);
+
+        t.interrupt();
+
+    }
+
 
 
     private static void assertNumbersConsecutive(List<String> itemsToProcess) {

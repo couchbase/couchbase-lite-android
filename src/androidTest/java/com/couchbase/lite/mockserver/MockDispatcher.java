@@ -6,6 +6,7 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -151,6 +152,15 @@ public class MockDispatcher extends Dispatcher {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public BlockingQueue<RecordedRequest> getRequestQueueSnapshot(String pathRegex) {
+        BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
+        if (queue == null) {
+            return null;
+        }
+        BlockingQueue<RecordedRequest> result = new LinkedBlockingQueue<RecordedRequest>(queue);
+        return result;
     }
 
     public MockResponse takeRecordedResponseBlocking(RecordedRequest request) {

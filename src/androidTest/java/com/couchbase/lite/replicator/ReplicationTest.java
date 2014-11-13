@@ -73,6 +73,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -387,10 +388,6 @@ public class ReplicationTest extends LiteTestCase {
         mockBulkGet.addDocument(mockDoc1);
         mockBulkGet.addDocument(mockDoc2);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
-        /*MockResponse mockResponse = mockBulkGet.generateMockResponse(null);
-        byte[] body = mockResponse.getBody();
-        String bodyString = new String(body);
-        Log.d(TAG, "bodyString: %s", bodyString);*/
 
         // respond to all PUT Checkpoint requests
         MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
@@ -3225,6 +3222,103 @@ public class ReplicationTest extends LiteTestCase {
 
         stopReplication(pullReplication);
         server.shutdown();
+
+    }
+
+    /**
+     * Spotted in https://github.com/couchbase/couchbase-lite-java-core/issues/313
+     * But there is another ticket that is linked off 313
+     */
+    public void testMockPullBulkDocsSyncGw() throws Exception {
+        mockPullBulkDocs(MockDispatcher.ServerType.SYNC_GW);
+    }
+
+
+    public void mockPullBulkDocs(MockDispatcher.ServerType serverType) throws Exception {
+
+        // set INBOX_CAPACITY to a smaller value so that processing times don't skew the test
+        ReplicationInternal.INBOX_CAPACITY = 10;
+
+        // serve 25 mock docs
+        int numMockDocsToServe = (ReplicationInternal.INBOX_CAPACITY * 2) + (ReplicationInternal.INBOX_CAPACITY / 2);
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(serverType);
+
+        // mock documents to be pulled
+        List<MockDocumentGet.MockDocument> mockDocs = MockHelper.getMockDocuments(numMockDocsToServe);
+
+        // respond to all GET (responds with 404) and PUT Checkpoint requests
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // _changes response
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument));
+        }
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // individual doc responses (expecting it to call _bulk_docs, but just in case)
+        for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
+            dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+        }
+
+        // _bulk_get response
+        MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+        for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+            mockBulkGet.addDocument(mockDocument);
+        }
+        mockBulkGet.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+        // start mock server
+        server.play();
+
+        // run pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        runReplication(pullReplication);
+        assertTrue(pullReplication.getLastError() == null);
+
+        // wait until it pushes checkpoint of last doc
+        MockDocumentGet.MockDocument lastDoc = mockDocs.get(mockDocs.size()-1);
+        waitForPutCheckpointRequestWithSequence(dispatcher, lastDoc.getDocSeq());
+
+        // dump out the outgoing requests for bulk docs
+        BlockingQueue<RecordedRequest> bulkGetRequests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_GET);
+        Iterator<RecordedRequest> iterator = bulkGetRequests.iterator();
+        while (iterator.hasNext()) {
+            RecordedRequest bulkGetRequest = iterator.next();
+
+            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(bulkGetRequest.getUtf8Body(), Map.class);
+            List docs = (List) bulkDocsJson.get("docs");
+            Log.d(TAG, "bulk get request: %s had %d docs", bulkGetRequest, docs.size());
+
+            if (iterator.hasNext()) {
+                // the bulk docs requests except for the last one should have max number of docs
+                // relax this a bit, so that it at least has to have greater than or equal to half max number of docs
+                assertTrue(docs.size() >= (ReplicationInternal.INBOX_CAPACITY / 2));
+                if (docs.size() != ReplicationInternal.INBOX_CAPACITY) {
+                    Log.w(TAG, "docs.size() %d != ReplicationInternal.INBOX_CAPACITY %d", docs.size(), ReplicationInternal.INBOX_CAPACITY);
+                }
+            }
+
+        }
+
+        // should not be any requests for individual docs
+        for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
+            BlockingQueue<RecordedRequest> requestsForDoc = dispatcher.getRequestQueueSnapshot(mockDocument.getDocPathRegex());
+            assertTrue(requestsForDoc == null || requestsForDoc.isEmpty());
+        }
+
+        server.shutdown();
+
 
     }
 
