@@ -1,11 +1,12 @@
 apply plugin: 'android-library'
-apply plugin: 'maven'
+apply plugin: 'android-maven'
 
 buildscript {
     repositories {
         mavenCentral()
     }
     dependencies {
+        classpath 'com.github.dcendents:android-maven-plugin:1.1'
         classpath 'com.android.tools.build:gradle:0.12.+'
     }
 }
