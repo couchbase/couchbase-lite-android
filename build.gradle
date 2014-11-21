@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.12.+'
+        classpath 'com.android.tools.build:gradle:0.13.2'
     }
 }
 
@@ -105,7 +105,7 @@ uploadArchives {
             repository(url: mavenPath()) {
                 authentication(userName: System.getenv("MAVEN_UPLOAD_USERNAME"), password: System.getenv("MAVEN_UPLOAD_PASSWORD"))
             }
-            pom.version = System.getenv("MAVEN_UPLOAD_VERSION")
+            pom.version = System.getenv("MAVEN_UPLOAD_VERSION") != null ? System.getenv("MAVEN_UPLOAD_VERSION") : ''
             pom.groupId = 'com.couchbase.lite'
             pom.artifactId = 'couchbase-lite-android'
             pom.project {
