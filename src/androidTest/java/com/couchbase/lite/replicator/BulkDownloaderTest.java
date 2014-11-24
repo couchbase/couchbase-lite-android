@@ -81,10 +81,12 @@ public class BulkDownloaderTest extends LiteTestCase {
                 new BulkDownloader.BulkDownloaderDocumentBlock() {
                     public void onDocument(Map<String, Object> props) {
                         // do nothing
+                        Log.d(TAG, "onDocument called with %s", props);
                     }
                 },
                 new RemoteRequestCompletionBlock() {
                     public void onCompletion(HttpResponse httpResponse, Object result, Throwable e) {
+                        Log.d(TAG, "RemoteRequestCompletionBlock called, result: %s e: %s", result, e);
                         if (e != null) {
                             gotError.countDown();
                         }
@@ -97,7 +99,7 @@ public class BulkDownloaderTest extends LiteTestCase {
 
         // make sure our callback was called with an error, since
         // we are returning a 4xx error to all _bulk_get requests
-        boolean success = gotError.await(5, TimeUnit.SECONDS);
+        boolean success = gotError.await(60, TimeUnit.SECONDS);
         assertTrue(success);
 
         // wait for the future to return
