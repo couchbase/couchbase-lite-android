@@ -76,6 +76,22 @@ task generateJavadocs(type: Javadoc) {
 }
 
 task createMavenDirectory(type: Exec) {
+    //these envs are required only to upload maven artifacts
+    print project.getGradle()
+    if(project.getGradle().toString().contains("createMavenDirectory")) {
+        if (System.getenv("MAVEN_UPLOAD_REPO_URL") == null) {
+            throw new GradleException("Please set MAVEN_UPLOAD_REPO_URL !!!")
+        }
+        if (System.getenv("MAVEN_UPLOAD_USERNAME") == null) {
+            throw new GradleException("Please set MAVEN_UPLOAD_USERNAME !!!")
+        }
+        if (System.getenv("MAVEN_UPLOAD_PASSWORD") == null) {
+            throw new GradleException("Please set MAVEN_UPLOAD_PASSWORD !!!")
+        }
+        if (System.getenv("MAVEN_UPLOAD_VERSION") == null) {
+            throw new GradleException("Please set MAVEN_UPLOAD_VERSION !!!")
+        }
+    }
 
     ext {
         uploadUser = System.getenv("MAVEN_UPLOAD_USERNAME") + ":" + System.getenv("MAVEN_UPLOAD_PASSWORD")
@@ -83,6 +99,7 @@ task createMavenDirectory(type: Exec) {
     }
     commandLine "curl", "--user", uploadUser, "-X", "MKCOL", mkcolPath
 }
+
 
 // this hack is only needed for apache mod_dav based Maven repo's like file.couchbase.com.  otherwise, skip it
 createMavenDirectory.onlyIf { System.getenv("MAVEN_UPLOAD_REPO_URL").contains("files") }
