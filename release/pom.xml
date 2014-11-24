@@ -1,0 +1,304 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.couchbase</groupId>
+    <artifactId>couchbase-lite</artifactId>
+    <version>${REVISION}</version>
+    <packaging>jar</packaging>
+    
+    <properties>
+        <local-m2dir>${basedir}/m2</local-m2dir>
+
+        <jackson.version>     1.9.2 </jackson.version>
+        <commons-io.version>  2.0.1 </commons-io.version>
+        <rhino.version>       1.7R3 </rhino.version>
+        <servlet.version>     2-3   </servlet.version>
+
+        <LICENSE_DIR>${basedir}</LICENSE_DIR>
+        <LICENSE_FILE>LICENSE.TXT</LICENSE_FILE>
+
+        <TARGET_DIR>${local-m2dir}/com/couchbase/lite</TARGET_DIR>
+        <ZIP_HOME>${basedir}/zip</ZIP_HOME>
+
+        <AND_CLASS_AAR> couchbase-lite-android-${REVISION}.aar          </AND_CLASS_AAR>
+        <JAR_JAVA_CORE> couchbase-lite-java-core-${REVISION}.jar        </JAR_JAVA_CORE>
+
+        <AND_CLASS_AAR_SRC> ${TARGET_DIR}/couchbase-lite-android/${REVISION}/${AND_CLASS_AAR}          </AND_CLASS_AAR_SRC>
+        <JAR_SRC_JAVA_CORE> ${TARGET_DIR}/couchbase-lite-java-core/${REVISION}/${JAR_JAVA_CORE}        </JAR_SRC_JAVA_CORE>
+
+        <STAGING>${basedir}/staging</STAGING>
+
+        <JAR_AND_CLASS> couchbase-lite-android-${REVISION}.jar                     </JAR_AND_CLASS>
+        <JAR_SRC_AND_CLASS> ${basedir}/build/intermediates/bundles/release/classes.jar </JAR_SRC_AND_CLASS>
+        <JAR_DST_AND_CLASS> ${STAGING}/${JAR_AND_CLASS}                                                                    </JAR_DST_AND_CLASS>
+
+
+        <JAR_COLLATORS>     cbl_collator_so-${REVISION}.jar                        </JAR_COLLATORS>
+        <JNI_SRC_DIR>       ${basedir}/jniLibs </JNI_SRC_DIR>
+        <COLLATOR_STAGING>  ${basedir}/staging_collator                            </COLLATOR_STAGING>
+        <JNI_DST_DIR>       ${COLLATOR_STAGING}/lib                                </JNI_DST_DIR>
+        <JAR_SRC_COLLATORS> ${STAGING}/${JAR_COLLATORS}                            </JAR_SRC_COLLATORS>
+
+        <POM_AND_CLASS> couchbase-lite-android-${REVISION}.pom          </POM_AND_CLASS>
+        <POM_JAVA_CORE> couchbase-lite-java-core-${REVISION}.pom        </POM_JAVA_CORE>
+
+        <POM_SRC_AND_CLASS> ${TARGET_DIR}/couchbase-lite-android/${REVISION}/${POM_AND_CLASS}          </POM_SRC_AND_CLASS>
+        <POM_SRC_JAVA_CORE> ${TARGET_DIR}/couchbase-lite-java-core/${REVISION}/${POM_JAVA_CORE}        </POM_SRC_JAVA_CORE>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>couchbase.public.repo</id>
+            <url>http://files.couchbase.com/maven2</url>
+        </repository>
+        <repository>
+            <id>couchbase.local.repo</id>
+            <url>file://${local-m2dir}</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.couchbase.lite</groupId>
+            <artifactId>couchbase-lite-android</artifactId>
+            <type>aar</type>
+            <version>${REVISION}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.couchbase.lite</groupId>
+            <artifactId>couchbase-lite-java-core</artifactId>
+            <version>${REVISION}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.mozilla</groupId>
+            <artifactId>rhino</artifactId>
+            <version>${rhino.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.couchbase.cblite</groupId>
+            <artifactId>servlet</artifactId>
+            <version>${servlet.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.couchbase.cblite</groupId>
+            <artifactId>webserver</artifactId>
+            <version>${servlet.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.android</groupId>
+            <artifactId>android</artifactId>
+            <version>2.2.1</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.1</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <id>validate_m2</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <echo>local-m2dir:   ${local-m2dir}</echo>
+                                <echo>${local-m2dir}/org/mozilla/rhino/${rhino.version}/rhino-${rhino.version}.jar</echo>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    
+                    <execution>
+                        <phase>clean</phase>
+                        <id>clean_derived</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <delete dir="${JNI_DST_DIR}"      failonerror="true" verbose="true" />
+                                <delete dir="${COLLATOR_STAGING}" failonerror="true" verbose="true" />
+                                <delete dir="${ZIP_HOME}"         failonerror="true" verbose="true" />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <phase>clean</phase>
+                        <id>clean_jars</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <delete file="${JAR_DST_AND_CLASS}"  failonerror="true" verbose="true" />
+                                <delete file="${JAR_SRC_COLLATORS}"  failonerror="true" verbose="true" />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    
+                    <execution>
+                        <phase>initialize</phase>
+                        <id>creat_dirs</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <mkdir  dir="${STAGING}"          />
+                                <mkdir  dir="${COLLATOR_STAGING}" />
+                                <mkdir  dir="${JNI_DST_DIR}"      />
+                                <mkdir  dir="${ZIP_HOME}"         />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <id>create_collator_jar</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                 <echo message="DEBUG:::   CREATE collator JAR" />
+                                 <copy     todir="${JNI_DST_DIR}"      flatten="false">
+                                    <fileset dir="${JNI_SRC_DIR}" />
+                                 </copy>
+                                 <jar  basedir="${COLLATOR_STAGING}" destfile="${JAR_SRC_COLLATORS}" />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <id>create_android_jar</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                 <echo message="DEBUG:::   CREATE Android JAR"  />
+                                 <copy file="${JAR_SRC_AND_CLASS}" tofile="${JAR_DST_AND_CLASS}" />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <id>copy_from_m2</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                 <echo message="DEBUG:::   LICENSE.txt" />
+
+                                 <copy todir="${ZIP_HOME}" preservelastmodified="true" flatten="true" verbose="true">
+                                     <fileset dir="${LICENSE_DIR}">
+                                         <include name="${LICENSE_FILE}"                              />
+                                     </fileset>
+                                 </copy>
+                                 
+                                 <!-- locally built  -->
+                                 <echo message="DEBUG:::   locally built couchbase-lite JARs" />
+                                 
+                                 <copy file="${AND_CLASS_AAR_SRC}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                 <copy file="${JAR_SRC_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                 
+                                 <copy file="${JAR_SRC_JAVA_CORE}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                 <copy file="${POM_SRC_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                 <copy file="${POM_SRC_JAVA_CORE}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                 <!-- locally packaged  -->
+                                 <echo message="DEBUG:::   locally packaged android JARs" />
+                                 
+                                 <copy file="${JAR_DST_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                 <copy file="${JAR_SRC_COLLATORS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                 
+                                 <!-- third-party    -->
+                                 <echo message="DEBUG:::   third-party" />
+                                 
+                                 <copy todir="${ZIP_HOME}" preservelastmodified="true" flatten="true" verbose="true">
+                                     <fileset dir="${local-m2dir}">
+                                         <include name="**/rhino-${rhino.version}.jar"                />
+                                         <include name="**/commons-io-${commons-io.version}.jar"      />
+                                         <include name="**/jackson-core-asl-${jackson.version}.jar"   />
+                                         <include name="**/jackson-mapper-asl-${jackson.version}.jar" />
+                                         
+                                         <include name="**/servlet-${servlet.version}.jar"            />
+                                         <include name="**/webserver-${servlet.version}.jar"          />
+                                     </fileset>
+                                 </copy>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <distributionManagement>
+        <repository>
+            <id>couchbase.public.repo</id>
+            <name>Couchbase Release Repository</name>
+            <url>http://files.couchbase.com/maven2/</url>
+        </repository>
+    </distributionManagement>
+</project>
