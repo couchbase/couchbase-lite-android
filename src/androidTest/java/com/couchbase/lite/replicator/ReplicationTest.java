@@ -3322,4 +3322,58 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * Make sure that after trying /db/_session, it should try /_session.
+     *
+     * Currently there is a bug where it tries /db/_session, and then
+     * tries /db_session.
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/208
+     */
+    public void failingTestCheckSessionAtPath() throws Exception {
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+
+        // session GET response w/ 404 to /db/_session
+        MockResponse fakeSessionResponse = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeSessionResponse);
+        WrappedSmartMockResponse wrappedSmartMockResponse = new WrappedSmartMockResponse(fakeSessionResponse);
+        wrappedSmartMockResponse.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, wrappedSmartMockResponse);
+
+        // session GET response w/ 404 to /_session
+        MockResponse fakeSessionResponse2 = new MockResponse();
+        MockHelper.set404NotFoundJson(fakeSessionResponse2);
+        WrappedSmartMockResponse wrappedSmartMockResponse2 = new WrappedSmartMockResponse(fakeSessionResponse2);
+        wrappedSmartMockResponse2.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION_COUCHDB, wrappedSmartMockResponse2);
+
+        // respond to all GET/PUT Checkpoint requests
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // start mock server
+        server.play();
+
+        // run pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setAuthenticator(new FacebookAuthorizer("justinbieber@glam.co"));
+        pullReplication.start();
+
+        // it should first try /db/_session
+        dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
+
+        // and then it should fallback to /_session
+        dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION_COUCHDB);
+
+        stopReplication(pullReplication);
+
+        server.shutdown();
+
+    }
+
 }
