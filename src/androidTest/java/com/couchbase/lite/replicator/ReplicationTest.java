@@ -3330,7 +3330,7 @@ public class ReplicationTest extends LiteTestCase {
      *
      * https://github.com/couchbase/couchbase-lite-java-core/issues/208
      */
-    public void failingTestCheckSessionAtPath() throws Exception {
+    public void testCheckSessionAtPath() throws Exception {
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
@@ -3344,12 +3344,15 @@ public class ReplicationTest extends LiteTestCase {
         wrappedSmartMockResponse.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, wrappedSmartMockResponse);
 
-        // session GET response w/ 404 to /_session
+        // session GET response w/ 200 OK to /_session
         MockResponse fakeSessionResponse2 = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeSessionResponse2);
-        WrappedSmartMockResponse wrappedSmartMockResponse2 = new WrappedSmartMockResponse(fakeSessionResponse2);
-        wrappedSmartMockResponse2.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION_COUCHDB, wrappedSmartMockResponse2);
+        Map<String, Object> responseJson = new HashMap<String, Object>();
+        Map<String, Object> userCtx = new HashMap<String, Object>();
+        userCtx.put("name", "foo");
+        responseJson.put("userCtx", userCtx);
+        fakeSessionResponse2.setBody(Manager.getObjectMapper().writeValueAsBytes(responseJson));
+        MockHelper.set200OKJson(fakeSessionResponse2);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION_COUCHDB, fakeSessionResponse2);
 
         // respond to all GET/PUT Checkpoint requests
         MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
