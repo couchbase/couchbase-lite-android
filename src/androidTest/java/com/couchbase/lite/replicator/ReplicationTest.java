@@ -2250,6 +2250,17 @@ public class ReplicationTest extends LiteTestCase {
         manager.setDefaultHttpClientFactory(mockHttpClientFactory);
 
         Replication r1 = database.createPushReplication(getReplicationURL());
+
+        final CountDownLatch changeEventError = new CountDownLatch(1);
+        r1.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                Log.d(TAG, "change event: %s", event);
+                if (event.getError() != null) {
+                    changeEventError.countDown();
+                }
+            }
+        });
         Assert.assertFalse(r1.isContinuous());
         runReplication(r1);
 
@@ -2257,6 +2268,8 @@ public class ReplicationTest extends LiteTestCase {
         Assert.assertEquals(0, r1.getCompletedChangesCount());
         Assert.assertEquals(0, r1.getChangesCount());
         Assert.assertNotNull(r1.getLastError());
+        boolean success = changeEventError.await(5, TimeUnit.SECONDS);
+        Assert.assertTrue(success);
 
 
     }
