@@ -3392,4 +3392,60 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     *
+     * - Start one shot replication
+     * - Changes feed request returns error
+     * - Change tracker stops
+     * - Replication stops -- make sure ChangeListener gets error
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/334
+     */
+    public void testChangeTrackerError() throws Exception {
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // 404 response to _changes feed (sticky)
+        MockResponse mockChangesFeed = new MockResponse();
+        MockHelper.set404NotFoundJson(mockChangesFeed);
+        WrappedSmartMockResponse wrapped = new WrappedSmartMockResponse(mockChangesFeed);
+        wrapped.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, wrapped);
+
+        // start mock server
+        server.play();
+
+        // run pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+
+        final CountDownLatch changeEventError = new CountDownLatch(1);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getError() != null) {
+                    changeEventError.countDown();
+                }
+            }
+        });
+
+        runReplication(pullReplication);
+        Assert.assertTrue(pullReplication.getLastError() != null);
+
+        boolean success = changeEventError.await(5, TimeUnit.SECONDS);
+        Assert.assertTrue(success);
+
+        server.shutdown();
+
+
+
+    }
+
 }
