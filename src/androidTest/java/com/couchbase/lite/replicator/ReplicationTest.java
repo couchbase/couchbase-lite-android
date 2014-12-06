@@ -3378,6 +3378,9 @@ public class ReplicationTest extends LiteTestCase {
         // run pull replication
         Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
         pullReplication.setAuthenticator(new FacebookAuthorizer("justinbieber@glam.co"));
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+        pullReplication.addChangeListener(replicationFinishedObserver);
         pullReplication.start();
 
         // it should first try /db/_session
@@ -3386,7 +3389,8 @@ public class ReplicationTest extends LiteTestCase {
         // and then it should fallback to /_session
         dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION_COUCHDB);
 
-        stopReplication(pullReplication);
+        boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+        Assert.assertTrue(success);
 
         server.shutdown();
 
