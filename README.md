@@ -92,7 +92,7 @@ Couchbase Lite Version  | Android Studio Version
 1.0.1  | Android Studio 0.5.7
 1.0.2  | Android Studio 0.8.2
 1.0.3.x  | Android Studio 0.8.2 - 0.8.9
-Master  | Android Studio 0.8.2 - 0.8.14
+Master  | Android Studio 1.0
 
 ### Prerequisites
 
@@ -121,7 +121,7 @@ $ git submodule init && git submodule update
 You should be able to import the project directly into Android Studio:
 
 * Start Android Studio
-* Choose File / Import and choose the settings.gradle file in the couchbase-lite-android directory you cloned earlier
+* Choose File / Import Project and choose the settings.gradle file in the couchbase-lite-android directory you cloned earlier.  (Note: if you are on the welcome screen, choose "Import Non-Android Studio Project)
 * Hit Finish and wait for all tasks to finish (may take a while)
 
 Caveat: when importing, you may see [Wrong offset: 290. Should be in range: 0, 230](https://code.google.com/p/android/issues/detail?id=74673), but after that you should be able to click the menu bar item "Sync Project with Gradle files" and the project should work.
@@ -144,7 +144,7 @@ If you want to run something (aside from the tests), you should get one of the s
     * See details above
 * Enable settings.gradle file
     * See details above
-* Configure Android Studio SDK location
+* If you don't already have a `local.properties` file, configure Android Studio SDK location
     * `cp local.properties.example local.properties`
     * Customize `local.properties` according to your SDK installation directory
 * Build and test
