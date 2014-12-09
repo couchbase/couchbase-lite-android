@@ -296,8 +296,6 @@ public class DocumentTest extends LiteTestCase {
         assertEquals("my_custom_id", documentFetched.getId());
         assertEquals("bar", documentFetched.getProperties().get("foo"));
 
-        database.getDocument()
-
     }
 
 }
