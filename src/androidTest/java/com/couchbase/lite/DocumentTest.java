@@ -285,6 +285,19 @@ public class DocumentTest extends LiteTestCase {
     }
 
 
+    public void testDocCustomID() throws Exception {
 
+        Document document = database.getDocument("my_custom_id");
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
+        document.putProperties(properties);
+
+        Document documentFetched = database.getDocument("my_custom_id");
+        assertEquals("my_custom_id", documentFetched.getId());
+        assertEquals("bar", documentFetched.getProperties().get("foo"));
+
+        database.getDocument()
+
+    }
 
 }
