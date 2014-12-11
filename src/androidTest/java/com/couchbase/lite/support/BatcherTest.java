@@ -286,7 +286,7 @@ public class BatcherTest extends LiteTestCase {
             }
 
             // latch should have been closed nearly immediately
-            success = latch1.await(50, TimeUnit.MILLISECONDS);
+            success = latch1.await(500, TimeUnit.MILLISECONDS);
             assertTrue(success);
 
             // add another object
