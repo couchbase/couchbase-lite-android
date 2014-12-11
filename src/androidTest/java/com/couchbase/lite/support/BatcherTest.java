@@ -403,7 +403,7 @@ public class BatcherTest extends LiteTestCase {
 
         // since we've already submitted up to capacity, our processor should
         // be called nearly immediately afterwards
-        success = latchFirstProcess.await(jobDelay * 2, TimeUnit.MILLISECONDS);
+        success = latchFirstProcess.await(500, TimeUnit.MILLISECONDS);
         assertTrue(success);
 
         // we should not have been interrupted either
