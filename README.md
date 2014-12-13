@@ -161,6 +161,8 @@ If you want to run something (aside from the tests), you should get one of the s
     * Ability for users to share data
 * [LiteServAndroid](https://github.com/couchbaselabs/couchbase-lite-android-liteserv)
     * REST API example
+* [TestCouchLiteAndroid](https://github.com/iraycd/TestCouchLiteAndroid)
+    * Simple example contributed by [@iraycd](https://github.com/iraycd) 
 
 ## System Requirements
 
