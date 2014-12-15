@@ -41,6 +41,7 @@ import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.support.RemoteRequestRetry;
 import com.couchbase.lite.util.Log;
+import com.couchbase.org.apache.http.entity.mime.MultipartEntity;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
@@ -57,7 +58,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.cookie.Cookie;
-import com.couchbase.org.apache.http.entity.mime.MultipartEntity;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -903,7 +903,7 @@ public class ReplicationTest extends LiteTestCase {
         Document doc1 = createDocumentForPushReplication("doc1", null, null);
 
         // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
-        int numAttempts = RemoteRequestRetry.MAX_RETRIES;
+        int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
         for (int i=0; i < numAttempts; i++) {
             RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
             assertNotNull(request);
