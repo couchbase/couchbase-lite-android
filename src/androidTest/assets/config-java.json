@@ -59,13 +59,13 @@
     "Test07_PushReplication": {
         "numbers_of_documents":[10, 100],
         "sizes_of_document":   [1000, 10000, 100000],
-        "kpi": [[  100,    1000,    1000],
+        "kpi": [[  2000,    2000,    2000],
                 [  2000,   2000,   -2]],
-        "baseline": [[ 575.00; 109.00; 339.00],
-                     [ 639.00; 962.00; -1.00]],
+        "baseline": [[ 1275.00; 940.00; 1339.00],
+                     [ 878.00; 962.00; -1.00]],
         "kpi_is_total": true,
         "repeat_count": 1,
-        "sum_kpi_baseline": 2207.00
+        "sum_kpi_baseline": 5207.00
     },
 
     "Test08_DocRevisions": {
