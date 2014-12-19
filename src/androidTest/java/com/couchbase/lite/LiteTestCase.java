@@ -365,10 +365,7 @@ public class LiteTestCase extends LiteTestCaseBase {
         return doc;
     }
 
-    public static Document createDocWithAttachment(Database database, String attachmentName, String content) throws Exception {
-
-        Map<String,Object> properties = new HashMap<String, Object>();
-        properties.put("foo", "bar");
+    public static Document createDocWithAttachment(Database database, String attachmentName, String content,  Map<String,Object> properties) throws Exception {
 
         Document doc = createDocumentWithProperties(database, properties);
         SavedRevision rev = doc.getCurrentRevision();
@@ -402,6 +399,15 @@ public class LiteTestCase extends LiteTestCaseBase {
         assertEquals(content.getBytes().length, attach.getLength());
 
         return doc;
+
+    }
+
+    public static Document createDocWithAttachment(Database database, String attachmentName, String content) throws Exception {
+
+        Map<String,Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
+        return createDocWithAttachment(database, attachmentName, content, properties);
+
     }
 
 

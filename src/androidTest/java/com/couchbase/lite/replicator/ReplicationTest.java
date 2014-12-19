@@ -1106,6 +1106,7 @@ public class ReplicationTest extends LiteTestCase {
         // wait until we get an IDLE event
         boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
         assertTrue(successful);
+
         stopReplication(firstPusher);
 
         // wait until replication does PUT checkpoint with lastSequence=1
@@ -1281,10 +1282,7 @@ public class ReplicationTest extends LiteTestCase {
                     assertTrue(revisionIds.contains(rev4a.getId()));
                     assertTrue(revisionIds.contains(rev2b.getId()));
                 }
-
             }
-
-
         }
         assertTrue(foundRevsDiff);
 
@@ -3447,9 +3445,255 @@ public class ReplicationTest extends LiteTestCase {
         Assert.assertTrue(success);
 
         server.shutdown();
-
-
-
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/358
+     *
+     * @related: https://github.com/couchbase/couchbase-lite-java-core/issues/55
+     * related: testContinuousPushReplicationGoesIdle()
+     *
+     * test steps:
+     * - start replicator
+     * - make sure replicator becomes idle state
+     * - add N docs
+     * - when callback state == idle
+     * - assert that mock has received N docs
+     */
+    public void testContinuousPushReplicationGoesIdleTwice() throws Exception{
+
+        // /_local/*
+        // /_revs_diff
+        // /_bulk_docs
+        // /_local/*
+        final int EXPECTED_REQUEST_COUNT = 4;
+
+        // make sure we are starting empty
+        assertEquals(0, database.getLastSequenceNumber());
+
+        // 1. Setup MockWebServer
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        final MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        mockCheckpointPut.setDelayMs(500);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // _revs_diff response -- everything missing
+        MockRevsDiff mockRevsDiff = new MockRevsDiff();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+        // _bulk_docs response -- everything stored
+        MockBulkDocs mockBulkDocs = new MockBulkDocs();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+
+        server.play();
+
+        // 2. Create replication
+        Replication replication = database.createPushReplication(server.getUrl("/db"));
+        replication.setContinuous(true);
+        CountDownLatch replicationIdle = new CountDownLatch(1);
+        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
+        replication.addChangeListener(idleObserver);
+        replication.start();
+
+        // 3. Wait until idle (make sure replicator becomes IDLE state)
+        boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        replication.removeChangeListener(idleObserver);
+
+        // 4. make sure if /_local was called by replicator after start and before idle
+        RecordedRequest request1 = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+        assertNotNull(request1);
+        dispatcher.takeRecordedResponseBlocking(request1);
+        assertEquals(1, server.getRequestCount());
+
+        // 5. Add replication change listener for transition to IDLE
+        class ReplicationTransitionToIdleObserver implements  Replication.ChangeListener{
+            private CountDownLatch doneSignal;
+            private CountDownLatch checkSignal;
+            public ReplicationTransitionToIdleObserver(CountDownLatch doneSignal, CountDownLatch checkSignal) {
+                this.doneSignal = doneSignal;
+                this.checkSignal = checkSignal;
+            }
+            public void changed(Replication.ChangeEvent event) {
+                Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] event => " + event.toString());
+                if(event.getTransition()!=null){
+                    if(event.getTransition().getSource() != event.getTransition().getDestination() &&
+                       event.getTransition().getDestination() == ReplicationState.IDLE){
+                        Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Transition to  IDLE");
+                        Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Request Count => " + server.getRequestCount());
+
+                        this.doneSignal.countDown();
+
+                        // When replicator becomes IDLE state, check if all requests are completed
+                        // assertEquals in inner class does not work....
+                        // Note: sometimes server.getRequestCount() returns expected number - 1.
+                        //       Is it timing issue?
+                        if(EXPECTED_REQUEST_COUNT == server.getRequestCount() ||
+                           EXPECTED_REQUEST_COUNT - 1 == server.getRequestCount()){
+                            this.checkSignal.countDown();
+                        }
+                    }
+                }
+            }
+        }
+        CountDownLatch checkStateToIdle = new CountDownLatch(1);
+        CountDownLatch checkRequestCount = new CountDownLatch(1);
+        ReplicationTransitionToIdleObserver replicationTransitionToIdleObserver =
+                new ReplicationTransitionToIdleObserver(checkStateToIdle, checkRequestCount);
+        replication.addChangeListener(replicationTransitionToIdleObserver);
+        Log.w(Log.TAG_SYNC, "Added listener for transition to IDLE");
+
+        // 6. Add doc(s)
+        for(int i = 1; i <= 1; i++) {
+            Map<String, Object> properties1 = new HashMap<String, Object>();
+            properties1.put("doc" + String.valueOf(i), "testContinuousPushReplicationGoesIdleTooSoon "+ String.valueOf(i));
+            final Document doc = createDocWithProperties(properties1);
+        }
+
+        // 7. Wait until idle (make sure replicator becomes IDLE state from other state)
+        // NOTE: 12/17/2014 - current code fails here because after adding listener, state never changed from IDLE
+        //       By implementing stateMachine for Replication completely, address this failure.
+        success = checkStateToIdle.await(20, TimeUnit.SECONDS); // check if state becomes IDLE from other state
+        assertTrue(success);
+        success = checkRequestCount.await(20, TimeUnit.SECONDS); // check if request count is 4 when state becomes IDLE
+        assertTrue(success);
+
+        // 8. Make sure some of requests are called
+        // _diff_revs
+        //RecordedRequest request2 = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
+        //assertNotNull(request2);
+        //dispatcher.takeRecordedResponseBlocking(request2);
+        // _bulk_docs
+        RecordedRequest request3 = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+        assertNotNull(request3);
+        dispatcher.takeRecordedResponseBlocking(request3);
+        // _local
+        RecordedRequest request4 = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+        assertNotNull(request4);
+        dispatcher.takeRecordedResponseBlocking(request4);
+        // double check total request
+        Log.w(Log.TAG_SYNC, "Total Requested Count before stop replicator => " + server.getRequestCount());
+        assertEquals(EXPECTED_REQUEST_COUNT, server.getRequestCount());
+
+        // 9. Stop replicator
+        replication.removeChangeListener(replicationTransitionToIdleObserver);
+        stopReplication(replication);
+
+        // 10. Stop MockWebServer
+        // NOTE: immediate MockWebServer shutdown causes IOException during stopping replicator.
+        // server.shutdown();
+    }
+
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/358
+     *
+     * related: testContinuousPushReplicationGoesIdleTooSoon()
+     *          testContinuousPushReplicationGoesIdle()
+     *
+     * test steps:
+     * - add N docs
+     * - start replicator
+     * - when callback state == idle
+     * - assert that mock has received N docs
+     */
+    public void testContinuousPushReplicationGoesIdleTooSoon() throws Exception{
+
+        // smaller batch size so there are multiple requests to _bulk_docs
+        ReplicationInternal.INBOX_CAPACITY = 5;
+        int numDocs = ReplicationInternal.INBOX_CAPACITY * 5;
+
+        // make sure we are starting empty
+        assertEquals(0, database.getLastSequenceNumber());
+
+        // Add doc(s)
+        // NOTE: more documents causes more HTTP calls. It could be more than 4 times...
+        for(int i = 1; i <= numDocs; i++) {
+            Map<String, Object> properties = new HashMap<String, Object>();
+            properties.put("doc" + String.valueOf(i), "testContinuousPushReplicationGoesIdleTooSoon "+ String.valueOf(i));
+            final Document doc = createDocWithProperties(properties);
+        }
+
+        // Setup MockWebServer
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        final MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        mockCheckpointPut.setDelayMs(500);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+        // _revs_diff response -- everything missing
+        MockRevsDiff mockRevsDiff = new MockRevsDiff();
+        mockRevsDiff.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+        // _bulk_docs response -- everything stored
+        MockBulkDocs mockBulkDocs = new MockBulkDocs();
+        mockBulkDocs.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+        server.play();
+
+        // Create replicator
+        Replication replication = database.createPushReplication(server.getUrl("/db"));
+        replication.setContinuous(true);
+        // special change listener for this test case.
+        class ReplicationTransitionToIdleObserver implements  Replication.ChangeListener{
+            private CountDownLatch enterIdleStateSignal;
+            public ReplicationTransitionToIdleObserver(CountDownLatch enterIdleStateSignal) {
+                this.enterIdleStateSignal = enterIdleStateSignal;
+            }
+            public void changed(Replication.ChangeEvent event) {
+                Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] event => " + event.toString());
+                if(event.getTransition()!=null){
+                    if(event.getTransition().getSource() != event.getTransition().getDestination() &&
+                            event.getTransition().getDestination() == ReplicationState.IDLE){
+                        Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Transition to  IDLE");
+                        Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Request Count => " + server.getRequestCount());
+
+                        this.enterIdleStateSignal.countDown();
+
+
+                    }
+                }
+            }
+        }
+        CountDownLatch enterIdleStateSignal        = new CountDownLatch(1);
+        ReplicationTransitionToIdleObserver replicationTransitionToIdleObserver = new ReplicationTransitionToIdleObserver(enterIdleStateSignal);
+        replication.addChangeListener(replicationTransitionToIdleObserver);
+        replication.start();
+
+        // Wait until idle (make sure replicator becomes IDLE state from other state)
+        boolean  success = enterIdleStateSignal.await(20, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // Once the replicator is idle get a snapshot of all the requests its made to _bulk_docs endpoint
+        int numDocsPushed = 0;
+        BlockingQueue<RecordedRequest> requests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_DOCS);
+        for (RecordedRequest request : requests) {
+            Log.i(Log.TAG_SYNC, "request: %s", request);
+            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+            List docs = (List) bulkDocsJson.get("docs");
+            numDocsPushed += docs.size();
+        }
+
+        // Assert that all docs have already been pushed by the time it goes IDLE
+        assertEquals(numDocs, numDocsPushed);
+
+        // Stop replicator and MockWebServer
+        stopReplication(replication);
+
+        // wait until checkpoint is pushed, since it can happen _after_ replication is finished.
+        // if this isn't done, there can be IOExceptions when calling server.shutdown()
+        waitForPutCheckpointRequestWithSeq(dispatcher, (int) database.getLastSequenceNumber());
+
+        server.shutdown();
+    }
 }
