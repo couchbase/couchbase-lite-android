@@ -858,7 +858,7 @@ public class ReplicationTest extends LiteTestCase {
      *
      * @throws Exception
      */
-    public void failingTestPushRetry() throws Exception {
+    public void testFailingTestPushRetry() throws Exception {
 
         RemoteRequestRetry.RETRY_DELAY_MS = 5; // speed up test execution
 
@@ -875,7 +875,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // _revs_diff response -- everything missing
         MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        // mockRevsDiff.setSticky(true);
+         mockRevsDiff.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
         // _bulk_docs response -- 503 errors
@@ -903,6 +903,8 @@ public class ReplicationTest extends LiteTestCase {
         Document doc1 = createDocumentForPushReplication("doc1", null, null);
 
         // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
+        // 1st attempt
+        // numAttempts are number of times retry in 1 attempt.
         int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
         for (int i=0; i < numAttempts; i++) {
             RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
@@ -915,14 +917,24 @@ public class ReplicationTest extends LiteTestCase {
         // TODO: sending new requests
         // but it shouldn't give up there, it should keep retrying, so we should expect to
         // see at least one more request (probably lots more, but let's just wait for one)
-        RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
-        assertNotNull(request);
-        dispatcher.takeRecordedResponseBlocking(request);
+
+        // By 12/16/2014, CBL core java tries RemoteRequestRetry.MAX_RETRIES + 1 see above.
+        // following code should cause hang.
+
+        // CBL java core should retry till success if it is retry-able.
+        // As Unit Test, we only check if replicator try at least two more attempts.
+        int NUM_RETRY = 2;
+        for(int j = 0; j < NUM_RETRY; j++){
+            for (int i=0; i < numAttempts; i++) {
+                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+                assertNotNull(request);
+                dispatcher.takeRecordedResponseBlocking(request);
+            }
+        }
+        // gave up replication!!!
 
         stopReplication(replication);
         server.shutdown();
-
-
     }
 
 
