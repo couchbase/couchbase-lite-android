@@ -861,6 +861,7 @@ public class ReplicationTest extends LiteTestCase {
     public void testFailingTestPushRetry() throws Exception {
 
         RemoteRequestRetry.RETRY_DELAY_MS = 5; // speed up test execution
+        ReplicationInternal.RETRY_DELAY   = 1; // speed up test execution (sec)
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
