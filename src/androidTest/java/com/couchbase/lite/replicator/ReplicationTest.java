@@ -860,8 +860,10 @@ public class ReplicationTest extends LiteTestCase {
      */
     public void testContinuousPushRetryBehavior() throws Exception {
 
-        RemoteRequestRetry.RETRY_DELAY_MS = 5; // speed up test execution
-        ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (sec)
+        RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
+
+        ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
+        ReplicationInternal.MAX_RETRIES = 3;         // spped up test execution (outer loop retry count)
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
@@ -916,10 +918,9 @@ public class ReplicationTest extends LiteTestCase {
         // By 12/16/2014, CBL core java tries RemoteRequestRetry.MAX_RETRIES + 1 see above.
         // Without fixing #299, following code should cause hang.
 
-        // CBL java core should retry till success if it is retry-able.
-        // As Unit Test, we only check if replicator try at least two more attempts.
-        int NUM_RETRY = 2;
-        for(int j = 0; j < NUM_RETRY; j++){
+        // outer retry loop
+        for(int j = 0; j < RemoteRequestRetry.MAX_RETRIES; j++){
+            // inner retry loop
             for (int i=0; i < numAttempts; i++) {
                 RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
                 assertNotNull(request);
