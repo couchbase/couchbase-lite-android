@@ -1169,6 +1169,78 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(row3.get("value"), rows.get(2).getValue());
 
     }
+
+    public void testViewGroupedNoReduce() throws CouchbaseLiteException {
+        Map<String,Object> docProperties = new HashMap<String,Object>();
+        docProperties.put("_id", "1");
+        docProperties.put("type", "A");
+        putDoc(database, docProperties);
+
+        docProperties = new HashMap<String,Object>();
+        docProperties.put("_id", "2");
+        docProperties.put("type", "A");
+        putDoc(database, docProperties);
+
+        docProperties = new HashMap<String,Object>();
+        docProperties.put("_id", "3");
+        docProperties.put("type", "B");
+        putDoc(database, docProperties);
+
+        docProperties = new HashMap<String,Object>();
+        docProperties.put("_id", "4");
+        docProperties.put("type", "B");
+        putDoc(database, docProperties);
+
+        docProperties = new HashMap<String,Object>();
+        docProperties.put("_id", "5");
+        docProperties.put("type", "C");
+        putDoc(database, docProperties);
+
+        docProperties = new HashMap<String,Object>();
+        docProperties.put("_id", "6");
+        docProperties.put("type", "C");
+        putDoc(database, docProperties);
+
+        View view = database.getView("GroupByType");
+        view.setMap(new Mapper() {
+                              @Override
+                              public void map(Map<String, Object> document, Emitter emitter) {
+                                  String type = (String) document.get("type");
+                                  if (type != null) {
+                                      emitter.emit(type, null);
+                                  }
+                              }
+
+                          }, "1.0"
+        );
+
+        view.updateIndex();
+        QueryOptions options = new QueryOptions();
+        //setGroup without reduce function
+        options.setGroupLevel(1);
+        List<QueryRow> rows = view.queryWithOptions(options);
+
+        assertEquals(3, rows.size());
+
+        Map<String,Object> row1 = new HashMap<String,Object>();
+        row1.put("key", "A");
+        row1.put("error", "not_found");
+
+        Map<String,Object> row2 = new HashMap<String,Object>();
+        row2.put("key", "B");
+        row2.put("error", "not_found");
+
+        Map<String,Object> row3 = new HashMap<String,Object>();
+        row3.put("key", "C");
+        row3.put("error", "not_found");
+
+        Assert.assertEquals(row1.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(row1.get("error"), rows.get(0).asJSONDictionary().get("error"));
+        Assert.assertEquals(row2.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(row2.get("error"), rows.get(1).asJSONDictionary().get("error"));
+        Assert.assertEquals(row3.get("key"), rows.get(2).getKey());
+        Assert.assertEquals(row3.get("error"), rows.get(2).asJSONDictionary().get("error"));
+    }
     
     public void testViewGroupedVariableLengthKey() throws CouchbaseLiteException {
         Map<String,Object> docProperties1 = new HashMap<String,Object>();
@@ -1244,7 +1316,6 @@ public class ViewsTest extends LiteTestCase {
                           }, "1"
         );
                           
-        Status status = new Status();
         view.updateIndex();
 
         QueryOptions options = new QueryOptions();
