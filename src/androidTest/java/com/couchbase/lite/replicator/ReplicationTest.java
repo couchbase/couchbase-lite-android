@@ -3704,4 +3704,167 @@ public class ReplicationTest extends LiteTestCase {
 
         server.shutdown();
     }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/352
+     *
+     * When retrying a replication, make sure to get session & checkpoint.
+     *
+     */
+    public void testCheckSessionAndCheckpointWhenRetryingReplication() throws Exception{
+
+        RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
+
+        ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
+        ReplicationInternal.MAX_RETRIES = 3;         // spped up test execution (outer loop retry count)
+
+
+        String fakeEmail = "myfacebook@gmail.com";
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // set up request
+        {
+            // response for /db/_session
+            MockSessionGet mockSessionGet = new MockSessionGet();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
+
+            // response for /db/_facebook
+            MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponseForSuccess(fakeEmail));
+
+            // response for /db/_local/.*
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // response for /db/_revs_diff
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            mockRevsDiff.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+            // response for /db/_bulk_docs  -- 503 errors
+            MockResponse mockResponse = new MockResponse().setResponseCode(503);
+            WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
+            mockBulkDocs.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+        }
+        server.play();
+
+        // register bogus fb token
+        Authenticator facebookAuthenticator = AuthenticatorFactory.createFacebookAuthenticator("fake_access_token");
+
+        // create replication
+        Replication replication = database.createPushReplication(server.getUrl("/db"));
+        replication.setAuthenticator(facebookAuthenticator);
+        replication.setContinuous(true);
+        CountDownLatch replicationIdle = new CountDownLatch(1);
+        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
+        replication.addChangeListener(idleObserver);
+        replication.start();
+
+        // wait until idle
+        boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        replication.removeChangeListener(idleObserver);
+
+        // create a doc in local db
+        Document doc1 = createDocumentForPushReplication("doc1", null, null);
+
+        // initial request
+        {
+            // check /db/_session
+            RecordedRequest sessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
+            assertNotNull(sessionRequest);
+            dispatcher.takeRecordedResponseBlocking(sessionRequest);
+
+            // check /db/_facebook
+            RecordedRequest facebookSessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
+            assertNotNull(facebookSessionRequest);
+            dispatcher.takeRecordedResponseBlocking(facebookSessionRequest);
+
+            // check /db/_local/.*
+            RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            assertNotNull(checkPointRequest);
+            dispatcher.takeRecordedResponseBlocking(checkPointRequest);
+
+            // check /db/_revs_diff
+            RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
+            assertNotNull(revsDiffRequest);
+            dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
+
+            // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
+            // 1st attempt
+            // numAttempts are number of times retry in 1 attempt.
+            int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
+            for (int i = 0; i < numAttempts; i++) {
+                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+                assertNotNull(request);
+                dispatcher.takeRecordedResponseBlocking(request);
+            }
+        }
+
+        // To test following, requires to fix #299 (improve retry behavior)
+
+        // Retry requests
+        // outer retry loop
+        for(int j = 0; j < ReplicationInternal.MAX_RETRIES; j++){
+
+            // MockSessionGet does not support isSticky
+            MockSessionGet mockSessionGet = new MockSessionGet();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
+
+            // MockFacebookAuthPost does not support isSticky
+            MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponseForSuccess(fakeEmail));
+
+            // *** Retry must include session & check point ***
+
+            // check /db/_session
+            RecordedRequest sessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
+            assertNotNull(sessionRequest);
+            dispatcher.takeRecordedResponseBlocking(sessionRequest);
+
+            // check /db/_facebook
+            RecordedRequest facebookSessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
+            assertNotNull(facebookSessionRequest);
+            dispatcher.takeRecordedResponseBlocking(facebookSessionRequest);
+
+            // check /db/_local/.*
+            RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            assertNotNull(checkPointRequest);
+            dispatcher.takeRecordedResponseBlocking(checkPointRequest);
+
+            // check /db/_revs_diff
+            RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
+            assertNotNull(revsDiffRequest);
+            dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
+
+            // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
+            // 1st attempt
+            // numAttempts are number of times retry in 1 attempt.
+            int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
+            for (int i = 0; i < numAttempts; i++) {
+                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+                assertNotNull(request);
+                dispatcher.takeRecordedResponseBlocking(request);
+            }
+        }
+
+        stopReplication(replication);
+
+        //server.shutdown();
+    }
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/352
+     *
+     * Makes the replicator stop, even if it’s continuous, when it receives a permanent-type error
+     */
+    public void testStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception{
+
+    }
 }
