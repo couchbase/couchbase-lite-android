@@ -3708,7 +3708,7 @@ public class ReplicationTest extends LiteTestCase {
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
 
         ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
-        ReplicationInternal.MAX_RETRIES = 3;         // spped up test execution (outer loop retry count)
+        ReplicationInternal.MAX_RETRIES = 3;         // speed up test execution (outer loop retry count)
 
 
         String fakeEmail = "myfacebook@gmail.com";
@@ -3857,6 +3857,83 @@ public class ReplicationTest extends LiteTestCase {
      * Makes the replicator stop, even if it’s continuous, when it receives a permanent-type error
      */
     public void testStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception{
+        RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
 
+        ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
+        ReplicationInternal.MAX_RETRIES = 3;         // speed up test execution (outer loop retry count)
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        // set up request
+        {
+            // response for /db/_local/.*
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // response for /db/_revs_diff
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            mockRevsDiff.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+            // response for /db/_bulk_docs  -- 400 Bad Request (not transient error)
+            MockResponse mockResponse = new MockResponse().setResponseCode(400);
+            WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
+            mockBulkDocs.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+        }
+        server.play();
+
+        // create replication
+        Replication replication = database.createPushReplication(server.getUrl("/db"));
+        replication.setContinuous(true);
+        // add replication observer for IDLE state
+        CountDownLatch replicationIdle = new CountDownLatch(1);
+        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
+        replication.addChangeListener(idleObserver);
+        // add replication observer for finished
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+        replication.addChangeListener(replicationFinishedObserver);
+
+        replication.start();
+
+        // wait until idle
+        boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        replication.removeChangeListener(idleObserver);
+
+        // create a doc in local db
+        Document doc1 = createDocumentForPushReplication("doc1", null, null);
+
+        // initial request
+        {
+            // check /db/_local/.*
+            RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            assertNotNull(checkPointRequest);
+            dispatcher.takeRecordedResponseBlocking(checkPointRequest);
+
+            // check /db/_revs_diff
+            RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
+            assertNotNull(revsDiffRequest);
+            dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
+
+            // we should observe only one POST to _bulk_docs request because error is not transient error
+            RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+            assertNotNull(request);
+            dispatcher.takeRecordedResponseBlocking(request);
+        }
+
+        // Without fixing CBL Java Core #352, following code causes hang. 
+
+        // wait for replication to finish
+        boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
+        Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
+        assertFalse(replication.isRunning());
+
+        server.shutdown();
     }
 }
