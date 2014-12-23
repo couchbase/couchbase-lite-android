@@ -919,7 +919,7 @@ public class ReplicationTest extends LiteTestCase {
         // Without fixing #299, following code should cause hang.
 
         // outer retry loop
-        for(int j = 0; j < RemoteRequestRetry.MAX_RETRIES; j++){
+        for(int j = 0; j < ReplicationInternal.MAX_RETRIES; j++){
             // inner retry loop
             for (int i=0; i < numAttempts; i++) {
                 RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
