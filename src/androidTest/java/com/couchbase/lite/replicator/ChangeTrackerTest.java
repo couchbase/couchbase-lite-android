@@ -24,15 +24,25 @@ public class ChangeTrackerTest extends LiteTestCase {
 
     public static final String TAG = "ChangeTracker";
 
+    /**
+     * Test case for CBL Java Core #317 (CBL Java #39)
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/317
+     */
+    public void testChangeTrackerNullPointerException() throws Throwable {
+        // Null pointer issue is not 100% reproducible. so try 10 times...
+        for(int i = 0; i < 10; i++)
+            changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.OneShot, true, true);
+    }
+
     public void testChangeTrackerOneShot() throws Throwable {
-        changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.OneShot, true);
+        changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.OneShot, true, false);
     }
 
     public void testChangeTrackerLongPoll() throws Throwable {
-        changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.LongPoll, true);
+        changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode.LongPoll, true, false);
     }
 
-    public void changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode mode, final boolean useMockReplicator) throws Throwable {
+    public void changeTrackerTestWithMode(ChangeTracker.ChangeTrackerMode mode, final boolean useMockReplicator, final boolean checkLastException) throws Throwable {
 
         final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
         final CountDownLatch changeReceivedSignal = new CountDownLatch(1);
@@ -104,6 +114,16 @@ public class ChangeTrackerTest extends LiteTestCase {
             e.printStackTrace();
         }
 
+        // check for NullPointer Exception or any Exception
+        if(checkLastException){
+            // CBL Java Core #317
+            // This check does not work without fixing Java Core #317 because ChangeTracker status
+            // becomes stopped before NullPointer Exception is thrown.
+            if(changeTracker.getLastError() != null){
+                Log.e(TAG, changeTracker.getLastError().toString());
+                assertFalse(changeTracker.getLastError() instanceof NullPointerException);
+            }
+        }
     }
 
     public void testChangeTrackerWithConflictsIncluded() {
