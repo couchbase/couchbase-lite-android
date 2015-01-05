@@ -382,9 +382,14 @@ public class RouterTest extends LiteTestCase {
         assertEquals(expectedRowsWithDocs, rows);
     }
 
+    /**
+     * in Router_Tests.m
+     * - (void) test_Views
+     */
     public void testViews() throws CouchbaseLiteException {
         send("PUT", "/db", Status.CREATED, null);
 
+        // PUT:
         Map<String,Object> result;
         Map<String,Object> doc1 = new HashMap<String,Object>();
         doc1.put("message", "hello");
@@ -402,7 +407,6 @@ public class RouterTest extends LiteTestCase {
         Database db = manager.getDatabase("db");
         View view = db.getView("design/view");
         view.setMapReduce(new Mapper() {
-
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 emitter.emit(document.get("message"), null);
@@ -410,7 +414,6 @@ public class RouterTest extends LiteTestCase {
         }, null, "1");
 
         // Build up our expected result
-
         Map<String,Object> row1 = new HashMap<String,Object>();
         row1.put("id", "doc1");
         row1.put("key", "hello");
@@ -456,6 +459,8 @@ public class RouterTest extends LiteTestCase {
         result = (Map<String,Object>)parseJSONResponse(conn);
         assertEquals(4, result.get("total_rows"));
     }
+
+
 
     public void testPostBulkDocs() {
         send("PUT", "/db", Status.CREATED, null);
@@ -801,5 +806,82 @@ public class RouterTest extends LiteTestCase {
     }
 
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/293
+     */
+    public void testTotalRowsAttributeOnViewQuery() throws CouchbaseLiteException {
+        send("PUT", "/db", Status.CREATED, null);
 
+        // PUT:
+        Map<String,Object> result;
+        Map<String,Object> doc1 = new HashMap<String,Object>();
+        doc1.put("message", "hello");
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
+        String revID = (String)result.get("rev");
+        Map<String,Object> doc3 = new HashMap<String,Object>();
+        doc3.put("message", "bonjour");
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc3", doc3, Status.CREATED, null);
+        String revID3 = (String)result.get("rev");
+        Map<String,Object> doc2 = new HashMap<String,Object>();
+        doc2.put("message", "guten tag");
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc2", doc2, Status.CREATED, null);
+        String revID2 = (String)result.get("rev");
+
+        Database db = manager.getDatabase("db");
+        View view = db.getView("design/view");
+        view.setMapReduce(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("message"), null);
+            }
+        }, null, "1");
+
+
+        // Build up our expected result
+        Map<String,Object> row1 = new HashMap<String,Object>();
+        row1.put("id", "doc1");
+        row1.put("key", "hello");
+        Map<String,Object> row2 = new HashMap<String,Object>();
+        row2.put("id", "doc2");
+        row2.put("key", "guten tag");
+        Map<String,Object> row3 = new HashMap<String,Object>();
+        row3.put("id", "doc3");
+        row3.put("key", "bonjour");
+
+        List<Map<String,Object>> expectedRows = new ArrayList<Map<String,Object>>();
+        expectedRows.add(row3);
+        expectedRows.add(row2);
+        //expectedRows.add(row1);
+
+        Map<String,Object> expectedResult = new HashMap<String,Object>();
+        expectedResult.put("offset", 0);
+        expectedResult.put("total_rows", 3);
+        expectedResult.put("rows", expectedRows);
+
+        // Query the view and check the result:
+        send("GET", "/db/_design/design/_view/view?limit=2", Status.OK, expectedResult);
+
+        // Check the ETag:
+        URLConnection conn = sendRequest("GET", "/db/_design/design/_view/view", null, null);
+        String etag = conn.getHeaderField("Etag");
+        assertEquals(String.format("\"%d\"", view.getLastSequenceIndexed()), etag);
+
+        // Try a conditional GET:
+        Map<String,String> headers = new HashMap<String,String>();
+        headers.put("If-None-Match", etag);
+        conn = sendRequest("GET", "/db/_design/design/_view/view", headers, null);
+        assertEquals(Status.NOT_MODIFIED, conn.getResponseCode());
+
+        // Update the database:
+        Map<String,Object> doc4 = new HashMap<String,Object>();
+        doc4.put("message", "aloha");
+        result = (Map<String,Object>)sendBody("PUT", "/db/doc4", doc4, Status.CREATED, null);
+
+        // Try a conditional GET:
+        conn = sendRequest("GET", "/db/_design/design/_view/view?limit=2", headers, null);
+        assertEquals(Status.OK, conn.getResponseCode());
+        result = (Map<String,Object>)parseJSONResponse(conn);
+        assertEquals(2, ((List)result.get("rows")).size());
+        assertEquals(4, result.get("total_rows"));
+    }
 }
