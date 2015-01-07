@@ -20,7 +20,6 @@ package com.couchbase.lite;
 import com.couchbase.lite.View.TDViewCollation;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.support.LazyJsonArray;
-import com.couchbase.lite.util.CollectionUtils;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -1856,7 +1855,7 @@ public class ViewsTest extends LiteTestCase {
 
         // match all
         Query query = view.createQuery();
-        CollectionUtils.Predicate<QueryRow> postFilterAll = new CollectionUtils.Predicate<QueryRow>(){
+        Predicate<QueryRow> postFilterAll = new Predicate<QueryRow>(){
             public boolean apply(QueryRow type){
                 return true;
             }
@@ -1876,7 +1875,7 @@ public class ViewsTest extends LiteTestCase {
 
 
         // match  zero
-        CollectionUtils.Predicate<QueryRow> postFilterNone = new CollectionUtils.Predicate<QueryRow>(){
+        Predicate<QueryRow> postFilterNone = new Predicate<QueryRow>(){
             public boolean apply(QueryRow type){
                 return false;
             }
@@ -1887,7 +1886,7 @@ public class ViewsTest extends LiteTestCase {
 
 
         // match two
-        CollectionUtils.Predicate<QueryRow> postFilter = new CollectionUtils.Predicate<QueryRow>(){
+        Predicate<QueryRow> postFilter = new Predicate<QueryRow>(){
             public boolean apply(QueryRow type){
                 if(type.getValue() instanceof String){
                     String val = (String)type.getValue();
@@ -1932,7 +1931,7 @@ public class ViewsTest extends LiteTestCase {
 
         Log.d(TAG, "---- QUERYIN' ----");
         Query query = database.createAllDocumentsQuery();
-        query.setPostFilter(new CollectionUtils.Predicate<QueryRow>(){
+        query.setPostFilter(new Predicate<QueryRow>(){
             public boolean apply(QueryRow type){
                 Log.e(TAG, "apply()");
                 if(type.getDocument().getProperty("skin") != null && type.getDocument().getProperty("skin") instanceof String) {
