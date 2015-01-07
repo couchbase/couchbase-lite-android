@@ -1825,4 +1825,127 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(Arrays.asList("f", "four"), rows.get(1).getKey());
     }
 
+    /**
+     * in View_Tests.m
+     * - (void) test06_ViewCustomFilter
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/303
+     */
+    public void testViewCustomFilter() throws Exception {
+        View view = database.getView("vu");
+        view.setMapReduce(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("name"), document.get("skin"));
+            }
+        }, null, "1");
+
+        Map<String,Object> docProperties1 = new HashMap<String,Object>();
+        docProperties1.put("name", "Barry");
+        docProperties1.put("skin", "none");
+        putDoc(database, docProperties1);
+        Map<String,Object> docProperties2 = new HashMap<String,Object>();
+        docProperties2.put("name", "Terry");
+        docProperties2.put("skin", "furry");
+        putDoc(database, docProperties2);
+        Map<String,Object> docProperties3 = new HashMap<String,Object>();
+        docProperties3.put("name", "Wanda");
+        docProperties3.put("skin", "scaly");
+        putDoc(database, docProperties3);
+
+        // match all
+        Query query = view.createQuery();
+        Predicate<QueryRow> postFilterAll = new Predicate<QueryRow>(){
+            public boolean apply(QueryRow type){
+                return true;
+            }
+        };
+        query.setPostFilter(postFilterAll);
+        QueryEnumerator rows = query.run();
+        assertEquals(3, rows.getCount());
+        for(int i = 0; i < rows.getCount(); i++){
+            Log.e(Log.TAG_QUERY, ""+ rows.getRow(i).getKey() + " => " + rows.getRow(i).getValue());
+        }
+        assertEquals(docProperties1.get("name"), rows.getRow(0).getKey());
+        assertEquals(docProperties1.get("skin"), rows.getRow(0).getValue());
+        assertEquals(docProperties2.get("name"), rows.getRow(1).getKey());
+        assertEquals(docProperties2.get("skin"), rows.getRow(1).getValue());
+        assertEquals(docProperties3.get("name"), rows.getRow(2).getKey());
+        assertEquals(docProperties3.get("skin"), rows.getRow(2).getValue());
+
+
+        // match  zero
+        Predicate<QueryRow> postFilterNone = new Predicate<QueryRow>(){
+            public boolean apply(QueryRow type){
+                return false;
+            }
+        };
+        query.setPostFilter(postFilterNone);
+        rows = query.run();
+        assertEquals(0, rows.getCount());
+
+
+        // match two
+        Predicate<QueryRow> postFilter = new Predicate<QueryRow>(){
+            public boolean apply(QueryRow type){
+                if(type.getValue() instanceof String){
+                    String val = (String)type.getValue();
+                    if(val != null && val.endsWith("y")){
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+        query.setPostFilter(postFilter);
+        rows = query.run();
+        assertEquals(2, rows.getCount());
+        assertEquals(docProperties2.get("name"), rows.getRow(0).getKey());
+        assertEquals(docProperties2.get("skin"), rows.getRow(0).getValue());
+        assertEquals(docProperties3.get("name"), rows.getRow(1).getKey());
+        assertEquals(docProperties3.get("skin"), rows.getRow(1).getValue());
     }
+    /**
+     * in View_Tests.m
+     * - (void) test06_AllDocsCustomFilter
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/303
+     */
+    public void testAllDocsCustomFilter() throws Exception{
+        Map<String,Object> docProperties1 = new HashMap<String,Object>();
+        docProperties1.put("_id", "1");
+        docProperties1.put("name", "Barry");
+        docProperties1.put("skin", "none");
+        putDoc(database, docProperties1);
+        Map<String,Object> docProperties2 = new HashMap<String,Object>();
+        docProperties2.put("_id", "2");
+        docProperties2.put("name", "Terry");
+        docProperties2.put("skin", "furry");
+        putDoc(database, docProperties2);
+        Map<String,Object> docProperties3 = new HashMap<String,Object>();
+        docProperties3.put("_id", "3");
+        docProperties3.put("name", "Wanda");
+        docProperties3.put("skin", "scaly");
+        putDoc(database, docProperties3);
+        database.clearDocumentCache();
+
+        Log.d(TAG, "---- QUERYIN' ----");
+        Query query = database.createAllDocumentsQuery();
+        query.setPostFilter(new Predicate<QueryRow>(){
+            public boolean apply(QueryRow type){
+                Log.e(TAG, "apply()");
+                if(type.getDocument().getProperty("skin") != null && type.getDocument().getProperty("skin") instanceof String) {
+                    String skin = (String) type.getDocument().getProperty("skin");
+                    if(skin.endsWith("y")){
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+        QueryEnumerator rows = query.run();
+        assertEquals(2, rows.getCount());
+        assertEquals(docProperties2.get("_id"), rows.getRow(0).getKey());
+        assertEquals(docProperties3.get("_id"), rows.getRow(1).getKey());
+    }
+}
