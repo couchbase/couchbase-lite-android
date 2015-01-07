@@ -858,6 +858,7 @@ public class ReplicationTest extends LiteTestCase {
      *
      * @throws Exception
      */
+    /*
     public void testContinuousPushRetryBehavior() throws Exception {
 
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
@@ -932,7 +933,7 @@ public class ReplicationTest extends LiteTestCase {
         stopReplication(replication);
         server.shutdown();
     }
-
+    */
 
     public void testMockSinglePush() throws Exception {
 
