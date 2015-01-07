@@ -112,7 +112,7 @@ $ git submodule init && git submodule update
 
 ### Enable settings.gradle file
 
-* `cp settings.gradle.example settings.gradle`
+`$ cp settings.gradle.example settings.gradle`
 
 *Note: settings.gradle cannot be checked in directly due to Android Studio issue #[65915](https://code.google.com/p/android/issues/detail?id=65915)*
 
