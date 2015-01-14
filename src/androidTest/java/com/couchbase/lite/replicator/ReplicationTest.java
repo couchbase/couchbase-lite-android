@@ -4039,4 +4039,136 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     *
+     * The observed problem:
+     *
+     * - Start continuous pull
+     * - Wait until it goes IDLE (this works fine)
+     * - Add a new document directly to the Sync Gateway
+     * - The continuous pull goes from IDLE -> RUNNING
+     * - Wait until it goes IDLE again (this doesn't work, it never goes back to IDLE)
+     *
+     * The test case below simulates the above scenario using a mock sync gateway.
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/383
+     */
+    public void testContinuousPullReplicationGoesIdleTwice() throws Exception {
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint PUT or GET response (sticky)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // add non-sticky changes response that returns no changes
+        // this will cause the pull replicator to go into the IDLE state
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // add _changes response that just blocks for a few seconds to emulate
+        // server that doesn't have any new changes.  while the puller is blocked on this request
+        // to the _changes feed, the test will add a new changes listener that waits until it goes
+        // into the RUNNING state
+        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+        mockChangesFeedNoResponse.setDelayMs(5 * 1000);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+
+        // after the above changes feed response returns after 5 seconds, the next time
+        // the puller gets the _changes feed, return a response that there is 1 new doc.
+        // this will cause the puller to go from IDLE -> RUNNING
+        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+        mockChangesFeed = new MockChangesFeed();
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // at this point, the mock _changes feed is done simulating new docs on the sync gateway
+        // since we've done enough to reproduce the problem.  so at this point, just make the changes
+        // feed block for a long time.
+        MockChangesFeedNoResponse mockChangesFeedNoResponse2 = new MockChangesFeedNoResponse();
+        mockChangesFeedNoResponse2.setDelayMs(6000 * 1000);  // block for > 1hr
+        mockChangesFeedNoResponse2.setSticky(true);  // continue this behavior indefinitely
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse2);
+
+        // doc1 response
+        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+        // _revs_diff response -- everything missing
+        MockRevsDiff mockRevsDiff = new MockRevsDiff();
+        mockRevsDiff.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+        server.play();
+
+        // create pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(true);
+
+        final CountDownLatch enteredIdleState1 = new CountDownLatch(1);
+        final CountDownLatch enteredIdleState2 = new CountDownLatch(1);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    enteredIdleState1.countDown();
+                }
+            }
+        });
+
+        // start pull replication
+        pullReplication.start();
+
+        // wait until its IDLE
+        boolean success = enteredIdleState1.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // change listener to see if its RUNNING
+        // we can't add this earlier, because the countdown latch would get
+        // triggered too early (the other approach would be to set the countdown
+        // latch to a higher number)
+        final CountDownLatch enteredRunningState = new CountDownLatch(1);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
+                    Log.d(TAG, "Replication is running");
+                    enteredRunningState.countDown();
+                }
+            }
+        });
+
+        // wait until its RUNNING
+        success = enteredRunningState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // second IDLE change listener
+        // we can't add this earlier, because the countdown latch would get
+        // triggered too early (the other approach would be to set the countdown
+        // latch to a higher number)
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    enteredIdleState2.countDown();
+                }
+            }
+        });
+
+        // wait until its IDLE again.  before the fix, it would never go IDLE again, and so
+        // this would timeout and the test would fail.
+        success = enteredIdleState2.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // clean up
+        stopReplication(pullReplication);
+        server.shutdown();
+
+    }
+
 }
