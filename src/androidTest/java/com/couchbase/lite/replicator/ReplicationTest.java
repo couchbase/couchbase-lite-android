@@ -4040,6 +4040,17 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
+     *
+     * The observed problem:
+     *
+     * - Start continuous pull
+     * - Wait until it goes IDLE (this works fine)
+     * - Add a new document directly to the Sync Gateway
+     * - The continuous pull goes from IDLE -> RUNNING
+     * - Wait until it goes IDLE again (this doesn't work, it never goes back to IDLE)
+     *
+     * The test case below simulates the above scenario using a mock sync gateway.
+     *
      * https://github.com/couchbase/couchbase-lite-java-core/issues/383
      */
     public void testContinuousPullReplicationGoesIdleTwice() throws Exception {
@@ -4055,26 +4066,33 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
         // add non-sticky changes response that returns no changes
+        // this will cause the pull replicator to go into the IDLE state
         MockChangesFeed mockChangesFeed = new MockChangesFeed();
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // add  _changes response that just blocks for a few seconds to emulate
-        // server that doesn't have any new changes
+        // add _changes response that just blocks for a few seconds to emulate
+        // server that doesn't have any new changes.  while the puller is blocked on this request
+        // to the _changes feed, the test will add a new changes listener that waits until it goes
+        // into the RUNNING state
         MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
         mockChangesFeedNoResponse.setDelayMs(5 * 1000);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
-        // real _changes response with doc1
+        // after the above changes feed response returns after 5 seconds, the next time
+        // the puller gets the _changes feed, return a response that there is 1 new doc.
+        // this will cause the puller to go from IDLE -> RUNNING
         MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
         mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
         mockChangesFeed = new MockChangesFeed();
         mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // the rest of the _changes responses should just block for 5 seconds and return nothing
+        // at this point, the mock _changes feed is done simulating new docs on the sync gateway
+        // since we've done enough to reproduce the problem.  so at this point, just make the changes
+        // feed block for a long time.
         MockChangesFeedNoResponse mockChangesFeedNoResponse2 = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse2.setDelayMs(60 * 1000);
-        mockChangesFeedNoResponse2.setSticky(true);
+        mockChangesFeedNoResponse2.setDelayMs(6000 * 1000);  // block for > 1hr
+        mockChangesFeedNoResponse2.setSticky(true);  // continue this behavior indefinitely
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse2);
 
         // doc1 response
@@ -4107,12 +4125,13 @@ public class ReplicationTest extends LiteTestCase {
         pullReplication.start();
 
         // wait until its IDLE
-        Log.d(TAG, "wait until its IDLE #1");
         boolean success = enteredIdleState1.await(30, TimeUnit.SECONDS);
         assertTrue(success);
-        Log.d(TAG, "/wait until its IDLE #1");
 
         // change listener to see if its RUNNING
+        // we can't add this earlier, because the countdown latch would get
+        // triggered too early (the other approach would be to set the countdown
+        // latch to a higher number)
         final CountDownLatch enteredRunningState = new CountDownLatch(1);
         pullReplication.addChangeListener(new Replication.ChangeListener() {
             @Override
@@ -4125,29 +4144,28 @@ public class ReplicationTest extends LiteTestCase {
         });
 
         // wait until its RUNNING
-        Log.d(TAG, "wait until its RUNNING");
         success = enteredRunningState.await(30, TimeUnit.SECONDS);
         assertTrue(success);
-        Log.d(TAG, "/wait until its RUNNING");
 
         // second IDLE change listener
+        // we can't add this earlier, because the countdown latch would get
+        // triggered too early (the other approach would be to set the countdown
+        // latch to a higher number)
         pullReplication.addChangeListener(new Replication.ChangeListener() {
             @Override
             public void changed(Replication.ChangeEvent event) {
                 if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    Log.d(TAG, "Replication is IDLE");
                     enteredIdleState2.countDown();
                 }
             }
         });
 
-        // wait until its IDLE again
-        Log.d(TAG, "wait until its IDLE #2");
+        // wait until its IDLE again.  before the fix, it would never go IDLE again, and so
+        // this would timeout and the test would fail.
         success = enteredIdleState2.await(30, TimeUnit.SECONDS);
         assertTrue(success);
-        Log.d(TAG, "/wait until its IDLE #2");
 
-
+        // clean up
         stopReplication(pullReplication);
         server.shutdown();
 
