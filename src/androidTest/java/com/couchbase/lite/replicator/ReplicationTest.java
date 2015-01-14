@@ -4039,4 +4039,118 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/383
+     */
+    public void testContinuousPullReplicationGoesIdleTwice() throws Exception {
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint PUT or GET response (sticky)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // add non-sticky changes response that returns no changes
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // add  _changes response that just blocks for a few seconds to emulate
+        // server that doesn't have any new changes
+        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+        mockChangesFeedNoResponse.setDelayMs(5 * 1000);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+
+        // real _changes response with doc1
+        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+        mockChangesFeed = new MockChangesFeed();
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // the rest of the _changes responses should just block for 5 seconds and return nothing
+        MockChangesFeedNoResponse mockChangesFeedNoResponse2 = new MockChangesFeedNoResponse();
+        mockChangesFeedNoResponse2.setDelayMs(60 * 1000);
+        mockChangesFeedNoResponse2.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse2);
+
+        // doc1 response
+        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+        // _revs_diff response -- everything missing
+        MockRevsDiff mockRevsDiff = new MockRevsDiff();
+        mockRevsDiff.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+        server.play();
+
+        // create pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(true);
+
+        final CountDownLatch enteredIdleState1 = new CountDownLatch(1);
+        final CountDownLatch enteredIdleState2 = new CountDownLatch(1);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    enteredIdleState1.countDown();
+                }
+            }
+        });
+
+        // start pull replication
+        pullReplication.start();
+
+        // wait until its IDLE
+        Log.d(TAG, "wait until its IDLE #1");
+        boolean success = enteredIdleState1.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        Log.d(TAG, "/wait until its IDLE #1");
+
+        // change listener to see if its RUNNING
+        final CountDownLatch enteredRunningState = new CountDownLatch(1);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
+                    Log.d(TAG, "Replication is running");
+                    enteredRunningState.countDown();
+                }
+            }
+        });
+
+        // wait until its RUNNING
+        Log.d(TAG, "wait until its RUNNING");
+        success = enteredRunningState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        Log.d(TAG, "/wait until its RUNNING");
+
+        // second IDLE change listener
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    Log.d(TAG, "Replication is IDLE");
+                    enteredIdleState2.countDown();
+                }
+            }
+        });
+
+        // wait until its IDLE again
+        Log.d(TAG, "wait until its IDLE #2");
+        success = enteredIdleState2.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        Log.d(TAG, "/wait until its IDLE #2");
+
+
+        stopReplication(pullReplication);
+        server.shutdown();
+
+    }
+
 }
