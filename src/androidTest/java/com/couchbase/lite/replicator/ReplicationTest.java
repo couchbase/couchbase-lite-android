@@ -21,6 +21,7 @@ import com.couchbase.lite.Validator;
 import com.couchbase.lite.View;
 import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
+import com.couchbase.lite.auth.BasicAuthenticator;
 import com.couchbase.lite.auth.FacebookAuthorizer;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockBulkDocs;
@@ -3944,4 +3945,98 @@ public class ReplicationTest extends LiteTestCase {
 
         server.shutdown();
     }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/356
+     */
+    public void testReplicationRestartPreservesValues() throws Exception {
+
+        // make sure we are starting empty
+        assertEquals(0, database.getLastSequenceNumber());
+
+        // add docs
+        Map<String, Object> properties1 = new HashMap<String, Object>();
+        properties1.put("doc1", "testContinuousPushReplicationGoesIdle");
+        final Document doc1 = createDocWithProperties(properties1);
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        server.play();
+
+        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // _revs_diff response -- everything missing
+        MockRevsDiff mockRevsDiff = new MockRevsDiff();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+        // _bulk_docs response -- everything stored
+        MockBulkDocs mockBulkDocs = new MockBulkDocs();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+
+        // create continuos replication
+        Replication pusher = database.createPushReplication(server.getUrl("/db"));
+        pusher.setContinuous(true);
+
+        // add filter properties to the replicator
+        String filterName = "app/clientIdAndTablesSchemeDocIdFilter";
+        pusher.setFilter(filterName);
+        Map<String, Object> filterParams = new HashMap<String, Object>();
+        String filterParam = "tablesSchemeDocId";
+        String filterVal = "foo";
+        filterParams.put(filterParam, filterVal);
+        pusher.setFilterParams(filterParams);
+
+        // doc ids
+        pusher.setDocIds(Arrays.asList(doc1.getId()));
+
+        // custom authenticator
+        BasicAuthenticator authenticator = new BasicAuthenticator("foo", "bar");
+        pusher.setAuthenticator(authenticator);
+
+        // custom request headers
+        Map<String, Object> requestHeaders = new HashMap<String, Object>();
+        requestHeaders.put("foo", "bar");
+        pusher.setHeaders(requestHeaders);
+
+        // create target
+        pusher.setCreateTarget(true);
+
+        // start the continuous replication
+        CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+        ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+        pusher.addChangeListener(replicationIdleObserver);
+        pusher.start();
+
+        // wait until we get an IDLE event
+        boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(successful);
+
+        // restart the replication
+        CountDownLatch replicationIdleSignal2 = new CountDownLatch(1);
+        ReplicationIdleObserver replicationIdleObserver2 = new ReplicationIdleObserver(replicationIdleSignal2);
+        pusher.addChangeListener(replicationIdleObserver2);
+        pusher.restart();
+
+        // wait until we get another IDLE event
+        successful = replicationIdleSignal2.await(30, TimeUnit.SECONDS);
+        assertTrue(successful);
+
+        // verify the restarted replication still has the values we set up earlier
+        assertEquals(filterName, pusher.getFilter());
+        assertTrue(pusher.getFilterParams().size() == 1);
+        assertEquals(filterVal, pusher.getFilterParams().get(filterParam));
+        assertTrue(pusher.isContinuous());
+        assertEquals(Arrays.asList(doc1.getId()), pusher.getDocIds());
+        assertEquals(authenticator, pusher.getAuthenticator());
+        assertEquals(requestHeaders, pusher.getHeaders());
+        assertTrue(pusher.shouldCreateTarget());
+
+
+    }
+
 }
