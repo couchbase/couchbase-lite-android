@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockDocumentGet;
@@ -7,15 +8,13 @@ import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.mockserver.MockPreloadedPullTarget;
 import com.couchbase.lite.replicator.CustomizableMockHttpClient;
 import com.couchbase.lite.replicator.Replication;
-import com.couchbase.lite.replicator.ReplicationState;
-import com.couchbase.lite.support.HttpClientFactory;
-import com.couchbase.test.lite.*;
-
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.router.*;
 import com.couchbase.lite.router.Router;
+import com.couchbase.lite.router.URLConnection;
+import com.couchbase.lite.router.URLStreamHandlerFactory;
 import com.couchbase.lite.storage.Cursor;
+import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.util.Log;
+import com.couchbase.test.lite.LiteTestCaseBase;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 

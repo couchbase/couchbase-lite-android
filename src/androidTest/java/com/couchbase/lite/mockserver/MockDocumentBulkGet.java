@@ -2,12 +2,11 @@ package com.couchbase.lite.mockserver;
 
 
 import com.couchbase.lite.Manager;
-import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.Utils;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +71,15 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
         try {
 
-            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+            byte[] body = request.getBody();
+
+            // for gzip support core java #172
+            // https://github.com/couchbase/couchbase-lite-java-core/issues/172
+            if(request.getHeader("Content-Encoding")!=null&&request.getHeader("Content-Encoding").contains("gzip")){
+                body = Utils.decompressByGzip(body);
+            }
+
+            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(body, Map.class);
             List docs = (List) bulkDocsJson.get("docs");
 
             MockResponse mockResponse = new MockResponse();
