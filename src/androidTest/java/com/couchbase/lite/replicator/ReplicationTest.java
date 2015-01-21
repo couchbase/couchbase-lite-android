@@ -37,7 +37,6 @@ import com.couchbase.lite.mockserver.MockFacebookAuthPost;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.mockserver.MockRevsDiff;
 import com.couchbase.lite.mockserver.MockSessionGet;
-import com.couchbase.lite.mockserver.MockUtils;
 import com.couchbase.lite.mockserver.SmartMockResponse;
 import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
 import com.couchbase.lite.support.HttpClientFactory;
@@ -473,19 +472,11 @@ public class ReplicationTest extends LiteTestCase {
 
         // allow for either a single _bulk_get request or individual doc requests.
         // if the server is sync gateway, it is allowable for replicator to use _bulk_get
-        RecordedRequest bulkGetRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_GET);
-        if (bulkGetRequest != null) {
-            byte[] body = bulkGetRequest.getBody();
-
-            // for gzip support core java #172
-            // https://github.com/couchbase/couchbase-lite-java-core/issues/172
-            if(bulkGetRequest.getHeader("Content-Encoding")!=null&&bulkGetRequest.getHeader("Content-Encoding").contains("gzip")){
-                body = Utils.decompressByGzip(body);
-            }
-
-            String bulkGetBody = new String(body, "UTF-8");
-            assertTrue(bulkGetBody.contains(mockDoc1.getDocId()));
-            assertTrue(bulkGetBody.contains(mockDoc2.getDocId()));
+        RecordedRequest request = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_GET);
+        if (request != null) {
+            String body = MockHelper.getUtf8Body(request);
+            assertTrue(body.contains(mockDoc1.getDocId()));
+            assertTrue(body.contains(mockDoc2.getDocId()));
         } else {
             RecordedRequest doc1Request = dispatcher.takeRequest(mockDoc1.getDocPathRegex());
             assertTrue(doc1Request.getMethod().equals("GET"));
@@ -1030,14 +1021,14 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
 
         RecordedRequest revsDiffRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_REVS_DIFF);
-        assertTrue(MockUtils.getUtf8Body(revsDiffRequest).contains(doc1Id));
+        assertTrue(MockHelper.getUtf8Body(revsDiffRequest).contains(doc1Id));
 
         RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
-        assertTrue(MockUtils.getUtf8Body(bulkDocsRequest).contains(doc1Id));
-        Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(MockUtils.getUtf8Body(bulkDocsRequest), Map.class);
+        assertTrue(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc1Id));
+        Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(MockHelper.getUtf8Body(bulkDocsRequest), Map.class);
         Map <String, Object> doc4Map = MockBulkDocs.findDocById(bulkDocsJson, doc4Id);
         assertTrue(((Boolean)doc4Map.get("_deleted")).booleanValue() == true);
-        assertFalse(MockUtils.getUtf8Body(bulkDocsRequest).contains(doc2Id));
+        assertFalse(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc2Id));
 
         RecordedRequest doc2putRequest = dispatcher.takeRequest(doc2PathRegex);
         CustomMultipartReaderDelegate delegate2 = new CustomMultipartReaderDelegate();
@@ -3336,21 +3327,11 @@ public class ReplicationTest extends LiteTestCase {
         BlockingQueue<RecordedRequest> bulkGetRequests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_GET);
         Iterator<RecordedRequest> iterator = bulkGetRequests.iterator();
         while (iterator.hasNext()) {
-            RecordedRequest bulkGetRequest = iterator.next();
-
-            byte[] body = bulkGetRequest.getBody();
-
-            // for gzip support core java #172
-            // https://github.com/couchbase/couchbase-lite-java-core/issues/172
-            if(bulkGetRequest.getHeader("Content-Encoding")!=null&&bulkGetRequest.getHeader("Content-Encoding").contains("gzip")){
-                body = Utils.decompressByGzip(body);
-            }
-
-            String json = new String(body, "UTF-8");
-
-            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(json, Map.class);
-            List docs = (List) bulkDocsJson.get("docs");
-            Log.d(TAG, "bulk get request: %s had %d docs", bulkGetRequest, docs.size());
+            RecordedRequest request = iterator.next();
+            byte[] body = MockHelper.getUncompressedBody(request);
+            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
+            List docs = (List) jsonMap.get("docs");
+            Log.d(TAG, "bulk get request: %s had %d docs", request, docs.size());
 
             if (iterator.hasNext()) {
                 // the bulk docs requests except for the last one should have max number of docs
@@ -3721,17 +3702,9 @@ public class ReplicationTest extends LiteTestCase {
         BlockingQueue<RecordedRequest> requests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_DOCS);
         for (RecordedRequest request : requests) {
             Log.i(Log.TAG_SYNC, "request: %s", request);
-
-            byte[] body = request.getBody();
-
-            // for gzip support core java #172
-            // https://github.com/couchbase/couchbase-lite-java-core/issues/172
-            if(request.getHeader("Content-Encoding")!=null&&request.getHeader("Content-Encoding").contains("gzip")){
-                body = Utils.decompressByGzip(body);
-            }
-
-            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(body, Map.class);
-            List docs = (List) bulkDocsJson.get("docs");
+            byte[] body = MockHelper.getUncompressedBody(request);
+            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
+            List docs = (List) jsonMap.get("docs");
             numDocsPushed += docs.size();
         }
 
