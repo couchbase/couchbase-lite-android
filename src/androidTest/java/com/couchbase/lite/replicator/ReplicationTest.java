@@ -2929,7 +2929,7 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-    public void testGetReplicator() throws Throwable {
+    public void testGetReplicatorWithCustomHeader() throws Throwable {
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
@@ -2946,12 +2946,18 @@ public class ReplicationTest extends LiteTestCase {
 
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", DEFAULT_TEST_DB);
-        properties.put("target", server.getUrl("/db").toExternalForm());
+        //properties.put("target", server.getUrl("/db").toExternalForm());
 
         Map<String,Object> headers = new HashMap<String,Object>();
         String coolieVal = "SyncGatewaySession=c38687c2696688a";
         headers.put("Cookie", coolieVal);
-        properties.put("headers", headers);
+        //properties.put("headers", headers);
+
+        Map<String,Object> targetProperties = new HashMap<String,Object>();
+        targetProperties.put("url", server.getUrl("/db").toExternalForm());
+        targetProperties.put("headers", headers);
+
+        properties.put("target", targetProperties);
 
         Replication replicator = manager.getReplicator(properties);
         assertNotNull(replicator);
@@ -2996,6 +3002,65 @@ public class ReplicationTest extends LiteTestCase {
         server.shutdown();
 
 
+    }
+
+    public void testGetReplicator() throws Throwable {
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint PUT or GET response (sticky)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        mockCheckpointPut.setDelayMs(500);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        server.play();
+
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put("source", DEFAULT_TEST_DB);
+        properties.put("target", server.getUrl("/db").toExternalForm());
+
+        Replication replicator = manager.getReplicator(properties);
+        assertNotNull(replicator);
+        assertEquals(server.getUrl("/db").toExternalForm(), replicator.getRemoteUrl().toExternalForm());
+        assertTrue(!replicator.isPull());
+        assertFalse(replicator.isContinuous());
+        assertFalse(replicator.isRunning());
+
+        // add replication observer
+        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+        replicator.addChangeListener(replicationFinishedObserver);
+
+        // start the replicator
+        Log.d(TAG, "Starting replicator " + replicator);
+        replicator.start();
+
+        final CountDownLatch replicationStarted = new CountDownLatch(1);
+        replicator.addChangeListener(new ReplicationActiveObserver(replicationStarted));
+
+        boolean success = replicationStarted.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // now lets lookup existing replicator and stop it
+        Log.d(TAG, "Looking up replicator");
+        properties.put("cancel", true);
+        Replication activeReplicator = manager.getReplicator(properties);
+        Log.d(TAG, "Found replicator " + activeReplicator + " and calling stop()");
+
+        activeReplicator.stop();
+        Log.d(TAG, "called stop(), waiting for it to finish");
+
+        // wait for replication to finish
+        boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
+        Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
+
+        assertTrue(didNotTimeOut);
+        assertFalse(activeReplicator.isRunning());
+
+        server.shutdown();
     }
 
     public void testGetReplicatorWithAuth() throws Throwable {
