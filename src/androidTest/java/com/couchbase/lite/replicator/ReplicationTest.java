@@ -2946,12 +2946,11 @@ public class ReplicationTest extends LiteTestCase {
 
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put("source", DEFAULT_TEST_DB);
-        //properties.put("target", server.getUrl("/db").toExternalForm());
 
+        // target with custom headers (cookie)
         Map<String,Object> headers = new HashMap<String,Object>();
         String coolieVal = "SyncGatewaySession=c38687c2696688a";
         headers.put("Cookie", coolieVal);
-        //properties.put("headers", headers);
 
         Map<String,Object> targetProperties = new HashMap<String,Object>();
         targetProperties.put("url", server.getUrl("/db").toExternalForm());
