@@ -40,8 +40,11 @@ import com.couchbase.lite.mockserver.MockSessionGet;
 import com.couchbase.lite.mockserver.SmartMockResponse;
 import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
 import com.couchbase.lite.support.HttpClientFactory;
+import com.couchbase.lite.support.MultipartReader;
+import com.couchbase.lite.support.MultipartReaderDelegate;
 import com.couchbase.lite.support.RemoteRequestRetry;
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.Utils;
 import com.couchbase.org.apache.http.entity.mime.MultipartEntity;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
@@ -469,11 +472,11 @@ public class ReplicationTest extends LiteTestCase {
 
         // allow for either a single _bulk_get request or individual doc requests.
         // if the server is sync gateway, it is allowable for replicator to use _bulk_get
-        RecordedRequest bulkGetRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_GET);
-        if (bulkGetRequest != null) {
-            String bulkGetBody = bulkGetRequest.getUtf8Body();
-            assertTrue(bulkGetBody.contains(mockDoc1.getDocId()));
-            assertTrue(bulkGetBody.contains(mockDoc2.getDocId()));
+        RecordedRequest request = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_GET);
+        if (request != null) {
+            String body = MockHelper.getUtf8Body(request);
+            assertTrue(body.contains(mockDoc1.getDocId()));
+            assertTrue(body.contains(mockDoc2.getDocId()));
         } else {
             RecordedRequest doc1Request = dispatcher.takeRequest(mockDoc1.getDocPathRegex());
             assertTrue(doc1Request.getMethod().equals("GET"));
@@ -1016,21 +1019,32 @@ public class ReplicationTest extends LiteTestCase {
         RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
         assertTrue(getCheckpointRequest.getMethod().equals("GET"));
         assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
+
         RecordedRequest revsDiffRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_REVS_DIFF);
-        assertTrue(revsDiffRequest.getUtf8Body().contains(doc1Id));
+        assertTrue(MockHelper.getUtf8Body(revsDiffRequest).contains(doc1Id));
+
         RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
-        assertTrue(bulkDocsRequest.getUtf8Body().contains(doc1Id));
-        Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(bulkDocsRequest.getUtf8Body(), Map.class);
+        assertTrue(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc1Id));
+        Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(MockHelper.getUtf8Body(bulkDocsRequest), Map.class);
         Map <String, Object> doc4Map = MockBulkDocs.findDocById(bulkDocsJson, doc4Id);
         assertTrue(((Boolean)doc4Map.get("_deleted")).booleanValue() == true);
+        assertFalse(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc2Id));
 
-        assertFalse(bulkDocsRequest.getUtf8Body().contains(doc2Id));
         RecordedRequest doc2putRequest = dispatcher.takeRequest(doc2PathRegex);
-        assertTrue(doc2putRequest.getUtf8Body().contains(doc2Id));
-        assertFalse(doc2putRequest.getUtf8Body().contains(doc3Id));
+        CustomMultipartReaderDelegate delegate2 = new CustomMultipartReaderDelegate();
+        MultipartReader reader2 = new MultipartReader(doc2putRequest.getHeader("Content-Type"), delegate2);
+        reader2.appendData(doc2putRequest.getBody());
+        String body2 = new String(delegate2.data, "UTF-8");
+        assertTrue(body2.contains(doc2Id));
+        assertFalse(body2.contains(doc3Id));
+
         RecordedRequest doc3putRequest = dispatcher.takeRequest(doc3PathRegex);
-        assertTrue(doc3putRequest.getUtf8Body().contains(doc3Id));
-        assertFalse(doc3putRequest.getUtf8Body().contains(doc2Id));
+        CustomMultipartReaderDelegate delegate3 = new CustomMultipartReaderDelegate();
+        MultipartReader reader3 = new MultipartReader(doc3putRequest.getHeader("Content-Type"), delegate3);
+        reader3.appendData(doc3putRequest.getBody());
+        String body3 = new String(delegate3.data, "UTF-8");
+        assertTrue(body3.contains(doc3Id));
+        assertFalse(body3.contains(doc2Id));
 
         // wait until the mock webserver receives a PUT checkpoint request
 
@@ -3377,11 +3391,11 @@ public class ReplicationTest extends LiteTestCase {
         BlockingQueue<RecordedRequest> bulkGetRequests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_GET);
         Iterator<RecordedRequest> iterator = bulkGetRequests.iterator();
         while (iterator.hasNext()) {
-            RecordedRequest bulkGetRequest = iterator.next();
-
-            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(bulkGetRequest.getUtf8Body(), Map.class);
-            List docs = (List) bulkDocsJson.get("docs");
-            Log.d(TAG, "bulk get request: %s had %d docs", bulkGetRequest, docs.size());
+            RecordedRequest request = iterator.next();
+            byte[] body = MockHelper.getUncompressedBody(request);
+            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
+            List docs = (List) jsonMap.get("docs");
+            Log.d(TAG, "bulk get request: %s had %d docs", request, docs.size());
 
             if (iterator.hasNext()) {
                 // the bulk docs requests except for the last one should have max number of docs
@@ -3752,8 +3766,9 @@ public class ReplicationTest extends LiteTestCase {
         BlockingQueue<RecordedRequest> requests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_DOCS);
         for (RecordedRequest request : requests) {
             Log.i(Log.TAG_SYNC, "request: %s", request);
-            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
-            List docs = (List) bulkDocsJson.get("docs");
+            byte[] body = MockHelper.getUncompressedBody(request);
+            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
+            List docs = (List) jsonMap.get("docs");
             numDocsPushed += docs.size();
         }
 
@@ -4235,4 +4250,27 @@ public class ReplicationTest extends LiteTestCase {
 
     }
 
+    class CustomMultipartReaderDelegate implements MultipartReaderDelegate  {
+        public Map<String, String> headers = null;
+        public byte[]  data = null;
+        public boolean gzipped = false;
+        public boolean bJson = false;
+        @Override
+        public void startedPart(Map<String, String> headers) {
+            gzipped = headers.get("Content-Encoding") != null && headers.get("Content-Encoding").contains("gzip");
+            bJson   = headers.get("Content-Type") != null && headers.get("Content-Type").contains("application/json");
+        }
+        @Override
+        public void appendToPart(byte[] data) {
+            if(gzipped && bJson) {
+                this.data = Utils.decompressByGzip(data);
+            }
+            else if(bJson){
+                this.data = data;
+            }
+        }
+        @Override
+        public void finishedPart() {
+        }
+    };
 }

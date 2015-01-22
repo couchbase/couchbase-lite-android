@@ -4,6 +4,7 @@ import com.couchbase.lite.Manager;
 import com.couchbase.lite.Misc;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
+import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -90,6 +91,32 @@ public class MockHelper {
 
     public static Map<String, Object> getJsonMapFromRequest(byte[] requestBody) throws IOException {
         return Manager.getObjectMapper().readValue(requestBody, Map.class);
+    }
+
+    /**
+     * returns decompressed byte[] body
+     */
+    public static byte[] getUncompressedBody(RecordedRequest request){
+        byte[] body = request.getBody();
+        if(isGzip(request)){
+            body = com.couchbase.lite.util.Utils.decompressByGzip(body);
+        }
+        return body;
+    }
+
+    /**
+     * returns decompressed String body
+     */
+    public static String getUtf8Body(RecordedRequest request) throws Exception{
+        return new String(getUncompressedBody(request), "UTF-8");
+    }
+
+    /*
+     * check if gzip is used for request body
+     */
+    public static boolean isGzip(RecordedRequest request){
+        return request.getHeader("Content-Encoding") != null &&
+               request.getHeader("Content-Encoding").contains("gzip");
     }
 
     public static class Batcher<T> {

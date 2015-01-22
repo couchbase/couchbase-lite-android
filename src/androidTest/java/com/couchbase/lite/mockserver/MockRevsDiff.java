@@ -64,7 +64,8 @@ public class MockRevsDiff implements SmartMockResponse {
 
             MockResponse mockResponse = new MockResponse();
 
-            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(request.getBody());
+            byte[] body = MockHelper.getUncompressedBody(request);
+            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
             Log.d(Log.TAG, "MockRevsDiff jsonMap: %s", jsonMap);
 
             Map<String, Object> responseMap = new HashMap<String, Object>();

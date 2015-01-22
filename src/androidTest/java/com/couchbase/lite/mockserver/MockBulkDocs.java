@@ -63,8 +63,8 @@ public class MockBulkDocs implements SmartMockResponse {
         try {
 
             MockResponse mockResponse = new MockResponse();
-
-            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(request.getBody());
+            byte[] body = MockHelper.getUncompressedBody(request);
+            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
 
             List<Map<String, Object>> responseList = new ArrayList<Map<String, Object>>();
 

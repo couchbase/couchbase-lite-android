@@ -1,13 +1,10 @@
 package com.couchbase.lite.mockserver;
 
 
-import com.couchbase.lite.Manager;
-import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,11 +66,10 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
     @Override
     public MockResponse generateMockResponse(RecordedRequest request) {
-
         try {
-
-            Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
-            List docs = (List) bulkDocsJson.get("docs");
+            byte[] body = MockHelper.getUncompressedBody(request);
+            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
+            List docs = (List)jsonMap.get("docs");
 
             MockResponse mockResponse = new MockResponse();
 
