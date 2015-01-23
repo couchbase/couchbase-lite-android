@@ -26,6 +26,7 @@ import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -1947,5 +1948,119 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(2, rows.getCount());
         assertEquals(docProperties2.get("_id"), rows.getRow(0).getKey());
         assertEquals(docProperties3.get("_id"), rows.getRow(1).getKey());
+    }
+
+    /**
+     * in View_Tests.m
+     * - (void) test05_ViewCustomSort
+     *
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/304
+     */
+    public void testViewCustomSort() throws Exception{
+        View view = database.getView("vu");
+        view.setMapReduce(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("name"), document.get("skin"));
+            }
+        }, null, "1");
+
+        Map<String,Object> docProperties1 = new HashMap<String,Object>();
+        docProperties1.put("name", "Barry");
+        docProperties1.put("skin", "none");
+        putDoc(database, docProperties1);
+        Map<String,Object> docProperties2 = new HashMap<String,Object>();
+        docProperties2.put("name", "Terry");
+        docProperties2.put("skin", "furry");
+        putDoc(database, docProperties2);
+        Map<String,Object> docProperties3 = new HashMap<String,Object>();
+        docProperties3.put("name", "Wanda");
+        docProperties3.put("skin", "scaly");
+        putDoc(database, docProperties3);
+
+        Query query = view.createQuery();
+        query.setSortDescriptors(new Comparator<QueryRow>() {
+            @Override
+            public int compare(QueryRow queryRow1, QueryRow queryRow2) {
+                String val1 = (String)queryRow1.getValue();
+                String val2 = (String)queryRow2.getValue();
+                return val2.compareTo(val1);
+            }
+        });
+        QueryEnumerator rows = query.run();
+
+        assertEquals(3, rows.getCount());
+        for(int i = 0; i < rows.getCount(); i++){
+            Log.e(Log.TAG_QUERY, ""+ rows.getRow(i).getKey() + " => " + rows.getRow(i).getValue());
+        }
+        assertEquals(docProperties3.get("name"), rows.getRow(0).getKey());
+        assertEquals(docProperties3.get("skin"), rows.getRow(0).getValue());
+        assertEquals(docProperties1.get("name"), rows.getRow(1).getKey());
+        assertEquals(docProperties1.get("skin"), rows.getRow(1).getValue());
+        assertEquals(docProperties2.get("name"), rows.getRow(2).getKey());
+        assertEquals(docProperties2.get("skin"), rows.getRow(2).getValue());
+
+        // Now test a keypath that implicitly refers to the value:
+        view.setMapReduce(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Map<String, Object> value = new HashMap<String, Object>();
+                value.put("skin", document.get("skin"));
+                emitter.emit(document.get("name"), value);
+            }
+        }, null, "2");
+
+        query.setSortDescriptors(new Comparator<QueryRow>() {
+            @Override
+            public int compare(QueryRow queryRow1, QueryRow queryRow2) {
+                String val1 = (String)((Map)queryRow1.getValue()).get("skin");
+                String val2 = (String)((Map)queryRow2.getValue()).get("skin");
+                return val2.compareTo(val1);
+            }
+        });
+        rows = query.run();
+
+        Map<String, Object> val = new HashMap<String, Object>();
+        assertEquals(3, rows.getCount());
+        assertEquals(docProperties3.get("name"), rows.getRow(0).getKey());
+        val.put("skin", docProperties3.get("skin"));
+        assertEquals(val, rows.getRow(0).getValue());
+        assertEquals(docProperties1.get("name"), rows.getRow(1).getKey());
+        val.put("skin", docProperties1.get("skin"));
+        assertEquals(val, rows.getRow(1).getValue());
+        assertEquals(docProperties2.get("name"), rows.getRow(2).getKey());
+        val.put("skin", docProperties2.get("skin"));
+        assertEquals(val, rows.getRow(2).getValue());
+
+        // Now test a keypath with an array:
+        view.setMapReduce(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                List<String> value = new ArrayList<String>();
+                value.add((String)document.get("skin"));
+                emitter.emit(document.get("name"), value);
+            }
+        }, null, "3");
+
+        query.setSortDescriptors(new Comparator<QueryRow>() {
+            @Override
+            public int compare(QueryRow queryRow1, QueryRow queryRow2) {
+                String val1 = (String)((List)queryRow1.getValue()).get(0);
+                String val2 = (String)((List)queryRow2.getValue()).get(0);
+                return val2.compareTo(val1);
+            }
+        });
+        rows = query.run();
+
+        List<String> value = new ArrayList<String>();
+        assertEquals(docProperties3.get("name"), rows.getRow(0).getKey());
+        value.add((String)docProperties3.get("skin"));
+        assertEquals(value, rows.getRow(0).getValue());
+        assertEquals(docProperties1.get("name"), rows.getRow(1).getKey());
+        value.set(0, (String)docProperties1.get("skin"));
+        assertEquals(value, rows.getRow(1).getValue());
+        assertEquals(docProperties2.get("name"), rows.getRow(2).getKey());
+        value.set(0, (String)docProperties2.get("skin"));
+        assertEquals(value, rows.getRow(2).getValue());
     }
 }
