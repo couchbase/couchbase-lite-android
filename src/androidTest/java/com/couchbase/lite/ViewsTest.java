@@ -1948,4 +1948,8 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(docProperties2.get("_id"), rows.getRow(0).getKey());
         assertEquals(docProperties3.get("_id"), rows.getRow(1).getKey());
     }
+
+    public void testQueryEnumerationImplementsIterable() {
+        assertTrue(new QueryEnumerator(null, new ArrayList<QueryRow>(), 0) instanceof Iterable);
+    }
 }
