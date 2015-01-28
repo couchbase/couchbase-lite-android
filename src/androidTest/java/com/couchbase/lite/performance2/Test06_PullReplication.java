@@ -17,40 +17,18 @@
 
 package com.couchbase.lite.performance2;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Document;
+import com.couchbase.lite.Database;
 import com.couchbase.lite.LitePerfTestCase;
-import com.couchbase.lite.Status;
-import com.couchbase.lite.TransactionalTask;
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.replicator.Replication;
-import com.couchbase.lite.support.Base64;
-import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class Test06_PullReplication extends LitePerfTestCase {
 
@@ -58,12 +36,18 @@ public class Test06_PullReplication extends LitePerfTestCase {
     private static final String _propertyValue = "1";
 
     public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws Exception {
+        char[] array = new char[sizeOfDocuments];
+        Arrays.fill(array, '*');
+        String body = new String(array);
+        /*
         String[] bigObj = new String[sizeOfDocuments];
         for (int i = 0; i < sizeOfDocuments; i++) {
             bigObj[i] = _propertyValue;
         }
+        */
         final Map<String, Object> props = new HashMap<String, Object>();
-        props.put("bigArray", bigObj);
+        //props.put("bigArray", bigObj);
+        props.put("k", body);
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
@@ -71,7 +55,8 @@ public class Test06_PullReplication extends LitePerfTestCase {
             String docId = String.format("doc%d-%s", i, docIdTimestamp);
 
             try {
-                addDocWithId(docId, props, "attachment.png", false);
+                //addDocWithId(docId, props, "attachment.png", false);
+                addDocWithId(docId, props, null, false);
                 //addDocWithId(docId, null, false);
             } catch (IOException ioex) {
                 Log.v("PerformanceStats",TAG+", Add document directly to sync gateway failed", ioex);
@@ -90,14 +75,16 @@ public class Test06_PullReplication extends LitePerfTestCase {
         runReplication(replPush);
         Log.v("PerformanceStats",TAG+", Finished pushing operation with: " + replPush);
 
+        Database database2 = ensureEmptyDatabase("cblite-test2");
+
         long startMillis = System.currentTimeMillis();
-        final Replication replPull = (Replication) database.createPullReplication(remote);
+        final Replication replPull = database2.createPullReplication(remote);
         replPull.setContinuous(false);
         Log.v("PerformanceStats",TAG+", Starting pull replication with: " + replPull);
         runReplication(replPull);
         double executionTime = Long.valueOf(System.currentTimeMillis()-startMillis);
         Log.v("PerformanceStats",TAG+", "+executionTime+","+numberOfDocuments+","+sizeOfDocuments);
-        assertNotNull(database);
+        assertNotNull(database2);
         Log.v("PerformanceStats",TAG+", Finished pull replication with: " + replPull);
         return executionTime;
     }
