@@ -17,38 +17,17 @@
 
 package com.couchbase.lite.performance2;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Document;
 import com.couchbase.lite.LitePerfTestCase;
-import com.couchbase.lite.Status;
-import com.couchbase.lite.TransactionalTask;
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.replicator.Replication;
-import com.couchbase.lite.support.Base64;
-import com.couchbase.lite.threading.BackgroundTask;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class Test07_PushReplication extends LitePerfTestCase {
 
@@ -56,12 +35,18 @@ public class Test07_PushReplication extends LitePerfTestCase {
     private static final String _propertyValue = "1";
 
     public double runOne(final int numberOfDocuments, final int sizeOfDocuments) throws Exception {
+        char[] array = new char[sizeOfDocuments];
+        Arrays.fill(array, '*');
+        String body = new String(array);
+        /*
         String[] bigObj = new String[sizeOfDocuments];
         for (int i = 0; i < sizeOfDocuments; i++) {
             bigObj[i] = _propertyValue;
         }
+        */
         final Map<String, Object> props = new HashMap<String, Object>();
-        props.put("bigArray", bigObj);
+        //props.put("bigArray", bigObj);
+        props.put("k", body);
 
         String docIdTimestamp = Long.toString(System.currentTimeMillis());
 
@@ -69,7 +54,8 @@ public class Test07_PushReplication extends LitePerfTestCase {
             String docId = String.format("doc%d-%s", i, docIdTimestamp);
 
             try {
-                addDocWithId(docId, props, "attachment.png", false);
+                addDocWithId(docId, props, null, false);
+                //addDocWithId(docId, props, "attachment.png", false);
                 //addDocWithId(docId, null, false);
             } catch (IOException ioex) {
                 Log.v("PerformanceStats",TAG+", Add document directly to sync gateway failed", ioex);
