@@ -4122,11 +4122,11 @@ public class ReplicationTest extends LiteTestCase {
      *
      * The observed problem:
      *
-     * - Start continuous pull
-     * - Wait until it goes IDLE (this works fine)
-     * - Add a new document directly to the Sync Gateway
-     * - The continuous pull goes from IDLE -> RUNNING
-     * - Wait until it goes IDLE again (this doesn't work, it never goes back to IDLE)
+     * - 1. Start continuous pull
+     * - 2. Wait until it goes IDLE (this works fine)
+     * - 3. Add a new document directly to the Sync Gateway
+     * - 4. The continuous pull goes from IDLE -> RUNNING
+     * - 5. Wait until it goes IDLE again (this doesn't work, it never goes back to IDLE)
      *
      * The test case below simulates the above scenario using a mock sync gateway.
      *
@@ -4157,6 +4157,7 @@ public class ReplicationTest extends LiteTestCase {
         mockChangesFeedNoResponse.setDelayMs(5 * 1000);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
+        // 3.
         // after the above changes feed response returns after 5 seconds, the next time
         // the puller gets the _changes feed, return a response that there is 1 new doc.
         // this will cause the puller to go from IDLE -> RUNNING
@@ -4190,64 +4191,70 @@ public class ReplicationTest extends LiteTestCase {
         pullReplication.setContinuous(true);
 
         final CountDownLatch enteredIdleState1 = new CountDownLatch(1);
-        final CountDownLatch enteredIdleState2 = new CountDownLatch(1);
         pullReplication.addChangeListener(new Replication.ChangeListener() {
             @Override
             public void changed(Replication.ChangeEvent event) {
                 if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    Log.e(TAG, "Replication is IDLE 1");
                     enteredIdleState1.countDown();
                 }
             }
         });
 
-        // start pull replication
+        // 1. start pull replication
         pullReplication.start();
 
-        // wait until its IDLE
+        // 2. wait until its IDLE
         boolean success = enteredIdleState1.await(30, TimeUnit.SECONDS);
         assertTrue(success);
+
+        // 3. see server side preparation
 
         // change listener to see if its RUNNING
         // we can't add this earlier, because the countdown latch would get
         // triggered too early (the other approach would be to set the countdown
         // latch to a higher number)
         final CountDownLatch enteredRunningState = new CountDownLatch(1);
+        final CountDownLatch enteredIdleState2   = new CountDownLatch(1);
         pullReplication.addChangeListener(new Replication.ChangeListener() {
             @Override
             public void changed(Replication.ChangeEvent event) {
                 if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
-                    Log.d(TAG, "Replication is running");
+                    Log.e(TAG, "Replication is RUNNING");
                     enteredRunningState.countDown();
+                }
+                // second IDLE change listener
+                // handling IDLE event here. It seems IDLE event was fired before set IDLE event handler
+                else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    if(enteredRunningState.getCount() <= 0) {
+                        Log.e(TAG, "Replication is IDLE 2");
+                        enteredIdleState2.countDown();
+                    }
                 }
             }
         });
 
-        // wait until its RUNNING
+        // 4. wait until its RUNNING
+        Log.e(TAG, "WAIT for RUNNING");
         success = enteredRunningState.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
-        // second IDLE change listener
-        // we can't add this earlier, because the countdown latch would get
-        // triggered too early (the other approach would be to set the countdown
-        // latch to a higher number)
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    enteredIdleState2.countDown();
-                }
-            }
-        });
-
-        // wait until its IDLE again.  before the fix, it would never go IDLE again, and so
+        // 5. wait until its IDLE again.  before the fix, it would never go IDLE again, and so
         // this would timeout and the test would fail.
+        Log.e(TAG, "WAIT for IDLE");
         success = enteredIdleState2.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
+        Log.e(TAG, "STOP REPLICATOR");
+
         // clean up
         stopReplication(pullReplication);
+
+        Log.e(TAG, "STOP MOCK SERVER");
+
         server.shutdown();
 
+        Log.e(TAG, "TEST DONE");
     }
 
     class CustomMultipartReaderDelegate implements MultipartReaderDelegate  {
