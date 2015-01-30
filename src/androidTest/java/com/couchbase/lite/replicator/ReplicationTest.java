@@ -37,7 +37,6 @@ import com.couchbase.lite.mockserver.MockFacebookAuthPost;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.mockserver.MockRevsDiff;
 import com.couchbase.lite.mockserver.MockSessionGet;
-import com.couchbase.lite.mockserver.SmartMockResponse;
 import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.support.MultipartReader;
@@ -86,6 +85,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Tests for the new state machine based replicator
  */
 public class ReplicationTest extends LiteTestCase {
+
 
     /**
      * Continuous puller starts offline
@@ -2754,23 +2754,22 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Test goOffline() method in the context of a continuous pusher.
      *
-     * - Kick off continuous push replication
-     * - Add a local document
-     * - Wait for document to be pushed
-     * - Call goOffline()
-     * - Add a 2nd local document
-     * - Call goOnline()
-     * - Wait for 2nd document to be pushed
+     * - 1. Add a local document
+     * - 2. Kick off continuous push replication
+     * - 3. Wait for document to be pushed
+     * - 4. Call goOffline()
+     * - 6. Call goOnline()
+     * - 5. Add a 2nd local document
+     * - 7. Wait for 2nd document to be pushed
      *
      * @throws Exception
      */
     public void testGoOfflinePusher() throws Exception {
-
         int previous = RemoteRequestRetry.RETRY_DELAY_MS;
         RemoteRequestRetry.RETRY_DELAY_MS = 5;
 
         try {
-            // create local docs
+            // 1. Add a local document
             Map<String,Object> properties = new HashMap<String, Object>();
             properties.put("testGoOfflinePusher", "1");
             Document doc1 = createDocumentWithProperties(database, properties);
@@ -2781,7 +2780,7 @@ public class ReplicationTest extends LiteTestCase {
             server.setDispatcher(dispatcher);
             server.play();
 
-            // checkpoint PUT or GET response (sticky)
+            // checkpoint PUT response (sticky)
             MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
             mockCheckpointPut.setSticky(true);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
@@ -2796,13 +2795,15 @@ public class ReplicationTest extends LiteTestCase {
             mockBulkDocs.setSticky(true);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-            // create and start push replication
+            // 2. Kick off continuous push replication
             Replication replicator = database.createPushReplication(server.getUrl("/db"));
             replicator.setContinuous(true);
             CountDownLatch replicationIdleSignal = new CountDownLatch(1);
             ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
             replicator.addChangeListener(replicationIdleObserver);
             replicator.start();
+
+            // 3. Wait for document to be pushed
 
             // wait until replication goes idle
             boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
@@ -2821,49 +2822,16 @@ public class ReplicationTest extends LiteTestCase {
                 }
             }
 
+            // 4. Call goOffline()
             putReplicationOffline(replicator);
 
-            // during this time, any requests to server will fail, because we
-            // are simulating being offline.  (whether or not the pusher should
-            // even be _sending_ requests during this time is a different story)
-            dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_REVS_DIFF);
-            dispatcher.clearRecordedRequests(MockHelper.PATH_REGEX_REVS_DIFF);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, new SmartMockResponse() {
-                @Override
-                public MockResponse generateMockResponse(RecordedRequest request) {
-                    return new MockResponse().setResponseCode(500);
-                }
+            // 6. Call goOnline()
+            putReplicationOnline(replicator);
 
-                @Override
-                public boolean isSticky() {
-                    return true;
-                }
-
-                @Override
-                public long delayMs() {
-                    return 0;
-                }
-            });
-
-            // add a 2nd doc to local db
+            // 5. Add a 2nd local document
             properties = new HashMap<String, Object>();
             properties.put("testGoOfflinePusher", "2");
             Document doc2 = createDocumentWithProperties(database, properties);
-
-            // currently, even when offline, adding a new doc will cause it to try pushing the
-            // doc.  (this is questionable behavior, need to check against iOS).  It will retry
-            // twice, so lets wait for two requests to /_revs_diff
-            RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
-            dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
-            revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
-            dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
-
-            putReplicationOnline(replicator);
-
-            // we are going online again, so the mockwebserver should accept _revs_diff responses again
-            dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_REVS_DIFF);
-            dispatcher.clearRecordedRequests(MockHelper.PATH_REGEX_REVS_DIFF);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
             // wait until mock server gets the 2nd checkpoint PUT request
             foundCheckpointPut = false;
@@ -2888,12 +2856,11 @@ public class ReplicationTest extends LiteTestCase {
 
             // cleanup
             stopReplication(replicator);
-            server.shutdown();
 
+            server.shutdown();
         } finally {
             RemoteRequestRetry.RETRY_DELAY_MS = previous;
         }
-
     }
 
     /**
@@ -4249,6 +4216,8 @@ public class ReplicationTest extends LiteTestCase {
         server.shutdown();
 
     }
+
+
 
     class CustomMultipartReaderDelegate implements MultipartReaderDelegate  {
         public Map<String, String> headers = null;
