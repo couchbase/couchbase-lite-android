@@ -294,22 +294,13 @@ public class BatcherTest extends LiteTestCase {
             assertTrue(success);
             timeAfterCallback = System.currentTimeMillis();
             delta = timeAfterCallback - timeBeforeQueue;
-            if(delta < 0) {
-                // Note: should not be happen, but observed.
-                continue;
-            }
 
             // https://github.com/couchbase/couchbase-lite-java-core/issues/403
             // Deley is not applied if docs are more than batcher capacity
             if(k == 0) {
                 assertTrue(delta >= processorDelay);
             }
-            else {
-                assertTrue(delta >= 0);
-            }
         }
-
-
     }
 
     /**
