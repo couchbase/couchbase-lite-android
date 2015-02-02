@@ -2058,4 +2058,84 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
         Assert.assertEquals(1, dump.get(4).get("seq"));
     }
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/494
+     */
+    public void testIndexingOlderRevision() throws CouchbaseLiteException{
+        // In case conflictWinner was deleted, conflict Looser should be indexed.
+
+        // create documents
+        List<RevisionInternal> docs = putDocs(database);
+        RevisionInternal leaf1 = docs.get(1);
+
+        Assert.assertEquals("four", database.getDocument("44444").getProperty("key"));
+
+        // update index
+        View view = createView(database);
+        view.updateIndex();
+        List<Map<String,Object>> dump = view.dump();
+        Log.d(TAG, "View dump: " + dump);
+        Assert.assertEquals(5, dump.size());
+        Assert.assertEquals("\"five\"", dump.get(0).get("key"));
+        Assert.assertEquals(5, dump.get(0).get("seq"));
+        Assert.assertEquals("\"four\"", dump.get(1).get("key"));
+        Assert.assertEquals(2, dump.get(1).get("seq"));
+        Assert.assertEquals("\"one\"", dump.get(2).get("key"));
+        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals("\"three\"", dump.get(3).get("key"));
+        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals("\"two\"", dump.get(4).get("key"));
+        Assert.assertEquals(1, dump.get(4).get("seq"));
+
+        // Create a conflict, won by the new revision:
+        Map<String,Object> props = new HashMap<String,Object>();
+        props.put("_id", "44444");
+        props.put("_rev", "1-~~~~~");  // higher revID, will win conflict
+        props.put("key", "40ur");
+        RevisionInternal leaf2 = new RevisionInternal(props, database);
+        database.forceInsert(leaf2, new ArrayList<String>(), null);
+        Assert.assertEquals(leaf1.getDocId(),leaf2.getDocId());
+
+        Assert.assertEquals("40ur", database.getDocument("44444").getProperty("key"));
+
+        // Update the view -- should contain only the key from the new rev, not the old:
+        view.updateIndex();
+        dump = view.dump();
+        Log.d(TAG, "View dump: " + dump);
+        Assert.assertEquals(5, dump.size());
+        Assert.assertEquals("\"40ur\"", dump.get(0).get("key"));
+        Assert.assertEquals(6, dump.get(0).get("seq"));
+        Assert.assertEquals("\"five\"", dump.get(1).get("key"));
+        Assert.assertEquals(5, dump.get(1).get("seq"));
+        Assert.assertEquals("\"one\"", dump.get(2).get("key"));
+        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals("\"three\"", dump.get(3).get("key"));
+        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals("\"two\"", dump.get(4).get("key"));
+        Assert.assertEquals(1, dump.get(4).get("seq"));
+
+
+        // create new revision with delete
+        RevisionInternal leaf3 = new RevisionInternal("44444", null, true, database);
+        leaf3 = database.putRevision(leaf3, "1-~~~~~", true);
+        Assert.assertEquals(leaf1.getDocId(),leaf3.getDocId());
+        Assert.assertEquals(true, leaf3.isDeleted());
+
+        Assert.assertEquals("four", database.getDocument("44444").getProperty("key"));
+
+        view.updateIndex();
+        dump = view.dump();
+        Log.e(TAG, "View dump: " + dump);
+        Assert.assertEquals(5, dump.size());
+        Assert.assertEquals("\"five\"", dump.get(0).get("key"));
+        Assert.assertEquals(5, dump.get(0).get("seq"));
+        Assert.assertEquals("\"four\"", dump.get(1).get("key"));
+        Assert.assertEquals(2, dump.get(1).get("seq"));
+        Assert.assertEquals("\"one\"", dump.get(2).get("key"));
+        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals("\"three\"", dump.get(3).get("key"));
+        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals("\"two\"", dump.get(4).get("key"));
+        Assert.assertEquals(1, dump.get(4).get("seq"));
+    }
 }
