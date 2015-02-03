@@ -2062,7 +2062,7 @@ public class ViewsTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-android/issues/494
      */
     public void testIndexingOlderRevision() throws CouchbaseLiteException{
-        // In case conflictWinner was deleted, conflict Looser should be indexed.
+        // In case conflictWinner was deleted, conflict loser should be indexed.
 
         // create documents
         List<RevisionInternal> docs = putDocs(database);
