@@ -1,7 +1,6 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
@@ -298,4 +297,9 @@ public class DocumentTest extends LiteTestCase {
 
     }
 
+    public void testGetPropertiesFromDocNotYetSaved(){
+        Document doc = database.createDocument();
+        Map<String, Object> properties = doc.getProperties();
+        assertNull(properties);
+    }
 }
