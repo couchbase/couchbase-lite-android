@@ -4224,7 +4224,129 @@ public class ReplicationTest extends LiteTestCase {
         Log.e(TAG, "TEST DONE");
     }
 
+    /**
+     * Test case that makes sure STOPPED notification is sent only once with continuous pull replication
+     * https://github.com/couchbase/couchbase-lite-android/issues/442
+     */
+    public void testContinuousPullReplicationSendStoppedOnce() throws Exception {
+        Log.d(TAG, "TEST START");
 
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint PUT or GET response (sticky)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // add non-sticky changes response that returns no changes
+        // this will cause the pull replicator to go into the IDLE state
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        server.play();
+
+        // create pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(true);
+
+        final CountDownLatch enteredIdleState = new CountDownLatch(1);
+        final CountDownLatch enteredStoppedState = new CountDownLatch(2);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    Log.d(TAG, "Replication is IDLE");
+                    enteredIdleState.countDown();
+                }
+                else if(event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED){
+                    Log.d(TAG, "Replication is STOPPED");
+                    enteredStoppedState.countDown();
+                }
+            }
+        });
+
+        // 1. start pull replication
+        pullReplication.start();
+
+        // 2. wait until its IDLE
+        boolean success = enteredIdleState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // 3. stop pull replication
+        stopReplication(pullReplication);
+
+        // 4. wait until its RUNNING
+        Log.d(TAG, "WAIT for STOPPED");
+        success = enteredStoppedState.await(60, TimeUnit.SECONDS);
+        // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
+        assertEquals(1, enteredStoppedState.getCount());
+        assertFalse(success);
+
+        Log.d(TAG, "STOP MOCK SERVER");
+        server.shutdown();
+
+        Log.d(TAG, "TEST DONE");
+    }
+
+    /**
+     * Test case that makes sure STOPPED notification is sent only once with one time pull replication
+     * https://github.com/couchbase/couchbase-lite-android/issues/442
+     */
+    public void testOneTimePullReplicationSendStoppedOnce() throws Exception {
+        Log.d(TAG, "TEST START");
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint PUT or GET response (sticky)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // add non-sticky changes response that returns no changes
+        // this will cause the pull replicator to go into the IDLE state
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        server.play();
+
+        // create pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(false);
+
+        // handle STOPPED notification
+        final CountDownLatch enteredStoppedState = new CountDownLatch(2);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if(event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED){
+                    Log.d(TAG, "Replication is STOPPED");
+                    enteredStoppedState.countDown();
+                }
+            }
+        });
+
+        // 1. start pull replication
+        pullReplication.start();
+
+
+        // 2. wait until its RUNNING
+        Log.d(TAG, "WAIT for STOPPED");
+        boolean success = enteredStoppedState.await(60, TimeUnit.SECONDS);
+        // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
+        assertEquals(1, enteredStoppedState.getCount());
+        assertFalse(success);
+
+        Log.d(TAG, "STOP MOCK SERVER");
+        server.shutdown();
+
+        Log.d(TAG, "TEST DONE");
+    }
 
     class CustomMultipartReaderDelegate implements MultipartReaderDelegate  {
         public Map<String, String> headers = null;
