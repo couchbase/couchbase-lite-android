@@ -4347,6 +4347,124 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "TEST DONE");
     }
+    /**
+     * Issue:  Pull Replicator does not send IDLE state after check point
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/389
+     *
+     * 1. Wait till pull replicator becomes IDLE state
+     * 2. Update change event handler for handling ACTIVE and IDLE
+     * 3. Create document into local db
+     * 4. Based on local doc information, prepare mock change response for 1st /_changes request
+     * 5. Prepare next mock change response for 2nd /_changes request (blocking for while)
+     * 6. wait for Replication IDLE -> ACTIVE -> IDLE
+     */
+    public void testPullReplicatonSendIdleStateAfterCheckPoint() throws Exception {
+        Log.d(TAG, "TEST START");
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint PUT or GET response (sticky) (for both push and pull)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // add non-sticky changes response that returns no changes  (for pull)
+        // this will cause the pull replicator to go into the IDLE state
+        MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
+
+        // start mock server
+        server.play();
+
+        // create pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(true);
+
+        // handler to wait for IDLE
+        final CountDownLatch pullInitialIdleState = new CountDownLatch(1);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    pullInitialIdleState.countDown();
+                }
+            }
+        });
+
+
+        // start pull replication
+        //pushReplication.start();
+        pullReplication.start();
+
+        // 1. Wait till replicator becomes IDLE
+        boolean success = pullInitialIdleState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // clear out existing queued mock responses to make room for new ones
+        dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHANGES);
+
+
+        // 2. Update change event handler for handling ACTIVE and IDLE
+        final CountDownLatch activeSignal = new CountDownLatch(1);
+        final CountDownLatch idleSignal = new CountDownLatch(1);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                Log.e(TAG, "[changed] PULL -> " + event);
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    // make sure pull replicator becomes IDLE after ACTIVE state.
+                    // so ignore any IDLE state before ACTIVE.
+                    if(activeSignal.getCount() == 0) {
+                        idleSignal.countDown();
+                    }
+                }
+                else if(event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE){
+                    activeSignal.countDown();
+                }
+            }
+        });
+
+        // 3. Create document into local db
+        Document doc = database.createDocument();
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("key", "1");
+        doc.putProperties(props);
+
+        // 4. Based on local doc information, prepare mock change response for 1st /_changes request
+        String docId = doc.getId();
+        String revId = doc.getCurrentRevisionId();
+        int lastSeq = (int)database.getLastSequenceNumber();
+
+        MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq+1);
+        mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // 5. Prepare next mock change response for 2nd /_changes request (blocking for while)
+        MockChangesFeedNoResponse mockChangesFeedNoResponse2 = new MockChangesFeedNoResponse();
+        mockChangesFeedNoResponse2.setDelayMs(60 * 1000);
+        mockChangesFeedNoResponse2.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse2);
+
+        // 6. wait for Replication IDLE -> ACTIVE -> IDLE
+        success = activeSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        success = idleSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        // stop pull replication
+        stopReplication(pullReplication);
+
+        server.shutdown();
+
+        Log.d(TAG, "TEST DONE");
+    }
+
+
 
     class CustomMultipartReaderDelegate implements MultipartReaderDelegate  {
         public Map<String, String> headers = null;
