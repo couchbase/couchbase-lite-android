@@ -1241,7 +1241,29 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(row3.get("key"), rows.get(2).getKey());
         Assert.assertEquals(row3.get("error"), rows.get(2).asJSONDictionary().get("error"));
     }
-    
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/413
+     */
+    public void testViewGroupedNoReduceWithoutDocs() throws CouchbaseLiteException {
+        View view = database.getView("GroupByType");
+        view.setMap(new Mapper() {
+                        @Override
+                        public void map(Map<String, Object> document, Emitter emitter) {
+                            String type = (String) document.get("type");
+                            if (type != null) {
+                                emitter.emit(type, null);
+                            }
+                        }
+                    }, "1.0"
+        );
+        view.updateIndex();
+        QueryOptions options = new QueryOptions();
+        options.setGroupLevel(1);
+        List<QueryRow> rows = view.queryWithOptions(options);
+        assertEquals(0, rows.size());
+    }
+
     public void testViewGroupedVariableLengthKey() throws CouchbaseLiteException {
         Map<String,Object> docProperties1 = new HashMap<String,Object>();
         docProperties1.put("_id", "H");
