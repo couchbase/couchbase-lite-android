@@ -3152,7 +3152,7 @@ public class ReplicationTest extends LiteTestCase {
      *
      * @throws Exception
      */
-    public void failingTestVerifyPullerInsertsDocsWithValidation() throws Exception {
+    public void testVerifyPullerInsertsDocsWithValidation() throws Exception {
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
