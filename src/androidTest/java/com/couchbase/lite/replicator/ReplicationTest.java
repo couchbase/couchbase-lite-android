@@ -15,6 +15,7 @@ import com.couchbase.lite.QueryOptions;
 import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.Revision;
 import com.couchbase.lite.SavedRevision;
+import com.couchbase.lite.Status;
 import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.ValidationContext;
 import com.couchbase.lite.Validator;
@@ -38,6 +39,7 @@ import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.mockserver.MockRevsDiff;
 import com.couchbase.lite.mockserver.MockSessionGet;
 import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
+import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.support.MultipartReader;
 import com.couchbase.lite.support.MultipartReaderDelegate;
@@ -66,6 +68,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -4464,7 +4467,178 @@ public class ReplicationTest extends LiteTestCase {
         Log.d(TAG, "TEST DONE");
     }
 
+    /**
+     * Sync (pull replication) fails on document with a lot of revisions and attachments
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/415
+     *
+     */
+    public void testPullReplicatonWithManyAttachmentRevisions() throws Exception {
+        Log.d(TAG, "TEST START: testPullReplicatonWithManyAttachmentRevisions()");
 
+        String docID = "11111";
+        String key = "key";
+        String value = "one-one-one-one";
+        String attachmentName = "attachment.png";
+
+        // create initial document (Revision 1-xxxx)
+        Map<String,Object> props1 = new HashMap<String,Object>();
+        props1.put("_id", docID);
+        props1.put(key, value);
+        RevisionInternal rev = new RevisionInternal(props1, database);
+        Status status = new Status();
+        RevisionInternal savedRev = database.putRevision(rev, null, false, status);
+
+        // add attachment to doc (Revision 2-xxxx)
+        Document doc = database.getDocument(docID);
+        UnsavedRevision newRev = doc.createRevision();
+        InputStream attachmentStream = getAsset(attachmentName);
+        newRev.setAttachment(attachmentName, "image/png", attachmentStream);
+        SavedRevision saved = newRev.save(true);
+
+        Log.e(TAG, "saved => " + saved);
+        Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
+
+        // Create 5 revisions with 50 conflicts each
+        int j = 3;
+        for(;j < 5;j++) {
+            // Create a conflict, won by the new revision:
+            Map<String, Object> props = new HashMap<String, Object>();
+            props.put("_id", docID);
+            props.put("_rev", j + "-00");
+            props.put(key, value);
+            RevisionInternal leaf = new RevisionInternal(props, database);
+            database.forceInsert(leaf, new ArrayList<String>(), null);
+            Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
+
+            for (int i = 0; i < 49; i++) {
+                // Create a conflict, won by the new revision:
+                Map<String, Object> props_conflict = new HashMap<String, Object>();
+                props_conflict.put("_id", docID);
+                String revStr = String.format("%d-%02d", j, i);
+                props_conflict.put("_rev", revStr);
+                props_conflict.put(key, value);
+                // attachment
+                byte[] attach1 = "This is the body of attach1".getBytes();
+                String base64 = Base64.encodeBytes(attach1);
+                Map<String, Object> attachment = new HashMap<String, Object>();
+                attachment.put("content_type", "text/plain");
+                attachment.put("data", base64);
+                Map<String, Object> attachmentDict = new HashMap<String, Object>();
+                attachmentDict.put("test_attachment", attachment);
+                props_conflict.put("_attachments", attachmentDict);
+                // end of attachment
+                RevisionInternal leaf_conflict = new RevisionInternal(props_conflict, database);
+                database.forceInsert(leaf_conflict, new ArrayList<String>(), null);
+                Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
+            }
+        }
+
+        String docId = doc.getId();
+        String revId = j + "-00";
+        int lastSeq = (int)database.getLastSequenceNumber();
+
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+        // checkpoint PUT or GET response (sticky) (for both push and pull)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
+
+        // start mock server
+        server.play();
+
+        // create pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(true);
+
+        final CountDownLatch idleSignal1 = new CountDownLatch(1);
+        final CountDownLatch idleSignal2 = new CountDownLatch(2);
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                Log.e(TAG, event.toString());
+                if (event.getError() != null) {
+                    Assert.fail("Should not have any error....");
+                }
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                    idleSignal1.countDown();
+                    idleSignal2.countDown();
+                }
+            }
+        });
+
+        // start pull replication
+        pullReplication.start();
+
+        boolean success = idleSignal1.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+
+        //
+        MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq+1);
+        mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
+        //mockDocument1.setAttachmentName("attachment3.png");
+
+        MockChangesFeed mockChangesFeed = new MockChangesFeed();
+        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+        // doc response
+        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument1);
+        //mockDocumentGet.addAttachmentFilename(mockDocument1.getAttachmentName());
+        dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+        // check /db/docid?...
+        RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex());
+        Log.e(TAG, request.toString());
+        Map<String,String> queries = query2map(request.getPath());
+        String atts_since = URLDecoder.decode(queries.get("atts_since"), "UTF-8");
+        List<String> json = (List<String>)str2json(atts_since);
+        Log.e(TAG, json.toString());
+        assertNotNull(json);
+        // atts_since parameter should be limit to PullerInternal.MAX_NUMBER_OF_ATTS_SINCE
+        assertTrue(json.size() == PullerInternal.MAX_NUMBER_OF_ATTS_SINCE);
+
+        boolean success2 = idleSignal2.await(30, TimeUnit.SECONDS);
+        assertTrue(success2);
+
+        // stop pull replication
+        stopReplication(pullReplication);
+
+        server.shutdown();
+
+        Log.d(TAG, "TEST END: testPullReplicatonWithManyAttachmentRevisions()");
+    }
+
+    public static Object str2json(String value) {
+        Object result = null;
+        try {
+            result = Manager.getObjectMapper().readValue(value, Object.class);
+        } catch (Exception e) {
+            Log.w("Unable to parse JSON Query", e);
+        }
+        return result;
+    }
+
+    public static Map<String,String> query2map(String queryString) {
+        Map<String,String> queries = new HashMap<String,String>();
+        for (String component : queryString.split("&")) {
+            int location = component.indexOf('=');
+            if(location > 0) {
+                String key = component.substring(0, location);
+                String value = component.substring(location + 1);
+                queries.put(key, value);
+            }
+        }
+        return queries;
+    }
 
     class CustomMultipartReaderDelegate implements MultipartReaderDelegate  {
         public Map<String, String> headers = null;
