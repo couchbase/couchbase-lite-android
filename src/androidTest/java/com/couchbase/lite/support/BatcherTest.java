@@ -285,20 +285,26 @@ public class BatcherTest extends LiteTestCase {
             success = latch1.await(500, TimeUnit.MILLISECONDS);
             assertTrue(success);
 
+            // To measure elapsed time, nanoTime() is better than currentTimeMillis()
+            // note: currentTimeMillis() is not accurate to measure elapsed time
+            // see: http://docs.oracle.com/javase/7/docs/api/java/lang/System.html#nanoTime()
+            timeBeforeQueue = System.nanoTime();
+
             // add another object
-            timeBeforeQueue = System.currentTimeMillis();
             batcher.queueObject(new String());
 
             // we shouldn't see latch close until processorDelay milliseconds has passed
             success = latch2.await(5, TimeUnit.SECONDS);
             assertTrue(success);
-            timeAfterCallback = System.currentTimeMillis();
+
+            timeAfterCallback = System.nanoTime();
             delta = timeAfterCallback - timeBeforeQueue;
+            delta /= 1000;
 
             // https://github.com/couchbase/couchbase-lite-java-core/issues/403
-            // Deley is not applied if docs are more than batcher capacity
+            // Delay is not applied if docs are more than batcher capacity
             if(k == 0) {
-                assertTrue(delta >= processorDelay);
+                assertTrue("delta is " + delta, delta >= processorDelay);
             }
         }
     }
@@ -342,9 +348,7 @@ public class BatcherTest extends LiteTestCase {
 
         // at this point, the countdown latch should be 0
         assertEquals(0, latch.getCount());
-
     }
-
 
     /**
      * - Call batcher to queue a single item in a fast loop
@@ -390,7 +394,6 @@ public class BatcherTest extends LiteTestCase {
                     objectsToQueue.add(Integer.toString(i));
                     batcher.queueObjects(objectsToQueue);
                     Log.d(TAG, "Submitted object %d", i);
-
                 }
             }
         });
@@ -408,10 +411,7 @@ public class BatcherTest extends LiteTestCase {
         assertEquals(latchInterrupted.getCount(), 1);
 
         t.interrupt();
-
     }
-
-
 
     private static void assertNumbersConsecutive(List<String> itemsToProcess) {
         int previousItemNumber = -1;
@@ -425,5 +425,4 @@ public class BatcherTest extends LiteTestCase {
             }
         }
     }
-
 }
