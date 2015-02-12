@@ -1,8 +1,5 @@
 [![Join the chat at https://gitter.im/couchbase/couchbase-lite-java-core](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/couchbase/couchbase-lite-java-core?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Stories in Ready](https://badge.waffle.io/couchbase/couchbase-lite-android.png?label=ready&title=Ready)](https://waffle.io/couchbase/couchbase-lite-android)
-# Couchbase-Lite-Android #
-
 Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend.  
 
 It is the Android port of [Couchbase Lite iOS](https://github.com/couchbase/couchbase-lite-ios).    
