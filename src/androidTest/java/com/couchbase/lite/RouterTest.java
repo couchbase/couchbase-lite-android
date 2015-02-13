@@ -884,4 +884,20 @@ public class RouterTest extends LiteTestCase {
         assertEquals(2, ((List)result.get("rows")).size());
         assertEquals(4, result.get("total_rows"));
     }
+
+    public void testSession() {
+        send("PUT", "/db", Status.CREATED, null);
+
+        Map<String,Object> session = new HashMap<String,Object>();
+        Map<String,Object> userCtx = new HashMap<String,Object>();
+        List<String> roles = new ArrayList<String>();
+        roles.add("_admin");
+        session.put("ok", true);
+        userCtx.put("name", null);
+        userCtx.put("roles", roles);
+        session.put("userCtx", userCtx);
+
+        send("GET", "/_session", Status.OK, session);
+        send("GET", "/db/_session", Status.OK, session);
+    }
 }
