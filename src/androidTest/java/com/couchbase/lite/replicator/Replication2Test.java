@@ -105,11 +105,13 @@ public class Replication2Test  extends LiteTestCase {
         // make some assertions about the outgoing _bulk_docs requests
         RecordedRequest bulkDocsRequest1 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
         assertNotNull(bulkDocsRequest1);
-        assertBulkDocJsonContainsDoc(bulkDocsRequest1, docs.get(0));
 
         RecordedRequest bulkDocsRequest2 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
         assertNotNull(bulkDocsRequest2);
-        assertBulkDocJsonContainsDoc(bulkDocsRequest2, docs.get(100));
+
+        // order may not be guaranteed
+        assertTrue(isBulkDocJsonContainsDoc(bulkDocsRequest1, docs.get(0)) || isBulkDocJsonContainsDoc(bulkDocsRequest2, docs.get(0)));
+        assertTrue(isBulkDocJsonContainsDoc(bulkDocsRequest1, docs.get(100)) || isBulkDocJsonContainsDoc(bulkDocsRequest2, docs.get(100)));
 
         // check if Android CBL client sent only one PUT /{db}/_local/xxxx request
         // previous check already consume this request, so queue size should be 0.

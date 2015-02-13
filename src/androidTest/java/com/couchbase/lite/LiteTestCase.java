@@ -35,6 +35,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -733,9 +734,18 @@ public class LiteTestCase extends LiteTestCaseBase {
         List docs = (List) bulkDocsJson.get("docs");
         Map<String, Object> firstDoc = (Map<String, Object>) docs.get(0);
         assertEquals(doc.getId(), firstDoc.get("_id"));
+    }
 
-
-
+    protected boolean isBulkDocJsonContainsDoc(RecordedRequest request, Document doc) throws Exception {
+        Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+        List docs = (List) bulkDocsJson.get("docs");
+        Iterator<Object> itr = docs.iterator();
+        while(itr.hasNext()){
+            Map<String, Object> tmp = (Map<String, Object>)itr.next();
+            if(tmp.get("_id").equals(doc.getId()))
+                return true;
+        }
+        return false;
     }
 
     public static class ReplicationIdleObserver implements Replication.ChangeListener {
