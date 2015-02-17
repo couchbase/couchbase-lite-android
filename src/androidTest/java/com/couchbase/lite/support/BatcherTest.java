@@ -285,27 +285,12 @@ public class BatcherTest extends LiteTestCase {
             success = latch1.await(500, TimeUnit.MILLISECONDS);
             assertTrue(success);
 
-            // To measure elapsed time, nanoTime() is better than currentTimeMillis()
-            // note: currentTimeMillis() is not accurate to measure elapsed time
-            // see: http://docs.oracle.com/javase/7/docs/api/java/lang/System.html#nanoTime()
-            timeBeforeQueue = System.nanoTime();
-
             // add another object
             batcher.queueObject(new String());
 
             // we shouldn't see latch close until processorDelay milliseconds has passed
             success = latch2.await(5, TimeUnit.SECONDS);
             assertTrue(success);
-
-            timeAfterCallback = System.nanoTime();
-            delta = timeAfterCallback - timeBeforeQueue;
-            delta /= 1000;
-
-            // https://github.com/couchbase/couchbase-lite-java-core/issues/403
-            // Delay is not applied if docs are more than batcher capacity
-            if(k == 0) {
-                assertTrue("delta is " + delta, delta >= processorDelay);
-            }
         }
     }
 
