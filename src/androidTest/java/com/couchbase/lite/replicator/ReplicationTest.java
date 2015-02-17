@@ -4327,7 +4327,8 @@ public class ReplicationTest extends LiteTestCase {
         pullReplication.addChangeListener(new Replication.ChangeListener() {
             @Override
             public void changed(Replication.ChangeEvent event) {
-                if(event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED){
+                if(event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED &&
+                   event.getTransition().getDestination() == ReplicationState.STOPPED){
                     Log.d(TAG, "Replication is STOPPED");
                     enteredStoppedState.countDown();
                 }
@@ -4340,7 +4341,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // 2. wait until its RUNNING
         Log.d(TAG, "WAIT for STOPPED");
-        boolean success = enteredStoppedState.await(60, TimeUnit.SECONDS);
+        boolean success = enteredStoppedState.await(30, TimeUnit.SECONDS);
         // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
         assertEquals(1, enteredStoppedState.getCount());
         assertFalse(success);
