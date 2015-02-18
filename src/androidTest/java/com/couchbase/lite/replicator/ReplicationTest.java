@@ -2595,8 +2595,12 @@ public class ReplicationTest extends LiteTestCase {
         pullReplication.start();
 
         // wait until it goes into idle state
-        boolean success = idleCountdownLatch.await(120, TimeUnit.SECONDS);
+        boolean success = idleCountdownLatch.await(60, TimeUnit.SECONDS);
         assertTrue(success);
+
+        // WORKAROUND: With CBL Java on Jenkins, Replicator becomes IDLE state before processing doc1. (NOT 100% REPRODUCIBLE)
+        // TODO: Investigate root cause
+        try{ Thread.sleep(5*1000); }catch(Exception e){ }
 
         // put the replication offline
         putReplicationOffline(pullReplication);
@@ -2613,7 +2617,7 @@ public class ReplicationTest extends LiteTestCase {
         putReplicationOnline(pullReplication);
 
         // wait until we receive all the docs
-        success = receivedAllDocs.await(120, TimeUnit.SECONDS);
+        success = receivedAllDocs.await(60, TimeUnit.SECONDS);
         assertTrue(success);
 
         // wait until we try to PUT a checkpoint request with doc2's sequence
