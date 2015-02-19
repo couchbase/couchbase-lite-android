@@ -2599,7 +2599,7 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(success);
 
         // WORKAROUND: With CBL Java on Jenkins, Replicator becomes IDLE state before processing doc1. (NOT 100% REPRODUCIBLE)
-        // TODO: Investigate root cause
+        // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
         if(!System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
             try {
                 Thread.sleep(5 * 1000);
@@ -3750,6 +3750,7 @@ public class ReplicationTest extends LiteTestCase {
         }
 
         // WORKAROUND: CBL Java Unit Test on Jenkins rarely fails following.
+        // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
         // It seems threading issue exists, and replicator becomes IDLE even tasks in batcher.
         if(System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
             // Assert that all docs have already been pushed by the time it goes IDLE

@@ -116,6 +116,7 @@ public class Replication2Test  extends LiteTestCase {
         assertNotNull(bulkDocsRequest2);
 
         if(System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
+            // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
             // TODO: this is not valid if device can not handle all replication data at once
             // order may not be guaranteed
             assertTrue(isBulkDocJsonContainsDoc(bulkDocsRequest1, docs.get(0)) || isBulkDocJsonContainsDoc(bulkDocsRequest2, docs.get(0)));
