@@ -28,8 +28,6 @@ public class ApiTest extends LiteTestCase {
 
     private int changeCount = 0;
 
-
-
     //SERVER & DOCUMENTS
 
     public void testAPIManager() throws Exception {
@@ -552,7 +550,7 @@ public class ApiTest extends LiteTestCase {
 
     }
 
-    public void failingTestCreateIdenticalParentContentRevisions() throws Exception {
+    public void testCreateIdenticalParentContentRevisions() throws Exception {
         Document doc = database.createDocument();
         SavedRevision rev = doc.createRevision().save();
 
