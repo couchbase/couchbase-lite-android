@@ -15,6 +15,8 @@ import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.util.Log;
 import com.couchbase.test.lite.LiteTestCaseBase;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
@@ -25,8 +27,6 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.cookie.Cookie;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

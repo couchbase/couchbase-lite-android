@@ -1,11 +1,10 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import junit.framework.Assert;
-
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import java.util.Arrays;
 import java.util.EnumSet;

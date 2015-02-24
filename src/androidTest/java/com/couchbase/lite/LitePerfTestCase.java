@@ -1,43 +1,21 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.support.Base64;
-import com.couchbase.test.lite.*;
-
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.replicator.Replication;
-import com.couchbase.lite.router.*;
-import com.couchbase.lite.router.Router;
-import com.couchbase.lite.storage.Cursor;
-import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
-
-import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.io.FileOutputStream;
 
 public class LitePerfTestCase extends LiteTestCase {
 
