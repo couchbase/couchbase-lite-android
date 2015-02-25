@@ -1,20 +1,12 @@
 package com.couchbase.lite.support;
 
-import com.couchbase.lite.Database;
 import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.util.Log;
-
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Date;import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 public class JsonDocumentTest extends LiteTestCase {
 

@@ -3,10 +3,9 @@ package com.couchbase.lite;
 import com.couchbase.lite.util.Log;
 import com.couchbase.touchdb.RevCollator;
 import com.couchbase.touchdb.TDCollateJSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import junit.framework.Assert;
-
-import org.codehaus.jackson.map.ObjectMapper;
 
 public class CollationTest extends LiteTestCase {
 

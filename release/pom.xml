@@ -12,7 +12,7 @@
     <properties>
         <local-m2dir>${basedir}/m2</local-m2dir>
 
-        <jackson.version>     1.9.2 </jackson.version>
+        <jackson.version>     2.5.0 </jackson.version>
         <commons-io.version>  2.0.1 </commons-io.version>
         <rhino.version>       1.7R3 </rhino.version>
         <servlet.version>     2-3   </servlet.version>
@@ -76,15 +76,20 @@
         </dependency>
 
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-core-asl</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
             <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
-        
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
@@ -273,8 +278,10 @@
                                      <fileset dir="${local-m2dir}">
                                          <include name="**/rhino-${rhino.version}.jar"                />
                                          <include name="**/commons-io-${commons-io.version}.jar"      />
-                                         <include name="**/jackson-core-asl-${jackson.version}.jar"   />
-                                         <include name="**/jackson-mapper-asl-${jackson.version}.jar" />
+
+                                         <include name="**/jackson-core-${jackson.version}.jar"   />
+                                         <include name="**/jackson-annotations-${jackson.version}.jar" />
+                                         <include name="**/jackson-databind-${jackson.version}.jar" />
                                          
                                          <include name="**/servlet-${servlet.version}.jar"            />
                                          <include name="**/webserver-${servlet.version}.jar"          />
