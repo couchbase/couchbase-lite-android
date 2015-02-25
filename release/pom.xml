@@ -278,8 +278,10 @@
                                      <fileset dir="${local-m2dir}">
                                          <include name="**/rhino-${rhino.version}.jar"                />
                                          <include name="**/commons-io-${commons-io.version}.jar"      />
-                                         <include name="**/jackson-core-asl-${jackson.version}.jar"   />
-                                         <include name="**/jackson-mapper-asl-${jackson.version}.jar" />
+
+                                         <include name="**/jackson-core-${jackson.version}.jar"   />
+                                         <include name="**/jackson-annotations-${jackson.version}.jar" />
+                                         <include name="**/jackson-databind-${jackson.version}.jar" />
                                          
                                          <include name="**/servlet-${servlet.version}.jar"            />
                                          <include name="**/webserver-${servlet.version}.jar"          />
