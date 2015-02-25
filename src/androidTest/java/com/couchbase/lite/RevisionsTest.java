@@ -169,6 +169,7 @@ public class RevisionsTest extends LiteTestCase {
     public void testRevisionIdEquivalentRevisions() throws Exception {
 
         // This test causes crash with CBL Java on OSX
+        // TODO: Github Ticket: https://github.com/couchbase/couchbase-lite-java/issues/55
         if(System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
 
             // two revisions with the same content and the same json
