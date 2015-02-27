@@ -4673,6 +4673,11 @@ public class ReplicationTest extends LiteTestCase {
             }
         }
         @Override
+        public void appendToPart(final byte[] data, int off, int len){
+            byte[] b = Arrays.copyOfRange(data, off, len - off);
+            appendToPart(b);
+        }
+        @Override
         public void finishedPart() {
         }
     };
