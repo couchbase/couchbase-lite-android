@@ -39,7 +39,7 @@ public class ValidationsTest extends LiteTestCase {
         Map<String, Object> props = new HashMap<String,Object>();
         props.put("name","Zaphod Beeblebrox");
         props.put("towel", "velvet");
-        RevisionInternal rev = new RevisionInternal(props, database);
+        RevisionInternal rev = new RevisionInternal(props);
         Status status = new Status();
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
@@ -71,7 +71,7 @@ public class ValidationsTest extends LiteTestCase {
         props = new HashMap<String,Object>();
         props.put("name","Vogon");
         props.put("poetry", true);
-        rev = new RevisionInternal(props, database);
+        rev = new RevisionInternal(props);
         validationCalled = false;
         gotExpectedError = false;
         try {
@@ -87,14 +87,14 @@ public class ValidationsTest extends LiteTestCase {
         props.put("_id", "ford");
         props.put("name","Ford Prefect");
         props.put("towel", "terrycloth");
-        rev = new RevisionInternal(props, database);
+        rev = new RevisionInternal(props);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         assertTrue(validationCalled);
         assertEquals("ford", rev.getDocId());
 
         // DELETE a document:
-        rev = new RevisionInternal(rev.getDocId(), rev.getRevId(), true, database);
+        rev = new RevisionInternal(rev.getDocId(), rev.getRevId(), true);
         assertTrue(rev.isDeleted());
         validationCalled = false;
         rev = database.putRevision(rev, rev.getRevId(), false, status);
@@ -104,7 +104,7 @@ public class ValidationsTest extends LiteTestCase {
         props = new HashMap<String,Object>();
         props.put("_id", "petunias");
         props.put("name","Pot of Petunias");
-        rev = new RevisionInternal(props, database);
+        rev = new RevisionInternal(props);
         validationCalled = false;
         gotExpectedError = false;
         try {

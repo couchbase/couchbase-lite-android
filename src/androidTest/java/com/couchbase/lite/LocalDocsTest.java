@@ -21,7 +21,7 @@ public class LocalDocsTest extends LiteTestCase {
         documentProperties.put("bar", false);
 
         Body body = new Body(documentProperties);
-        RevisionInternal rev1 = new RevisionInternal(body, database);
+        RevisionInternal rev1 = new RevisionInternal(body);
 
         Status status = new Status();
         rev1 = database.putLocalRevision(rev1, null);
@@ -42,7 +42,7 @@ public class LocalDocsTest extends LiteTestCase {
         documentProperties = readRev.getProperties();
         documentProperties.put("status", "updated!");
         body = new Body(documentProperties);
-        RevisionInternal rev2 = new RevisionInternal(body, database);
+        RevisionInternal rev2 = new RevisionInternal(body);
         RevisionInternal rev2input = rev2;
         rev2 = database.putLocalRevision(rev2, rev1.getRevId());
         Log.v(TAG, "Updated " + rev1);
@@ -66,7 +66,7 @@ public class LocalDocsTest extends LiteTestCase {
 
 
         // Delete it:
-        RevisionInternal revD = new RevisionInternal(rev2.getDocId(), null, true, database);
+        RevisionInternal revD = new RevisionInternal(rev2.getDocId(), null, true);
 
         gotException = false;
         try {
@@ -82,7 +82,7 @@ public class LocalDocsTest extends LiteTestCase {
 
         // Delete nonexistent doc:
         gotException = false;
-        RevisionInternal revFake = new RevisionInternal("_local/fake", null, true, database);
+        RevisionInternal revFake = new RevisionInternal("_local/fake", null, true);
         try {
             database.putLocalRevision(revFake, null);
         } catch (CouchbaseLiteException e) {

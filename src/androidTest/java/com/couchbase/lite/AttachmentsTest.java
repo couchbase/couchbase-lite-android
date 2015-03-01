@@ -59,7 +59,7 @@ public class AttachmentsTest extends LiteTestCase {
         Map<String, Object> rev1Properties = new HashMap<String, Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
-        RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties, database), null, false, status);
+        RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties), null, false, status);
 
         Assert.assertEquals(Status.CREATED, status.getCode());
 
@@ -118,7 +118,7 @@ public class AttachmentsTest extends LiteTestCase {
         rev2Properties.put("_id", rev1.getDocId());
         rev2Properties.put("foo", 2);
         rev2Properties.put("bazz", false);
-        RevisionInternal rev2 = database.putRevision(new RevisionInternal(rev2Properties, database), rev1.getRevId(), false, status);
+        RevisionInternal rev2 = database.putRevision(new RevisionInternal(rev2Properties), rev1.getRevId(), false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
         database.copyAttachmentNamedFromSequenceToSequence(testAttachmentName, rev1.getSequence(), rev2.getSequence());
@@ -128,7 +128,7 @@ public class AttachmentsTest extends LiteTestCase {
         rev3Properties.put("_id", rev2.getDocId());
         rev3Properties.put("foo", 2);
         rev3Properties.put("bazz", false);
-        RevisionInternal rev3 = database.putRevision(new RevisionInternal(rev3Properties, database), rev2.getRevId(), false, status);
+        RevisionInternal rev3 = database.putRevision(new RevisionInternal(rev3Properties), rev2.getRevId(), false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
         byte[] attach2 = "<html>And this is attach2</html>".getBytes();
@@ -192,7 +192,7 @@ public class AttachmentsTest extends LiteTestCase {
         Map<String, Object> rev1Properties = new HashMap<String, Object>();
         rev1Properties.put("foo", 1);
         rev1Properties.put("bar", false);
-        RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties, database), null, false, status);
+        RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties), null, false, status);
 
         Assert.assertEquals(Status.CREATED, status.getCode());
 
@@ -246,7 +246,7 @@ public class AttachmentsTest extends LiteTestCase {
         rev2Properties.put("_id", rev1WithAttachmentsProperties.get("_id"));
         rev2Properties.put("foo", 2);
 
-        RevisionInternal newRev = new RevisionInternal(rev2Properties, database);
+        RevisionInternal newRev = new RevisionInternal(rev2Properties);
         RevisionInternal rev2 = database.putRevision(newRev, rev1WithAttachments.getRevId(), false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
@@ -269,7 +269,7 @@ public class AttachmentsTest extends LiteTestCase {
         rev3Properties.put("foo", 3);
         rev3Properties.put("baz", false);
 
-        RevisionInternal rev3 = new RevisionInternal(rev3Properties, database);
+        RevisionInternal rev3 = new RevisionInternal(rev3Properties);
         rev3 = database.putRevision(rev3, rev2.getRevId(), false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
@@ -320,7 +320,7 @@ public class AttachmentsTest extends LiteTestCase {
         properties.put("bar", false);
         properties.put("_attachments", attachmentDict);
 
-        RevisionInternal rev1 = database.putRevision(new RevisionInternal(properties, database), null, false);
+        RevisionInternal rev1 = database.putRevision(new RevisionInternal(properties), null, false);
 
         // Examine the attachment store:
         Assert.assertEquals(1, attachments.count());

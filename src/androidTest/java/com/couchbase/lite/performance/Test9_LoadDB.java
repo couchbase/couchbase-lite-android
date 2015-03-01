@@ -18,17 +18,14 @@
 package com.couchbase.lite.performance;
 
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.LiteTestContext;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.Status;
-import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,7 +72,7 @@ public class Test9_LoadDB extends LiteTestCase {
                 props.put("bigArray", bigObj);
 
                 Body body = new Body(props);
-                RevisionInternal rev1 = new RevisionInternal(body, database);
+                RevisionInternal rev1 = new RevisionInternal(body);
 
                 Status status = new Status();
                 try {

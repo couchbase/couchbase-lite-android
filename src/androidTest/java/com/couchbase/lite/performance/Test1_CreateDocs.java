@@ -18,21 +18,14 @@
 package com.couchbase.lite.performance;
 
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.ReplicationFilter;
-import com.couchbase.lite.RevisionList;
-import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Test1_CreateDocs extends LiteTestCase {
@@ -65,7 +58,7 @@ public class Test1_CreateDocs extends LiteTestCase {
                     props.put("bigArray", bigObj);
 
                     Body body = new Body(props);
-                    RevisionInternal rev1 = new RevisionInternal(body, database);
+                    RevisionInternal rev1 = new RevisionInternal(body);
 
                     Status status = new Status();
                     try {

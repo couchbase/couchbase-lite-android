@@ -33,7 +33,7 @@ public class RevTreeTest extends LiteTestCase {
     public void testForceInsertEmptyHistory() throws CouchbaseLiteException {
 
         List<String> revHistory = null;
-        RevisionInternal rev = new RevisionInternal("FakeDocId", "1-tango", false, database);
+        RevisionInternal rev = new RevisionInternal("FakeDocId", "1-tango", false);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
@@ -47,7 +47,7 @@ public class RevTreeTest extends LiteTestCase {
 
     public void testRevTree() throws CouchbaseLiteException {
 
-        RevisionInternal rev = new RevisionInternal("MyDocId", "4-foxy", false, database);
+        RevisionInternal rev = new RevisionInternal("MyDocId", "4-foxy", false);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
@@ -65,7 +65,7 @@ public class RevTreeTest extends LiteTestCase {
         assertEquals(1, database.getDocumentCount());
         verifyHistory(database, rev, revHistory);
 
-        RevisionInternal conflict = new RevisionInternal("MyDocId", "5-epsilon", false, database);
+        RevisionInternal conflict = new RevisionInternal("MyDocId", "5-epsilon", false);
 
         Map<String, Object> conflictProperties = new HashMap<String, Object>();
         conflictProperties.put("_id", conflict.getDocId());
@@ -97,7 +97,7 @@ public class RevTreeTest extends LiteTestCase {
         verifyHistory(database, conflict, conflictHistory);
 
         // Add an unrelated document:
-        RevisionInternal other = new RevisionInternal("AnotherDocID", "1-ichi", false, database);
+        RevisionInternal other = new RevisionInternal("AnotherDocID", "1-ichi", false);
         Map<String,Object> otherProperties = new HashMap<String,Object>();
         otherProperties.put("language", "jp");
         other.setProperties(otherProperties);
@@ -142,7 +142,7 @@ public class RevTreeTest extends LiteTestCase {
         final String DOCUMENT_ID = "MyDocId";
 
         // add a document with a single (first) revision
-        final RevisionInternal rev = new RevisionInternal(DOCUMENT_ID, "1-one", false, database);
+        final RevisionInternal rev = new RevisionInternal(DOCUMENT_ID, "1-one", false);
         Map<String, Object> revProperties = new HashMap<String, Object>();
         revProperties.put("_id", rev.getDocId());
         revProperties.put("_rev", rev.getRevId());
@@ -170,7 +170,7 @@ public class RevTreeTest extends LiteTestCase {
         database.removeChangeListener(listener);
 
         // add two more revisions to the document
-        final RevisionInternal rev3 = new RevisionInternal(DOCUMENT_ID, "3-three", false, database);
+        final RevisionInternal rev3 = new RevisionInternal(DOCUMENT_ID, "3-three", false);
         Map<String, Object> rev3Properties = new HashMap<String, Object>();
         rev3Properties.put("_id", rev3.getDocId());
         rev3Properties.put("_rev", rev3.getRevId());
@@ -205,7 +205,7 @@ public class RevTreeTest extends LiteTestCase {
         // add a conflicting revision, with the same history length as the last revision we
         // inserted. Since this new revision's revID has a higher ASCII sort, it should become the
         // new winning revision.
-        final RevisionInternal conflictRev = new RevisionInternal(DOCUMENT_ID, "3-winner", false, database);
+        final RevisionInternal conflictRev = new RevisionInternal(DOCUMENT_ID, "3-winner", false);
         Map<String, Object> conflictProperties = new HashMap<String, Object>();
         conflictProperties.put("_id", conflictRev.getDocId());
         conflictProperties.put("_rev", conflictRev.getRevId());

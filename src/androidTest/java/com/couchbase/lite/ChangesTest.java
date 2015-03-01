@@ -30,7 +30,7 @@ public class ChangesTest extends LiteTestCase {
         documentProperties.put("baz", "touch");
 
         Body body = new Body(documentProperties);
-        RevisionInternal rev1 = new RevisionInternal(body, database);
+        RevisionInternal rev1 = new RevisionInternal(body);
 
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
@@ -67,7 +67,7 @@ public class ChangesTest extends LiteTestCase {
         database.addChangeListener(changeListener);
 
         // Insert a document as if it came from a remote source.
-        RevisionInternal rev = new RevisionInternal("docId", "1-rev", false, database);
+        RevisionInternal rev = new RevisionInternal("docId", "1-rev", false);
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("_id", rev.getDocId());
         properties.put("_rev", rev.getRevId());

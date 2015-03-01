@@ -460,7 +460,7 @@ public class LiteTestCase extends LiteTestCaseBase {
         doc1Properties.put("bar", false);
 
         Body body = new Body(doc1Properties);
-        RevisionInternal rev1 = new RevisionInternal(body, database);
+        RevisionInternal rev1 = new RevisionInternal(body);
 
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
@@ -470,7 +470,7 @@ public class LiteTestCase extends LiteTestCaseBase {
         doc1Properties.put("UPDATED", true);
 
         @SuppressWarnings("unused")
-        RevisionInternal rev2 = database.putRevision(new RevisionInternal(doc1Properties, database), rev1.getRevId(), false, status);
+        RevisionInternal rev2 = database.putRevision(new RevisionInternal(doc1Properties), rev1.getRevId(), false, status);
         assertEquals(Status.CREATED, status.getCode());
 
         Map<String, Object> doc2Properties = new HashMap<String, Object>();
@@ -479,7 +479,7 @@ public class LiteTestCase extends LiteTestCaseBase {
         doc2Properties.put("baz", 666);
         doc2Properties.put("fnord", true);
 
-        database.putRevision(new RevisionInternal(doc2Properties, database), null, false, status);
+        database.putRevision(new RevisionInternal(doc2Properties), null, false, status);
         assertEquals(Status.CREATED, status.getCode());
 
         Document doc2 = database.getDocument(doc2Id);

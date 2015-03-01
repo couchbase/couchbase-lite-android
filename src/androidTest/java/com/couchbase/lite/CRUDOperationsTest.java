@@ -47,7 +47,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         documentProperties.put("baz", "touch");
 
         Body body = new Body(documentProperties);
-        RevisionInternal rev1 = new RevisionInternal(body, database);
+        RevisionInternal rev1 = new RevisionInternal(body);
 
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
@@ -66,7 +66,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         documentProperties = readRev.getProperties();
         documentProperties.put("status", "updated!");
         body = new Body(documentProperties);
-        RevisionInternal rev2 = new RevisionInternal(body, database);
+        RevisionInternal rev2 = new RevisionInternal(body);
         RevisionInternal rev2input = rev2;
         rev2 = database.putRevision(rev2, rev1.getRevId(), false, status);
         Log.v(TAG, "Updated " + rev1);
@@ -114,7 +114,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
 
 
         // Delete it:
-        RevisionInternal revD = new RevisionInternal(rev2.getDocId(), null, true, database);
+        RevisionInternal revD = new RevisionInternal(rev2.getDocId(), null, true);
         RevisionInternal revResult = null;
         gotExpectedError = false;
         try {
@@ -131,7 +131,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         assertTrue(revD.getRevId().startsWith("3-"));
 
         // Delete nonexistent doc:
-        RevisionInternal revFake = new RevisionInternal("fake", null, true, database);
+        RevisionInternal revFake = new RevisionInternal("fake", null, true);
         gotExpectedError = false;
         try {
             database.putRevision(revFake, null, false, status);
