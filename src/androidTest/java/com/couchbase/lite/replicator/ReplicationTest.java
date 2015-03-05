@@ -4685,14 +4685,12 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Push Replication, never receive REPLICATION_ACTIVE status
      * https://github.com/couchbase/couchbase-lite-android/issues/451
-     *
      */
     public void testPushReplActiveState() throws Exception {
         Log.d(TAG, "TEST START: testPushReplActiveState()");
 
         // make sure we are starting empty
         assertEquals(0, database.getLastSequenceNumber());
-
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
@@ -4717,7 +4715,6 @@ public class ReplicationTest extends LiteTestCase {
         Replication pullReplication = database.createPushReplication(server.getUrl("/db"));
         pullReplication.setContinuous(true);
         final String checkpointId = pullReplication.remoteCheckpointDocID();  // save the checkpoint id for later usage
-        Log.e(Log.TAG, "checkpointId => " + checkpointId);
 
         // Event handler for IDLE
         CountDownLatch idleSignal = new CountDownLatch(1);
@@ -4732,12 +4729,10 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(successful);
         pullReplication.removeChangeListener(idleObserver);
 
-
         // Event handler for ACTIVE
         CountDownLatch activeSignal = new CountDownLatch(1);
         ReplicationActiveObserver activeObserver = new ReplicationActiveObserver(activeSignal);
         pullReplication.addChangeListener(activeObserver);
-
 
         // Event handler for IDLE2
         CountDownLatch idleSignal2 = new CountDownLatch(1);
@@ -4745,7 +4740,7 @@ public class ReplicationTest extends LiteTestCase {
         pullReplication.addChangeListener(idleObserver2);
 
         // add docs
-        Map<String,Object> properties1 = new HashMap<String,Object>();
+        Map<String, Object> properties1 = new HashMap<String, Object>();
         properties1.put("doc1", "testPushReplActiveState");
         final Document doc1 = createDocWithProperties(properties1);
 
