@@ -21,7 +21,6 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.TransactionalTask;
-import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
@@ -65,7 +64,7 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCase {
                         Map<String, Object> rev1Properties = new HashMap<String, Object>();
                         rev1Properties.put("foo", 1);
                         rev1Properties.put("bar", false);
-                        RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties, database), null, false, status);
+                        RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties), null, false, status);
 
                         Assert.assertEquals(Status.CREATED, status.getCode());
 

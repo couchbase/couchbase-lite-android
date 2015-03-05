@@ -341,7 +341,7 @@ public class RevisionsTest extends LiteTestCase {
     }
 
     private static RevisionInternal mkrev(String revID) {
-        return new RevisionInternal("docid", revID, false, null);
+        return new RevisionInternal("docid", revID, false);
     }
 
 }

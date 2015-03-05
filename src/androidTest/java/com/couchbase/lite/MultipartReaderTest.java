@@ -37,15 +37,19 @@ public class MultipartReaderTest extends LiteTestCase {
         }
 
         public void appendToPart(byte[] data) {
+            appendToPart(data, 0, data.length);
+        }
+
+        public void appendToPart(final byte[] data, int off, int len)
+        {
             Assert.assertNotNull(currentPartData);
-            currentPartData.append(data, 0, data.length);
+            currentPartData.append(data, off, len);
         }
 
         public void finishedPart() {
             Assert.assertNotNull(currentPartData);
             currentPartData = null;
         }
-
     }
 
     public void testParseContentType() {
@@ -71,7 +75,6 @@ public class MultipartReaderTest extends LiteTestCase {
         } catch (Exception e) {
             // expected exception
         }
-
     }
 
     public void testParseHeaders() {
@@ -96,8 +99,8 @@ public class MultipartReaderTest extends LiteTestCase {
 
     }
 
-    public void testReaderOperation() {
-
+    public void testReaderOperation()
+    {
         Charset utf8 = Charset.forName("UTF-8");
 
         byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
@@ -116,12 +119,10 @@ public class MultipartReaderTest extends LiteTestCase {
         mime3Buffer.append("\r\n--BOUNDARY\r\n\r\n2nd part\r\n--BOUNDARY--");
         byte[] mime3 = mime3Buffer.toString().getBytes(utf8);
         readerOperationWithMime(mime3, mime3BufferFirstPart.toString(), "2nd part", 1024);
-
-
     }
 
-    private void readerOperationWithMime(byte[] mime, String part1ExpectedStr, String part2ExpectedStr, int recommendedChunkSize) {
-
+    private void readerOperationWithMime(byte[] mime, String part1ExpectedStr, String part2ExpectedStr, int recommendedChunkSize)
+    {
         Charset utf8 = Charset.forName("UTF-8");
 
         // if the caller passes in a special chunksize, which is not equal to mime.length, then
@@ -168,8 +169,6 @@ public class MultipartReaderTest extends LiteTestCase {
 
             Assert.assertTrue(headers1.containsKey("Header"));
             Assert.assertEquals(headers1.get("Header"), "Val ue");
-
         }
     }
-
 }

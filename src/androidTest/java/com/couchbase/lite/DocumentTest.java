@@ -112,8 +112,7 @@ public class DocumentTest extends LiteTestCase {
         RevisionInternal revisionInternal = new RevisionInternal(
                 document.getId(),
                 document.getCurrentRevisionId(),
-                deleted,
-                database
+                deleted
         );
         EnumSet<Database.TDContentOptions> contentOptions = EnumSet.of(
                 Database.TDContentOptions.TDIncludeAttachments,

@@ -4497,7 +4497,7 @@ public class ReplicationTest extends LiteTestCase {
         Map<String,Object> props1 = new HashMap<String,Object>();
         props1.put("_id", docID);
         props1.put(key, value);
-        RevisionInternal rev = new RevisionInternal(props1, database);
+        RevisionInternal rev = new RevisionInternal(props1);
         Status status = new Status();
         RevisionInternal savedRev = database.putRevision(rev, null, false, status);
 
@@ -4519,7 +4519,7 @@ public class ReplicationTest extends LiteTestCase {
             props.put("_id", docID);
             props.put("_rev", j + "-00");
             props.put(key, value);
-            RevisionInternal leaf = new RevisionInternal(props, database);
+            RevisionInternal leaf = new RevisionInternal(props);
             database.forceInsert(leaf, new ArrayList<String>(), null);
             Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
 
@@ -4540,7 +4540,7 @@ public class ReplicationTest extends LiteTestCase {
                 attachmentDict.put("test_attachment", attachment);
                 props_conflict.put("_attachments", attachmentDict);
                 // end of attachment
-                RevisionInternal leaf_conflict = new RevisionInternal(props_conflict, database);
+                RevisionInternal leaf_conflict = new RevisionInternal(props_conflict);
                 database.forceInsert(leaf_conflict, new ArrayList<String>(), null);
                 Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
             }
@@ -4671,6 +4671,11 @@ public class ReplicationTest extends LiteTestCase {
             else if(bJson){
                 this.data = data;
             }
+        }
+        @Override
+        public void appendToPart(final byte[] data, int off, int len){
+            byte[] b = Arrays.copyOfRange(data, off, len - off);
+            appendToPart(b);
         }
         @Override
         public void finishedPart() {

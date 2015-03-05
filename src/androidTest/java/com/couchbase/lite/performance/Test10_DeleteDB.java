@@ -60,7 +60,7 @@ public class Test10_DeleteDB extends LiteTestCase {
                     props.put("bigArray", bigObj);
 
                     Body body = new Body(props);
-                    RevisionInternal rev1 = new RevisionInternal(body, database);
+                    RevisionInternal rev1 = new RevisionInternal(body);
 
                     Status status = new Status();
                     try {
