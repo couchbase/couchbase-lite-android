@@ -4680,5 +4680,90 @@ public class ReplicationTest extends LiteTestCase {
         @Override
         public void finishedPart() {
         }
-    };
+    }
+
+    /**
+     * Push Replication, never receive REPLICATION_ACTIVE status
+     * https://github.com/couchbase/couchbase-lite-android/issues/451
+     */
+    public void testPushReplActiveState() throws Exception {
+        Log.d(TAG, "TEST START: testPushReplActiveState()");
+
+        // make sure we are starting empty
+        assertEquals(0, database.getLastSequenceNumber());
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        server.play();
+
+        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // _revs_diff response -- everything missing
+        MockRevsDiff mockRevsDiff = new MockRevsDiff();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+        // _bulk_docs response -- everything stored
+        MockBulkDocs mockBulkDocs = new MockBulkDocs();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+
+        //
+        Replication pullReplication = database.createPushReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(true);
+        final String checkpointId = pullReplication.remoteCheckpointDocID();  // save the checkpoint id for later usage
+
+        // Event handler for IDLE
+        CountDownLatch idleSignal = new CountDownLatch(1);
+        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(idleSignal);
+        pullReplication.addChangeListener(idleObserver);
+
+        // start the continuous replication
+        pullReplication.start();
+
+        // wait until we get an IDLE event
+        boolean successful = idleSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(successful);
+        pullReplication.removeChangeListener(idleObserver);
+
+        // Event handler for ACTIVE
+        CountDownLatch activeSignal = new CountDownLatch(1);
+        ReplicationActiveObserver activeObserver = new ReplicationActiveObserver(activeSignal);
+        pullReplication.addChangeListener(activeObserver);
+
+        // Event handler for IDLE2
+        CountDownLatch idleSignal2 = new CountDownLatch(1);
+        ReplicationIdleObserver idleObserver2 = new ReplicationIdleObserver(idleSignal2);
+        pullReplication.addChangeListener(idleObserver2);
+
+        // add docs
+        Map<String, Object> properties1 = new HashMap<String, Object>();
+        properties1.put("doc1", "testPushReplActiveState");
+        final Document doc1 = createDocWithProperties(properties1);
+
+        // wait until we get an ACTIVE event
+        successful = activeSignal.await(30, TimeUnit.SECONDS);
+        assertTrue(successful);
+        pullReplication.removeChangeListener(activeObserver);
+
+        // check _bulk_docs
+        RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+        assertNotNull(request);
+        assertTrue(MockHelper.getUtf8Body(request).contains("testPushReplActiveState"));
+
+        // wait until we get an IDLE event
+        successful = idleSignal2.await(30, TimeUnit.SECONDS);
+        assertTrue(successful);
+        pullReplication.removeChangeListener(idleObserver2);
+
+        // stop pull replication
+        stopReplication(pullReplication);
+
+        server.shutdown();
+
+        Log.d(TAG, "TEST END: testPushReplActiveState()");
+    }
 }
