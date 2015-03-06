@@ -1,6 +1,12 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.mockserver.MockCheckpointPut;
+import com.couchbase.lite.mockserver.MockDispatcher;
+import com.couchbase.lite.mockserver.MockHelper;
+import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.util.Log;
+import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,9 +17,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class ManagerTest extends LiteTestCase {
 
@@ -160,4 +168,73 @@ public class ManagerTest extends LiteTestCase {
         }
     }
 
+
+    /**
+     * Error after close DB client
+     * https://github.com/couchbase/couchbase-lite-java/issues/52
+     */
+    public void testClose() throws Exception {
+        Log.d(Log.TAG, "START testClose()");
+
+        boolean success = false;
+
+        // create mock server
+        MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        MockWebServer server = new MockWebServer();
+        server.setDispatcher(dispatcher);
+        server.play();
+
+        // checkpoint PUT or GET response (sticky) (for both push and pull)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // create pull replication & start it
+        Replication pull = database.createPullReplication(server.getUrl("/db"));
+        pull.setContinuous(true);
+        final CountDownLatch pullIdleState = new CountDownLatch(1);
+        ReplicationIdleObserver pullIdleObserver = new ReplicationIdleObserver(pullIdleState);
+        pull.addChangeListener(pullIdleObserver);
+        pull.start();
+
+        // create push replication & start it
+        Replication push = database.createPullReplication(server.getUrl("/db"));
+        push.setContinuous(true);
+        final CountDownLatch pushIdleState = new CountDownLatch(1);
+        ReplicationIdleObserver pushIdleObserver = new ReplicationIdleObserver(pushIdleState);
+        push.addChangeListener(pushIdleObserver);
+        push.start();
+
+        // wait till both push and pull replicators become idle.
+        success = pullIdleState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        pull.removeChangeListener(pullIdleObserver);
+        success = pushIdleState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        push.removeChangeListener(pushIdleObserver);
+
+        final CountDownLatch pullStoppedState = new CountDownLatch(1);
+        ReplicationFinishedObserver pullStoppedObserver = new ReplicationFinishedObserver(pullStoppedState);
+        pull.addChangeListener(pullStoppedObserver);
+        final CountDownLatch pushStoppedState = new CountDownLatch(1);
+        ReplicationFinishedObserver pushStoppedObserver = new ReplicationFinishedObserver(pushStoppedState);
+        push.addChangeListener(pushStoppedObserver);
+
+        // close Manager, which close database(s) and replicator(s)
+        manager.close();
+
+        // wait till both push and pull replicators become idle.
+        success = pullStoppedState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        pull.removeChangeListener(pullStoppedObserver);
+        success = pushStoppedState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        push.removeChangeListener(pushStoppedObserver);
+
+        // shutdown mock server
+        server.shutdown();
+
+        Log.d(Log.TAG, "END testClose()");
+    }
 }
