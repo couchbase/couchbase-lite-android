@@ -930,11 +930,6 @@ public class ApiTest extends LiteTestCase {
         // stop the livequery since we are done with it
         query.removeChangeListener(changeListener);
         query.stop();
-
-        // Workaround:
-        // Putting a small sleep to ensure that the liveQuery is done its async update operation.
-        // https://github.com/couchbase/couchbase-lite-java-core/issues/296
-        Thread.sleep(500);
     }
 
     public void testAsyncViewQuery() throws Exception {
