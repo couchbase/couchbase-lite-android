@@ -79,6 +79,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -4765,5 +4766,66 @@ public class ReplicationTest extends LiteTestCase {
         server.shutdown();
 
         Log.d(TAG, "TEST END: testPushReplActiveState()");
+    }
+
+    /**
+     * Error after close DB client
+     * https://github.com/couchbase/couchbase-lite-java/issues/52
+     */
+    public void testStop() throws Exception {
+        Log.d(Log.TAG, "START testStop()");
+
+        boolean success = false;
+
+        // create mock server
+        MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        MockWebServer server = new MockWebServer();
+        server.setDispatcher(dispatcher);
+        server.play();
+
+        // checkpoint PUT or GET response (sticky) (for both push and pull)
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // create pull replication & start it
+        Replication pull = database.createPullReplication(server.getUrl("/db"));
+        pull.setContinuous(true);
+        final CountDownLatch pullIdleState = new CountDownLatch(1);
+        ReplicationIdleObserver pullIdleObserver = new ReplicationIdleObserver(pullIdleState);
+        pull.addChangeListener(pullIdleObserver);
+        pull.start();
+
+        // create push replication & start it
+        Replication push = database.createPullReplication(server.getUrl("/db"));
+        push.setContinuous(true);
+        final CountDownLatch pushIdleState = new CountDownLatch(1);
+        ReplicationIdleObserver pushIdleObserver = new ReplicationIdleObserver(pushIdleState);
+        push.addChangeListener(pushIdleObserver);
+        push.start();
+
+        // wait till both push and pull replicators become idle.
+        success = pullIdleState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        pull.removeChangeListener(pullIdleObserver);
+        success = pushIdleState.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        push.removeChangeListener(pushIdleObserver);
+
+        // stop both pull and push replicators
+        stopReplication(pull);
+        stopReplication(push);
+
+        // all threads which are associated with replicators should be terminated.
+        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        for (Thread t : threadSet) {
+            assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+        }
+
+        // shutdown mock server
+        server.shutdown();
+
+        Log.d(Log.TAG, "END testStop()");
     }
 }

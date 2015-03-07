@@ -16,6 +16,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -224,13 +225,18 @@ public class ManagerTest extends LiteTestCase {
         // close Manager, which close database(s) and replicator(s)
         manager.close();
 
-        // wait till both push and pull replicators become idle.
-        success = pullStoppedState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+        // not need to wait. manager.close() should wait till replicators are closed.
+        assertEquals(0, pullStoppedState.getCount());
+        assertEquals(0, pushStoppedState.getCount());
         pull.removeChangeListener(pullStoppedObserver);
-        success = pushStoppedState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
         push.removeChangeListener(pushStoppedObserver);
+
+        // all threads for Executors should be terminated.
+        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        for (Thread t : threadSet) {
+            assertEquals(-1, t.getName().indexOf("CBLManagerWorkExecutor"));
+            assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+        }
 
         // shutdown mock server
         server.shutdown();
