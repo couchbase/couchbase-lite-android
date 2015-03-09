@@ -848,15 +848,13 @@ public class ApiTest extends LiteTestCase {
         int numTimesCallbackCalled = atomicInteger.get();
         Log.d(Database.TAG, "testLiveQueryStop: numTimesCallbackCalled is: " + numTimesCallbackCalled + ".  Now adding docs");
 
-        for (int i=0; i<10; i++) {
+        for (int i = 0; i < 10; i++) {
             createDocuments(db, 1);
             Log.d(Database.TAG, "testLiveQueryStop: add a document.  atomicInteger.get(): " + atomicInteger.get());
             assertEquals(numTimesCallbackCalled, atomicInteger.get());
             Thread.sleep(200);
         }
         assertEquals(numTimesCallbackCalled, atomicInteger.get());
-
-
     }
 
     public void testLiveQueryRestart() throws Exception {
