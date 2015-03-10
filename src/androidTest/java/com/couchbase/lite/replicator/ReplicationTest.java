@@ -2833,11 +2833,6 @@ public class ReplicationTest extends LiteTestCase {
             // 4. Call goOffline()
             putReplicationOffline(replicator);
 
-            // clear all responses received so far
-            dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHECKPOINT);
-            dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_REVS_DIFF);
-            dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_BULK_DOCS);
-
             // 5. Add a 2nd local document
             properties = new HashMap<String, Object>();
             properties.put("testGoOfflinePusher", "2");
@@ -2845,13 +2840,10 @@ public class ReplicationTest extends LiteTestCase {
 
             // make sure if push replicator does not send request during offline.
             try {
-                Thread.sleep(5000 * 5);
+                Thread.sleep(1000 * 3);
             } catch (Exception ex) {
             }
-            RecordedRequest checkpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
-            assertNull(checkpointRequest);
-            RecordedRequest revsDiffRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_REVS_DIFF);
-            assertNull(revsDiffRequest);
+            // make sure not receive _bulk_docs during offline.
             RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
             assertNull(bulkDocsRequest);
 
