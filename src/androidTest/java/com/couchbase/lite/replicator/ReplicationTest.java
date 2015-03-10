@@ -2638,13 +2638,10 @@ public class ReplicationTest extends LiteTestCase {
         // cleanup
         stopReplication(pullReplication);
         server.shutdown();
-
     }
 
     private void putReplicationOffline(Replication replication) throws InterruptedException {
-
         Log.d(Log.TAG, "putReplicationOffline: %s", replication);
-
 
         // this was a useless test, the replication wasn't even started
         final CountDownLatch wentOffline = new CountDownLatch(1);
@@ -2657,16 +2654,12 @@ public class ReplicationTest extends LiteTestCase {
 
         replication.removeChangeListener(changeListener);
 
-        Log.d(Log.TAG, "/ putReplicationOffline: %s", replication);
-
-
+        Log.d(Log.TAG, "/putReplicationOffline: %s", replication);
     }
-
 
     private void putReplicationOnline(Replication replication) throws InterruptedException {
 
         Log.d(Log.TAG, "putReplicationOnline: %s", replication);
-
 
         // this was a useless test, the replication wasn't even started
         final CountDownLatch wentOnline = new CountDownLatch(1);
@@ -2681,9 +2674,7 @@ public class ReplicationTest extends LiteTestCase {
         replication.removeChangeListener(changeListener);
 
         Log.d(Log.TAG, "/putReplicationOnline: %s", replication);
-
     }
-
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/253
@@ -2834,16 +2825,30 @@ public class ReplicationTest extends LiteTestCase {
                 }
             }
 
+            // make some assertions about the outgoing _bulk_docs requests for first doc
+            RecordedRequest bulkDocsRequest1 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
+            assertNotNull(bulkDocsRequest1);
+            assertBulkDocJsonContainsDoc(bulkDocsRequest1, doc1);
+
             // 4. Call goOffline()
             putReplicationOffline(replicator);
-
-            // 6. Call goOnline()
-            putReplicationOnline(replicator);
 
             // 5. Add a 2nd local document
             properties = new HashMap<String, Object>();
             properties.put("testGoOfflinePusher", "2");
             Document doc2 = createDocumentWithProperties(database, properties);
+
+            // make sure if push replicator does not send request during offline.
+            try {
+                Thread.sleep(1000 * 3);
+            } catch (Exception ex) {
+            }
+            // make sure not receive _bulk_docs during offline.
+            RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
+            assertNull(bulkDocsRequest);
+
+            // 6. Call goOnline()
+            putReplicationOnline(replicator);
 
             // wait until mock server gets the 2nd checkpoint PUT request
             foundCheckpointPut = false;
@@ -2858,10 +2863,7 @@ public class ReplicationTest extends LiteTestCase {
                 }
             }
 
-            // make some assertions about the outgoing _bulk_docs requests
-            RecordedRequest bulkDocsRequest1 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
-            assertNotNull(bulkDocsRequest1);
-            assertBulkDocJsonContainsDoc(bulkDocsRequest1, doc1);
+            // make some assertions about the outgoing _bulk_docs requests for second doc
             RecordedRequest bulkDocsRequest2 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
             assertNotNull(bulkDocsRequest2);
             assertBulkDocJsonContainsDoc(bulkDocsRequest2, doc2);

@@ -700,9 +700,7 @@ public class LiteTestCase extends LiteTestCaseBase {
             int deleted = cursor.getInt(5);
             Log.d(TAG, String.format("Revs row seq: %s doc_id: %s, revIdStr: %s, parent: %s, current: %s, deleted: %s",
                     sequence, doc_id, revIdStr, parent, current, deleted));
-
         }
-
     }
 
     public static SavedRevision createRevisionWithRandomProps(SavedRevision createRevFrom, boolean allowConflict) throws Exception {
@@ -714,7 +712,6 @@ public class LiteTestCase extends LiteTestCaseBase {
     }
 
     /*
-
     Assert that the bulk docs json in request contains given doc.
 
     Example bulk docs json.
@@ -763,7 +760,6 @@ public class LiteTestCase extends LiteTestCaseBase {
                 doneSignal.countDown();
             }
         }
-
     }
 
     public static class ReplicationFinishedObserver implements Replication.ChangeListener {
@@ -782,7 +778,6 @@ public class LiteTestCase extends LiteTestCaseBase {
                 assertEquals(event.getChangeCount(), event.getCompletedChangeCount());
             }
         }
-
     }
 
     public static class ReplicationOfflineObserver implements Replication.ChangeListener {
@@ -800,7 +795,6 @@ public class LiteTestCase extends LiteTestCaseBase {
                 doneSignal.countDown();
             }
         }
-
     }
 
     public static class ReplicationActiveObserver implements Replication.ChangeListener {
@@ -818,10 +812,5 @@ public class LiteTestCase extends LiteTestCaseBase {
                 doneSignal.countDown();
             }
         }
-
     }
-
-
-
-
 }
