@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.util.Log;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -11,6 +12,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 public class DocumentTest extends LiteTestCase {
 
@@ -133,8 +135,6 @@ public class DocumentTest extends LiteTestCase {
         }
 
         assertTrue(gotExpectedException);
-
-
     }
 
     /**
@@ -173,8 +173,6 @@ public class DocumentTest extends LiteTestCase {
         assertEquals(fetchedProps.get("foo"), new String(chars));
 
     }
-
-
 
     public void failingTestDocumentPropertiesAreImmutable() throws Exception {
         String jsonString = "{\n" +
@@ -281,7 +279,6 @@ public class DocumentTest extends LiteTestCase {
 
     }
 
-
     public void testDocCustomID() throws Exception {
 
         Document document = database.getDocument("my_custom_id");
@@ -299,5 +296,150 @@ public class DocumentTest extends LiteTestCase {
         Document doc = database.createDocument();
         Map<String, Object> properties = doc.getProperties();
         assertNull(properties);
+    }
+
+    /**
+     * Document.update() - simple successful scenario
+     */
+    public void testUpdate() throws Exception {
+        Document document = database.getDocument("testUpdate");
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("title", "testUpdate");
+        document.putProperties(properties);
+
+        final String title = "testUpdate - 2";
+        final String notes = "notes - 2";
+
+        document.update(new Document.DocumentUpdater() {
+            @Override
+            public boolean update(UnsavedRevision newRevision) {
+                Map<String, Object> properties = newRevision.getUserProperties();
+                properties.put("title", title);
+                properties.put("notes", notes);
+                newRevision.setUserProperties(properties);
+                return true;
+            }
+        });
+        Document document2 = database.getDocument("testUpdate");
+        assertEquals(title, document2.getProperties().get("title"));
+        assertEquals(notes, document2.getProperties().get("notes"));
+    }
+
+    /**
+     * Document.update() - simple fail scenario
+     */
+    public void testUpdateFalse() throws Exception {
+        Document document = database.getDocument("testUpdateFalse");
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("title", "testUpdate");
+        document.putProperties(properties);
+
+        final String title = "testUpdate - 2";
+        final String notes = "notes - 2";
+
+        document.update(new Document.DocumentUpdater() {
+            @Override
+            public boolean update(UnsavedRevision newRevision) {
+                Map<String, Object> properties = newRevision.getUserProperties();
+                properties.put("title", title);
+                properties.put("notes", notes);
+                newRevision.setUserProperties(properties);
+                return false;
+            }
+        });
+        Document document2 = database.getDocument("testUpdateFalse");
+        assertEquals("testUpdate", document2.getProperties().get("title"));
+        assertNull(document2.getProperties().get("notes"));
+    }
+
+    /**
+     * Unit Test for https://github.com/couchbase/couchbase-lite-java-core/issues/472
+     *
+     * Tries to reproduce the scenario which is described in following comment.
+     * https://github.com/couchbase/couchbase-lite-net/issues/388#issuecomment-77637583
+     */
+    public void testUpdateConflict() throws Exception {
+        Document document = database.getDocument("testUpdateConflict");
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("title", "testUpdateConflict");
+        document.putProperties(properties);
+
+        final String title1 = "testUpdateConflict - 1";
+        final String text1 = "notes - 1";
+
+        final String title2 = "testUpdateConflict - 2";
+        final String notes2 = "notes - 2";
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+
+        // Another thread to update document
+        // This thread pretends to be Pull replicator update logic
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.w(TAG, "Thread.run() start");
+
+                // wait till main thread finishes to create newRevision
+                Log.w(TAG, "Thread.run() latch1.await()");
+                try {
+                    latch1.await();
+                } catch (InterruptedException e) {
+                    Log.e(TAG, e.getMessage());
+                }
+
+                Log.w(TAG, "Thread.run() exit from latch1.await()");
+
+                Document document1 = database.getDocument("testUpdateConflict");
+                Map<String, Object> properties1 = new HashMap<String, Object>();
+                properties1.put("title", title1);
+                properties1.put("text", text1);
+                try {
+                    document1.putProperties(properties1);
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "[Thread.run()] " + e.getMessage());
+                }
+
+                Log.w(TAG, "Thread.run() latch2.countDown()");
+                latch2.countDown();
+
+                Log.w(TAG, "Thread.run() end");
+            }
+        });
+        thread.start();
+
+        // main thread to update document
+        document.update(new Document.DocumentUpdater() {
+            @Override
+            public boolean update(UnsavedRevision newRevision) {
+
+                Log.w(TAG, "DocumentUpdater.update() start");
+
+                // after created newRevision wait till other thread to update document.
+                Log.w(TAG, "DocumentUpdater.update() latch1.countDown()");
+                latch1.countDown();
+
+                Log.w(TAG, "DocumentUpdater.update() latch2.await()");
+                try {
+                    latch2.await();
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "[DocumentUpdater.update()]" + e.getMessage());
+                }
+
+                Map<String, Object> properties2 = newRevision.getUserProperties();
+                properties2.put("title", title2);
+                properties2.put("notes", notes2);
+                newRevision.setUserProperties(properties2);
+
+                Log.w(TAG, "DocumentUpdater.update() end");
+                return true;
+            }
+        });
+
+        Document document4 = database.getDocument("testUpdateConflict");
+        Log.w(TAG, "" + document4.getProperties());
+        assertEquals(title2, document4.getProperties().get("title"));
+        assertEquals(notes2, document4.getProperties().get("notes"));
+        assertNull(notes2, document4.getProperties().get("text"));
     }
 }
