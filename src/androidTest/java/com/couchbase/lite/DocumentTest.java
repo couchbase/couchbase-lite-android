@@ -326,7 +326,7 @@ public class DocumentTest extends LiteTestCase {
     }
 
     /**
-     * Document.update() - simple fail scenario
+     * Document.update() - simple scenario with failure
      */
     public void testUpdateFalse() throws Exception {
         Document document = database.getDocument("testUpdateFalse");
