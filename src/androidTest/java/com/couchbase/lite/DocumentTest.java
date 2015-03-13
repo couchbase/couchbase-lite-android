@@ -354,7 +354,7 @@ public class DocumentTest extends LiteTestCase {
 
     /**
      * Unit Test for https://github.com/couchbase/couchbase-lite-java-core/issues/472
-     *
+     * <p/>
      * Tries to reproduce the scenario which is described in following comment.
      * https://github.com/couchbase/couchbase-lite-net/issues/388#issuecomment-77637583
      */
@@ -392,6 +392,7 @@ public class DocumentTest extends LiteTestCase {
 
                 Document document1 = database.getDocument("testUpdateConflict");
                 Map<String, Object> properties1 = new HashMap<String, Object>();
+                properties1.putAll(document1.getProperties());
                 properties1.put("title", title1);
                 properties1.put("text", text1);
                 try {
@@ -440,6 +441,6 @@ public class DocumentTest extends LiteTestCase {
         Log.w(TAG, "" + document4.getProperties());
         assertEquals(title2, document4.getProperties().get("title"));
         assertEquals(notes2, document4.getProperties().get("notes"));
-        assertNull(notes2, document4.getProperties().get("text"));
+        assertEquals(text1, document4.getProperties().get("text"));
     }
 }
