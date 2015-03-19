@@ -41,7 +41,18 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
         }
 
         try {
+            // Write-Ahead Logging (WAL) http://sqlite.org/wal.html
+            // http://developer.android.com/reference/android/database/sqlite/SQLiteDatabase.html#enableWriteAheadLogging()
+            // ENABLE_WRITE_AHEAD_LOGGING is available from API 16
+            // enableWriteAheadLogging() is available from API 11, but it does not work with API 9 and 10.
+            // Minimum version CBL Android supports is API 9
+
+            // NOTE: Not obvious difference. But it seems Without WAL is faster.
+            //       WAL consumes more memory, it might make GC busier.
+
+            //database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY | SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING);
             database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
+
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
             TDCollateJSON.registerCustomCollators(database);
             RevCollator.register(database);
@@ -75,7 +86,13 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 
     @Override
     public void beginTransaction() {
+
         database.beginTransaction();
+
+        // NOTE: Use beginTransactionNonExclusive() with ENABLE_WRITE_AHEAD_LOGGING
+        //       http://stackoverflow.com/questions/8104832/sqlite-simultaneous-reading-and-writing
+
+        // database.beginTransactionNonExclusive();
     }
 
     @Override
