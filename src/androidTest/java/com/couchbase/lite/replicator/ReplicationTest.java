@@ -1,5 +1,7 @@
 package com.couchbase.lite.replicator;
 
+import android.os.Build;
+
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
@@ -2583,6 +2585,7 @@ public class ReplicationTest extends LiteTestCase {
         pullReplication.addChangeListener(new Replication.ChangeListener() {
             @Override
             public void changed(Replication.ChangeEvent event) {
+                Log.e(Log.TAG_SYNC, "event.getCompletedChangeCount() = " + event.getCompletedChangeCount());
                 if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
                     idleCountdownLatch.countDown();
                 }
@@ -2600,13 +2603,16 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(success);
 
         // WORKAROUND: With CBL Java on Jenkins, Replicator becomes IDLE state before processing doc1. (NOT 100% REPRODUCIBLE)
+        // NOTE: 03/20/2014 This is also observable with on Standard Android emulator with ARM. (NOT 100% REPRODUCIBLE)
         // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
-        if(!System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
+        if(!System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik") ||
+                Build.BRAND.equalsIgnoreCase("generic")) {
             try {
                 Thread.sleep(5 * 1000);
             } catch (Exception e) {
             }
         }
+
 
         // put the replication offline
         putReplicationOffline(pullReplication);
@@ -2618,6 +2624,8 @@ public class ReplicationTest extends LiteTestCase {
         MockChangesFeed mockChangesFeed2 = new MockChangesFeed();
         mockChangesFeed2.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed2.generateMockResponse());
+
+
 
         // put the replication online (should see the new docs)
         putReplicationOnline(pullReplication);
