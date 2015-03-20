@@ -4819,10 +4819,18 @@ public class ReplicationTest extends LiteTestCase {
         stopReplication(pull);
         stopReplication(push);
 
+        // give 5 sec to clean thread status.
+        try {
+            Thread.sleep(5 * 1000);
+        } catch (Exception e) {
+        }
+
         // all threads which are associated with replicators should be terminated.
         Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
         for (Thread t : threadSet) {
-            assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+            if (t.isAlive()) {
+                assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+            }
         }
 
         // shutdown mock server
