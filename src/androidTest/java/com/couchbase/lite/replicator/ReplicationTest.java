@@ -1,7 +1,5 @@
 package com.couchbase.lite.replicator;
 
-import android.os.Build;
-
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
@@ -2605,13 +2603,15 @@ public class ReplicationTest extends LiteTestCase {
         // WORKAROUND: With CBL Java on Jenkins, Replicator becomes IDLE state before processing doc1. (NOT 100% REPRODUCIBLE)
         // NOTE: 03/20/2014 This is also observable with on Standard Android emulator with ARM. (NOT 100% REPRODUCIBLE)
         // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
-        if(!System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik") ||
-                Build.BRAND.equalsIgnoreCase("generic")) {
-            try {
-                Thread.sleep(5 * 1000);
-            } catch (Exception e) {
-            }
+        // NOTE: Build.BRAND.equalsIgnoreCase("generic") is only for Android, not for regular Java.
+        //       So, till solve IDLE state issue, always wait 5 seconds.
+        //if(!System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik") ||
+        //        Build.BRAND.equalsIgnoreCase("generic")) {
+        try {
+            Thread.sleep(5 * 1000);
+        } catch (Exception e) {
         }
+        //}
 
 
         // put the replication offline
