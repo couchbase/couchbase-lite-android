@@ -224,5 +224,10 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
         public void close() {
             delegate.close();
         }
+
+        @Override
+        public boolean isNull(int columnIndex) {
+            return delegate.isNull(columnIndex);
+        }
     }
 }
