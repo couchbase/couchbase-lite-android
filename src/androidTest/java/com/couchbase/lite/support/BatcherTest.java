@@ -245,12 +245,9 @@ public class BatcherTest extends LiteTestCase {
      */
     public void testBatcherWaitsForProcessorDelay2() throws Exception {
 
-        long timeBeforeQueue;
-        long timeAfterCallback;
-        long delta;
         boolean success;
 
-        for (int k=0; k<5; k++) {
+        for (int k = 0; k < 5; k++) {
 
             ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
             int inboxCapacity = 5;
@@ -262,7 +259,7 @@ public class BatcherTest extends LiteTestCase {
             latches.add(latch1);
             latches.add(latch2);
 
-            final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+            Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
                 @Override
                 public void process(List<String> itemsToProcess) {
                     try {
@@ -284,6 +281,14 @@ public class BatcherTest extends LiteTestCase {
             // latch should have been closed nearly immediately
             success = latch1.await(500, TimeUnit.MILLISECONDS);
             assertTrue(success);
+
+            // NOTE: https://github.com/couchbase/couchbase-lite-java-core/issues/518
+            //       CountDownLatch became 0, but task might not be done yet.
+            //       Give little bit of time for slower environment.
+            try {
+                Thread.sleep(500);
+            } catch (Exception ex) {
+            }
 
             // add another object
             batcher.queueObject(new String());
