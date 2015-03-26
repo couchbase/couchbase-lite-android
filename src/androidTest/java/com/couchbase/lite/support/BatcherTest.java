@@ -343,9 +343,11 @@ public class BatcherTest extends LiteTestCase {
 
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
         final int inboxCapacity = 10;
-        final int processorDelay = 500;
         final int numItemsToSubmit = inboxCapacity * 100;
-        final int jobDelay = 50;
+        final int jobDelay = 50;                  // 50ms
+        final int processorDelay = jobDelay * 20; // 1000ms
+
+
 
         final CountDownLatch latchFirstProcess = new CountDownLatch(1);
         final CountDownLatch latchSubmittedCapacity = new CountDownLatch(1);
@@ -389,7 +391,10 @@ public class BatcherTest extends LiteTestCase {
 
         // since we've already submitted up to capacity, our processor should
         // be called nearly immediately afterwards
-        success = latchFirstProcess.await(jobDelay * 2, TimeUnit.MILLISECONDS);
+        // NOTE: latchFirstProcess should be 0 after between 50ms and 1000ms.
+        //       But it seems 100ms is not good enough for slow simulator.
+        //       This is reason that currently waits 500ms.
+        success = latchFirstProcess.await(jobDelay * 10, TimeUnit.MILLISECONDS);
         assertTrue(success);
 
         // we should not have been interrupted either
