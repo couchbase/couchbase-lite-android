@@ -6,6 +6,7 @@ import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.Utils;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.io.File;
@@ -165,7 +166,9 @@ public class ManagerTest extends LiteTestCase {
             if (a != null) {
                 a.delete();
             }
-            executorService.shutdown();
+
+            // Note: ExecutorService should be called shutdown()
+            Utils.shutdownAndAwaitTermination(executorService);
         }
     }
 

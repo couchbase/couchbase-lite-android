@@ -5,9 +5,8 @@ import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
-import com.couchbase.lite.mockserver.MockRevsDiff;
 import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
-import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.Utils;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
@@ -21,11 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class RemoteRequestTest extends LiteTestCase {
@@ -85,7 +82,6 @@ public class RemoteRequestTest extends LiteTestCase {
         ScheduledExecutorService requestExecutorService = Executors.newScheduledThreadPool(5);
         ScheduledExecutorService workExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-        // ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(4);
         RemoteRequestRetry request = new RemoteRequestRetry(
                 RemoteRequestRetry.RemoteRequestType.REMOTE_REQUEST,
                 requestExecutorService,
@@ -114,6 +110,9 @@ public class RemoteRequestTest extends LiteTestCase {
             assertNotNull(recordedRequest);
         }
 
+        // Note: ExecutorService should be called shutdown()
+        Utils.shutdownAndAwaitTermination(requestExecutorService);
+        Utils.shutdownAndAwaitTermination(workExecutorService);
     }
 
 
@@ -193,6 +192,9 @@ public class RemoteRequestTest extends LiteTestCase {
             assertNotNull(recordedRequest);
         }
 
+        // Note: ExecutorService should be called shutdown()
+        Utils.shutdownAndAwaitTermination(requestExecutorService);
+        Utils.shutdownAndAwaitTermination(workExecutorService);
     }
 
 
@@ -275,7 +277,6 @@ public class RemoteRequestTest extends LiteTestCase {
 
             Future future = request.submit();
             requestFutures.add(future);
-
         }
 
         for (Future future : requestFutures) {
@@ -285,14 +286,8 @@ public class RemoteRequestTest extends LiteTestCase {
         boolean success = received503Error.await(120, TimeUnit.SECONDS);
         assertTrue(success);
 
-
-
-
-
-
+        // Note: ExecutorService should be called shutdown()
+        Utils.shutdownAndAwaitTermination(requestExecutorService);
+        Utils.shutdownAndAwaitTermination(workExecutorService);
     }
-
-
-
-
 }

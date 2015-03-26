@@ -1,10 +1,8 @@
 package com.couchbase.lite.replicator;
 
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.Status;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
@@ -12,8 +10,8 @@ import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
 import com.couchbase.lite.support.CouchbaseLiteHttpClientFactory;
 import com.couchbase.lite.support.PersistentCookieStore;
 import com.couchbase.lite.support.RemoteRequestCompletionBlock;
-import com.couchbase.lite.support.RemoteRequestRetry;
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.Utils;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
@@ -104,6 +102,10 @@ public class BulkDownloaderTest extends LiteTestCase {
 
         // wait for the future to return
         future.get(300, TimeUnit.SECONDS);
+
+        // Note: ExecutorService should be called shutdown()
+        Utils.shutdownAndAwaitTermination(requestExecutorService);
+        Utils.shutdownAndAwaitTermination(workExecutorService);
 
         server.shutdown();
 
