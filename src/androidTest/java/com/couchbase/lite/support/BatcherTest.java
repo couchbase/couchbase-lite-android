@@ -402,10 +402,7 @@ public class BatcherTest extends LiteTestCase {
 
         // since we've already submitted up to capacity, our processor should
         // be called nearly immediately afterwards
-        // NOTE: latchFirstProcess should be 0 this point in general, but this is not guaranteed.
-        //       Give more time. 1sec instead of 100ms
-        //       https://github.com/couchbase/couchbase-lite-java-core/issues/521
-        success = latchFirstProcess.await(jobDelay * 20, TimeUnit.MILLISECONDS);
+        success = latchFirstProcess.await(jobDelay * 2, TimeUnit.MILLISECONDS);
         assertTrue(success);
 
         // we should not have been interrupted either
