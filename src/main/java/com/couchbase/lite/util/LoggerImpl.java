@@ -14,13 +14,11 @@
  * and limitations under the License.
  */
 
-package com.couchbase.lite.android;
+package com.couchbase.lite.util;
 
 import android.util.Log;
 
-import com.couchbase.lite.util.Logger;
-
-public class AndroidLogger implements Logger {
+public class LoggerImpl implements Logger {
     @Override
     public void v(String tag, String msg) {
         Log.v(tag, msg);
