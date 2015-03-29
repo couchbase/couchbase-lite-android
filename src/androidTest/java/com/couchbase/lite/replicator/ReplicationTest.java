@@ -3935,7 +3935,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/352
      *
-     * Makes the replicator stop, even if it’s continuous, when it receives a permanent-type error
+     * Makes the replicator stop, even if it is continuous, when it receives a permanent-type error
      */
     public void testStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception{
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)

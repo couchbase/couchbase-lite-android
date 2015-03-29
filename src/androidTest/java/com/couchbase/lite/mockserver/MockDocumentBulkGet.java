@@ -48,7 +48,7 @@ import java.util.Map;
     Content-Type: image/png
     Content-Disposition: attachment; filename="attachment.png"
 
-    PNG
+    PNG
     --aff16d5e5921568ad8fab41b9ec3c2dc86390da4f9dbbc2cec7bf5e2655f--
     --77d6fa0c04b501832f5dcf93d515cb73f39fa74104b01bc5a5b24dd57f4a--
     ...
