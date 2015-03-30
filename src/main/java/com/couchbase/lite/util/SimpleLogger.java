@@ -18,7 +18,7 @@ package com.couchbase.lite.util;
 
 import android.util.Log;
 
-public class LoggerImpl implements Logger {
+public class SimpleLogger implements Logger {
     @Override
     public void v(String tag, String msg) {
         Log.v(tag, msg);
