@@ -16,6 +16,7 @@
         <commons-io.version>  2.0.1 </commons-io.version>
         <rhino.version>       1.7R3 </rhino.version>
         <servlet.version>     2-3   </servlet.version>
+        <stateless4j.version> 2.5.0 </stateless4j.version>
 
         <LICENSE_DIR>${basedir}</LICENSE_DIR>
         <LICENSE_FILE>LICENSE.TXT</LICENSE_FILE>
@@ -91,6 +92,13 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.oxo42</groupId>
+            <artifactId>stateless4j</artifactId>
+            <version>${stateless4j.version}</version>
             <scope>compile</scope>
         </dependency>
         
@@ -282,6 +290,8 @@
                                          <include name="**/jackson-core-${jackson.version}.jar"   />
                                          <include name="**/jackson-annotations-${jackson.version}.jar" />
                                          <include name="**/jackson-databind-${jackson.version}.jar" />
+
+                                         <include name="**/stateless4j-${stateless4j.version}.jar" />
                                          
                                          <include name="**/servlet-${servlet.version}.jar"            />
                                          <include name="**/webserver-${servlet.version}.jar"          />
