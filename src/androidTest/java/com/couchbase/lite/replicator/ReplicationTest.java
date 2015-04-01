@@ -4306,7 +4306,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // 4. wait until its RUNNING
         Log.d(TAG, "WAIT for STOPPED");
-        success = enteredStoppedState.await(60, TimeUnit.SECONDS);
+        success = enteredStoppedState.await(Replication.DEFAULT_MAX_TIMEOUT_FOR_SHUTDOWN + 30, TimeUnit.SECONDS); // replicator maximum shutdown timeout 60 sec + additional 30 sec for other stuff
         // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
         assertEquals(1, enteredStoppedState.getCount());
         assertFalse(success);
