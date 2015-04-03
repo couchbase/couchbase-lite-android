@@ -677,9 +677,6 @@ public class RouterTest extends LiteTestCase {
         Log.v(TAG, String.format("result %s", result));
         String email = (String) result.get("email");
         assertEquals(email, "jens@mooseyard.com");
-
-
-
     }
 
     public void testPushReplicate() throws Exception {
@@ -919,6 +916,9 @@ public class RouterTest extends LiteTestCase {
         assertNotNull(result.get("session_id"));
         String sessionId1 = (String) result.get("session_id");
 
+        // NOTE: one short replication should be blocked. sendBody() waits till response is ready.
+        //      https://github.com/couchbase/couchbase-lite-android/issues/204
+        
         // kick off 2nd replication via REST api
         Log.i(TAG, "Call 2nd /_replicate");
         Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
@@ -941,8 +941,9 @@ public class RouterTest extends LiteTestCase {
         boolean success3 = waitForReplicationToFinish();
         assertTrue(success3);
 
-        assertTrue(sessionId1.equals(sessionId2));
+        assertFalse(sessionId1.equals(sessionId2));
         assertFalse(sessionId1.equals(sessionId3));
+        assertFalse(sessionId2.equals(sessionId3));
 
         // cleanup
         server.shutdown();
@@ -1012,6 +1013,31 @@ public class RouterTest extends LiteTestCase {
 
         assertTrue(sessionId1.equals(sessionId2));
         assertTrue(sessionId1.equals(sessionId3));
+
+        // cleanup
+        server.shutdown();
+    }
+
+    public void testPullReplicateOneShot() throws Exception {
+
+        // create mock sync gateway that will serve as a pull target and return random docs
+        int numMockDocsToServe = 0;
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        server.setDispatcher(dispatcher);
+        server.play();
+
+        // kick off replication via REST api
+        Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+        Log.e(TAG, "map: " + replicateJsonMap);
+
+        Map<String,Object> result = (Map<String,Object>)sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+        Log.e(TAG, "result: " + result);
+        assertNotNull(result.get("session_id"));
+
+        ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
+        assertEquals(0, activeTasks.size());
 
         // cleanup
         server.shutdown();

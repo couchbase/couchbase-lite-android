@@ -9,6 +9,7 @@ import com.couchbase.lite.mockserver.MockPreloadedPullTarget;
 import com.couchbase.lite.replicator.CustomizableMockHttpClient;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.router.Router;
+import com.couchbase.lite.router.RouterCallbackBlock;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.router.URLStreamHandlerFactory;
 import com.couchbase.lite.storage.Cursor;
@@ -259,27 +260,46 @@ public class LiteTestCase extends LiteTestCaseBase {
     protected URLConnection sendRequest(String method, String path, Map<String, String> headers, Object bodyObj) {
         try {
             URL url = new URL("cblite://" + path);
-            URLConnection conn = (URLConnection)url.openConnection();
+            URLConnection conn = (URLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod(method);
-            if(headers != null) {
+            if (headers != null) {
                 for (String header : headers.keySet()) {
                     conn.setRequestProperty(header, headers.get(header));
                 }
             }
             Map<String, List<String>> allProperties = conn.getRequestProperties();
-            if(bodyObj != null) {
+            if (bodyObj != null) {
                 conn.setDoInput(true);
                 ByteArrayInputStream bais = new ByteArrayInputStream(mapper.writeValueAsBytes(bodyObj));
                 conn.setRequestInputStream(bais);
             }
 
             Router router = new com.couchbase.lite.router.Router(manager, conn);
+
+            final CountDownLatch latch = new CountDownLatch(1);
+            router.setCallbackBlock(new RouterCallbackBlock() {
+                @Override
+                public void onResponseReady() {
+                    latch.countDown();
+                }
+            });
+
             router.start();
+
+            boolean success = false;
+            try {
+                // NOTE: latch.await() should be fine. 60 sec for just in case.
+                success = latch.await(60, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            assertTrue(success);
+
             return conn;
         } catch (MalformedURLException e) {
             fail();
-        } catch(IOException e) {
+        } catch (IOException e) {
             fail();
         }
         return null;
