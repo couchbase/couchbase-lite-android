@@ -4,7 +4,4 @@
 : ${MAVEN_UPLOAD_PASSWORD:?"Need to set MAVEN_UPLOAD_PASSWORD non-empty"}
 : ${MAVEN_UPLOAD_REPO_URL:?"Need to set MAVEN_UPLOAD_REPO_URL non-empty"}
 
-#at first build all projects
-./gradlew :libraries:couchbase-lite-java-core:build && ./gradlew :build -DbuildAndroidWithArtifacts &&
-#then upload artifacts
-./gradlew :libraries:couchbase-lite-java-core:uploadArchivesWrapper && ./gradlew :uploadArchivesWrapper -DbuildAndroidWithArtifacts
+./gradlew :libraries:couchbase-lite-java-core:build && ./gradlew :libraries:couchbase-lite-java-core:uploadArchivesWrapper && ./gradlew build -DbuildAndroidWithArtifacts && ./gradlew uploadArchivesWrapper -DbuildAndroidWithArtifacts
