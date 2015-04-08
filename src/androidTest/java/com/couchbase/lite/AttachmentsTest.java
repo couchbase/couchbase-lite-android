@@ -30,8 +30,10 @@ import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -778,5 +780,22 @@ public class AttachmentsTest extends LiteTestCase {
     }
 
 
+    public void testGetContentURL() throws Exception {
+
+        String attachmentName = "index.html";
+        String content  = "This is a test attachment!";
+
+        Document doc = createDocWithAttachment(database, attachmentName, content);
+        Attachment attachment = doc.getCurrentRevision().getAttachment(attachmentName);
+        URL url = attachment.getContentURL();
+        assertNotNull(url);
+        FileInputStream fis = new FileInputStream(url.getFile());
+        byte[] buffer = new byte[1024];
+        int len = fis.read(buffer);
+        assertTrue(len != -1);
+        String content2 = new String(buffer, 0, len);
+        assertEquals(content, content2);
+        fis.close();
+    }
 
 }
