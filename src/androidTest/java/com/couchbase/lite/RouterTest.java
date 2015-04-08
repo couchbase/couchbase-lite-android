@@ -1037,7 +1037,11 @@ public class RouterTest extends LiteTestCase {
         assertNotNull(result.get("session_id"));
 
         ArrayList<Object> activeTasks = (ArrayList<Object>)send("GET", "/_active_tasks", Status.OK, null);
-        assertEquals(0, activeTasks.size());
+        Log.e(TAG, "activeTasks.size(): " + activeTasks.size());
+        for(Object obj : activeTasks){
+            Map<String, Object> resp = (Map<String, Object>)obj;
+            assertEquals("Stopped", resp.get("status"));
+        }
 
         // cleanup
         server.shutdown();
