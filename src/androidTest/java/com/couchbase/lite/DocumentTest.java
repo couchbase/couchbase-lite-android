@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import junit.framework.Assert;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -442,5 +443,33 @@ public class DocumentTest extends LiteTestCase {
         assertEquals(title2, document4.getProperties().get("title"));
         assertEquals(notes2, document4.getProperties().get("notes"));
         assertEquals(text1, document4.getProperties().get("text"));
+    }
+
+    /**
+     * Nonsensical CouchbaseLiteException (Conflict) exception thrown on UnsavedRevision.save() #479
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/479
+     */
+    public void testNonsensicalConflictExceptionOnUnsavedRevision() throws CouchbaseLiteException {
+        for(int i = 0; i < 100; i++) {
+            Document document = database.createDocument();
+
+            document.putProperties(Collections.<String, Object>singletonMap("test", "1"));
+            document = document.getCurrentRevision().getDocument();
+
+            SavedRevision savedRevision = document.getCurrentRevision();
+            savedRevision.createRevision(Collections.<String, Object>singletonMap("test", "2"));
+
+            document = document.getCurrentRevision().getDocument();
+
+            UnsavedRevision unsavedRevision = document.createRevision();
+            unsavedRevision.setProperties(Collections.<String, Object>singletonMap("test", "3"));
+            unsavedRevision.save(); //Nonsensical conflict thrown here
+
+            document = document.getCurrentRevision().getDocument();
+
+            unsavedRevision = document.createRevision();
+            unsavedRevision.setProperties(Collections.<String, Object>singletonMap("test", "4"));
+            unsavedRevision.save(); //Or here
+        }
     }
 }
