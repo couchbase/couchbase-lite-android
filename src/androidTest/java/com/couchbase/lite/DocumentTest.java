@@ -450,26 +450,36 @@ public class DocumentTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/479
      */
     public void testNonsensicalConflictExceptionOnUnsavedRevision() throws CouchbaseLiteException {
+        // try 100 times to reproduce the issue
         for(int i = 0; i < 100; i++) {
             Document document = database.createDocument();
+            String documentID = document.getId();
 
             document.putProperties(Collections.<String, Object>singletonMap("test", "1"));
             document = document.getCurrentRevision().getDocument();
+            assertEquals(documentID, document.getProperty("_id"));
+            assertTrue(((String)document.getProperty("_rev")).startsWith("1-"));
 
             SavedRevision savedRevision = document.getCurrentRevision();
             savedRevision.createRevision(Collections.<String, Object>singletonMap("test", "2"));
+            assertEquals(documentID, document.getProperty("_id"));
+            assertTrue(((String)document.getProperty("_rev")).startsWith("2-"));
 
             document = document.getCurrentRevision().getDocument();
 
             UnsavedRevision unsavedRevision = document.createRevision();
             unsavedRevision.setProperties(Collections.<String, Object>singletonMap("test", "3"));
             unsavedRevision.save(); //Nonsensical conflict thrown here
+            assertEquals(documentID, document.getProperty("_id"));
+            assertTrue(((String)document.getProperty("_rev")).startsWith("3-"));
 
             document = document.getCurrentRevision().getDocument();
 
             unsavedRevision = document.createRevision();
             unsavedRevision.setProperties(Collections.<String, Object>singletonMap("test", "4"));
             unsavedRevision.save(); //Or here
+            assertEquals(documentID, document.getProperty("_id"));
+            assertTrue(((String)document.getProperty("_rev")).startsWith("4-"));
         }
     }
 }
