@@ -450,8 +450,31 @@ public class DocumentTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/479
      */
     public void testNonsensicalConflictExceptionOnUnsavedRevision() throws CouchbaseLiteException {
+
+        View testNonsensicalConflict = database.getView("testNonsensicalConflict");
+        testNonsensicalConflict.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(null,null);
+            }
+        }, "");
+        Query query = testNonsensicalConflict.createQuery();
+        LiveQuery liveQuery = query.toLiveQuery();
+
+        liveQuery.addChangeListener(new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                QueryEnumerator rows = event.getRows();
+                while(rows.hasNext()){
+                    QueryRow next = rows.next();
+                    next.getDocument();
+                }
+            }
+        });
+        liveQuery.run();
+
         // try 100 times to reproduce the issue
-        for(int i = 0; i < 100; i++) {
+        for(int i = 0; i < 1000; i++) {
             Document document = database.createDocument();
             String documentID = document.getId();
 
