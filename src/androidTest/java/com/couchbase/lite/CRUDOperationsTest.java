@@ -88,7 +88,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         assertTrue(gotExpectedError);
 
         // Check the changes feed, with and without filters:
-        RevisionList changes = database.changesSince(0, null, null);
+        RevisionList changes = database.changesSince(0, null, null, null);
         Log.v(TAG, "Changes = " + changes);
         assertEquals(1, changes.size());
 
@@ -99,7 +99,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
                 return "updated!".equals(revision.getProperties().get("status"));
             }
 
-        });
+        }, null);
         assertEquals(1, changes.size());
 
         changes = database.changesSince(0, null, new ReplicationFilter() {
@@ -109,7 +109,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
                 return "not updated!".equals(revision.getProperties().get("status"));
             }
 
-        });
+        }, null);
         assertEquals(0, changes.size());
 
 
@@ -145,7 +145,7 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         assertNull(readRev);
 
         // Get Changes feed
-        changes = database.changesSince(0, null, null);
+        changes = database.changesSince(0, null, null, null);
         assertTrue(changes.size() == 1);
 
         // Get Revision History

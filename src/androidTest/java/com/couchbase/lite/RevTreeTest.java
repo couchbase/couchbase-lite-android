@@ -120,13 +120,13 @@ public class RevTreeTest extends LiteTestCase {
 
         // Get the _changes feed and verify only the winner is in it:
         ChangesOptions options = new ChangesOptions();
-        RevisionList changes = database.changesSince(0, options, null);
+        RevisionList changes = database.changesSince(0, options, null, null);
         RevisionList expectedChanges = new RevisionList();
         expectedChanges.add(conflict);
         expectedChanges.add(other);
         assertEquals(changes, expectedChanges);
         options.setIncludeConflicts(true);
-        changes = database.changesSince(0, options, null);
+        changes = database.changesSince(0, options, null, null);
         expectedChanges = new RevisionList();
         expectedChanges.add(rev);
         expectedChanges.add(conflict);

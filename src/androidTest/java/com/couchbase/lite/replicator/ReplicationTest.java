@@ -13,6 +13,7 @@ import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
 import com.couchbase.lite.QueryOptions;
 import com.couchbase.lite.QueryRow;
+import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.Revision;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.Status;
@@ -69,10 +70,13 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -4286,8 +4290,7 @@ public class ReplicationTest extends LiteTestCase {
                 if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
                     Log.d(TAG, "Replication is IDLE");
                     enteredIdleState.countDown();
-                }
-                else if(event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED){
+                } else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
                     Log.d(TAG, "Replication is STOPPED");
                     enteredStoppedState.countDown();
                 }
@@ -4845,5 +4848,98 @@ public class ReplicationTest extends LiteTestCase {
         server.shutdown();
 
         Log.d(Log.TAG, "END testStop()");
+    }
+
+    /**
+     * http://developer.couchbase.com/mobile/develop/references/couchbase-lite/couchbase-lite/replication/replication/index.html#mapstring-string-filterparams--get-set-
+     * <p/>
+     * Params passed in filtered push throw a null exception in the filter function
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/533
+     */
+    public void testSetFilterParams() throws CouchbaseLiteException, IOException, InterruptedException {
+        // make sure we are starting empty
+        assertEquals(0, database.getLastSequenceNumber());
+
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        server.play();
+
+        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // _revs_diff response -- everything missing
+        MockRevsDiff mockRevsDiff = new MockRevsDiff();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+        // _bulk_docs response -- everything stored
+        MockBulkDocs mockBulkDocs = new MockBulkDocs();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+
+
+        // create 10 documents and delete 5
+        for (int i = 0; i < 10; i++) {
+            Document doc = null;
+            if (i % 2 == 0) {
+                doc = createDocument(i, true);
+            } else {
+                doc = createDocument(i, false);
+            }
+            if (i % 2 == 0) {
+                try {
+                    doc.delete();
+                } catch (CouchbaseLiteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        final CountDownLatch latch = new CountDownLatch(10);
+        final CountDownLatch check = new CountDownLatch(10);
+        database.setFilter("unDeleted", new ReplicationFilter() {
+            @Override
+            public boolean filter(SavedRevision savedRevision, Map<String, Object> params) {
+                Log.e(TAG, "unDeleted: params: " + params);
+                if (params == null || !"hello".equals(params.get("name"))) {
+                    check.countDown();
+                }
+                latch.countDown();
+                return !savedRevision.isDeletion();
+            }
+        });
+
+        Replication pushReplication = database.createPushReplication(server.getUrl("/db"));
+        pushReplication.setContinuous(false);
+        pushReplication.setFilter("unDeleted");
+        pushReplication.setFilterParams(Collections.<String, Object>singletonMap("name", "hello"));
+        pushReplication.start();
+
+        boolean success = latch.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+        assertEquals(10, check.getCount());
+    }
+
+    private Document createDocument(int number, boolean flag) {
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        Calendar calendar = GregorianCalendar.getInstance();
+        String currentTimeString = dateFormatter.format(calendar.getTime());
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("type", "test_doc");
+        properties.put("created_at", currentTimeString);
+        if (flag == true) {
+            properties.put("name", "Waldo");
+        }
+        Document document = database.getDocument(String.valueOf(number));
+        try {
+            document.putProperties(properties);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+        return document;
     }
 }
