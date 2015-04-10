@@ -2160,4 +2160,73 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
         Assert.assertEquals(1, dump.get(4).get("seq"));
     }
+
+    /**
+     * LiveQuery should re-run query from scratch after options are changed
+     * https://github.com/couchbase/couchbase-lite-ios/issues/596
+     * <p/>
+     * in View_Tests.m
+     * - (void) test13_LiveQuery_UpdateWhenQueryOptionsChanged
+     */
+    public void testLiveQueryUpdateWhenQueryOptionsChanged() throws CouchbaseLiteException, InterruptedException {
+        View view = database.getView("vu");
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("sequence"), null);
+            }
+        }, "1");
+
+        createDocuments(database, 5);
+
+        Query query = view.createQuery();
+        QueryEnumerator rows = query.run();
+
+        assertEquals(5, rows.getCount());
+
+        int expectedKey = 0;
+        for (QueryRow row : rows) {
+            assertEquals(((Integer) row.getKey()).intValue(), expectedKey++);
+        }
+
+        LiveQuery liveQuery = view.createQuery().toLiveQuery();
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        liveQuery.addChangeListener(new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                Log.e(TAG, "---- changed ---");
+                latch1.countDown();
+                latch2.countDown();
+            }
+        });
+        liveQuery.start();
+
+        boolean success1 = latch1.await(3, TimeUnit.SECONDS);
+        assertTrue(success1);
+
+        rows = liveQuery.getRows();
+        assertNotNull(rows);
+        assertEquals(5, rows.getCount());
+        expectedKey = 0;
+        for (QueryRow row : rows) {
+            assertEquals(((Integer) row.getKey()).intValue(), expectedKey++);
+        }
+
+        liveQuery.setStartKey(2);
+        liveQuery.queryOptionsChanged();
+
+        boolean success2 = latch2.await(3, TimeUnit.SECONDS);
+        assertTrue(success2);
+
+        rows = liveQuery.getRows();
+        assertNotNull(rows);
+        assertEquals(3, rows.getCount());
+        expectedKey = 2;
+        for (QueryRow row : rows) {
+            assertEquals(((Integer) row.getKey()).intValue(), expectedKey++);
+        }
+
+        liveQuery.stop();
+    }
 }
