@@ -1,17 +1,17 @@
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-    <id>android_${EDITION}</id>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>android</id>
     <formats>
         <format>zip</format>
     </formats>
     <files>
         <file>
-            <source> ${ZIP_HOME}/LICENSE.TXT     </source>
+            <source> ${ZIP_HOME}/${LICENSE_FILE}    </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
-                                 <!-- locally built  -->
+        <!-- locally built  -->
         <file>
             <source> ${ZIP_HOME}/${JAR_JAVA_CORE} </source>
             <outputDirectory>/</outputDirectory>
@@ -28,17 +28,6 @@
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/${JAR_JA_SCRIPT} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-        <file>
-            <source> ${ZIP_HOME}/${JAR_JLISTENER} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-
-        <file>
             <source> ${ZIP_HOME}/${POM_JAVA_CORE} </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
@@ -48,17 +37,8 @@
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
-        <file>
-            <source> ${ZIP_HOME}/${POM_JA_SCRIPT} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-        <file>
-            <source> ${ZIP_HOME}/${POM_JLISTENER} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-                                 <!-- locally packaged  -->
+
+        <!-- locally packaged  -->
         <file>
             <source> ${ZIP_HOME}/${JAR_AND_CLASS} </source>
             <outputDirectory>/</outputDirectory>
@@ -69,19 +49,21 @@
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
-                                 <!-- third-party    -->
+
+        <!-- third-party    -->
         <file>
             <source> ${ZIP_HOME}/rhino-${rhino.version}.jar                </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/stateless4j-${stateless4j.version}.jar    </source>
+            <source> ${ZIP_HOME}/commons-io-${commons-io.version}.jar      </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
+
         <file>
-            <source> ${ZIP_HOME}/commons-io-${commons-io.version}.jar      </source>
+            <source> ${ZIP_HOME}/jackson-core-${jackson.version}.jar   </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
@@ -91,15 +73,17 @@
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/jackson-core-${jackson.version}.jar </source>
+            <source> ${ZIP_HOME}/jackson-databind-${jackson.version}.jar   </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
+
         <file>
-            <source> ${ZIP_HOME}/jackson-databind-${jackson.version}.jar </source>
+            <source> ${ZIP_HOME}/stateless4j-${stateless4j.version}.jar   </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
+
         <file>
             <source> ${ZIP_HOME}/servlet-${servlet.version}.jar            </source>
             <outputDirectory>/</outputDirectory>

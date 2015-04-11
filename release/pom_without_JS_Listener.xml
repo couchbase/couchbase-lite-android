@@ -1,16 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>com.couchbase</groupId>
     <artifactId>couchbase-lite</artifactId>
     <version>${REVISION}</version>
     <packaging>jar</packaging>
 
     <properties>
-
         <local-m2dir>${basedir}/m2</local-m2dir>
 
         <jackson.version>     2.5.0 </jackson.version>
@@ -19,22 +18,17 @@
         <servlet.version>     2-3   </servlet.version>
         <stateless4j.version> 2.4.0 </stateless4j.version>
 
-        <LICENSE_DIR>${basedir}/build/license/couchbase-lite</LICENSE_DIR>
-        <LICENSE_FILE>LICENSE_${EDITION}.txt</LICENSE_FILE>
+        <LICENSE_DIR>${basedir}</LICENSE_DIR>
+        <LICENSE_FILE>LICENSE.TXT</LICENSE_FILE>
 
         <TARGET_DIR>${local-m2dir}/com/couchbase/lite</TARGET_DIR>
         <ZIP_HOME>${basedir}/zip</ZIP_HOME>
-        <EDITION>${EDITION}</EDITION>
 
         <AND_CLASS_AAR> couchbase-lite-android-${REVISION}.aar          </AND_CLASS_AAR>
         <JAR_JAVA_CORE> couchbase-lite-java-core-${REVISION}.jar        </JAR_JAVA_CORE>
-        <JAR_JA_SCRIPT> couchbase-lite-java-javascript-${REVISION}.jar  </JAR_JA_SCRIPT>
-        <JAR_JLISTENER> couchbase-lite-java-listener-${REVISION}.jar    </JAR_JLISTENER>
 
         <AND_CLASS_AAR_SRC> ${TARGET_DIR}/couchbase-lite-android/${REVISION}/${AND_CLASS_AAR}          </AND_CLASS_AAR_SRC>
         <JAR_SRC_JAVA_CORE> ${TARGET_DIR}/couchbase-lite-java-core/${REVISION}/${JAR_JAVA_CORE}        </JAR_SRC_JAVA_CORE>
-        <JAR_SRC_JA_SCRIPT> ${TARGET_DIR}/couchbase-lite-java-javascript/${REVISION}/${JAR_JA_SCRIPT}  </JAR_SRC_JA_SCRIPT>
-        <JAR_SRC_JLISTENER> ${TARGET_DIR}/couchbase-lite-java-listener/${REVISION}/${JAR_JLISTENER}    </JAR_SRC_JLISTENER>
 
         <STAGING>${basedir}/staging</STAGING>
 
@@ -51,13 +45,9 @@
 
         <POM_AND_CLASS> couchbase-lite-android-${REVISION}.pom          </POM_AND_CLASS>
         <POM_JAVA_CORE> couchbase-lite-java-core-${REVISION}.pom        </POM_JAVA_CORE>
-        <POM_JA_SCRIPT> couchbase-lite-java-javascript-${REVISION}.pom  </POM_JA_SCRIPT>
-        <POM_JLISTENER> couchbase-lite-java-listener-${REVISION}.pom    </POM_JLISTENER>
 
         <POM_SRC_AND_CLASS> ${TARGET_DIR}/couchbase-lite-android/${REVISION}/${POM_AND_CLASS}          </POM_SRC_AND_CLASS>
         <POM_SRC_JAVA_CORE> ${TARGET_DIR}/couchbase-lite-java-core/${REVISION}/${POM_JAVA_CORE}        </POM_SRC_JAVA_CORE>
-        <POM_SRC_JA_SCRIPT> ${TARGET_DIR}/couchbase-lite-java-javascript/${REVISION}/${POM_JA_SCRIPT}  </POM_SRC_JA_SCRIPT>
-        <POM_SRC_JLISTENER> ${TARGET_DIR}/couchbase-lite-java-listener/${REVISION}/${POM_JLISTENER}    </POM_SRC_JLISTENER>
     </properties>
 
     <repositories>
@@ -85,25 +75,6 @@
             <version>${REVISION}</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.couchbase.lite</groupId>
-            <artifactId>couchbase-lite-java-javascript</artifactId>
-            <version>${REVISION}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.couchbase.lite</groupId>
-            <artifactId>couchbase-lite-java-listener</artifactId>
-            <version>${REVISION}</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -113,14 +84,14 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <artifactId>jackson-annotations</artifactId>
             <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.mozilla</groupId>
-            <artifactId>rhino</artifactId>
-            <version>${rhino.version}</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
 
@@ -132,19 +103,26 @@
         </dependency>
 
         <dependency>
+            <groupId>org.mozilla</groupId>
+            <artifactId>rhino</artifactId>
+            <version>${rhino.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
             <scope>compile</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>com.couchbase.cblite</groupId>
             <artifactId>servlet</artifactId>
             <version>${servlet.version}</version>
             <scope>compile</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>com.couchbase.cblite</groupId>
             <artifactId>webserver</artifactId>
@@ -192,7 +170,7 @@
                             </tasks>
                         </configuration>
                     </execution>
-                    
+
                     <execution>
                         <phase>clean</phase>
                         <id>clean_derived</id>
@@ -220,7 +198,7 @@
                             </tasks>
                         </configuration>
                     </execution>
-                    
+
                     <execution>
                         <phase>initialize</phase>
                         <id>creat_dirs</id>
@@ -245,15 +223,15 @@
                         </goals>
                         <configuration>
                             <tasks>
-                                 <echo message="DEBUG:::   CREATE collator JAR" />
-                                 <copy     todir="${JNI_DST_DIR}"      flatten="false">
+                                <echo message="DEBUG:::   CREATE collator JAR" />
+                                <copy     todir="${JNI_DST_DIR}"      flatten="false">
                                     <fileset dir="${JNI_SRC_DIR}" />
-                                 </copy>
-                                 <jar  basedir="${COLLATOR_STAGING}" destfile="${JAR_SRC_COLLATORS}" />
+                                </copy>
+                                <jar  basedir="${COLLATOR_STAGING}" destfile="${JAR_SRC_COLLATORS}" />
                             </tasks>
                         </configuration>
                     </execution>
-                    
+
                     <execution>
                         <phase>prepare-package</phase>
                         <id>create_android_jar</id>
@@ -262,12 +240,12 @@
                         </goals>
                         <configuration>
                             <tasks>
-                                 <echo message="DEBUG:::   CREATE Android JAR"  />
-                                 <copy file="${JAR_SRC_AND_CLASS}" tofile="${JAR_DST_AND_CLASS}" />
+                                <echo message="DEBUG:::   CREATE Android JAR"  />
+                                <copy file="${JAR_SRC_AND_CLASS}" tofile="${JAR_DST_AND_CLASS}" />
                             </tasks>
                         </configuration>
                     </execution>
-                    
+
                     <execution>
                         <phase>prepare-package</phase>
                         <id>copy_from_m2</id>
@@ -276,58 +254,55 @@
                         </goals>
                         <configuration>
                             <tasks>
-                                 <echo message="DEBUG:::   LICENSE.TXT" />
+                                <echo message="DEBUG:::   LICENSE.txt" />
 
-                                 <copy todir="${ZIP_HOME}" preservelastmodified="true" flatten="true" verbose="true">
-                                     <fileset dir="${LICENSE_DIR}">
-                                         <include name="${LICENSE_FILE}"                              />
-                                     </fileset>
-                                 </copy>
-                                 <echo message="DEBUG::: MOVE  LICENSE_EDITION.TXT into LICENSE.TXT" />
-                                 <move file="${ZIP_HOME}/${LICENSE_FILE}" tofile="${ZIP_HOME}/LICENSE.TXT"/>
-                                 
-                                 <!-- locally built  -->
-                                 <echo message="DEBUG:::   locally built couchbase-lite JARs" />
-                                 
-                                 <copy file="${AND_CLASS_AAR_SRC}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
-                                 <copy file="${JAR_SRC_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy todir="${ZIP_HOME}" preservelastmodified="true" flatten="true" verbose="true">
+                                    <fileset dir="${LICENSE_DIR}">
+                                        <include name="${LICENSE_FILE}"                              />
+                                    </fileset>
+                                </copy>
 
-                                 <copy file="${JAR_SRC_JAVA_CORE}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
-                                 <copy file="${JAR_SRC_JA_SCRIPT}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
-                                 <copy file="${JAR_SRC_JLISTENER}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <!-- locally built  -->
+                                <echo message="DEBUG:::   locally built couchbase-lite JARs" />
 
-                                 <copy file="${POM_SRC_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
-                                 <copy file="${POM_SRC_JAVA_CORE}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
-                                 <copy file="${POM_SRC_JA_SCRIPT}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
-                                 <copy file="${POM_SRC_JLISTENER}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy file="${AND_CLASS_AAR_SRC}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy file="${JAR_SRC_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
 
-                                 <!-- locally packaged  -->
-                                 <echo message="DEBUG:::   locally packaged android JARs" />
-                                 
-                                 <copy file="${JAR_DST_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
-                                 <copy file="${JAR_SRC_COLLATORS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
-                                 
-                                 <!-- third-party    -->
-                                 <echo message="DEBUG:::   third-party" />
-                                 
-                                 <copy todir="${ZIP_HOME}" preservelastmodified="true" flatten="true" verbose="true">
-                                     <fileset dir="${local-m2dir}">
-                                         <include name="**/rhino-${rhino.version}.jar"                />
-                                         <include name="**/commons-io-${commons-io.version}.jar"      />
-                                         <include name="**/jackson-annotations-${jackson.version}.jar"   />
-                                         <include name="**/jackson-core-${jackson.version}.jar" />
-                                         <include name="**/jackson-databind-${jackson.version}.jar" />
-                                         <include name="**/stateless4j-${stateless4j.version}.jar" />
-                                         <include name="**/servlet-${servlet.version}.jar"            />
-                                         <include name="**/webserver-${servlet.version}.jar"          />
-                                     </fileset>
-                                 </copy>
+                                <copy file="${JAR_SRC_JAVA_CORE}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                <copy file="${POM_SRC_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy file="${POM_SRC_JAVA_CORE}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                <!-- locally packaged  -->
+                                <echo message="DEBUG:::   locally packaged android JARs" />
+
+                                <copy file="${JAR_DST_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy file="${JAR_SRC_COLLATORS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                <!-- third-party    -->
+                                <echo message="DEBUG:::   third-party" />
+
+                                <copy todir="${ZIP_HOME}" preservelastmodified="true" flatten="true" verbose="true">
+                                    <fileset dir="${local-m2dir}">
+                                        <include name="**/rhino-${rhino.version}.jar"                />
+                                        <include name="**/commons-io-${commons-io.version}.jar"      />
+
+                                        <include name="**/jackson-core-${jackson.version}.jar"   />
+                                        <include name="**/jackson-annotations-${jackson.version}.jar" />
+                                        <include name="**/jackson-databind-${jackson.version}.jar" />
+
+                                        <include name="**/stateless4j-${stateless4j.version}.jar" />
+
+                                        <include name="**/servlet-${servlet.version}.jar"            />
+                                        <include name="**/webserver-${servlet.version}.jar"          />
+                                    </fileset>
+                                </copy>
                             </tasks>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            
+
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -348,7 +323,7 @@
             </plugin>
         </plugins>
     </build>
-    
+
     <distributionManagement>
         <repository>
             <id>couchbase.public.repo</id>
