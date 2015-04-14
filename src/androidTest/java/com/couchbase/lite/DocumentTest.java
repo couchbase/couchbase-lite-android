@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.Body;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -7,12 +8,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import junit.framework.Assert;
 
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 public class DocumentTest extends LiteTestCase {
@@ -481,5 +487,103 @@ public class DocumentTest extends LiteTestCase {
             assertEquals(documentID, document.getProperty("_id"));
             assertTrue(((String)document.getProperty("_rev")).startsWith("4-"));
         }
+    }
+
+    public void testInsertionOrderPreserved() throws CouchbaseLiteException {
+        List<String> keys1 = new ArrayList<String>();
+        keys1.add("z");
+        keys1.add("a");
+        keys1.add("b");
+        keys1.add("y");
+
+        List<String> keys2 = new ArrayList<String>();
+        keys2.add("w");
+        keys2.add("e");
+        keys2.add("f");
+        keys2.add("k");
+        assertTrue(keys1.size() == keys2.size());
+
+        // Ensure the "normal" hashcode (hashcode + VM specific secondary hashcode)
+        // results in a different ordering or this test is moot
+        Set<String> set1 = new HashSet<String>(keys1);
+        Set<String> set2 = new HashSet<String>(keys2);
+        Iterator<String> it1 = set1.iterator();
+        Iterator<String> it2 = set2.iterator();
+        boolean sameOrder1 = true;
+        boolean sameOrder2 = true;
+
+        for (int i = 0, len = keys1.size(); i < len; i++) {
+            String key = it1.next();
+            String key2 = it2.next();
+            if (!keys1.get(i).equals(key)) {
+                sameOrder1 = false;
+            }
+            if (!keys2.get(i).equals(key2)) {
+                sameOrder2 = false;
+            }
+        }
+        assertFalse("Hashcode assumption failed", sameOrder1);
+        assertFalse("Hashcode assumption failed", sameOrder2);
+
+        // Now really test that the insertion order is preserved
+        Document document = database.createDocument();
+        UnsavedRevision rev = document.createRevision();
+        Map<String, Object> props = rev.getProperties();
+
+        // But first make sure our assumptions about UnsavedRevision hold
+        assertEquals(props.size(), 1);
+        assertTrue(props.containsKey("_id"));
+
+        for (String key: keys1) {
+            props.put(key, null);
+        }
+        byte[] attach = "why not some attachments too?".getBytes();
+        rev.setAttachment("attach", "text/plain", new ByteArrayInputStream(attach));
+        SavedRevision savedRev = rev.save();
+
+        rev = savedRev.createRevision();
+        props = rev.getProperties();
+        // New keys should be appended last
+        for (String key: keys2) {
+            props.put(key, null);
+        }
+        // But modifying an existing key should not change the order
+        props.put(keys1.get(0), 1);
+        props = rev.save().getProperties();
+
+        // Finally lets check the order
+        Iterator<String> propsKeysIt = props.keySet().iterator();
+        assertEquals("_id", propsKeysIt.next());
+        // We want to preserve the insertion order, so the properties of the first rev come
+        // before _rev itself, as it is only added when the revision is first saved
+        // To have _rev right after _id we could reserve its place by adding the key with a null
+        // value but that is dangerous has there might be code that relies on containsKey().
+        // The other option would be to have our own version of LinkedHashMap (cost vs benefit)
+        for (String key: keys1) {
+            assertEquals(key, propsKeysIt.next());
+        }
+        assertEquals("_attachments", propsKeysIt.next());
+        assertEquals("_rev", propsKeysIt.next());
+        for (String key: keys2) {
+            assertEquals(key, propsKeysIt.next());
+        }
+        assertFalse(propsKeysIt.hasNext());
+
+        // Now test if the JSON parser preserves the order
+        Body body = new Body(props);
+        body = new Body(body.getJson());
+        props = body.getProperties();
+
+        propsKeysIt = props.keySet().iterator();
+        assertEquals("_id", propsKeysIt.next());
+        for (String key: keys1) {
+            assertEquals(key, propsKeysIt.next());
+        }
+        assertEquals("_attachments", propsKeysIt.next());
+        assertEquals("_rev", propsKeysIt.next());
+        for (String key: keys2) {
+            assertEquals(key, propsKeysIt.next());
+        }
+        assertFalse(propsKeysIt.hasNext());
     }
 }
