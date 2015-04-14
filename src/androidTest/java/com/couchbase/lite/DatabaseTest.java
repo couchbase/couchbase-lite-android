@@ -5,6 +5,7 @@ import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.FileDirUtils;
+import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.util.HashMap;
@@ -247,6 +248,66 @@ public class DatabaseTest extends LiteTestCase {
         database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict);
 
         assertTrue(outIsConflict.get());
+    }
 
+    /**
+     * in Database_Tests.m
+     * - (void) test075_UpdateDocInTransaction
+     */
+    public void testUpdateDocInTransaction() throws InterruptedException {
+        // Test for #256, "Conflict error when updating a document multiple times in transaction block"
+        // https://github.com/couchbase/couchbase-lite-ios/issues/256
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testUpdateDocInTransaction");
+        properties.put("count", 1);
+
+        final Document doc = createDocumentWithProperties(database, properties);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                Log.e(TAG, "-- changed() --");
+                latch.countDown();
+            }
+        });
+        assertTrue(database.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                // Update doc. The currentRevision should update, but no notification be posted (yet).
+                Map<String, Object> props1 = new HashMap<String, Object>();
+                props1.putAll(doc.getProperties());
+                props1.put("count", 2);
+                SavedRevision rev1 = null;
+                try {
+                    rev1 = doc.putProperties(props1);
+                } catch (CouchbaseLiteException e) {
+                    Log.e(Log.TAG_DATABASE, e.toString());
+                    return false;
+                }
+                assertNotNull(rev1);
+                assertEquals(doc.getCurrentRevision(), rev1);
+                assertEquals(1, latch.getCount());
+
+                // Update doc again; this should succeed, in the same manner.
+                Map<String, Object> props2 = new HashMap<String, Object>();
+                props2.putAll(doc.getProperties());
+                props2.put("count", 3);
+                SavedRevision rev2 = null;
+                try {
+                    rev2 = doc.putProperties(props2);
+                } catch (CouchbaseLiteException e) {
+                    Log.e(Log.TAG_DATABASE, e.toString());
+                    return false;
+                }
+                assertNotNull(rev2);
+                assertEquals(doc.getCurrentRevision(), rev2);
+                assertEquals(1, latch.getCount());
+
+                return true;
+            }
+        }));
+        assertTrue(latch.await(0, TimeUnit.SECONDS));
     }
 }
