@@ -77,20 +77,14 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
             <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
             <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
@@ -287,9 +281,8 @@
                                         <include name="**/rhino-${rhino.version}.jar"                />
                                         <include name="**/commons-io-${commons-io.version}.jar"      />
 
-                                        <include name="**/jackson-core-${jackson.version}.jar"   />
-                                        <include name="**/jackson-annotations-${jackson.version}.jar" />
-                                        <include name="**/jackson-databind-${jackson.version}.jar" />
+                                        <include name="**/jackson-core-asl-${jackson.version}.jar"   />
+                                        <include name="**/jackson-mapper-asl-${jackson.version}.jar" />
 
                                         <include name="**/stateless4j-${stateless4j.version}.jar" />
 

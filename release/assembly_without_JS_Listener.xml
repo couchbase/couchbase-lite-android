@@ -63,17 +63,12 @@
         </file>
 
         <file>
-            <source> ${ZIP_HOME}/jackson-core-${jackson.version}.jar   </source>
+            <source> ${ZIP_HOME}/jackson-core-asl-${jackson.version}.jar   </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/jackson-annotations-${jackson.version}.jar   </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-        <file>
-            <source> ${ZIP_HOME}/jackson-databind-${jackson.version}.jar   </source>
+            <source> ${ZIP_HOME}/jackson-mapper-asl-${jackson.version}.jar   </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
