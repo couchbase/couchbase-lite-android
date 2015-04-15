@@ -448,8 +448,10 @@ public class DocumentTest extends LiteTestCase {
     /**
      * Nonsensical CouchbaseLiteException (Conflict) exception thrown on UnsavedRevision.save() #479
      * https://github.com/couchbase/couchbase-lite-java-core/issues/479
+     *
+     * Note: this test fails with 1.0.4 or earlier. This test takes time, as default, test is disabled.
      */
-    public void testNonsensicalConflictExceptionOnUnsavedRevision() throws CouchbaseLiteException {
+    public void disabledTestNonsensicalConflictExceptionOnUnsavedRevision() throws CouchbaseLiteException {
 
         View testNonsensicalConflict = database.getView("testNonsensicalConflict");
         testNonsensicalConflict.setMap(new Mapper() {
