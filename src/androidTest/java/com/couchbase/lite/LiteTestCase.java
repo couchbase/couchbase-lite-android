@@ -15,6 +15,7 @@ import com.couchbase.lite.router.URLStreamHandlerFactory;
 import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.URIUtils;
 import com.couchbase.test.lite.LiteTestCaseBase;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -172,7 +173,9 @@ public class LiteTestCase extends LiteTestCaseBase {
     protected URL getReplicationURL()  {
         try {
             if(getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
-                return new URL(String.format("%s://%s:%s@%s:%d/%s", getReplicationProtocol(), getReplicationAdminUser(), getReplicationAdminPassword(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
+                String encodedUserName = URIUtils.encode(getReplicationAdminUser());
+                String encodedPassword = URIUtils.encode(getReplicationAdminPassword());
+                return new URL(String.format("%s://%s:%s@%s:%d/%s", getReplicationProtocol(), encodedUserName, encodedPassword, getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
             } else {
                 return new URL(String.format("%s://%s:%d/%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
             }
@@ -184,7 +187,9 @@ public class LiteTestCase extends LiteTestCaseBase {
     protected URL getReplicationSubURL(String subIndex)  {
         try {
             if(getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
-                return new URL(String.format("%s://%s:%s@%s:%d/%s%s", getReplicationProtocol(), getReplicationAdminUser(), getReplicationAdminPassword(), getReplicationServer(), getReplicationPort(), getReplicationDatabase(),subIndex));
+                String encodedUserName = URIUtils.encode(getReplicationAdminUser());
+                String encodedPassword = URIUtils.encode(getReplicationAdminPassword());
+                return new URL(String.format("%s://%s:%s@%s:%d/%s%s", getReplicationProtocol(), encodedUserName, encodedPassword, getReplicationServer(), getReplicationPort(), getReplicationDatabase(),subIndex));
             } else {
                 return new URL(String.format("%s://%s:%d/%s%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase(),subIndex));
             }
