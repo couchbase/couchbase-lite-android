@@ -301,7 +301,7 @@ public class AttachmentsTest extends LiteTestCase {
     }
 
     @SuppressWarnings("unchecked")
-    public void testPutAttachment() throws CouchbaseLiteException {
+    public void testPutAttachment() throws CouchbaseLiteException, IOException {
 
         String testAttachmentName = "test_attachment";
         BlobStore attachments = database.getAttachments();
@@ -437,8 +437,7 @@ public class AttachmentsTest extends LiteTestCase {
         rev.save();
     }
 
-    public void testStreamAttachmentBlobStoreWriter() {
-
+    public void testStreamAttachmentBlobStoreWriter() throws IOException {
 
         BlobStore attachments = database.getAttachments();
 
@@ -811,4 +810,23 @@ public class AttachmentsTest extends LiteTestCase {
         fis.close();
     }
 
+    public void testAttachmentThrowIoException() {
+        InputStream in = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw new IOException();
+            }
+        };
+
+        Document doc = database.createDocument();
+        UnsavedRevision rev = doc.createRevision();
+        rev.setAttachment("ioe_attach", "text/plain", in);
+
+        try {
+            rev.save();
+            fail("Saved revision with corrupt attachment");
+        } catch (CouchbaseLiteException expected) {
+            assertEquals(Status.STATUS_ATTACHMENT_ERROR, expected.getCBLStatus().getCode());
+        }
+    }
 }
