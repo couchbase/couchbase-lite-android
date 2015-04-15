@@ -78,10 +78,28 @@ public class AuthTest extends TestCase {
     public void testBasicAuthenticator() {
         String username = "username";
         String password = "password";
+        String expectedAuthInfo = username + ":" + password;
         BasicAuthenticator basicAuth = new BasicAuthenticator(username, password);
 
         Assert.assertNull(basicAuth.loginParametersForSite(null));
         Assert.assertTrue(basicAuth.usesCookieBasedLogin());
-        Assert.assertEquals(basicAuth.authUserInfo(), username + ":" + password);
+        Assert.assertEquals(basicAuth.authUserInfo(), expectedAuthInfo);
+
+        // Test encoding of authUserInfo
+        // Username with reserved characters from RFC 3986
+        // Password with unreserved characters
+        username = "/?#:[]@";
+        password = "aAwWzZ190-._~";
+        expectedAuthInfo = "%2F%3F%23%3A%5B%5D%40" + ":" + password;
+        basicAuth = new BasicAuthenticator(username, password);
+        Assert.assertEquals(basicAuth.authUserInfo(), expectedAuthInfo);
+
+        // Also test with some UTF-8 characters
+        username = "七乃又直ந்த";
+        password = "ؤلمن:يстекло";
+        expectedAuthInfo = "%E4%B8%83%E4%B9%83%E5%8F%88%E7%9B%B4%E0%AE%A8%E0%AF%8D%E0%AE%A4"
+                + ":" + "%D8%A4%D9%84%D9%85%D9%86%3A%D9%8A%D1%81%D1%82%D0%B5%D0%BA%D0%BB%D0%BE";
+        basicAuth = new BasicAuthenticator(username, password);
+        Assert.assertEquals(basicAuth.authUserInfo(), expectedAuthInfo);
     }
 }
