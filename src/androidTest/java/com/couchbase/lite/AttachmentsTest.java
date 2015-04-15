@@ -424,6 +424,19 @@ public class AttachmentsTest extends LiteTestCase {
         database.close();
     }
 
+    public void testAddAndGetAttachment() throws CouchbaseLiteException {
+        Document document = database.createDocument();
+        UnsavedRevision rev = document.createRevision();
+
+        byte[] attach = "This is the body of attach".getBytes();;
+        InputStream in = new ByteArrayInputStream(attach);
+        rev.setAttachment("attach", "text/plain", in);
+
+        assertNotNull(rev.getAttachment("attach"));
+        assertEquals(1, rev.getAttachments().size());
+        rev.save();
+    }
+
     public void testStreamAttachmentBlobStoreWriter() {
 
 
