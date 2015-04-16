@@ -15,6 +15,7 @@ import com.couchbase.lite.router.URLStreamHandlerFactory;
 import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.URIUtils;
 import com.couchbase.test.lite.LiteTestCaseBase;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,8 +33,10 @@ import org.apache.http.cookie.Cookie;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -133,12 +136,14 @@ public class LiteTestCase extends LiteTestCaseBase {
         Properties systemProperties = System.getProperties();
         InputStream mainProperties = getAsset("test.properties");
         if(mainProperties != null) {
-            systemProperties.load(mainProperties);
+            systemProperties.load(new InputStreamReader(mainProperties, "UTF-8"));
+            mainProperties.close();
         }
         try {
             InputStream localProperties = getAsset("local-test.properties");
             if(localProperties != null) {
-                systemProperties.load(localProperties);
+                systemProperties.load(new InputStreamReader(localProperties, "UTF-8"));
+                localProperties.close();
             }
         } catch (IOException e) {
             Log.w(TAG, "Error trying to read from local-test.properties, does this file exist?");
@@ -172,7 +177,9 @@ public class LiteTestCase extends LiteTestCaseBase {
     protected URL getReplicationURL()  {
         try {
             if(getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
-                return new URL(String.format("%s://%s:%s@%s:%d/%s", getReplicationProtocol(), getReplicationAdminUser(), getReplicationAdminPassword(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
+                String username = URIUtils.encode(getReplicationAdminUser());
+                String password = URIUtils.encode(getReplicationAdminPassword());
+                return new URL(String.format("%s://%s:%s@%s:%d/%s", getReplicationProtocol(), username, password, getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
             } else {
                 return new URL(String.format("%s://%s:%d/%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
             }
@@ -184,7 +191,9 @@ public class LiteTestCase extends LiteTestCaseBase {
     protected URL getReplicationSubURL(String subIndex)  {
         try {
             if(getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
-                return new URL(String.format("%s://%s:%s@%s:%d/%s%s", getReplicationProtocol(), getReplicationAdminUser(), getReplicationAdminPassword(), getReplicationServer(), getReplicationPort(), getReplicationDatabase(),subIndex));
+                String username = URIUtils.encode(getReplicationAdminUser());
+                String password = URIUtils.encode(getReplicationAdminPassword());
+                return new URL(String.format("%s://%s:%s@%s:%d/%s%s", getReplicationProtocol(), username, password, getReplicationServer(), getReplicationPort(), getReplicationDatabase(),subIndex));
             } else {
                 return new URL(String.format("%s://%s:%d/%s%s", getReplicationProtocol(), getReplicationServer(), getReplicationPort(), getReplicationDatabase(),subIndex));
             }
