@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class DocumentTest extends LiteTestCase {
 
@@ -506,5 +507,24 @@ public class DocumentTest extends LiteTestCase {
             assertEquals(documentID, document.getProperty("_id"));
             assertTrue(((String)document.getProperty("_rev")).startsWith("4-"));
         }
+    }
+
+    public void testAddChangeListener() throws CouchbaseLiteException, InterruptedException {
+        final CountDownLatch documentChanged = new CountDownLatch(1);
+        Document doc = database.createDocument();
+        doc.addChangeListener(new Document.ChangeListener() {
+            @Override
+            public void changed(Document.ChangeEvent event) {
+                DocumentChange docChange = event.getChange();
+                String msg = "New revision added: %s. Conflict: %s";
+                msg = String.format(msg,
+                        docChange.getAddedRevision(), docChange.isConflict());
+                Log.d(TAG, msg);
+                documentChanged.countDown();
+            }
+        });
+        doc.createRevision().save();
+        boolean success = documentChanged.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
     }
 }
