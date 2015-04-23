@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class ViewsTest extends LiteTestCase {
@@ -784,6 +785,54 @@ public class ViewsTest extends LiteTestCase {
         result.put("total_rows", rows.size());
         result.put("offset", offset);
         return result;
+    }
+
+    public void testAllDocumentsLiveQuery() throws CouchbaseLiteException {
+        final AtomicInteger changeCount = new AtomicInteger();
+
+        Database db = startDatabase();
+        LiveQuery query = db.createAllDocumentsQuery().toLiveQuery();
+        query.setStartKey("1");
+        query.setEndKey("10");
+        query.addChangeListener(new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                changeCount.incrementAndGet();
+            }
+        });
+
+        query.start();
+        query.waitForRows();
+        assertNull(query.getLastError());
+        QueryEnumerator rows = query.getRows();
+        assertNotNull(rows);
+        assertEquals(0, rows.getCount());
+
+        // A change event is sent the first time a query finishes loading
+        assertEquals(1, changeCount.get());
+
+        db.getDocument("a").createRevision().save();
+
+        query.waitForRows();
+        // A change event is not sent, if the query results remain the same
+        assertEquals(1, changeCount.get());
+        rows = query.getRows();
+        assertNotNull(rows);
+        assertEquals(0, rows.getCount());
+
+        db.getDocument("1").createRevision().save();
+
+        // The query must update before sending notifications
+        assertEquals(1, changeCount.get());
+        query.waitForRows();
+        assertEquals(2, changeCount.get());
+
+        rows = query.getRows();
+        assertNotNull(rows);
+        assertEquals(1, rows.getCount());
+
+        assertNull(query.getLastError());
+        query.stop();
     }
 
     public void testViewReduce() throws CouchbaseLiteException {
