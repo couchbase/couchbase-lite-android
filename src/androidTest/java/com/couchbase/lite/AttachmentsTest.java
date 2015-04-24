@@ -829,4 +829,18 @@ public class AttachmentsTest extends LiteTestCase {
             assertEquals(Status.STATUS_ATTACHMENT_ERROR, expected.getCBLStatus().getCode());
         }
     }
+
+    public void testGetAttachmentFromUnsavedRevision() throws Exception {
+        String attachmentName = "index.html";
+        String content  = "This is a test attachment!";
+
+        Document doc = createDocWithAttachment(database, attachmentName, content);
+        UnsavedRevision rev = doc.createRevision();
+        Attachment attachment = rev.getAttachment(attachmentName);
+        assertNotNull(attachment);
+
+        InputStream in = attachment.getContent();
+        assertNotNull(in);
+        assertEquals(IOUtils.toString(in, "UTF-8"), content);
+    }
 }
