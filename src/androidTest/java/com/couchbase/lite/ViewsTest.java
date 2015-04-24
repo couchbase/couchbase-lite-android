@@ -1901,6 +1901,31 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(Arrays.asList("f", "four"), rows.get(1).getKey());
     }
 
+    public void testAllDocsPrefixMatch() throws CouchbaseLiteException {
+        database.getDocument("aaaaaaa").createRevision().save();
+        database.getDocument("a11zzzzz").createRevision().save();
+        database.getDocument("a七乃又直ந்த").createRevision().save();
+        database.getDocument("A1").createRevision().save();
+        database.getDocument("bcd").createRevision().save();
+        database.getDocument("01234").createRevision().save();
+
+        QueryOptions options = new QueryOptions();
+        options.setPrefixMatchLevel(1);
+        options.setStartKey("a");
+        options.setEndKey("a");
+
+        Map<String, Object> result = database.getAllDocs(options);
+        assertNotNull(result);
+        List<QueryRow> rows = (List<QueryRow>) result.get("rows");
+        assertNotNull(rows);
+
+        // 1 < a < 七 - order is ascending by default
+        assertEquals(3, rows.size());
+        assertEquals("a11zzzzz", rows.get(0).getKey());
+        assertEquals("aaaaaaa", rows.get(1).getKey());
+        assertEquals("a七乃又直ந்த", rows.get(2).getKey());
+    }
+
     /**
      * in View_Tests.m
      * - (void) test06_ViewCustomFilter
