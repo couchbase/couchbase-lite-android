@@ -318,8 +318,6 @@ public class RevisionsTest extends LiteTestCase {
 
     }
 
-
-
     public void testDocumentChangeListener() throws Exception {
 
         Document doc = database.createDocument();
@@ -340,8 +338,34 @@ public class RevisionsTest extends LiteTestCase {
 
     }
 
+    public void testRevisionSequence() throws CouchbaseLiteException {
+        Document doc = database.createDocument();
+        UnsavedRevision unsavedRev = doc.createRevision();
+
+        // An unsaved revision has no sequence number
+        assertEquals(0, unsavedRev.getSequence());
+        // A new document has no parent and so there is no parent sequence number
+        assertNull(unsavedRev.getParentId());
+        assertEquals(0, unsavedRev.getParentSequence());
+
+        SavedRevision rev = unsavedRev.save();
+        // The first revision of our database must have 1 has sequence number
+        assertEquals(1, rev.getSequence());
+        // Since it has no parent rev, the parent sequence number is 0
+        assertNull(rev.getParentId());
+        assertEquals(0, rev.getParentSequence());
+
+        unsavedRev = doc.createRevision();
+        assertEquals(0, unsavedRev.getSequence());
+        assertEquals(1, unsavedRev.getParentSequence());
+
+        rev = unsavedRev.save();
+        assertEquals(2, rev.getSequence());
+        assertNotNull(rev.getParentId());
+        assertEquals(1, rev.getParentSequence());
+    }
+
     private static RevisionInternal mkrev(String revID) {
         return new RevisionInternal("docid", revID, false);
     }
-
 }
