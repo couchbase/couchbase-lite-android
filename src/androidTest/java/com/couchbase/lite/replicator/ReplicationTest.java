@@ -4943,6 +4943,9 @@ public class ReplicationTest extends LiteTestCase {
         return document;
     }
 
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/575
+     */
     public void testRestartWithStoppedReplicator() throws Exception {
 
         MockDispatcher dispatcher = new MockDispatcher();
