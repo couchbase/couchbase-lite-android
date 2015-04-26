@@ -30,9 +30,11 @@ import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -42,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 
 public class AttachmentsTest extends LiteTestCase {
 
@@ -842,5 +845,36 @@ public class AttachmentsTest extends LiteTestCase {
         InputStream in = attachment.getContent();
         assertNotNull(in);
         assertEquals(IOUtils.toString(in, "UTF-8"), content);
+    }
+
+    public void testGzippedAttachments() throws Exception {
+        String attachmentName = "index.html";
+        byte content[]  = "This is a test attachment!".getBytes("UTF-8");
+
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        GZIPOutputStream gzipOut = new GZIPOutputStream(byteOut);
+        gzipOut.write(content);
+        gzipOut.close();
+        byte contentGzipped[] = byteOut.toByteArray();
+
+        Document doc = database.createDocument();
+        UnsavedRevision rev = doc.createRevision();
+        rev.setAttachment(attachmentName, "text/html", new ByteArrayInputStream(contentGzipped));
+        rev.save();
+
+        SavedRevision savedRev = doc.getCurrentRevision();
+        Attachment attachment = savedRev.getAttachment(attachmentName);
+
+        // As far as revision users are concerned their data is not gzipped
+        assertFalse(attachment.getGZipped());
+        assertEquals(content, IOUtils.toByteArray(attachment.getContent()));
+        assertFalse(attachment.getGZipped());
+
+        // But the it may be gzipped encoded internally
+        long sequence = savedRev.getSequence();
+        attachment = database.getAttachmentForSequence(sequence, attachmentName);
+        assertTrue(attachment.getGZipped());
+        assertEquals(contentGzipped, IOUtils.toByteArray(attachment.getContent()));
+        assertTrue(attachment.getGZipped());
     }
 }
