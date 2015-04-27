@@ -4514,6 +4514,7 @@ public class ReplicationTest extends LiteTestCase {
         RevisionInternal rev = new RevisionInternal(props1);
         Status status = new Status();
         RevisionInternal savedRev = database.putRevision(rev, null, false, status);
+        String rev1ID = savedRev.getRevId();
 
         // add attachment to doc (Revision 2-xxxx)
         Document doc = database.getDocument(docID);
@@ -4521,13 +4522,14 @@ public class ReplicationTest extends LiteTestCase {
         InputStream attachmentStream = getAsset(attachmentName);
         newRev.setAttachment(attachmentName, "image/png", attachmentStream);
         SavedRevision saved = newRev.save(true);
+        String rev2ID = doc.getCurrentRevisionId();
 
         Log.e(TAG, "saved => " + saved);
         Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
 
         // Create 5 revisions with 50 conflicts each
         int j = 3;
-        for(;j < 5;j++) {
+        for (; j < 5; j++) {
             // Create a conflict, won by the new revision:
             Map<String, Object> props = new HashMap<String, Object>();
             props.put("_id", docID);
@@ -4555,7 +4557,11 @@ public class ReplicationTest extends LiteTestCase {
                 props_conflict.put("_attachments", attachmentDict);
                 // end of attachment
                 RevisionInternal leaf_conflict = new RevisionInternal(props_conflict);
-                database.forceInsert(leaf_conflict, new ArrayList<String>(), null);
+                List<String> revHistory = new ArrayList<String>();
+                revHistory.add(leaf_conflict.getRevId());
+                revHistory.add(rev2ID);
+                revHistory.add(rev1ID);
+                database.forceInsert(leaf_conflict, revHistory, null);
                 Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
             }
         }
