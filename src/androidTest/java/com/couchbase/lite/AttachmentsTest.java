@@ -36,7 +36,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -840,6 +839,26 @@ public class AttachmentsTest extends LiteTestCase {
         String content  = "This is a test attachment!";
 
         Document doc = createDocWithAttachment(database, attachmentName, content);
+        UnsavedRevision rev = doc.createRevision();
+        Attachment attachment = rev.getAttachment(attachmentName);
+        assertNotNull(attachment);
+
+        InputStream in = attachment.getContent();
+        assertNotNull(in);
+        assertEquals(IOUtils.toString(in, "UTF-8"), content);
+    }
+
+    public void testGetAttachmentFromUnsavedRevisionWithMultipleRevisions() throws Exception {
+        String attachmentName = "index.html";
+        String content = "This is a test attachment!";
+
+        Document doc = createDocWithAttachment(database, attachmentName, content);
+
+        // added extra two revisions to make sure in case the revision that has an attachment is
+        // more than two generation older than current.
+        doc.createRevision().save();
+        doc.createRevision().save();
+
         UnsavedRevision rev = doc.createRevision();
         Attachment attachment = rev.getAttachment(attachmentName);
         assertNotNull(attachment);
