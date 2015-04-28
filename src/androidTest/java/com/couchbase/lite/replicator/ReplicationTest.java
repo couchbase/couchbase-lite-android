@@ -4948,4 +4948,64 @@ public class ReplicationTest extends LiteTestCase {
         }
         return document;
     }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/575
+     */
+    public void testRestartWithStoppedReplicator() throws Exception {
+
+        MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, 0, 0);
+        server.play();
+
+
+        // run pull replication
+        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+        pullReplication.setContinuous(true);
+
+        // it should go idle twice, hence countdown latch = 2
+        final CountDownLatch replicationIdleFirstTime = new CountDownLatch(1);
+        final CountDownLatch replicationIdleSecondTime = new CountDownLatch(2);
+        final CountDownLatch replicationStoppedFirstTime = new CountDownLatch(1);
+
+        pullReplication.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
+                    Log.e(Log.TAG, "IDLE");
+                    replicationIdleFirstTime.countDown();
+                    replicationIdleSecondTime.countDown();
+                }
+                else if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.STOPPED) {
+                    Log.e(Log.TAG, "STOPPED");
+                    replicationStoppedFirstTime.countDown();
+                }
+            }
+        });
+
+        pullReplication.start();
+
+
+        // wait until replication goes idle
+        boolean success = replicationIdleFirstTime.await(60, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        pullReplication.stop();
+
+        // wait until replication stop
+        success = replicationStoppedFirstTime.await(60, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        pullReplication.restart();
+
+        // wait until replication goes idle again
+        success = replicationIdleSecondTime.await(60, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        stopReplication(pullReplication);
+
+        // cleanup / shutdown
+        server.shutdown();
+    }
 }
