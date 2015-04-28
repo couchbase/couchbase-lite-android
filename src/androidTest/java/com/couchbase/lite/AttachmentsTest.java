@@ -17,8 +17,6 @@
 
 package com.couchbase.lite;
 
-import android.test.MoreAsserts;
-
 import com.couchbase.lite.internal.AttachmentInternal;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.storage.ContentValues;
@@ -36,7 +34,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -869,14 +866,14 @@ public class AttachmentsTest extends LiteTestCase {
 
         // As far as revision users are concerned their data is not gzipped
         assertFalse(attachment.getGZipped());
-        MoreAsserts.assertEquals(content, IOUtils.toByteArray(attachment.getContent()));
+        assertTrue(Arrays.equals(content, IOUtils.toByteArray(attachment.getContent())));
         assertFalse(attachment.getGZipped());
 
         // But the it may be gzipped encoded internally
         long sequence = savedRev.getSequence();
         attachment = database.getAttachmentForSequence(sequence, attachmentName);
         assertTrue(attachment.getGZipped());
-        MoreAsserts.assertEquals(contentGzipped, IOUtils.toByteArray(attachment.getContent()));
+        assertTrue(Arrays.equals(contentGzipped, IOUtils.toByteArray(attachment.getContent())));
         assertTrue(attachment.getGZipped());
     }
 }
