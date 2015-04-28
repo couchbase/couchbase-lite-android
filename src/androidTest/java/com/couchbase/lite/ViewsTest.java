@@ -24,14 +24,20 @@ import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class ViewsTest extends LiteTestCase {
@@ -784,6 +790,54 @@ public class ViewsTest extends LiteTestCase {
         result.put("total_rows", rows.size());
         result.put("offset", offset);
         return result;
+    }
+
+    public void testAllDocumentsLiveQuery() throws CouchbaseLiteException {
+        final AtomicInteger changeCount = new AtomicInteger();
+
+        Database db = startDatabase();
+        LiveQuery query = db.createAllDocumentsQuery().toLiveQuery();
+        query.setStartKey("1");
+        query.setEndKey("10");
+        query.addChangeListener(new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                changeCount.incrementAndGet();
+            }
+        });
+
+        query.start();
+        query.waitForRows();
+        assertNull(query.getLastError());
+        QueryEnumerator rows = query.getRows();
+        assertNotNull(rows);
+        assertEquals(0, rows.getCount());
+
+        // A change event is sent the first time a query finishes loading
+        assertEquals(1, changeCount.get());
+
+        db.getDocument("a").createRevision().save();
+
+        query.waitForRows();
+        // A change event is not sent, if the query results remain the same
+        assertEquals(1, changeCount.get());
+        rows = query.getRows();
+        assertNotNull(rows);
+        assertEquals(0, rows.getCount());
+
+        db.getDocument("1").createRevision().save();
+
+        // The query must update before sending notifications
+        assertEquals(1, changeCount.get());
+        query.waitForRows();
+        assertEquals(2, changeCount.get());
+
+        rows = query.getRows();
+        assertNotNull(rows);
+        assertEquals(1, rows.getCount());
+
+        assertNull(query.getLastError());
+        query.stop();
     }
 
     public void testViewReduce() throws CouchbaseLiteException {
@@ -1847,6 +1901,31 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(Arrays.asList("f", "four"), rows.get(1).getKey());
     }
 
+    public void testAllDocsPrefixMatch() throws CouchbaseLiteException {
+        database.getDocument("aaaaaaa").createRevision().save();
+        database.getDocument("a11zzzzz").createRevision().save();
+        database.getDocument("a七乃又直ந்த").createRevision().save();
+        database.getDocument("A1").createRevision().save();
+        database.getDocument("bcd").createRevision().save();
+        database.getDocument("01234").createRevision().save();
+
+        QueryOptions options = new QueryOptions();
+        options.setPrefixMatchLevel(1);
+        options.setStartKey("a");
+        options.setEndKey("a");
+
+        Map<String, Object> result = database.getAllDocs(options);
+        assertNotNull(result);
+        List<QueryRow> rows = (List<QueryRow>) result.get("rows");
+        assertNotNull(rows);
+
+        // 1 < a < 七 - order is ascending by default
+        assertEquals(3, rows.size());
+        assertEquals("a11zzzzz", rows.get(0).getKey());
+        assertEquals("aaaaaaa", rows.get(1).getKey());
+        assertEquals("a七乃又直ந்த", rows.get(2).getKey());
+    }
+
     /**
      * in View_Tests.m
      * - (void) test06_ViewCustomFilter
@@ -2228,5 +2307,89 @@ public class ViewsTest extends LiteTestCase {
         }
 
         liveQuery.stop();
+    }
+
+    /**
+     * Tests that when converting from a Query to a LiveQuery, all properties are preserved.
+     * More speficially tests that the Query copy constructor copies all fields.
+     *
+     * Regression test for couchbase/couchbase-lite-java-core#585.
+     */
+    public void testQueryToLiveQuery() throws Exception {
+        View view = database.getView("vu");
+        Query query = view.createQuery();
+
+        query.setAllDocsMode(Query.AllDocsMode.INCLUDE_DELETED);
+        assertTrue(query.shouldIncludeDeleted());
+        query.setPrefetch(true);
+        query.setPrefixMatchLevel(1);
+        query.setStartKey(Arrays.asList("hello", "wo"));
+        query.setStartKey(Arrays.asList("hello", "wo", Collections.EMPTY_MAP));
+        query.setKeys(Arrays.<Object>asList("1", "5", "aaaaa"));
+        query.setGroupLevel(2);
+        query.setPrefixMatchLevel(2);
+        query.setStartKeyDocId("1");
+        query.setEndKeyDocId("123456789");
+        query.setDescending(true);
+        query.setLimit(10);
+        query.setIndexUpdateMode(Query.IndexUpdateMode.NEVER);
+        query.setSkip(2);
+        query.setPostFilter(new Predicate<QueryRow>() {
+            @Override
+            public boolean apply(QueryRow type) {
+                return true;
+            }
+        });
+        query.setMapOnly(true);
+
+        // Lets also test the copy constructor itself
+        // But first ensure our assumptions hold
+        if (Modifier.isAbstract(Query.class.getModifiers())) {
+            fail("Assumption failed: test needs to be updated");
+        }
+        if (Query.class.getSuperclass() != Object.class) {
+            // sameFields(Object, Object) does not compare fields of superclasses
+            fail("Assumption failed: test needs to be updated");
+        }
+        Constructor<Query> copyConstructor = null;
+        try {
+            copyConstructor = Query.class.getDeclaredConstructor(Database.class, Query.class);
+        } catch (NoSuchMethodException e) {
+            fail("Copy constructor not found");
+        }
+        if (Modifier.isPrivate(copyConstructor.getModifiers())) {
+            fail("Copy constructor is private");
+        }
+
+        // Constructor is package protected
+        copyConstructor.setAccessible(true);
+
+        // Now make some copies
+        LiveQuery copy1 = query.toLiveQuery();
+        Query copy2 = copyConstructor.newInstance(query.getDatabase(), query);
+
+        sameFields(query, copy1);
+        sameFields(query, copy2);
+    }
+
+    private static <T> void sameFields(T expected, T actual) throws Exception {
+        // Compare the fields in the expected class (Query)
+        // and not the ones in actual, as it may be a subclass (LiveQuery)
+        assertNotNull(actual);
+        Class<?> clazz = expected.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+
+        boolean compared = false;
+        for (Field field: fields) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            field.setAccessible(true);
+            Object expectedObj = field.get(expected);
+            Object actualObj = field.get(actual);
+            assertEquals(expectedObj, actualObj);
+            compared = true;
+        }
+        assertTrue("No fields to compare?!?", compared);
     }
 }
