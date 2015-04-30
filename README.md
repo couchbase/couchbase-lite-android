@@ -38,7 +38,7 @@ Using Gradle is the easiest way to automate Couchbase Lite builds in your projec
 
 ### Using latest official release
 
-#### Maven repo URL: `http://files.couchbase.com/maven2/`
+##### Maven repo URL: `http://files.couchbase.com/maven2/`
 
 In the project level `build.gradle` file, specify maven repo URL.
 ```
@@ -50,7 +50,7 @@ repositories {
 }
 ```
 
-#### Workaround for "duplicate files during packaging of APK" issue
+##### Workaround for "duplicate files during packaging of APK" issue
 
 In the application level `build.gradle` file, add following in `android` section
 ```
@@ -63,7 +63,7 @@ packagingOptions {
 }    
 ```
 
-#### Set couchbase-lite-android as dependency
+##### Set couchbase-lite-android as dependency
 
 In the application level `build.gradle` file, add following in `dependencies` section
 ```
