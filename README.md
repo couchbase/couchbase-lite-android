@@ -38,31 +38,59 @@ Using Gradle is the easiest way to automate Couchbase Lite builds in your projec
 
 ### Using latest official release
 
-Maven repo URL: `http://files.couchbase.com/maven2/`
+1. Maven repo URL: `http://files.couchbase.com/maven2/`
 
+In the project level `build.gradle` file, specify maven repo URL.
 ```
-<dependency>
-  <groupId>com.couchbase.lite</groupId>
-  <artifactId>android</artifactId>
-  <version>${latest_version}</version>
-</dependency>
+repositories {
+    jcenter()
+    maven {
+        url "http://files.couchbase.com/maven2/"
+    }
+}
 ```
 
-Where ${latest_version} should be replaced by something that looks like `1.0.3`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-java-core/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
+2. Workaround for "duplicate files during packaging of APK" issue
+
+In the application level `build.gradle` file, add following in `android` section
+```
+// workaround for "duplicate files during packaging of APK" issue
+// see https://groups.google.com/d/msg/adt-dev/bl5Rc4Szpzg/wC8cylTWuIEJ
+packagingOptions {
+    exclude 'META-INF/ASL2.0'
+    exclude 'META-INF/LICENSE'
+    exclude 'META-INF/NOTICE'
+}    
+```
+
+3. Set couchbase-lite-android as dependency
+
+In the application level `build.gradle` file, add following in `dependencies` section
+```
+compile 'com.couchbase.lite:couchbase-lite-android:{latest-version}'
+```
+
+In case of using couchbase lite 1.0.4
+```
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:21.0.3'
+    compile 'com.couchbase.lite:couchbase-lite-android:1.0.4'
+}
+```
+
+
+Where ${latest_version} should be replaced by something that looks like `1.0.4`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
 
 ### Using master branch version (bleeding edge)
 
 Maven repo URL: `http://files.couchbase.com/maven2/`
 
 ```
-<dependency>
-  <groupId>com.couchbase.lite</groupId>
-  <artifactId>android</artifactId>
-  <version>0.0.0-473</version>
-</dependency>
+compile 'com.couchbase.lite:couchbase-lite-android:0.0.0-517'
 ```
 
-While `0.0.0-473` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "473" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `0.0.0-` and is later than `0.0.0-473`
+While `0.0.0-517` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "517" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `0.0.0-` and is later than `0.0.0-517`
 
 Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle) that uses this maven artifact.
 
