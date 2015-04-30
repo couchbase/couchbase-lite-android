@@ -31,6 +31,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -803,7 +804,7 @@ public class AttachmentsTest extends LiteTestCase {
         Attachment attachment = doc.getCurrentRevision().getAttachment(attachmentName);
         URL url = attachment.getContentURL();
         assertNotNull(url);
-        FileInputStream fis = new FileInputStream(url.getFile());
+        FileInputStream fis = new FileInputStream(new File(url.toURI()));
         byte[] buffer = new byte[1024];
         int len = fis.read(buffer);
         assertTrue(len != -1);

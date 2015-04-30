@@ -81,7 +81,8 @@ public class ApiTest extends LiteTestCase {
         assertTrue(deleteme.exists());
         String dbPath =deleteme.getPath();
         assertTrue(new File(dbPath).exists());
-        assertTrue(new File(dbPath.substring(0, dbPath.lastIndexOf('.'))).exists());
+        // check for attachment directory
+        assertTrue(new File(dbPath.substring(0, dbPath.lastIndexOf('.')) + " attachments").exists());
         deleteme.delete();
         assertFalse(deleteme.exists());
         assertFalse(new File(dbPath).exists());
