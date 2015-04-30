@@ -99,7 +99,7 @@ Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-An
 
 For Eclipse and Phonegap users, here are links to the zip file which includes the jars:
 
-* [Master Branch build #473 zipfile](http://factory.couchbase.com/job/build_cblite_android_master-community/lastSuccessfulBuild/artifact/couchbase-lite-android-community_0.0.0-473.zip) - to get more recent builds, see [Jenkins CI builds](http://factory.couchbase.com/view/build/view/mobile_dev/view/android/job/build_cblite_android_master/)
+* [Master Branch build #515 zipfile](http://mobile.jenkins.couchbase.com/job/couchbase-lite-android-create-zip/37/artifact/artifacts/couchbase-lite-0.0.0-515-android_community.zip) - to get more recent builds, see [Jenkins CI builds](http://mobile.jenkins.couchbase.com/job/couchbase-lite-android-create-zip/)
 * To get the latest released zipfile, go to [the official download site](http://www.couchbase.com/download#cb-mobile) and download the latest release.
 
 
@@ -117,8 +117,9 @@ Couchbase Lite Version  | Android Studio Version
 1.0.0  | Android Studio 0.5.7
 1.0.1  | Android Studio 0.5.7
 1.0.2  | Android Studio 0.8.2
-1.0.3.x  | Android Studio 0.8.2 - 0.8.9
-Master  | Android Studio 1.0
+1.0.3.x | Android Studio 0.8.2 - 0.8.9
+1.0.4  | Android Studio 1.0
+Master | Android Studio 1.0
 
 ### Prerequisites
 
@@ -173,7 +174,7 @@ If you want to run something (aside from the tests), you should get one of the s
 * If you don't already have a `local.properties` file, configure Android Studio SDK location
     * `cp local.properties.example local.properties`
     * Customize `local.properties` according to your SDK installation directory
-* Build and test
+* Build
     * `$ ./gradlew build`
 
 ## Example Apps
