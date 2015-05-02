@@ -9,9 +9,11 @@ import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -112,7 +114,7 @@ public class ManagerTest extends LiteTestCase {
         manager.replaceDatabase("replaced", dbStream, null);
 
         //Now validate the number of files in the DB
-        assertEquals(10,manager.getDatabase("replaced").getDocumentCount());
+        assertEquals(10, manager.getDatabase("replaced").getDocumentCount());
 
     }
 
@@ -129,7 +131,7 @@ public class ManagerTest extends LiteTestCase {
         manager.replaceDatabase("replaced2", dbStream, attachments);
 
         //Validate the number of files in the DB
-        assertEquals(1,manager.getDatabase("replaced2").getDocumentCount());
+        assertEquals(1, manager.getDatabase("replaced2").getDocumentCount());
 
         //get the attachment from the document
         Document doc = manager.getDatabase("replaced2").getExistingDocument("168e0c56-4588-4df4-8700-4d5115fa9c74");
@@ -137,7 +139,58 @@ public class ManagerTest extends LiteTestCase {
         assertNotNull(doc);
 
         RevisionInternal gotRev1 = database.getDocumentWithIDAndRev(doc.getId(), doc.getCurrentRevisionId(), EnumSet.noneOf(Database.TDContentOptions.class));
+    }
 
+    public void testReplaceDatabaseFromCBLAndroid104() throws CouchbaseLiteException, IOException {
+        InputStream dbStream = getAsset("sample_db_cbl_android_104.cblite");
+        Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
+        InputStream blobStream1 = getAsset("sample_db_cbl_android_104/attachments/7f0e1bc2d59e1607f21b984ce6fbfe777e6f458e.blob");
+        InputStream blobStream2 = getAsset("sample_db_cbl_android_104/attachments/fcc1350f03cad8acfc7c13bf8e1cc70485825bda.blob");
+        attachmentStreams.put("7f0e1bc2d59e1607f21b984ce6fbfe777e6f458e.blob", blobStream1);
+        attachmentStreams.put("fcc1350f03cad8acfc7c13bf8e1cc70485825bda.blob", blobStream2);
+        manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
+        Database replacedDatabase = manager.getDatabase("replaced_database");
+        assertEquals(2, replacedDatabase.getDocumentCount());
+        for (int i = 0; i < replacedDatabase.getDocumentCount(); i++) {
+            Document doc = replacedDatabase.getDocument("doc" + String.valueOf(i));
+            Map<String, Object> props = doc.getProperties();
+            assertEquals(i, Integer.parseInt((String) props.get("key")));
+            List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
+            assertEquals(1, attachments.size());
+            Attachment attachment = attachments.get(0);
+            assertEquals("file_" + String.valueOf(i) + ".txt", attachment.getName());
+            BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
+            String str = br.readLine();
+            assertEquals("content " + String.valueOf(i), str);
+            br.close();
+        }
+        replacedDatabase.delete();
+    }
+
+    public void testReplaceDatabaseFromCBLAndroid110() throws CouchbaseLiteException, IOException {
+        InputStream dbStream = getAsset("sample_db_cbl_android_110.cblite");
+        Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
+        InputStream blobStream1 = getAsset("sample_db_cbl_android_110 attachments/7F0E1BC2D59E1607F21B984CE6FBFE777E6F458E.blob");
+        InputStream blobStream2 = getAsset("sample_db_cbl_android_110 attachments/FCC1350F03CAD8ACFC7C13BF8E1CC70485825BDA.blob");
+        attachmentStreams.put("7F0E1BC2D59E1607F21B984CE6FBFE777E6F458E.blob", blobStream1);
+        attachmentStreams.put("FCC1350F03CAD8ACFC7C13BF8E1CC70485825BDA.blob", blobStream2);
+        manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
+        Database replacedDatabase = manager.getDatabase("replaced_database");
+        assertEquals(2, replacedDatabase.getDocumentCount());
+        for (int i = 0; i < replacedDatabase.getDocumentCount(); i++) {
+            Document doc = replacedDatabase.getDocument("doc" + String.valueOf(i));
+            Map<String, Object> props = doc.getProperties();
+            assertEquals(i, Integer.parseInt((String) props.get("key")));
+            List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
+            assertEquals(1, attachments.size());
+            Attachment attachment = attachments.get(0);
+            assertEquals("file_" + String.valueOf(i) + ".txt", attachment.getName());
+            BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
+            String str = br.readLine();
+            assertEquals("content " + String.valueOf(i), str);
+            br.close();
+        }
+        replacedDatabase.delete();
     }
 
     public void testGetDatabaseConcurrently() throws Exception {
