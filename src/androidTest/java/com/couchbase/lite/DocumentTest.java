@@ -48,7 +48,7 @@ public class DocumentTest extends LiteTestCase {
         properties.put("mykey", "myval");
         SavedRevision newRev = document.putProperties(properties);
         newRev.loadProperties();
-        assertTrue( newRev.getProperties().containsKey("mykey") );
+        assertTrue(newRev.getProperties().containsKey("mykey"));
 
         Assert.assertTrue(document.isDeleted());
         Document fetchedDoc = database.getExistingDocument(docId);
@@ -458,7 +458,7 @@ public class DocumentTest extends LiteTestCase {
         testNonsensicalConflict.setMap(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
-                emitter.emit(null,null);
+                emitter.emit(null, null);
             }
         }, "");
         Query query = testNonsensicalConflict.createQuery();
@@ -468,7 +468,7 @@ public class DocumentTest extends LiteTestCase {
             @Override
             public void changed(LiveQuery.ChangeEvent event) {
                 QueryEnumerator rows = event.getRows();
-                while(rows.hasNext()){
+                while (rows.hasNext()) {
                     QueryRow next = rows.next();
                     next.getDocument();
                 }
@@ -526,5 +526,95 @@ public class DocumentTest extends LiteTestCase {
         doc.createRevision().save();
         boolean success = documentChanged.await(30, TimeUnit.SECONDS);
         assertTrue(success);
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/563
+     * Updating a document in a transaction block twice using Document.DocumentUpdater results in an infinite loop
+     * <p/>
+     * NOTE: Use Document.update()
+     */
+    public void testMultipleUpdatesInTransactionWithUpdate() throws CouchbaseLiteException {
+        Log.e(TAG, "testMultipleUpdatesInTransactionWithUpdate() START");
+        final Document doc = database.createDocument();
+        HashMap<String, Object> properties = new HashMap<String, Object>();
+        properties.put("key", "value1");
+        doc.putProperties(properties);
+        database.runInTransaction(
+                new TransactionalTask() {
+                    @Override
+                    public boolean run() {
+                        try {
+                            doc.update(new Document.DocumentUpdater() {
+                                @Override
+                                public boolean update(UnsavedRevision newRevision) {
+                                    Log.e(TAG, "Trying to update key to value 2");
+                                    Map<String, Object> properties = newRevision.getUserProperties();
+                                    properties.put("key", "value2");
+                                    newRevision.setUserProperties(properties);
+                                    return true;
+                                }
+                            });
+                            doc.update(new Document.DocumentUpdater() {
+                                @Override
+                                public boolean update(UnsavedRevision newRevision) {
+                                    Log.e(TAG, "Trying to update key to value 3");
+                                    Map<String, Object> properties = newRevision.getUserProperties();
+                                    properties.put("key", "value3");
+                                    newRevision.setUserProperties(properties);
+                                    return true;
+                                }
+                            });
+                        } catch (CouchbaseLiteException e) {
+                            Log.e(TAG, "Trying to update key to value 2 or 3");
+                            fail("Trying to update key to value 2 or 3, but failed.");
+                            return false;
+                        }
+                        return true;
+                    }
+                });
+        Map<String, Object> properties4 = doc.getProperties();
+        Log.e(TAG, "properties4 = " + properties4);
+        Log.e(TAG, "testMultipleUpdatesInTransactionWithUpdate() END");
+    }
+
+    /**
+     * NOTE: This is variation of testMultipleUpdatesInTransactionWithUpdate() test with using Document.putProperties()
+     */
+    public void testMultipleUpdatesInTransactionWithPutProperties() throws CouchbaseLiteException {
+        Log.e(TAG, "testMultipleUpdatesInTransactionWithPutProperties() START");
+        final Document doc = database.createDocument();
+        HashMap<String, Object> properties1 = new HashMap<String, Object>();
+        properties1.put("key", "value1");
+        doc.putProperties(properties1);
+        database.runInTransaction(
+                new TransactionalTask() {
+                    @Override
+                    public boolean run() {
+                        try {
+                            Map<String, Object> properties2 = new HashMap<String, Object>(doc.getProperties());
+                            properties2.put("key", "value2");
+                            doc.putProperties(properties2);
+                        } catch (CouchbaseLiteException e) {
+                            Log.e(TAG, "Trying to update key to value 2");
+                            fail("Trying to update key to value 2, but failed.");
+                            return false;
+                        }
+                        try {
+                            Map<String, Object> properties3 = new HashMap<String, Object>(doc.getProperties());
+                            properties3.put("key", "value3");
+                            doc.putProperties(properties3);
+                        } catch (CouchbaseLiteException e) {
+                            Log.e(TAG, "Trying to update key to value 3");
+                            fail("Trying to update key to value 3, but failed.");
+                            return false;
+                        }
+                        return true;
+                    }
+                });
+        Map<String, Object> properties4 = doc.getProperties();
+        Log.e(TAG, "properties4 = " + properties4);
+        assertEquals("value3", properties4.get("key"));
+        Log.e(TAG, "testMultipleUpdatesInTransactionWithPutProperties() END");
     }
 }
