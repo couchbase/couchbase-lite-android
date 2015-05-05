@@ -36,7 +36,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -79,6 +78,10 @@ public class LiteTestCase extends LiteTestCaseBase {
 
     protected static boolean performanceTestsEnabled() {
         return Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"));
+    }
+
+    protected static boolean syncgatewayTestsEnabled() {
+        return Boolean.parseBoolean(System.getProperty("syncgatewayTestsEnabled"));
     }
 
     protected InputStream getAsset(String name) {
