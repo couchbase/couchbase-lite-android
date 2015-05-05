@@ -346,13 +346,34 @@ public class ManagerTest extends LiteTestCase {
         InputStream is = attachment.getContent();
         assertNotNull(is);
         is.close();
+
+        /*
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+        assertEquals(2, counter);
+        */
+
         replacedDatabase.delete();
     }
 
     /**
      * Test for pre-built database test from CBL .NET 1.1.0
      * Because of CBL .NET 1.1.0 sample database file, following test fails.
-     * TODO: Work this later
      */
     public void testReplaceDatabaseFromCBLNet110() throws CouchbaseLiteException, IOException {
         InputStream dbStream = getAsset("netdb110.cblite");
@@ -370,6 +391,28 @@ public class ManagerTest extends LiteTestCase {
         InputStream is = attachment.getContent();
         assertNotNull(is);
         is.close();
+
+        /*
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+        assertEquals(2, counter);
+        */
+
         replacedDatabase.delete();
     }
 
