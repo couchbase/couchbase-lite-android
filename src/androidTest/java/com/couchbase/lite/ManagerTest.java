@@ -9,12 +9,15 @@ import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -112,7 +115,7 @@ public class ManagerTest extends LiteTestCase {
         manager.replaceDatabase("replaced", dbStream, null);
 
         //Now validate the number of files in the DB
-        assertEquals(10,manager.getDatabase("replaced").getDocumentCount());
+        assertEquals(10, manager.getDatabase("replaced").getDocumentCount());
 
     }
 
@@ -129,7 +132,7 @@ public class ManagerTest extends LiteTestCase {
         manager.replaceDatabase("replaced2", dbStream, attachments);
 
         //Validate the number of files in the DB
-        assertEquals(1,manager.getDatabase("replaced2").getDocumentCount());
+        assertEquals(1, manager.getDatabase("replaced2").getDocumentCount());
 
         //get the attachment from the document
         Document doc = manager.getDatabase("replaced2").getExistingDocument("168e0c56-4588-4df4-8700-4d5115fa9c74");
@@ -137,7 +140,237 @@ public class ManagerTest extends LiteTestCase {
         assertNotNull(doc);
 
         RevisionInternal gotRev1 = database.getDocumentWithIDAndRev(doc.getId(), doc.getCurrentRevisionId(), EnumSet.noneOf(Database.TDContentOptions.class));
+    }
 
+    // Test for pre-built database test from CBL Android 1.0.4
+    public void testReplaceDatabaseFromCBLAndroid104() throws CouchbaseLiteException, IOException {
+        InputStream dbStream = getAsset("sample_db_cbl_android_104.cblite");
+        Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
+        InputStream blobStream1 = getAsset("sample_db_cbl_android_104/attachments/7f0e1bc2d59e1607f21b984ce6fbfe777e6f458e.blob");
+        InputStream blobStream2 = getAsset("sample_db_cbl_android_104/attachments/fcc1350f03cad8acfc7c13bf8e1cc70485825bda.blob");
+        attachmentStreams.put("7f0e1bc2d59e1607f21b984ce6fbfe777e6f458e.blob", blobStream1);
+        attachmentStreams.put("fcc1350f03cad8acfc7c13bf8e1cc70485825bda.blob", blobStream2);
+        manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
+        Database replacedDatabase = manager.getDatabase("replaced_database");
+        assertEquals(2, replacedDatabase.getDocumentCount());
+        for (int i = 0; i < replacedDatabase.getDocumentCount(); i++) {
+            Document doc = replacedDatabase.getDocument("doc" + String.valueOf(i));
+            Map<String, Object> props = doc.getProperties();
+            assertEquals(i, Integer.parseInt((String) props.get("key")));
+            List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
+            assertEquals(1, attachments.size());
+            Attachment attachment = attachments.get(0);
+            assertEquals("file_" + String.valueOf(i) + ".txt", attachment.getName());
+            BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
+            String str = br.readLine();
+            assertEquals("content " + String.valueOf(i), str);
+            br.close();
+        }
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+        assertEquals(2, counter);
+
+        replacedDatabase.delete();
+    }
+
+    // Test for pre-built database test from CBL Android 1.1.0
+    public void testReplaceDatabaseFromCBLAndroid110() throws CouchbaseLiteException, IOException {
+        InputStream dbStream = getAsset("sample_db_cbl_android_110.cblite");
+        Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
+        InputStream blobStream1 = getAsset("sample_db_cbl_android_110 attachments/7F0E1BC2D59E1607F21B984CE6FBFE777E6F458E.blob");
+        InputStream blobStream2 = getAsset("sample_db_cbl_android_110 attachments/FCC1350F03CAD8ACFC7C13BF8E1CC70485825BDA.blob");
+        attachmentStreams.put("7F0E1BC2D59E1607F21B984CE6FBFE777E6F458E.blob", blobStream1);
+        attachmentStreams.put("FCC1350F03CAD8ACFC7C13BF8E1CC70485825BDA.blob", blobStream2);
+        manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
+        Database replacedDatabase = manager.getDatabase("replaced_database");
+        assertEquals(2, replacedDatabase.getDocumentCount());
+        for (int i = 0; i < replacedDatabase.getDocumentCount(); i++) {
+            Document doc = replacedDatabase.getDocument("doc" + String.valueOf(i));
+            Map<String, Object> props = doc.getProperties();
+            assertEquals(i, Integer.parseInt((String) props.get("key")));
+            List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
+            assertEquals(1, attachments.size());
+            Attachment attachment = attachments.get(0);
+            assertEquals("file_" + String.valueOf(i) + ".txt", attachment.getName());
+            BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
+            String str = br.readLine();
+            assertEquals("content " + String.valueOf(i), str);
+            br.close();
+        }
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+        assertEquals(2, counter);
+
+        replacedDatabase.delete();
+    }
+
+    // Test for pre-built database test from CBL iOS 1.0.4
+    public void testReplaceDatabaseFromCBLIOS104() throws CouchbaseLiteException, IOException {
+        InputStream dbStream = getAsset("iosdb104.cblite");
+        Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
+        InputStream blobStream1 = getAsset("attachments_iosdb104/56DD54D80B602638AFE81BF55CBA90D94BE0ECB1.blob");
+        InputStream blobStream2 = getAsset("attachments_iosdb104/8356C24A292E9D0A8FE19C9CF666085FD86E2ABE.blob");
+        attachmentStreams.put("56DD54D80B602638AFE81BF55CBA90D94BE0ECB1.blob", blobStream1);
+        attachmentStreams.put("8356C24A292E9D0A8FE19C9CF666085FD86E2ABE.blob", blobStream2);
+        manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
+        Database replacedDatabase = manager.getDatabase("replaced_database");
+        assertEquals(1, replacedDatabase.getDocumentCount());
+        for (int i = 1; i <= replacedDatabase.getDocumentCount(); i++) {
+            Document doc = replacedDatabase.getDocument("doc" + String.valueOf(i));
+            List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
+            assertEquals(2, attachments.size());
+            Attachment attachment = attachments.get(0);
+            assertEquals("attach" + String.valueOf(i + 1), attachment.getName());
+            BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
+            String str = br.readLine();
+            assertTrue(str.length() > 0);
+            br.close();
+        }
+
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+
+        assertEquals(1, counter);
+
+        replacedDatabase.delete();
+    }
+
+    // Test for pre-built database test from CBL iOS 1.1.0
+    public void testReplaceDatabaseFromCBLIOS110() throws CouchbaseLiteException, IOException {
+        InputStream dbStream = getAsset("iosdb110.cblite");
+        Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
+        InputStream blobStream1 = getAsset("attachments_iosdb110/56DD54D80B602638AFE81BF55CBA90D94BE0ECB1.blob");
+        InputStream blobStream2 = getAsset("attachments_iosdb110/8356C24A292E9D0A8FE19C9CF666085FD86E2ABE.blob");
+        attachmentStreams.put("56DD54D80B602638AFE81BF55CBA90D94BE0ECB1.blob", blobStream1);
+        attachmentStreams.put("8356C24A292E9D0A8FE19C9CF666085FD86E2ABE.blob", blobStream2);
+        manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
+        Database replacedDatabase = manager.getDatabase("replaced_database");
+        assertEquals(1, replacedDatabase.getDocumentCount());
+        for (int i = 1; i <= replacedDatabase.getDocumentCount(); i++) {
+            Document doc = replacedDatabase.getDocument("doc" + String.valueOf(i));
+            List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
+            assertEquals(2, attachments.size());
+            Attachment attachment = attachments.get(0);
+            assertEquals("attach" + String.valueOf(i + 1), attachment.getName());
+            BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
+            String str = br.readLine();
+            assertTrue(str.length() > 0);
+            br.close();
+        }
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+
+        assertEquals(1, counter);
+
+        replacedDatabase.delete();
+    }
+
+    // Test for pre-built database test from CBL .NET 1.0.4
+    public void testReplaceDatabaseFromCBLNet104() throws CouchbaseLiteException, IOException {
+        InputStream dbStream = getAsset("netdb104.cblite");
+        Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
+        InputStream blobStream1 = getAsset("attachments_netdb104/d6ea829121af9d025ec61d8157fcf8ea4b445129.blob");
+        attachmentStreams.put("d6ea829121af9d025ec61d8157fcf8ea4b445129.blob", blobStream1);
+        manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
+        Database replacedDatabase = manager.getDatabase("replaced_database");
+        assertEquals(2, replacedDatabase.getDocumentCount());
+        Document doc = replacedDatabase.getDocument("be9d2bac-37f5-40a8-8ab4-4dfe0776ab6f");
+        List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
+        assertEquals(1, attachments.size());
+        Attachment attachment = attachments.get(0);
+        assertEquals("image", attachment.getName());
+        InputStream is = attachment.getContent();
+        assertNotNull(is);
+        is.close();
+        replacedDatabase.delete();
+    }
+
+    /**
+     * Test for pre-built database test from CBL .NET 1.1.0
+     * Because of CBL .NET 1.1.0 sample database file, following test fails.
+     * TODO: Work this later
+     */
+    public void failingTestReplaceDatabaseFromCBLNet110() throws CouchbaseLiteException, IOException {
+        InputStream dbStream = getAsset("netdb110.cblite");
+        Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
+        InputStream blobStream1 = getAsset("attachments_netdb110/d6ea829121af9d025ec61d8157fcf8ea4b445129.blob");
+        attachmentStreams.put("d6ea829121af9d025ec61d8157fcf8ea4b445129.blob", blobStream1);
+        manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
+        Database replacedDatabase = manager.getDatabase("replaced_database");
+        assertEquals(2, replacedDatabase.getDocumentCount());
+        Document doc = replacedDatabase.getDocument("e58d4401-7794-435d-b588-346ad285b65f");
+        List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
+        assertEquals(1, attachments.size());
+        Attachment attachment = attachments.get(0);
+        assertEquals("image", attachment.getName());
+        InputStream is = attachment.getContent();
+        assertNotNull(is);
+        is.close();
+        replacedDatabase.delete();
     }
 
     public void testGetDatabaseConcurrently() throws Exception {
