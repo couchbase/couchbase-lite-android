@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -165,6 +166,26 @@ public class ManagerTest extends LiteTestCase {
             assertEquals("content " + String.valueOf(i), str);
             br.close();
         }
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+        assertEquals(2, counter);
+
         replacedDatabase.delete();
     }
 
@@ -192,6 +213,26 @@ public class ManagerTest extends LiteTestCase {
             assertEquals("content " + String.valueOf(i), str);
             br.close();
         }
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+        assertEquals(2, counter);
+
         replacedDatabase.delete();
     }
 
@@ -217,6 +258,28 @@ public class ManagerTest extends LiteTestCase {
             assertTrue(str.length() > 0);
             br.close();
         }
+
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+
+        assertEquals(1, counter);
+
         replacedDatabase.delete();
     }
 
@@ -242,6 +305,27 @@ public class ManagerTest extends LiteTestCase {
             assertTrue(str.length() > 0);
             br.close();
         }
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+
+        assertEquals(1, counter);
+
         replacedDatabase.delete();
     }
 
@@ -266,7 +350,9 @@ public class ManagerTest extends LiteTestCase {
     }
 
     /**
-     * Because of CBL .NET 1.1.0 sample database file. Following test fails.
+     * Test for pre-built database test from CBL .NET 1.1.0
+     * Because of CBL .NET 1.1.0 sample database file, following test fails.
+     * TODO: Work this later
      */
     public void failingTestReplaceDatabaseFromCBLNet110() throws CouchbaseLiteException, IOException {
         InputStream dbStream = getAsset("netdb110.cblite");
