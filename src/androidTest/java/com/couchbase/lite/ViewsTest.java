@@ -26,7 +26,6 @@ import junit.framework.Assert;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -524,12 +523,12 @@ public class ViewsTest extends LiteTestCase {
     }
 
     //https://github.com/couchbase/couchbase-lite-android/issues/314
-    public void failingTestViewQueryWithDictSentinel() throws CouchbaseLiteException {
+    public void testViewQueryWithDictSentinel() throws CouchbaseLiteException {
 
         List<String> key1 = new ArrayList<String>();
         key1.add("red");
         key1.add("model1");
-        Map<String,Object> dict1 = new HashMap<String,Object>();
+        Map<String, Object> dict1 = new HashMap<String, Object>();
         dict1.put("id", "11");
         dict1.put("key", key1);
         putDoc(database, dict1);
@@ -537,7 +536,7 @@ public class ViewsTest extends LiteTestCase {
         List<String> key2 = new ArrayList<String>();
         key2.add("red");
         key2.add("model2");
-        Map<String,Object> dict2 = new HashMap<String,Object>();
+        Map<String, Object> dict2 = new HashMap<String, Object>();
         dict2.put("id", "12");
         dict2.put("key", key2);
         putDoc(database, dict2);
@@ -545,7 +544,7 @@ public class ViewsTest extends LiteTestCase {
         List<String> key3 = new ArrayList<String>();
         key3.add("green");
         key3.add("model1");
-        Map<String,Object> dict3 = new HashMap<String,Object>();
+        Map<String, Object> dict3 = new HashMap<String, Object>();
         dict3.put("id", "21");
         dict3.put("key", key3);
         putDoc(database, dict3);
@@ -553,7 +552,7 @@ public class ViewsTest extends LiteTestCase {
         List<String> key4 = new ArrayList<String>();
         key4.add("yellow");
         key4.add("model2");
-        Map<String,Object> dict4 = new HashMap<String,Object>();
+        Map<String, Object> dict4 = new HashMap<String, Object>();
         dict4.put("id", "31");
         dict4.put("key", key4);
         putDoc(database, dict4);
@@ -572,7 +571,6 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
         Assert.assertTrue(Arrays.equals(new Object[]{"yellow", "model2"}, ((LazyJsonArray) rows.get(3).getKey()).toArray()));
 
-
         // Start/end key query:
         options = new QueryOptions();
         options.setStartKey("a");
@@ -584,18 +582,19 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
 
         // Start/end query without inclusive end:
+        options.setEndKey(Arrays.asList("red", "model1"));
         options.setInclusiveEnd(false);
         rows = view.queryWithOptions(options);
-        Assert.assertEquals(1, rows.size()); //3
+        Assert.assertEquals(1, rows.size()); //1
         Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
 
         // Reversed:
+        options = new QueryOptions();
+        options.setStartKey(Arrays.asList("red", new HashMap<String, Object>()));
+        options.setEndKey(Arrays.asList("green", "model1"));
         options.setDescending(true);
-        options.setStartKey("red");
-        options.setEndKey(Arrays.asList("green", new HashMap<String, Object>()));
-        options.setInclusiveEnd(true);
         rows = view.queryWithOptions(options);
-        Assert.assertEquals(3, rows.size()); //0
+        Assert.assertEquals(3, rows.size()); 
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
         Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
@@ -603,7 +602,7 @@ public class ViewsTest extends LiteTestCase {
         // Reversed, no inclusive end:
         options.setInclusiveEnd(false);
         rows = view.queryWithOptions(options);
-        Assert.assertEquals(2, rows.size()); //0
+        Assert.assertEquals(2, rows.size());
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
 
@@ -617,7 +616,6 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(2, rows.size());
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
-
     }
 
 
