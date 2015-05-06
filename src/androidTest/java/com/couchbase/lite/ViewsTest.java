@@ -26,7 +26,6 @@ import junit.framework.Assert;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -193,7 +192,7 @@ public class ViewsTest extends LiteTestCase {
         Map<String,Object> dict2 = new HashMap<String,Object>();
         dict2.put("_id", "22222");
         dict2.put("value", "hello");
-        dict2.put("ancestors", new String[] { "11111" });
+        dict2.put("ancestors", new String[]{"11111"});
         result.add(putDoc(db, dict2));
 
         Map<String,Object> dict3 = new HashMap<String,Object>();
@@ -2391,5 +2390,33 @@ public class ViewsTest extends LiteTestCase {
             compared = true;
         }
         assertTrue("No fields to compare?!?", compared);
+    }
+
+    public void testDeleteIndexTest() {
+        View newView = database.getView("newview");
+        newView.deleteIndex();
+        newView.setMap(
+                new Mapper() {
+                    @Override
+                    public void map(Map<String, Object> documentProperties, Emitter emitter) {
+                        String documentId = (String) documentProperties.get("_id");
+                        emitter.emit(documentId, "Document id is " + documentId);
+                    }
+                },
+                "1"
+        );
+        Query query = database.getView("newview").createQuery();
+        QueryEnumerator queryResult = null;
+        try {
+            queryResult = query.run();
+        } catch (CouchbaseLiteException e) {
+            Log.e(TAG, "Failed to run Query.run() for indexDeleted", e);
+            fail("Failed to run Query.run() for indexDeleted");
+        }
+
+        for (Iterator<QueryRow> it = queryResult.iterator(); it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.i("deleteIndexTest", (String) row.getValue());
+        }
     }
 }
