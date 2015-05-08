@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -616,5 +617,66 @@ public class DocumentTest extends LiteTestCase {
         Log.e(TAG, "properties4 = " + properties4);
         assertEquals("value3", properties4.get("key"));
         Log.e(TAG, "testMultipleUpdatesInTransactionWithPutProperties() END");
+    }
+
+    public static SavedRevision createRevisionWithProps(SavedRevision createRevFrom, Map<String, Object> properties, boolean allowConflict) throws Exception {
+        UnsavedRevision unsavedRevision = createRevFrom.createRevision();
+        unsavedRevision.setUserProperties(properties);
+        return unsavedRevision.save(allowConflict);
+    }
+
+    public void testResolveConflict() throws CouchbaseLiteException, Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testResolveConflict");
+        properties.put("key", "1");
+
+        final Document doc = database.getDocument("testResolveConflict");
+
+        UnsavedRevision newRev1 = doc.createRevision();
+        newRev1.setUserProperties(properties);
+        SavedRevision rev1 = newRev1.save();
+
+        Map<String, Object> props1 = new HashMap<String, Object>();
+        props1.put("key", "2a");
+        SavedRevision rev2a = createRevisionWithProps(rev1, props1, false);
+        Map<String, Object> props2 = new HashMap<String, Object>();
+        props2.put("key", "2b");
+        SavedRevision rev2b = createRevisionWithProps(rev1, props2, true);
+
+        final List<SavedRevision> conflicts = doc.getConflictingRevisions();
+        if (conflicts.size() > 1) {
+            // There is more than one current revision, thus a conflict!
+            assertTrue(database.runInTransaction(new TransactionalTask() {
+                @Override
+                public boolean run() {
+                    try {
+                        // Come up with a merged/resolved document in some way that's
+                        // appropriate for the app. You could even just pick the body of
+                        // one of the revisions.
+                        Map<String, Object> mergedProps = new HashMap<String, Object>(conflicts.get(0).getUserProperties());
+                        mergedProps.put("key", "3");
+
+                        // Delete the conflicting revisions to get rid of the conflict:
+                        SavedRevision current = doc.getCurrentRevision();
+                        for (SavedRevision rev : conflicts) {
+                            UnsavedRevision newRev = rev.createRevision();
+                            if (rev.getId().equals(current.getId())) {
+                                newRev.setProperties(mergedProps);
+                            } else {
+                                newRev.setIsDeletion(true);
+                            }
+                            // saveAllowingConflict allows 'rev' to be updated even if it
+                            // is not the document's current revision.
+                            newRev.save(true);
+                        }
+                    } catch (CouchbaseLiteException e) {
+                        return false;
+                    }
+                    return true;
+                }
+            }));
+        }
+        assertEquals(1, doc.getConflictingRevisions().size());
+        assertEquals("3", doc.getProperties().get("key"));
     }
 }
