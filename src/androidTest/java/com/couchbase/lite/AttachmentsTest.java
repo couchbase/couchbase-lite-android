@@ -897,4 +897,108 @@ public class AttachmentsTest extends LiteTestCase {
         assertTrue(Arrays.equals(contentGzipped, IOUtils.toByteArray(attachment.getContent())));
         assertTrue(attachment.getGZipped());
     }
+
+    // Store Gzipped attachment by Base64 encoding
+    public void testGzippedAttachmentByBase64() throws Exception {
+        String attachmentName = "attachment.png";
+
+        // 1. store attachment with doc
+
+        // 1.a load attachment data from asset
+        InputStream attachmentStream = getAsset(attachmentName);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        IOUtils.copy(attachmentStream, baos);
+        baos.close();
+        attachmentStream.close();
+        byte[] bytes = baos.toByteArray();
+
+        // 1.b apply GZIP + Base64
+        String attachmentBase64 = Base64.encodeBytes(bytes, Base64.GZIP);
+
+        // 1.c attachment Map object
+        Map<String, Object> attachmentMap = new HashMap<String, Object>();
+        attachmentMap.put("content_type", "image/png");
+        attachmentMap.put("data", attachmentBase64);
+        attachmentMap.put("encoding", "gzip");
+        attachmentMap.put("length", bytes.length);
+
+        // 1.d attachments Map object
+        Map<String, Object> attachmentsMap = new HashMap<String, Object>();
+        attachmentsMap.put(attachmentName, attachmentMap);
+
+        // 1.e document property Map object
+        Map<String, Object> propsMap = new HashMap<String, Object>();
+        propsMap.put("_attachments", attachmentsMap);
+
+        // 1.f store document into database
+        Document putDoc = database.createDocument();
+        putDoc.putProperties(propsMap);
+        String docId = putDoc.getId();
+
+        // 2. Load attachment from database and compare it with original
+
+        // 2.a load doc and attachment from database
+        Document getDoc = database.getDocument(docId);
+        Attachment attachment = getDoc.getCurrentRevision().getAttachment(attachmentName);
+        assertEquals(bytes.length, attachment.getLength());
+        assertEquals("image/png", attachment.getContentType());
+        assertEquals("gzip", attachment.getMetadata().get("encoding"));
+        // NOTE: I am not sure getGZipped() should return true or not, because getContent() returns unzipped InputStream.
+        // assertTrue(attachment.getGZipped());
+
+        InputStream is = attachment.getContent();
+        byte[] receivedBytes = getBytesFromInputStream(is);
+        assertEquals(bytes.length, receivedBytes.length);
+        is.close();
+
+        assertTrue(Arrays.equals(bytes, receivedBytes));
+    }
+
+    private static byte[] getBytesFromInputStream(InputStream is) {
+        org.apache.commons.io.output.ByteArrayOutputStream os = new org.apache.commons.io.output.ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len = 0;
+        try {
+            while ((len = is.read(buffer)) > 0) {
+                os.write(buffer, 0, len);
+            }
+            os.flush();
+        } catch (IOException e) {
+            Log.e(Log.TAG, "is.read(buffer) or os.flush() error", e);
+            return null;
+        }
+        return os.toByteArray();
+    }
+
+    private Document addDocWithId(String attachmentName) throws IOException, CouchbaseLiteException {
+        // load attachment
+        InputStream attachmentStream = getAsset(attachmentName);
+        org.apache.commons.io.output.ByteArrayOutputStream baos = new org.apache.commons.io.output.ByteArrayOutputStream();
+        IOUtils.copy(attachmentStream, baos);
+        baos.close();
+        attachmentStream.close();
+
+        // apply GZIP + Base64
+        byte[] bytes = baos.toByteArray();
+        String attachmentBase64 = Base64.encodeBytes(bytes, Base64.GZIP);
+
+        // attachment
+        Map<String, Object> attachment = new HashMap<String, Object>();
+        attachment.put("content_type", "image/png");
+        attachment.put("data", attachmentBase64);
+        attachment.put("encoding", "gzip");
+        attachment.put("length", bytes.length);
+
+        // document attachments
+        Map<String, Object> attachments = new HashMap<String, Object>();
+        attachments.put(attachmentName, attachment);
+
+        // document property
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("_attachments", attachments);
+
+        Document doc = database.createDocument();
+        doc.putProperties(props);
+        return doc;
+    }
 }
