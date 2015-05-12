@@ -1,0 +1,28 @@
+{
+    "adminInterface": ":4985",
+    "interface": ":4984",
+	"log": ["*"], 
+	"databases": {
+		"backfill": {
+            "server": "walrus:data",
+            "sync": `
+	            function(doc){
+	                console.log("sync function called")
+	            	channel(doc.channels);
+		            console.log("checking doc type: " + doc.type)
+		            if (doc.type == "accessGrant") {
+		                console.log("giving accessGrant access.")
+		                console.log("doc.user. " + doc.user + " doc.accessChannel: " + doc.accessChannel)
+		                access(doc.user, doc.accessChannel);
+		            } else {
+		                console.log("not an accessGrant")
+		            }
+				}
+			`,
+            "users": {
+                "GUEST": {"disabled": true, "admin_channels": ["*"]},
+                "Hideki": {"name": "Hideki", "password": "passw0rd", "disabled": false,  "admin_channels": ["ABC"]}
+            }
+        }
+	}
+}

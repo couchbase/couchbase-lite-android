@@ -144,10 +144,10 @@ public class ManagerTest extends LiteTestCase {
 
     // Test for pre-built database test from CBL Android 1.0.4
     public void testReplaceDatabaseFromCBLAndroid104() throws CouchbaseLiteException, IOException {
-        InputStream dbStream = getAsset("sample_db_cbl_android_104.cblite");
+        InputStream dbStream = getAsset("androiddb104.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
-        InputStream blobStream1 = getAsset("sample_db_cbl_android_104/attachments/7f0e1bc2d59e1607f21b984ce6fbfe777e6f458e.blob");
-        InputStream blobStream2 = getAsset("sample_db_cbl_android_104/attachments/fcc1350f03cad8acfc7c13bf8e1cc70485825bda.blob");
+        InputStream blobStream1 = getAsset("attachments_androiddb104/7f0e1bc2d59e1607f21b984ce6fbfe777e6f458e.blob");
+        InputStream blobStream2 = getAsset("attachments_androiddb104/fcc1350f03cad8acfc7c13bf8e1cc70485825bda.blob");
         attachmentStreams.put("7f0e1bc2d59e1607f21b984ce6fbfe777e6f458e.blob", blobStream1);
         attachmentStreams.put("fcc1350f03cad8acfc7c13bf8e1cc70485825bda.blob", blobStream2);
         manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
@@ -191,10 +191,10 @@ public class ManagerTest extends LiteTestCase {
 
     // Test for pre-built database test from CBL Android 1.1.0
     public void testReplaceDatabaseFromCBLAndroid110() throws CouchbaseLiteException, IOException {
-        InputStream dbStream = getAsset("sample_db_cbl_android_110.cblite");
+        InputStream dbStream = getAsset("androiddb110.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
-        InputStream blobStream1 = getAsset("sample_db_cbl_android_110 attachments/7F0E1BC2D59E1607F21B984CE6FBFE777E6F458E.blob");
-        InputStream blobStream2 = getAsset("sample_db_cbl_android_110 attachments/FCC1350F03CAD8ACFC7C13BF8E1CC70485825BDA.blob");
+        InputStream blobStream1 = getAsset("attachments_androiddb110/7F0E1BC2D59E1607F21B984CE6FBFE777E6F458E.blob");
+        InputStream blobStream2 = getAsset("attachments_androiddb110/FCC1350F03CAD8ACFC7C13BF8E1CC70485825BDA.blob");
         attachmentStreams.put("7F0E1BC2D59E1607F21B984CE6FBFE777E6F458E.blob", blobStream1);
         attachmentStreams.put("FCC1350F03CAD8ACFC7C13BF8E1CC70485825BDA.blob", blobStream2);
         manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
@@ -346,23 +346,46 @@ public class ManagerTest extends LiteTestCase {
         InputStream is = attachment.getContent();
         assertNotNull(is);
         is.close();
+
+        /*
+        CBL Android/Java v1.1.0 does not compatible with CBL .NET v1.0.4 or earlier.
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+        assertEquals(2, counter);
+        */
+
         replacedDatabase.delete();
     }
 
     /**
      * Test for pre-built database test from CBL .NET 1.1.0
      * Because of CBL .NET 1.1.0 sample database file, following test fails.
-     * TODO: Work this later
      */
-    public void failingTestReplaceDatabaseFromCBLNet110() throws CouchbaseLiteException, IOException {
+    public void testReplaceDatabaseFromCBLNet110() throws CouchbaseLiteException, IOException {
         InputStream dbStream = getAsset("netdb110.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
-        InputStream blobStream1 = getAsset("attachments_netdb110/d6ea829121af9d025ec61d8157fcf8ea4b445129.blob");
-        attachmentStreams.put("d6ea829121af9d025ec61d8157fcf8ea4b445129.blob", blobStream1);
+        InputStream blobStream1 = getAsset("attachments_netdb110/D6EA829121AF9D025EC61D8157FCF8EA4B445129.blob");
+        attachmentStreams.put("D6EA829121AF9D025EC61D8157FCF8EA4B445129.blob", blobStream1);
         manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
         Database replacedDatabase = manager.getDatabase("replaced_database");
         assertEquals(2, replacedDatabase.getDocumentCount());
-        Document doc = replacedDatabase.getDocument("e58d4401-7794-435d-b588-346ad285b65f");
+        Document doc = replacedDatabase.getDocument("doc2");
         List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
         assertEquals(1, attachments.size());
         Attachment attachment = attachments.get(0);
@@ -370,6 +393,27 @@ public class ManagerTest extends LiteTestCase {
         InputStream is = attachment.getContent();
         assertNotNull(is);
         is.close();
+
+        int counter = 0;
+        // Create a view and register its map function:
+        View v = replacedDatabase.getView("view_test");
+        v.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document);
+            }
+        }, "1");
+        v.updateIndex();
+        Query q = v.createQuery();
+        QueryEnumerator r = q.run();
+        for (Iterator<QueryRow> it = r; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.w(Log.TAG, row.getDocument().getProperties().toString());
+            counter++;
+        }
+        assertEquals(2, counter);
+
+
         replacedDatabase.delete();
     }
 

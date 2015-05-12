@@ -19,9 +19,9 @@ import java.util.concurrent.CountDownLatch;
  * <p/>
  * Test requires sync_gateway
  */
-public class Test01_PullReplWithRevsAndAtts extends LiteTestCase {
+public class PullReplWithRevsAndAttsTest extends LiteTestCase {
 
-    public static final String TAG = "Test01_PullReplWithRevsAndAtts";
+    public static final String TAG = "PullReplWithRevsAndAttsTest";
 
     @Override
     protected void setUp() throws Exception {
