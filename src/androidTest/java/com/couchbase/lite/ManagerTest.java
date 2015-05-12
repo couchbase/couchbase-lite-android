@@ -348,6 +348,8 @@ public class ManagerTest extends LiteTestCase {
         is.close();
 
         /*
+        CBL Android/Java v1.1.0 does not compatible with CBL .NET v1.0.4 or earlier.
+
         int counter = 0;
         // Create a view and register its map function:
         View v = replacedDatabase.getView("view_test");
@@ -378,12 +380,12 @@ public class ManagerTest extends LiteTestCase {
     public void testReplaceDatabaseFromCBLNet110() throws CouchbaseLiteException, IOException {
         InputStream dbStream = getAsset("netdb110.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
-        InputStream blobStream1 = getAsset("attachments_netdb110/d6ea829121af9d025ec61d8157fcf8ea4b445129.blob");
-        attachmentStreams.put("d6ea829121af9d025ec61d8157fcf8ea4b445129.blob", blobStream1);
+        InputStream blobStream1 = getAsset("attachments_netdb110/D6EA829121AF9D025EC61D8157FCF8EA4B445129.blob");
+        attachmentStreams.put("D6EA829121AF9D025EC61D8157FCF8EA4B445129.blob", blobStream1);
         manager.replaceDatabase("replaced_database", dbStream, attachmentStreams);
         Database replacedDatabase = manager.getDatabase("replaced_database");
         assertEquals(2, replacedDatabase.getDocumentCount());
-        Document doc = replacedDatabase.getDocument("4481f258-efec-43d8-979f-8e700c5cd7ab");
+        Document doc = replacedDatabase.getDocument("doc2");
         List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
         assertEquals(1, attachments.size());
         Attachment attachment = attachments.get(0);
@@ -392,7 +394,6 @@ public class ManagerTest extends LiteTestCase {
         assertNotNull(is);
         is.close();
 
-        /*
         int counter = 0;
         // Create a view and register its map function:
         View v = replacedDatabase.getView("view_test");
@@ -411,7 +412,7 @@ public class ManagerTest extends LiteTestCase {
             counter++;
         }
         assertEquals(2, counter);
-        */
+
 
         replacedDatabase.delete();
     }
