@@ -886,16 +886,13 @@ public class AttachmentsTest extends LiteTestCase {
         Attachment attachment = savedRev.getAttachment(attachmentName);
 
         // As far as revision users are concerned their data is not gzipped
-        assertFalse(attachment.getGZipped());
         assertTrue(Arrays.equals(content, IOUtils.toByteArray(attachment.getContent())));
-        assertFalse(attachment.getGZipped());
 
         // But the it may be gzipped encoded internally
         long sequence = savedRev.getSequence();
         attachment = database.getAttachmentForSequence(sequence, attachmentName);
         assertTrue(attachment.getGZipped());
         assertTrue(Arrays.equals(contentGzipped, IOUtils.toByteArray(attachment.getContent())));
-        assertTrue(attachment.getGZipped());
     }
 
     // Store Gzipped attachment by Base64 encoding
@@ -943,8 +940,6 @@ public class AttachmentsTest extends LiteTestCase {
         assertEquals(bytes.length, attachment.getLength());
         assertEquals("image/png", attachment.getContentType());
         assertEquals("gzip", attachment.getMetadata().get("encoding"));
-        // NOTE: I am not sure getGZipped() should return true or not, because getContent() returns unzipped InputStream.
-        // assertTrue(attachment.getGZipped());
 
         InputStream is = attachment.getContent();
         byte[] receivedBytes = getBytesFromInputStream(is);
