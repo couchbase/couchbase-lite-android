@@ -964,36 +964,4 @@ public class AttachmentsTest extends LiteTestCase {
         }
         return os.toByteArray();
     }
-
-    private Document addDocWithId(String attachmentName) throws IOException, CouchbaseLiteException {
-        // load attachment
-        InputStream attachmentStream = getAsset(attachmentName);
-        org.apache.commons.io.output.ByteArrayOutputStream baos = new org.apache.commons.io.output.ByteArrayOutputStream();
-        IOUtils.copy(attachmentStream, baos);
-        baos.close();
-        attachmentStream.close();
-
-        // apply GZIP + Base64
-        byte[] bytes = baos.toByteArray();
-        String attachmentBase64 = Base64.encodeBytes(bytes, Base64.GZIP);
-
-        // attachment
-        Map<String, Object> attachment = new HashMap<String, Object>();
-        attachment.put("content_type", "image/png");
-        attachment.put("data", attachmentBase64);
-        attachment.put("encoding", "gzip");
-        attachment.put("length", bytes.length);
-
-        // document attachments
-        Map<String, Object> attachments = new HashMap<String, Object>();
-        attachments.put(attachmentName, attachment);
-
-        // document property
-        Map<String, Object> props = new HashMap<String, Object>();
-        props.put("_attachments", attachments);
-
-        Document doc = database.createDocument();
-        doc.putProperties(props);
-        return doc;
-    }
 }
