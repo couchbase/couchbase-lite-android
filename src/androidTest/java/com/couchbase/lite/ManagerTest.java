@@ -251,12 +251,20 @@ public class ManagerTest extends LiteTestCase {
             Document doc = replacedDatabase.getDocument("doc" + String.valueOf(i));
             List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
             assertEquals(2, attachments.size());
-            Attachment attachment = attachments.get(0);
-            assertEquals("attach" + String.valueOf(i + 1), attachment.getName());
-            BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
-            String str = br.readLine();
-            assertTrue(str.length() > 0);
-            br.close();
+            // attachment order is not guaranteed
+            Attachment attachment0 = attachments.get(0);
+            Attachment attachment1 = attachments.get(1);
+            assertFalse(attachment0.getName().equals(attachment1.getName()));
+            assertTrue("attach1".equals(attachment0.getName()) || "attach2".equals(attachment0.getName()));
+            assertTrue("attach1".equals(attachment1.getName()) || "attach2".equals(attachment1.getName()));
+            BufferedReader br0 = new BufferedReader(new InputStreamReader(attachment0.getContent()));
+            String str0 = br0.readLine();
+            assertTrue(str0.length() > 0);
+            br0.close();
+            BufferedReader br1 = new BufferedReader(new InputStreamReader(attachment1.getContent()));
+            String str1 = br1.readLine();
+            assertTrue(str1.length() > 0);
+            br1.close();
         }
 
 
@@ -298,12 +306,20 @@ public class ManagerTest extends LiteTestCase {
             Document doc = replacedDatabase.getDocument("doc" + String.valueOf(i));
             List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
             assertEquals(2, attachments.size());
-            Attachment attachment = attachments.get(0);
-            assertEquals("attach" + String.valueOf(i + 1), attachment.getName());
-            BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
-            String str = br.readLine();
-            assertTrue(str.length() > 0);
-            br.close();
+            // attachment order is not guaranteed
+            Attachment attachment0 = attachments.get(0);
+            Attachment attachment1 = attachments.get(1);
+            assertFalse(attachment0.getName().equals(attachment1.getName()));
+            assertTrue("attach1".equals(attachment0.getName()) || "attach2".equals(attachment0.getName()));
+            assertTrue("attach1".equals(attachment1.getName()) || "attach2".equals(attachment1.getName()));
+            BufferedReader br0 = new BufferedReader(new InputStreamReader(attachment0.getContent()));
+            String str0 = br0.readLine();
+            assertTrue(str0.length() > 0);
+            br0.close();
+            BufferedReader br1 = new BufferedReader(new InputStreamReader(attachment1.getContent()));
+            String str1 = br1.readLine();
+            assertTrue(str1.length() > 0);
+            br1.close();
         }
 
         int counter = 0;
