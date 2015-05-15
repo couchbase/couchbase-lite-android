@@ -929,6 +929,11 @@ public class ApiTest extends LiteTestCase {
         // stop the livequery since we are done with it
         query.removeChangeListener(changeListener);
         query.stop();
+
+        // Workaround for https://github.com/couchbase/couchbase-lite-android/issues/613
+        try {
+            Thread.sleep(2 * 1000);
+        }catch(Exception e){}
     }
 
     public void testAsyncViewQuery() throws Exception {
