@@ -63,7 +63,7 @@ public class MockDispatcher extends Dispatcher {
     }
 
     @Override
-    public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
+    public synchronized MockResponse dispatch(RecordedRequest request) throws InterruptedException {
         System.out.println(String.format("Request: %s", request));
         for(String pathRegex: queueMap.keySet()){
             if (regexMatches(pathRegex, request.getPath())) {
