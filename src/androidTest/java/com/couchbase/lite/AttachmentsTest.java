@@ -845,6 +845,7 @@ public class AttachmentsTest extends LiteTestCase {
         InputStream in = attachment.getContent();
         assertNotNull(in);
         assertEquals(IOUtils.toString(in, "UTF-8"), content);
+        in.close();
     }
 
     public void testGetAttachmentFromUnsavedRevisionWithMultipleRevisions() throws Exception {
@@ -865,6 +866,7 @@ public class AttachmentsTest extends LiteTestCase {
         InputStream in = attachment.getContent();
         assertNotNull(in);
         assertEquals(IOUtils.toString(in, "UTF-8"), content);
+        in.close();
     }
 
     public void testGzippedAttachments() throws Exception {
@@ -886,13 +888,19 @@ public class AttachmentsTest extends LiteTestCase {
         Attachment attachment = savedRev.getAttachment(attachmentName);
 
         // As far as revision users are concerned their data is not gzipped
-        assertTrue(Arrays.equals(content, IOUtils.toByteArray(attachment.getContent())));
+        InputStream in = attachment.getContent();
+        assertNotNull(in);
+        assertTrue(Arrays.equals(content, IOUtils.toByteArray(in)));
+        in.close();
 
         // But the it may be gzipped encoded internally
         long sequence = savedRev.getSequence();
         attachment = database.getAttachmentForSequence(sequence, attachmentName);
         assertTrue(attachment.getGZipped());
-        assertTrue(Arrays.equals(contentGzipped, IOUtils.toByteArray(attachment.getContent())));
+        in = attachment.getContent();
+        assertNotNull(in);
+        assertTrue(Arrays.equals(contentGzipped, IOUtils.toByteArray(in)));
+        in.close();
     }
 
     // Store Gzipped attachment by Base64 encoding
