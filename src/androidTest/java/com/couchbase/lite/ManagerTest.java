@@ -46,7 +46,7 @@ public class ManagerTest extends LiteTestCase {
         Database db = manager.getDatabaseWithoutOpening("foo", mustExist);
         assertNotNull(db);
         assertEquals("foo", db.getName());
-        assertTrue(db.getPath().startsWith(new LiteTestContext().getRootDirectory().getAbsolutePath()));
+        assertTrue(db.getPath().startsWith(new LiteTestContext(false).getRootDirectory().getAbsolutePath()));
         assertFalse(db.exists());
 
 
