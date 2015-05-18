@@ -6,7 +6,6 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -62,8 +61,10 @@ public class MockDispatcher extends Dispatcher {
         }
     }
 
+    Object lockResponseQueue = new Object();
+
     @Override
-    public synchronized MockResponse dispatch(RecordedRequest request) throws InterruptedException {
+    public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
         System.out.println(String.format("Request: %s", request));
         for(String pathRegex: queueMap.keySet()){
             if (regexMatches(pathRegex, request.getPath())) {
@@ -74,9 +75,12 @@ public class MockDispatcher extends Dispatcher {
                     throw new RuntimeException(msg);
                 }
                 if (!responseQueue.isEmpty()) {
-                    SmartMockResponse smartMockResponse = responseQueue.take();
-                    if (smartMockResponse.isSticky()) {
-                        responseQueue.put(smartMockResponse); // if it's sticky, put it back in queue
+                    SmartMockResponse smartMockResponse = null;
+                    synchronized (lockResponseQueue) {
+                        smartMockResponse = responseQueue.take();
+                        if (smartMockResponse.isSticky()) {
+                            responseQueue.put(smartMockResponse); // if it's sticky, put it back in queue
+                        }
                     }
                     if (smartMockResponse.delayMs() > 0) {
                         System.out.println(String.format("Delaying response %s for %d ms (path: %s)", smartMockResponse, smartMockResponse.delayMs(), pathRegex));
