@@ -51,8 +51,10 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
                 return;
             }
 
-            Log.e(Log.TAG_SYNC, "BroadcastReceiver.onReceive() isOnline(context)=" + isOnline(context));
-            if (isOnline(context)) {
+            boolean bOnline = isOnline(context);
+            Log.v(Log.TAG_SYNC, "BroadcastReceiver.onReceive() bOnline=" + bOnline);
+
+            if (bOnline) {
                 notifyListenersNetworkReachable();
             } else {
                 notifyListenersNetworkUneachable();
