@@ -3392,12 +3392,7 @@ public class ReplicationTest extends LiteTestCase {
             if (iterator.hasNext()) {
                 // the bulk docs requests except for the last one should have max number of docs
                 // relax this a bit, so that it at least has to have greater than or equal to half max number of docs
-
-                // TODO: Review following check
-                // https://github.com/couchbase/couchbase-lite-java-core/issues/645
-                // Depends on test platform, each request's doc size is not guaranteed.
-                // assertTrue(docs.size() >= (ReplicationInternal.INBOX_CAPACITY / 2));
-
+                assertTrue(docs.size() >= (ReplicationInternal.INBOX_CAPACITY / 2));
                 if (docs.size() != ReplicationInternal.INBOX_CAPACITY) {
                     Log.w(TAG, "docs.size() %d != ReplicationInternal.INBOX_CAPACITY %d", docs.size(), ReplicationInternal.INBOX_CAPACITY);
                 }
@@ -3406,15 +3401,8 @@ public class ReplicationTest extends LiteTestCase {
 
         // should not be any requests for individual docs
         for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
-            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
             BlockingQueue<RecordedRequest> requestsForDoc = dispatcher.getRequestQueueSnapshot(mockDocument.getDocPathRegex());
-
-            // TODO: Fix following check on non-Android environment
-            //      https://github.com/couchbase/couchbase-lite-java-core/issues/645
-            //      Depends on test environment, single doc request could be executed on non-android platforms
-            if(System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
-                assertTrue(requestsForDoc == null || requestsForDoc.isEmpty());
-            }
+            assertTrue(requestsForDoc == null || requestsForDoc.isEmpty());
         }
 
         server.shutdown();
