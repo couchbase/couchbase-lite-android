@@ -873,7 +873,6 @@ public class ReplicationTest extends LiteTestCase {
     public void testContinuousPushRetryBehavior() throws Exception {
 
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
-
         ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
         ReplicationInternal.MAX_RETRIES = 3;         // spped up test execution (outer loop retry count)
 
@@ -3325,10 +3324,10 @@ public class ReplicationTest extends LiteTestCase {
         mockPullBulkDocs(MockDispatcher.ServerType.SYNC_GW);
     }
 
-
     public void mockPullBulkDocs(MockDispatcher.ServerType serverType) throws Exception {
 
         // set INBOX_CAPACITY to a smaller value so that processing times don't skew the test
+        int previous = ReplicationInternal.INBOX_CAPACITY;
         ReplicationInternal.INBOX_CAPACITY = 10;
 
         // serve 25 mock docs
@@ -3358,7 +3357,6 @@ public class ReplicationTest extends LiteTestCase {
         for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
             MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
             dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
-
         }
 
         // _bulk_get response
@@ -3399,19 +3397,17 @@ public class ReplicationTest extends LiteTestCase {
                     Log.w(TAG, "docs.size() %d != ReplicationInternal.INBOX_CAPACITY %d", docs.size(), ReplicationInternal.INBOX_CAPACITY);
                 }
             }
-
         }
 
         // should not be any requests for individual docs
         for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
-            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
             BlockingQueue<RecordedRequest> requestsForDoc = dispatcher.getRequestQueueSnapshot(mockDocument.getDocPathRegex());
             assertTrue(requestsForDoc == null || requestsForDoc.isEmpty());
         }
 
         server.shutdown();
 
-
+        ReplicationInternal.INBOX_CAPACITY = previous;
     }
 
     /**
@@ -3688,6 +3684,7 @@ public class ReplicationTest extends LiteTestCase {
     public void testContinuousPushReplicationGoesIdleTooSoon() throws Exception{
 
         // smaller batch size so there are multiple requests to _bulk_docs
+        int previous = ReplicationInternal.INBOX_CAPACITY;
         ReplicationInternal.INBOX_CAPACITY = 5;
         int numDocs = ReplicationInternal.INBOX_CAPACITY * 5;
 
@@ -3780,6 +3777,8 @@ public class ReplicationTest extends LiteTestCase {
         waitForPutCheckpointRequestWithSeq(dispatcher, (int) database.getLastSequenceNumber());
 
         server.shutdown();
+
+        ReplicationInternal.INBOX_CAPACITY = previous;
     }
 
     /**
@@ -3943,7 +3942,6 @@ public class ReplicationTest extends LiteTestCase {
      */
     public void testStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception{
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
-
         ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
         ReplicationInternal.MAX_RETRIES = 3;         // speed up test execution (outer loop retry count)
 
