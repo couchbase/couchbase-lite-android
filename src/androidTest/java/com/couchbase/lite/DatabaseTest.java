@@ -5,6 +5,7 @@ import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.FileDirUtils;
+import com.couchbase.lite.support.RevisionUtils;
 import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
@@ -200,7 +201,7 @@ public class DatabaseTest extends LiteTestCase {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_local_seq", "");
         RevisionInternal revisionInternal = new RevisionInternal(props);
-        byte[] encoded = database.encodeDocumentJSON(revisionInternal);
+        byte[] encoded = RevisionUtils.encodeDocumentJSON(revisionInternal);
         assertNotNull(encoded);
     }
 

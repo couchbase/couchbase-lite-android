@@ -67,7 +67,7 @@ public class RouterTest extends LiteTestCase {
         assertTrue(System.currentTimeMillis() * 1000 > (Long) dbInfo.get("instance_start_time"));
         assertTrue(dbInfo.containsKey("db_uuid"));
 
-        send("PUT", "/database", Status.PRECONDITION_FAILED, null);
+        send("PUT", "/database", Status.DUPLICATE, null);
         send("PUT", "/database2", Status.CREATED, null);
 
         List<String> allDbs = new ArrayList<String>();

@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.support.RevisionUtils;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -19,42 +20,42 @@ public class RevisionsTest extends LiteTestCase {
         int num;
         String suffix;
 
-        num = Database.parseRevIDNumber("1-utiopturoewpt");
+        num = RevisionUtils.parseRevIDNumber("1-utiopturoewpt");
         Assert.assertEquals(1, num);
-        suffix = Database.parseRevIDSuffix("1-utiopturoewpt");
+        suffix = RevisionUtils.parseRevIDSuffix("1-utiopturoewpt");
         Assert.assertEquals("utiopturoewpt", suffix);
 
-        num = Database.parseRevIDNumber("321-fdjfdsj-e");
+        num = RevisionUtils.parseRevIDNumber("321-fdjfdsj-e");
         Assert.assertEquals(321, num);
-        suffix = Database.parseRevIDSuffix("321-fdjfdsj-e");
+        suffix = RevisionUtils.parseRevIDSuffix("321-fdjfdsj-e");
         Assert.assertEquals("fdjfdsj-e", suffix);
 
-        num = Database.parseRevIDNumber("0-fdjfdsj-e");
-        suffix = Database.parseRevIDSuffix("0-fdjfdsj-e");
+        num = RevisionUtils.parseRevIDNumber("0-fdjfdsj-e");
+        suffix = RevisionUtils.parseRevIDSuffix("0-fdjfdsj-e");
         Assert.assertTrue(num == 0 || (suffix.length() == 0));
-        num = Database.parseRevIDNumber("-4-fdjfdsj-e");
-        suffix = Database.parseRevIDSuffix("-4-fdjfdsj-e");
+        num = RevisionUtils.parseRevIDNumber("-4-fdjfdsj-e");
+        suffix = RevisionUtils.parseRevIDSuffix("-4-fdjfdsj-e");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = Database.parseRevIDNumber("5_fdjfdsj-e");
-        suffix = Database.parseRevIDSuffix("5_fdjfdsj-e");
+        num = RevisionUtils.parseRevIDNumber("5_fdjfdsj-e");
+        suffix = RevisionUtils.parseRevIDSuffix("5_fdjfdsj-e");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = Database.parseRevIDNumber(" 5-fdjfdsj-e");
-        suffix = Database.parseRevIDSuffix(" 5-fdjfdsj-e");
+        num = RevisionUtils.parseRevIDNumber(" 5-fdjfdsj-e");
+        suffix = RevisionUtils.parseRevIDSuffix(" 5-fdjfdsj-e");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = Database.parseRevIDNumber("7 -foo");
-        suffix = Database.parseRevIDSuffix("7 -foo");
+        num = RevisionUtils.parseRevIDNumber("7 -foo");
+        suffix = RevisionUtils.parseRevIDSuffix("7 -foo");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = Database.parseRevIDNumber("7-");
-        suffix = Database.parseRevIDSuffix("7-");
+        num = RevisionUtils.parseRevIDNumber("7-");
+        suffix = RevisionUtils.parseRevIDSuffix("7-");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = Database.parseRevIDNumber("7");
-        suffix = Database.parseRevIDSuffix("7");
+        num = RevisionUtils.parseRevIDNumber("7");
+        suffix = RevisionUtils.parseRevIDSuffix("7");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = Database.parseRevIDNumber("eiuwtiu");
-        suffix = Database.parseRevIDSuffix("eiuwtiu");
+        num = RevisionUtils.parseRevIDNumber("eiuwtiu");
+        suffix = RevisionUtils.parseRevIDSuffix("eiuwtiu");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
-        num = Database.parseRevIDNumber("");
-        suffix = Database.parseRevIDSuffix("");
+        num = RevisionUtils.parseRevIDNumber("");
+        suffix = RevisionUtils.parseRevIDSuffix("");
         Assert.assertTrue(num < 0 || (suffix.length() == 0));
     }
 
@@ -103,7 +104,7 @@ public class RevisionsTest extends LiteTestCase {
         expectedHistoryDict.put("start", 4);
         expectedHistoryDict.put("ids", expectedSuffixes);
 
-        Map<String,Object> historyDict = Database.makeRevisionHistoryDict(revs);
+        Map<String,Object> historyDict = RevisionUtils.makeRevisionHistoryDict(revs);
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
@@ -117,7 +118,7 @@ public class RevisionsTest extends LiteTestCase {
         expectedHistoryDict = new HashMap<String,Object>();
         expectedHistoryDict.put("ids", expectedSuffixes);
 
-        historyDict = Database.makeRevisionHistoryDict(revs);
+        historyDict = RevisionUtils.makeRevisionHistoryDict(revs);
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
@@ -131,7 +132,7 @@ public class RevisionsTest extends LiteTestCase {
         expectedHistoryDict = new HashMap<String,Object>();
         expectedHistoryDict.put("ids", expectedSuffixes);
 
-        historyDict = Database.makeRevisionHistoryDict(revs);
+        historyDict = RevisionUtils.makeRevisionHistoryDict(revs);
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
     }
