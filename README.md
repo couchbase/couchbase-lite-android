@@ -38,7 +38,9 @@ Using Gradle is the easiest way to automate Couchbase Lite builds in your projec
 
 ### Using latest official release
 
-##### Maven repo URL: `http://files.couchbase.com/maven2/`
+##### Optional: Maven repo URL: `http://files.couchbase.com/maven2/`
+
+**From 1.1.0 releae, Couchbase Lite Android is also hosted on JCenter which is default maven repository for Android Studio.**
 
 In the project level `build.gradle` file, specify maven repo URL.
 ```
@@ -70,17 +72,17 @@ In the application level `build.gradle` file, add following in `dependencies` se
 compile 'com.couchbase.lite:couchbase-lite-android:{latest-version}'
 ```
 
-In case of using couchbase lite 1.0.4
+In case of using couchbase lite 1.1.0
 ```
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:21.0.3'
-    compile 'com.couchbase.lite:couchbase-lite-android:1.0.4'
+    compile 'com.couchbase.lite:couchbase-lite-android:1.1.0'
 }
 ```
 
 
-Where ${latest_version} should be replaced by something that looks like `1.0.4`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
+Where ${latest_version} should be replaced by something that looks like `1.1.0`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
 
 ### Using master branch version (bleeding edge)
 
