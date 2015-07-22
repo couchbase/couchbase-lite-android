@@ -1,6 +1,5 @@
 package com.couchbase.lite.replicator;
 
-import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.internal.RevisionInternal;
@@ -19,7 +18,6 @@ import org.apache.http.HttpResponse;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -61,8 +59,8 @@ public class BulkDownloaderTest extends LiteTestCase {
         // BulkDownloader expects to be given a list of RevisionInternal
         List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
         Document doc = createDocumentForPushReplication("doc1", null, null);
-        EnumSet<Database.TDContentOptions> contentOptions = EnumSet.noneOf(Database.TDContentOptions.class);
-        RevisionInternal revisionInternal = database.getDocumentWithIDAndRev(doc.getId(), doc.getCurrentRevisionId(), contentOptions);
+        RevisionInternal revisionInternal = database.getDocument(doc.getId(),
+                doc.getCurrentRevisionId(), true);
         revs.add(revisionInternal);
 
         // countdown latch to make sure we got an error
@@ -108,7 +106,5 @@ public class BulkDownloaderTest extends LiteTestCase {
         Utils.shutdownAndAwaitTermination(workExecutorService);
 
         server.shutdown();
-
     }
-
 }

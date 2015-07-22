@@ -94,7 +94,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ReplicationTest extends LiteTestCase {
 
-
     /**
      * Continuous puller starts offline
      * Wait for a while .. (til what?)
@@ -183,10 +182,10 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * Start continuous replication with a closed db.
-     *
+     * <p/>
      * Expected behavior:
-     *   - Receive replication finished callback
-     *   - Replication lastError will contain an exception
+     * - Receive replication finished callback
+     * - Replication lastError will contain an exception
      */
     public void testStartReplicationClosedDb() throws Exception {
 
@@ -252,7 +251,7 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * Pull replication test:
-     *
+     * <p/>
      * - Single one-shot pull replication
      * - Against simulated sync gateway
      * - Remote docs do not have attachments
@@ -268,7 +267,7 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * Pull replication test:
-     *
+     * <p/>
      * - Single one-shot pull replication
      * - Against simulated couchdb
      * - Remote docs do not have attachments
@@ -285,7 +284,7 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * Pull replication test:
-     *
+     * <p/>
      * - Single one-shot pull replication
      * - Against simulated couchdb
      * - Remote docs have attachments
@@ -302,13 +301,12 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * Pull replication test:
-     *
+     * <p/>
      * - Single one-shot pull replication
      * - Against simulated sync gateway
      * - Remote docs have attachments
-     *
+     * <p/>
      * TODO: sporadic assertion failure when checking rev field of PUT checkpoint requests
-     *
      */
     public void testMockSinglePullSyncGwAttachments() throws Exception {
 
@@ -341,19 +339,18 @@ public class ReplicationTest extends LiteTestCase {
     }
 
 
-
     /**
      * Do a pull replication
      *
      * @param shutdownMockWebserver - should this test shutdown the mockwebserver
      *                              when done?  if another test wants to pick up
      *                              where this left off, you should pass false.
-     * @param serverType - should the mock return the Sync Gateway server type in
-     *                   the "Server" HTTP Header?  this changes the behavior of the
-     *                   replicator to use bulk_get and POST reqeusts for _changes feeds.
-     * @param addAttachments - should the mock sync gateway return docs with attachments?
+     * @param serverType            - should the mock return the Sync Gateway server type in
+     *                              the "Server" HTTP Header?  this changes the behavior of the
+     *                              replicator to use bulk_get and POST reqeusts for _changes feeds.
+     * @param addAttachments        - should the mock sync gateway return docs with attachments?
      * @return a map that contains the mockwebserver (key="server") and the mock dispatcher
-     *         (key="dispatcher")
+     * (key="dispatcher")
      */
     public Map<String, Object> mockSinglePull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType, boolean addAttachments) throws Exception {
 
@@ -508,14 +505,12 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
-     *
      * Simulate the following:
-     *
+     * <p/>
      * - Add a few docs and do a pull replication
      * - One doc on sync gateway is now updated
      * - Do a second pull replication
      * - Assert we get the updated doc and save it locally
-     *
      */
     public Map<String, Object> mockMultiplePull(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType) throws Exception {
 
@@ -597,7 +592,7 @@ public class ReplicationTest extends LiteTestCase {
         }
         assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
         if (serverType == MockDispatcher.ServerType.SYNC_GW) {
-            Map <String, Object> jsonMap = Manager.getObjectMapper().readValue(getChangesFeedRequest.getUtf8Body(), Map.class);
+            Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(getChangesFeedRequest.getUtf8Body(), Map.class);
             assertTrue(jsonMap.containsKey("since"));
             Integer since = (Integer) jsonMap.get("since");
             assertEquals(2, since.intValue());
@@ -712,7 +707,7 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/257
-     *
+     * <p/>
      * - Create local document with attachment
      * - Start continuous pull replication
      * - MockServer returns _changes with new rev of document
@@ -720,7 +715,6 @@ public class ReplicationTest extends LiteTestCase {
      * - Delete doc cache (not sure if needed)
      * - Fetch doc fresh from database
      * - Verify that it still has attachments
-     *
      */
     public void testAttachmentsDeletedOnPull() throws Exception {
 
@@ -741,7 +735,6 @@ public class ReplicationTest extends LiteTestCase {
         // add some documents - verify it has an attachment
         Document doc1 = createDocumentForPushReplication(doc1Id, doc1AttachName, contentType);
         String doc1Rev1 = doc1.getCurrentRevisionId();
-        database.clearDocumentCache();
         doc1 = database.getDocument(doc1.getId());
         assertTrue(doc1.getCurrentRevision().getAttachments().size() > 0);
 
@@ -784,7 +777,7 @@ public class ReplicationTest extends LiteTestCase {
                 RevisionInternal.digestFromRevID(doc1Rev2),
                 RevisionInternal.digestFromRevID(doc1Rev1)
         );
-        revHistory.put("ids",ids);
+        revHistory.put("ids", ids);
         mockDocumentGet.setRevHistoryMap(revHistory);
         dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
@@ -797,9 +790,6 @@ public class ReplicationTest extends LiteTestCase {
         waitForPutCheckpointRequestWithSeq(dispatcher, 1);
 
         stopReplication(pullReplication);
-
-        // clear doc cache
-        database.clearDocumentCache();
 
         // make sure doc has attachments
         Document doc1Fetched = database.getDocument(doc1.getId());
@@ -817,7 +807,7 @@ public class ReplicationTest extends LiteTestCase {
      * waiting on connection to be released by the thread calling
      * waitForUpdateThread().  When the deadlock bug was present,
      * this test would trigger the deadlock and never finish.
-     *
+     * <p/>
      * TODO: sporadic assertion failure when checking rev field of PUT checkpoint requests
      */
     public void testPullerWithLiveQuery() throws Throwable {
@@ -889,7 +879,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // _revs_diff response -- everything missing
         MockRevsDiff mockRevsDiff = new MockRevsDiff();
-         mockRevsDiff.setSticky(true);
+        mockRevsDiff.setSticky(true);
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
         // _bulk_docs response -- 503 errors
@@ -920,7 +910,7 @@ public class ReplicationTest extends LiteTestCase {
         // 1st attempt
         // numAttempts are number of times retry in 1 attempt.
         int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
-        for (int i=0; i < numAttempts; i++) {
+        for (int i = 0; i < numAttempts; i++) {
             RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
             assertNotNull(request);
             dispatcher.takeRecordedResponseBlocking(request);
@@ -930,9 +920,9 @@ public class ReplicationTest extends LiteTestCase {
         // Without fixing #299, following code should cause hang.
 
         // outer retry loop
-        for(int j = 0; j < ReplicationInternal.MAX_RETRIES; j++){
+        for (int j = 0; j < ReplicationInternal.MAX_RETRIES; j++) {
             // inner retry loop
-            for (int i=0; i < numAttempts; i++) {
+            for (int i = 0; i < numAttempts; i++) {
                 RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
                 assertNotNull(request);
                 dispatcher.takeRecordedResponseBlocking(request);
@@ -944,26 +934,19 @@ public class ReplicationTest extends LiteTestCase {
         server.shutdown();
     }
 
-
     public void testMockSinglePush() throws Exception {
-
         boolean shutdownMockWebserver = true;
-
         mockSinglePush(shutdownMockWebserver, MockDispatcher.ServerType.SYNC_GW);
-
     }
-
 
     /**
      * Do a push replication
-     *
+     * <p/>
      * - Create docs in local db
-     *   - One with no attachment
-     *   - One with small attachment
-     *   - One with large attachment
-     *
+     * - One with no attachment
+     * - One with small attachment
+     * - One with large attachment
      */
-
     public Map<String, Object> mockSinglePush(boolean shutdownMockWebserver, MockDispatcher.ServerType serverType) throws Exception {
 
         String doc1Id = "doc1";
@@ -1032,9 +1015,11 @@ public class ReplicationTest extends LiteTestCase {
 
         RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
         assertTrue(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc1Id));
-        Map <String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(MockHelper.getUtf8Body(bulkDocsRequest), Map.class);
-        Map <String, Object> doc4Map = MockBulkDocs.findDocById(bulkDocsJson, doc4Id);
-        assertTrue(((Boolean)doc4Map.get("_deleted")).booleanValue() == true);
+        Map<String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(MockHelper.getUtf8Body(bulkDocsRequest), Map.class);
+        Map<String, Object> doc4Map = MockBulkDocs.findDocById(bulkDocsJson, doc4Id);
+        assertTrue(((Boolean) doc4Map.get("_deleted")).booleanValue() == true);
+        String str = MockHelper.getUtf8Body(bulkDocsRequest);
+        Log.e(TAG, str);
         assertFalse(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc2Id));
 
         RecordedRequest doc2putRequest = dispatcher.takeRequest(doc2PathRegex);
@@ -1097,7 +1082,7 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(0, database.getLastSequenceNumber());
 
         // add docs
-        Map<String,Object> properties1 = new HashMap<String,Object>();
+        Map<String, Object> properties1 = new HashMap<String, Object>();
         properties1.put("doc1", "testContinuousPushReplicationGoesIdle");
         final Document doc1 = createDocWithProperties(properties1);
 
@@ -1176,14 +1161,13 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/241
-     *
+     * <p/>
      * - Set the "retry time" to a short number
      * - Setup mock server to return 404 for all _changes requests
      * - Start continuous replication
      * - Sleep for 5X retry time
      * - Assert that we've received at least two requests to _changes feed
      * - Stop replication + cleanup
-     *
      */
     public void testContinuousReplication404Changes() throws Exception {
 
@@ -1203,7 +1187,7 @@ public class ReplicationTest extends LiteTestCase {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
             // mock _changes response
-            for (int i=0; i<100; i++) {
+            for (int i = 0; i < 100; i++) {
                 MockResponse mockChangesFeed = new MockResponse();
                 MockHelper.set404NotFoundJson(mockChangesFeed);
                 dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed);
@@ -1323,14 +1307,13 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Verify that when a conflict is resolved on (mock) Sync Gateway
      * and a pull replication is done, the conflict is resolved locally.
-     *
+     * <p/>
      * - Create local docs in conflict
      * - Simulate sync gw responses that resolve the conflict
      * - Do pull replication
      * - Assert conflict is resolved locally
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/77
-     *
      */
     public void testRemoteConflictResolution() throws Exception {
 
@@ -1346,7 +1329,7 @@ public class ReplicationTest extends LiteTestCase {
         QueryEnumerator rows = allDocsQuery.run();
         boolean foundDoc = false;
         assertEquals(1, rows.getCount());
-        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+        for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
             QueryRow row = it.next();
             if (row.getDocument().getId().equals(doc.getId())) {
                 foundDoc = true;
@@ -1447,11 +1430,11 @@ public class ReplicationTest extends LiteTestCase {
 
         assertEquals(0, database.getLastSequenceNumber());
 
-        Map<String,Object> properties1 = new HashMap<String,Object>();
+        Map<String, Object> properties1 = new HashMap<String, Object>();
         properties1.put("doc1", "testPushReplicationCanMissDocs");
         final Document doc1 = createDocWithProperties(properties1);
 
-        Map<String,Object> properties2 = new HashMap<String,Object>();
+        Map<String, Object> properties2 = new HashMap<String, Object>();
         properties1.put("doc2", "testPushReplicationCanMissDocs");
         final Document doc2 = createDocWithProperties(properties2);
 
@@ -1533,7 +1516,7 @@ public class ReplicationTest extends LiteTestCase {
 
         assertEquals(0, database.getLastSequenceNumber());
 
-        Map<String,Object> properties1 = new HashMap<String,Object>();
+        Map<String, Object> properties1 = new HashMap<String, Object>();
         properties1.put("dynamic", 1);
         final Document doc = createDocWithProperties(properties1);
         SavedRevision doc1Rev = doc.getCurrentRevision();
@@ -1572,20 +1555,20 @@ public class ReplicationTest extends LiteTestCase {
             // verify that there are no PUT requests with attachments
             if (httpRequest instanceof HttpPut) {
                 HttpPut httpPut = (HttpPut) httpRequest;
-                HttpEntity entity=httpPut.getEntity();
+                HttpEntity entity = httpPut.getEntity();
                 //assertFalse("PUT request with updated doc properties contains attachment", entity instanceof MultipartEntity);
             }
         }
 
         mockHttpClient.clearCapturedRequests();
 
-        Document oldDoc =database.getDocument(doc.getId());
+        Document oldDoc = database.getDocument(doc.getId());
         UnsavedRevision aUnsavedRev = oldDoc.createRevision();
-        Map<String,Object> prop = new HashMap<String,Object>();
+        Map<String, Object> prop = new HashMap<String, Object>();
         prop.putAll(oldDoc.getProperties());
-        prop.put("dynamic", (Integer) oldDoc.getProperty("dynamic") +1);
+        prop.put("dynamic", (Integer) oldDoc.getProperty("dynamic") + 1);
         aUnsavedRev.setProperties(prop);
-        final SavedRevision savedRev=aUnsavedRev.save();
+        final SavedRevision savedRev = aUnsavedRev.save();
 
         mockHttpClient.setResponder(doc.getId(), new CustomizableMockHttpClient.Responder() {
             @Override
@@ -1598,7 +1581,7 @@ public class ReplicationTest extends LiteTestCase {
             }
         });
 
-        final String json = String.format("{\"%s\":{\"missing\":[\"%s\"],\"possible_ancestors\":[\"%s\",\"%s\"]}}",doc.getId(),savedRev.getId(),doc1Rev.getId(), doc2Rev.getId());
+        final String json = String.format("{\"%s\":{\"missing\":[\"%s\"],\"possible_ancestors\":[\"%s\",\"%s\"]}}", doc.getId(), savedRev.getId(), doc1Rev.getId(), doc2Rev.getId());
         mockHttpClient.setResponder("_revs_diff", new CustomizableMockHttpClient.Responder() {
             @Override
             public HttpResponse execute(HttpUriRequest httpUriRequest) throws IOException {
@@ -1615,7 +1598,7 @@ public class ReplicationTest extends LiteTestCase {
             // verify that there are no PUT requests with attachments
             if (httpRequest instanceof HttpPut) {
                 HttpPut httpPut = (HttpPut) httpRequest;
-                HttpEntity entity=httpPut.getEntity();
+                HttpEntity entity = httpPut.getEntity();
                 assertFalse("PUT request with updated doc properties contains attachment", entity instanceof MultipartEntity);
             }
         }
@@ -1628,7 +1611,7 @@ public class ReplicationTest extends LiteTestCase {
 
         assertEquals(0, database.getLastSequenceNumber());
 
-        Map<String,Object> properties1 = new HashMap<String,Object>();
+        Map<String, Object> properties1 = new HashMap<String, Object>();
         properties1.put("dynamic", 1);
         final Document doc = createDocWithProperties(properties1);
         SavedRevision doc1Rev = doc.getCurrentRevision();
@@ -1679,13 +1662,13 @@ public class ReplicationTest extends LiteTestCase {
         runReplication(pusher);
 
         List<HttpRequest> captured = mockHttpClient.getCapturedRequests();
-        int entityIndex =0;
+        int entityIndex = 0;
         for (HttpRequest httpRequest : captured) {
             // verify that there are no PUT requests with attachments
             if (httpRequest instanceof HttpPut) {
                 HttpPut httpPut = (HttpPut) httpRequest;
-                HttpEntity entity=httpPut.getEntity();
-                if(entityIndex++ == 0) {
+                HttpEntity entity = httpPut.getEntity();
+                if (entityIndex++ == 0) {
                     assertTrue("PUT request with attachment is not multipart", entity instanceof MultipartEntity);
                 } else {
                     assertFalse("PUT request with attachment is multipart", entity instanceof MultipartEntity);
@@ -1713,7 +1696,7 @@ public class ReplicationTest extends LiteTestCase {
 
         Replication pullerWithFilter1 = database.createPullReplication(getReplicationURL());
         pullerWithFilter1.setFilter("foo/bar");
-        Map<String, Object> filterParams= new HashMap<String, Object>();
+        Map<String, Object> filterParams = new HashMap<String, Object>();
         filterParams.put("a", "aval");
         filterParams.put("b", "bval");
         List<String> docIds = Arrays.asList("doc3", "doc1", "doc2");
@@ -1726,7 +1709,7 @@ public class ReplicationTest extends LiteTestCase {
 
         Replication pullerWithFilter2 = database.createPullReplication(getReplicationURL());
         pullerWithFilter2.setFilter("foo/bar");
-        filterParams= new HashMap<String, Object>();
+        filterParams = new HashMap<String, Object>();
         filterParams.put("b", "bval");
         filterParams.put("a", "aval");
         pullerWithFilter2.setDocIds(Arrays.asList("doc2", "doc3", "doc1"));
@@ -1786,7 +1769,7 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/376
-     *
+     * <p/>
      * This test aims to demonstrate that when the changes feed returns purged documents the
      * replicator is able to fetch all other documents but unable to finish the replication
      * (STOPPED OR IDLE STATE)
@@ -1907,7 +1890,7 @@ public class ReplicationTest extends LiteTestCase {
         int numBulkDocRequests = 0;
         HttpPost lastBulkDocsRequest = null;
 
-        Map<String,Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testPurgeDocument");
 
         Document doc = createDocumentWithProperties(database, properties);
@@ -1970,7 +1953,7 @@ public class ReplicationTest extends LiteTestCase {
         // at this point, we should have captured exactly 1 bulk docs request
         numBulkDocRequests = 0;
         for (HttpRequest capturedRequest : mockHttpClient.getCapturedRequests()) {
-            if (capturedRequest instanceof  HttpPost && ((HttpPost) capturedRequest).getURI().toString().endsWith("_bulk_docs")) {
+            if (capturedRequest instanceof HttpPost && ((HttpPost) capturedRequest).getURI().toString().endsWith("_bulk_docs")) {
                 lastBulkDocsRequest = (HttpPost) capturedRequest;
                 numBulkDocRequests += 1;
             }
@@ -1996,14 +1979,14 @@ public class ReplicationTest extends LiteTestCase {
 
         // wait for a while to give the replicator a chance to push it
         // (it should not actually push anything)
-        Thread.sleep(5*1000);
+        Thread.sleep(5 * 1000);
 
         // we should not have gotten any more _bulk_docs requests, because
         // the replicator should not have pushed anything else.
         // (in the case of the bug, it was trying to push the purged revision)
         numBulkDocRequests = 0;
         for (HttpRequest capturedRequest : mockHttpClient.getCapturedRequests()) {
-            if (capturedRequest instanceof  HttpPost && ((HttpPost) capturedRequest).getURI().toString().endsWith("_bulk_docs")) {
+            if (capturedRequest instanceof HttpPost && ((HttpPost) capturedRequest).getURI().toString().endsWith("_bulk_docs")) {
                 numBulkDocRequests += 1;
             }
         }
@@ -2026,8 +2009,8 @@ public class ReplicationTest extends LiteTestCase {
 
             // create a bunch local documents
             int numDocsToSend = ReplicationInternal.INBOX_CAPACITY * 3;
-            for (int i=0; i < numDocsToSend; i++) {
-                Map<String,Object> properties = new HashMap<String, Object>();
+            for (int i = 0; i < numDocsToSend; i++) {
+                Map<String, Object> properties = new HashMap<String, Object>();
                 properties.put("testPusherBatching", i);
                 createDocumentWithProperties(database, properties);
             }
@@ -2102,12 +2085,11 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Verify that validation blocks are called correctly for docs
      * pulled from the sync gateway.
-     *
+     * <p/>
      * - Add doc to (mock) sync gateway
      * - Add validation function that will reject that doc
      * - Do a pull replication
      * - Assert that the doc does _not_ make it into the db
-     *
      */
     public void testValidationBlockCalled() throws Throwable {
 
@@ -2169,9 +2151,9 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * Attempting to reproduce couchtalk issue:
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-android/issues/312
-     *
+     * <p/>
      * - Start continuous puller against mock SG w/ 50 docs
      * - After every 10 docs received, restart replication
      * - Make sure all 50 docs are received and stored in local db
@@ -2341,14 +2323,14 @@ public class ReplicationTest extends LiteTestCase {
 
     public void testChannelsMore() throws MalformedURLException, CouchbaseLiteException {
 
-        Database  db = startDatabase();
+        Database db = startDatabase();
         URL fakeRemoteURL = new URL("http://couchbase.com/no_such_db");
         Replication r1 = db.createPullReplication(fakeRemoteURL);
 
         assertTrue(r1.getChannels().isEmpty());
         r1.setFilter("foo/bar");
         assertTrue(r1.getChannels().isEmpty());
-        Map<String, Object> filterParams= new HashMap<String, Object>();
+        Map<String, Object> filterParams = new HashMap<String, Object>();
         filterParams.put("a", "b");
         r1.setFilterParams(filterParams);
         assertTrue(r1.getChannels().isEmpty());
@@ -2363,13 +2345,13 @@ public class ReplicationTest extends LiteTestCase {
         r1.setChannels(channels);
         assertEquals(channels, r1.getChannels());
         assertEquals("sync_gateway/bychannel", r1.getFilter());
-        filterParams= new HashMap<String, Object>();
+        filterParams = new HashMap<String, Object>();
         filterParams.put("channels", "NBC,MTV");
         assertEquals(filterParams, r1.getFilterParams());
 
         r1.setChannels(null);
         assertEquals(r1.getFilter(), null);
-        assertEquals(null ,r1.getFilterParams());
+        assertEquals(null, r1.getFilterParams());
 
     }
 
@@ -2435,7 +2417,7 @@ public class ReplicationTest extends LiteTestCase {
             assertNull(pusher.getLastError());
         }
 
-        if (expectReplicatorError == false ) {
+        if (expectReplicatorError == false) {
 
             int expectedLastSequence = 1;
             Log.d(TAG, "waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
@@ -2455,7 +2437,6 @@ public class ReplicationTest extends LiteTestCase {
 
         // Shut down the server. Instances cannot be reused.
         server.shutdown();
-
 
 
     }
@@ -2629,7 +2610,6 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed2.generateMockResponse());
 
 
-
         // put the replication online (should see the new docs)
         putReplicationOnline(pullReplication);
 
@@ -2715,7 +2695,7 @@ public class ReplicationTest extends LiteTestCase {
         // add _changes response to feed=normal that returns empty _changes feed immediately
         MockChangesFeed mockChangesFeed = new MockChangesFeed();
         MockResponse mockResponse = mockChangesFeed.generateMockResponse();
-        for (int i=0; i<500; i++) {  // TODO: use setSticky instead of workaround to add a ton of mock responses
+        for (int i = 0; i < 500; i++) {  // TODO: use setSticky instead of workaround to add a ton of mock responses
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_NORMAL, new WrappedSmartMockResponse(mockResponse));
         }
 
@@ -2768,7 +2748,7 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * Test goOffline() method in the context of a continuous pusher.
-     *
+     * <p/>
      * - 1. Add a local document
      * - 2. Kick off continuous push replication
      * - 3. Wait for document to be pushed
@@ -2785,7 +2765,7 @@ public class ReplicationTest extends LiteTestCase {
 
         try {
             // 1. Add a local document
-            Map<String,Object> properties = new HashMap<String, Object>();
+            Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("testGoOfflinePusher", "1");
             Document doc1 = createDocumentWithProperties(database, properties);
 
@@ -2923,7 +2903,7 @@ public class ReplicationTest extends LiteTestCase {
         // run replicator and make sure it has an error
         assertNotNull(pullReplication.getLastError());
         assertTrue(pullReplication.getLastError() instanceof HttpResponseException);
-        assertEquals(401 /* unauthorized */, ((HttpResponseException)pullReplication.getLastError()).getStatusCode());
+        assertEquals(401 /* unauthorized */, ((HttpResponseException) pullReplication.getLastError()).getStatusCode());
 
         // assert that the replicator sent the requests we expected it to send
         RecordedRequest sessionReqeust = dispatcher.takeRequest(MockHelper.PATH_REGEX_SESSION);
@@ -2951,15 +2931,15 @@ public class ReplicationTest extends LiteTestCase {
 
         server.play();
 
-        Map<String,Object> properties = new HashMap<String,Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("source", DEFAULT_TEST_DB);
 
         // target with custom headers (cookie)
-        Map<String,Object> headers = new HashMap<String,Object>();
+        Map<String, Object> headers = new HashMap<String, Object>();
         String coolieVal = "SyncGatewaySession=c38687c2696688a";
         headers.put("Cookie", coolieVal);
 
-        Map<String,Object> targetProperties = new HashMap<String,Object>();
+        Map<String, Object> targetProperties = new HashMap<String, Object>();
         targetProperties.put("url", server.getUrl("/db").toExternalForm());
         targetProperties.put("headers", headers);
 
@@ -3024,7 +3004,7 @@ public class ReplicationTest extends LiteTestCase {
 
         server.play();
 
-        Map<String,Object> properties = new HashMap<String,Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("source", DEFAULT_TEST_DB);
         properties.put("target", server.getUrl("/db").toExternalForm());
 
@@ -3071,13 +3051,13 @@ public class ReplicationTest extends LiteTestCase {
 
     public void testGetReplicatorWithAuth() throws Throwable {
 
-        Map<String,Object> authProperties = getReplicationAuthParsedJson();
+        Map<String, Object> authProperties = getReplicationAuthParsedJson();
 
-        Map<String,Object> targetProperties = new HashMap<String,Object>();
+        Map<String, Object> targetProperties = new HashMap<String, Object>();
         targetProperties.put("url", getReplicationURL().toExternalForm());
         targetProperties.put("auth", authProperties);
 
-        Map<String,Object> properties = new HashMap<String,Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("source", DEFAULT_TEST_DB);
         properties.put("target", targetProperties);
 
@@ -3089,7 +3069,6 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
-     *
      * When the server returns a 409 error to a PUT checkpoint response, make
      * sure it does the right thing:
      * - Pull latest remote checkpoint
@@ -3156,7 +3135,7 @@ public class ReplicationTest extends LiteTestCase {
         // we should have gotten two requests to PATH_REGEX_CHECKPOINT:
         // PUT -> 409 Conflict
         // PUT -> 201 Created
-        for (int i=1; i<=2; i++) {
+        for (int i = 1; i <= 2; i++) {
             Log.v(TAG, "waiting for PUT checkpoint: %d", i);
             waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc1.getDocSeq());
             Log.d(TAG, "got PUT checkpoint: %d", i);
@@ -3173,7 +3152,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Verify that Validation based Rejects revert the entire batch that the document is in
      * even if one of the documents fail the validation.
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/242
      *
      * @throws Exception
@@ -3211,7 +3190,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Make sure calling puller.setChannels() causes the changetracker to send the correct
      * request to the sync gateway.
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/292
      */
     public void testChannelsFilter() throws Exception {
@@ -3243,7 +3222,7 @@ public class ReplicationTest extends LiteTestCase {
         RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
         assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
         String body = getChangesFeedRequest.getUtf8Body();
-        Map <String, Object> jsonMap = Manager.getObjectMapper().readValue(body, Map.class);
+        Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(body, Map.class);
         assertTrue(jsonMap.containsKey("filter"));
         String filter = (String) jsonMap.get("filter");
         assertEquals("sync_gateway/bychannel", filter);
@@ -3261,7 +3240,7 @@ public class ReplicationTest extends LiteTestCase {
      * - Start continuous pull
      * - Mockwebserver responds that there are no changes
      * - Assert that puller goes into IDLE state
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-android/issues/445
      */
     public void testContinuousPullEntersIdleState() throws Exception {
@@ -3319,7 +3298,7 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Spotted in https://github.com/couchbase/couchbase-lite-java-core/issues/313
      * But there is another ticket that is linked off 313
-     *
+     * <p/>
      * TODO: This test fails because of Batcher is not implemented correct.
      */
     public void failingTestMockPullBulkDocsSyncGw() throws Exception {
@@ -3378,7 +3357,7 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(pullReplication.getLastError() == null);
 
         // wait until it pushes checkpoint of last doc
-        MockDocumentGet.MockDocument lastDoc = mockDocs.get(mockDocs.size()-1);
+        MockDocumentGet.MockDocument lastDoc = mockDocs.get(mockDocs.size() - 1);
         waitForPutCheckpointRequestWithSequence(dispatcher, lastDoc.getDocSeq());
 
         // dump out the outgoing requests for bulk docs
@@ -3414,10 +3393,10 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * Make sure that after trying /db/_session, it should try /_session.
-     *
+     * <p/>
      * Currently there is a bug where it tries /db/_session, and then
      * tries /db_session.
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/208
      */
     public void testCheckSessionAtPath() throws Exception {
@@ -3474,12 +3453,11 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
-     *
      * - Start one shot replication
      * - Changes feed request returns error
      * - Change tracker stops
      * - Replication stops -- make sure ChangeListener gets error
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/334
      */
     public void testChangeTrackerError() throws Exception {
@@ -3531,7 +3509,7 @@ public class ReplicationTest extends LiteTestCase {
      *
      * @related: https://github.com/couchbase/couchbase-lite-java-core/issues/55
      * related: testContinuousPushReplicationGoesIdle()
-     *
+     * <p/>
      * test steps:
      * - start replicator
      * - make sure replicator becomes idle state
@@ -3539,7 +3517,7 @@ public class ReplicationTest extends LiteTestCase {
      * - when callback state == idle
      * - assert that mock has received N docs
      */
-    public void testContinuousPushReplicationGoesIdleTwice() throws Exception{
+    public void testContinuousPushReplicationGoesIdleTwice() throws Exception {
 
         // /_local/*
         // /_revs_diff
@@ -3593,18 +3571,20 @@ public class ReplicationTest extends LiteTestCase {
         assertEquals(1, server.getRequestCount());
 
         // 5. Add replication change listener for transition to IDLE
-        class ReplicationTransitionToIdleObserver implements  Replication.ChangeListener{
+        class ReplicationTransitionToIdleObserver implements Replication.ChangeListener {
             private CountDownLatch doneSignal;
             private CountDownLatch checkSignal;
+
             public ReplicationTransitionToIdleObserver(CountDownLatch doneSignal, CountDownLatch checkSignal) {
                 this.doneSignal = doneSignal;
                 this.checkSignal = checkSignal;
             }
+
             public void changed(Replication.ChangeEvent event) {
                 Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] event => " + event.toString());
-                if(event.getTransition()!=null){
-                    if(event.getTransition().getSource() != event.getTransition().getDestination() &&
-                       event.getTransition().getDestination() == ReplicationState.IDLE){
+                if (event.getTransition() != null) {
+                    if (event.getTransition().getSource() != event.getTransition().getDestination() &&
+                            event.getTransition().getDestination() == ReplicationState.IDLE) {
                         Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Transition to  IDLE");
                         Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Request Count => " + server.getRequestCount());
 
@@ -3614,8 +3594,8 @@ public class ReplicationTest extends LiteTestCase {
                         // assertEquals in inner class does not work....
                         // Note: sometimes server.getRequestCount() returns expected number - 1.
                         //       Is it timing issue?
-                        if(EXPECTED_REQUEST_COUNT == server.getRequestCount() ||
-                           EXPECTED_REQUEST_COUNT - 1 == server.getRequestCount()){
+                        if (EXPECTED_REQUEST_COUNT == server.getRequestCount() ||
+                                EXPECTED_REQUEST_COUNT - 1 == server.getRequestCount()) {
                             this.checkSignal.countDown();
                         }
                     }
@@ -3630,9 +3610,9 @@ public class ReplicationTest extends LiteTestCase {
         Log.w(Log.TAG_SYNC, "Added listener for transition to IDLE");
 
         // 6. Add doc(s)
-        for(int i = 1; i <= 1; i++) {
+        for (int i = 1; i <= 1; i++) {
             Map<String, Object> properties1 = new HashMap<String, Object>();
-            properties1.put("doc" + String.valueOf(i), "testContinuousPushReplicationGoesIdleTooSoon "+ String.valueOf(i));
+            properties1.put("doc" + String.valueOf(i), "testContinuousPushReplicationGoesIdleTooSoon " + String.valueOf(i));
             final Document doc = createDocWithProperties(properties1);
         }
 
@@ -3673,17 +3653,17 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/358
-     *
+     * <p/>
      * related: testContinuousPushReplicationGoesIdleTooSoon()
-     *          testContinuousPushReplicationGoesIdle()
-     *
+     * testContinuousPushReplicationGoesIdle()
+     * <p/>
      * test steps:
      * - add N docs
      * - start replicator
      * - when callback state == idle
      * - assert that mock has received N docs
      */
-    public void testContinuousPushReplicationGoesIdleTooSoon() throws Exception{
+    public void testContinuousPushReplicationGoesIdleTooSoon() throws Exception {
 
         // smaller batch size so there are multiple requests to _bulk_docs
         int previous = ReplicationInternal.INBOX_CAPACITY;
@@ -3695,9 +3675,9 @@ public class ReplicationTest extends LiteTestCase {
 
         // Add doc(s)
         // NOTE: more documents causes more HTTP calls. It could be more than 4 times...
-        for(int i = 1; i <= numDocs; i++) {
+        for (int i = 1; i <= numDocs; i++) {
             Map<String, Object> properties = new HashMap<String, Object>();
-            properties.put("doc" + String.valueOf(i), "testContinuousPushReplicationGoesIdleTooSoon "+ String.valueOf(i));
+            properties.put("doc" + String.valueOf(i), "testContinuousPushReplicationGoesIdleTooSoon " + String.valueOf(i));
             final Document doc = createDocWithProperties(properties);
         }
 
@@ -3725,16 +3705,18 @@ public class ReplicationTest extends LiteTestCase {
         Replication replication = database.createPushReplication(server.getUrl("/db"));
         replication.setContinuous(true);
         // special change listener for this test case.
-        class ReplicationTransitionToIdleObserver implements  Replication.ChangeListener{
+        class ReplicationTransitionToIdleObserver implements Replication.ChangeListener {
             private CountDownLatch enterIdleStateSignal;
+
             public ReplicationTransitionToIdleObserver(CountDownLatch enterIdleStateSignal) {
                 this.enterIdleStateSignal = enterIdleStateSignal;
             }
+
             public void changed(Replication.ChangeEvent event) {
                 Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] event => " + event.toString());
-                if(event.getTransition()!=null){
-                    if(event.getTransition().getSource() != event.getTransition().getDestination() &&
-                            event.getTransition().getDestination() == ReplicationState.IDLE){
+                if (event.getTransition() != null) {
+                    if (event.getTransition().getSource() != event.getTransition().getDestination() &&
+                            event.getTransition().getDestination() == ReplicationState.IDLE) {
                         Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Transition to  IDLE");
                         Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Request Count => " + server.getRequestCount());
 
@@ -3749,7 +3731,7 @@ public class ReplicationTest extends LiteTestCase {
         replication.start();
 
         // Wait until idle (make sure replicator becomes IDLE state from other state)
-        boolean  success = enterIdleStateSignal.await(20, TimeUnit.SECONDS);
+        boolean success = enterIdleStateSignal.await(20, TimeUnit.SECONDS);
         assertTrue(success);
 
         // Once the replicator is idle get a snapshot of all the requests its made to _bulk_docs endpoint
@@ -3766,7 +3748,7 @@ public class ReplicationTest extends LiteTestCase {
         // WORKAROUND: CBL Java Unit Test on Jenkins rarely fails following.
         // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
         // It seems threading issue exists, and replicator becomes IDLE even tasks in batcher.
-        if(System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
+        if (System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
             // Assert that all docs have already been pushed by the time it goes IDLE
             assertEquals(numDocs, numDocsPushed);
         }
@@ -3785,11 +3767,10 @@ public class ReplicationTest extends LiteTestCase {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/352
-     *
+     * <p/>
      * When retrying a replication, make sure to get session & checkpoint.
-     *
      */
-    public void testCheckSessionAndCheckpointWhenRetryingReplication() throws Exception{
+    public void testCheckSessionAndCheckpointWhenRetryingReplication() throws Exception {
 
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
 
@@ -3890,7 +3871,7 @@ public class ReplicationTest extends LiteTestCase {
 
         // Retry requests
         // outer retry loop
-        for(int j = 0; j < ReplicationInternal.MAX_RETRIES; j++){
+        for (int j = 0; j < ReplicationInternal.MAX_RETRIES; j++) {
 
             // MockSessionGet does not support isSticky
             MockSessionGet mockSessionGet = new MockSessionGet();
@@ -3937,12 +3918,13 @@ public class ReplicationTest extends LiteTestCase {
 
         //server.shutdown();
     }
+
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/352
-     *
+     * <p/>
      * Makes the replicator stop, even if it is continuous, when it receives a permanent-type error
      */
-    public void testStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception{
+    public void testStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception {
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
         ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
         ReplicationInternal.MAX_RETRIES = 3;         // speed up test execution (outer loop retry count)
@@ -4116,17 +4098,16 @@ public class ReplicationTest extends LiteTestCase {
     }
 
     /**
-     *
      * The observed problem:
-     *
+     * <p/>
      * - 1. Start continuous pull
      * - 2. Wait until it goes IDLE (this works fine)
      * - 3. Add a new document directly to the Sync Gateway
      * - 4. The continuous pull goes from IDLE -> RUNNING
      * - 5. Wait until it goes IDLE again (this doesn't work, it never goes back to IDLE)
-     *
+     * <p/>
      * The test case below simulates the above scenario using a mock sync gateway.
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/383
      */
     public void testContinuousPullReplicationGoesIdleTwice() throws Exception {
@@ -4212,7 +4193,7 @@ public class ReplicationTest extends LiteTestCase {
         // triggered too early (the other approach would be to set the countdown
         // latch to a higher number)
         final CountDownLatch enteredRunningState = new CountDownLatch(1);
-        final CountDownLatch enteredIdleState2   = new CountDownLatch(1);
+        final CountDownLatch enteredIdleState2 = new CountDownLatch(1);
         pullReplication.addChangeListener(new Replication.ChangeListener() {
             @Override
             public void changed(Replication.ChangeEvent event) {
@@ -4223,7 +4204,7 @@ public class ReplicationTest extends LiteTestCase {
                 // second IDLE change listener
                 // handling IDLE event here. It seems IDLE event was fired before set IDLE event handler
                 else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    if(enteredRunningState.getCount() <= 0) {
+                    if (enteredRunningState.getCount() <= 0) {
                         Log.e(TAG, "Replication is IDLE 2");
                         enteredIdleState2.countDown();
                     }
@@ -4353,8 +4334,8 @@ public class ReplicationTest extends LiteTestCase {
         pullReplication.addChangeListener(new Replication.ChangeListener() {
             @Override
             public void changed(Replication.ChangeEvent event) {
-                if(event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED &&
-                   event.getTransition().getDestination() == ReplicationState.STOPPED){
+                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED &&
+                        event.getTransition().getDestination() == ReplicationState.STOPPED) {
                     Log.d(TAG, "Replication is STOPPED");
                     enteredStoppedState.countDown();
                 }
@@ -4377,10 +4358,11 @@ public class ReplicationTest extends LiteTestCase {
 
         Log.d(TAG, "TEST DONE");
     }
+
     /**
      * Issue:  Pull Replicator does not send IDLE state after check point
      * https://github.com/couchbase/couchbase-lite-java-core/issues/389
-     *
+     * <p/>
      * 1. Wait till pull replicator becomes IDLE state
      * 2. Update change event handler for handling ACTIVE and IDLE
      * 3. Create document into local db
@@ -4447,11 +4429,10 @@ public class ReplicationTest extends LiteTestCase {
                 if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
                     // make sure pull replicator becomes IDLE after ACTIVE state.
                     // so ignore any IDLE state before ACTIVE.
-                    if(activeSignal.getCount() == 0) {
+                    if (activeSignal.getCount() == 0) {
                         idleSignal.countDown();
                     }
-                }
-                else if(event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE){
+                } else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
                     activeSignal.countDown();
                 }
             }
@@ -4466,9 +4447,9 @@ public class ReplicationTest extends LiteTestCase {
         // 4. Based on local doc information, prepare mock change response for 1st /_changes request
         String docId = doc.getId();
         String revId = doc.getCurrentRevisionId();
-        int lastSeq = (int)database.getLastSequenceNumber();
+        int lastSeq = (int) database.getLastSequenceNumber();
 
-        MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq+1);
+        MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq + 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
         MockChangesFeed mockChangesFeed = new MockChangesFeed();
         mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
@@ -4497,7 +4478,6 @@ public class ReplicationTest extends LiteTestCase {
     /**
      * Sync (pull replication) fails on document with a lot of revisions and attachments
      * https://github.com/couchbase/couchbase-lite-java-core/issues/415
-     *
      */
     public void testPullReplicatonWithManyAttachmentRevisions() throws Exception {
         Log.d(TAG, "TEST START: testPullReplicatonWithManyAttachmentRevisions()");
@@ -4508,13 +4488,13 @@ public class ReplicationTest extends LiteTestCase {
         String attachmentName = "attachment.png";
 
         // create initial document (Revision 1-xxxx)
-        Map<String,Object> props1 = new HashMap<String,Object>();
+        Map<String, Object> props1 = new HashMap<String, Object>();
         props1.put("_id", docID);
         props1.put(key, value);
         RevisionInternal rev = new RevisionInternal(props1);
         Status status = new Status();
         RevisionInternal savedRev = database.putRevision(rev, null, false, status);
-        String rev1ID = savedRev.getRevId();
+        String rev1ID = savedRev.getRevID();
 
         // add attachment to doc (Revision 2-xxxx)
         Document doc = database.getDocument(docID);
@@ -4558,7 +4538,7 @@ public class ReplicationTest extends LiteTestCase {
                 // end of attachment
                 RevisionInternal leaf_conflict = new RevisionInternal(props_conflict);
                 List<String> revHistory = new ArrayList<String>();
-                revHistory.add(leaf_conflict.getRevId());
+                revHistory.add(leaf_conflict.getRevID());
                 revHistory.add(rev2ID);
                 revHistory.add(rev1ID);
                 database.forceInsert(leaf_conflict, revHistory, null);
@@ -4568,7 +4548,7 @@ public class ReplicationTest extends LiteTestCase {
 
         String docId = doc.getId();
         String revId = j + "-00";
-        int lastSeq = (int)database.getLastSequenceNumber();
+        int lastSeq = (int) database.getLastSequenceNumber();
 
 
         // create mockwebserver and custom dispatcher
@@ -4615,7 +4595,7 @@ public class ReplicationTest extends LiteTestCase {
 
 
         //
-        MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq+1);
+        MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq + 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
         //mockDocument1.setAttachmentName("attachment3.png");
 
@@ -4631,9 +4611,9 @@ public class ReplicationTest extends LiteTestCase {
         // check /db/docid?...
         RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex());
         Log.e(TAG, request.toString());
-        Map<String,String> queries = query2map(request.getPath());
+        Map<String, String> queries = query2map(request.getPath());
         String atts_since = URLDecoder.decode(queries.get("atts_since"), "UTF-8");
-        List<String> json = (List<String>)str2json(atts_since);
+        List<String> json = (List<String>) str2json(atts_since);
         Log.e(TAG, json.toString());
         assertNotNull(json);
         // atts_since parameter should be limit to PullerInternal.MAX_NUMBER_OF_ATTS_SINCE
@@ -4660,11 +4640,11 @@ public class ReplicationTest extends LiteTestCase {
         return result;
     }
 
-    public static Map<String,String> query2map(String queryString) {
-        Map<String,String> queries = new HashMap<String,String>();
+    public static Map<String, String> query2map(String queryString) {
+        Map<String, String> queries = new HashMap<String, String>();
         for (String component : queryString.split("&")) {
             int location = component.indexOf('=');
-            if(location > 0) {
+            if (location > 0) {
                 String key = component.substring(0, location);
                 String value = component.substring(location + 1);
                 queries.put(key, value);
@@ -4673,30 +4653,33 @@ public class ReplicationTest extends LiteTestCase {
         return queries;
     }
 
-    class CustomMultipartReaderDelegate implements MultipartReaderDelegate  {
+    class CustomMultipartReaderDelegate implements MultipartReaderDelegate {
         public Map<String, String> headers = null;
-        public byte[]  data = null;
+        public byte[] data = null;
         public boolean gzipped = false;
         public boolean bJson = false;
+
         @Override
         public void startedPart(Map<String, String> headers) {
             gzipped = headers.get("Content-Encoding") != null && headers.get("Content-Encoding").contains("gzip");
-            bJson   = headers.get("Content-Type") != null && headers.get("Content-Type").contains("application/json");
+            bJson = headers.get("Content-Type") != null && headers.get("Content-Type").contains("application/json");
         }
+
         @Override
         public void appendToPart(byte[] data) {
-            if(gzipped && bJson) {
+            if (gzipped && bJson) {
                 this.data = Utils.decompressByGzip(data);
-            }
-            else if(bJson){
+            } else if (bJson) {
                 this.data = data;
             }
         }
+
         @Override
-        public void appendToPart(final byte[] data, int off, int len){
+        public void appendToPart(final byte[] data, int off, int len) {
             byte[] b = Arrays.copyOfRange(data, off, len - off);
             appendToPart(b);
         }
+
         @Override
         public void finishedPart() {
         }
@@ -4976,8 +4959,7 @@ public class ReplicationTest extends LiteTestCase {
                     Log.e(Log.TAG, "IDLE");
                     replicationIdleFirstTime.countDown();
                     replicationIdleSecondTime.countDown();
-                }
-                else if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.STOPPED) {
+                } else if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.STOPPED) {
                     Log.e(Log.TAG, "STOPPED");
                     replicationStoppedFirstTime.countDown();
                 }

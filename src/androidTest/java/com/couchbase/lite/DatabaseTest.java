@@ -14,51 +14,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DatabaseTest extends LiteTestCase {
 
-    public void testPruneRevsToMaxDepth() throws Exception {
-
-        Map<String,Object> properties = new HashMap<String,Object>();
-        properties.put("testName", "testDatabaseCompaction");
-        properties.put("tag", 1337);
-
-        Document doc=createDocumentWithProperties(database, properties);
-        SavedRevision rev = doc.getCurrentRevision();
-
-        database.setMaxRevTreeDepth(1);
-        for (int i=0; i<10; i++) {
-            Map<String,Object> properties2 = new HashMap<String,Object>(properties);
-            properties2.put("tag", i);
-            rev = rev.createRevision(properties2);
-        }
-
-        int numPruned = database.pruneRevsToMaxDepth(1);
-        assertEquals(10, numPruned);
-
-        Document fetchedDoc = database.getDocument(doc.getId());
-        List<SavedRevision> revisions = fetchedDoc.getRevisionHistory();
-        assertEquals(1, revisions.size());
-
-        numPruned = database.pruneRevsToMaxDepth(1);
-        assertEquals(0, numPruned);
-
-    }
-
     public void testPruneRevsToMaxDepthViaCompact() throws Exception {
 
-        Map<String,Object> properties = new HashMap<String,Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testDatabaseCompaction");
         properties.put("tag", 1337);
 
-        Document doc=createDocumentWithProperties(database, properties);
+        Document doc = createDocumentWithProperties(database, properties);
         SavedRevision rev = doc.getCurrentRevision();
 
         database.setMaxRevTreeDepth(1);
-        for (int i=0; i<10; i++) {
-            Map<String,Object> properties2 = new HashMap<String,Object>(properties);
+        for (int i = 0; i < 10; i++) {
+            Map<String, Object> properties2 = new HashMap<String, Object>(properties);
             properties2.put("tag", i);
             rev = rev.createRevision(properties2);
         }
@@ -68,7 +39,6 @@ public class DatabaseTest extends LiteTestCase {
         Document fetchedDoc = database.getDocument(doc.getId());
         List<SavedRevision> revisions = fetchedDoc.getRevisionHistory();
         assertEquals(1, revisions.size());
-
     }
 
     /**
@@ -102,8 +72,6 @@ public class DatabaseTest extends LiteTestCase {
         assertTrue(success);
 
         assertEquals(1, atomicInteger.get());
-
-
     }
 
     /**
@@ -111,23 +79,16 @@ public class DatabaseTest extends LiteTestCase {
      * for each insert (no batching)
      */
     public void testChangeListenerNotification() throws Exception {
-
         final int numDocs = 50;
         final AtomicInteger atomicInteger = new AtomicInteger(0);
-        final CountDownLatch countDownLatch = new CountDownLatch(1);
-
         database.addChangeListener(new Database.ChangeListener() {
             @Override
             public void changed(Database.ChangeEvent event) {
                 atomicInteger.incrementAndGet();
             }
         });
-
         createDocuments(database, numDocs);
-
         assertEquals(numDocs, atomicInteger.get());
-
-
     }
 
     /**
@@ -152,7 +113,8 @@ public class DatabaseTest extends LiteTestCase {
         // create mock sync gateway that will serve as a pull target and return random docs
         int numMockDocsToServe = 0;
         MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher,
+                numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         server.play();
@@ -201,54 +163,8 @@ public class DatabaseTest extends LiteTestCase {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_local_seq", "");
         RevisionInternal revisionInternal = new RevisionInternal(props);
-        byte[] encoded = RevisionUtils.encodeDocumentJSON(revisionInternal);
+        byte[] encoded = RevisionUtils.asCanonicalJSON(revisionInternal);
         assertNotNull(encoded);
-    }
-
-    public void testWinningRevIDOfDoc() throws Exception {
-
-        Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("testName", "testCreateRevisions");
-        properties.put("tag", 1337);
-
-        Map<String, Object> properties2a = new HashMap<String, Object>();
-        properties2a.put("testName", "testCreateRevisions");
-        properties2a.put("tag", 1338);
-
-        Map<String, Object> properties2b = new HashMap<String, Object>();
-        properties2b.put("testName", "testCreateRevisions");
-        properties2b.put("tag", 1339);
-
-        AtomicBoolean outIsDeleted = new AtomicBoolean(false);
-        AtomicBoolean outIsConflict = new AtomicBoolean(false);
-
-        // Create a conflict on purpose
-        Document doc = database.createDocument();
-        UnsavedRevision newRev1 = doc.createRevision();
-        newRev1.setUserProperties(properties);
-        SavedRevision rev1 = newRev1.save();
-
-        long docNumericId = database.getDocNumericID(doc.getId());
-        assertTrue(docNumericId != 0);
-        assertEquals(rev1.getId(), database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict));
-        assertFalse(outIsConflict.get());
-
-        outIsDeleted.set(false);
-        outIsConflict.set(false);
-        UnsavedRevision newRev2a = rev1.createRevision();
-        newRev2a.setUserProperties(properties2a);
-        SavedRevision rev2a = newRev2a.save();
-        assertEquals(rev2a.getId(), database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict));
-        assertFalse(outIsConflict.get());
-
-        outIsDeleted.set(false);
-        outIsConflict.set(false);
-        UnsavedRevision newRev2b = rev1.createRevision();
-        newRev2b.setUserProperties(properties2b);
-        SavedRevision rev2b = newRev2b.save(true);
-        database.winningRevIDOfDoc(docNumericId, outIsDeleted, outIsConflict);
-
-        assertTrue(outIsConflict.get());
     }
 
     /**

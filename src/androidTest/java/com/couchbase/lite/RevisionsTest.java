@@ -7,7 +7,6 @@ import com.couchbase.lite.util.Log;
 import junit.framework.Assert;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,11 +99,11 @@ public class RevisionsTest extends LiteTestCase {
         expectedSuffixes.add("jkl");
         expectedSuffixes.add("ghi");
         expectedSuffixes.add("def");
-        Map<String,Object> expectedHistoryDict = new HashMap<String,Object>();
+        Map<String, Object> expectedHistoryDict = new HashMap<String, Object>();
         expectedHistoryDict.put("start", 4);
         expectedHistoryDict.put("ids", expectedSuffixes);
 
-        Map<String,Object> historyDict = RevisionUtils.makeRevisionHistoryDict(revs);
+        Map<String, Object> historyDict = RevisionUtils.makeRevisionHistoryDict(revs);
         Assert.assertEquals(expectedHistoryDict, historyDict);
 
 
@@ -115,7 +114,7 @@ public class RevisionsTest extends LiteTestCase {
         expectedSuffixes = new ArrayList<String>();
         expectedSuffixes.add("4-jkl");
         expectedSuffixes.add("2-def");
-        expectedHistoryDict = new HashMap<String,Object>();
+        expectedHistoryDict = new HashMap<String, Object>();
         expectedHistoryDict.put("ids", expectedSuffixes);
 
         historyDict = RevisionUtils.makeRevisionHistoryDict(revs);
@@ -129,7 +128,7 @@ public class RevisionsTest extends LiteTestCase {
         expectedSuffixes = new ArrayList<String>();
         expectedSuffixes.add("12345");
         expectedSuffixes.add("6789");
-        expectedHistoryDict = new HashMap<String,Object>();
+        expectedHistoryDict = new HashMap<String, Object>();
         expectedHistoryDict.put("ids", expectedSuffixes);
 
         historyDict = RevisionUtils.makeRevisionHistoryDict(revs);
@@ -160,8 +159,6 @@ public class RevisionsTest extends LiteTestCase {
         SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
 
         assertNotSame(rev2a.getId(), rev2b.getId());
-
-
     }
 
     /**
@@ -171,8 +168,7 @@ public class RevisionsTest extends LiteTestCase {
 
         // This test causes crash with CBL Java on OSX
         // TODO: Github Ticket: https://github.com/couchbase/couchbase-lite-java/issues/55
-        if(System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
-
+        if (System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
             // two revisions with the same content and the same json
             // should have the exact same revision id, because their content
             // will have an identical hash
@@ -199,7 +195,6 @@ public class RevisionsTest extends LiteTestCase {
             SavedRevision rev2b = newRev2b.save(true);
 
             assertEquals(rev2a.getId(), rev2b.getId());
-
         }
     }
 
@@ -232,7 +227,7 @@ public class RevisionsTest extends LiteTestCase {
             losingRev = rev2a;
         }
 
-        assertEquals(2,doc.getConflictingRevisions().size());
+        assertEquals(2, doc.getConflictingRevisions().size());
         assertEquals(2, doc.getLeafRevisions().size());
 
         // let's manually choose the losing rev as the winner.  First, delete winner, which will
@@ -273,8 +268,8 @@ public class RevisionsTest extends LiteTestCase {
             expectedWinner = rev2b;
         }
 
-        RevisionInternal revFound = database.getDocumentWithIDAndRev(doc.getId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
-        assertEquals(expectedWinner.getId(), revFound.getRevId());
+        RevisionInternal revFound = database.getDocument(doc.getId(), null, true);
+        assertEquals(expectedWinner.getId(), revFound.getRevID());
 
     }
 
@@ -290,8 +285,8 @@ public class RevisionsTest extends LiteTestCase {
         // rev3b should be picked as the winner since it has a longer branch
         SavedRevision expectedWinner = rev3b;
 
-        RevisionInternal revFound = database.getDocumentWithIDAndRev(doc.getId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
-        assertEquals(expectedWinner.getId(), revFound.getRevId());
+        RevisionInternal revFound = database.getDocument(doc.getId(), null, true);
+        assertEquals(expectedWinner.getId(), revFound.getRevID());
 
     }
 
@@ -314,8 +309,8 @@ public class RevisionsTest extends LiteTestCase {
         SavedRevision rev9b = createRevisionWithRandomProps(rev8b, true);
         SavedRevision rev10b = createRevisionWithRandomProps(rev9b, true);
 
-        RevisionInternal revFound = database.getDocumentWithIDAndRev(doc.getId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
-        assertEquals(rev10b.getId(), revFound.getRevId());
+        RevisionInternal revFound = database.getDocument(doc.getId(), null, true);
+        assertEquals(rev10b.getId(), revFound.getRevID());
 
     }
 

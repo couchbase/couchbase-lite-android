@@ -1,14 +1,14 @@
 /**
  * Original iOS version by  Jens Alfke
  * Ported to Android by Marty Schoch
- *
+ * <p/>
  * Copyright (c) 2012 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -21,7 +21,6 @@ import com.couchbase.lite.internal.RevisionInternal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,27 +35,30 @@ public class RevTreeTest extends LiteTestCase {
         RevisionInternal rev = new RevisionInternal("FakeDocId", "1-tango", false);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
-        revProperties.put("_id", rev.getDocId());
-        revProperties.put("_rev", rev.getRevId());
+        revProperties.put("_id", rev.getDocID());
+        revProperties.put("_rev", rev.getRevID());
         revProperties.put("message", "hi");
         rev.setProperties(revProperties);
 
         database.forceInsert(rev, revHistory, null);
-
     }
 
+    /**
+     * in DatabaseInternal_Tests.m
+     * - (void) test06_RevTree
+     */
     public void testRevTree() throws CouchbaseLiteException {
 
         RevisionInternal rev = new RevisionInternal("MyDocId", "4-foxy", false);
 
         Map<String, Object> revProperties = new HashMap<String, Object>();
-        revProperties.put("_id", rev.getDocId());
-        revProperties.put("_rev", rev.getRevId());
+        revProperties.put("_id", rev.getDocID());
+        revProperties.put("_rev", rev.getRevID());
         revProperties.put("message", "hi");
         rev.setProperties(revProperties);
 
         List<String> revHistory = new ArrayList<String>();
-        revHistory.add(rev.getRevId());
+        revHistory.add(rev.getRevID());
         revHistory.add("3-thrice");
         revHistory.add("2-too");
         revHistory.add("1-won");
@@ -68,13 +70,13 @@ public class RevTreeTest extends LiteTestCase {
         RevisionInternal conflict = new RevisionInternal("MyDocId", "5-epsilon", false);
 
         Map<String, Object> conflictProperties = new HashMap<String, Object>();
-        conflictProperties.put("_id", conflict.getDocId());
-        conflictProperties.put("_rev", conflict.getRevId());
+        conflictProperties.put("_id", conflict.getDocID());
+        conflictProperties.put("_rev", conflict.getRevID());
         conflictProperties.put("message", "yo");
         conflict.setProperties(conflictProperties);
 
         List<String> conflictHistory = new ArrayList<String>();
-        conflictHistory.add(conflict.getRevId());
+        conflictHistory.add(conflict.getRevID());
         conflictHistory.add("4-delta");
         conflictHistory.add("3-gamma");
         conflictHistory.add("2-too");
@@ -98,24 +100,22 @@ public class RevTreeTest extends LiteTestCase {
 
         // Add an unrelated document:
         RevisionInternal other = new RevisionInternal("AnotherDocID", "1-ichi", false);
-        Map<String,Object> otherProperties = new HashMap<String,Object>();
+        Map<String, Object> otherProperties = new HashMap<String, Object>();
         otherProperties.put("language", "jp");
         other.setProperties(otherProperties);
         List<String> otherHistory = new ArrayList<String>();
-        otherHistory.add(other.getRevId());
+        otherHistory.add(other.getRevID());
         database.forceInsert(other, otherHistory, null);
 
         // Fetch one of those phantom revisions with no body:
-        RevisionInternal rev2 = database.getDocumentWithIDAndRev(rev.getDocId(), "2-too", EnumSet.noneOf(Database.TDContentOptions.class));
-        assertEquals(rev.getDocId(), rev2.getDocId());
-        assertEquals("2-too", rev2.getRevId());
-        //Assert.assertNull(rev2.getContent());
+        RevisionInternal rev2 = database.getDocument(rev.getDocID(), "2-too", true);
+        assertNull(rev2); // NOT FOUND
 
         // Make sure no duplicate rows were inserted for the common revisions:
         assertEquals(8, database.getLastSequenceNumber());
 
         // Make sure the revision with the higher revID wins the conflict:
-        RevisionInternal current = database.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
+        RevisionInternal current = database.getDocument(rev.getDocID(), null, true);
         assertEquals(conflict, current);
 
         // Get the _changes feed and verify only the winner is in it:
@@ -144,12 +144,12 @@ public class RevTreeTest extends LiteTestCase {
         // add a document with a single (first) revision
         final RevisionInternal rev = new RevisionInternal(DOCUMENT_ID, "1-one", false);
         Map<String, Object> revProperties = new HashMap<String, Object>();
-        revProperties.put("_id", rev.getDocId());
-        revProperties.put("_rev", rev.getRevId());
+        revProperties.put("_id", rev.getDocID());
+        revProperties.put("_rev", rev.getRevID());
         revProperties.put("message", "hi");
         rev.setProperties(revProperties);
 
-        List<String> revHistory = Arrays.asList(rev.getRevId());
+        List<String> revHistory = Arrays.asList(rev.getRevID());
 
         Database.ChangeListener listener = new Database.ChangeListener() {
             @Override
@@ -157,12 +157,13 @@ public class RevTreeTest extends LiteTestCase {
                 assertEquals(1, event.getChanges().size());
                 DocumentChange change = event.getChanges().get(0);
                 assertEquals(DOCUMENT_ID, change.getDocumentId());
-                assertEquals(rev.getRevId(), change.getRevisionId());
+                assertEquals(rev.getRevID(), change.getRevisionId());
                 assertTrue(change.isCurrentRevision());
                 assertFalse(change.isConflict());
 
-                SavedRevision current = database.getDocument(change.getDocumentId()).getCurrentRevision();
-                assertEquals(rev.getRevId(), current.getId());
+                SavedRevision current = database.getDocument(
+                        change.getDocumentId()).getCurrentRevision();
+                assertEquals(rev.getRevID(), current.getId());
             }
         };
         database.addChangeListener(listener);
@@ -172,12 +173,12 @@ public class RevTreeTest extends LiteTestCase {
         // add two more revisions to the document
         final RevisionInternal rev3 = new RevisionInternal(DOCUMENT_ID, "3-three", false);
         Map<String, Object> rev3Properties = new HashMap<String, Object>();
-        rev3Properties.put("_id", rev3.getDocId());
-        rev3Properties.put("_rev", rev3.getRevId());
+        rev3Properties.put("_id", rev3.getDocID());
+        rev3Properties.put("_rev", rev3.getRevID());
         rev3Properties.put("message", "hi again");
         rev3.setProperties(rev3Properties);
 
-        List<String> rev3History = Arrays.asList(rev3.getRevId(), "2-two", rev.getRevId());
+        List<String> rev3History = Arrays.asList(rev3.getRevID(), "2-two", rev.getRevID());
 
         listener = new Database.ChangeListener() {
             @Override
@@ -185,12 +186,12 @@ public class RevTreeTest extends LiteTestCase {
                 assertEquals(1, event.getChanges().size());
                 DocumentChange change = event.getChanges().get(0);
                 assertEquals(DOCUMENT_ID, change.getDocumentId());
-                assertEquals(rev3.getRevId(), change.getRevisionId());
+                assertEquals(rev3.getRevID(), change.getRevisionId());
                 assertTrue(change.isCurrentRevision());
                 assertFalse(change.isConflict());
 
                 Document doc = database.getDocument(change.getDocumentId());
-                assertEquals(rev3.getRevId(), doc.getCurrentRevisionId());
+                assertEquals(rev3.getRevID(), doc.getCurrentRevisionId());
                 try {
                     assertEquals(3, doc.getRevisionHistory().size());
                 } catch (CouchbaseLiteException ex) {
@@ -207,12 +208,12 @@ public class RevTreeTest extends LiteTestCase {
         // new winning revision.
         final RevisionInternal conflictRev = new RevisionInternal(DOCUMENT_ID, "3-winner", false);
         Map<String, Object> conflictProperties = new HashMap<String, Object>();
-        conflictProperties.put("_id", conflictRev.getDocId());
-        conflictProperties.put("_rev", conflictRev.getRevId());
+        conflictProperties.put("_id", conflictRev.getDocID());
+        conflictProperties.put("_rev", conflictRev.getRevID());
         conflictProperties.put("message", "winner");
         conflictRev.setProperties(conflictProperties);
 
-        List<String> conflictRevHistory = Arrays.asList(conflictRev.getRevId(), "2-two", rev.getRevId());
+        List<String> conflictRevHistory = Arrays.asList(conflictRev.getRevID(), "2-two", rev.getRevID());
 
         listener = new Database.ChangeListener() {
             @Override
@@ -220,12 +221,12 @@ public class RevTreeTest extends LiteTestCase {
                 assertEquals(1, event.getChanges().size());
                 DocumentChange change = event.getChanges().get(0);
                 assertEquals(DOCUMENT_ID, change.getDocumentId());
-                assertEquals(conflictRev.getRevId(), change.getRevisionId());
+                assertEquals(conflictRev.getRevID(), change.getRevisionId());
                 assertTrue(change.isCurrentRevision());
                 assertTrue(change.isConflict());
 
                 Document doc = database.getDocument(change.getDocumentId());
-                assertEquals(conflictRev.getRevId(), doc.getCurrentRevisionId());
+                assertEquals(conflictRev.getRevID(), doc.getCurrentRevisionId());
                 try {
                     assertEquals(2, doc.getConflictingRevisions().size());
                     assertEquals(3, doc.getRevisionHistory().size());
@@ -240,18 +241,17 @@ public class RevTreeTest extends LiteTestCase {
     }
 
     private static void verifyHistory(Database db, RevisionInternal rev, List<String> history) {
-        RevisionInternal gotRev = db.getDocumentWithIDAndRev(rev.getDocId(), null, EnumSet.noneOf(Database.TDContentOptions.class));
+        RevisionInternal gotRev = db.getDocument(rev.getDocID(), null, true);
         assertEquals(rev, gotRev);
         assertEquals(rev.getProperties(), gotRev.getProperties());
 
         List<RevisionInternal> revHistory = db.getRevisionHistory(gotRev);
         assertEquals(history.size(), revHistory.size());
-        for(int i=0; i<history.size(); i++) {
+        for (int i = 0; i < history.size(); i++) {
             RevisionInternal hrev = revHistory.get(i);
-            assertEquals(rev.getDocId(), hrev.getDocId());
-            assertEquals(history.get(i), hrev.getRevId());
+            assertEquals(rev.getDocID(), hrev.getDocID());
+            assertEquals(history.get(i), hrev.getRevID());
             assertFalse(rev.isDeleted());
         }
     }
-
 }

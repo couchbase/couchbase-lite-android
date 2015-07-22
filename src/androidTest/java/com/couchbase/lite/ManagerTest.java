@@ -10,12 +10,10 @@ import com.couchbase.lite.util.Utils;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -37,16 +35,17 @@ public class ManagerTest extends LiteTestCase {
         //to ensure this test is easily repeatable we will explicitly remove
         //any stale foo.cblite
         boolean mustExist = true;
-        Database old = manager.getDatabaseWithoutOpening("foo", mustExist);
-        if(old != null) {
+        Database old = manager.getDatabase("foo", mustExist);
+        if (old != null) {
             old.delete();
         }
 
         mustExist = false;
-        Database db = manager.getDatabaseWithoutOpening("foo", mustExist);
+        Database db = manager.getDatabase("foo", mustExist);
         assertNotNull(db);
         assertEquals("foo", db.getName());
-        assertTrue(db.getPath().startsWith(new LiteTestContext(false).getRootDirectory().getAbsolutePath()));
+        assertTrue(db.getPath().startsWith(new LiteTestContext(false).
+                getRootDirectory().getAbsolutePath()));
         assertFalse(db.exists());
 
 
@@ -62,61 +61,14 @@ public class ManagerTest extends LiteTestCase {
 
         db.close();
         db.delete();
-
-    }
-
-
-    public void testUpgradeOldDatabaseFiles() throws Exception {
-
-        String directoryName = "test-directory-" + System.currentTimeMillis();
-        LiteTestContext context = new LiteTestContext(directoryName);
-
-        File directory = context.getFilesDir();
-        if(!directory.exists()) {
-            boolean result = directory.mkdir();
-            if(!result) {
-                throw new IOException("Unable to create directory " + directory);
-            }
-        }
-        File oldTouchDbFile = new File(directory, String.format("old%s", Manager.DATABASE_SUFFIX_OLD));
-        oldTouchDbFile.createNewFile();
-        File newCbLiteFile = new File(directory, String.format("new%s", Manager.DATABASE_SUFFIX));
-        newCbLiteFile.createNewFile();
-
-        File migratedOldFile = new File(directory, String.format("old%s", Manager.DATABASE_SUFFIX));
-        migratedOldFile.createNewFile();
-        super.stopCBLite();
-        manager = new Manager(context, Manager.DEFAULT_OPTIONS);
-
-        assertTrue(migratedOldFile.exists());
-        //cannot rename old.touchdb to old.cblite, because old.cblite already exists
-        assertTrue(oldTouchDbFile.exists());
-        assertTrue(newCbLiteFile.exists());
-
-        assertEquals(3, directory.listFiles().length);
-
-        super.stopCBLite();
-        migratedOldFile.delete();
-        manager = new Manager(context, Manager.DEFAULT_OPTIONS);
-
-        //rename old.touchdb in old.cblite, previous old.cblite already doesn't exist
-        assertTrue(migratedOldFile.exists());
-        assertTrue(oldTouchDbFile.exists() == false);
-        assertTrue(newCbLiteFile.exists());
-        assertEquals(2, directory.listFiles().length);
-
     }
 
     public void testReplaceDatabaseNamedNoAttachments() throws CouchbaseLiteException {
-
         //Copy database from assets to local storage
         InputStream dbStream = getAsset("noattachments.cblite");
-
         manager.replaceDatabase("replaced", dbStream, null);
-
         //Now validate the number of files in the DB
         assertEquals(10, manager.getDatabase("replaced").getDocumentCount());
-
     }
 
     public void testReplaceDatabaseNamedWithAttachments() throws CouchbaseLiteException {
@@ -127,7 +79,7 @@ public class ManagerTest extends LiteTestCase {
 
         Map<String, InputStream> attachments = new HashMap<String, InputStream>();
         InputStream blobStream = getAsset("attachments/356a192b7913b04c54574d18c28d46e6395428ab.blob");
-        attachments.put("356a192b7913b04c54574d18c28d46e6395428ab.blob",blobStream);
+        attachments.put("356a192b7913b04c54574d18c28d46e6395428ab.blob", blobStream);
 
         manager.replaceDatabase("replaced2", dbStream, attachments);
 
@@ -139,7 +91,7 @@ public class ManagerTest extends LiteTestCase {
 
         assertNotNull(doc);
 
-        RevisionInternal gotRev1 = database.getDocumentWithIDAndRev(doc.getId(), doc.getCurrentRevisionId(), EnumSet.noneOf(Database.TDContentOptions.class));
+        RevisionInternal gotRev1 = database.getDocument(doc.getId(), doc.getCurrentRevisionId(), true);
     }
 
     // Test for pre-built database test from CBL Android 1.0.4
