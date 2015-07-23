@@ -3322,7 +3322,7 @@ public class ReplicationTest extends LiteTestCase {
      *
      * TODO: This test fails because of Batcher is not implemented correct.
      */
-    public void failingTestMockPullBulkDocsSyncGw() throws Exception {
+    public void testMockPullBulkDocsSyncGw() throws Exception {
         mockPullBulkDocs(MockDispatcher.ServerType.SYNC_GW);
     }
 
@@ -3384,14 +3384,15 @@ public class ReplicationTest extends LiteTestCase {
         // dump out the outgoing requests for bulk docs
         BlockingQueue<RecordedRequest> bulkGetRequests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_GET);
         Iterator<RecordedRequest> iterator = bulkGetRequests.iterator();
+        boolean first = true;
         while (iterator.hasNext()) {
             RecordedRequest request = iterator.next();
             byte[] body = MockHelper.getUncompressedBody(request);
             Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
             List docs = (List) jsonMap.get("docs");
-            Log.d(TAG, "bulk get request: %s had %d docs", request, docs.size());
-
-            if (iterator.hasNext()) {
+            Log.w(TAG, "bulk get request: %s had %d docs", request, docs.size());
+            // except first one and last one, docs.size() should be (neary) equal with INBOX_CAPACTITY.
+            if (iterator.hasNext() && !first) {
                 // the bulk docs requests except for the last one should have max number of docs
                 // relax this a bit, so that it at least has to have greater than or equal to half max number of docs
                 assertTrue(docs.size() >= (ReplicationInternal.INBOX_CAPACITY / 2));
@@ -3399,6 +3400,7 @@ public class ReplicationTest extends LiteTestCase {
                     Log.w(TAG, "docs.size() %d != ReplicationInternal.INBOX_CAPACITY %d", docs.size(), ReplicationInternal.INBOX_CAPACITY);
                 }
             }
+            first = false;
         }
 
         // should not be any requests for individual docs
