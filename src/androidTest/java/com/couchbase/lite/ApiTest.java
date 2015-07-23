@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
 
@@ -20,7 +21,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 /**
  * Created by andrey on 12/3/13.
  */
@@ -33,35 +33,35 @@ public class ApiTest extends LiteTestCase {
     public void testAPIManager() throws Exception {
         Manager manager = this.manager;
         Assert.assertTrue(manager != null);
-        for(String dbName : manager.getAllDatabaseNames()){
+        for (String dbName : manager.getAllDatabaseNames()) {
             Database db = manager.getDatabase(dbName);
             Log.i(TAG, "Database '" + dbName + "':" + db.getDocumentCount() + " documents");
         }
-        ManagerOptions options= new ManagerOptions();
+        ManagerOptions options = new ManagerOptions();
         options.setReadOnly(true);
 
         // We want to create two different managers reading from the same directory so we
         // create LiteTestContext(false) to make sure we don't delete the directory
-        Manager roManager=new Manager(new LiteTestContext(false), options);
-        Assert.assertTrue(roManager!=null);
+        Manager roManager = new Manager(new LiteTestContext(false), options);
+        Assert.assertTrue(roManager != null);
 
-        Database db =roManager.getDatabase("foo");
+        Database db = roManager.getDatabase("foo");
         Assert.assertNull(db);
-        List<String> dbNames=manager.getAllDatabaseNames();
+        List<String> dbNames = manager.getAllDatabaseNames();
         Assert.assertFalse(dbNames.contains("foo"));
         Assert.assertTrue(dbNames.contains(DEFAULT_TEST_DB));
     }
 
     public void testCreateDocument() throws CouchbaseLiteException {
-        Map<String,Object> properties = new HashMap<String,Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testCreateDocument");
         properties.put("tag", 1337);
 
         Database db = startDatabase();
-        Document doc=createDocumentWithProperties(db, properties);
-        String docID=doc.getId();
+        Document doc = createDocumentWithProperties(db, properties);
+        String docID = doc.getId();
         assertTrue("Invalid doc ID: " + docID, docID.length() > 10);
-        String currentRevisionID=doc.getCurrentRevisionId();
+        String currentRevisionID = doc.getCurrentRevisionId();
         assertTrue("Invalid doc revision: " + docID, currentRevisionID.length() > 10);
         assertEquals(doc.getUserProperties(), properties);
         assertEquals(db.getDocument(docID), doc);
@@ -75,35 +75,36 @@ public class ApiTest extends LiteTestCase {
         assertNull(db.getExistingDocument("b0gus"));
     }
 
-
     public void testDeleteDatabase() throws Exception {
+
         Database deleteme = manager.getDatabase("deleteme");
         assertTrue(deleteme.exists());
-        String dbPath =deleteme.getPath();
-        assertTrue(new File(dbPath).exists());
-        // check for attachment directory
-        assertTrue(new File(dbPath.substring(0, dbPath.lastIndexOf('.')) + " attachments").exists());
+        assertTrue(new File(deleteme.getPath()).exists());
+        assertTrue(new File(deleteme.getAttachmentStorePath()).exists());
+        assertTrue(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
+
         deleteme.delete();
         assertFalse(deleteme.exists());
-        assertFalse(new File(dbPath).exists());
-        assertFalse(new File(dbPath + "-journal").exists());
-        assertFalse(new File(dbPath.substring(0, dbPath.lastIndexOf('.'))).exists());
+        assertFalse(new File(deleteme.getPath()).exists());
+        assertFalse(new File(deleteme.getAttachmentStorePath()).exists());
+        assertFalse(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
+
         deleteme.delete();  // delete again, even though already deleted
         Database deletemeFetched = manager.getExistingDatabase("deleteme");
         assertNull(deletemeFetched);
     }
 
-    public void testDatabaseCompaction() throws Exception{
+    public void testDatabaseCompaction() throws Exception {
 
-        Map<String,Object> properties = new HashMap<String,Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testDatabaseCompaction");
         properties.put("tag", 1337);
 
 
-        Document doc=createDocumentWithProperties(database, properties);
+        Document doc = createDocumentWithProperties(database, properties);
         SavedRevision rev1 = doc.getCurrentRevision();
 
-        Map<String,Object> properties2 = new HashMap<String,Object>(properties);
+        Map<String, Object> properties2 = new HashMap<String, Object>(properties);
         properties2.put("tag", 4567);
 
         SavedRevision rev2 = rev1.createRevision(properties2);
@@ -119,10 +120,9 @@ public class ApiTest extends LiteTestCase {
                 assertTrue(revision.arePropertiesAvailable());
             }
         }
-
     }
 
-    public void testDocumentCache() throws Exception{
+    public void testDocumentCache() throws Exception {
 
         Database db = startDatabase();
         Document doc = db.createDocument();
@@ -144,16 +144,15 @@ public class ApiTest extends LiteTestCase {
 
         Document docRev2 = db.getExistingDocument(documentId);
         assertEquals("baz", docRev2.getProperty("foo"));
-
     }
 
-    public void testCreateRevisions() throws Exception{
-        Map<String,Object> properties = new HashMap<String,Object>();
+    public void testCreateRevisions() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testCreateRevisions");
         properties.put("tag", 1337);
 
         Database db = startDatabase();
-        Document doc=createDocumentWithProperties(db, properties);
+        Document doc = createDocumentWithProperties(db, properties);
         assertFalse(doc.isDeleted());
         SavedRevision rev1 = doc.getCurrentRevision();
         assertTrue(rev1.getId().startsWith("1-"));
@@ -161,13 +160,14 @@ public class ApiTest extends LiteTestCase {
         assertEquals(0, rev1.getAttachments().size());
 
         // Test -createRevisionWithProperties:
-        Map<String,Object> properties2 = new HashMap<String,Object>(properties);
+        Map<String, Object> properties2 = new HashMap<String, Object>(properties);
         properties2.put("tag", 4567);
 
         SavedRevision rev2 = rev1.createRevision(properties2);
         assertNotNull("Put failed", rev2);
 
-        assertTrue("Document revision ID is still " + doc.getCurrentRevisionId(), doc.getCurrentRevisionId().startsWith("2-"));
+        assertTrue("Document revision ID is still " + doc.getCurrentRevisionId(),
+                doc.getCurrentRevisionId().startsWith("2-"));
 
         assertEquals(rev2.getId(), doc.getCurrentRevisionId());
         assertNotNull(rev2.arePropertiesAvailable());
@@ -183,7 +183,7 @@ public class ApiTest extends LiteTestCase {
         assertEquals(newRev.getParentId(), rev2.getId());
         assertEquals(doc.getCurrentRevision(), rev2);
         assertFalse(doc.isDeleted());
-        List<SavedRevision> listRevs=new ArrayList<SavedRevision>();
+        List<SavedRevision> listRevs = new ArrayList<SavedRevision>();
         listRevs.add(rev1);
         listRevs.add(rev2);
 
@@ -191,32 +191,31 @@ public class ApiTest extends LiteTestCase {
         assertEquals(newRev.getProperties(), rev2.getProperties());
         assertEquals(newRev.getUserProperties(), rev2.getUserProperties());
 
-        Map<String,Object> userProperties=new HashMap<String, Object>();
+        Map<String, Object> userProperties = new HashMap<String, Object>();
         userProperties.put("because", "NoSQL");
 
         newRev.setUserProperties(userProperties);
         assertEquals(newRev.getUserProperties(), userProperties);
 
-        Map<String,Object> expectProperties=new HashMap<String, Object>();
+        Map<String, Object> expectProperties = new HashMap<String, Object>();
         expectProperties.put("because", "NoSQL");
         expectProperties.put("_id", doc.getId());
         expectProperties.put("_rev", rev2.getId());
 
-        assertEquals(newRev.getProperties(),expectProperties);
+        assertEquals(newRev.getProperties(), expectProperties);
         SavedRevision rev3 = newRev.save();
         assertNotNull(rev3);
         assertEquals(rev3.getUserProperties(), newRev.getUserProperties());
     }
 
-
-    public void testCreateNewRevisions() throws Exception{
-        Map<String,Object> properties = new HashMap<String,Object>();
+    public void testCreateNewRevisions() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testCreateRevisions");
         properties.put("tag", 1337);
 
         Database db = startDatabase();
-        Document doc=db.createDocument();
-        UnsavedRevision newRev =doc.createRevision();
+        Document doc = db.createDocument();
+        UnsavedRevision newRev = doc.createRevision();
 
         Document newRevDocument = newRev.getDocument();
         assertEquals(doc, newRevDocument);
@@ -224,7 +223,7 @@ public class ApiTest extends LiteTestCase {
         assertNull(newRev.getParentId());
         assertNull(newRev.getParent());
 
-        Map<String,Object> expectProperties=new HashMap<String, Object>();
+        Map<String, Object> expectProperties = new HashMap<String, Object>();
         expectProperties.put("_id", doc.getId());
         assertEquals(expectProperties, newRev.getProperties());
         assertTrue(!newRev.isDeletion());
@@ -235,7 +234,6 @@ public class ApiTest extends LiteTestCase {
         //newRev[@"tag"] = @1337;
         newRev.setUserProperties(properties);
         assertEquals(newRev.getUserProperties(), properties);
-
 
         SavedRevision rev1 = newRev.save();
         assertNotNull("Save 1 failed", rev1);
@@ -260,14 +258,15 @@ public class ApiTest extends LiteTestCase {
         properties.put("tag", 4567);
         newRev.setUserProperties(properties);
         SavedRevision rev2 = newRev.save();
-        assertNotNull( "Save 2 failed", rev2);
+        assertNotNull("Save 2 failed", rev2);
         assertEquals(doc.getCurrentRevision(), rev2);
         assertNotNull(rev2.getId().startsWith("2-"));
         assertEquals(2, rev2.getSequence());
         assertEquals(rev1.getId(), rev2.getParentId());
         assertEquals(rev1, rev2.getParent());
 
-        assertNotNull("Document revision ID is still " + doc.getCurrentRevisionId(), doc.getCurrentRevisionId().startsWith("2-"));
+        assertNotNull("Document revision ID is still " + doc.getCurrentRevisionId(),
+                doc.getCurrentRevisionId().startsWith("2-"));
 
         // Add a deletion/tombstone revision:
         newRev = doc.createRevision();
@@ -296,13 +295,12 @@ public class ApiTest extends LiteTestCase {
     //API_SaveMultipleUnsavedDocuments on IOS
     //API_DeleteMultipleDocuments commented on IOS
 
-
-    public void testDeleteDocument() throws Exception{
-        Map<String,Object> properties = new HashMap<String, Object>();
+    public void testDeleteDocument() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testDeleteDocument");
 
         Database db = startDatabase();
-        Document doc=createDocumentWithProperties(db, properties);
+        Document doc = createDocumentWithProperties(db, properties);
         assertTrue(!doc.isDeleted());
         assertTrue(!doc.getCurrentRevision().isDeletion());
         assertTrue(doc.delete());
@@ -310,27 +308,25 @@ public class ApiTest extends LiteTestCase {
         assertNull(doc.getCurrentRevision());
     }
 
-
-    public void testPurgeDocument() throws Exception{
-        Map<String,Object> properties = new HashMap<String, Object>();
+    public void testPurgeDocument() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testPurgeDocument");
 
         Database db = startDatabase();
-        Document doc=createDocumentWithProperties(db, properties);
+        Document doc = createDocumentWithProperties(db, properties);
         assertNotNull(doc);
         doc.purge();
 
         Document redoc = db.getCachedDocument(doc.getId());
         assertNull(redoc);
-
     }
 
-    public void testDeleteDocumentViaTombstoneRevision() throws Exception{
-        Map<String,Object> properties = new HashMap<String, Object>();
+    public void testDeleteDocumentViaTombstoneRevision() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testDeleteDocument");
 
         Database db = startDatabase();
-        Document doc=createDocumentWithProperties(db, properties);
+        Document doc = createDocumentWithProperties(db, properties);
         assertTrue(!doc.isDeleted());
         assertTrue(!doc.getCurrentRevision().isDeletion());
 
@@ -345,9 +341,7 @@ public class ApiTest extends LiteTestCase {
 
     }
 
-
-
-    public void testAllDocuments() throws Exception{
+    public void testAllDocuments() throws Exception {
         Database db = startDatabase();
         int kNDocs = 5;
         createDocuments(db, kNDocs);
@@ -363,12 +357,13 @@ public class ApiTest extends LiteTestCase {
         QueryEnumerator rows = query.run();
         assertEquals(rows.getCount(), kNDocs);
         int n = 0;
-        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+        for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
             QueryRow row = it.next();
             Log.i(TAG, "    --> " + row);
             Document doc = row.getDocument();
-            assertNotNull("Couldn't get doc from query", doc );
-            assertNotNull("QueryRow should have preloaded revision contents", doc.getCurrentRevision().arePropertiesAvailable());
+            assertNotNull("Couldn't get doc from query", doc);
+            assertNotNull("QueryRow should have preloaded revision contents",
+                    doc.getCurrentRevision().arePropertiesAvailable());
             Log.i(TAG, "        Properties =" + doc.getProperties());
             assertNotNull("Couldn't get doc properties", doc.getProperties());
             assertEquals(doc.getProperty("testName"), "testDatabase");
@@ -377,21 +372,20 @@ public class ApiTest extends LiteTestCase {
         assertEquals(n, kNDocs);
     }
 
-
-    public void testLocalDocs() throws Exception{
-        Map<String,Object> properties = new HashMap<String, Object>();
+    public void testLocalDocs() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "bar");
 
         Database db = startDatabase();
 
-        Map<String,Object> props = db.getExistingLocalDocument("dock");
+        Map<String, Object> props = db.getExistingLocalDocument("dock");
         assertNull(props);
         assertNotNull("Couldn't put new local doc", db.putLocalDocument("dock", properties));
         props = db.getExistingLocalDocument("dock");
         assertEquals(props.get("foo"), "bar");
 
 
-        Map<String,Object> newProperties = new HashMap<String, Object>();
+        Map<String, Object> newProperties = new HashMap<String, Object>();
         newProperties.put("FOOO", "BARRR");
 
         assertNotNull("Couldn't update local doc", db.putLocalDocument("dock", newProperties));
@@ -408,11 +402,10 @@ public class ApiTest extends LiteTestCase {
 
     }
 
-
     // HISTORY
 
-    public void testHistory() throws Exception{
-        Map<String,Object> properties = new HashMap<String, Object>();
+    public void testHistory() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "test06_History");
         properties.put("tag", 1);
 
@@ -420,7 +413,7 @@ public class ApiTest extends LiteTestCase {
 
         Document doc = createDocumentWithProperties(db, properties);
         String rev1ID = doc.getCurrentRevisionId();
-        Log.i(TAG, "1st revision: "+ rev1ID);
+        Log.i(TAG, "1st revision: " + rev1ID);
         assertNotNull("1st revision looks wrong: " + rev1ID, rev1ID.startsWith("1-"));
         assertEquals(doc.getUserProperties(), properties);
         properties = new HashMap<String, Object>();
@@ -438,7 +431,7 @@ public class ApiTest extends LiteTestCase {
 
         SavedRevision rev1 = revisions.get(0);
         assertEquals(rev1.getId(), rev1ID);
-        Map<String,Object> gotProperties = rev1.getProperties();
+        Map<String, Object> gotProperties = rev1.getProperties();
         assertEquals(1, gotProperties.get("tag"));
 
         SavedRevision rev2 = revisions.get(1);
@@ -447,16 +440,16 @@ public class ApiTest extends LiteTestCase {
         gotProperties = rev2.getProperties();
         assertEquals(2, gotProperties.get("tag"));
 
-        List<SavedRevision> tmp =  new ArrayList<SavedRevision>();
+        List<SavedRevision> tmp = new ArrayList<SavedRevision>();
         tmp.add(rev2);
         assertEquals(doc.getConflictingRevisions(), tmp);
         assertEquals(doc.getLeafRevisions(), tmp);
 
     }
 
-    public void testHistoryAfterDocDeletion() throws Exception{
+    public void testHistoryAfterDocDeletion() throws Exception {
 
-        Map<String,Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         String docId = "testHistoryAfterDocDeletion";
         properties.put("tag", 1);
 
@@ -466,13 +459,14 @@ public class ApiTest extends LiteTestCase {
         doc.putProperties(properties);
 
         String revID = doc.getCurrentRevisionId();
-        for(int i=2; i<6; i++){
+        for (int i = 2; i < 6; i++) {
             properties.put("tag", i);
-            properties.put("_rev", revID );
+            properties.put("_rev", revID);
             doc.putProperties(properties);
             revID = doc.getCurrentRevisionId();
             Log.i(TAG, i + " revision: " + revID);
-            assertTrue("revision is not correct:" + revID + ", should be with prefix " + i +"-", revID.startsWith(String.valueOf(i) +"-"));
+            assertTrue("revision is not correct:" + revID + ", should be with prefix " + i + "-",
+                    revID.startsWith(String.valueOf(i) + "-"));
             assertEquals("Doc Id is not correct ", docId, doc.getId());
         }
 
@@ -498,18 +492,17 @@ public class ApiTest extends LiteTestCase {
 
         // make sure the rev id is 7-
         assertTrue(docPostDelete.getCurrentRevisionId().startsWith("7-"));
-
     }
 
-    public void testConflict() throws Exception{
-        Map<String,Object> prop = new HashMap<String, Object>();
+    public void testConflict() throws Exception {
+        Map<String, Object> prop = new HashMap<String, Object>();
         prop.put("foo", "bar");
 
         Database db = startDatabase();
         Document doc = createDocumentWithProperties(db, prop);
         SavedRevision rev1 = doc.getCurrentRevision();
 
-        Map<String,Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.putAll(doc.getProperties());
         properties.put("tag", 2);
         SavedRevision rev2a = doc.putProperties(properties);
@@ -532,9 +525,11 @@ public class ApiTest extends LiteTestCase {
 
         SavedRevision defaultRev, otherRev;
         if (rev2a.getId().compareTo(rev2b.getId()) > 0) {
-            defaultRev = rev2a; otherRev = rev2b;
+            defaultRev = rev2a;
+            otherRev = rev2b;
         } else {
-            defaultRev = rev2b; otherRev = rev2a;
+            defaultRev = rev2b;
+            otherRev = rev2a;
         }
         assertEquals(doc.getCurrentRevision(), defaultRev);
 
@@ -567,7 +562,7 @@ public class ApiTest extends LiteTestCase {
         unsavedRev2.setProperties(properties);
         SavedRevision savedRev2 = unsavedRev2.save(true);
         assertNotNull(savedRev2);
-        
+
         assertEquals(savedRev1.getId(), savedRev2.getId());
 
         List<SavedRevision> conflicts = doc.getConflictingRevisions();
@@ -585,7 +580,7 @@ public class ApiTest extends LiteTestCase {
     public void testAttachments() throws Exception, IOException {
 
         String attachmentName = "index.html";
-        String content  = "This is a test attachment!";
+        String content = "This is a test attachment!";
 
         Document doc = createDocWithAttachment(database, attachmentName, content);
 
@@ -594,9 +589,7 @@ public class ApiTest extends LiteTestCase {
         SavedRevision rev4 = newRev.save();
         assertNotNull(rev4);
         assertEquals(0, rev4.getAttachmentNames().size());
-
     }
-
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/132
@@ -604,12 +597,12 @@ public class ApiTest extends LiteTestCase {
     public void testUpdateDocWithAttachments() throws Exception, IOException {
 
         String attachmentName = "index.html";
-        String content  = "This is a test attachment!";
+        String content = "This is a test attachment!";
 
         Document doc = createDocWithAttachment(database, attachmentName, content);
         SavedRevision latestRevision = doc.getCurrentRevision();
 
-        Map<String,Object> propertiesUpdated = new HashMap<String, Object>();
+        Map<String, Object> propertiesUpdated = new HashMap<String, Object>();
         propertiesUpdated.put("propertiesUpdated", "testUpdateDocWithAttachments");
         UnsavedRevision newUnsavedRevision = latestRevision.createRevision();
         newUnsavedRevision.setUserProperties(propertiesUpdated);
@@ -623,14 +616,11 @@ public class ApiTest extends LiteTestCase {
         is.close();
         assertEquals(content, new String(attachmentBytes));
         assertNotNull(fetched);
-
-
-
     }
 
     //CHANGE TRACKING
 
-    public void testChangeTracking() throws Exception{
+    public void testChangeTracking() throws Exception {
 
         final CountDownLatch doneSignal = new CountDownLatch(1);
 
@@ -643,18 +633,17 @@ public class ApiTest extends LiteTestCase {
         });
 
         createDocumentsAsync(db, 5);
-        // We expect that the changes reported by the server won't be notified, because those revisions
-        // are already cached in memory.
+        // We expect that the changes reported by the server won't be notified, because those
+        // revisions are already cached in memory.
         boolean success = doneSignal.await(300, TimeUnit.SECONDS);
         assertTrue(success);
         assertEquals(5, db.getLastSequenceNumber());
 
     }
 
-
     //VIEWS
 
-    public void testCreateView() throws Exception{
+    public void testCreateView() throws Exception {
         Database db = startDatabase();
         View view = db.getView("vu");
         assertNotNull(view);
@@ -684,46 +673,42 @@ public class ApiTest extends LiteTestCase {
         assertEquals(11, rows.getCount());
 
         int expectedKey = 23;
-        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+        for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
             QueryRow row = it.next();
             assertEquals(expectedKey, row.getKey());
-            assertEquals(expectedKey+1, row.getSequenceNumber());
+            assertEquals(expectedKey + 1, row.getSequenceNumber());
             ++expectedKey;
         }
     }
 
-
-
     //API_RunSlowView commented on IOS
 
-
-    public void testValidation() throws Exception{
+    public void testValidation() throws Exception {
         Database db = startDatabase();
         db.setValidation("uncool", new Validator() {
             @Override
             public void validate(Revision newRevision, ValidationContext context) {
                 {
-                    if (newRevision.getProperty("groovy") ==null) {
+                    if (newRevision.getProperty("groovy") == null) {
                         context.reject("uncool");
                     }
-
                 }
             }
         });
 
-        Map<String,Object> properties = new HashMap<String,Object>();
-        properties.put("groovy",  "right on");
-        properties.put( "foo", "bar");
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("groovy", "right on");
+        properties.put("foo", "bar");
 
         Document doc = db.createDocument();
         assertNotNull(doc.putProperties(properties));
 
-        properties = new HashMap<String,Object>();
-        properties.put( "foo", "bar");
+        properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
         doc = db.createDocument();
-        try{
+        try {
             assertNull(doc.putProperties(properties));
-        } catch (CouchbaseLiteException e){
+        } catch (CouchbaseLiteException e) {
             //TODO
             assertEquals(e.getCBLStatus().getCode(), Status.FORBIDDEN);
 //            assertEquals(e.getLocalizedMessage(), "forbidden: uncool"); //TODO: Not hooked up yet
@@ -732,18 +717,18 @@ public class ApiTest extends LiteTestCase {
     }
 
 
-    public void testViewWithLinkedDocs() throws Exception{
+    public void testViewWithLinkedDocs() throws Exception {
         Database db = startDatabase();
         int kNDocs = 50;
         Document[] docs = new Document[50];
 
         String lastDocID = "";
-        for (int i=0; i<kNDocs; i++) {
-            Map<String,Object> properties = new HashMap<String,Object>();
+        for (int i = 0; i < kNDocs; i++) {
+            Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("sequence", i);
             properties.put("prev", lastDocID);
             Document doc = createDocumentWithProperties(db, properties);
-            docs[i]=doc;
+            docs[i] = doc;
             lastDocID = doc.getId();
         }
 
@@ -766,7 +751,7 @@ public class ApiTest extends LiteTestCase {
         int rowNumber = 23;
 
 
-        for (Iterator<QueryRow> it = rows; it.hasNext();) {
+        for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
             QueryRow row = it.next();
             assertEquals(row.getKey(), rowNumber);
             Document prevDoc = docs[rowNumber];
@@ -847,11 +832,13 @@ public class ApiTest extends LiteTestCase {
         // if we add more docs to the database and pause (to give time for potential callbacks)
 
         int numTimesCallbackCalled = atomicInteger.get();
-        Log.d(Database.TAG, "testLiveQueryStop: numTimesCallbackCalled is: " + numTimesCallbackCalled + ".  Now adding docs");
+        Log.d(Database.TAG, "testLiveQueryStop: numTimesCallbackCalled is: " +
+                numTimesCallbackCalled + ".  Now adding docs");
 
         for (int i = 0; i < 10; i++) {
             createDocuments(db, 1);
-            Log.d(Database.TAG, "testLiveQueryStop: add a document.  atomicInteger.get(): " + atomicInteger.get());
+            Log.d(Database.TAG, "testLiveQueryStop: add a document.  atomicInteger.get(): " +
+                    atomicInteger.get());
             assertEquals(numTimesCallbackCalled, atomicInteger.get());
             Thread.sleep(200);
         }
@@ -867,7 +854,8 @@ public class ApiTest extends LiteTestCase {
     public void runLiveQuery(String methodNameToCall) throws Exception {
 
         final Database db = startDatabase();
-        final CountDownLatch doneSignal = new CountDownLatch(11);  // 11 corresponds to startKey=23; endKey=33
+        final CountDownLatch doneSignal = new CountDownLatch(11);
+        // 11 corresponds to startKey=23; endKey=33
 
         // run a live query
         View view = db.getView("vu");
@@ -884,7 +872,7 @@ public class ApiTest extends LiteTestCase {
 
         // these are the keys that we expect to see in the livequery change listener callback
         final Set<Integer> expectedKeys = new HashSet<Integer>();
-        for (int i=23; i<34; i++) {
+        for (int i = 23; i < 34; i++) {
             expectedKeys.add(i);
         }
 
@@ -933,7 +921,8 @@ public class ApiTest extends LiteTestCase {
         // Workaround for https://github.com/couchbase/couchbase-lite-android/issues/613
         try {
             Thread.sleep(2 * 1000);
-        }catch(Exception e){}
+        } catch (Exception e) {
+        }
     }
 
     public void testAsyncViewQuery() throws Exception {
@@ -986,7 +975,8 @@ public class ApiTest extends LiteTestCase {
      * running in the background server.
      */
     public void testSharedMapBlocks() throws Exception {
-        Manager mgr = new Manager(new LiteTestContext("API_SharedMapBlocks"), Manager.DEFAULT_OPTIONS);
+        Manager mgr = new Manager(new LiteTestContext("API_SharedMapBlocks"),
+                Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
         db.setFilter("phil", new ReplicationFilter() {
@@ -1005,7 +995,8 @@ public class ApiTest extends LiteTestCase {
         View view = db.getView("view");
         boolean ok = view.setMapReduce(new Mapper() {
                                            @Override
-                                           public void map(Map<String, Object> document, Emitter emitter) {
+                                           public void map(Map<String, Object> document,
+                                                           Emitter emitter) {
 
                                            }
                                        }, new Reducer() {
@@ -1038,11 +1029,9 @@ public class ApiTest extends LiteTestCase {
         result.get();  // blocks until async task has run
         db.close();
         mgr.close();
-
     }
 
-
-    public void testChangeUUID() throws Exception{
+    public void testChangeUUID() throws Exception {
         Manager mgr = new Manager(new LiteTestContext("ChangeUUID"), Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
@@ -1057,7 +1046,6 @@ public class ApiTest extends LiteTestCase {
         mgr.close();
     }
 
-
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/220
      */
@@ -1069,7 +1057,7 @@ public class ApiTest extends LiteTestCase {
 
         for (int j = 0; j < numberOfDocuments; j++) {
 
-            Map<String,Object> prop = new HashMap<String, Object>();
+            Map<String, Object> prop = new HashMap<String, Object>();
             prop.put("foo", "bar");
             prop.put("toogle", true);
             Document document = createDocumentWithProperties(database, prop);
@@ -1083,14 +1071,13 @@ public class ApiTest extends LiteTestCase {
 
             Document doc = docs[j];
 
-            for(int k=0; k < numberOfUpdates; k++)
-            {
+            for (int k = 0; k < numberOfUpdates; k++) {
                 Map<String, Object> contents = new HashMap(doc.getProperties());
 
                 Boolean wasChecked = (Boolean) contents.get("toogle");
 
                 //toggle value of check property
-                contents.put("toogle",!wasChecked);
+                contents.put("toogle", !wasChecked);
 
                 try {
                     doc.putProperties(contents);
@@ -1104,7 +1091,6 @@ public class ApiTest extends LiteTestCase {
 
         assertEquals(numberOfDocuments * numberOfUpdates, numDocsUpdated.get());
         assertEquals(0, numExceptions.get());
-
     }
 
     /**
@@ -1121,7 +1107,7 @@ public class ApiTest extends LiteTestCase {
             public boolean run() {
                 for (int j = 0; j < numberOfDocuments; j++) {
 
-                    Map<String,Object> prop = new HashMap<String, Object>();
+                    Map<String, Object> prop = new HashMap<String, Object>();
                     prop.put("foo", "bar");
                     prop.put("toogle", true);
                     Document document = createDocumentWithProperties(database, prop);
@@ -1142,8 +1128,7 @@ public class ApiTest extends LiteTestCase {
                     Document doc = docs[j];
                     SavedRevision lastSavedRevision = null;
 
-                    for(int k=0; k < numberOfUpdates; k++)
-                    {
+                    for (int k = 0; k < numberOfUpdates; k++) {
 
                         if (lastSavedRevision != null) {
                             assertEquals(lastSavedRevision.getId(), doc.getCurrentRevisionId());
@@ -1155,7 +1140,7 @@ public class ApiTest extends LiteTestCase {
                         Boolean wasChecked = (Boolean) contents.get("toogle");
 
                         //toggle value of check property
-                        contents.put("toogle",!wasChecked);
+                        contents.put("toogle", !wasChecked);
 
                         try {
                             lastSavedRevision = doc.putProperties(contents);
@@ -1173,7 +1158,5 @@ public class ApiTest extends LiteTestCase {
 
         assertEquals(numberOfDocuments * numberOfUpdates, numDocsUpdated.get());
         assertEquals(0, numExceptions.get());
-
     }
-
 }

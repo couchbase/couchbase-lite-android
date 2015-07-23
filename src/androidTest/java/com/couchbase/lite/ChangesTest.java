@@ -41,7 +41,8 @@ public class ChangesTest extends LiteTestCase {
     public void testLocalChangesAreNotExternal() throws CouchbaseLiteException {
         changeNotifications = 0;
         Database.ChangeListener changeListener = new Database.ChangeListener() {
-            @Override public void changed(Database.ChangeEvent event) {
+            @Override
+            public void changed(Database.ChangeEvent event) {
                 changeNotifications++;
                 assertFalse(event.isExternal());
             }
@@ -59,7 +60,8 @@ public class ChangesTest extends LiteTestCase {
     public void testPulledChangesAreExternal() throws CouchbaseLiteException {
         changeNotifications = 0;
         Database.ChangeListener changeListener = new Database.ChangeListener() {
-            @Override public void changed(Database.ChangeEvent event) {
+            @Override
+            public void changed(Database.ChangeEvent event) {
                 changeNotifications++;
                 assertTrue(event.isExternal());
             }
@@ -69,13 +71,12 @@ public class ChangesTest extends LiteTestCase {
         // Insert a document as if it came from a remote source.
         RevisionInternal rev = new RevisionInternal("docId", "1-rev", false);
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("_id", rev.getDocId());
-        properties.put("_rev", rev.getRevId());
+        properties.put("_id", rev.getDocID());
+        properties.put("_rev", rev.getRevID());
         rev.setProperties(properties);
-        database.forceInsert(rev, Arrays.asList(rev.getRevId()), getReplicationURL());
+        database.forceInsert(rev, Arrays.asList(rev.getRevID()), getReplicationURL());
 
         // Make sure that the assertion in changeListener was called.
         assertEquals(1, changeNotifications);
     }
-
 }

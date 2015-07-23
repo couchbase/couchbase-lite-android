@@ -27,15 +27,15 @@ public class LocalDocsTest extends LiteTestCase {
         rev1 = database.putLocalRevision(rev1, null);
 
         Log.v(TAG, "Created " + rev1);
-        assertEquals("_local/doc1", rev1.getDocId());
-        assertTrue(rev1.getRevId().startsWith("1-"));
+        assertEquals("_local/doc1", rev1.getDocID());
+        assertTrue(rev1.getRevID().startsWith("1-"));
 
         //read it back
-        RevisionInternal readRev = database.getLocalDocument(rev1.getDocId(), null);
+        RevisionInternal readRev = database.getLocalDocument(rev1.getDocID(), null);
         assertNotNull(readRev);
-        Map<String,Object> readRevProps = readRev.getProperties();
-        assertEquals(rev1.getDocId(), readRev.getProperties().get("_id"));
-        assertEquals(rev1.getRevId(), readRev.getProperties().get("_rev"));
+        Map<String, Object> readRevProps = readRev.getProperties();
+        assertEquals(rev1.getDocID(), readRev.getProperties().get("_id"));
+        assertEquals(rev1.getRevID(), readRev.getProperties().get("_rev"));
         assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
 
         //now update it
@@ -44,20 +44,20 @@ public class LocalDocsTest extends LiteTestCase {
         body = new Body(documentProperties);
         RevisionInternal rev2 = new RevisionInternal(body);
         RevisionInternal rev2input = rev2;
-        rev2 = database.putLocalRevision(rev2, rev1.getRevId());
+        rev2 = database.putLocalRevision(rev2, rev1.getRevID());
         Log.v(TAG, "Updated " + rev1);
-        assertEquals(rev1.getDocId(), rev2.getDocId());
-        assertTrue(rev2.getRevId().startsWith("2-"));
+        assertEquals(rev1.getDocID(), rev2.getDocID());
+        assertTrue(rev2.getRevID().startsWith("2-"));
 
         //read it back
-        readRev = database.getLocalDocument(rev2.getDocId(), null);
+        readRev = database.getLocalDocument(rev2.getDocID(), null);
         assertNotNull(readRev);
         assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
         // Try to update the first rev, which should fail:
         boolean gotException = false;
         try {
-            database.putLocalRevision(rev2input, rev1.getRevId());
+            database.putLocalRevision(rev2input, rev1.getRevID());
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CONFLICT, e.getCBLStatus().getCode());
             gotException = true;
@@ -66,7 +66,7 @@ public class LocalDocsTest extends LiteTestCase {
 
 
         // Delete it:
-        RevisionInternal revD = new RevisionInternal(rev2.getDocId(), null, true);
+        RevisionInternal revD = new RevisionInternal(rev2.getDocID(), null, true);
 
         gotException = false;
         try {
@@ -78,7 +78,7 @@ public class LocalDocsTest extends LiteTestCase {
         }
         assertTrue(gotException);
 
-        revD = database.putLocalRevision(revD, rev2.getRevId());
+        revD = database.putLocalRevision(revD, rev2.getRevID());
 
         // Delete nonexistent doc:
         gotException = false;
@@ -91,10 +91,8 @@ public class LocalDocsTest extends LiteTestCase {
         }
         assertTrue(gotException);
 
-
         // Read it back (should fail):
-        readRev = database.getLocalDocument(revD.getDocId(), null);
+        readRev = database.getLocalDocument(revD.getDocID(), null);
         assertNull(readRev);
     }
-
 }

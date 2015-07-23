@@ -33,18 +33,17 @@ public class LitePerfTestCase extends LiteTestCase {
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp in LitePerfTestCase");
         super.setUp();
-        Log.enableLogging("PerformanceStats",Log.VERBOSE);
+        Log.enableLogging("PerformanceStats", Log.VERBOSE);
         loadCustomProperties();
         loadConfigs();
         runMultiple();
     }
 
-    public double runOne(int numberOfDocuments, int sizeOfDocuments)  throws Exception {
+    public double runOne(int numberOfDocuments, int sizeOfDocuments) throws Exception {
         return 0;
-    };
+    }
 
     public void loadConfigs() {
-        JSONObject json;
         try {
             InputStream is = getAsset("config.json");
             perfConfig = new JSONObject(IOUtils.toString(is, "UTF-8"));
@@ -55,12 +54,10 @@ public class LitePerfTestCase extends LiteTestCase {
         } catch (UnsupportedEncodingException ex) {
             ex.printStackTrace();
             return;
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             ex.printStackTrace();
             return;
-        }
-        catch (JSONException ex) {
+        } catch (JSONException ex) {
             ex.printStackTrace();
             return;
         }
@@ -137,22 +134,22 @@ public class LitePerfTestCase extends LiteTestCase {
                 }
                 arrayBaselines.add(oneRow);
             }
-            repeatCount  =  testConfig.getInt(new String("repeat_count"));
-            SumKpiBaseline  =  testConfig.getDouble(new String("sum_kpi_baseline"));
-        }
-        catch (JSONException ex) {
+            repeatCount = testConfig.getInt(new String("repeat_count"));
+            SumKpiBaseline = testConfig.getDouble(new String("sum_kpi_baseline"));
+        } catch (JSONException ex) {
             ex.printStackTrace();
             return;
         }
         boolean kpiIsTotal = false;
         try {
-            kpiIsTotal  =  testConfig.getBoolean(new String("kpi_is_total"));
+            kpiIsTotal = testConfig.getBoolean(new String("kpi_is_total"));
         } catch (JSONException ex) {
             // It is ok if "kpi_is_total" is not specified
         }
 
-        Log.v("PerformanceStats",TAG+","+"------------- "+className+" - Count of params: " + arrayNumberOfDocuments.size() + " NumberOfDocuments, " +
-                arraySizeofDocuments.size() + " SizeOfDocuments " );
+        Log.v("PerformanceStats", TAG + "," + "------------- " + className +
+                " - Count of params: " + arrayNumberOfDocuments.size() + " NumberOfDocuments, " +
+                arraySizeofDocuments.size() + " SizeOfDocuments ");
 
         ArrayList<ArrayList> resultNumberOfDocuments = new ArrayList<ArrayList>();
         ArrayList<ArrayList> diffBaselinesNumberofDocuments = new ArrayList<ArrayList>();
@@ -177,8 +174,8 @@ public class LitePerfTestCase extends LiteTestCase {
                 if (kpiTotalTime < 0) {
                     resultSizeOfDocuments.add(-1.0);
                     diffBaselinesSizeofDocument.add(-1.0);
-                    Log.v("PerformanceStats", "#"+testCount+": skpi" +
-                            ". (docs="+kNumberOfDocuments+",size="+kSizeOfDocuments+"B) ");
+                    Log.v("PerformanceStats", "#" + testCount + ": skpi" +
+                            ". (docs=" + kNumberOfDocuments + ",size=" + kSizeOfDocuments + "B) ");
                     continue;
                 }
 
@@ -186,13 +183,14 @@ public class LitePerfTestCase extends LiteTestCase {
                 double sum = 0, min = 999999, max = 0, avg = 0;
                 for (int repeat = 0; repeat < repeatCount; repeat++) {
                     try {
-                        //Force close and reopen of manager and database to ensure cold start before the iteration
+                        //Force close and reopen of manager and database to ensure cold start
+                        // before the iteration
                         tearDown();
                         Thread.sleep(1000);
                         startCBLite();
                         startDatabase();
                         //manager = new Manager(new LiteTestContext(), Manager.DEFAULT_OPTIONS);
-                        //database = manager.getDatabase(DEFAULT_TEST_DB);
+                        //database = manager.getStorageEngine(DEFAULT_TEST_DB);
                         //Run test
                         double ExecutionTime = runOne(kNumberOfDocuments, kSizeOfDocuments);
                         arrayResults.add(ExecutionTime);
@@ -203,11 +201,11 @@ public class LitePerfTestCase extends LiteTestCase {
                         Log.v("PerformanceStats", "Got CouchbaseLiteException. " + ex);
                         ex.printStackTrace();
                         fail();
-                    } catch(InterruptedException ex) {
+                    } catch (InterruptedException ex) {
                         Log.v("PerformanceStats", "Got InterruptedException. " + ex);
                         ex.printStackTrace();
                         fail();
-                    } catch(Exception ex) {
+                    } catch (Exception ex) {
                         Log.v("PerformanceStats", "Got Exception. " + ex);
                         ex.printStackTrace();
                         fail();
@@ -221,60 +219,60 @@ public class LitePerfTestCase extends LiteTestCase {
                     result = min / kNumberOfDocuments;
                 sumKpi = sumKpi + result;
                 resultSizeOfDocuments.add(result);
-                double diffBaseline = (result - kBaseline)/kBaseline*100;
+                double diffBaseline = (result - kBaseline) / kBaseline * 100;
                 diffBaselinesSizeofDocument.add(diffBaseline);
 
                 String passFail;
-                if (result > kpiTotalTime || diffBaseline > 20 ) {
+                if (result > kpiTotalTime || diffBaseline > 20) {
                     passFail = new String("Fail");
                     failCount++;
                 } else
                     passFail = new String("Pass");
-                Log.v("PerformanceStats", "#"+testCount+": "+passFail+
-                      ". (docs="+kNumberOfDocuments+",size="+kSizeOfDocuments+"B) "+
-                      "avg "+String.format("%.2f",avg)+", max "+String.format("%.2f",max)+", min "+String.format("%.2f",min) +
-                      ", result "+String.format("%.2f",result)+"\nkpi "+String.format("%.2f",kpiTotalTime)+
-                      ", baseline "+String.format("%.2f",kBaseline)+", "+"diffBaseline "+String.format("%.2f",diffBaseline)+
-                        "％, RepeatExecutionTime:"+arrayResults.toString());
+                Log.v("PerformanceStats", "#" + testCount + ": " + passFail +
+                        ". (docs=" + kNumberOfDocuments + ",size=" + kSizeOfDocuments + "B) " +
+                        "avg " + String.format("%.2f", avg) + ", max " + String.format("%.2f", max) + ", min " + String.format("%.2f", min) +
+                        ", result " + String.format("%.2f", result) + "\nkpi " + String.format("%.2f", kpiTotalTime) +
+                        ", baseline " + String.format("%.2f", kBaseline) + ", " + "diffBaseline " + String.format("%.2f", diffBaseline) +
+                        "％, RepeatExecutionTime:" + arrayResults.toString());
             }
             resultNumberOfDocuments.add(resultSizeOfDocuments);
             diffBaselinesNumberofDocuments.add(diffBaselinesSizeofDocument);
         }
         // This is the number for easier comparison between test runs to see whether there are over 10% variation.  The number does not have meaning of its own because it is the sum of all test iterations
-        double diffPercent = (sumKpi - SumKpiBaseline)/SumKpiBaseline*100;
+        double diffPercent = (sumKpi - SumKpiBaseline) / SumKpiBaseline * 100;
         String summaryPassFail = (failCount == 0) ? "PASS" : "FAIL";
         String baselineComparePassFail = (diffPercent > 10) ? "FAIL" : "PASS";
 
-        Log.v("PerformanceStats", TAG + "," + className + ": "+summaryPassFail+". "+testCount+" sub-tests ran. "+failCount+" sub-tests fail");
-        Log.v("PerformanceStats", TAG + "," + "Baseline compare "+baselineComparePassFail+". sumKpi:"+String.format("%.2f",sumKpi)+
-                " baseline:"+String.format("%.2f",SumKpiBaseline)+" difference:"+String.format("%.2f",diffPercent)+"%");
+        Log.v("PerformanceStats", TAG + "," + className + ": " + summaryPassFail + ". " + testCount + " sub-tests ran. " + failCount + " sub-tests fail");
+        Log.v("PerformanceStats", TAG + "," + "Baseline compare " + baselineComparePassFail + ". sumKpi:" + String.format("%.2f", sumKpi) +
+                " baseline:" + String.format("%.2f", SumKpiBaseline) + " difference:" + String.format("%.2f", diffPercent) + "%");
 
         StringBuffer columHeader = new StringBuffer(" # docs; ");
-        for (int arrayNumbers = 0; arrayNumbers < arraySizeofDocuments.size();  arrayNumbers++) {
+        for (int arrayNumbers = 0; arrayNumbers < arraySizeofDocuments.size(); arrayNumbers++) {
             columHeader.append(arraySizeofDocuments.get(arrayNumbers) + "B, ");
         }
         Log.v("PerformanceStats", TAG + "," + columHeader);
 
         for (int i = 0; i < arrayNumberOfDocuments.size(); i++) {
-            ArrayList<Double> row  = resultNumberOfDocuments.get(i);
+            ArrayList<Double> row = resultNumberOfDocuments.get(i);
             StringBuffer str = new StringBuffer();
             str.append(arrayNumberOfDocuments.get(i)).append("; ");
             for (int j = 0; j < row.size(); j++) {
-                str.append(String.format("%.2f",row.get(j))).append("; ");
+                str.append(String.format("%.2f", row.get(j))).append("; ");
             }
             Log.v("PerformanceStats", TAG + "," + str + ";");
         }
         Log.v("PerformanceStats", TAG + "," + "--- Percentage of deviation from baselines");
         Log.v("PerformanceStats", TAG + "," + columHeader);
         for (int i = 0; i < arrayNumberOfDocuments.size(); i++) {
-            ArrayList<Double> row  = diffBaselinesNumberofDocuments.get(i);
+            ArrayList<Double> row = diffBaselinesNumberofDocuments.get(i);
             StringBuffer str = new StringBuffer();
             str.append(arrayNumberOfDocuments.get(i)).append("; ");
             for (int j = 0; j < row.size(); j++) {
                 if (row.get(j) == 1.0)
                     str.append("SKIP; ");
                 else
-                    str.append(String.format("%.2f",row.get(j))).append("%; ");
+                    str.append(String.format("%.2f", row.get(j))).append("%; ");
 
             }
             Log.v("PerformanceStats", TAG + "," + str + ";");
@@ -285,7 +283,8 @@ public class LitePerfTestCase extends LiteTestCase {
         return (remote.getPort() == 4984 || remote.getPort() == 4984);
     }
 
-    public void addDocWithId(String docId, Map<String, Object> props, String attachmentName, boolean gzipped) throws IOException, CouchbaseLiteException {
+    public void addDocWithId(String docId, Map<String, Object> props, String attachmentName, boolean gzipped)
+            throws IOException, CouchbaseLiteException {
         final String docJson;
 
         if (attachmentName == null) {
@@ -323,5 +322,4 @@ public class LitePerfTestCase extends LiteTestCase {
             }
         }
     }
-
 }

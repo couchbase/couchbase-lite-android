@@ -4,12 +4,12 @@ import com.couchbase.lite.BlobKey;
 import com.couchbase.lite.BlobStore;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.support.Base64;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-
-import org.apache.commons.io.IOUtils;
 import com.couchbase.org.apache.http.entity.mime.MultipartEntity;
 import com.couchbase.org.apache.http.entity.mime.content.InputStreamBody;
 import com.couchbase.org.apache.http.entity.mime.content.StringBody;
+import com.squareup.okhttp.mockwebserver.MockResponse;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,9 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /*
-
     Generate mock document GET response, eg
 
     {
@@ -41,7 +39,6 @@ import java.util.Map;
 
     Limitations: it cannot represent docs with revision histories longer
     than one rev.
-
  */
 public class MockDocumentGet {
 
@@ -220,9 +217,8 @@ public class MockDocumentGet {
 
             MultipartEntity multiPart = new MultipartEntity();
             String partNameIgnored = "part";  // this never seems to appear anywhere in response
-            multiPart.addPart(partNameIgnored, new StringBody(generateDocumentBody(), "application/json", Charset.forName("UTF-8")));
-
-
+            multiPart.addPart(partNameIgnored, new StringBody(generateDocumentBody(),
+                    "application/json", Charset.forName("UTF-8")));
 
             for (String attachmentName : attachmentFileNames) {
 
@@ -231,13 +227,16 @@ public class MockDocumentGet {
                 int contentLength = attachmentBytes.length;
 
                 if (this.isIncludeAttachmentPart()) {
-                    multiPart.addPart(attachmentName, new InputStreamBody(new ByteArrayInputStream(attachmentBytes), "image/png", attachmentName, contentLength));
+                    multiPart.addPart(attachmentName, new InputStreamBody(
+                            new ByteArrayInputStream(attachmentBytes),
+                            "image/png", attachmentName, contentLength));
                 }
 
                 baos = new ByteArrayOutputStream();
                 multiPart.writeTo(baos);
 
-                mockResponse.setHeader(multiPart.getContentType().getName(), multiPart.getContentType().getValue());
+                mockResponse.setHeader(multiPart.getContentType().getName(),
+                        multiPart.getContentType().getValue());
 
                 byte[] body = baos.toByteArray();
                 mockResponse.setBody(body);
@@ -245,11 +244,7 @@ public class MockDocumentGet {
                 String bodyString = new String(body);
 
                 baos.close();
-
             }
-
-
-
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -274,7 +269,6 @@ public class MockDocumentGet {
             throw new RuntimeException(e);
         }
     }
-
 
     public boolean isIncludeAttachmentPart() {
         return includeAttachmentPart;
@@ -406,6 +400,4 @@ public class MockDocumentGet {
             this.docSeq = docSeq;
         }
     }
-
-
 }

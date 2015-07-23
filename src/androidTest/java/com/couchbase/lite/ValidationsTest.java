@@ -7,37 +7,37 @@ import com.couchbase.lite.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class ValidationsTest extends LiteTestCase {
 
     public static final String TAG = "Validations";
 
     boolean validationCalled = false;
 
+    /**
+     * in DatabaseInternal_Tests.m
+     * - (void) test05_Validation
+     */
     public void testValidations() throws CouchbaseLiteException {
-
         Validator validator = new Validator() {
-
             @Override
             public void validate(Revision newRevision, ValidationContext context) {
-
                 assertNotNull(newRevision);
                 assertNotNull(context);
                 assertTrue(newRevision.getProperties() != null || newRevision.isDeletion());
                 validationCalled = true;
-                boolean hoopy = newRevision.isDeletion()  || (newRevision.getProperties().get("towel") != null);
-                Log.v(TAG, String.format("--- Validating %s --> %b", newRevision.getProperties(), hoopy));
-                if(!hoopy) {
+                boolean hoopy = newRevision.isDeletion() ||
+                        (newRevision.getProperties().get("towel") != null);
+                Log.v(TAG, "--- Validating %s --> %b", newRevision.getProperties(), hoopy);
+                if (!hoopy) {
                     context.reject("Where's your towel?");
                 }
             }
         };
-
         database.setValidation("hoopy", validator);
 
         // POST a valid new document:
-        Map<String, Object> props = new HashMap<String,Object>();
-        props.put("name","Zaphod Beeblebrox");
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("name", "Zaphod Beeblebrox");
         props.put("towel", "velvet");
         RevisionInternal rev = new RevisionInternal(props);
         Status status = new Status();
@@ -50,7 +50,7 @@ public class ValidationsTest extends LiteTestCase {
         props.put("head_count", 3);
         rev.setProperties(props);
         validationCalled = false;
-        rev = database.putRevision(rev, rev.getRevId(), false, status);
+        rev = database.putRevision(rev, rev.getRevID(), false, status);
         assertTrue(validationCalled);
         assertEquals(Status.CREATED, status.getCode());
 
@@ -60,7 +60,7 @@ public class ValidationsTest extends LiteTestCase {
         validationCalled = false;
         boolean gotExpectedError = false;
         try {
-            rev = database.putRevision(rev, rev.getRevId(), false, status);
+            database.putRevision(rev, rev.getRevID(), false, status);
         } catch (CouchbaseLiteException e) {
             gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
@@ -68,14 +68,14 @@ public class ValidationsTest extends LiteTestCase {
         assertTrue(gotExpectedError);
 
         // POST an invalid new document:
-        props = new HashMap<String,Object>();
-        props.put("name","Vogon");
+        props = new HashMap<String, Object>();
+        props.put("name", "Vogon");
         props.put("poetry", true);
         rev = new RevisionInternal(props);
         validationCalled = false;
         gotExpectedError = false;
         try {
-            rev = database.putRevision(rev, null, false, status);
+            database.putRevision(rev, null, false, status);
         } catch (CouchbaseLiteException e) {
             gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
@@ -83,37 +83,36 @@ public class ValidationsTest extends LiteTestCase {
         assertTrue(gotExpectedError);
 
         // PUT a valid new document with an ID:
-        props = new HashMap<String,Object>();
+        props = new HashMap<String, Object>();
         props.put("_id", "ford");
-        props.put("name","Ford Prefect");
+        props.put("name", "Ford Prefect");
         props.put("towel", "terrycloth");
         rev = new RevisionInternal(props);
         validationCalled = false;
         rev = database.putRevision(rev, null, false, status);
         assertTrue(validationCalled);
-        assertEquals("ford", rev.getDocId());
+        assertEquals("ford", rev.getDocID());
 
         // DELETE a document:
-        rev = new RevisionInternal(rev.getDocId(), rev.getRevId(), true);
+        rev = new RevisionInternal(rev.getDocID(), rev.getRevID(), true);
         assertTrue(rev.isDeleted());
         validationCalled = false;
-        rev = database.putRevision(rev, rev.getRevId(), false, status);
+        rev = database.putRevision(rev, rev.getRevID(), false, status);
         assertTrue(validationCalled);
 
         // PUT an invalid new document:
-        props = new HashMap<String,Object>();
+        props = new HashMap<String, Object>();
         props.put("_id", "petunias");
-        props.put("name","Pot of Petunias");
+        props.put("name", "Pot of Petunias");
         rev = new RevisionInternal(props);
         validationCalled = false;
         gotExpectedError = false;
         try {
-            rev = database.putRevision(rev, null, false, status);
+            database.putRevision(rev, null, false, status);
         } catch (CouchbaseLiteException e) {
             gotExpectedError = (e.getCBLStatus().getCode() == Status.FORBIDDEN);
         }
         assertTrue(validationCalled);
         assertTrue(gotExpectedError);
     }
-
 }

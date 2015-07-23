@@ -80,8 +80,8 @@ public class MockHelper {
     public static Map<String, Object> generateRandomJsonMap() {
 
         Map<String, Object> randomJsonMap = new HashMap<String, Object>();
-        randomJsonMap.put(Misc.TDCreateUUID(), false);
-        randomJsonMap.put("uuid", Misc.TDCreateUUID());
+        randomJsonMap.put(Misc.CreateUUID(), false);
+        randomJsonMap.put("uuid", Misc.CreateUUID());
         return randomJsonMap;
     }
 
@@ -156,7 +156,7 @@ public class MockHelper {
         for (int i=0; i<numDocs; i++) {
 
             String docId = String.format("doc%s", i);
-            String revIdHash = Misc.TDCreateUUID().substring(0, 3);
+            String revIdHash = Misc.CreateUUID().substring(0, 3);
             String revId = String.format("1-%s", revIdHash);
             int seq = i;
 

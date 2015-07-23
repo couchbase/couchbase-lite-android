@@ -9,7 +9,6 @@ import junit.framework.Assert;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +27,6 @@ public class DocumentTest extends LiteTestCase {
         document.putProperties(properties);
         Assert.assertNotNull(document.getCurrentRevisionId());
         Assert.assertNotNull(document.getCurrentRevision());
-
     }
 
     /**
@@ -44,7 +42,7 @@ public class DocumentTest extends LiteTestCase {
         Assert.assertNotNull(document.getCurrentRevision());
         String docId = document.getId();
 
-        properties.put("_rev",document.getCurrentRevisionId());
+        properties.put("_rev", document.getCurrentRevisionId());
         properties.put("_deleted", true);
         properties.put("mykey", "myval");
         SavedRevision newRev = document.putProperties(properties);
@@ -59,7 +57,7 @@ public class DocumentTest extends LiteTestCase {
         database.getAllDocs(new QueryOptions());
         Query queryAllDocs = database.createAllDocumentsQuery();
         QueryEnumerator queryEnumerator = queryAllDocs.run();
-        for (Iterator<QueryRow> it = queryEnumerator; it.hasNext();) {
+        for (Iterator<QueryRow> it = queryEnumerator; it.hasNext(); ) {
             QueryRow row = it.next();
             Assert.assertFalse(row.getDocument().getId().equals(docId));
         }
@@ -84,7 +82,7 @@ public class DocumentTest extends LiteTestCase {
         database.getAllDocs(new QueryOptions());
         Query queryAllDocs = database.createAllDocumentsQuery();
         QueryEnumerator queryEnumerator = queryAllDocs.run();
-        for (Iterator<QueryRow> it = queryEnumerator; it.hasNext();) {
+        for (Iterator<QueryRow> it = queryEnumerator; it.hasNext(); ) {
             QueryRow row = it.next();
             Assert.assertFalse(row.getDocument().getId().equals(docId));
         }
@@ -119,24 +117,20 @@ public class DocumentTest extends LiteTestCase {
                 document.getCurrentRevisionId(),
                 deleted
         );
-        EnumSet<Database.TDContentOptions> contentOptions = EnumSet.of(
-                Database.TDContentOptions.TDIncludeAttachments,
-                Database.TDContentOptions.TDBigAttachmentsFollow
-        );
-        database.loadRevisionBody(revisionInternal, contentOptions);
+        database.loadRevisionBody(revisionInternal);
 
         // now lets purge the document, and then try to load the revision body again
         document.purge();
 
         boolean gotExpectedException = false;
+        RevisionInternal copyRev = revisionInternal.copyWithoutBody();
         try {
-            database.loadRevisionBody(revisionInternal, contentOptions);
+            database.loadRevisionBody(copyRev);
         } catch (CouchbaseLiteException e) {
             if (e.getCBLStatus().getCode() == Status.NOT_FOUND) {
                 gotExpectedException = true;
             }
         }
-
         assertTrue(gotExpectedException);
     }
 
@@ -157,7 +151,6 @@ public class DocumentTest extends LiteTestCase {
         Map<String, Object> fetchedProps = docFetched.getCurrentRevision().getProperties();
         assertNotNull(fetchedProps.get("_removed"));
         assertTrue(docFetched.getCurrentRevision().isGone());
-
     }
 
     public void failingTestGetDocumentWithLargeJSON() {
@@ -174,7 +167,6 @@ public class DocumentTest extends LiteTestCase {
         Document docFetched = database.getDocument(doc.getId());
         Map<String, Object> fetchedProps = docFetched.getCurrentRevision().getProperties();
         assertEquals(fetchedProps.get("foo"), new String(chars));
-
     }
 
     public void failingTestDocumentPropertiesAreImmutable() throws Exception {
@@ -255,6 +247,7 @@ public class DocumentTest extends LiteTestCase {
 
     /**
      * Assert that if you add a
+     *
      * @throws Exception
      */
     public void testNonPrimitiveTypesInDocument() throws Exception {
@@ -295,7 +288,7 @@ public class DocumentTest extends LiteTestCase {
 
     }
 
-    public void testGetPropertiesFromDocNotYetSaved(){
+    public void testGetPropertiesFromDocNotYetSaved() {
         Document doc = database.createDocument();
         Map<String, Object> properties = doc.getProperties();
         assertNull(properties);
@@ -450,10 +443,11 @@ public class DocumentTest extends LiteTestCase {
     /**
      * Nonsensical CouchbaseLiteException (Conflict) exception thrown on UnsavedRevision.save() #479
      * https://github.com/couchbase/couchbase-lite-java-core/issues/479
-     *
+     * <p/>
      * Note: this test fails with 1.0.4 or earlier. This test takes time, as default, test is disabled.
      */
-    public void disabledTestNonsensicalConflictExceptionOnUnsavedRevision() throws CouchbaseLiteException {
+    public void disabledTestNonsensicalConflictExceptionOnUnsavedRevision()
+            throws CouchbaseLiteException {
 
         View testNonsensicalConflict = database.getView("testNonsensicalConflict");
         testNonsensicalConflict.setMap(new Mapper() {
@@ -478,19 +472,19 @@ public class DocumentTest extends LiteTestCase {
         liveQuery.run();
 
         // try 100 times to reproduce the issue
-        for(int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             Document document = database.createDocument();
             String documentID = document.getId();
 
             document.putProperties(Collections.<String, Object>singletonMap("test", "1"));
             document = document.getCurrentRevision().getDocument();
             assertEquals(documentID, document.getProperty("_id"));
-            assertTrue(((String)document.getProperty("_rev")).startsWith("1-"));
+            assertTrue(((String) document.getProperty("_rev")).startsWith("1-"));
 
             SavedRevision savedRevision = document.getCurrentRevision();
             savedRevision.createRevision(Collections.<String, Object>singletonMap("test", "2"));
             assertEquals(documentID, document.getProperty("_id"));
-            assertTrue(((String)document.getProperty("_rev")).startsWith("2-"));
+            assertTrue(((String) document.getProperty("_rev")).startsWith("2-"));
 
             document = document.getCurrentRevision().getDocument();
 
@@ -498,7 +492,7 @@ public class DocumentTest extends LiteTestCase {
             unsavedRevision.setProperties(Collections.<String, Object>singletonMap("test", "3"));
             unsavedRevision.save(); //Nonsensical conflict thrown here
             assertEquals(documentID, document.getProperty("_id"));
-            assertTrue(((String)document.getProperty("_rev")).startsWith("3-"));
+            assertTrue(((String) document.getProperty("_rev")).startsWith("3-"));
 
             document = document.getCurrentRevision().getDocument();
 
@@ -506,7 +500,7 @@ public class DocumentTest extends LiteTestCase {
             unsavedRevision.setProperties(Collections.<String, Object>singletonMap("test", "4"));
             unsavedRevision.save(); //Or here
             assertEquals(documentID, document.getProperty("_id"));
-            assertTrue(((String)document.getProperty("_rev")).startsWith("4-"));
+            assertTrue(((String) document.getProperty("_rev")).startsWith("4-"));
         }
     }
 
@@ -531,7 +525,8 @@ public class DocumentTest extends LiteTestCase {
 
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/563
-     * Updating a document in a transaction block twice using Document.DocumentUpdater results in an infinite loop
+     * Updating a document in a transaction block twice using Document.DocumentUpdater results in
+     * an infinite loop
      * <p/>
      * NOTE: Use Document.update()
      */
@@ -580,7 +575,8 @@ public class DocumentTest extends LiteTestCase {
     }
 
     /**
-     * NOTE: This is variation of testMultipleUpdatesInTransactionWithUpdate() test with using Document.putProperties()
+     * NOTE: This is variation of testMultipleUpdatesInTransactionWithUpdate() test
+     * with using Document.putProperties()
      */
     public void testMultipleUpdatesInTransactionWithPutProperties() throws CouchbaseLiteException {
         Log.e(TAG, "testMultipleUpdatesInTransactionWithPutProperties() START");
@@ -619,7 +615,10 @@ public class DocumentTest extends LiteTestCase {
         Log.e(TAG, "testMultipleUpdatesInTransactionWithPutProperties() END");
     }
 
-    public static SavedRevision createRevisionWithProps(SavedRevision createRevFrom, Map<String, Object> properties, boolean allowConflict) throws Exception {
+    public static SavedRevision createRevisionWithProps(SavedRevision createRevFrom,
+                                                        Map<String, Object> properties,
+                                                        boolean allowConflict)
+            throws Exception {
         UnsavedRevision unsavedRevision = createRevFrom.createRevision();
         unsavedRevision.setUserProperties(properties);
         return unsavedRevision.save(allowConflict);
@@ -653,7 +652,8 @@ public class DocumentTest extends LiteTestCase {
                         // Come up with a merged/resolved document in some way that's
                         // appropriate for the app. You could even just pick the body of
                         // one of the revisions.
-                        Map<String, Object> mergedProps = new HashMap<String, Object>(conflicts.get(0).getUserProperties());
+                        Map<String, Object> mergedProps = new HashMap<String, Object>(
+                                conflicts.get(0).getUserProperties());
                         mergedProps.put("key", "3");
 
                         // Delete the conflicting revisions to get rid of the conflict:
