@@ -20,7 +20,6 @@ public class BatcherTest extends LiteTestCase {
     /**
      * Add 100 items in a batcher and make sure that the processor
      * is correctly called back with the first batch.
-     *
      */
     public void testBatcherSingleBatch() throws Exception {
 
@@ -36,19 +35,15 @@ public class BatcherTest extends LiteTestCase {
 
             @Override
             public void process(List<String> itemsToProcess) {
-                Log.v(TAG, "process called with: " + itemsToProcess);
-
+                Log.e(TAG, "process called with: " + itemsToProcess);
                 assertEquals(10, itemsToProcess.size());
-
                 assertNumbersConsecutive(itemsToProcess);
-
                 doneSignal.countDown();
             }
-
         });
 
         ArrayList<String> objectsToQueue = new ArrayList<String>();
-        for (int i=0; i<inboxCapacity * numBatches; i++) {
+        for (int i = 0; i < inboxCapacity * numBatches; i++) {
             objectsToQueue.add(Integer.toString(i));
         }
         batcher.queueObjects(objectsToQueue);
@@ -94,7 +89,7 @@ public class BatcherTest extends LiteTestCase {
         });
 
         ArrayList<String> objectsToQueue = new ArrayList<String>();
-        for (int i=0; i<numItemsToSubmit; i++) {
+        for (int i = 0; i < numItemsToSubmit; i++) {
             objectsToQueue.add(Integer.toString(i));
             if (objectsToQueue.size() == 5) {
                 batcher.queueObjects(objectsToQueue);
@@ -113,7 +108,7 @@ public class BatcherTest extends LiteTestCase {
     /**
      * Reproduce issue:
      * https://github.com/couchbase/couchbase-lite-java-core/issues/283
-     *
+     * <p/>
      * This sporadically fails on the genymotion emulator and Nexus 5 device.
      */
     public void testBatcherThreadSafe() throws Exception {
@@ -152,13 +147,13 @@ public class BatcherTest extends LiteTestCase {
         });
 
 
-        for (int i=0; i<numThreads; i++) {
+        for (int i = 0; i < numThreads; i++) {
             final String iStr = Integer.toString(i);
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
 
-                    for (int j=0; j<numItemsPerThread; j++) {
+                    for (int j = 0; j < numItemsPerThread; j++) {
                         try {
                             Thread.sleep(5);
                         } catch (InterruptedException e) {
@@ -195,7 +190,7 @@ public class BatcherTest extends LiteTestCase {
      * - Expected behavior: should invoke BatchProcessor almost immediately
      * - Add a single element to batcher
      * - Expected behavior: after processing delay has expired, should invoke BatchProcessor
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/329
      */
     public void testBatcherWaitsForProcessorDelay1() throws Exception {
@@ -205,38 +200,47 @@ public class BatcherTest extends LiteTestCase {
         long delta;
         boolean success;
 
-        for (int k=0; k<5; k++) {
 
-            ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
-            int inboxCapacity = 5;
-            int processorDelay = 1000;
+        ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
+        int inboxCapacity = 5;
+        int processorDelay = 1000;
 
-            final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(2);
 
 
-            final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
-                @Override
-                public void process(List<String> itemsToProcess) {
-                    Log.d(TAG, "process() called with %d items", itemsToProcess.size());
-                    latch.countDown();
-                }
-            });
+        final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+            @Override
+            public void process(List<String> itemsToProcess) {
+                Log.d(TAG, "process() called with %d items", itemsToProcess.size());
+                latch1.countDown();
+                latch2.countDown();
+            }
+        });
 
-            // add a single object
-            timeBeforeQueue = System.currentTimeMillis();
-            batcher.queueObject(new String());
+        // add a single object
+        timeBeforeQueue = System.currentTimeMillis();
+        batcher.queueObject(new String());
 
-            // we shouldn't see latch close until processorDelay milliseconds has passed
-            success = latch.await(5, TimeUnit.SECONDS);
-            assertTrue(success);
-            timeAfterCallback = System.currentTimeMillis();
-            delta = timeAfterCallback - timeBeforeQueue;
-            assertTrue(delta > 0);
-            assertTrue(delta >= processorDelay);
+        // we shouldn't see latch close until processorDelay milliseconds has passed
+        success = latch1.await(5, TimeUnit.SECONDS);
+        assertTrue(success);
+        //timeAfterCallback = System.currentTimeMillis();
+        //delta = timeAfterCallback - timeBeforeQueue;
 
-            // Note: ExecutorService should be called shutdown()
-            Utils.shutdownAndAwaitTermination(workExecutor);
-        }
+        // add a single object
+        timeBeforeQueue = System.currentTimeMillis();
+        batcher.queueObject(new String());
+        // we shouldn't see latch close until processorDelay milliseconds has passed
+        success = latch2.await(5, TimeUnit.SECONDS);
+        assertTrue(success);
+        timeAfterCallback = System.currentTimeMillis();
+        delta = timeAfterCallback - timeBeforeQueue;
+        assertTrue(delta > 0);
+        assertTrue(delta >= processorDelay);
+
+        // Note: ExecutorService should be called shutdown()
+        Utils.shutdownAndAwaitTermination(workExecutor);
     }
 
 
@@ -245,68 +249,65 @@ public class BatcherTest extends LiteTestCase {
      * - Expected behavior: should invoke BatchProcessor almost immediately
      * - Add a single element to batcher
      * - Expected behavior: after processing delay has expired, should invoke BatchProcessor
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/329
      */
     public void testBatcherWaitsForProcessorDelay2() throws Exception {
 
-        long timeBeforeQueue;
-        long timeAfterCallback;
-        long delta;
-        boolean success;
+        ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
+        int inboxCapacity = 5;
+        int processorDelay = 1000;
 
-        for (int k=0; k<5; k++) {
+        final BlockingQueue<CountDownLatch> latches = new LinkedBlockingQueue<CountDownLatch>();
+        CountDownLatch latch1 = new CountDownLatch(1);
+        CountDownLatch latch2 = new CountDownLatch(1);
+        latches.add(latch1);
+        latches.add(latch2);
 
-            ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
-            int inboxCapacity = 5;
-            int processorDelay = 1000;
-
-            final BlockingQueue<CountDownLatch> latches = new LinkedBlockingQueue<CountDownLatch>();
-            CountDownLatch latch1 = new CountDownLatch(1);
-            CountDownLatch latch2 = new CountDownLatch(1);
-            latches.add(latch1);
-            latches.add(latch2);
-
-            final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
-                @Override
-                public void process(List<String> itemsToProcess) {
-                    try {
-                        Log.d(TAG, "process() called with %d items", itemsToProcess.size());
-                        CountDownLatch latch = latches.take();
-                        latch.countDown();
-                    } catch (InterruptedException e) {
-                        assertFalse(true);
-                        throw new RuntimeException(e);
+        Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity,
+                processorDelay,
+                new BatchProcessor<String>() {
+                    @Override
+                    public void process(List<String> itemsToProcess) {
+                        try {
+                            Log.d(TAG, "process() called with %d items", itemsToProcess.size());
+                            CountDownLatch latch = latches.take();
+                            latch.countDown();
+                        } catch (InterruptedException e) {
+                            assertFalse(true);
+                            throw new RuntimeException(e);
+                        }
                     }
-                }
-            });
+                });
 
-            // fill up batcher capacity
-            for (int i = 0; i < inboxCapacity; i++) {
-                batcher.queueObject(new String());
-            }
-
-            // latch should have been closed nearly immediately
-            success = latch1.await(500, TimeUnit.MILLISECONDS);
-            assertTrue(success);
-
-            // add another object
+        // fill up batcher capacity
+        for (int i = 0; i < inboxCapacity; i++)
             batcher.queueObject(new String());
 
-            // we shouldn't see latch close until processorDelay milliseconds has passed
-            success = latch2.await(5, TimeUnit.SECONDS);
-            assertTrue(success);
+        // latch should have been closed nearly immediately
+        boolean success = latch1.await(500, TimeUnit.MILLISECONDS);
+        assertTrue(success);
 
-            // Note: ExecutorService should be called shutdown()
-            Utils.shutdownAndAwaitTermination(workExecutor);
-        }
+        long timeBeforeQueue = System.currentTimeMillis();
+
+        // add another object
+        batcher.queueObject(new String());
+
+        // we shouldn't see latch close until processorDelay milliseconds has passed
+        success = latch2.await(5, TimeUnit.SECONDS);
+        assertTrue(success);
+        long delta = System.currentTimeMillis() - timeBeforeQueue;
+        assertTrue(delta >= processorDelay);
+
+        // Note: ExecutorService should be called shutdown()
+        Utils.shutdownAndAwaitTermination(workExecutor);
     }
 
     /**
      * - Add jobs with 10x the capacity
      * - Call waitForPendingFutures
      * - Make sure all jobs are processed before waitForPendingFutures returns
-     *
+     * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/329
      */
     public void testWaitForPendingFutures() throws Exception {
@@ -317,9 +318,7 @@ public class BatcherTest extends LiteTestCase {
         int numItemsToSubmit = 30;
 
         final CountDownLatch latch = new CountDownLatch(numItemsToSubmit);
-
-
-        final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
+        Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
             @Override
             public void process(List<String> itemsToProcess) {
                 Log.d(TAG, "process() called with %d items", itemsToProcess.size());
@@ -331,7 +330,7 @@ public class BatcherTest extends LiteTestCase {
 
         // add numItemsToSubmit to batcher in one swoop
         ArrayList<String> objectsToQueue = new ArrayList<String>();
-        for (int i=0; i<numItemsToSubmit; i++) {
+        for (int i = 0; i < numItemsToSubmit; i++) {
             objectsToQueue.add(Integer.toString(i));
         }
         batcher.queueObjects(objectsToQueue);
@@ -355,50 +354,40 @@ public class BatcherTest extends LiteTestCase {
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
         final int inboxCapacity = 10;
         final int numItemsToSubmit = inboxCapacity * 100;
-        final int jobDelay = 50;                  // 50ms
-        final int processorDelay = jobDelay * 20; // 1000ms
-
-
+        final int processorDelay = 1000; // 1000ms
 
         final CountDownLatch latchFirstProcess = new CountDownLatch(1);
         final CountDownLatch latchSubmittedCapacity = new CountDownLatch(1);
-        final CountDownLatch latchInterrupted = new CountDownLatch(1);
 
-        final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
-            @Override
-            public void process(List<String> itemsToProcess) {
-                Log.d(TAG, "process() called with %d items", itemsToProcess.size());
-                try {
-                    Thread.sleep(jobDelay);
-                    latchFirstProcess.countDown();
-                    Log.d(TAG, "/process() called with %d items", itemsToProcess.size());
-                } catch (InterruptedException e) {
-                    latchInterrupted.countDown();
-                    e.printStackTrace();
-                }
-            }
-        });
+        final Batcher batcher = new Batcher<String>(workExecutor,
+                inboxCapacity,
+                processorDelay,
+                new BatchProcessor<String>() {
+                    @Override
+                    public void process(List<String> itemsToProcess) {
+                        Log.d(TAG, "process() called with %d items", itemsToProcess.size());
+                        latchFirstProcess.countDown();
+                    }
+                });
 
         final CountDownLatch monitorThread = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 for (int i = 0; i < numItemsToSubmit; i++) {
-
-                    if (i == inboxCapacity) {
+                    if (i == inboxCapacity)
                         latchSubmittedCapacity.countDown();
-                    }
-
                     ArrayList<String> objectsToQueue = new ArrayList<String>();
                     objectsToQueue.add(Integer.toString(i));
                     batcher.queueObjects(objectsToQueue);
                     Log.d(TAG, "Submitted object %d", i);
                 }
-                monitorThread.countDown();;
+                monitorThread.countDown();
             }
         });
         t.start();
 
+        // NOTE: 5sec could be too long
         boolean success = latchSubmittedCapacity.await(5, TimeUnit.SECONDS);
         assertTrue(success);
 
@@ -407,15 +396,12 @@ public class BatcherTest extends LiteTestCase {
         // NOTE: latchFirstProcess should be 0 after between 50ms and 1000ms.
         //       But it seems 100ms is not good enough for slow simulator.
         //       This is reason that currently waits 500ms.
-        success = latchFirstProcess.await(jobDelay * 10, TimeUnit.MILLISECONDS);
+        success = latchFirstProcess.await(500, TimeUnit.MILLISECONDS);
         assertTrue(success);
 
-        // we should not have been interrupted either
-        assertEquals(latchInterrupted.getCount(), 1);
-
-        t.interrupt();
-
         monitorThread.await();
+
+        batcher.waitForPendingFutures();
 
         // Note: ExecutorService should be called shutdown()
         Utils.shutdownAndAwaitTermination(workExecutor);
