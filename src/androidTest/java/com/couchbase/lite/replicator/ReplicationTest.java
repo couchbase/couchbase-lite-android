@@ -17,6 +17,7 @@ import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.Revision;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.Status;
+import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.ValidationContext;
 import com.couchbase.lite.Validator;
@@ -4867,6 +4868,104 @@ public class ReplicationTest extends LiteTestCase {
         assertTrue(success);
 
         stopReplication(pullReplication);
+
+        // cleanup / shutdown
+        server.shutdown();
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/696
+     * in Unit-Tests/Replication_Tests.m
+     * - (void)test18_PendingDocumentIDs
+     */
+    public void test18_PendingDocumentIDs() throws Exception {
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        server.setDispatcher(dispatcher);
+        server.play();
+
+        // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+        mockCheckpointPut.setSticky(true);
+        mockCheckpointPut.setDelayMs(50);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+        // _revs_diff response -- everything missing
+        MockRevsDiff mockRevsDiff = new MockRevsDiff();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+        // _bulk_docs response -- everything stored
+        MockBulkDocs mockBulkDocs = new MockBulkDocs();
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+
+        Replication repl = database.createPushReplication(server.getUrl("/db"));
+        assertNotNull(repl.getPendingDocumentIDs());
+        assertEquals(0, repl.getPendingDocumentIDs().size());
+
+        assertTrue(database.runInTransaction(
+                new TransactionalTask() {
+                    @Override
+                    public boolean run() {
+                        for (int i = 1; i <= 10; i++) {
+                            Document doc = database.getDocument(String.format("doc-%d", i));
+                            Map<String, Object> props = new HashMap<String, Object>();
+                            props.put("index", i);
+                            props.put("bar", false);
+                            try {
+                                doc.putProperties(props);
+                            } catch (CouchbaseLiteException e) {
+                                fail(e.getMessage());
+                            }
+                        }
+                        return true;
+                    }
+                }
+        ));
+
+
+        assertEquals(10, repl.getPendingDocumentIDs().size());
+        assertTrue(repl.isDocumentPending(database.getDocument("doc-1")));
+
+        runReplication(repl);
+
+        assertNotNull(repl.getPendingDocumentIDs());
+        assertEquals(0, repl.getPendingDocumentIDs().size());
+        assertFalse(repl.isDocumentPending(database.getDocument("doc-1")));
+
+
+        assertTrue(database.runInTransaction(
+                new TransactionalTask() {
+                    @Override
+                    public boolean run() {
+                        for (int i = 11; i <= 20; i++) {
+                            Document doc = database.getDocument(String.format("doc-%d", i));
+                            Map<String, Object> props = new HashMap<String, Object>();
+                            props.put("index", i);
+                            props.put("bar", false);
+                            try {
+                                doc.putProperties(props);
+                            } catch (CouchbaseLiteException e) {
+                                fail(e.getMessage());
+                            }
+                        }
+                        return true;
+                    }
+                }
+        ));
+
+        repl = database.createPushReplication(server.getUrl("/db"));
+        assertNotNull(repl.getPendingDocumentIDs());
+        assertEquals(10, repl.getPendingDocumentIDs().size());
+        assertTrue(repl.isDocumentPending(database.getDocument("doc-11")));
+        assertFalse(repl.isDocumentPending(database.getDocument("doc-1")));
+
+        // pull replication
+        repl = database.createPullReplication(server.getUrl("/db"));
+        assertNull(repl.getPendingDocumentIDs());
+        runReplication(repl);
+        assertNull(repl.getPendingDocumentIDs());
 
         // cleanup / shutdown
         server.shutdown();
