@@ -24,6 +24,8 @@ public class TDCollateJSON {
     public static native char testEscape(String source);
     public static native int testDigitToInt(int digit);
 
+    public native static boolean isARMv7();
+
     /**
      * Convenience wrapper around testCollateJSON which calculates lengths based on string lengths
      * of params.
@@ -33,7 +35,13 @@ public class TDCollateJSON {
     }
 
     static {
-        System.loadLibrary("com_couchbase_touchdb_TDCollateJSON");
+        System.loadLibrary("com_couchbase_touchdb_TDCollateJSON_util");
+        if (isARMv7()) {
+            System.loadLibrary("com_couchbase_touchdb_TDCollateJSON-v7a");
+        }
+        else {
+            System.loadLibrary("com_couchbase_touchdb_TDCollateJSON");
+        }
     }
 
 }
