@@ -61,6 +61,8 @@ dependencies {
             'com.couchbase.lite:couchbase-lite-java-core:' + System.getenv("MAVEN_UPLOAD_VERSION")
 
     androidTestCompile 'com.squareup.okhttp:mockwebserver:2.0.0'
+    androidTestCompile files('libraries/couchbase-lite-java-core/libs/cbforest.jar')
+
 
 }
 
