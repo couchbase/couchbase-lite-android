@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.store.ForestDBStore;
 import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
@@ -81,7 +82,10 @@ public class ApiTest extends LiteTestCase {
         assertTrue(deleteme.exists());
         assertTrue(new File(deleteme.getPath()).exists());
         assertTrue(new File(deleteme.getAttachmentStorePath()).exists());
-        assertTrue(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
+        if(isSQLiteDB())
+            assertTrue(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
+        else
+            assertTrue(new File(deleteme.getPath(), ForestDBStore.kDBFilename).exists());
 
         deleteme.delete();
         assertFalse(deleteme.exists());
@@ -494,6 +498,10 @@ public class ApiTest extends LiteTestCase {
         assertTrue(docPostDelete.getCurrentRevisionId().startsWith("7-"));
     }
 
+    /**
+     * in Database_Tests.m
+     * - (void) test14_Conflict
+     */
     public void testConflict() throws Exception {
         Map<String, Object> prop = new HashMap<String, Object>();
         prop.put("foo", "bar");
@@ -517,11 +525,16 @@ public class ApiTest extends LiteTestCase {
         assertNotNull("Failed to create a a conflict", rev2b);
 
         List<SavedRevision> confRevs = new ArrayList<SavedRevision>();
-        confRevs.add(rev2b);
-        confRevs.add(rev2a);
-        assertEquals(doc.getConflictingRevisions(), confRevs);
-
-        assertEquals(doc.getLeafRevisions(), confRevs);
+        // TODO: order of revisions are questionable. revisit this again.
+        if (rev2a.getId().compareTo(rev2b.getId()) > 0) {
+            confRevs.add(rev2a);
+            confRevs.add(rev2b);
+        }else {
+            confRevs.add(rev2b);
+            confRevs.add(rev2a);
+        }
+        assertEquals(confRevs, doc.getConflictingRevisions());
+        assertEquals(confRevs, doc.getLeafRevisions());
 
         SavedRevision defaultRev, otherRev;
         if (rev2a.getId().compareTo(rev2b.getId()) > 0) {
@@ -655,11 +668,16 @@ public class ApiTest extends LiteTestCase {
         view.setMap(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
+                Log.w(TAG, "[testCreateView().map()] START");
+                Log.w(TAG, "[testCreateView().map()] key=" + document.get("sequence").toString());
                 emitter.emit(document.get("sequence"), null);
+                //emitter.emit(document.get("sequence").toString(), null);
+                Log.w(TAG, "[testCreateView().map()] END");
             }
         }, "1");
 
-        assertNotNull(view.getMap() != null);
+        //assertNotNull(view.getMap() != null);
+        assertNotNull(view.getMap());
 
         int kNDocs = 50;
         createDocuments(db, kNDocs);
@@ -675,7 +693,10 @@ public class ApiTest extends LiteTestCase {
         int expectedKey = 23;
         for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
             QueryRow row = it.next();
-            assertEquals(expectedKey, row.getKey());
+            Object key = row.getKey();
+            if(key instanceof Double)
+                key = ((Double)key).intValue();
+            assertEquals(expectedKey, key);
             assertEquals(expectedKey + 1, row.getSequenceNumber());
             ++expectedKey;
         }
@@ -753,7 +774,7 @@ public class ApiTest extends LiteTestCase {
 
         for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
             QueryRow row = it.next();
-            assertEquals(row.getKey(), rowNumber);
+            assertEquals(rowNumber, ((Number)row.getKey()).intValue());
             Document prevDoc = docs[rowNumber];
             assertEquals(row.getDocumentId(), prevDoc.getId());
             assertEquals(row.getDocument(), prevDoc);
@@ -884,8 +905,8 @@ public class ApiTest extends LiteTestCase {
                 QueryEnumerator rows = event.getRows();
                 for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
                     QueryRow row = it.next();
-                    if (expectedKeys.contains(row.getKey())) {
-                        expectedKeys.remove(row.getKey());
+                    if (expectedKeys.contains(((Number)row.getKey()).intValue())) {
+                        expectedKeys.remove(((Number)row.getKey()).intValue());
                         doneSignal.countDown();
                     }
 
@@ -956,7 +977,10 @@ public class ApiTest extends LiteTestCase {
                 for (Iterator<QueryRow> it = rows; it.hasNext(); ) {
                     QueryRow row = it.next();
                     assertEquals(row.getDocument().getDatabase(), db);
-                    assertEquals(row.getKey(), expectedKey);
+                    Object key = row.getKey();
+                    if(key instanceof Double)
+                        key = ((Double)key).intValue();
+                    assertEquals(expectedKey, key);
                     ++expectedKey;
                 }
                 doneSignal.countDown();
@@ -965,7 +989,7 @@ public class ApiTest extends LiteTestCase {
         });
 
         Log.i(TAG, "Waiting for async query to finish...");
-        boolean success = doneSignal.await(300, TimeUnit.SECONDS);
+        boolean success = doneSignal.await(120, TimeUnit.SECONDS);
         assertTrue("Done signal timed out, async query never ran", success);
 
     }

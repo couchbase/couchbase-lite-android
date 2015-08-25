@@ -19,7 +19,6 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.View.TDViewCollation;
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.support.LazyJsonArray;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -102,7 +101,6 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(0, database.getAllViews().size());
         Assert.assertEquals(null, database.getExistingView("viewToDelete"));
 
-
         View view = database.getView("viewToDelete");
         Assert.assertNotNull(view);
         Assert.assertEquals(database, view.getDatabase());
@@ -110,7 +108,9 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertNull(view.getMap());
         Assert.assertEquals(view, database.getExistingView("viewToDelete"));
 
-        Assert.assertEquals(0, database.getAllViews().size());
+        // Database.getView(...) create view file. so this check should be 1.
+        Assert.assertEquals(1, database.getAllViews().size());
+
         boolean changed = view.setMapReduce(new Mapper() {
 
             @Override
@@ -238,6 +238,10 @@ public class ViewsTest extends LiteTestCase {
         return view;
     }
 
+    /**
+     * in ViewInternal_Tests.m
+     * - (void) test02_Index
+     */
     public void testViewIndex() throws CouchbaseLiteException {
 
         int numTimesMapFunctionInvoked = 0;
@@ -279,7 +283,6 @@ public class ViewsTest extends LiteTestCase {
         InstrumentedMapBlock mapBlock = new InstrumentedMapBlock();
         view.setMap(mapBlock, "1");
 
-        Assert.assertEquals(1, view.getViewId());
         Assert.assertTrue(view.isStale());
 
         view.updateIndex();
@@ -390,6 +393,9 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(0, rows.size());
     }
 
+    /**
+     * - (void) test08_Query
+     */
     public void testViewQuery()
             throws CouchbaseLiteException {
 
@@ -506,6 +512,10 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(dict4.get("key"), rows.get(0).getKey());
         Assert.assertEquals(dict4.get("value"), rows.get(0).getValue());
 
+        // TODO
+        // Limit:
+        // Skip + limit:
+
         // Specific keys:
         options = new QueryOptions();
         List<Object> keys = new ArrayList<Object>();
@@ -516,15 +526,14 @@ public class ViewsTest extends LiteTestCase {
         rows = view.query(options);
 
         expectedRows = new ArrayList<Object>();
-        expectedRows.add(dict4);
         expectedRows.add(dict2);
+        expectedRows.add(dict4);
 
         Assert.assertEquals(2, rows.size());
-        Assert.assertEquals(dict4.get("key"), rows.get(0).getKey());
-        Assert.assertEquals(dict4.get("value"), rows.get(0).getValue());
-        Assert.assertEquals(dict2.get("key"), rows.get(1).getKey());
-        Assert.assertEquals(dict2.get("value"), rows.get(1).getValue());
-
+        Assert.assertEquals(dict2.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(dict2.get("value"), rows.get(0).getValue());
+        Assert.assertEquals(dict4.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(dict4.get("value"), rows.get(1).getValue());
     }
 
     //https://github.com/couchbase/couchbase-lite-android/issues/314
@@ -571,10 +580,10 @@ public class ViewsTest extends LiteTestCase {
         List<QueryRow> rows = view.query(options);
 
         Assert.assertEquals(4, rows.size());
-        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"yellow", "model2"}, ((LazyJsonArray) rows.get(3).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((List) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((List) rows.get(1).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((List) rows.get(2).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"yellow", "model2"}, ((List) rows.get(3).getKey()).toArray()));
 
         // Start/end key query:
         options = new QueryOptions();
@@ -582,16 +591,16 @@ public class ViewsTest extends LiteTestCase {
         options.setEndKey(Arrays.asList("red", new HashMap<String, Object>()));
         rows = view.query(options);
         Assert.assertEquals(3, rows.size());
-        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((List) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((List) rows.get(1).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((List) rows.get(2).getKey()).toArray()));
 
         // Start/end query without inclusive end:
         options.setEndKey(Arrays.asList("red", "model1"));
         options.setInclusiveEnd(false);
         rows = view.query(options);
         Assert.assertEquals(1, rows.size()); //1
-        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((List) rows.get(0).getKey()).toArray()));
 
         // Reversed:
         options = new QueryOptions();
@@ -600,16 +609,16 @@ public class ViewsTest extends LiteTestCase {
         options.setDescending(true);
         rows = view.query(options);
         Assert.assertEquals(3, rows.size());
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((LazyJsonArray) rows.get(2).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((List) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((List) rows.get(1).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"green", "model1"}, ((List) rows.get(2).getKey()).toArray()));
 
         // Reversed, no inclusive end:
         options.setInclusiveEnd(false);
         rows = view.query(options);
         Assert.assertEquals(2, rows.size());
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((List) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((List) rows.get(1).getKey()).toArray()));
 
         // Specific keys:
         options = new QueryOptions();
@@ -619,8 +628,9 @@ public class ViewsTest extends LiteTestCase {
         options.setKeys(keys);
         rows = view.query(options);
         Assert.assertEquals(2, rows.size());
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((LazyJsonArray) rows.get(0).getKey()).toArray()));
-        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((LazyJsonArray) rows.get(1).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((List) rows.get(0).getKey()).toArray()));
+        Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((List) rows.get(1).getKey()).toArray()));
+
     }
 
 
@@ -701,8 +711,7 @@ public class ViewsTest extends LiteTestCase {
         query.setEndKey(33547239);
         QueryEnumerator rows = query.run();
         assertEquals(1, rows.getCount());
-
-        assertEquals(33547239, rows.getRow(0).getKey());
+        assertEquals(33547239, ((Number)rows.getRow(0).getKey()).intValue());
     }
 
     public void testAllDocsQuery() throws CouchbaseLiteException {
@@ -848,6 +857,10 @@ public class ViewsTest extends LiteTestCase {
         query.stop();
     }
 
+    /**
+     * in ViewInternal_Tests.m
+     * - (void) test16_Reduce
+     */
     public void testViewReduce() throws CouchbaseLiteException {
 
         Map<String, Object> docProperties1 = new HashMap<String, Object>();
@@ -866,25 +879,24 @@ public class ViewsTest extends LiteTestCase {
         putDoc(database, docProperties3);
 
         View view = database.getView("totaler");
-        view.setMapReduce(new Mapper() {
-
-                              @Override
-                              public void map(Map<String, Object> document, Emitter emitter) {
-                                  Assert.assertNotNull(document.get("_id"));
-                                  Assert.assertNotNull(document.get("_rev"));
-                                  Object cost = document.get("cost");
-                                  if (cost != null) {
-                                      emitter.emit(document.get("_id"), cost);
-                                  }
-                              }
-                          }, new Reducer() {
-
-                              @Override
-                              public Object reduce(List<Object> keys, List<Object> values,
-                                                   boolean rereduce) {
-                                  return View.totalValues(values);
-                              }
-                          }, "1"
+        view.setMapReduce(
+                new Mapper() {
+                    @Override
+                    public void map(Map<String, Object> document, Emitter emitter) {
+                        Assert.assertNotNull(document.get("_id"));
+                        Assert.assertNotNull(document.get("_rev"));
+                        Object cost = document.get("cost");
+                        if (cost != null) {
+                            emitter.emit(document.get("_id"), cost);
+                        }
+                    }
+                },
+                new Reducer() {
+                    @Override
+                    public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                        return View.totalValues(values);
+                    }
+                }, "1"
         );
 
         view.updateIndex();
@@ -892,6 +904,7 @@ public class ViewsTest extends LiteTestCase {
         List<Map<String, Object>> dumpResult = view.dump();
         Log.v(TAG, "View dump: " + dumpResult);
         Assert.assertEquals(3, dumpResult.size());
+        Object obj = dumpResult.get(0).get("key");
         Assert.assertEquals("\"App\"", dumpResult.get(0).get("key"));
         Assert.assertEquals("1.95", dumpResult.get(0).get("value"));
         Assert.assertEquals(2, dumpResult.get(0).get("seq"));
@@ -1423,14 +1436,24 @@ public class ViewsTest extends LiteTestCase {
         row3.put("value", 5.0);
         expectedRows.add(row3);
 
-        Assert.assertEquals(row1.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(row1.get("key"), toIntegerList((List<Number>) rows.get(0).getKey()));
         Assert.assertEquals(row1.get("value"), rows.get(0).getValue());
-        Assert.assertEquals(row2.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(row2.get("key"), toIntegerList((List<Number>) rows.get(1).getKey()));
         Assert.assertEquals(row2.get("value"), rows.get(1).getValue());
-        Assert.assertEquals(row3.get("key"), rows.get(2).getKey());
+        Assert.assertEquals(row3.get("key"), toIntegerList((List<Number>) rows.get(2).getKey()));
         Assert.assertEquals(row3.get("value"), rows.get(2).getValue());
     }
 
+
+    private static List<Integer> toIntegerList(List<Number> src){
+        if(src == null) return null;
+
+        List<Integer> dest = new ArrayList<Integer>(src.size());
+        for(Number n : src){
+            dest.add(n.intValue());
+        }
+        return dest;
+    }
 
     public void testViewCollation() throws CouchbaseLiteException {
         List<Object> list1 = new ArrayList<Object>();
@@ -1657,7 +1680,7 @@ public class ViewsTest extends LiteTestCase {
             Assert.assertEquals(expected[i][0], id);
             Assert.assertEquals(2, key.size());
             Assert.assertEquals(expected[i][1], key.get(0));
-            Assert.assertEquals(expected[i][2], key.get(1));
+            Assert.assertEquals(expected[i][2], ((Number) key.get(1)).intValue());
             if (expected[i][3] == null) {
                 Assert.assertNull(row.getValue());
             } else {
@@ -1889,6 +1912,7 @@ public class ViewsTest extends LiteTestCase {
                 String key = (String) document.get("key");
                 if (key != null) {
                     String first = key.substring(0, 1);
+                    Log.w(TAG, "first=%s", first);
                     emitter.emit(Arrays.asList(first, key), null);
                 }
             }
@@ -1971,7 +1995,7 @@ public class ViewsTest extends LiteTestCase {
         QueryEnumerator rows = query.run();
         assertEquals(3, rows.getCount());
         for (int i = 0; i < rows.getCount(); i++) {
-            Log.e(Log.TAG_QUERY, "" + rows.getRow(i).getKey() + " => " + rows.getRow(i).getValue());
+            Log.d(Log.TAG_QUERY, "" + rows.getRow(i).getKey() + " => " + rows.getRow(i).getValue());
         }
         assertEquals(docProperties1.get("name"), rows.getRow(0).getKey());
         assertEquals(docProperties1.get("skin"), rows.getRow(0).getValue());
@@ -2074,7 +2098,7 @@ public class ViewsTest extends LiteTestCase {
         View view = createView(database);
         view.updateIndex();
         List<Map<String, Object>> dump = view.dump();
-        Log.v(TAG, "View dump: " + dump);
+        Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
         Assert.assertEquals(5, dump.get(0).get("seq"));
@@ -2090,7 +2114,8 @@ public class ViewsTest extends LiteTestCase {
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", "44444");
-        props.put("_rev", "1-~~~~~");  // higher revID, will win conflict
+        //props.put("_rev", "1-~~~~~");  // higher revID, will win conflict
+        props.put("_rev", "1-ffffff");  // higher revID, will win conflict
         props.put("key", "40ur");
         RevisionInternal leaf2 = new RevisionInternal(props);
         database.forceInsert(leaf2, new ArrayList<String>(), null);
@@ -2145,7 +2170,8 @@ public class ViewsTest extends LiteTestCase {
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", "44444");
-        props.put("_rev", "1-...."); // lower revID, will lose conflict
+        //props.put("_rev", "1-...."); // lower revID, will lose conflict
+        props.put("_rev", "1-0000"); // lower revID, will lose conflict
         props.put("key", "40ur");
         RevisionInternal leaf2 = new RevisionInternal(props);
         database.forceInsert(leaf2, new ArrayList<String>(), null);
@@ -2170,6 +2196,9 @@ public class ViewsTest extends LiteTestCase {
 
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/494
+     *
+     * in ViewInternal_tests.m
+     * - (void) test_IndexingOlderRevision
      */
     public void testIndexingOlderRevision() throws CouchbaseLiteException {
         // In case conflictWinner was deleted, conflict loser should be indexed.
@@ -2200,7 +2229,7 @@ public class ViewsTest extends LiteTestCase {
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", "44444");
-        props.put("_rev", "1-~~~~~");  // higher revID, will win conflict
+        props.put("_rev", "1-FFFFFFFF");  // higher revID, will win conflict
         props.put("key", "40ur");
         RevisionInternal leaf2 = new RevisionInternal(props);
         database.forceInsert(leaf2, new ArrayList<String>(), null);
@@ -2224,10 +2253,9 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
         Assert.assertEquals(1, dump.get(4).get("seq"));
 
-
         // create new revision with delete
         RevisionInternal leaf3 = new RevisionInternal("44444", null, true);
-        leaf3 = database.putRevision(leaf3, "1-~~~~~", true);
+        leaf3 = database.putRevision(leaf3, leaf2.getRevID(), true);
         Assert.assertEquals(leaf1.getDocID(), leaf3.getDocID());
         Assert.assertEquals(true, leaf3.isDeleted());
 
@@ -2235,12 +2263,13 @@ public class ViewsTest extends LiteTestCase {
 
         view.updateIndex();
         dump = view.dump();
-        Log.e(TAG, "View dump: " + dump);
+        Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
+        int forSeq = (int)(isSQLiteDB()?leaf1.getSequence():leaf3.getSequence());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
         Assert.assertEquals(5, dump.get(0).get("seq"));
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, dump.get(1).get("seq"));
+        Assert.assertEquals(forSeq, dump.get(1).get("seq"));
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
         Assert.assertEquals(3, dump.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
@@ -2274,7 +2303,7 @@ public class ViewsTest extends LiteTestCase {
 
         int expectedKey = 0;
         for (QueryRow row : rows) {
-            assertEquals(((Integer) row.getKey()).intValue(), expectedKey++);
+            assertEquals(((Number)row.getKey()).intValue(), expectedKey++);
         }
 
         LiveQuery liveQuery = view.createQuery().toLiveQuery();
@@ -2283,7 +2312,7 @@ public class ViewsTest extends LiteTestCase {
         liveQuery.addChangeListener(new LiveQuery.ChangeListener() {
             @Override
             public void changed(LiveQuery.ChangeEvent event) {
-                Log.e(TAG, "---- changed ---");
+                Log.d(TAG, "---- changed ---");
                 latch1.countDown();
                 latch2.countDown();
             }
@@ -2298,7 +2327,7 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(5, rows.getCount());
         expectedKey = 0;
         for (QueryRow row : rows) {
-            assertEquals(((Integer) row.getKey()).intValue(), expectedKey++);
+            assertEquals(((Number)row.getKey()).intValue(), expectedKey++);
         }
 
         liveQuery.setStartKey(2);
@@ -2312,7 +2341,7 @@ public class ViewsTest extends LiteTestCase {
         assertEquals(3, rows.getCount());
         expectedKey = 2;
         for (QueryRow row : rows) {
-            assertEquals(((Integer) row.getKey()).intValue(), expectedKey++);
+            assertEquals(((Number)row.getKey()).intValue(), expectedKey++);
         }
 
         liveQuery.stop();

@@ -56,7 +56,7 @@ public class LiteTestCase extends LiteTestCaseBase {
     protected Database database = null;
     protected String DEFAULT_TEST_DB = "cblite-test";
 
-    boolean isSQLiteDB(){
+    protected boolean isSQLiteDB(){
         String name = database.getStore().getClass().getName();
         return Manager.DEFAULT_STORE_CLASSNAME.equals(name);
     }

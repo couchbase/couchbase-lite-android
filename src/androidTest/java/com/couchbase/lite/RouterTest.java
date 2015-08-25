@@ -1036,14 +1036,14 @@ public class RouterTest extends LiteTestCase {
 
         // kick off replication via REST api
         Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
-        Log.e(TAG, "map: " + replicateJsonMap);
+        Log.i(TAG, "map: " + replicateJsonMap);
 
         Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.e(TAG, "result: " + result);
+        Log.i(TAG, "result: " + result);
         assertNotNull(result.get("session_id"));
 
         ArrayList<Object> activeTasks = (ArrayList<Object>) send("GET", "/_active_tasks", Status.OK, null);
-        Log.e(TAG, "activeTasks.size(): " + activeTasks.size());
+        Log.v(TAG, "activeTasks.size(): " + activeTasks.size());
         for (Object obj : activeTasks) {
             Map<String, Object> resp = (Map<String, Object>) obj;
             assertEquals("Stopped", resp.get("status"));
