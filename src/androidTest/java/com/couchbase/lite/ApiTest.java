@@ -43,7 +43,7 @@ public class ApiTest extends LiteTestCase {
 
         // We want to create two different managers reading from the same directory so we
         // create LiteTestContext(false) to make sure we don't delete the directory
-        Manager roManager = new Manager(new LiteTestContext(false), options);
+        Manager roManager = new Manager(getDefaultTestContext(false), options);
         Assert.assertTrue(roManager != null);
 
         Database db = roManager.getDatabase("foo");
@@ -1001,7 +1001,7 @@ public class ApiTest extends LiteTestCase {
      * running in the background server.
      */
     public void testSharedMapBlocks() throws Exception {
-        Manager mgr = new Manager(new LiteTestContext("API_SharedMapBlocks"),
+        Manager mgr = new Manager(getTestContext("API_SharedMapBlocks", true),
                 Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
@@ -1058,7 +1058,7 @@ public class ApiTest extends LiteTestCase {
     }
 
     public void testChangeUUID() throws Exception {
-        Manager mgr = new Manager(new LiteTestContext("ChangeUUID"), Manager.DEFAULT_OPTIONS);
+        Manager mgr = new Manager(getTestContext("ChangeUUID", true), Manager.DEFAULT_OPTIONS);
         Database db = mgr.getDatabase("db");
         db.open();
         String pub = db.publicUUID();

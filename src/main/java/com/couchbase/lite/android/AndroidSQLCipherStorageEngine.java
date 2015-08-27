@@ -1,7 +1,7 @@
 /**
- * Created by Wayne Carter.
+ * Created by Pasin Suriyentrakorn.
  *
- * Copyright (c) 2012 Couchbase, Inc. All rights reserved.
+ * Copyright (c) 2015 Couchbase, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
@@ -22,22 +22,21 @@ import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
 
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.os.Build;
+import net.sqlcipher.database.SQLiteDatabase;
+//import net.sqlcipher.database.SQLiteException;
 
-public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
-    public static final String TAG = "AndroidSQLiteStorageEngine";
+public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
+    public static final String TAG = "AndroidSQLCipherStorageEngine";
 
     private SQLiteDatabase database;
     private AndroidContext context;
 
-    public AndroidSQLiteStorageEngine(AndroidContext context) {
+    public AndroidSQLCipherStorageEngine(AndroidContext context) {
         this.context = context;
     }
 
     @Override
-    public boolean open(String path, String encryptionKey /*Ignore encryptionKey*/) {
+    public boolean open(String path, String encryptionKey) throws SQLException {
         if(database != null && database.isOpen())
             return true;
 
@@ -50,18 +49,19 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 
             // NOTE: Not obvious difference. But it seems Without WAL is faster.
             //       WAL consumes more memory, it might make GC busier.
-            database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
+            SQLiteDatabase.loadLibs(context.getWrappedContext());
+            char[] key = encryptionKey != null ? encryptionKey.toCharArray() : new char[0];
+            database = SQLiteDatabase.openOrCreateDatabase(path, key, null);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
 
-            // Register custom collator:
-            String sqliteDatabaseClassName = "android/database/sqlite/SQLiteDatabase";
-            SQLiteRevCollator.register(database, sqliteDatabaseClassName, Build.VERSION.SDK_INT);
-            SQLiteJsonCollator.register(database, sqliteDatabaseClassName, Build.VERSION.SDK_INT);
-        } catch(SQLiteException e) {
-            Log.e(TAG, "Error opening", e);
+            String sqliteDatabaseClassName = "net/sqlcipher/database/SQLiteDatabase";
+            SQLiteJsonCollator.register(database, sqliteDatabaseClassName, 0);
+            SQLiteRevCollator.register(database, sqliteDatabaseClassName, 0);
+        } catch(net.sqlcipher.database.SQLiteException e) {
+            Log.e(TAG, "Unable to open the SQLite database", e);
             if (database != null)
                 database.close();
-            return false;
+            throw new SQLException(e);
         }
 
         return database.isOpen();
@@ -153,14 +153,13 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
         Log.v(Log.TAG_DATABASE, "%s: Closed Android sqlite db", this);
     }
 
-    @Override
     public boolean supportEncryption() {
-        return false;
+        return true;
     }
 
     @Override
     public String toString() {
-        return "AndroidSQLiteStorageEngine{" +
+        return "AndroidSQLCipherStorageEngine{" +
                 "database=" + Integer.toHexString(System.identityHashCode(database)) +
                 "}";
     }

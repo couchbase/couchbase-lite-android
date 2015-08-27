@@ -1,1 +1,1 @@
-include ':couchbase-lite-android', ':libraries:couchbase-lite-java-core',':libraries:couchbase-lite-java-forestdb'
+include ':couchbase-lite-android', ':libraries:couchbase-lite-java-core', ':libraries:sqlcipher-android', ':libraries:couchbase-lite-java-forestdb'

@@ -17,19 +17,12 @@
 
 package com.couchbase.lite.performance2;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.LitePerfTestCase;
-import com.couchbase.lite.LiteTestContext;
 import com.couchbase.lite.Manager;
-import com.couchbase.lite.Status;
 import com.couchbase.lite.TransactionalTask;
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,7 +63,7 @@ public class Test09_LoadDB extends LitePerfTestCase {
         try {
             database.close();
             manager.close();
-            manager = new Manager(new LiteTestContext(), Manager.DEFAULT_OPTIONS);
+            manager = new Manager(getDefaultTestContext(true), Manager.DEFAULT_OPTIONS);
             database = manager.getDatabase(DEFAULT_TEST_DB);
         } catch(Exception ex) {
             Log.v("PerformanceStats",TAG+", Fail to teardown and restart db", ex);

@@ -19,7 +19,6 @@ package com.couchbase.lite.performance;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.LiteTestContext;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.internal.Body;
@@ -57,7 +56,7 @@ public class Test9_LoadDB extends LiteTestCase {
             try {
                 tearDown();
 
-                manager = new Manager(new LiteTestContext(), Manager.DEFAULT_OPTIONS);
+                manager = new Manager(getDefaultTestContext(true), Manager.DEFAULT_OPTIONS);
                 database = manager.getDatabase(DEFAULT_TEST_DB);
             }
             catch(Exception ex)
