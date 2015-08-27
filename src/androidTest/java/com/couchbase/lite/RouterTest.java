@@ -618,16 +618,16 @@ public class RouterTest extends LiteTestCase {
         //now build up the request
         List<String> doc1Revs = new ArrayList<String>();
         doc1Revs.add(doc1r2ID);
-        doc1Revs.add("3-foo");
+        doc1Revs.add("3-1000");
 
         List<String> doc2Revs = new ArrayList<String>();
         doc2Revs.add(doc2r1ID);
 
         List<String> doc3Revs = new ArrayList<String>();
-        doc3Revs.add("10-bar");
+        doc3Revs.add("10-1000");
 
         List<String> doc9Revs = new ArrayList<String>();
-        doc9Revs.add("6-six");
+        doc9Revs.add("6-1000");
 
         Map<String, Object> revsDiffRequest = new HashMap<String, Object>();
         revsDiffRequest.put("11111", doc1Revs);
@@ -637,13 +637,13 @@ public class RouterTest extends LiteTestCase {
 
         //now build up the expected response
         List<String> doc1missing = new ArrayList<String>();
-        doc1missing.add("3-foo");
+        doc1missing.add("3-1000");
 
         List<String> doc3missing = new ArrayList<String>();
-        doc3missing.add("10-bar");
+        doc3missing.add("10-1000");
 
         List<String> doc9missing = new ArrayList<String>();
-        doc9missing.add("6-six");
+        doc9missing.add("6-1000");
 
         Map<String, Object> doc1missingMap = new HashMap<String, Object>();
         doc1missingMap.put("missing", doc1missing);

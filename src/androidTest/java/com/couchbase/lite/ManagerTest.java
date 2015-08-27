@@ -73,6 +73,9 @@ public class ManagerTest extends LiteTestCase {
 
     public void testReplaceDatabaseNamedWithAttachments() throws CouchbaseLiteException {
 
+        if(!isSQLiteDB())
+            fail("ForestDB does not work...Need to fix");
+
         InputStream dbStream = getAsset("withattachments.cblite");
 
         String[] attachmentlist = null;

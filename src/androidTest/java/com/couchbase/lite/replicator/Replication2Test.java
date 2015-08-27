@@ -38,10 +38,11 @@ public class Replication2Test  extends LiteTestCase {
      */
     public void testExcessiveCheckpointingDuringPushReplication() throws Exception {
 
+        final int NUM_DOCS = 199;
         List<Document> docs = new ArrayList<Document>();
 
-        // 1. Add 200 local documents
-        for(int i = 0; i < 200; i++) {
+        // 1. Add more than 100 docs, as chunk size is 100
+        for(int i = 0; i < NUM_DOCS; i++) {
             Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("testExcessiveCheckpointingDuringPushReplication", String.valueOf(i));
             Document doc = createDocumentWithProperties(database, properties);
@@ -92,7 +93,7 @@ public class Replication2Test  extends LiteTestCase {
 
         // wait until mock server gets the checkpoint PUT request
         boolean foundCheckpointPut = false;
-        String expectedLastSequence = "200";
+        String expectedLastSequence = String.valueOf(NUM_DOCS);
         while (!foundCheckpointPut) {
             RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
             if (request.getMethod().equals("PUT")) {

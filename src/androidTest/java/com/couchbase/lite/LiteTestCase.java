@@ -597,6 +597,8 @@ public class LiteTestCase extends LiteTestCaseBase {
 
                 Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(
                         request.getUtf8Body(), Map.class);
+                Log.e(TAG, "lastSequence=" +jsonMap.get("lastSequence"));
+                Log.e(TAG, "checkpoint request=" + jsonMap);
                 if (jsonMap.containsKey("lastSequence") &&
                         ((String) jsonMap.get("lastSequence")).equals(expectedLastSequenceStr)) {
                     foundExpectedLastSeq = true;
@@ -605,6 +607,7 @@ public class LiteTestCase extends LiteTestCaseBase {
                 // wait until mock server responds to the checkpoint PUT request.
                 // not sure if this is strictly necessary, but might prevent race conditions.
                 dispatcher.takeRecordedResponseBlocking(request);
+
             }
         }
 
