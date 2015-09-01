@@ -56,17 +56,13 @@ dependencies {
     // instrumentTestCompile is used rather than compile.
     androidTestCompile 'commons-io:commons-io:2.0.1'
 
-    compile project(':libraries:cbforest-java')
-
     compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-core') :
             'com.couchbase.lite:couchbase-lite-java-core:' + System.getenv("MAVEN_UPLOAD_VERSION")
 
+    compile project(':libraries:cbforest-java')
 
     androidTestCompile 'com.squareup.okhttp:mockwebserver:2.0.0'
-    //androidTestCompile files('libraries/couchbase-lite-java-core/libs/cbforest.jar')
-
-
 }
 
 task generateJavadocs(type: Javadoc) {
@@ -103,7 +99,6 @@ task createMavenDirectory(type: Exec) {
     }
     commandLine "curl", "--user", uploadUser, "-X", "MKCOL", mkcolPath
 }
-
 
 // this hack is only needed for apache mod_dav based Maven repo's like file.couchbase.com.  otherwise, skip it
 createMavenDirectory.onlyIf { System.getenv("MAVEN_UPLOAD_REPO_URL").contains("files") }
