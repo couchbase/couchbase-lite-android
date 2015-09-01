@@ -56,6 +56,8 @@ public class LiteTestCase extends LiteTestCaseBase {
     protected Database database = null;
     protected String DEFAULT_TEST_DB = "cblite-test";
 
+    protected boolean useForestDB = false;
+
     protected boolean isSQLiteDB(){
         String name = database.getStore().getClass().getName();
         return Manager.DEFAULT_STORE_CLASSNAME.equals(name);
@@ -104,7 +106,17 @@ public class LiteTestCase extends LiteTestCaseBase {
         Manager.enableLogging(Log.TAG_MULTI_STREAM_WRITER, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_REMOTE_REQUEST, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_ROUTER, Log.VERBOSE);
-        manager = new Manager(context, Manager.DEFAULT_OPTIONS);
+
+        // forestdb
+        if(useForestDB) {
+            ManagerOptions options = new ManagerOptions();
+            options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
+            manager = new Manager(context, options);
+        }
+        // SQLite
+        else{
+            manager = new Manager(context, Manager.DEFAULT_OPTIONS);
+        }
     }
 
     protected void stopCBLite() {
@@ -803,5 +815,14 @@ public class LiteTestCase extends LiteTestCaseBase {
                 doneSignal.countDown();
             }
         }
+    }
+
+
+    @Override
+    public void runBare() throws Throwable {
+        useForestDB = false;
+        super.runBare();
+        useForestDB = true;
+        super.runBare();
     }
 }
