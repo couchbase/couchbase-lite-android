@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SQLiteStoreTest extends LiteTestCase {
     public void testWinningRevIDOfDoc() throws Exception {
+        if(!isSQLiteDB())
+            return;
 
         SQLiteStore store = (SQLiteStore) database.getStore();
 

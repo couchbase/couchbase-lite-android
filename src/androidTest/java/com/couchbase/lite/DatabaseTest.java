@@ -185,7 +185,7 @@ public class DatabaseTest extends LiteTestCase {
         database.addChangeListener(new Database.ChangeListener() {
             @Override
             public void changed(Database.ChangeEvent event) {
-                Log.e(TAG, "-- changed() --");
+                Log.i(TAG, "-- changed() --");
                 latch.countDown();
             }
         });

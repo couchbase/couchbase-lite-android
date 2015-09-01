@@ -79,7 +79,7 @@ public class DocumentTest extends LiteTestCase {
         Assert.assertNull(fetchedDoc);
 
         // query all docs and make sure we don't see that document
-        database.getAllDocs(new QueryOptions());
+        //database.getAllDocs(new QueryOptions());
         Query queryAllDocs = database.createAllDocumentsQuery();
         QueryEnumerator queryEnumerator = queryAllDocs.run();
         for (Iterator<QueryRow> it = queryEnumerator; it.hasNext(); ) {

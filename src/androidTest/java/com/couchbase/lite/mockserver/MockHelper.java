@@ -156,7 +156,7 @@ public class MockHelper {
         for (int i=0; i<numDocs; i++) {
 
             String docId = String.format("doc%s", i);
-            String revIdHash = Misc.CreateUUID().substring(0, 3);
+            String revIdHash = Misc.CreateUUID().substring(0, 4);
             String revId = String.format("1-%s", revIdHash);
             int seq = i;
 

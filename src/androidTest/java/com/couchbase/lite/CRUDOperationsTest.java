@@ -92,7 +92,6 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         assertEquals(1, changes.size());
 
         changes = database.changesSince(0, null, new ReplicationFilter() {
-
             @Override
             public boolean filter(SavedRevision revision, Map<String, Object> params) {
                 return "updated!".equals(revision.getProperties().get("status"));
@@ -102,7 +101,6 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
         assertEquals(1, changes.size());
 
         changes = database.changesSince(0, null, new ReplicationFilter() {
-
             @Override
             public boolean filter(SavedRevision revision, Map<String, Object> params) {
                 return "not updated!".equals(revision.getProperties().get("status"));
@@ -162,8 +160,11 @@ public class CRUDOperationsTest extends LiteTestCase implements Database.ChangeL
             assertNotNull(rev);
             assertNotNull(rev.getDocID());
             assertNotNull(rev.getRevID());
-            assertEquals(rev.getDocID(), rev.getProperties().get("_id"));
-            assertEquals(rev.getRevID(), rev.getProperties().get("_rev"));
+            // body could be null if withBody = false
+            if(rev.getProperties() != null) {
+                assertEquals(rev.getDocID(), rev.getProperties().get("_id"));
+                assertEquals(rev.getRevID(), rev.getProperties().get("_rev"));
+            }
         }
     }
 }

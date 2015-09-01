@@ -308,7 +308,13 @@ public class ReplicationTest extends LiteTestCase {
         mockMultiplePull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB);
     }
 
+
     public void testMockContinuousPullCouchDb() throws Exception {
+
+        // TODO: (IMPORTANT, FORESTDB) lastSequence for checkpoint does not match and couase dead lock
+        // if(!isSQLiteDB())
+        //    fail("FORESTDB casues deadlock becasue of lastSequence mismatch for checkpoint");
+
         boolean shutdownMockWebserver = true;
         mockContinuousPull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB);
     }
@@ -660,6 +666,9 @@ public class ReplicationTest extends LiteTestCase {
         success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
         assertTrue(success);
 
+        long lastSeq = database.getLastSequenceNumber();
+        Log.e(TAG, "lastSequence = %d", lastSeq);
+
         // wait until the mock webserver receives a PUT checkpoint request with last do's sequence,
         // this avoids ugly and confusing exceptions in the logs.
         List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, numMockRemoteDocs - 1);
@@ -690,7 +699,7 @@ public class ReplicationTest extends LiteTestCase {
 
         String doc1Id = "doc1";
         int doc1Rev2Generation = 2;
-        String doc1Rev2Digest = "b";
+        String doc1Rev2Digest = "b000";
         String doc1Rev2 = String.format("%d-%s", doc1Rev2Generation, doc1Rev2Digest);
         int doc1Seq1 = 1;
         String doc1AttachName = "attachment.png";
@@ -1189,6 +1198,9 @@ public class ReplicationTest extends LiteTestCase {
      * Regression test for issue couchbase/couchbase-lite-android#174
      */
     public void testAllLeafRevisionsArePushed() throws Exception {
+
+        if(!isSQLiteDB())
+            fail("For ForestDB, this is known ISSUE.");
 
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderRevDiffsAllMissing();
@@ -1725,13 +1737,13 @@ public class ReplicationTest extends LiteTestCase {
 
         //generate mock documents
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(
-                doc1Id, "1-a", 1);
+                doc1Id, "1-a000", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
         final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(
-                doc2Id, "1-b", 2);
+                doc2Id, "1-b000", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
         final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(
-                doc3Id, "1-c", 3);
+                doc3Id, "1-c000", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -4395,7 +4407,7 @@ public class ReplicationTest extends LiteTestCase {
             // Create a conflict, won by the new revision:
             Map<String, Object> props = new HashMap<String, Object>();
             props.put("_id", docID);
-            props.put("_rev", j + "-00");
+            props.put("_rev", j + "-0000");
             props.put(key, value);
             RevisionInternal leaf = new RevisionInternal(props);
             database.forceInsert(leaf, new ArrayList<String>(), null);
@@ -4405,7 +4417,7 @@ public class ReplicationTest extends LiteTestCase {
                 // Create a conflict, won by the new revision:
                 Map<String, Object> props_conflict = new HashMap<String, Object>();
                 props_conflict.put("_id", docID);
-                String revStr = String.format("%d-%02d", j, i);
+                String revStr = String.format("%d-%04d", j, i);
                 props_conflict.put("_rev", revStr);
                 props_conflict.put(key, value);
                 // attachment
@@ -4421,6 +4433,9 @@ public class ReplicationTest extends LiteTestCase {
                 RevisionInternal leaf_conflict = new RevisionInternal(props_conflict);
                 List<String> revHistory = new ArrayList<String>();
                 revHistory.add(leaf_conflict.getRevID());
+                for(int k = j - 1; k > 2; k--){
+                    revHistory.add(String.format("%d-0000", k));
+                }
                 revHistory.add(rev2ID);
                 revHistory.add(rev1ID);
                 database.forceInsert(leaf_conflict, revHistory, null);

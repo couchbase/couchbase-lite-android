@@ -297,6 +297,7 @@ public class BatcherTest extends LiteTestCase {
         success = latch2.await(5, TimeUnit.SECONDS);
         assertTrue(success);
         long delta = System.currentTimeMillis() - timeBeforeQueue;
+        Log.d(TAG,"delta => " + delta + "ms");
         assertTrue(delta >= processorDelay);
 
         // Note: ExecutorService should be called shutdown()

@@ -69,7 +69,7 @@ public class ChangesTest extends LiteTestCase {
         database.addChangeListener(changeListener);
 
         // Insert a document as if it came from a remote source.
-        RevisionInternal rev = new RevisionInternal("docId", "1-rev", false);
+        RevisionInternal rev = new RevisionInternal("docId", "1-1111", false);
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("_id", rev.getDocID());
         properties.put("_rev", rev.getRevID());

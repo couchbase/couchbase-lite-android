@@ -5,11 +5,14 @@ import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
+import com.couchbase.lite.util.ZipUtils;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -64,6 +67,10 @@ public class ManagerTest extends LiteTestCase {
     }
 
     public void testReplaceDatabaseNamedNoAttachments() throws CouchbaseLiteException {
+        // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
+        // for .cblite. This is only applicable for SQLite
+        if(!isSQLiteDB()) return;
+
         //Copy database from assets to local storage
         InputStream dbStream = getAsset("noattachments.cblite");
         manager.replaceDatabase("replaced", dbStream, null);
@@ -72,6 +79,10 @@ public class ManagerTest extends LiteTestCase {
     }
 
     public void testReplaceDatabaseNamedWithAttachments() throws CouchbaseLiteException {
+
+        // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
+        // for .cblite. This is only applicable for SQLite
+        if(!isSQLiteDB()) return;
 
         InputStream dbStream = getAsset("withattachments.cblite");
 
@@ -96,6 +107,10 @@ public class ManagerTest extends LiteTestCase {
 
     // Test for pre-built database test from CBL Android 1.0.4
     public void testReplaceDatabaseFromCBLAndroid104() throws CouchbaseLiteException, IOException {
+        // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
+        // for .cblite. This is only applicable for SQLite
+        if(!isSQLiteDB()) return;
+
         InputStream dbStream = getAsset("androiddb104.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
         InputStream blobStream1 = getAsset("attachments_androiddb104/7f0e1bc2d59e1607f21b984ce6fbfe777e6f458e.blob");
@@ -143,6 +158,10 @@ public class ManagerTest extends LiteTestCase {
 
     // Test for pre-built database test from CBL Android 1.1.0
     public void testReplaceDatabaseFromCBLAndroid110() throws CouchbaseLiteException, IOException {
+        // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
+        // for .cblite. This is only applicable for SQLite
+        if(!isSQLiteDB()) return;
+
         InputStream dbStream = getAsset("androiddb110.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
         InputStream blobStream1 = getAsset("attachments_androiddb110/7F0E1BC2D59E1607F21B984CE6FBFE777E6F458E.blob");
@@ -190,6 +209,10 @@ public class ManagerTest extends LiteTestCase {
 
     // Test for pre-built database test from CBL iOS 1.0.4
     public void testReplaceDatabaseFromCBLIOS104() throws CouchbaseLiteException, IOException {
+        // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
+        // for .cblite. This is only applicable for SQLite
+        if(!isSQLiteDB()) return;
+
         InputStream dbStream = getAsset("iosdb104.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
         InputStream blobStream1 = getAsset("attachments_iosdb104/56DD54D80B602638AFE81BF55CBA90D94BE0ECB1.blob");
@@ -245,6 +268,10 @@ public class ManagerTest extends LiteTestCase {
 
     // Test for pre-built database test from CBL iOS 1.1.0
     public void testReplaceDatabaseFromCBLIOS110() throws CouchbaseLiteException, IOException {
+        // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
+        // for .cblite. This is only applicable for SQLite
+        if(!isSQLiteDB()) return;
+
         InputStream dbStream = getAsset("iosdb110.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
         InputStream blobStream1 = getAsset("attachments_iosdb110/56DD54D80B602638AFE81BF55CBA90D94BE0ECB1.blob");
@@ -299,6 +326,10 @@ public class ManagerTest extends LiteTestCase {
 
     // Test for pre-built database test from CBL .NET 1.0.4
     public void testReplaceDatabaseFromCBLNet104() throws CouchbaseLiteException, IOException {
+        // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
+        // for .cblite. This is only applicable for SQLite
+        if(!isSQLiteDB()) return;
+
         InputStream dbStream = getAsset("netdb104.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
         InputStream blobStream1 = getAsset("attachments_netdb104/d6ea829121af9d025ec61d8157fcf8ea4b445129.blob");
@@ -346,6 +377,10 @@ public class ManagerTest extends LiteTestCase {
      * Because of CBL .NET 1.1.0 sample database file, following test fails.
      */
     public void testReplaceDatabaseFromCBLNet110() throws CouchbaseLiteException, IOException {
+        // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
+        // for .cblite. This is only applicable for SQLite
+        if(!isSQLiteDB()) return;
+
         InputStream dbStream = getAsset("netdb110.cblite");
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
         InputStream blobStream1 = getAsset("attachments_netdb110/D6EA829121AF9D025EC61D8157FCF8EA4B445129.blob");
@@ -498,5 +533,69 @@ public class ManagerTest extends LiteTestCase {
         server.shutdown();
 
         Log.d(Log.TAG, "END testClose()");
+    }
+
+
+    // #pragma mark - REPLACE DATABASE:
+
+    public void test23_ReplaceOldVersionDatabase() throws Exception {
+        // Test only SQLite:
+        if (!isSQLiteDB())
+            return;
+
+        // iOS 1.2.0
+        File srcDir = new File(manager.getContext().getFilesDir(), "iosdb.cblite2");
+        FileDirUtils.deleteRecursive(srcDir);
+        File fDir = manager.getContext().getFilesDir();
+        ZipUtils.unzip(getAsset("iosdb.cblite2.zip"), manager.getContext().getFilesDir());
+
+        testReplaceDatabaseWithCBLite2("replacedb", srcDir.getAbsolutePath(), new ReplaceDatabaseCallback() {
+            @Override
+            public void onComplete(QueryEnumerator e) {
+                assertEquals(1, e.getCount());
+                Document doc = e.getRow(0).getDocument();
+                assertNotNull(doc);
+                assertEquals("doc1", doc.getId());
+                assertEquals(2, doc.getCurrentRevision().getAttachments().size());
+                Attachment att1 = doc.getCurrentRevision().getAttachment("attach1");
+                assertNotNull(att1);
+                Attachment att2 = doc.getCurrentRevision().getAttachment("attach2");
+                assertNotNull(att2);
+            }
+        });
+    }
+
+    interface ReplaceDatabaseCallback {
+        void onComplete(QueryEnumerator e);
+    }
+
+    void testReplaceDatabaseWithCBLite2(String name, String dataabaseDir, ReplaceDatabaseCallback callback) throws CouchbaseLiteException {
+        assertTrue(manager.replaceDatabase(name, dataabaseDir));
+        checkReplacedDatabase(name, callback);
+        Database replacedb = manager.getDatabase(name);
+        replacedb.delete();
+    }
+
+    void checkReplacedDatabase(String name, ReplaceDatabaseCallback callback) throws CouchbaseLiteException {
+        Database replaceDb = this.manager.getExistingDatabase(name);
+        assertNotNull(replaceDb);
+
+        View view = replaceDb.getView("myview");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), null);
+            }
+        }, "1.0");
+
+        Query query = view.createQuery();
+        assertNotNull(query);
+        query.setPrefetch(true);
+        QueryEnumerator e = query.run();
+        assertNotNull(e);
+
+        if(callback != null)
+            callback.onComplete(e);
     }
 }

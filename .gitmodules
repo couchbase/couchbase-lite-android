@@ -1,3 +1,6 @@
 [submodule "libraries/couchbase-lite-java-core"]
 	path = libraries/couchbase-lite-java-core
 	url = https://github.com/couchbase/couchbase-lite-java-core.git
+[submodule "libraries/cbforest-java"]
+	path = libraries/cbforest-java
+	url = https://github.com/couchbaselabs/cbforest-java.git

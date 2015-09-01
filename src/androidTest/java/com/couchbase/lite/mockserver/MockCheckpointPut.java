@@ -63,7 +63,7 @@ public class MockCheckpointPut implements SmartMockResponse {
      */
     private String generateNextRev() {
         if (getRev() == null) {
-            return "0-1";
+            return "0-0001";
         } else {
             StringTokenizer st = new StringTokenizer(getRev(), "-");
             String beforeDash = st.nextToken();

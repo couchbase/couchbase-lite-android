@@ -56,6 +56,12 @@ public class LiteTestCase extends LiteTestCaseBase {
     protected Database database = null;
     protected String DEFAULT_TEST_DB = "cblite-test";
 
+    protected boolean useForestDB = false;
+
+    protected boolean isSQLiteDB(){
+        String name = database.getStore().getClass().getName();
+        return Manager.DEFAULT_STORE_CLASSNAME.equals(name);
+    }
     @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp");
@@ -100,7 +106,17 @@ public class LiteTestCase extends LiteTestCaseBase {
         Manager.enableLogging(Log.TAG_MULTI_STREAM_WRITER, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_REMOTE_REQUEST, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_ROUTER, Log.VERBOSE);
-        manager = new Manager(context, Manager.DEFAULT_OPTIONS);
+
+        // forestdb
+        if(useForestDB) {
+            ManagerOptions options = new ManagerOptions();
+            options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
+            manager = new Manager(context, options);
+        }
+        // SQLite
+        else{
+            manager = new Manager(context, Manager.DEFAULT_OPTIONS);
+        }
     }
 
     protected void stopCBLite() {
@@ -593,6 +609,8 @@ public class LiteTestCase extends LiteTestCaseBase {
 
                 Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(
                         request.getUtf8Body(), Map.class);
+                Log.e(TAG, "lastSequence=" +jsonMap.get("lastSequence"));
+                Log.e(TAG, "checkpoint request=" + jsonMap);
                 if (jsonMap.containsKey("lastSequence") &&
                         ((String) jsonMap.get("lastSequence")).equals(expectedLastSequenceStr)) {
                     foundExpectedLastSeq = true;
@@ -601,6 +619,7 @@ public class LiteTestCase extends LiteTestCaseBase {
                 // wait until mock server responds to the checkpoint PUT request.
                 // not sure if this is strictly necessary, but might prevent race conditions.
                 dispatcher.takeRecordedResponseBlocking(request);
+
             }
         }
 
@@ -796,5 +815,14 @@ public class LiteTestCase extends LiteTestCaseBase {
                 doneSignal.countDown();
             }
         }
+    }
+
+
+    @Override
+    public void runBare() throws Throwable {
+        useForestDB = false;
+        super.runBare();
+        useForestDB = true;
+        super.runBare();
     }
 }
