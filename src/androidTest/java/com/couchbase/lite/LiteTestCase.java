@@ -822,6 +822,11 @@ public class LiteTestCase extends LiteTestCaseBase {
     public void runBare() throws Throwable {
         useForestDB = false;
         super.runBare();
+
+        // currently test of forestdb is only for android. Java one casue problem.
+        if (!System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik"))
+            return;
+
         useForestDB = true;
         super.runBare();
     }
