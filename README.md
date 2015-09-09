@@ -176,7 +176,11 @@ If you want to run something (aside from the tests), you should get one of the s
 * If you don't already have a `local.properties` file, configure Android Studio SDK location
     * `cp local.properties.example local.properties`
     * Customize `local.properties` according to your SDK installation directory
-* Build
+* Compile (assemble)
+    * `$ ./gradlew assemble`
+* Test
+    * `$ ./gradlew connectedAndroidTest`
+* Build (compile & test)
     * `$ ./gradlew build`
 
 ## Example Apps
