@@ -524,17 +524,19 @@ public class ApiTest extends LiteTestCase {
         SavedRevision rev2b = newRev.save(allowConflict);
         assertNotNull("Failed to create a a conflict", rev2b);
 
-        List<SavedRevision> confRevs = new ArrayList<SavedRevision>();
-        // TODO: order of revisions are questionable. revisit this again.
-        if (rev2a.getId().compareTo(rev2b.getId()) > 0) {
-            confRevs.add(rev2a);
-            confRevs.add(rev2b);
-        }else {
-            confRevs.add(rev2b);
-            confRevs.add(rev2a);
-        }
-        assertEquals(confRevs, doc.getConflictingRevisions());
-        assertEquals(confRevs, doc.getLeafRevisions());
+        // NOTE: getConflictingRevisions() and getLeafRevisions() => order is not guaranteed
+        List<SavedRevision> expectedConfRevs1 = new ArrayList<SavedRevision>();
+        expectedConfRevs1.add(rev2a);
+        expectedConfRevs1.add(rev2b);
+
+        List<SavedRevision> expectedConfRevs2 = new ArrayList<SavedRevision>();
+        expectedConfRevs2.add(rev2b);
+        expectedConfRevs2.add(rev2a);
+
+        List<SavedRevision> actualConfRevs = doc.getConflictingRevisions();
+        assertTrue(expectedConfRevs1.equals(actualConfRevs) || expectedConfRevs2.equals(actualConfRevs));
+        List<SavedRevision> actualLeafRevs = doc.getLeafRevisions();
+        assertTrue(expectedConfRevs1.equals(actualLeafRevs) || expectedConfRevs2.equals(actualLeafRevs));
 
         SavedRevision defaultRev, otherRev;
         if (rev2a.getId().compareTo(rev2b.getId()) > 0) {
