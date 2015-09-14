@@ -591,7 +591,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_touchdb_TDCollateJSON_nativeRegisterCu
 
 	// get the native handle
 
-	LOGV("SQLite3 handle is %d", sqliteHandle);
+	//LOGV("SQLite3 handle is %d", sqliteHandle);
 
 	//try and install a custom collator
 

@@ -13,7 +13,16 @@ public class RevCollator {
     // FIXME: only public for now until moved in to same package
     public static native int testCollateRevIds(String string1, String string2);
 
+    public native static boolean isARMv7();
+
     static {
-        System.loadLibrary("com_couchbase_touchdb_RevCollator");
+        System.loadLibrary("com_couchbase_touchdb_RevCollator_util");
+        if (isARMv7()) {
+            System.loadLibrary("com_couchbase_touchdb_RevCollator-v7a");
+        }
+        else {
+            System.loadLibrary("com_couchbase_touchdb_RevCollator");
+        }
     }
+
 }
