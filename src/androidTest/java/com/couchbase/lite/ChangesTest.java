@@ -12,6 +12,7 @@ public class ChangesTest extends LiteTestCase {
     private int changeNotifications = 0;
 
     public void testChangeNotification() throws CouchbaseLiteException {
+        changeNotifications = 0;
 
         Database.ChangeListener changeListener = new Database.ChangeListener() {
             @Override
