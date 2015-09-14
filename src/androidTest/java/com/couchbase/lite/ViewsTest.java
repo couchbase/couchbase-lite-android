@@ -108,8 +108,12 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertNull(view.getMap());
         Assert.assertEquals(view, database.getExistingView("viewToDelete"));
 
-        // Database.getView(...) create view file. so this check should be 1.
-        Assert.assertEquals(1, database.getAllViews().size());
+        // NOTE: Forestdb view storage creates view db when constructor is called.
+        //       But SQLite view storage does not create view record when constructor is called.
+        if(isUseForestDB())
+            Assert.assertEquals(1, database.getAllViews().size());
+        else
+            Assert.assertEquals(0, database.getAllViews().size());
 
         boolean changed = view.setMapReduce(new Mapper() {
 
@@ -467,7 +471,20 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(dict1.get("key"), rows.get(2).getKey());
         Assert.assertEquals(dict1.get("value"), rows.get(2).getValue());
 
+
+        // Start/end query without inclusive start:
+        options.setInclusiveStart(false);
+        options.setStartKey("five");
+        rows = view.query(options);
+        Assert.assertEquals(2, rows.size());
+        Assert.assertEquals(dict4.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(dict4.get("value"), rows.get(0).getValue());
+        Assert.assertEquals(dict1.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(dict1.get("value"), rows.get(1).getValue());
+
         // Start/end query without inclusive end:
+        options.setStartKey("a");
+        options.setInclusiveStart(true);
         options.setInclusiveEnd(false);
 
         rows = view.query(options);
@@ -512,9 +529,35 @@ public class ViewsTest extends LiteTestCase {
         Assert.assertEquals(dict4.get("key"), rows.get(0).getKey());
         Assert.assertEquals(dict4.get("value"), rows.get(0).getValue());
 
-        // TODO
         // Limit:
+        options = new QueryOptions();
+        options.setLimit(2);
+        rows = view.query(options);
+        Assert.assertEquals(2, rows.size());
+        Assert.assertEquals(dict5.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(dict5.get("value"), rows.get(0).getValue());
+        Assert.assertEquals(dict4.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(dict4.get("value"), rows.get(1).getValue());
+
+        // Skip rows:
+        options = new QueryOptions();
+        options.setSkip(2);
+        rows = view.query(options);
+        Assert.assertEquals(3, rows.size());
+        Assert.assertEquals(dict1.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(dict1.get("value"), rows.get(0).getValue());
+        Assert.assertEquals(dict3.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(dict3.get("value"), rows.get(1).getValue());
+        Assert.assertEquals(dict2.get("key"), rows.get(2).getKey());
+        Assert.assertEquals(dict2.get("value"), rows.get(2).getValue());
+
         // Skip + limit:
+        options.setLimit(1);
+        rows = view.query(options);
+        Assert.assertEquals(1, rows.size());
+        Assert.assertEquals(dict1.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(dict1.get("value"), rows.get(0).getValue());
+
 
         // Specific keys:
         options = new QueryOptions();

@@ -62,6 +62,7 @@ public class LiteTestCase extends LiteTestCaseBase {
         String name = database.getStore().getClass().getName();
         return Manager.DEFAULT_STORE_CLASSNAME.equals(name);
     }
+
     @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp");
@@ -829,5 +830,9 @@ public class LiteTestCase extends LiteTestCaseBase {
 
         useForestDB = true;
         super.runBare();
+    }
+
+    public boolean isUseForestDB() {
+        return useForestDB;
     }
 }
