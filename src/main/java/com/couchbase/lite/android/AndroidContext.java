@@ -39,8 +39,7 @@ public class AndroidContext implements Context {
 
     @Override
     public SQLiteStorageEngineFactory getSQLiteStorageEngineFactory() {
-        return new AndroidSQLiteStorageEngineFactory();
+        return new AndroidSQLiteStorageEngineFactory(this);
     }
-
 
 }

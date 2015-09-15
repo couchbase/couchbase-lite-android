@@ -20,6 +20,7 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.AttachmentInternal;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.support.Base64;
+import com.couchbase.lite.support.security.SymmetricKeyException;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
 
@@ -291,7 +292,7 @@ public class AttachmentsTest extends LiteTestCase {
      * - (void) test11_PutAttachment
      */
     @SuppressWarnings("unchecked")
-    public void testPutAttachment() throws CouchbaseLiteException, IOException {
+    public void testPutAttachment() throws Exception {
 
         // Put a revision that includes an _attachments dict:
         RevisionInternal rev1 = putDocWithAttachment(null, "This is the body of attach1", false);
@@ -426,8 +427,7 @@ public class AttachmentsTest extends LiteTestCase {
         rev.save();
     }
 
-    public void testStreamAttachmentBlobStoreWriter() throws IOException {
-
+    public void testStreamAttachmentBlobStoreWriter() throws Exception {
         BlobStore attachments = database.getAttachmentStore();
 
         BlobStoreWriter blobWriter = new com.couchbase.lite.BlobStoreWriter(attachments);
@@ -998,7 +998,8 @@ public class AttachmentsTest extends LiteTestCase {
         return atts;
     }
 
-    private static BlobStoreWriter blobForData(Database db, byte[] data) {
+    private static BlobStoreWriter blobForData(Database db, byte[] data)
+            throws SymmetricKeyException {
         try {
             BlobStoreWriter blob = db.getAttachmentWriter();
             blob.appendData(data);

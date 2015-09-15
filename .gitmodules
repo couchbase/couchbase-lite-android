@@ -4,3 +4,6 @@
 [submodule "libraries/couchbase-lite-java-forestdb"]
 	path = libraries/couchbase-lite-java-forestdb
 	url = https://github.com/couchbaselabs/couchbase-lite-java-forestdb.git
+[submodule "libraries/sqlcipher-android"]
+	path = libraries/sqlcipher-android
+	url = https://github.com/couchbaselabs/sqlcipher-android

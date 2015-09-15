@@ -11,6 +11,7 @@ import com.couchbase.lite.router.Router;
 import com.couchbase.lite.router.RouterCallbackBlock;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.router.URLStreamHandlerFactory;
+import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.URIUtils;
@@ -45,7 +46,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class LiteTestCase extends LiteTestCaseBase {
-
     public static final String TAG = "LiteTestCase";
 
     private static boolean initializedUrlHandler = false;
@@ -54,13 +54,18 @@ public class LiteTestCase extends LiteTestCaseBase {
 
     protected Manager manager = null;
     protected Database database = null;
-    protected String DEFAULT_TEST_DB = "cblite-test";
+    protected static final String DEFAULT_TEST_DB = "cblite-test";
+    protected static final String DEFAULT_TEST_DIR_NAME = "test";
 
     protected boolean useForestDB = false;
 
     protected boolean isSQLiteDB(){
         String name = database.getStore().getClass().getName();
         return Manager.DEFAULT_STORE_CLASSNAME.equals(name);
+    }
+
+    protected  boolean isAndriod() {
+        return (System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik"));
     }
 
     @Override
@@ -91,8 +96,19 @@ public class LiteTestCase extends LiteTestCaseBase {
         return this.getClass().getResourceAsStream("/assets/" + name);
     }
 
+    protected Context getDefaultTestContext(boolean deleteContent) {
+        return getTestContext(DEFAULT_TEST_DIR_NAME, deleteContent);
+    }
+
+    protected Context getTestContext(String dirName, boolean deleteContent) {
+        Context context = getTestContext(dirName);
+        if (deleteContent)
+            FileDirUtils.cleanDirectory(context.getFilesDir());
+        return context;
+    }
+
     protected void startCBLite() throws IOException {
-        LiteTestContext context = new LiteTestContext();
+        Context context = getDefaultTestContext(true);
         Manager.enableLogging(TAG, Log.VERBOSE);
         Manager.enableLogging(Log.TAG, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_SYNC, Log.VERBOSE);
@@ -147,7 +163,6 @@ public class LiteTestCase extends LiteTestCaseBase {
     }
 
     protected void loadCustomProperties() throws IOException {
-
         Properties systemProperties = System.getProperties();
         InputStream mainProperties = getAsset("test.properties");
         if (mainProperties != null) {

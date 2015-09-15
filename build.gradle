@@ -56,19 +56,20 @@ android {
 def buildAndroidWithArtifacts = System.getProperty("buildAndroidWithArtifacts")
 
 dependencies {
-
-    // this library is only needed by test code (95% certain), and therefore
-    // instrumentTestCompile is used rather than compile.
-    androidTestCompile 'commons-io:commons-io:2.0.1'
-
     compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-core') :
             'com.couchbase.lite:couchbase-lite-java-core:' + version
 
     compile buildAndroidWithArtifacts == null ?
+            project(':libraries:sqlcipher-android') :
+            'com.couchbase.lite.android:sqlcipher:' + System.getenv("MAVEN_UPLOAD_VERSION")
+	
+	compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-forestdb') :
             'com.couchbase.lite:couchbase-lite-java-forestdb:' + version
 
+    // Libraries required for tests only:
+    androidTestCompile 'commons-io:commons-io:2.0.1'
     androidTestCompile 'com.squareup.okhttp:mockwebserver:2.0.0'
 }
 
