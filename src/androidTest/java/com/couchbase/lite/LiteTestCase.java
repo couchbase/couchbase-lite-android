@@ -68,6 +68,10 @@ public class LiteTestCase extends LiteTestCaseBase {
         return (System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik"));
     }
 
+    protected boolean isUseForestDB() {
+        return useForestDB;
+    }
+
     @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp");
@@ -833,21 +837,16 @@ public class LiteTestCase extends LiteTestCaseBase {
         }
     }
 
-
     @Override
     public void runBare() throws Throwable {
+        // Run Unit Test with SQLiteStore
         useForestDB = false;
         super.runBare();
 
-        // currently test of forestdb is only for android. Java one casue problem.
-        if (!System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik"))
-            return;
-
+        // Run Unit Test with ForestDBStore
         useForestDB = true;
         super.runBare();
     }
 
-    public boolean isUseForestDB() {
-        return useForestDB;
-    }
+
 }
