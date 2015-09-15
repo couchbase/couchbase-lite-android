@@ -28,6 +28,8 @@ public class MiscTest extends LiteTestCase {
     }
 
     public void testSymmetricKey() throws Exception {
+        if (!isAndriod()) return;
+
         // Generate a key from a password:
         String password = "letmein123456";
         byte[] salt = "SaltyMcNaCl".getBytes();
