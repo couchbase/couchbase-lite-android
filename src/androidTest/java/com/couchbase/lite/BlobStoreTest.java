@@ -41,6 +41,8 @@ public class BlobStoreTest extends LiteTestCase {
     public void runBare() throws Throwable {
         encrypt = false;
         super.runBare();
+        if(!isAndriod())
+            return;
         encrypt = true;
         super.runBare();
     }
