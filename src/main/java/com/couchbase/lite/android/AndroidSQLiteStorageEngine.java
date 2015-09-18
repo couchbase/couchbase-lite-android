@@ -32,12 +32,12 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     private SQLiteDatabase database;
     private AndroidContext context;
 
-    public AndroidSQLiteStorageEngine(AndroidContext context) {
+    public AndroidSQLiteStorageEngine() {
         this.context = context;
     }
 
     @Override
-    public boolean open(String path, String encryptionKey /*Ignore encryptionKey*/) {
+    public boolean open(String path) {
         if(database != null && database.isOpen())
             return true;
 
