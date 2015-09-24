@@ -22,48 +22,32 @@ import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
 
-import net.sqlcipher.database.SQLiteDatabase;
-//import net.sqlcipher.database.SQLiteException;
+import com.couchbase.lite.database.sqlite.SQLiteDatabase;
+
+import java.util.Map;
 
 public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
-    public static final String TAG = "AndroidSQLCipherStorageEngine";
+    private static final boolean SUPPORT_ENCRYPTION = true;
 
     private SQLiteDatabase database;
-    private AndroidContext context;
 
-    public AndroidSQLCipherStorageEngine(AndroidContext context) {
-        this.context = context;
+    public AndroidSQLCipherStorageEngine() {
+        // Do Nothing
     }
 
     @Override
-    public boolean open(String path, String encryptionKey) throws SQLException {
+    public boolean open(String path) throws SQLException {
         if(database != null && database.isOpen())
             return true;
-
         try {
-            // Write-Ahead Logging (WAL) http://sqlite.org/wal.html
-            // http://developer.android.com/reference/android/database/sqlite/SQLiteDatabase.html#enableWriteAheadLogging()
-            // ENABLE_WRITE_AHEAD_LOGGING is available from API 16
-            // enableWriteAheadLogging() is available from API 11, but it does not work with API 9 and 10.
-            // Minimum version CBL Android supports is API 9
-
-            // NOTE: Not obvious difference. But it seems Without WAL is faster.
-            //       WAL consumes more memory, it might make GC busier.
-            SQLiteDatabase.loadLibs(context.getWrappedContext());
-            char[] key = encryptionKey != null ? encryptionKey.toCharArray() : new char[0];
-            database = SQLiteDatabase.openOrCreateDatabase(path, key, null);
+            database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
-
-            String sqliteDatabaseClassName = "net/sqlcipher/database/SQLiteDatabase";
-            SQLiteJsonCollator.register(database, sqliteDatabaseClassName, 0);
-            SQLiteRevCollator.register(database, sqliteDatabaseClassName, 0);
-        } catch(net.sqlcipher.database.SQLiteException e) {
-            Log.e(TAG, "Unable to open the SQLite database", e);
+        } catch(Throwable e) {
+            Log.e(Log.TAG_DATABASE, "Unable to open the SQLite database", e);
             if (database != null)
                 database.close();
             throw new SQLException(e);
         }
-
         return database.isOpen();
     }
 
@@ -85,9 +69,6 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
     @Override
     public void beginTransaction() {
         database.beginTransaction();
-        // NOTE: Use beginTransactionNonExclusive() with ENABLE_WRITE_AHEAD_LOGGING
-        //       http://stackoverflow.com/questions/8104832/sqlite-simultaneous-reading-and-writing
-        // database.beginTransactionNonExclusive();
     }
 
     @Override
@@ -104,7 +85,7 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
     public void execSQL(String sql) throws SQLException {
         try {
             database.execSQL(sql);
-        } catch (android.database.SQLException e) {
+        } catch (Exception e) {
             throw new SQLException(e);
         }
     }
@@ -113,33 +94,31 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
     public void execSQL(String sql, Object[] bindArgs) throws SQLException {
         try {
             database.execSQL(sql, bindArgs);
-        } catch (android.database.SQLException e) {
+        } catch (Exception e) {
             throw new SQLException(e);
         }
     }
 
     @Override
     public Cursor rawQuery(String sql, String[] selectionArgs) {
-        return new SQLiteCursorWrapper(database.rawQuery(sql, selectionArgs));
+        return new SQLiteCursor(database.rawQuery(sql, selectionArgs));
     }
 
     @Override
     public long insert(String table, String nullColumnHack, ContentValues values) {
-        return database.insert(table, nullColumnHack,
-                AndroidSQLiteHelper.toAndroidContentValues(values));
+        return database.insert(table, nullColumnHack, toContentValues(values));
     }
 
     @Override
     public long insertWithOnConflict(String table, String nullColumnHack,
                                      ContentValues initialValues, int conflictAlgorithm) {
         return database.insertWithOnConflict(table, nullColumnHack,
-                AndroidSQLiteHelper.toAndroidContentValues(initialValues), conflictAlgorithm);
+                toContentValues(initialValues), conflictAlgorithm);
     }
 
     @Override
     public int update(String table, ContentValues values, String whereClause, String[] whereArgs) {
-        return database.update(table,
-                AndroidSQLiteHelper.toAndroidContentValues(values), whereClause, whereArgs);
+        return database.update(table, toContentValues(values), whereClause, whereArgs);
     }
 
     @Override
@@ -150,11 +129,10 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
     @Override
     public void close() {
         database.close();
-        Log.v(Log.TAG_DATABASE, "%s: Closed Android sqlite db", this);
     }
 
     public boolean supportEncryption() {
-        return true;
+        return SUPPORT_ENCRYPTION;
     }
 
     @Override
@@ -162,5 +140,74 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
         return "AndroidSQLCipherStorageEngine{" +
                 "database=" + Integer.toHexString(System.identityHashCode(database)) +
                 "}";
+    }
+
+    private com.couchbase.lite.database.ContentValues toContentValues(ContentValues values) {
+        com.couchbase.lite.database.ContentValues contentValues =
+                new com.couchbase.lite.database.ContentValues(values.size());
+        for (Map.Entry<String, Object> value : values.valueSet()) {
+            if (value.getValue() == null) {
+                contentValues.put(value.getKey(), (String) null);
+            } else if (value.getValue() instanceof String) {
+                contentValues.put(value.getKey(), (String) value.getValue());
+            } else if (value.getValue() instanceof Integer) {
+                contentValues.put(value.getKey(), (Integer) value.getValue());
+            } else if (value.getValue() instanceof Long) {
+                contentValues.put(value.getKey(), (Long) value.getValue());
+            } else if (value.getValue() instanceof Boolean) {
+                contentValues.put(value.getKey(), (Boolean) value.getValue());
+            } else if (value.getValue() instanceof byte[]) {
+                contentValues.put(value.getKey(), (byte[]) value.getValue());
+            }
+        }
+        return contentValues;
+    }
+
+    private class SQLiteCursor implements Cursor {
+        private com.couchbase.lite.database.cursor.Cursor cursor;
+
+        public SQLiteCursor(com.couchbase.lite.database.cursor.Cursor cursor) {
+            this.cursor = cursor;
+        }
+
+        @Override
+        public boolean moveToNext() {
+            return cursor.moveToNext();
+        }
+
+        @Override
+        public boolean isAfterLast() {
+            return cursor.isAfterLast();
+        }
+
+        @Override
+        public String getString(int columnIndex) {
+            return cursor.getString(columnIndex);
+        }
+
+        @Override
+        public int getInt(int columnIndex) {
+            return cursor.getInt(columnIndex);
+        }
+
+        @Override
+        public long getLong(int columnIndex) {
+            return cursor.getLong(columnIndex);
+        }
+
+        @Override
+        public byte[] getBlob(int columnIndex) {
+            return cursor.getBlob(columnIndex);
+        }
+
+        @Override
+        public void close() {
+            cursor.close();
+        }
+
+        @Override
+        public boolean isNull(int columnIndex) {
+            return cursor.isNull(columnIndex);
+        }
     }
 }

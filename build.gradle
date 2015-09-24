@@ -59,14 +59,14 @@ dependencies {
     compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-core') :
             'com.couchbase.lite:couchbase-lite-java-core:' + version
-
-    compile buildAndroidWithArtifacts == null ?
-            project(':libraries:sqlcipher-android') :
-            'com.couchbase.lite.android:sqlcipher:' + System.getenv("MAVEN_UPLOAD_VERSION")
 	
 	compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-forestdb') :
             'com.couchbase.lite:couchbase-lite-java-forestdb:' + version
+
+    compile buildAndroidWithArtifacts == null ?
+            project(':libraries:couchbase-lite-java-sqlcipher') :
+            'com.couchbase.lite:couchbase-lite-java-sqlcipher:' + version
 
     // Libraries required for tests only:
     androidTestCompile 'commons-io:commons-io:2.0.1'
