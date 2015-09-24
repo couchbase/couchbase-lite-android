@@ -30,10 +30,8 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public static final String TAG = "AndroidSQLiteStorageEngine";
 
     private SQLiteDatabase database;
-    private AndroidContext context;
 
     public AndroidSQLiteStorageEngine() {
-        this.context = context;
     }
 
     @Override
