@@ -52,21 +52,13 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
     }
 
     @Override
-    public int getVersion() throws SQLException {
-        try {
-            return database.getVersion();
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public int getVersion() {
+        return database.getVersion();
     }
 
     @Override
-    public void setVersion(int version) throws SQLException {
-        try {
-            database.setVersion(version);
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public void setVersion(int version) {
+        database.setVersion(version);
     }
 
     @Override
@@ -75,30 +67,18 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
     }
 
     @Override
-    public void beginTransaction() throws SQLException {
-        try {
-            database.beginTransaction();
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public void beginTransaction() {
+        database.beginTransaction();
     }
 
     @Override
-    public void endTransaction() throws SQLException {
-        try {
-            database.endTransaction();
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public void endTransaction() {
+        database.endTransaction();
     }
 
     @Override
-    public void setTransactionSuccessful() throws SQLException {
-        try {
-            database.setTransactionSuccessful();
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public void setTransactionSuccessful() {
+        database.setTransactionSuccessful();
     }
 
     @Override
@@ -120,63 +100,35 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
     }
 
     @Override
-    public Cursor rawQuery(String sql, String[] selectionArgs) throws SQLException {
-        try {
-            return new SQLiteCursor(database.rawQuery(sql, selectionArgs));
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public Cursor rawQuery(String sql, String[] selectionArgs) {
+        return new SQLiteCursor(database.rawQuery(sql, selectionArgs));
     }
 
     @Override
-    public long insert(String table, String nullColumnHack, ContentValues values)
-            throws SQLException {
-        try {
-            return database.insert(table, nullColumnHack, toContentValues(values));
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public long insert(String table, String nullColumnHack, ContentValues values) {
+        return database.insert(table, nullColumnHack, toContentValues(values));
     }
 
     @Override
     public long insertWithOnConflict(String table, String nullColumnHack,
-                                     ContentValues initialValues, int conflictAlgorithm)
-            throws SQLException {
-        try {
-            return database.insertWithOnConflict(table, nullColumnHack,
-                    toContentValues(initialValues), conflictAlgorithm);
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+                                     ContentValues initialValues, int conflictAlgorithm) {
+        return database.insertWithOnConflict(table, nullColumnHack,
+                toContentValues(initialValues), conflictAlgorithm);
     }
 
     @Override
-    public int update(String table, ContentValues values, String whereClause, String[] whereArgs)
-            throws SQLException {
-        try {
-            return database.update(table, toContentValues(values), whereClause, whereArgs);
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public int update(String table, ContentValues values, String whereClause, String[] whereArgs) {
+        return database.update(table, toContentValues(values), whereClause, whereArgs);
     }
 
     @Override
-    public int delete(String table, String whereClause, String[] whereArgs) throws SQLException {
-        try {
-            return database.delete(table, whereClause, whereArgs);
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public int delete(String table, String whereClause, String[] whereArgs) {
+        return database.delete(table, whereClause, whereArgs);
     }
 
     @Override
-    public void close() throws SQLException {
-        try {
-            database.close();
-            Log.v(Log.TAG_DATABASE, "%s: Closed Android sqlite db", this);
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+    public void close() {
+        database.close();
     }
 
     public boolean supportEncryption() {
@@ -219,75 +171,43 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
         }
 
         @Override
-        public boolean moveToNext() throws SQLException {
-            try {
-                return cursor.moveToNext();
-            } catch (Exception e) {
-                throw new SQLException(e.getMessage(), e);
-            }
+        public boolean moveToNext() {
+            return cursor.moveToNext();
         }
 
         @Override
-        public boolean isAfterLast() throws SQLException {
-            try {
-                return cursor.isAfterLast();
-            } catch (Exception e) {
-                throw new SQLException(e);
-            }
+        public boolean isAfterLast() {
+            return cursor.isAfterLast();
         }
 
         @Override
-        public String getString(int columnIndex) throws SQLException {
-            try {
-                return cursor.getString(columnIndex);
-            } catch (Exception e) {
-                throw new SQLException(e);
-            }
+        public String getString(int columnIndex) {
+            return cursor.getString(columnIndex);
         }
 
         @Override
-        public int getInt(int columnIndex) throws SQLException {
-            try {
-                return cursor.getInt(columnIndex);
-            } catch (Exception e) {
-                throw new SQLException(e);
-            }
+        public int getInt(int columnIndex) {
+            return cursor.getInt(columnIndex);
         }
 
         @Override
-        public long getLong(int columnIndex) throws SQLException {
-            try {
-                return cursor.getLong(columnIndex);
-            } catch (Exception e) {
-                throw new SQLException(e);
-            }
+        public long getLong(int columnIndex) {
+            return cursor.getLong(columnIndex);
         }
 
         @Override
-        public byte[] getBlob(int columnIndex) throws SQLException {
-            try {
-                return cursor.getBlob(columnIndex);
-            } catch (Exception e) {
-                throw new SQLException(e);
-            }
+        public byte[] getBlob(int columnIndex) {
+            return cursor.getBlob(columnIndex);
         }
 
         @Override
-        public void close() throws SQLException {
-            try {
-                cursor.close();
-            } catch (Exception e) {
-                throw new SQLException(e);
-            }
+        public void close() {
+            cursor.close();
         }
 
         @Override
-        public boolean isNull(int columnIndex) throws SQLException {
-            try {
-                return cursor.isNull(columnIndex);
-            } catch (Exception e) {
-                throw new SQLException(e);
-            }
+        public boolean isNull(int columnIndex) {
+            return cursor.isNull(columnIndex);
         }
     }
 }
