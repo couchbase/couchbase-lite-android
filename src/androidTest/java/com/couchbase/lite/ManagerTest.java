@@ -466,70 +466,72 @@ public class ManagerTest extends LiteTestCase {
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         MockWebServer server = new MockWebServer();
         server.setDispatcher(dispatcher);
-        server.play();
-
-        // checkpoint PUT or GET response (sticky) (for both push and pull)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
-
-        // create pull replication & start it
-        Replication pull = database.createPullReplication(server.getUrl("/db"));
-        pull.setContinuous(true);
-        final CountDownLatch pullIdleState = new CountDownLatch(1);
-        ReplicationIdleObserver pullIdleObserver = new ReplicationIdleObserver(pullIdleState);
-        pull.addChangeListener(pullIdleObserver);
-        pull.start();
-
-        // create push replication & start it
-        Replication push = database.createPullReplication(server.getUrl("/db"));
-        push.setContinuous(true);
-        final CountDownLatch pushIdleState = new CountDownLatch(1);
-        ReplicationIdleObserver pushIdleObserver = new ReplicationIdleObserver(pushIdleState);
-        push.addChangeListener(pushIdleObserver);
-        push.start();
-
-        // wait till both push and pull replicators become idle.
-        success = pullIdleState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        pull.removeChangeListener(pullIdleObserver);
-        success = pushIdleState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        push.removeChangeListener(pushIdleObserver);
-
-        final CountDownLatch pullStoppedState = new CountDownLatch(1);
-        ReplicationFinishedObserver pullStoppedObserver = new ReplicationFinishedObserver(pullStoppedState);
-        pull.addChangeListener(pullStoppedObserver);
-        final CountDownLatch pushStoppedState = new CountDownLatch(1);
-        ReplicationFinishedObserver pushStoppedObserver = new ReplicationFinishedObserver(pushStoppedState);
-        push.addChangeListener(pushStoppedObserver);
-
-        // close Manager, which close database(s) and replicator(s)
-        manager.close();
-
-        // not need to wait. manager.close() should wait till replicators are closed.
-        assertEquals(0, pullStoppedState.getCount());
-        assertEquals(0, pushStoppedState.getCount());
-        pull.removeChangeListener(pullStoppedObserver);
-        push.removeChangeListener(pushStoppedObserver);
-
-        // give 5 sec to clean thread status.
         try {
-            Thread.sleep(5 * 1000);
-        } catch (Exception e) {
-        }
+            server.play();
 
-        // all threads for Executors should be terminated.
-        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-        for (Thread t : threadSet) {
-            if (t.isAlive()) {
-                assertEquals(-1, t.getName().indexOf("CBLManagerWorkExecutor"));
-                assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+            // checkpoint PUT or GET response (sticky) (for both push and pull)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // create pull replication & start it
+            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            pull.setContinuous(true);
+            final CountDownLatch pullIdleState = new CountDownLatch(1);
+            ReplicationIdleObserver pullIdleObserver = new ReplicationIdleObserver(pullIdleState);
+            pull.addChangeListener(pullIdleObserver);
+            pull.start();
+
+            // create push replication & start it
+            Replication push = database.createPullReplication(server.getUrl("/db"));
+            push.setContinuous(true);
+            final CountDownLatch pushIdleState = new CountDownLatch(1);
+            ReplicationIdleObserver pushIdleObserver = new ReplicationIdleObserver(pushIdleState);
+            push.addChangeListener(pushIdleObserver);
+            push.start();
+
+            // wait till both push and pull replicators become idle.
+            success = pullIdleState.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            pull.removeChangeListener(pullIdleObserver);
+            success = pushIdleState.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            push.removeChangeListener(pushIdleObserver);
+
+            final CountDownLatch pullStoppedState = new CountDownLatch(1);
+            ReplicationFinishedObserver pullStoppedObserver = new ReplicationFinishedObserver(pullStoppedState);
+            pull.addChangeListener(pullStoppedObserver);
+            final CountDownLatch pushStoppedState = new CountDownLatch(1);
+            ReplicationFinishedObserver pushStoppedObserver = new ReplicationFinishedObserver(pushStoppedState);
+            push.addChangeListener(pushStoppedObserver);
+
+            // close Manager, which close database(s) and replicator(s)
+            manager.close();
+
+            // not need to wait. manager.close() should wait till replicators are closed.
+            assertEquals(0, pullStoppedState.getCount());
+            assertEquals(0, pushStoppedState.getCount());
+            pull.removeChangeListener(pullStoppedObserver);
+            push.removeChangeListener(pushStoppedObserver);
+
+            // give 3 sec to clean thread status.
+            try {
+                Thread.sleep(3 * 1000);
+            } catch (Exception e) {
             }
-        }
 
-        // shutdown mock server
-        server.shutdown();
+            // all threads for Executors should be terminated.
+            Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+            for (Thread t : threadSet) {
+                if (t.isAlive()) {
+                    assertEquals(-1, t.getName().indexOf("CBLManagerWorkExecutor"));
+                    assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+                }
+            }
+        }finally {
+            // shutdown mock server
+            server.shutdown();
+        }
 
         Log.d(Log.TAG, "END testClose()");
     }

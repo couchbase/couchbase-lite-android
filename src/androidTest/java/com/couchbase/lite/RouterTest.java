@@ -3,6 +3,7 @@ package com.couchbase.lite;
 import com.couchbase.lite.mockserver.MockCheckpointGet;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
+import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class RouterTest extends LiteTestCase {
 
@@ -471,7 +474,6 @@ public class RouterTest extends LiteTestCase {
         assertEquals(4, result.get("total_rows"));
     }
 
-
     public void testPostBulkDocs() {
         send("PUT", "/db", Status.CREATED, null);
 
@@ -693,34 +695,36 @@ public class RouterTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // fake checkpoint response 404
-        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
+            // fake checkpoint response 404
+            MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
 
-        server.play();
+            server.play();
 
-        Map<String, Object> replicateJsonMap = getPushReplicationParsedJson(server.getUrl("/db"));
+            Map<String, Object> replicateJsonMap = getPushReplicationParsedJson(server.getUrl("/db"));
 
-        Log.v(TAG, "map: " + replicateJsonMap);
-        Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.v(TAG, "result: " + result);
-        assertNotNull(result.get("session_id"));
+            Log.v(TAG, "map: " + replicateJsonMap);
+            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.v(TAG, "result: " + result);
+            assertNotNull(result.get("session_id"));
 
-        boolean success = waitForReplicationToFinish();
-        assertTrue(success);
-
-        server.shutdown();
+            boolean success = waitForReplicationToFinish();
+            assertTrue(success);
+        }finally {
+            server.shutdown();
+        }
     }
 
     private boolean waitForReplicationToFinish() throws InterruptedException {
-        int maxTimeToWaitMs = 60 * 1000;
+        int maxTimeToWaitMs = 30 * 1000;
         int timeWaited = 0;
         boolean success = true;
 
         ArrayList<Object> activeTasks = (ArrayList<Object>) send("GET", "/_active_tasks", Status.OK, null);
         while (activeTasks.size() > 0 && timeWaited < maxTimeToWaitMs) {
-            int timeToWait = 1000;
+            int timeToWait = 200;
             Thread.sleep(timeToWait);
             activeTasks = (ArrayList<Object>) send("GET", "/_active_tasks", Status.OK, null);
             timeWaited += timeToWait;
@@ -740,21 +744,23 @@ public class RouterTest extends LiteTestCase {
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
-        server.play();
+        try {
+            server.play();
 
-        // kick off replication via REST api
-        Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
-        Log.v(TAG, "map: " + replicateJsonMap);
-        Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.v(TAG, "result: " + result);
-        assertNotNull(result.get("session_id"));
+            // kick off replication via REST api
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            Log.v(TAG, "map: " + replicateJsonMap);
+            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.v(TAG, "result: " + result);
+            assertNotNull(result.get("session_id"));
 
-        // wait for replication to finish
-        boolean success = waitForReplicationToFinish();
-        assertTrue(success);
-
-        // cleanup
-        server.shutdown();
+            // wait for replication to finish
+            boolean success = waitForReplicationToFinish();
+            assertTrue(success);
+        }finally {
+            // cleanup
+            server.shutdown();
+        }
     }
 
     /**
@@ -910,49 +916,51 @@ public class RouterTest extends LiteTestCase {
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
-        server.play();
+        try {
+            server.play();
 
-        // kick off 1st replication via REST api
-        Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
-        Log.i(TAG, "map: " + replicateJsonMap);
+            // kick off 1st replication via REST api
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            Log.i(TAG, "map: " + replicateJsonMap);
 
-        Log.i(TAG, "Call 1st /_replicate");
-        Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.i(TAG, "result: " + result);
-        assertNotNull(result.get("session_id"));
-        String sessionId1 = (String) result.get("session_id");
+            Log.i(TAG, "Call 1st /_replicate");
+            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result: " + result);
+            assertNotNull(result.get("session_id"));
+            String sessionId1 = (String) result.get("session_id");
 
-        // NOTE: one short replication should be blocked. sendBody() waits till response is ready.
-        //      https://github.com/couchbase/couchbase-lite-android/issues/204
+            // NOTE: one short replication should be blocked. sendBody() waits till response is ready.
+            //      https://github.com/couchbase/couchbase-lite-android/issues/204
 
-        // kick off 2nd replication via REST api
-        Log.i(TAG, "Call 2nd /_replicate");
-        Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.i(TAG, "result2: " + result2);
-        assertNotNull(result2.get("session_id"));
-        String sessionId2 = (String) result2.get("session_id");
+            // kick off 2nd replication via REST api
+            Log.i(TAG, "Call 2nd /_replicate");
+            Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result2: " + result2);
+            assertNotNull(result2.get("session_id"));
+            String sessionId2 = (String) result2.get("session_id");
 
-        // wait for replication to finish
-        boolean success = waitForReplicationToFinish();
-        assertTrue(success);
+            // wait for replication to finish
+            boolean success = waitForReplicationToFinish();
+            assertTrue(success);
 
-        // kick off 3rd replication via REST api
-        Log.i(TAG, "Call 3rd /_replicate");
-        Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.i(TAG, "result3: " + result3);
-        assertNotNull(result3.get("session_id"));
-        String sessionId3 = (String) result3.get("session_id");
+            // kick off 3rd replication via REST api
+            Log.i(TAG, "Call 3rd /_replicate");
+            Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result3: " + result3);
+            assertNotNull(result3.get("session_id"));
+            String sessionId3 = (String) result3.get("session_id");
 
-        // wait for replication to finish
-        boolean success3 = waitForReplicationToFinish();
-        assertTrue(success3);
+            // wait for replication to finish
+            boolean success3 = waitForReplicationToFinish();
+            assertTrue(success3);
 
-        assertFalse(sessionId1.equals(sessionId2));
-        assertFalse(sessionId1.equals(sessionId3));
-        assertFalse(sessionId2.equals(sessionId3));
-
-        // cleanup
-        server.shutdown();
+            assertFalse(sessionId1.equals(sessionId2));
+            assertFalse(sessionId1.equals(sessionId3));
+            assertFalse(sessionId2.equals(sessionId3));
+        }finally {
+            // cleanup
+            server.shutdown();
+        }
     }
 
     /**
@@ -966,62 +974,83 @@ public class RouterTest extends LiteTestCase {
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
-        server.play();
-
-        // kick off 1st replication via REST api
-        Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
-        replicateJsonMap.put("continuous", true);
-        Log.i(TAG, "map: " + replicateJsonMap);
-
-        Log.i(TAG, "Call 1st /_replicate");
-        Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.i(TAG, "result: " + result);
-        assertNotNull(result.get("session_id"));
-        String sessionId1 = (String) result.get("session_id");
-
-        // no wait, immediately call new _replicate REST API
-
-        // kick off 2nd replication via REST api => Should be
-        Log.i(TAG, "Call 2nd /_replicate");
-        Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.i(TAG, "result2: " + result2);
-        assertNotNull(result2.get("session_id"));
-        String sessionId2 = (String) result2.get("session_id");
-
-        // 20 sec is to wait replicator becomes IDLE
         try {
-            Thread.sleep(20 * 1000);
-        } catch (Exception e) {
+            server.play();
+
+            // kick off 1st replication via REST api
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            replicateJsonMap.put("continuous", true);
+            Log.i(TAG, "map: " + replicateJsonMap);
+
+            Log.i(TAG, "Call 1st /_replicate");
+            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result: " + result);
+            assertNotNull(result.get("session_id"));
+            String sessionId1 = (String) result.get("session_id");
+
+            // no wait, immediately call new _replicate REST API
+
+            // kick off 2nd replication via REST api => Should be
+            Log.i(TAG, "Call 2nd /_replicate");
+            Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result2: " + result2);
+            assertNotNull(result2.get("session_id"));
+            String sessionId2 = (String) result2.get("session_id");
+
+            // WAIT replicator becomes IDLE
+            List<CountDownLatch> replicationIdleSignals = new ArrayList<CountDownLatch>();
+            List<Replication> repls = database.getActiveReplications();
+            for(Replication repl : repls){
+                if(repl.getStatus()== Replication.ReplicationStatus.REPLICATION_ACTIVE){
+                    final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+                    ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+                    repl.addChangeListener(idleObserver);
+                    replicationIdleSignals.add(replicationIdleSignal);
+                }
+            }
+            for(CountDownLatch signal : replicationIdleSignals){
+                assertTrue(signal.await(30, TimeUnit.SECONDS));
+            }
+
+            // kick off 3rd replication via REST api => Should be
+            Log.i(TAG, "Call 3rd /_replicate");
+            Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result3: " + result3);
+            assertNotNull(result3.get("session_id"));
+            String sessionId3 = (String) result3.get("session_id");
+
+            // WAIT replicator becomes IDLE
+            replicationIdleSignals = new ArrayList<CountDownLatch>();
+            repls = database.getActiveReplications();
+            for(Replication repl : repls){
+                if(repl.getStatus()== Replication.ReplicationStatus.REPLICATION_ACTIVE){
+                    final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+                    ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+                    repl.addChangeListener(idleObserver);
+                    replicationIdleSignals.add(replicationIdleSignal);
+                }
+            }
+            for(CountDownLatch signal : replicationIdleSignals){
+                assertTrue(signal.await(30, TimeUnit.SECONDS));
+            }
+
+
+            // Cancel Replicator
+            replicateJsonMap.put("cancel", true);
+            Log.i(TAG, "map: " + replicateJsonMap);
+            Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result4: " + result4);
+
+            // wait for replication to finish
+            boolean success = waitForReplicationToFinish();
+            assertTrue(success);
+
+            assertTrue(sessionId1.equals(sessionId2));
+            assertTrue(sessionId1.equals(sessionId3));
+        }finally {
+            // cleanup
+            server.shutdown();
         }
-
-        // kick off 34d replication via REST api => Should be
-        Log.i(TAG, "Call 3rd /_replicate");
-        Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.i(TAG, "result3: " + result3);
-        assertNotNull(result3.get("session_id"));
-        String sessionId3 = (String) result3.get("session_id");
-
-        // 20 sec is to wait replicator becomes IDLE
-        try {
-            Thread.sleep(20 * 1000);
-        } catch (Exception e) {
-        }
-
-        // Cancel Replicator
-        replicateJsonMap.put("cancel", true);
-        Log.i(TAG, "map: " + replicateJsonMap);
-        Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.i(TAG, "result4: " + result4);
-
-        // wait for replication to finish
-        boolean success = waitForReplicationToFinish();
-        assertTrue(success);
-
-        assertTrue(sessionId1.equals(sessionId2));
-        assertTrue(sessionId1.equals(sessionId3));
-
-        // cleanup
-        server.shutdown();
     }
 
     public void testPullReplicateOneShot() throws Exception {
@@ -1032,24 +1061,26 @@ public class RouterTest extends LiteTestCase {
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
-        server.play();
+        try {
+            server.play();
 
-        // kick off replication via REST api
-        Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
-        Log.i(TAG, "map: " + replicateJsonMap);
+            // kick off replication via REST api
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            Log.i(TAG, "map: " + replicateJsonMap);
 
-        Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-        Log.i(TAG, "result: " + result);
-        assertNotNull(result.get("session_id"));
+            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result: " + result);
+            assertNotNull(result.get("session_id"));
 
-        ArrayList<Object> activeTasks = (ArrayList<Object>) send("GET", "/_active_tasks", Status.OK, null);
-        Log.v(TAG, "activeTasks.size(): " + activeTasks.size());
-        for (Object obj : activeTasks) {
-            Map<String, Object> resp = (Map<String, Object>) obj;
-            assertEquals("Stopped", resp.get("status"));
+            ArrayList<Object> activeTasks = (ArrayList<Object>) send("GET", "/_active_tasks", Status.OK, null);
+            Log.v(TAG, "activeTasks.size(): " + activeTasks.size());
+            for (Object obj : activeTasks) {
+                Map<String, Object> resp = (Map<String, Object>) obj;
+                assertEquals("Stopped", resp.get("status"));
+            }
+        }finally {
+            // cleanup
+            server.shutdown();
         }
-
-        // cleanup
-        server.shutdown();
     }
 }

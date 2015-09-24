@@ -802,7 +802,7 @@ public class ApiTest extends LiteTestCase {
      */
     public void testLiveQueryStop() throws Exception {
 
-        final int kNDocs = 100;
+        final int kNDocs = 50;
 
         final CountDownLatch doneSignal = new CountDownLatch(1);
 
@@ -863,7 +863,7 @@ public class ApiTest extends LiteTestCase {
             Log.d(Database.TAG, "testLiveQueryStop: add a document.  atomicInteger.get(): " +
                     atomicInteger.get());
             assertEquals(numTimesCallbackCalled, atomicInteger.get());
-            Thread.sleep(200);
+            Thread.sleep(100);
         }
         assertEquals(numTimesCallbackCalled, atomicInteger.get());
     }
@@ -943,7 +943,7 @@ public class ApiTest extends LiteTestCase {
 
         // Workaround for https://github.com/couchbase/couchbase-lite-android/issues/613
         try {
-            Thread.sleep(2 * 1000);
+            Thread.sleep(1 * 1000);
         } catch (Exception e) {
         }
     }

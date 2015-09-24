@@ -40,71 +40,73 @@ public class BulkDownloaderTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // _bulk_docs response -- 406 errors
-        MockResponse mockResponse = new MockResponse().setResponseCode(406);
-        WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
-        mockBulkDocs.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- 406 errors
+            MockResponse mockResponse = new MockResponse().setResponseCode(406);
+            WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
+            mockBulkDocs.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        server.play();
+            server.play();
 
-        ScheduledExecutorService requestExecutorService = Executors.newScheduledThreadPool(5);
-        ScheduledExecutorService workExecutorService = Executors.newSingleThreadScheduledExecutor();
+            ScheduledExecutorService requestExecutorService = Executors.newScheduledThreadPool(5);
+            ScheduledExecutorService workExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-        String urlString = String.format("%s/%s", server.getUrl("/db"), "_local");
-        URL url = new URL(urlString);
+            String urlString = String.format("%s/%s", server.getUrl("/db"), "_local");
+            URL url = new URL(urlString);
 
 
-        // BulkDownloader expects to be given a list of RevisionInternal
-        List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
-        Document doc = createDocumentForPushReplication("doc1", null, null);
-        RevisionInternal revisionInternal = database.getDocument(doc.getId(),
-                doc.getCurrentRevisionId(), true);
-        revs.add(revisionInternal);
+            // BulkDownloader expects to be given a list of RevisionInternal
+            List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
+            Document doc = createDocumentForPushReplication("doc1", null, null);
+            RevisionInternal revisionInternal = database.getDocument(doc.getId(),
+                    doc.getCurrentRevisionId(), true);
+            revs.add(revisionInternal);
 
-        // countdown latch to make sure we got an error
-        final CountDownLatch gotError = new CountDownLatch(1);
+            // countdown latch to make sure we got an error
+            final CountDownLatch gotError = new CountDownLatch(1);
 
-        // create a bulkdownloader
-        BulkDownloader bulkDownloader = new BulkDownloader(
-                workExecutorService,
-                factory,
-                url,
-                revs,
-                database,
-                null,
-                new BulkDownloader.BulkDownloaderDocumentBlock() {
-                    public void onDocument(Map<String, Object> props) {
-                        // do nothing
-                        Log.d(TAG, "onDocument called with %s", props);
-                    }
-                },
-                new RemoteRequestCompletionBlock() {
-                    public void onCompletion(HttpResponse httpResponse, Object result, Throwable e) {
-                        Log.d(TAG, "RemoteRequestCompletionBlock called, result: %s e: %s", result, e);
-                        if (e != null) {
-                            gotError.countDown();
+            // create a bulkdownloader
+            BulkDownloader bulkDownloader = new BulkDownloader(
+                    workExecutorService,
+                    factory,
+                    url,
+                    revs,
+                    database,
+                    null,
+                    new BulkDownloader.BulkDownloaderDocumentBlock() {
+                        public void onDocument(Map<String, Object> props) {
+                            // do nothing
+                            Log.d(TAG, "onDocument called with %s", props);
+                        }
+                    },
+                    new RemoteRequestCompletionBlock() {
+                        public void onCompletion(HttpResponse httpResponse, Object result, Throwable e) {
+                            Log.d(TAG, "RemoteRequestCompletionBlock called, result: %s e: %s", result, e);
+                            if (e != null) {
+                                gotError.countDown();
+                            }
                         }
                     }
-                }
-        );
+            );
 
-        // submit the request
-        Future future = requestExecutorService.submit(bulkDownloader);
+            // submit the request
+            Future future = requestExecutorService.submit(bulkDownloader);
 
-        // make sure our callback was called with an error, since
-        // we are returning a 4xx error to all _bulk_get requests
-        boolean success = gotError.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
+            // make sure our callback was called with an error, since
+            // we are returning a 4xx error to all _bulk_get requests
+            boolean success = gotError.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        // wait for the future to return
-        future.get(300, TimeUnit.SECONDS);
+            // wait for the future to return
+            future.get(300, TimeUnit.SECONDS);
 
-        // Note: ExecutorService should be called shutdown()
-        Utils.shutdownAndAwaitTermination(requestExecutorService);
-        Utils.shutdownAndAwaitTermination(workExecutorService);
-
-        server.shutdown();
+            // Note: ExecutorService should be called shutdown()
+            Utils.shutdownAndAwaitTermination(requestExecutorService);
+            Utils.shutdownAndAwaitTermination(workExecutorService);
+        }finally {
+            server.shutdown();
+        }
     }
 }

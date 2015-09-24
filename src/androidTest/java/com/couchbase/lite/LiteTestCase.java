@@ -15,6 +15,7 @@ import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.URIUtils;
+import com.couchbase.lite.util.Utils;
 import com.couchbase.test.lite.LiteTestCaseBase;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -141,8 +142,15 @@ public class LiteTestCase extends LiteTestCaseBase {
     }
 
     protected void stopCBLite() {
-        if (manager != null) {
-            manager.close();
+        int DEFAULT_VALUE = Utils.DEFAULT_TIME_TO_WAIT_4_SHUTDOWN;
+        Utils.DEFAULT_TIME_TO_WAIT_4_SHUTDOWN = 0;
+        try {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+        finally{
+            Utils.DEFAULT_TIME_TO_WAIT_4_SHUTDOWN = DEFAULT_VALUE;
         }
     }
 
@@ -590,7 +598,7 @@ public class LiteTestCase extends LiteTestCaseBase {
         final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
         replication.start();
-        boolean success = replicationDoneSignal.await(300, TimeUnit.SECONDS);
+        boolean success = replicationDoneSignal.await(120, TimeUnit.SECONDS);
         assertTrue(success);
     }
 

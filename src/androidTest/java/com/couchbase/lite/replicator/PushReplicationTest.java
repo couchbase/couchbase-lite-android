@@ -43,46 +43,50 @@ public class PushReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.play();
+        try {
+            server.play();
 
-        // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(50);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(50);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        // doc PUT responses for docs with attachments
-        MockDocumentPut mockDocPut = new MockDocumentPut().setDocId(docId).setRev(doc.getCurrentRevisionId());
-        dispatcher.enqueueResponse(docPathRegex, mockDocPut.generateMockResponse());
+            // doc PUT responses for docs with attachments
+            MockDocumentPut mockDocPut = new MockDocumentPut().setDocId(docId).setRev(doc.getCurrentRevisionId());
+            dispatcher.enqueueResponse(docPathRegex, mockDocPut.generateMockResponse());
 
-        // run replication
-        Replication replication = database.createPushReplication(server.getUrl("/db"));
-        replication.setContinuous(false);
-        runReplication(replication);
+            // run replication
+            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            replication.setContinuous(false);
+            runReplication(replication);
 
-        // make assertions about outgoing requests from replicator -> mock
-        RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
-        assertTrue(getCheckpointRequest.getMethod().equals("GET"));
-        assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
+            // make assertions about outgoing requests from replicator -> mock
+            RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
+            assertTrue(getCheckpointRequest.getMethod().equals("GET"));
+            assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
 
-        RecordedRequest revsDiffRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_REVS_DIFF);
-        assertTrue(MockHelper.getUtf8Body(revsDiffRequest).contains(docId));
+            RecordedRequest revsDiffRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_REVS_DIFF);
+            assertTrue(MockHelper.getUtf8Body(revsDiffRequest).contains(docId));
 
-        RecordedRequest docputRequest = dispatcher.takeRequest(docPathRegex);
-        CustomMultipartReaderDelegate delegate = new CustomMultipartReaderDelegate();
-        MultipartReader reader = new MultipartReader(docputRequest.getHeader("Content-Type"), delegate);
-        reader.appendData(docputRequest.getBody());
-        assertTrue(delegate.json.contains(docId));
-        byte[] attachmentBytes = MockDocumentGet.getAssetByteArray(docAttachName);
-        assertTrue(Arrays.equals(attachmentBytes, delegate.attachment));
+            RecordedRequest docputRequest = dispatcher.takeRequest(docPathRegex);
+            CustomMultipartReaderDelegate delegate = new CustomMultipartReaderDelegate();
+            MultipartReader reader = new MultipartReader(docputRequest.getHeader("Content-Type"), delegate);
+            reader.appendData(docputRequest.getBody());
+            assertTrue(delegate.json.contains(docId));
+            byte[] attachmentBytes = MockDocumentGet.getAssetByteArray(docAttachName);
+            assertTrue(Arrays.equals(attachmentBytes, delegate.attachment));
+        }finally{
+            server.shutdown();
+        }
     }
 
     protected Document createDocumentForPushReplication(String docId, String attachmentFileName, String attachmentContentType) throws CouchbaseLiteException {
