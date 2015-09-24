@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class LocalDocsTest extends LiteTestCase {
+public class LocalDocsTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "LocalDocs";
 

@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class RevisionsTest extends LiteTestCase {
+public class RevisionsTest extends LiteTestCaseWithDB {
 
     public void testParseRevID() {
         int num;

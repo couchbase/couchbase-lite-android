@@ -1,7 +1,7 @@
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
@@ -26,7 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class BulkDownloaderTest extends LiteTestCase {
+public class BulkDownloaderTest extends LiteTestCaseWithDB {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/331

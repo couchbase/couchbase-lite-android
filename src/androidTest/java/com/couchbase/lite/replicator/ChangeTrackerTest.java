@@ -1,6 +1,6 @@
 package com.couchbase.lite.replicator;
 
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.util.Log;
 
 import org.apache.http.HttpResponse;
@@ -20,7 +20,7 @@ import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class ChangeTrackerTest extends LiteTestCase {
+public class ChangeTrackerTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "ChangeTracker";
 

@@ -6,18 +6,8 @@ import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
-import java.nio.ByteBuffer;
-import java.security.AlgorithmParameters;
 import java.security.SecureRandom;
-import java.security.spec.KeySpec;
 import java.util.Arrays;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 
 public class MiscTest extends LiteTestCase {
     public void testUnquoteString() {

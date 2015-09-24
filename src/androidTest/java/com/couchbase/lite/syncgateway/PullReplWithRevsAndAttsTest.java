@@ -2,7 +2,7 @@ package com.couchbase.lite.syncgateway;
 
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.replicator.Replication;
@@ -19,7 +19,7 @@ import java.util.concurrent.CountDownLatch;
  * <p/>
  * Test requires sync_gateway
  */
-public class PullReplWithRevsAndAttsTest extends LiteTestCase {
+public class PullReplWithRevsAndAttsTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "PullReplWithRevsAndAttsTest";
 

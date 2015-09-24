@@ -2,7 +2,7 @@ package com.couchbase.lite.syncgateway;
 
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.QueryOptions;
 import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.auth.AuthenticatorFactory;
@@ -23,7 +23,7 @@ import java.util.Map;
  * set "backfill" for replicationDatabase
  * set "Sync Gateway's IP address" for replicationServer
  */
-public class BackFillTest extends LiteTestCase {
+public class BackFillTest extends LiteTestCaseWithDB {
     public static final String TAG = "BackFillTest";
 
     @Override

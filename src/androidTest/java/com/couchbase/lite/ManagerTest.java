@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class ManagerTest extends LiteTestCase {
+public class ManagerTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "ManagerTest";
 

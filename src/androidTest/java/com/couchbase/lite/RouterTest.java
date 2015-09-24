@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class RouterTest extends LiteTestCase {
+public class RouterTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "Router";
 

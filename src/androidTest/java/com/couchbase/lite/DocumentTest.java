@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class DocumentTest extends LiteTestCase {
+public class DocumentTest extends LiteTestCaseWithDB {
 
     public void testNewDocumentHasCurrentRevision() throws CouchbaseLiteException {
 

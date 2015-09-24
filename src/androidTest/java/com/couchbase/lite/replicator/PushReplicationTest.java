@@ -2,7 +2,7 @@ package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.mockserver.MockBulkDocs;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Created by hideki on 5/11/15.
  */
-public class PushReplicationTest extends LiteTestCase {
+public class PushReplicationTest extends LiteTestCaseWithDB {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/614

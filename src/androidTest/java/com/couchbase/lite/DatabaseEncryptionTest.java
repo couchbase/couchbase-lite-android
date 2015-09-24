@@ -23,7 +23,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DatabaseEncryptionTest extends LiteTestCase {
+public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     private static final String TEST_DIR = "encryption";
     private static final String NULL_PASSWORD = null;
     private Manager currentManager;

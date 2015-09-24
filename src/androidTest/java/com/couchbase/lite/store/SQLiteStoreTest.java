@@ -1,7 +1,7 @@
 package com.couchbase.lite.store;
 
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.UnsavedRevision;
 
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Created by hideki on 7/18/15.
  */
-public class SQLiteStoreTest extends LiteTestCase {
+public class SQLiteStoreTest extends LiteTestCaseWithDB {
     public void testWinningRevIDOfDoc() throws Exception {
         if(!isSQLiteDB())
             return;

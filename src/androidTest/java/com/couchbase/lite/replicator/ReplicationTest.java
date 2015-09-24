@@ -5,7 +5,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.Emitter;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.Mapper;
@@ -93,7 +93,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Tests for the new state machine based replicator
  */
-public class ReplicationTest extends LiteTestCase {
+public class ReplicationTest extends LiteTestCaseWithDB {
 
     /**
      * Continuous puller starts offline

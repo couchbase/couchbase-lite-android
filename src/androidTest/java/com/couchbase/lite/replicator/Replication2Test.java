@@ -1,7 +1,7 @@
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.mockserver.MockBulkDocs;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by hideki on 1/26/15.
  */
-public class Replication2Test  extends LiteTestCase {
+public class Replication2Test  extends LiteTestCaseWithDB {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/328

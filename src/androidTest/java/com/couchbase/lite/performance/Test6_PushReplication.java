@@ -19,7 +19,7 @@ package com.couchbase.lite.performance;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.util.Log;
@@ -35,7 +35,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test6_PushReplication extends LiteTestCase {
+public class Test6_PushReplication extends LiteTestCaseWithDB {
 
     public static final String TAG = "PushReplicationPerformance";
 

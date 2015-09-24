@@ -17,7 +17,7 @@
 
 package com.couchbase.lite.performance;
 
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.threading.BackgroundTask;
@@ -42,7 +42,7 @@ import java.net.URL;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class Test7_PullReplication extends LiteTestCase {
+public class Test7_PullReplication extends LiteTestCaseWithDB {
 
     public static final String TAG = "PullReplicationPerformance";
 

@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Created by hideki on 8/13/15.
  */
-public class SimpleCRUDTest extends LiteTestCase{
+public class SimpleCRUDTest extends LiteTestCaseWithDB {
     public static final String TAG = SimpleCRUDTest.class.getSimpleName();
 
     public void testHelloWorld() throws Exception{

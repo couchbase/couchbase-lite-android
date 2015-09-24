@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by andrey on 12/3/13.
  */
-public class ApiTest extends LiteTestCase {
+public class ApiTest extends LiteTestCaseWithDB {
 
     private int changeCount = 0;
 

@@ -1,7 +1,7 @@
 package com.couchbase.lite.support;
 
 
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
@@ -25,7 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class RemoteRequestTest extends LiteTestCase {
+public class RemoteRequestTest extends LiteTestCaseWithDB {
 
     /**
      * Make RemoteRequests will retry correctly.

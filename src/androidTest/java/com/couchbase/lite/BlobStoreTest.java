@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class BlobStoreTest extends LiteTestCase {
+public class BlobStoreTest extends LiteTestCaseWithDB {
     private boolean encrypt;
     private File storeFile;
     private BlobStore store;
