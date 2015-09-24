@@ -3,7 +3,7 @@ package com.couchbase.lite.syncgateway;
 import com.couchbase.lite.Attachment;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.util.Log;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by hideki on 5/7/15.
  */
-public class GzippedAttachmentTest extends LiteTestCase {
+public class GzippedAttachmentTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "GzippedAttachmentTest";
 

@@ -7,7 +7,7 @@ import com.couchbase.lite.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ValidationsTest extends LiteTestCase {
+public class ValidationsTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "Validations";
 

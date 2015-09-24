@@ -1,6 +1,6 @@
 package com.couchbase.lite.support;
 
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 
 import org.apache.http.client.CookieStore;
 import org.apache.http.cookie.Cookie;
@@ -10,7 +10,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public class PersistentCookieStoreTest extends LiteTestCase {
+public class PersistentCookieStoreTest extends LiteTestCaseWithDB {
 
     public void testEncodeDecodeCookie() throws Exception {
 

@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ViewsTest extends LiteTestCase {
+public class ViewsTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "Views";
 

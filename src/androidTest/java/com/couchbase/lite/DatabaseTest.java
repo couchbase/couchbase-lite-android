@@ -16,7 +16,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class DatabaseTest extends LiteTestCase {
+public class DatabaseTest extends LiteTestCaseWithDB {
 
     public void testPruneRevsToMaxDepthViaCompact() throws Exception {
 
@@ -113,44 +113,44 @@ public class DatabaseTest extends LiteTestCase {
         // create mock sync gateway that will serve as a pull target and return random docs
         int numMockDocsToServe = 0;
         MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher,
-                numMockDocsToServe, 1);
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
-        server.play();
+        try {
+            server.play();
 
-        final Replication replication = database.createPullReplication(server.getUrl("/db"));
+            final Replication replication = database.createPullReplication(server.getUrl("/db"));
 
-        assertEquals(0, database.getAllReplications().size());
-        assertEquals(0, database.getActiveReplications().size());
+            assertEquals(0, database.getAllReplications().size());
+            assertEquals(0, database.getActiveReplications().size());
 
-        final CountDownLatch replicationRunning = new CountDownLatch(1);
-        replication.addChangeListener(new ReplicationActiveObserver(replicationRunning));
+            final CountDownLatch replicationRunning = new CountDownLatch(1);
+            replication.addChangeListener(new ReplicationActiveObserver(replicationRunning));
 
-        replication.start();
+            replication.start();
 
-        boolean success = replicationRunning.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            boolean success = replicationRunning.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        assertEquals(1, database.getAllReplications().size());
-        assertEquals(1, database.getActiveReplications().size());
+            assertEquals(1, database.getAllReplications().size());
+            assertEquals(1, database.getActiveReplications().size());
 
-        final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
+            final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+            replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
 
-        success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
+            success = replicationDoneSignal.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        // workaround race condition.  Since our replication change listener will get triggered
-        // _before_ the internal change listener that updates the activeReplications map, we
-        // need to pause briefly to let the internal change listener to update activeReplications.
-        Thread.sleep(500);
+            // workaround race condition.  Since our replication change listener will get triggered
+            // _before_ the internal change listener that updates the activeReplications map, we
+            // need to pause briefly to let the internal change listener to update activeReplications.
+            Thread.sleep(500);
 
-        assertEquals(1, database.getAllReplications().size());
-        assertEquals(0, database.getActiveReplications().size());
-
-        server.shutdown();
-
+            assertEquals(1, database.getAllReplications().size());
+            assertEquals(0, database.getActiveReplications().size());
+        }finally {
+            server.shutdown();
+        }
     }
 
     public void testGetDatabaseNameFromPath() throws Exception {

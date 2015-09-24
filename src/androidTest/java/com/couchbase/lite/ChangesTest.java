@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ChangesTest extends LiteTestCase {
+public class ChangesTest extends LiteTestCaseWithDB {
 
     private int changeNotifications = 0;
 

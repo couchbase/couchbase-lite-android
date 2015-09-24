@@ -4,7 +4,8 @@ import com.couchbase.lite.LiteTestCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
-import java.util.Date;import java.util.HashMap;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

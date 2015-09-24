@@ -17,35 +17,14 @@
 
 package com.couchbase.lite.performance2;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.LitePerfTestCase;
-import com.couchbase.lite.LiteTestCase;
-import com.couchbase.lite.ReplicationFilter;
-import com.couchbase.lite.RevisionList;
-import com.couchbase.lite.SavedRevision;
-import com.couchbase.lite.Status;
 import com.couchbase.lite.TransactionalTask;
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.util.Log;
 
-import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import com.couchbase.lite.Revision;
+
 import com.couchbase.lite.Document;
 
 

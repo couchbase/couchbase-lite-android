@@ -354,7 +354,7 @@ public class BatcherTest extends LiteTestCase {
 
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
         final int inboxCapacity = 10;
-        final int numItemsToSubmit = inboxCapacity * 100;
+        final int numItemsToSubmit = inboxCapacity * 25;
         final int processorDelay = 1000; // 1000ms
 
         final CountDownLatch latchFirstProcess = new CountDownLatch(1);
@@ -367,7 +367,8 @@ public class BatcherTest extends LiteTestCase {
                     @Override
                     public void process(List<String> itemsToProcess) {
                         Log.d(TAG, "process() called with %d items", itemsToProcess.size());
-                        latchFirstProcess.countDown();
+                        if (latchFirstProcess.getCount() > 0)
+                            latchFirstProcess.countDown();
                     }
                 });
 

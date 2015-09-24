@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
-public class AttachmentsTest extends LiteTestCase {
+public class AttachmentsTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "Attachments";
 

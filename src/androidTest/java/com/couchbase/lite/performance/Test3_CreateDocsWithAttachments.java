@@ -18,7 +18,7 @@
 package com.couchbase.lite.performance;
 
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.Status;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.internal.RevisionInternal;
@@ -29,7 +29,7 @@ import junit.framework.Assert;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test3_CreateDocsWithAttachments extends LiteTestCase {
+public class Test3_CreateDocsWithAttachments extends LiteTestCaseWithDB {
 
     public static final String TAG = "CreateDocsWithAttachmentsPerformance";
 

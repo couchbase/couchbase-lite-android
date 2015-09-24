@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CacheTest extends LiteTestCase {
+public class CacheTest extends LiteTestCaseWithDB {
 
     public void testCache() throws Exception {
 

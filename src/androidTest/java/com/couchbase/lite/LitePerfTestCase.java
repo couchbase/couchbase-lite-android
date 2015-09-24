@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LitePerfTestCase extends LiteTestCase {
+public class LitePerfTestCase extends LiteTestCaseWithDB {
 
     public static final String TAG = "summary";
     JSONObject perfConfig, envConfig;

@@ -8,13 +8,12 @@ import com.couchbase.lite.auth.TokenAuthenticator;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AuthTest extends TestCase {
+public class AuthTest extends LiteTestCase {
 
     public void testParsePersonaAssertion() {
         try {

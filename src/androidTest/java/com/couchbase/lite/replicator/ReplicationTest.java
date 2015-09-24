@@ -5,7 +5,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.DocumentChange;
 import com.couchbase.lite.Emitter;
-import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.Mapper;
@@ -93,7 +93,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Tests for the new state machine based replicator
  */
-public class ReplicationTest extends LiteTestCase {
+public class ReplicationTest extends LiteTestCaseWithDB {
 
     /**
      * Continuous puller starts offline
@@ -107,75 +107,80 @@ public class ReplicationTest extends LiteTestCase {
         Log.d(Log.TAG, "testGoOnlinePuller");
 
         // create mock server
-        MockDispatcher dispatcher = new MockDispatcher();
-        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         MockWebServer server = new MockWebServer();
-        server.setDispatcher(dispatcher);
-        server.play();
+        try {
+            MockDispatcher dispatcher = new MockDispatcher();
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            server.setDispatcher(dispatcher);
+            server.play();
 
-        // mock documents to be pulled
-        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
-        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+            // mock documents to be pulled
+            MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
 
-        // checkpoint PUT or GET response (sticky)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT or GET response (sticky)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _changes response 503 error (sticky)
-        WrappedSmartMockResponse wrapped2 = new WrappedSmartMockResponse(new MockResponse().setResponseCode(503));
-        wrapped2.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, wrapped2);
+            // _changes response 503 error (sticky)
+            WrappedSmartMockResponse wrapped2 = new WrappedSmartMockResponse(new MockResponse().setResponseCode(503));
+            wrapped2.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, wrapped2);
 
-        // doc1 response
-        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
-        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+            // doc1 response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        mockRevsDiff.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            mockRevsDiff.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        mockBulkDocs.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            mockBulkDocs.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        // create and start replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
-        pullReplication.start();
-        Log.d(Log.TAG, "Started pullReplication: %s", pullReplication);
+            // create and start replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
+            pullReplication.start();
+            Log.d(Log.TAG, "Started pullReplication: %s", pullReplication);
 
-        // wait until a _checkpoint request have been sent
-        dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            // wait until a _checkpoint request have been sent
+            dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
 
-        // wait until a _changes request has been sent
-        dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
+            // wait until a _changes request has been sent
+            dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
 
-        putReplicationOffline(pullReplication);
+            putReplicationOffline(pullReplication);
 
-        // clear out existing queued mock responses to make room for new ones
-        dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHANGES);
+            // clear out existing queued mock responses to make room for new ones
+            dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHANGES);
 
-        // real _changes response with doc1
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // real _changes response with doc1
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // long poll changes feed no response
-        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+            // long poll changes feed no response
+            MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+            mockChangesFeedNoResponse.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
-        putReplicationOnline(pullReplication);
+            putReplicationOnline(pullReplication);
 
-        Log.d(Log.TAG, "Waiting for PUT checkpoint request with seq: %d", mockDoc1.getDocSeq());
-        waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc1.getDocSeq());
-        Log.d(Log.TAG, "Got PUT checkpoint request with seq: %d", mockDoc1.getDocSeq());
+            Log.d(Log.TAG, "Waiting for PUT checkpoint request with seq: %d", mockDoc1.getDocSeq());
+            waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc1.getDocSeq());
+            Log.d(Log.TAG, "Got PUT checkpoint request with seq: %d", mockDoc1.getDocSeq());
 
-        stopReplication(pullReplication);
-        server.shutdown();
+            stopReplication(pullReplication);
+        }
+        finally {
+            server.shutdown();
+        }
+
     }
 
     /**
@@ -337,148 +342,150 @@ public class ReplicationTest extends LiteTestCase {
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
-        dispatcher.setServerType(serverType);
+        try {
+            dispatcher.setServerType(serverType);
 
-        // mock documents to be pulled
-        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
-        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
-        mockDoc1.setAttachmentName("attachment.png");
-        MockDocumentGet.MockDocument mockDoc2 = new MockDocumentGet.MockDocument("doc2", "1-563b", 2);
-        mockDoc2.setJsonMap(MockHelper.generateRandomJsonMap());
-        mockDoc2.setAttachmentName("attachment2.png");
+            // mock documents to be pulled
+            MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+            mockDoc1.setAttachmentName("attachment.png");
+            MockDocumentGet.MockDocument mockDoc2 = new MockDocumentGet.MockDocument("doc2", "1-563b", 2);
+            mockDoc2.setJsonMap(MockHelper.generateRandomJsonMap());
+            mockDoc2.setAttachmentName("attachment2.png");
 
-        // checkpoint GET response w/ 404
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // doc1 response
-        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
-        if (addAttachments) {
-            mockDocumentGet.addAttachmentFilename(mockDoc1.getAttachmentName());
-        }
-        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
-
-        // doc2 response
-        mockDocumentGet = new MockDocumentGet(mockDoc2);
-        if (addAttachments) {
-            mockDocumentGet.addAttachmentFilename(mockDoc2.getAttachmentName());
-        }
-        dispatcher.enqueueResponse(mockDoc2.getDocPathRegex(), mockDocumentGet.generateMockResponse());
-
-        // _bulk_get response
-        MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
-        mockBulkGet.addDocument(mockDoc1);
-        mockBulkGet.addDocument(mockDoc2);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
-
-        // respond to all PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(500);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
-
-        // start mock server
-        server.play();
-
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        Map<String, Object> headers = new HashMap<String, Object>();
-        headers.put("foo", "bar");
-        pullReplication.setHeaders(headers);
-        String checkpointId = pullReplication.remoteCheckpointDocID();
-        runReplication(pullReplication);
-        Log.d(TAG, "pullReplication finished");
-
-        database.addChangeListener(new Database.ChangeListener() {
-            @Override
-            public void changed(Database.ChangeEvent event) {
-                List<DocumentChange> changes = event.getChanges();
-                for (DocumentChange documentChange : changes) {
-                    Log.d(TAG, "doc change callback: %s", documentChange.getDocumentId());
-                }
+            // doc1 response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            if (addAttachments) {
+                mockDocumentGet.addAttachmentFilename(mockDoc1.getAttachmentName());
             }
-        });
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // assert that we now have both docs in local db
-        assertNotNull(database);
-        Document doc1 = database.getDocument(mockDoc1.getDocId());
-        assertNotNull(doc1);
-        assertNotNull(doc1.getCurrentRevisionId());
-        assertTrue(doc1.getCurrentRevisionId().equals(mockDoc1.getDocRev()));
-        assertNotNull(doc1.getProperties());
-        assertEquals(mockDoc1.getJsonMap(), doc1.getUserProperties());
-        Document doc2 = database.getDocument(mockDoc2.getDocId());
-        assertNotNull(doc2);
-        assertNotNull(doc2.getCurrentRevisionId());
-        assertNotNull(doc2.getProperties());
-        assertTrue(doc2.getCurrentRevisionId().equals(mockDoc2.getDocRev()));
-        assertEquals(mockDoc2.getJsonMap(), doc2.getUserProperties());
+            // doc2 response
+            mockDocumentGet = new MockDocumentGet(mockDoc2);
+            if (addAttachments) {
+                mockDocumentGet.addAttachmentFilename(mockDoc2.getAttachmentName());
+            }
+            dispatcher.enqueueResponse(mockDoc2.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // assert that docs have attachments (if applicable)
-        if (addAttachments) {
-            attachmentAsserts(mockDoc1.getAttachmentName(), doc1);
-            attachmentAsserts(mockDoc2.getAttachmentName(), doc2);
+            // _bulk_get response
+            MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+            mockBulkGet.addDocument(mockDoc1);
+            mockBulkGet.addDocument(mockDoc2);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+            // respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // start mock server
+            server.play();
+
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            Map<String, Object> headers = new HashMap<String, Object>();
+            headers.put("foo", "bar");
+            pullReplication.setHeaders(headers);
+            String checkpointId = pullReplication.remoteCheckpointDocID();
+            runReplication(pullReplication);
+            Log.d(TAG, "pullReplication finished");
+
+            database.addChangeListener(new Database.ChangeListener() {
+                @Override
+                public void changed(Database.ChangeEvent event) {
+                    List<DocumentChange> changes = event.getChanges();
+                    for (DocumentChange documentChange : changes) {
+                        Log.d(TAG, "doc change callback: %s", documentChange.getDocumentId());
+                    }
+                }
+            });
+
+            // assert that we now have both docs in local db
+            assertNotNull(database);
+            Document doc1 = database.getDocument(mockDoc1.getDocId());
+            assertNotNull(doc1);
+            assertNotNull(doc1.getCurrentRevisionId());
+            assertTrue(doc1.getCurrentRevisionId().equals(mockDoc1.getDocRev()));
+            assertNotNull(doc1.getProperties());
+            assertEquals(mockDoc1.getJsonMap(), doc1.getUserProperties());
+            Document doc2 = database.getDocument(mockDoc2.getDocId());
+            assertNotNull(doc2);
+            assertNotNull(doc2.getCurrentRevisionId());
+            assertNotNull(doc2.getProperties());
+            assertTrue(doc2.getCurrentRevisionId().equals(mockDoc2.getDocRev()));
+            assertEquals(mockDoc2.getJsonMap(), doc2.getUserProperties());
+
+            // assert that docs have attachments (if applicable)
+            if (addAttachments) {
+                attachmentAsserts(mockDoc1.getAttachmentName(), doc1);
+                attachmentAsserts(mockDoc2.getAttachmentName(), doc2);
+            }
+
+            // make assertions about outgoing requests from replicator -> mock
+            RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
+            assertNotNull(getCheckpointRequest);
+            assertEquals("bar", getCheckpointRequest.getHeader("foo"));
+            assertTrue(getCheckpointRequest.getMethod().equals("GET"));
+            assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
+            RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+            if (serverType == MockDispatcher.ServerType.SYNC_GW) {
+                assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
+            } else {
+                assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
+            }
+            assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
+
+            // wait until the mock webserver receives a PUT checkpoint request with doc #2's sequence
+            Log.d(TAG, "waiting for PUT checkpoint %s", mockDoc2.getDocSeq());
+            List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, mockDoc2.getDocSeq());
+            validateCheckpointRequestsRevisions(checkpointRequests);
+            Log.d(TAG, "got PUT checkpoint %s", mockDoc2.getDocSeq());
+
+            // assert our local sequence matches what is expected
+            String lastSequence = database.lastSequenceWithCheckpointId(checkpointId);
+            assertEquals(Integer.toString(mockDoc2.getDocSeq()), lastSequence);
+
+            // assert completed count makes sense
+            assertEquals(pullReplication.getChangesCount(), pullReplication.getCompletedChangesCount());
+
+            // allow for either a single _bulk_get request or individual doc requests.
+            // if the server is sync gateway, it is allowable for replicator to use _bulk_get
+            RecordedRequest request = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_GET);
+            if (request != null) {
+                String body = MockHelper.getUtf8Body(request);
+                assertTrue(body.contains(mockDoc1.getDocId()));
+                assertTrue(body.contains(mockDoc2.getDocId()));
+            } else {
+                RecordedRequest doc1Request = dispatcher.takeRequest(mockDoc1.getDocPathRegex());
+                assertTrue(doc1Request.getMethod().equals("GET"));
+                assertTrue(doc1Request.getPath().matches(mockDoc1.getDocPathRegex()));
+                RecordedRequest doc2Request = dispatcher.takeRequest(mockDoc2.getDocPathRegex());
+                assertTrue(doc2Request.getMethod().equals("GET"));
+                assertTrue(doc2Request.getPath().matches(mockDoc2.getDocPathRegex()));
+            }
         }
-
-        // make assertions about outgoing requests from replicator -> mock
-        RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
-        assertNotNull(getCheckpointRequest);
-        assertEquals("bar", getCheckpointRequest.getHeader("foo"));
-        assertTrue(getCheckpointRequest.getMethod().equals("GET"));
-        assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
-        RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
-        if (serverType == MockDispatcher.ServerType.SYNC_GW) {
-            assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
-        } else {
-            assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
-        }
-        assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
-
-        // wait until the mock webserver receives a PUT checkpoint request with doc #2's sequence
-        Log.d(TAG, "waiting for PUT checkpoint %s", mockDoc2.getDocSeq());
-        List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, mockDoc2.getDocSeq());
-        validateCheckpointRequestsRevisions(checkpointRequests);
-        Log.d(TAG, "got PUT checkpoint %s", mockDoc2.getDocSeq());
-
-        // assert our local sequence matches what is expected
-        String lastSequence = database.lastSequenceWithCheckpointId(checkpointId);
-        assertEquals(Integer.toString(mockDoc2.getDocSeq()), lastSequence);
-
-        // assert completed count makes sense
-        assertEquals(pullReplication.getChangesCount(), pullReplication.getCompletedChangesCount());
-
-        // allow for either a single _bulk_get request or individual doc requests.
-        // if the server is sync gateway, it is allowable for replicator to use _bulk_get
-        RecordedRequest request = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_GET);
-        if (request != null) {
-            String body = MockHelper.getUtf8Body(request);
-            assertTrue(body.contains(mockDoc1.getDocId()));
-            assertTrue(body.contains(mockDoc2.getDocId()));
-        } else {
-            RecordedRequest doc1Request = dispatcher.takeRequest(mockDoc1.getDocPathRegex());
-            assertTrue(doc1Request.getMethod().equals("GET"));
-            assertTrue(doc1Request.getPath().matches(mockDoc1.getDocPathRegex()));
-            RecordedRequest doc2Request = dispatcher.takeRequest(mockDoc2.getDocPathRegex());
-            assertTrue(doc2Request.getMethod().equals("GET"));
-            assertTrue(doc2Request.getPath().matches(mockDoc2.getDocPathRegex()));
-        }
-
-        // Shut down the server. Instances cannot be reused.
-        if (shutdownMockWebserver) {
-            server.shutdown();
+        finally{
+            // Shut down the server. Instances cannot be reused.
+            if (shutdownMockWebserver) {
+                server.shutdown();
+            }
         }
 
         Map<String, Object> returnVal = new HashMap<String, Object>();
         returnVal.put("server", server);
         returnVal.put("dispatcher", dispatcher);
-
         return returnVal;
     }
 
@@ -502,104 +509,105 @@ public class ReplicationTest extends LiteTestCase {
 
         MockWebServer server = (MockWebServer) serverAndDispatcher.get("server");
         MockDispatcher dispatcher = (MockDispatcher) serverAndDispatcher.get("dispatcher");
+        try {
+            // clear out any possible residue left from previous test, eg, mock responses queued up as
+            // any recorded requests that have been logged.
+            dispatcher.reset();
 
-        // clear out any possible residue left from previous test, eg, mock responses queued up as
-        // any recorded requests that have been logged.
-        dispatcher.reset();
+            String doc1Rev = "2-2e38";
+            int doc1Seq = 3;
+            String checkpointRev = "0-1";
+            String checkpointLastSequence = "2";
 
-        String doc1Rev = "2-2e38";
-        int doc1Seq = 3;
-        String checkpointRev = "0-1";
-        String checkpointLastSequence = "2";
+            // checkpoint GET response w/ seq = 2
+            MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
+            mockCheckpointGet.setOk("true");
+            mockCheckpointGet.setRev(checkpointRev);
+            mockCheckpointGet.setLastSequence(checkpointLastSequence);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
 
-        // checkpoint GET response w/ seq = 2
-        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
-        mockCheckpointGet.setOk("true");
-        mockCheckpointGet.setRev(checkpointRev);
-        mockCheckpointGet.setLastSequence(checkpointLastSequence);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            MockChangesFeed.MockChangedDoc mockChangedDoc1 = new MockChangesFeed.MockChangedDoc()
+                    .setSeq(doc1Seq)
+                    .setDocId(doc1Id)
+                    .setChangedRevIds(Arrays.asList(doc1Rev));
+            mockChangesFeed.add(mockChangedDoc1);
+            MockResponse fakeChangesResponse = mockChangesFeed.generateMockResponse();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, fakeChangesResponse);
 
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        MockChangesFeed.MockChangedDoc mockChangedDoc1 = new MockChangesFeed.MockChangedDoc()
-                .setSeq(doc1Seq)
-                .setDocId(doc1Id)
-                .setChangedRevIds(Arrays.asList(doc1Rev));
-        mockChangesFeed.add(mockChangedDoc1);
-        MockResponse fakeChangesResponse = mockChangesFeed.generateMockResponse();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, fakeChangesResponse);
+            // doc1 response
+            Map<String, Object> doc1JsonMap = MockHelper.generateRandomJsonMap();
+            MockDocumentGet mockDocumentGet = new MockDocumentGet()
+                    .setDocId(doc1Id)
+                    .setRev(doc1Rev)
+                    .setJsonMap(doc1JsonMap);
+            String doc1PathRegex = "/db/doc1.*";
+            dispatcher.enqueueResponse(doc1PathRegex, mockDocumentGet.generateMockResponse());
 
-        // doc1 response
-        Map<String, Object> doc1JsonMap = MockHelper.generateRandomJsonMap();
-        MockDocumentGet mockDocumentGet = new MockDocumentGet()
-                .setDocId(doc1Id)
-                .setRev(doc1Rev)
-                .setJsonMap(doc1JsonMap);
-        String doc1PathRegex = "/db/doc1.*";
-        dispatcher.enqueueResponse(doc1PathRegex, mockDocumentGet.generateMockResponse());
+            // checkpoint PUT response
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointGet.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // checkpoint PUT response
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointGet.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            runReplication(pullReplication);
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        runReplication(pullReplication);
+            // assert that we now have both docs in local db
+            assertNotNull(database);
+            Document doc1 = database.getDocument(doc1Id);
+            assertNotNull(doc1);
+            assertNotNull(doc1.getCurrentRevisionId());
+            assertTrue(doc1.getCurrentRevisionId().startsWith("2-"));
+            assertEquals(doc1JsonMap, doc1.getUserProperties());
 
-        // assert that we now have both docs in local db
-        assertNotNull(database);
-        Document doc1 = database.getDocument(doc1Id);
-        assertNotNull(doc1);
-        assertNotNull(doc1.getCurrentRevisionId());
-        assertTrue(doc1.getCurrentRevisionId().startsWith("2-"));
-        assertEquals(doc1JsonMap, doc1.getUserProperties());
+            // make assertions about outgoing requests from replicator -> mock
+            RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
+            assertNotNull(getCheckpointRequest);
+            assertTrue(getCheckpointRequest.getMethod().equals("GET"));
+            assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
+            RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
 
-        // make assertions about outgoing requests from replicator -> mock
-        RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
-        assertNotNull(getCheckpointRequest);
-        assertTrue(getCheckpointRequest.getMethod().equals("GET"));
-        assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
-        RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+            if (serverType == MockDispatcher.ServerType.SYNC_GW) {
+                assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
 
-        if (serverType == MockDispatcher.ServerType.SYNC_GW) {
-            assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
+            } else {
+                assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
+            }
+            assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
+            if (serverType == MockDispatcher.ServerType.SYNC_GW) {
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(getChangesFeedRequest.getUtf8Body(), Map.class);
+                assertTrue(jsonMap.containsKey("since"));
+                Integer since = (Integer) jsonMap.get("since");
+                assertEquals(2, since.intValue());
+            }
 
-        } else {
-            assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
+            RecordedRequest doc1Request = dispatcher.takeRequest(doc1PathRegex);
+            assertTrue(doc1Request.getMethod().equals("GET"));
+            assertTrue(doc1Request.getPath().matches("/db/doc1\\?rev=2-2e38.*"));
+
+            // wait until the mock webserver receives a PUT checkpoint request with doc #2's sequence
+            int expectedLastSequence = doc1Seq;
+            List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, expectedLastSequence);
+            assertEquals(1, checkpointRequests.size());
+
+            // assert our local sequence matches what is expected
+            String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
+            assertEquals(Integer.toString(expectedLastSequence), lastSequence);
+
+            // assert completed count makes sense
+            assertEquals(pullReplication.getChangesCount(), pullReplication.getCompletedChangesCount());
         }
-        assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
-        if (serverType == MockDispatcher.ServerType.SYNC_GW) {
-            Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(getChangesFeedRequest.getUtf8Body(), Map.class);
-            assertTrue(jsonMap.containsKey("since"));
-            Integer since = (Integer) jsonMap.get("since");
-            assertEquals(2, since.intValue());
-        }
-
-        RecordedRequest doc1Request = dispatcher.takeRequest(doc1PathRegex);
-        assertTrue(doc1Request.getMethod().equals("GET"));
-        assertTrue(doc1Request.getPath().matches("/db/doc1\\?rev=2-2e38.*"));
-
-        // wait until the mock webserver receives a PUT checkpoint request with doc #2's sequence
-        int expectedLastSequence = doc1Seq;
-        List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, expectedLastSequence);
-        assertEquals(1, checkpointRequests.size());
-
-        // assert our local sequence matches what is expected
-        String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
-        assertEquals(Integer.toString(expectedLastSequence), lastSequence);
-
-        // assert completed count makes sense
-        assertEquals(pullReplication.getChangesCount(), pullReplication.getCompletedChangesCount());
-
-        if (shutdownMockWebserver) {
-            server.shutdown();
+        finally {
+            if (shutdownMockWebserver) {
+                server.shutdown();
+            }
         }
 
         Map<String, Object> returnVal = new HashMap<String, Object>();
         returnVal.put("server", server);
         returnVal.put("dispatcher", dispatcher);
-
         return returnVal;
     }
 
@@ -614,68 +622,70 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.setServerType(serverType);
         int numDocsPerChangesResponse = numMockRemoteDocs / 10;
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockRemoteDocs, numDocsPerChangesResponse);
+        try {
+            server.play();
 
-        server.play();
+            final CountDownLatch receivedAllDocs = new CountDownLatch(1);
 
-        final CountDownLatch receivedAllDocs = new CountDownLatch(1);
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
+            final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+            pullReplication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
 
-        final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        pullReplication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
+            final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+            ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+            pullReplication.addChangeListener(idleObserver);
 
-        final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
-        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdleSignal);
-        pullReplication.addChangeListener(idleObserver);
-
-        database.addChangeListener(new Database.ChangeListener() {
-            @Override
-            public void changed(Database.ChangeEvent event) {
-                List<DocumentChange> changes = event.getChanges();
-                for (DocumentChange change : changes) {
-                    numDocsPulledLocally.addAndGet(1);
+            database.addChangeListener(new Database.ChangeListener() {
+                @Override
+                public void changed(Database.ChangeEvent event) {
+                    List<DocumentChange> changes = event.getChanges();
+                    for (DocumentChange change : changes) {
+                        numDocsPulledLocally.addAndGet(1);
+                    }
+                    if (numDocsPulledLocally.get() == numMockRemoteDocs) {
+                        receivedAllDocs.countDown();
+                    }
                 }
-                if (numDocsPulledLocally.get() == numMockRemoteDocs) {
-                    receivedAllDocs.countDown();
-                }
+            });
+
+            pullReplication.start();
+
+            // wait until we received all mock docs or timeout occurs
+            boolean success = receivedAllDocs.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            // make sure all docs in local db
+            Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
+            Integer totalRows = (Integer) allDocs.get("total_rows");
+            List rows = (List) allDocs.get("rows");
+            assertEquals(numMockRemoteDocs, totalRows.intValue());
+            assertEquals(numMockRemoteDocs, rows.size());
+
+            // wait until idle
+            success = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            // cleanup / shutdown
+            pullReplication.stop();
+
+            success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            long lastSeq = database.getLastSequenceNumber();
+            Log.e(TAG, "lastSequence = %d", lastSeq);
+
+            // wait until the mock webserver receives a PUT checkpoint request with last do's sequence,
+            // this avoids ugly and confusing exceptions in the logs.
+            List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, numMockRemoteDocs - 1);
+            validateCheckpointRequestsRevisions(checkpointRequests);
+        }
+        finally {
+            if (shutdownMockWebserver) {
+                server.shutdown();
             }
-        });
-
-        pullReplication.start();
-
-        // wait until we received all mock docs or timeout occurs
-        boolean success = receivedAllDocs.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
-
-        // make sure all docs in local db
-        Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
-        Integer totalRows = (Integer) allDocs.get("total_rows");
-        List rows = (List) allDocs.get("rows");
-        assertEquals(numMockRemoteDocs, totalRows.intValue());
-        assertEquals(numMockRemoteDocs, rows.size());
-
-        // wait until idle
-        success = replicationIdleSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-
-        // cleanup / shutdown
-        pullReplication.stop();
-
-        success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-
-        long lastSeq = database.getLastSequenceNumber();
-        Log.e(TAG, "lastSequence = %d", lastSeq);
-
-        // wait until the mock webserver receives a PUT checkpoint request with last do's sequence,
-        // this avoids ugly and confusing exceptions in the logs.
-        List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, numMockRemoteDocs - 1);
-        validateCheckpointRequestsRevisions(checkpointRequests);
-
-        if (shutdownMockWebserver) {
-            server.shutdown();
         }
 
         Map<String, Object> returnVal = new HashMap<String, Object>();
@@ -708,73 +718,75 @@ public class ReplicationTest extends LiteTestCase {
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
-        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.play();
+        try {
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            server.play();
 
-        // add some documents - verify it has an attachment
-        Document doc1 = createDocumentForPushReplication(doc1Id, doc1AttachName, contentType);
-        String doc1Rev1 = doc1.getCurrentRevisionId();
-        doc1 = database.getDocument(doc1.getId());
-        assertTrue(doc1.getCurrentRevision().getAttachments().size() > 0);
+            // add some documents - verify it has an attachment
+            Document doc1 = createDocumentForPushReplication(doc1Id, doc1AttachName, contentType);
+            String doc1Rev1 = doc1.getCurrentRevisionId();
+            doc1 = database.getDocument(doc1.getId());
+            assertTrue(doc1.getCurrentRevision().getAttachments().size() > 0);
 
-        // checkpoint GET response w/ 404
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        // checkpoint PUT response
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT response
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // add response to 1st _changes request
-        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(
-                doc1Id, doc1Rev2, doc1Seq1);
-        Map<String, Object> newProperties = new HashMap<String, Object>(doc1.getProperties());
-        newProperties.put("_rev", doc1Rev2);
-        mockDocument1.setJsonMap(newProperties);
-        mockDocument1.setAttachmentName(doc1AttachName);
+            // add response to 1st _changes request
+            final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(
+                    doc1Id, doc1Rev2, doc1Seq1);
+            Map<String, Object> newProperties = new HashMap<String, Object>(doc1.getProperties());
+            newProperties.put("_rev", doc1Rev2);
+            mockDocument1.setJsonMap(newProperties);
+            mockDocument1.setAttachmentName(doc1AttachName);
 
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
-        // server that doesn't have any new changes
-        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse.setDelayMs(60 * 1000);
-        mockChangesFeedNoResponse.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
+            // server that doesn't have any new changes
+            MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+            mockChangesFeedNoResponse.setDelayMs(60 * 1000);
+            mockChangesFeedNoResponse.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
-        // add response to doc get
-        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument1);
-        mockDocumentGet.addAttachmentFilename(mockDocument1.getAttachmentName());
-        mockDocumentGet.setIncludeAttachmentPart(false);
-        Map<String, Object> revHistory = new HashMap<String, Object>();
-        revHistory.put("start", doc1Rev2Generation);
-        List ids = Arrays.asList(
-                RevisionInternal.digestFromRevID(doc1Rev2),
-                RevisionInternal.digestFromRevID(doc1Rev1)
-        );
-        revHistory.put("ids", ids);
-        mockDocumentGet.setRevHistoryMap(revHistory);
-        dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+            // add response to doc get
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument1);
+            mockDocumentGet.addAttachmentFilename(mockDocument1.getAttachmentName());
+            mockDocumentGet.setIncludeAttachmentPart(false);
+            Map<String, Object> revHistory = new HashMap<String, Object>();
+            revHistory.put("start", doc1Rev2Generation);
+            List ids = Arrays.asList(
+                    RevisionInternal.digestFromRevID(doc1Rev2),
+                    RevisionInternal.digestFromRevID(doc1Rev1)
+            );
+            revHistory.put("ids", ids);
+            mockDocumentGet.setRevHistoryMap(revHistory);
+            dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // create and start pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
-        pullReplication.start();
+            // create and start pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
+            pullReplication.start();
 
-        // wait for the next PUT checkpoint request/response
-        waitForPutCheckpointRequestWithSeq(dispatcher, 1);
+            // wait for the next PUT checkpoint request/response
+            waitForPutCheckpointRequestWithSeq(dispatcher, 1);
 
-        stopReplication(pullReplication);
+            stopReplication(pullReplication);
 
-        // make sure doc has attachments
-        Document doc1Fetched = database.getDocument(doc1.getId());
-        assertTrue(doc1Fetched.getCurrentRevision().getAttachments().size() > 0);
-
-        server.shutdown();
+            // make sure doc has attachments
+            Document doc1Fetched = database.getDocument(doc1.getId());
+            assertTrue(doc1Fetched.getCurrentRevision().getAttachments().size() > 0);
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -845,68 +857,71 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(500);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        mockRevsDiff.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            mockRevsDiff.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- 503 errors
-        MockResponse mockResponse = new MockResponse().setResponseCode(503);
-        WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
-        mockBulkDocs.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- 503 errors
+            MockResponse mockResponse = new MockResponse().setResponseCode(503);
+            WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
+            mockBulkDocs.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        server.play();
+            server.play();
 
-        // create replication
-        Replication replication = database.createPushReplication(server.getUrl("/db"));
-        replication.setContinuous(true);
-        CountDownLatch replicationIdle = new CountDownLatch(1);
-        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
-        replication.addChangeListener(idleObserver);
-        replication.start();
+            // create replication
+            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            replication.setContinuous(true);
+            CountDownLatch replicationIdle = new CountDownLatch(1);
+            ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
+            replication.addChangeListener(idleObserver);
+            replication.start();
 
-        // wait until idle
-        boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        replication.removeChangeListener(idleObserver);
+            // wait until idle
+            boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            replication.removeChangeListener(idleObserver);
 
-        // create a doc in local db
-        Document doc1 = createDocumentForPushReplication("doc1", null, null);
+            // create a doc in local db
+            Document doc1 = createDocumentForPushReplication("doc1", null, null);
 
-        // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
-        // 1st attempt
-        // numAttempts are number of times retry in 1 attempt.
-        int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
-        for (int i = 0; i < numAttempts; i++) {
-            RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
-            assertNotNull(request);
-            dispatcher.takeRecordedResponseBlocking(request);
-        }
-
-        // By 12/16/2014, CBL core java tries RemoteRequestRetry.MAX_RETRIES + 1 see above.
-        // Without fixing #299, following code should cause hang.
-
-        // outer retry loop
-        for (int j = 0; j < ReplicationInternal.MAX_RETRIES; j++) {
-            // inner retry loop
+            // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
+            // 1st attempt
+            // numAttempts are number of times retry in 1 attempt.
+            int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
             for (int i = 0; i < numAttempts; i++) {
                 RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
                 assertNotNull(request);
                 dispatcher.takeRecordedResponseBlocking(request);
             }
-        }
-        // gave up replication!!!
 
-        stopReplication(replication);
-        server.shutdown();
+            // By 12/16/2014, CBL core java tries RemoteRequestRetry.MAX_RETRIES + 1 see above.
+            // Without fixing #299, following code should cause hang.
+
+            // outer retry loop
+            for (int j = 0; j < ReplicationInternal.MAX_RETRIES; j++) {
+                // inner retry loop
+                for (int i = 0; i < numAttempts; i++) {
+                    RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+                    assertNotNull(request);
+                    dispatcher.takeRecordedResponseBlocking(request);
+                }
+            }
+            // gave up replication!!!
+
+            stopReplication(replication);
+        }finally {
+            server.shutdown();
+        }
     }
 
     public void testMockSinglePush() throws Exception {
@@ -938,99 +953,103 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(serverType);
-        server.play();
+        try {
+            server.play();
 
-        // add some documents
-        Document doc1 = createDocumentForPushReplication(doc1Id, null, null);
-        Document doc2 = createDocumentForPushReplication(doc2Id, doc2AttachName, contentType);
-        Document doc3 = createDocumentForPushReplication(doc3Id, doc3AttachName, contentType);
-        Document doc4 = createDocumentForPushReplication(doc4Id, null, null);
-        doc4.delete();
+            // add some documents
+            Document doc1 = createDocumentForPushReplication(doc1Id, null, null);
+            Document doc2 = createDocumentForPushReplication(doc2Id, doc2AttachName, contentType);
+            Document doc3 = createDocumentForPushReplication(doc3Id, doc3AttachName, contentType);
+            Document doc4 = createDocumentForPushReplication(doc4Id, null, null);
+            doc4.delete();
 
-        // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(50);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(50);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        // doc PUT responses for docs with attachments
-        MockDocumentPut mockDoc2Put = new MockDocumentPut()
-                .setDocId(doc2Id)
-                .setRev(doc2.getCurrentRevisionId());
-        dispatcher.enqueueResponse(doc2PathRegex, mockDoc2Put.generateMockResponse());
-        MockDocumentPut mockDoc3Put = new MockDocumentPut()
-                .setDocId(doc3Id)
-                .setRev(doc3.getCurrentRevisionId());
-        dispatcher.enqueueResponse(doc3PathRegex, mockDoc3Put.generateMockResponse());
+            // doc PUT responses for docs with attachments
+            MockDocumentPut mockDoc2Put = new MockDocumentPut()
+                    .setDocId(doc2Id)
+                    .setRev(doc2.getCurrentRevisionId());
+            dispatcher.enqueueResponse(doc2PathRegex, mockDoc2Put.generateMockResponse());
+            MockDocumentPut mockDoc3Put = new MockDocumentPut()
+                    .setDocId(doc3Id)
+                    .setRev(doc3.getCurrentRevisionId());
+            dispatcher.enqueueResponse(doc3PathRegex, mockDoc3Put.generateMockResponse());
 
-        // run replication
-        Replication replication = database.createPushReplication(server.getUrl("/db"));
-        replication.setContinuous(false);
-        if (serverType != MockDispatcher.ServerType.SYNC_GW) {
-            replication.setCreateTarget(true);
-            Assert.assertTrue(replication.shouldCreateTarget());
+            // run replication
+            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            replication.setContinuous(false);
+            if (serverType != MockDispatcher.ServerType.SYNC_GW) {
+                replication.setCreateTarget(true);
+                Assert.assertTrue(replication.shouldCreateTarget());
+            }
+            runReplication(replication);
+
+            // make assertions about outgoing requests from replicator -> mock
+            RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
+            assertTrue(getCheckpointRequest.getMethod().equals("GET"));
+            assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
+
+            RecordedRequest revsDiffRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_REVS_DIFF);
+            assertTrue(MockHelper.getUtf8Body(revsDiffRequest).contains(doc1Id));
+
+            RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
+            assertTrue(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc1Id));
+            Map<String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(MockHelper.getUtf8Body(bulkDocsRequest), Map.class);
+            Map<String, Object> doc4Map = MockBulkDocs.findDocById(bulkDocsJson, doc4Id);
+            assertTrue(((Boolean) doc4Map.get("_deleted")).booleanValue() == true);
+            String str = MockHelper.getUtf8Body(bulkDocsRequest);
+            Log.e(TAG, str);
+            assertFalse(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc2Id));
+
+            RecordedRequest doc2putRequest = dispatcher.takeRequest(doc2PathRegex);
+            CustomMultipartReaderDelegate delegate2 = new CustomMultipartReaderDelegate();
+            MultipartReader reader2 = new MultipartReader(doc2putRequest.getHeader("Content-Type"), delegate2);
+            reader2.appendData(doc2putRequest.getBody());
+            String body2 = new String(delegate2.data, "UTF-8");
+            assertTrue(body2.contains(doc2Id));
+            assertFalse(body2.contains(doc3Id));
+
+            RecordedRequest doc3putRequest = dispatcher.takeRequest(doc3PathRegex);
+            CustomMultipartReaderDelegate delegate3 = new CustomMultipartReaderDelegate();
+            MultipartReader reader3 = new MultipartReader(doc3putRequest.getHeader("Content-Type"), delegate3);
+            reader3.appendData(doc3putRequest.getBody());
+            String body3 = new String(delegate3.data, "UTF-8");
+            assertTrue(body3.contains(doc3Id));
+            assertFalse(body3.contains(doc2Id));
+
+            // wait until the mock webserver receives a PUT checkpoint request
+
+            int expectedLastSequence = 5;
+            Log.d(TAG, "waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
+            List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, expectedLastSequence);
+            Log.d(TAG, "done waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
+            validateCheckpointRequestsRevisions(checkpointRequests);
+
+            // assert our local sequence matches what is expected
+            String lastSequence = database.lastSequenceWithCheckpointId(replication.remoteCheckpointDocID());
+            assertEquals(Integer.toString(expectedLastSequence), lastSequence);
+
+            // assert completed count makes sense
+            assertEquals(replication.getChangesCount(), replication.getCompletedChangesCount());
+
         }
-        runReplication(replication);
-
-        // make assertions about outgoing requests from replicator -> mock
-        RecordedRequest getCheckpointRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHECKPOINT);
-        assertTrue(getCheckpointRequest.getMethod().equals("GET"));
-        assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
-
-        RecordedRequest revsDiffRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_REVS_DIFF);
-        assertTrue(MockHelper.getUtf8Body(revsDiffRequest).contains(doc1Id));
-
-        RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
-        assertTrue(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc1Id));
-        Map<String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(MockHelper.getUtf8Body(bulkDocsRequest), Map.class);
-        Map<String, Object> doc4Map = MockBulkDocs.findDocById(bulkDocsJson, doc4Id);
-        assertTrue(((Boolean) doc4Map.get("_deleted")).booleanValue() == true);
-        String str = MockHelper.getUtf8Body(bulkDocsRequest);
-        Log.e(TAG, str);
-        assertFalse(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc2Id));
-
-        RecordedRequest doc2putRequest = dispatcher.takeRequest(doc2PathRegex);
-        CustomMultipartReaderDelegate delegate2 = new CustomMultipartReaderDelegate();
-        MultipartReader reader2 = new MultipartReader(doc2putRequest.getHeader("Content-Type"), delegate2);
-        reader2.appendData(doc2putRequest.getBody());
-        String body2 = new String(delegate2.data, "UTF-8");
-        assertTrue(body2.contains(doc2Id));
-        assertFalse(body2.contains(doc3Id));
-
-        RecordedRequest doc3putRequest = dispatcher.takeRequest(doc3PathRegex);
-        CustomMultipartReaderDelegate delegate3 = new CustomMultipartReaderDelegate();
-        MultipartReader reader3 = new MultipartReader(doc3putRequest.getHeader("Content-Type"), delegate3);
-        reader3.appendData(doc3putRequest.getBody());
-        String body3 = new String(delegate3.data, "UTF-8");
-        assertTrue(body3.contains(doc3Id));
-        assertFalse(body3.contains(doc2Id));
-
-        // wait until the mock webserver receives a PUT checkpoint request
-
-        int expectedLastSequence = 5;
-        Log.d(TAG, "waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
-        List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, expectedLastSequence);
-        Log.d(TAG, "done waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
-        validateCheckpointRequestsRevisions(checkpointRequests);
-
-        // assert our local sequence matches what is expected
-        String lastSequence = database.lastSequenceWithCheckpointId(replication.remoteCheckpointDocID());
-        assertEquals(Integer.toString(expectedLastSequence), lastSequence);
-
-        // assert completed count makes sense
-        assertEquals(replication.getChangesCount(), replication.getCompletedChangesCount());
-
-        // Shut down the server. Instances cannot be reused.
-        if (shutdownMockWebserver) {
-            server.shutdown();
+        finally {
+            // Shut down the server. Instances cannot be reused.
+            if (shutdownMockWebserver) {
+                server.shutdown();
+            }
         }
 
         Map<String, Object> returnVal = new HashMap<String, Object>();
@@ -1057,72 +1076,76 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.play();
+        try {
+            server.play();
 
-        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        // replication to do initial sync up - has to be continuous replication so the checkpoint id
-        // matches the next continuous replication we're gonna do later.
+            // replication to do initial sync up - has to be continuous replication so the checkpoint id
+            // matches the next continuous replication we're gonna do later.
 
-        Replication firstPusher = database.createPushReplication(server.getUrl("/db"));
-        firstPusher.setContinuous(true);
-        final String checkpointId = firstPusher.remoteCheckpointDocID();  // save the checkpoint id for later usage
+            Replication firstPusher = database.createPushReplication(server.getUrl("/db"));
+            firstPusher.setContinuous(true);
+            final String checkpointId = firstPusher.remoteCheckpointDocID();  // save the checkpoint id for later usage
 
-        // start the continuous replication
-        CountDownLatch replicationIdleSignal = new CountDownLatch(1);
-        ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
-        firstPusher.addChangeListener(replicationIdleObserver);
-        firstPusher.start();
+            // start the continuous replication
+            CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+            ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+            firstPusher.addChangeListener(replicationIdleObserver);
+            firstPusher.start();
 
-        // wait until we get an IDLE event
-        boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(successful);
+            // wait until we get an IDLE event
+            boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(successful);
 
-        stopReplication(firstPusher);
+            stopReplication(firstPusher);
 
-        // wait until replication does PUT checkpoint with lastSequence=1
-        int expectedLastSequence = 1;
-        waitForPutCheckpointRequestWithSeq(dispatcher, expectedLastSequence);
+            // wait until replication does PUT checkpoint with lastSequence=1
+            int expectedLastSequence = 1;
+            waitForPutCheckpointRequestWithSeq(dispatcher, expectedLastSequence);
 
-        // the last sequence should be "1" at this point.  we will use this later
-        final String lastSequence = database.lastSequenceWithCheckpointId(checkpointId);
-        assertEquals("1", lastSequence);
+            // the last sequence should be "1" at this point.  we will use this later
+            final String lastSequence = database.lastSequenceWithCheckpointId(checkpointId);
+            assertEquals("1", lastSequence);
 
-        // start a second continuous replication
-        Replication secondPusher = database.createPushReplication(server.getUrl("/db"));
-        secondPusher.setContinuous(true);
-        final String secondPusherCheckpointId = secondPusher.remoteCheckpointDocID();
-        assertEquals(checkpointId, secondPusherCheckpointId);
+            // start a second continuous replication
+            Replication secondPusher = database.createPushReplication(server.getUrl("/db"));
+            secondPusher.setContinuous(true);
+            final String secondPusherCheckpointId = secondPusher.remoteCheckpointDocID();
+            assertEquals(checkpointId, secondPusherCheckpointId);
 
-        // remove current handler for the GET/PUT checkpoint request, and
-        // install a new handler that returns the lastSequence from previous replication
-        dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHECKPOINT);
-        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
-        mockCheckpointGet.setLastSequence(lastSequence);
-        mockCheckpointGet.setRev("0-2");
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
+            // remove current handler for the GET/PUT checkpoint request, and
+            // install a new handler that returns the lastSequence from previous replication
+            dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHECKPOINT);
+            MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
+            mockCheckpointGet.setLastSequence(lastSequence);
+            mockCheckpointGet.setRev("0-2");
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
 
-        // start second replication
-        replicationIdleSignal = new CountDownLatch(1);
-        replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
-        secondPusher.addChangeListener(replicationIdleObserver);
-        secondPusher.start();
+            // start second replication
+            replicationIdleSignal = new CountDownLatch(1);
+            replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+            secondPusher.addChangeListener(replicationIdleObserver);
+            secondPusher.start();
 
-        // wait until we get an IDLE event
-        successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(successful);
-        stopReplication(secondPusher);
+            // wait until we get an IDLE event
+            successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(successful);
+            stopReplication(secondPusher);
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -1145,49 +1168,51 @@ public class ReplicationTest extends LiteTestCase {
             MockDispatcher dispatcher = new MockDispatcher();
             MockWebServer server = MockHelper.getMockWebServer(dispatcher);
             dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-            server.play();
+            try {
+                server.play();
 
-            // mock checkpoint GET response w/ 404
-            MockResponse fakeCheckpointResponse = new MockResponse();
-            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+                // mock checkpoint GET response w/ 404
+                MockResponse fakeCheckpointResponse = new MockResponse();
+                MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-            // mock _changes response
-            for (int i = 0; i < 100; i++) {
-                MockResponse mockChangesFeed = new MockResponse();
-                MockHelper.set404NotFoundJson(mockChangesFeed);
-                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed);
+                // mock _changes response
+                for (int i = 0; i < 100; i++) {
+                    MockResponse mockChangesFeed = new MockResponse();
+                    MockHelper.set404NotFoundJson(mockChangesFeed);
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed);
+                }
+
+                // create new replication
+                int retryDelaySeconds = 1;
+                Replication pull = database.createPullReplication(server.getUrl("/db"));
+                pull.setContinuous(true);
+
+                // add done listener to replication
+                CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+                ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+                pull.addChangeListener(replicationFinishedObserver);
+
+                // start the replication
+                pull.start();
+
+                // wait until we get a few requests
+                Log.d(TAG, "Waiting for a _changes request");
+                RecordedRequest changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
+                Log.d(TAG, "Got first _changes request, waiting for another _changes request");
+                changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
+                Log.d(TAG, "Got second _changes request, waiting for another _changes request");
+                changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
+                Log.d(TAG, "Got third _changes request, stopping replicator");
+
+                // the replication should still be running
+                assertEquals(1, replicationDoneSignal.getCount());
+
+                // cleanup
+                stopReplication(pull);
+            }finally {
+                server.shutdown();
             }
-
-            // create new replication
-            int retryDelaySeconds = 1;
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
-            pull.setContinuous(true);
-
-            // add done listener to replication
-            CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-            ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-            pull.addChangeListener(replicationFinishedObserver);
-
-            // start the replication
-            pull.start();
-
-            // wait until we get a few requests
-            Log.d(TAG, "Waiting for a _changes request");
-            RecordedRequest changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
-            Log.d(TAG, "Got first _changes request, waiting for another _changes request");
-            changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
-            Log.d(TAG, "Got second _changes request, waiting for another _changes request");
-            changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
-            Log.d(TAG, "Got third _changes request, stopping replicator");
-
-            // the replication should still be running
-            assertEquals(1, replicationDoneSignal.getCount());
-
-            // cleanup
-            stopReplication(pull);
-
-            server.shutdown();
 
         } finally {
             PullerInternal.CHANGE_TRACKER_RESTART_DELAY_MS = previous;
@@ -1202,7 +1227,6 @@ public class ReplicationTest extends LiteTestCase {
         // currently this test fails with ForestDBStore
         if(!isSQLiteDB())
             return;
-
 
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderRevDiffsAllMissing();
@@ -1310,82 +1334,86 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        try {
 
-        // checkpoint GET response w/ 404
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        int rev3PromotedGeneration = 3;
-        String rev3PromotedDigest = "d46b";
-        String rev3Promoted = String.format("%d-%s", rev3PromotedGeneration, rev3PromotedDigest);
+            int rev3PromotedGeneration = 3;
+            String rev3PromotedDigest = "d46b";
+            String rev3Promoted = String.format("%d-%s", rev3PromotedGeneration, rev3PromotedDigest);
 
-        int rev3DeletedGeneration = 3;
-        String rev3DeletedDigest = "e768";
-        String rev3Deleted = String.format("%d-%s", rev3DeletedGeneration, rev3DeletedDigest);
+            int rev3DeletedGeneration = 3;
+            String rev3DeletedDigest = "e768";
+            String rev3Deleted = String.format("%d-%s", rev3DeletedGeneration, rev3DeletedDigest);
 
-        int seq = 4;
+            int seq = 4;
 
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        MockChangesFeed.MockChangedDoc mockChangedDoc = new MockChangesFeed.MockChangedDoc();
-        mockChangedDoc.setDocId(doc.getId());
-        mockChangedDoc.setSeq(seq);
-        mockChangedDoc.setChangedRevIds(Arrays.asList(rev3Promoted, rev3Deleted));
-        mockChangesFeed.add(mockChangedDoc);
-        MockResponse response = mockChangesFeed.generateMockResponse();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, response);
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            MockChangesFeed.MockChangedDoc mockChangedDoc = new MockChangesFeed.MockChangedDoc();
+            mockChangedDoc.setDocId(doc.getId());
+            mockChangedDoc.setSeq(seq);
+            mockChangedDoc.setChangedRevIds(Arrays.asList(rev3Promoted, rev3Deleted));
+            mockChangesFeed.add(mockChangedDoc);
+            MockResponse response = mockChangesFeed.generateMockResponse();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, response);
 
-        // docRev3Promoted response
-        MockDocumentGet.MockDocument docRev3Promoted = new MockDocumentGet.MockDocument(doc.getId(), rev3Promoted, seq);
-        docRev3Promoted.setJsonMap(MockHelper.generateRandomJsonMap());
-        MockDocumentGet mockDocRev3PromotedGet = new MockDocumentGet(docRev3Promoted);
-        Map<String, Object> rev3PromotedRevHistory = new HashMap<String, Object>();
-        rev3PromotedRevHistory.put("start", rev3PromotedGeneration);
-        List ids = Arrays.asList(
-                rev3PromotedDigest,
-                RevisionInternal.digestFromRevID(rev2a.getId()),
-                RevisionInternal.digestFromRevID(rev2b.getId())
-        );
-        rev3PromotedRevHistory.put("ids", ids);
-        mockDocRev3PromotedGet.setRevHistoryMap(rev3PromotedRevHistory);
-        dispatcher.enqueueResponse(docRev3Promoted.getDocPathRegex(), mockDocRev3PromotedGet.generateMockResponse());
+            // docRev3Promoted response
+            MockDocumentGet.MockDocument docRev3Promoted = new MockDocumentGet.MockDocument(doc.getId(), rev3Promoted, seq);
+            docRev3Promoted.setJsonMap(MockHelper.generateRandomJsonMap());
+            MockDocumentGet mockDocRev3PromotedGet = new MockDocumentGet(docRev3Promoted);
+            Map<String, Object> rev3PromotedRevHistory = new HashMap<String, Object>();
+            rev3PromotedRevHistory.put("start", rev3PromotedGeneration);
+            List ids = Arrays.asList(
+                    rev3PromotedDigest,
+                    RevisionInternal.digestFromRevID(rev2a.getId()),
+                    RevisionInternal.digestFromRevID(rev2b.getId())
+            );
+            rev3PromotedRevHistory.put("ids", ids);
+            mockDocRev3PromotedGet.setRevHistoryMap(rev3PromotedRevHistory);
+            dispatcher.enqueueResponse(docRev3Promoted.getDocPathRegex(), mockDocRev3PromotedGet.generateMockResponse());
 
-        // docRev3Deleted response
-        MockDocumentGet.MockDocument docRev3Deleted = new MockDocumentGet.MockDocument(doc.getId(), rev3Deleted, seq);
-        Map<String, Object> jsonMap = MockHelper.generateRandomJsonMap();
-        jsonMap.put("_deleted", true);
-        docRev3Deleted.setJsonMap(jsonMap);
-        MockDocumentGet mockDocRev3DeletedGet = new MockDocumentGet(docRev3Deleted);
-        Map<String, Object> rev3DeletedRevHistory = new HashMap<String, Object>();
-        rev3DeletedRevHistory.put("start", rev3DeletedGeneration);
-        ids = Arrays.asList(
-                rev3DeletedDigest,
-                RevisionInternal.digestFromRevID(rev2b.getId()),
-                RevisionInternal.digestFromRevID(rev1.getId())
-        );
-        rev3DeletedRevHistory.put("ids", ids);
-        mockDocRev3DeletedGet.setRevHistoryMap(rev3DeletedRevHistory);
-        dispatcher.enqueueResponse(docRev3Deleted.getDocPathRegex(), mockDocRev3DeletedGet.generateMockResponse());
+            // docRev3Deleted response
+            MockDocumentGet.MockDocument docRev3Deleted = new MockDocumentGet.MockDocument(doc.getId(), rev3Deleted, seq);
+            Map<String, Object> jsonMap = MockHelper.generateRandomJsonMap();
+            jsonMap.put("_deleted", true);
+            docRev3Deleted.setJsonMap(jsonMap);
+            MockDocumentGet mockDocRev3DeletedGet = new MockDocumentGet(docRev3Deleted);
+            Map<String, Object> rev3DeletedRevHistory = new HashMap<String, Object>();
+            rev3DeletedRevHistory.put("start", rev3DeletedGeneration);
+            ids = Arrays.asList(
+                    rev3DeletedDigest,
+                    RevisionInternal.digestFromRevID(rev2b.getId()),
+                    RevisionInternal.digestFromRevID(rev1.getId())
+            );
+            rev3DeletedRevHistory.put("ids", ids);
+            mockDocRev3DeletedGet.setRevHistoryMap(rev3DeletedRevHistory);
+            dispatcher.enqueueResponse(docRev3Deleted.getDocPathRegex(), mockDocRev3DeletedGet.generateMockResponse());
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        runReplication(pullReplication);
-        assertNull(pullReplication.getLastError());
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            runReplication(pullReplication);
+            assertNull(pullReplication.getLastError());
 
-        // assertions about outgoing requests
-        RecordedRequest changesRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
-        assertNotNull(changesRequest);
-        RecordedRequest docRev3DeletedRequest = dispatcher.takeRequest(docRev3Deleted.getDocPathRegex());
-        assertNotNull(docRev3DeletedRequest);
-        RecordedRequest docRev3PromotedRequest = dispatcher.takeRequest(docRev3Promoted.getDocPathRegex());
-        assertNotNull(docRev3PromotedRequest);
+            // assertions about outgoing requests
+            RecordedRequest changesRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+            assertNotNull(changesRequest);
+            RecordedRequest docRev3DeletedRequest = dispatcher.takeRequest(docRev3Deleted.getDocPathRegex());
+            assertNotNull(docRev3DeletedRequest);
+            RecordedRequest docRev3PromotedRequest = dispatcher.takeRequest(docRev3Promoted.getDocPathRegex());
+            assertNotNull(docRev3PromotedRequest);
 
-        // Make sure the conflict was resolved locally.
-        assertEquals(1, doc.getConflictingRevisions().size());
+            // Make sure the conflict was resolved locally.
+            assertEquals(1, doc.getConflictingRevisions().size());
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -1752,90 +1780,92 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        try {
 
-        //add response to _local request
-        // checkpoint GET response w/ 404
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            //add response to _local request
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        //add response to _changes request
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            //add response to _changes request
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // doc1 response
-        MockDocumentGet mockDocumentGet1 = new MockDocumentGet(mockDocument1);
-        dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet1.generateMockResponse());
+            // doc1 response
+            MockDocumentGet mockDocumentGet1 = new MockDocumentGet(mockDocument1);
+            dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet1.generateMockResponse());
 
-        // doc2 missing reponse
-        MockResponse missingDocumentMockResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(missingDocumentMockResponse);
-        dispatcher.enqueueResponse(mockDocument2.getDocPathRegex(), missingDocumentMockResponse);
+            // doc2 missing reponse
+            MockResponse missingDocumentMockResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(missingDocumentMockResponse);
+            dispatcher.enqueueResponse(mockDocument2.getDocPathRegex(), missingDocumentMockResponse);
 
-        // doc3 response
-        MockDocumentGet mockDocumentGet3 = new MockDocumentGet(mockDocument3);
-        dispatcher.enqueueResponse(mockDocument3.getDocPathRegex(), mockDocumentGet3.generateMockResponse());
+            // doc3 response
+            MockDocumentGet mockDocumentGet3 = new MockDocumentGet(mockDocument3);
+            dispatcher.enqueueResponse(mockDocument3.getDocPathRegex(), mockDocumentGet3.generateMockResponse());
 
-        // checkpoint PUT response
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT response
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        //create url for replication
-        URL baseUrl = server.getUrl("/db");
+            //create url for replication
+            URL baseUrl = server.getUrl("/db");
 
-        //create replication
-        Replication pullReplication = database.createPullReplication(baseUrl);
-        pullReplication.setContinuous(false);
+            //create replication
+            Replication pullReplication = database.createPullReplication(baseUrl);
+            pullReplication.setContinuous(false);
 
-        //add change listener to notify when the replication is finished
-        CountDownLatch replicationFinishedContCountDownLatch = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver =
-                new ReplicationFinishedObserver(replicationFinishedContCountDownLatch);
-        pullReplication.addChangeListener(replicationFinishedObserver);
+            //add change listener to notify when the replication is finished
+            CountDownLatch replicationFinishedContCountDownLatch = new CountDownLatch(1);
+            ReplicationFinishedObserver replicationFinishedObserver =
+                    new ReplicationFinishedObserver(replicationFinishedContCountDownLatch);
+            pullReplication.addChangeListener(replicationFinishedObserver);
 
-        //start replication
-        pullReplication.start();
+            //start replication
+            pullReplication.start();
 
-        boolean success = replicationFinishedContCountDownLatch.await(100, TimeUnit.SECONDS);
-        assertTrue(success);
+            boolean success = replicationFinishedContCountDownLatch.await(100, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        if (pullReplication.getLastError() != null) {
-            Log.d(TAG, "Replication had error: " + ((HttpResponseException) pullReplication.getLastError()).getStatusCode());
+            if (pullReplication.getLastError() != null) {
+                Log.d(TAG, "Replication had error: " + ((HttpResponseException) pullReplication.getLastError()).getStatusCode());
+            }
+
+            //assert document 1 was correctly pulled
+            Document doc1 = database.getDocument(doc1Id);
+            assertNotNull(doc1);
+            assertNotNull(doc1.getCurrentRevision());
+
+            //assert it was impossible to pull doc2
+            Document doc2 = database.getDocument(doc2Id);
+            assertNotNull(doc2);
+            assertNull(doc2.getCurrentRevision());
+
+            //assert it was possible to pull doc3
+            Document doc3 = database.getDocument(doc3Id);
+            assertNotNull(doc3);
+            assertNotNull(doc3.getCurrentRevision());
+
+            // wait until the replicator PUT's checkpoint with mockDocument3's sequence
+            waitForPutCheckpointRequestWithSeq(dispatcher, mockDocument3.getDocSeq());
+
+            //last saved seq must be equal to last pulled document seq
+            String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
+            String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
+            assertEquals(doc3Seq, lastSequence);
+        }finally {
+            //stop mock server
+            server.shutdown();
         }
-
-        //assert document 1 was correctly pulled
-        Document doc1 = database.getDocument(doc1Id);
-        assertNotNull(doc1);
-        assertNotNull(doc1.getCurrentRevision());
-
-        //assert it was impossible to pull doc2
-        Document doc2 = database.getDocument(doc2Id);
-        assertNotNull(doc2);
-        assertNull(doc2.getCurrentRevision());
-
-        //assert it was possible to pull doc3
-        Document doc3 = database.getDocument(doc3Id);
-        assertNotNull(doc3);
-        assertNotNull(doc3.getCurrentRevision());
-
-        // wait until the replicator PUT's checkpoint with mockDocument3's sequence
-        waitForPutCheckpointRequestWithSeq(dispatcher, mockDocument3.getDocSeq());
-
-        //last saved seq must be equal to last pulled document seq
-        String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
-        String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
-        assertEquals(doc3Seq, lastSequence);
-
-        //stop mock server
-        server.shutdown();
     }
 
     /**
@@ -2053,50 +2083,52 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
 
-        // checkpoint GET response w/ 404
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // doc response
-        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
-        dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+            // doc response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
+            dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // checkpoint PUT response
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, new MockCheckpointPut());
+            // checkpoint PUT response
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, new MockCheckpointPut());
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // Add Validation block
-        database.setValidation("testValidationBlockCalled", new Validator() {
-            @Override
-            public void validate(Revision newRevision, ValidationContext context) {
-                if (newRevision.getDocument().getId().equals(mockDocument.getDocId())) {
-                    context.reject("Reject");
+            // Add Validation block
+            database.setValidation("testValidationBlockCalled", new Validator() {
+                @Override
+                public void validate(Revision newRevision, ValidationContext context) {
+                    if (newRevision.getDocument().getId().equals(mockDocument.getDocId())) {
+                        context.reject("Reject");
+                    }
                 }
-            }
-        });
+            });
 
-        // run pull replication
+            // run pull replication
 
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        runReplication(pullReplication);
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            runReplication(pullReplication);
 
-        waitForPutCheckpointRequestWithSeq(dispatcher, mockDocument.getDocSeq());
+            waitForPutCheckpointRequestWithSeq(dispatcher, mockDocument.getDocSeq());
 
-        // assert doc is not in local db
-        Document doc = database.getDocument(mockDocument.getDocId());
-        assertNull(doc.getCurrentRevision());  // doc should have been rejected by validation, and therefore not present
-
-        server.shutdown();
+            // assert doc is not in local db
+            Document doc = database.getDocument(mockDocument.getDocId());
+            assertNull(doc.getCurrentRevision());  // doc should have been rejected by validation, and therefore not present
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -2119,62 +2151,63 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         int numDocsPerChangesResponse = numMockRemoteDocs / 10;
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockRemoteDocs, numDocsPerChangesResponse);
+        try {
+            server.play();
 
-        server.play();
+            final CountDownLatch receivedAllDocs = new CountDownLatch(1);
 
-        final CountDownLatch receivedAllDocs = new CountDownLatch(1);
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
+            // it should go idle twice, hence countdown latch = 2
+            final CountDownLatch replicationIdleFirstTime = new CountDownLatch(1);
+            final CountDownLatch replicationIdleSecondTime = new CountDownLatch(2);
 
-        // it should go idle twice, hence countdown latch = 2
-        final CountDownLatch replicationIdleFirstTime = new CountDownLatch(1);
-        final CountDownLatch replicationIdleSecondTime = new CountDownLatch(2);
-
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
-                    replicationIdleFirstTime.countDown();
-                    replicationIdleSecondTime.countDown();
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
+                        replicationIdleFirstTime.countDown();
+                        replicationIdleSecondTime.countDown();
+                    }
                 }
-            }
-        });
+            });
 
-        database.addChangeListener(new Database.ChangeListener() {
-            @Override
-            public void changed(Database.ChangeEvent event) {
-                List<DocumentChange> changes = event.getChanges();
-                for (DocumentChange change : changes) {
-                    numDocsPulledLocally.addAndGet(1);
+            database.addChangeListener(new Database.ChangeListener() {
+                @Override
+                public void changed(Database.ChangeEvent event) {
+                    List<DocumentChange> changes = event.getChanges();
+                    for (DocumentChange change : changes) {
+                        numDocsPulledLocally.addAndGet(1);
+                    }
+                    if (numDocsPulledLocally.get() == numMockRemoteDocs) {
+                        receivedAllDocs.countDown();
+                    }
                 }
-                if (numDocsPulledLocally.get() == numMockRemoteDocs) {
-                    receivedAllDocs.countDown();
-                }
-            }
-        });
+            });
 
-        pullReplication.start();
+            pullReplication.start();
 
-        // wait until we received all mock docs or timeout occurs
-        boolean success = receivedAllDocs.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
+            // wait until we received all mock docs or timeout occurs
+            boolean success = receivedAllDocs.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        // wait until replication goes idle
-        success = replicationIdleFirstTime.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
+            // wait until replication goes idle
+            success = replicationIdleFirstTime.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        pullReplication.restart();
+            pullReplication.restart();
 
-        // wait until replication goes idle again
-        success = replicationIdleSecondTime.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
+            // wait until replication goes idle again
+            success = replicationIdleSecondTime.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        stopReplication(pullReplication);
-
-        // cleanup / shutdown
-        server.shutdown();
+            stopReplication(pullReplication);
+        }finally {
+            // cleanup / shutdown
+            server.shutdown();
+        }
     }
 
     public void testRunReplicationWithError() throws Exception {
@@ -2322,58 +2355,60 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.play();
+        try {
+            server.play();
 
-        // add some documents
-        Document doc1 = createDocumentForPushReplication(doc1Id, null, null);
+            // add some documents
+            Document doc1 = createDocumentForPushReplication(doc1Id, null, null);
 
-        // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(50);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(50);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // 1st _bulk_docs response -- transient error
-        MockResponse response = new MockResponse().setStatus(status);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, response);
+            // 1st _bulk_docs response -- transient error
+            MockResponse response = new MockResponse().setStatus(status);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, response);
 
-        // 2nd _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // 2nd _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        // run replication
-        Replication pusher = database.createPushReplication(server.getUrl("/db"));
-        pusher.setContinuous(false);
-        runReplication(pusher);
+            // run replication
+            Replication pusher = database.createPushReplication(server.getUrl("/db"));
+            pusher.setContinuous(false);
+            runReplication(pusher);
 
-        if (expectReplicatorError == true) {
-            assertNotNull(pusher.getLastError());
-        } else {
-            assertNull(pusher.getLastError());
+            if (expectReplicatorError == true) {
+                assertNotNull(pusher.getLastError());
+            } else {
+                assertNull(pusher.getLastError());
+            }
+
+            if (expectReplicatorError == false) {
+
+                int expectedLastSequence = 1;
+                Log.d(TAG, "waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
+                List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, expectedLastSequence);
+                Log.d(TAG, "done waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
+                validateCheckpointRequestsRevisions(checkpointRequests);
+
+                // assert our local sequence matches what is expected
+                String lastSequence = database.lastSequenceWithCheckpointId(pusher.remoteCheckpointDocID());
+                assertEquals(Integer.toString(expectedLastSequence), lastSequence);
+
+                // assert completed count makes sense
+                assertEquals(pusher.getChangesCount(), pusher.getCompletedChangesCount());
+            }
+        }finally {
+            // Shut down the server. Instances cannot be reused.
+            server.shutdown();
         }
-
-        if (expectReplicatorError == false) {
-
-            int expectedLastSequence = 1;
-            Log.d(TAG, "waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
-            List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, expectedLastSequence);
-            Log.d(TAG, "done waiting for put checkpoint with lastSequence: %d", expectedLastSequence);
-            validateCheckpointRequestsRevisions(checkpointRequests);
-
-            // assert our local sequence matches what is expected
-            String lastSequence = database.lastSequenceWithCheckpointId(pusher.remoteCheckpointDocID());
-            assertEquals(Integer.toString(expectedLastSequence), lastSequence);
-
-            // assert completed count makes sense
-            assertEquals(pusher.getChangesCount(), pusher.getCompletedChangesCount());
-        }
-
-        // Shut down the server. Instances cannot be reused.
-        server.shutdown();
     }
 
 
@@ -2457,106 +2492,109 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
-        server.play();
-
-        // mock documents to be pulled
-        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
-        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
-        mockDoc1.setAttachmentName("attachment.png");
-        MockDocumentGet.MockDocument mockDoc2 = new MockDocumentGet.MockDocument("doc2", "1-563b", 2);
-        mockDoc2.setJsonMap(MockHelper.generateRandomJsonMap());
-        mockDoc2.setAttachmentName("attachment2.png");
-
-        // fake checkpoint PUT and GET response w/ 404
-        MockCheckpointPut fakeCheckpointResponse = new MockCheckpointPut();
-        fakeCheckpointResponse.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
-
-        // _changes response with docs
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
-
-        // next _changes response will block (eg, longpoll reponse with no changes to return)
-        MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
-
-        // doc1 response
-        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
-        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
-
-        // doc2 response
-        mockDocumentGet = new MockDocumentGet(mockDoc2);
-        dispatcher.enqueueResponse(mockDoc2.getDocPathRegex(), mockDocumentGet.generateMockResponse());
-
-        // create replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
-
-        // add a change listener
-        final CountDownLatch idleCountdownLatch = new CountDownLatch(1);
-        final CountDownLatch receivedAllDocs = new CountDownLatch(1);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                Log.e(Log.TAG_SYNC, "event.getCompletedChangeCount() = " + event.getCompletedChangeCount());
-                if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
-                    idleCountdownLatch.countDown();
-                }
-                if (event.getCompletedChangeCount() == numMockDocsToServe) {
-                    receivedAllDocs.countDown();
-                }
-            }
-        });
-
-        // start replication
-        pullReplication.start();
-
-        // wait until it goes into idle state
-        boolean success = idleCountdownLatch.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
-
-        // WORKAROUND: With CBL Java on Jenkins, Replicator becomes IDLE state before processing doc1. (NOT 100% REPRODUCIBLE)
-        // NOTE: 03/20/2014 This is also observable with on Standard Android emulator with ARM. (NOT 100% REPRODUCIBLE)
-        // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
-        // NOTE: Build.BRAND.equalsIgnoreCase("generic") is only for Android, not for regular Java.
-        //       So, till solve IDLE state issue, always wait 5 seconds.
         try {
-            Thread.sleep(5 * 1000);
-        } catch (Exception e) {
+            server.play();
+
+            // mock documents to be pulled
+            MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+            mockDoc1.setAttachmentName("attachment.png");
+            MockDocumentGet.MockDocument mockDoc2 = new MockDocumentGet.MockDocument("doc2", "1-563b", 2);
+            mockDoc2.setJsonMap(MockHelper.generateRandomJsonMap());
+            mockDoc2.setAttachmentName("attachment2.png");
+
+            // fake checkpoint PUT and GET response w/ 404
+            MockCheckpointPut fakeCheckpointResponse = new MockCheckpointPut();
+            fakeCheckpointResponse.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+            // _changes response with docs
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // next _changes response will block (eg, longpoll reponse with no changes to return)
+            MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
+
+            // doc1 response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+            // doc2 response
+            mockDocumentGet = new MockDocumentGet(mockDoc2);
+            dispatcher.enqueueResponse(mockDoc2.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+            // create replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
+
+            // add a change listener
+            final CountDownLatch idleCountdownLatch = new CountDownLatch(1);
+            final CountDownLatch receivedAllDocs = new CountDownLatch(1);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    Log.e(Log.TAG_SYNC, "event.getCompletedChangeCount() = " + event.getCompletedChangeCount());
+                    if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
+                        idleCountdownLatch.countDown();
+                    }
+                    if (event.getCompletedChangeCount() == numMockDocsToServe) {
+                        receivedAllDocs.countDown();
+                    }
+                }
+            });
+
+            // start replication
+            pullReplication.start();
+
+            // wait until it goes into idle state
+            boolean success = idleCountdownLatch.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            // WORKAROUND: With CBL Java on Jenkins, Replicator becomes IDLE state before processing doc1. (NOT 100% REPRODUCIBLE)
+            // NOTE: 03/20/2014 This is also observable with on Standard Android emulator with ARM. (NOT 100% REPRODUCIBLE)
+            // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
+            // NOTE: Build.BRAND.equalsIgnoreCase("generic") is only for Android, not for regular Java.
+            //       So, till solve IDLE state issue, always wait 5 seconds.
+            try {
+                Thread.sleep(5 * 1000);
+            } catch (Exception e) {
+            }
+
+            // put the replication offline
+            putReplicationOffline(pullReplication);
+
+            // at this point, we shouldn't have received all of the docs yet.
+            assertTrue(receivedAllDocs.getCount() > 0);
+
+            // return some more docs on _changes feed
+            MockChangesFeed mockChangesFeed2 = new MockChangesFeed();
+            mockChangesFeed2.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed2.generateMockResponse());
+
+            // put the replication online (should see the new docs)
+            putReplicationOnline(pullReplication);
+
+            // wait until we receive all the docs
+            success = receivedAllDocs.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            // wait until we try to PUT a checkpoint request with doc2's sequence
+            waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc2.getDocSeq());
+
+            // make sure all docs in local db
+            Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
+            Integer totalRows = (Integer) allDocs.get("total_rows");
+            List rows = (List) allDocs.get("rows");
+            assertEquals(numMockDocsToServe, totalRows.intValue());
+            assertEquals(numMockDocsToServe, rows.size());
+
+            // cleanup
+            stopReplication(pullReplication);
+        }finally {
+            server.shutdown();
         }
-
-        // put the replication offline
-        putReplicationOffline(pullReplication);
-
-        // at this point, we shouldn't have received all of the docs yet.
-        assertTrue(receivedAllDocs.getCount() > 0);
-
-        // return some more docs on _changes feed
-        MockChangesFeed mockChangesFeed2 = new MockChangesFeed();
-        mockChangesFeed2.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed2.generateMockResponse());
-
-        // put the replication online (should see the new docs)
-        putReplicationOnline(pullReplication);
-
-        // wait until we receive all the docs
-        success = receivedAllDocs.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
-
-        // wait until we try to PUT a checkpoint request with doc2's sequence
-        waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc2.getDocSeq());
-
-        // make sure all docs in local db
-        Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
-        Integer totalRows = (Integer) allDocs.get("total_rows");
-        List rows = (List) allDocs.get("rows");
-        assertEquals(numMockDocsToServe, totalRows.intValue());
-        assertEquals(numMockDocsToServe, rows.size());
-
-        // cleanup
-        stopReplication(pullReplication);
-        server.shutdown();
     }
 
     private void putReplicationOffline(Replication replication) throws InterruptedException {
@@ -2604,71 +2642,74 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        try {
 
-        // add sticky checkpoint GET response w/ 404
-        MockCheckpointGet fakeCheckpointResponse = new MockCheckpointGet();
-        fakeCheckpointResponse.set404(true);
-        fakeCheckpointResponse.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            // add sticky checkpoint GET response w/ 404
+            MockCheckpointGet fakeCheckpointResponse = new MockCheckpointGet();
+            fakeCheckpointResponse.set404(true);
+            fakeCheckpointResponse.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
 
-        // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
-        // server that doesn't have any new changes
-        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse.setDelayMs(60 * 1000);
-        mockChangesFeedNoResponse.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_LONGPOLL, mockChangesFeedNoResponse);
+            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
+            // server that doesn't have any new changes
+            MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+            mockChangesFeedNoResponse.setDelayMs(60 * 1000);
+            mockChangesFeedNoResponse.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_LONGPOLL, mockChangesFeedNoResponse);
 
-        // add _changes response to feed=normal that returns empty _changes feed immediately
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        MockResponse mockResponse = mockChangesFeed.generateMockResponse();
-        for (int i = 0; i < 500; i++) {  // TODO: use setSticky instead of workaround to add a ton of mock responses
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_NORMAL, new WrappedSmartMockResponse(mockResponse));
+            // add _changes response to feed=normal that returns empty _changes feed immediately
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            MockResponse mockResponse = mockChangesFeed.generateMockResponse();
+            for (int i = 0; i < 500; i++) {  // TODO: use setSticky instead of workaround to add a ton of mock responses
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_NORMAL, new WrappedSmartMockResponse(mockResponse));
+            }
+
+            // start mock server
+            server.play();
+
+            //create url for replication
+            URL baseUrl = server.getUrl("/db");
+
+            //create replication
+            final Replication pullReplication = database.createPullReplication(baseUrl);
+            pullReplication.setContinuous(true);
+            pullReplication.start();
+
+            // wait until we get a request to the _changes feed
+            RecordedRequest changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES_LONGPOLL);
+            assertNotNull(changesReq);
+
+            putReplicationOffline(pullReplication);
+
+            // at this point since we called takeRequest earlier, our recorded _changes request queue should be empty
+            assertNull(dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES_LONGPOLL));
+
+            // put replication online 10 times
+            for (int i = 0; i < 10; i++) {
+                pullReplication.goOnline();
+            }
+
+            // sleep for a while to give things a chance to start
+            Log.d(TAG, "sleeping for 2 seconds");
+            Thread.sleep(2 * 1000);
+            Log.d(TAG, "done sleeping");
+
+            // how many _changes feed requests has the replicator made since going online?
+            int numChangesRequests = 0;
+            while ((changesReq = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES_LONGPOLL)) != null) {
+                Log.d(TAG, "changesReq: %s", changesReq);
+                numChangesRequests += 1;
+            }
+
+            // assert that there was only one _changes feed request
+            assertEquals(1, numChangesRequests);
+
+            // shutdown
+            stopReplication(pullReplication);
+        }finally {
+            server.shutdown();
         }
-
-        // start mock server
-        server.play();
-
-        //create url for replication
-        URL baseUrl = server.getUrl("/db");
-
-        //create replication
-        final Replication pullReplication = database.createPullReplication(baseUrl);
-        pullReplication.setContinuous(true);
-        pullReplication.start();
-
-        // wait until we get a request to the _changes feed
-        RecordedRequest changesReq = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES_LONGPOLL);
-        assertNotNull(changesReq);
-
-        putReplicationOffline(pullReplication);
-
-        // at this point since we called takeRequest earlier, our recorded _changes request queue should be empty
-        assertNull(dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES_LONGPOLL));
-
-        // put replication online 10 times
-        for (int i = 0; i < 10; i++) {
-            pullReplication.goOnline();
-        }
-
-        // sleep for a while to give things a chance to start
-        Log.d(TAG, "sleeping for 2 seconds");
-        Thread.sleep(2 * 1000);
-        Log.d(TAG, "done sleeping");
-
-        // how many _changes feed requests has the replicator made since going online?
-        int numChangesRequests = 0;
-        while ((changesReq = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES_LONGPOLL)) != null) {
-            Log.d(TAG, "changesReq: %s", changesReq);
-            numChangesRequests += 1;
-        }
-
-        // assert that there was only one _changes feed request
-        assertEquals(1, numChangesRequests);
-
-        // shutdown
-        stopReplication(pullReplication);
-        server.shutdown();
     }
 
     /**
@@ -2695,100 +2736,102 @@ public class ReplicationTest extends LiteTestCase {
             Document doc1 = createDocumentWithProperties(database, properties);
 
             // create mock server
-            MockDispatcher dispatcher = new MockDispatcher();
             MockWebServer server = new MockWebServer();
-            server.setDispatcher(dispatcher);
-            server.play();
-
-            // checkpoint PUT response (sticky)
-            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-            mockCheckpointPut.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
-
-            // _revs_diff response -- everything missing
-            MockRevsDiff mockRevsDiff = new MockRevsDiff();
-            mockRevsDiff.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
-
-            // _bulk_docs response -- everything stored
-            MockBulkDocs mockBulkDocs = new MockBulkDocs();
-            mockBulkDocs.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
-
-            // 2. Kick off continuous push replication
-            Replication replicator = database.createPushReplication(server.getUrl("/db"));
-            replicator.setContinuous(true);
-            CountDownLatch replicationIdleSignal = new CountDownLatch(1);
-            ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
-            replicator.addChangeListener(replicationIdleObserver);
-            replicator.start();
-
-            // 3. Wait for document to be pushed
-
-            // wait until replication goes idle
-            boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
-            assertTrue(successful);
-
-            // wait until mock server gets the checkpoint PUT request
-            boolean foundCheckpointPut = false;
-            String expectedLastSequence = "1";
-            while (!foundCheckpointPut) {
-                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
-                if (request.getMethod().equals("PUT")) {
-                    foundCheckpointPut = true;
-                    Assert.assertTrue(request.getUtf8Body().indexOf(expectedLastSequence) != -1);
-                    // wait until mock server responds to the checkpoint PUT request
-                    dispatcher.takeRecordedResponseBlocking(request);
-                }
-            }
-
-            // make some assertions about the outgoing _bulk_docs requests for first doc
-            RecordedRequest bulkDocsRequest1 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
-            assertNotNull(bulkDocsRequest1);
-            assertBulkDocJsonContainsDoc(bulkDocsRequest1, doc1);
-
-            // 4. Call goOffline()
-            putReplicationOffline(replicator);
-
-            // 5. Add a 2nd local document
-            properties = new HashMap<String, Object>();
-            properties.put("testGoOfflinePusher", "2");
-            Document doc2 = createDocumentWithProperties(database, properties);
-
-            // make sure if push replicator does not send request during offline.
             try {
-                Thread.sleep(1000 * 3);
-            } catch (Exception ex) {
-            }
-            // make sure not receive _bulk_docs during offline.
-            RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
-            assertNull(bulkDocsRequest);
+                MockDispatcher dispatcher = new MockDispatcher();
+                server.setDispatcher(dispatcher);
+                server.play();
 
-            // 6. Call goOnline()
-            putReplicationOnline(replicator);
+                // checkpoint PUT response (sticky)
+                MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+                mockCheckpointPut.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-            // wait until mock server gets the 2nd checkpoint PUT request
-            foundCheckpointPut = false;
-            expectedLastSequence = "2";
-            while (!foundCheckpointPut) {
-                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
-                if (request.getMethod().equals("PUT")) {
-                    foundCheckpointPut = true;
-                    Assert.assertTrue(request.getUtf8Body().indexOf(expectedLastSequence) != -1);
-                    // wait until mock server responds to the checkpoint PUT request
-                    dispatcher.takeRecordedResponseBlocking(request);
+                // _revs_diff response -- everything missing
+                MockRevsDiff mockRevsDiff = new MockRevsDiff();
+                mockRevsDiff.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+                // _bulk_docs response -- everything stored
+                MockBulkDocs mockBulkDocs = new MockBulkDocs();
+                mockBulkDocs.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+
+                // 2. Kick off continuous push replication
+                Replication replicator = database.createPushReplication(server.getUrl("/db"));
+                replicator.setContinuous(true);
+                CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+                ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+                replicator.addChangeListener(replicationIdleObserver);
+                replicator.start();
+
+                // 3. Wait for document to be pushed
+
+                // wait until replication goes idle
+                boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+                assertTrue(successful);
+
+                // wait until mock server gets the checkpoint PUT request
+                boolean foundCheckpointPut = false;
+                String expectedLastSequence = "1";
+                while (!foundCheckpointPut) {
+                    RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+                    if (request.getMethod().equals("PUT")) {
+                        foundCheckpointPut = true;
+                        Assert.assertTrue(request.getUtf8Body().indexOf(expectedLastSequence) != -1);
+                        // wait until mock server responds to the checkpoint PUT request
+                        dispatcher.takeRecordedResponseBlocking(request);
+                    }
                 }
+
+                // make some assertions about the outgoing _bulk_docs requests for first doc
+                RecordedRequest bulkDocsRequest1 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
+                assertNotNull(bulkDocsRequest1);
+                assertBulkDocJsonContainsDoc(bulkDocsRequest1, doc1);
+
+                // 4. Call goOffline()
+                putReplicationOffline(replicator);
+
+                // 5. Add a 2nd local document
+                properties = new HashMap<String, Object>();
+                properties.put("testGoOfflinePusher", "2");
+                Document doc2 = createDocumentWithProperties(database, properties);
+
+                // make sure if push replicator does not send request during offline.
+                try {
+                    Thread.sleep(1000 * 3);
+                } catch (Exception ex) {
+                }
+                // make sure not receive _bulk_docs during offline.
+                RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
+                assertNull(bulkDocsRequest);
+
+                // 6. Call goOnline()
+                putReplicationOnline(replicator);
+
+                // wait until mock server gets the 2nd checkpoint PUT request
+                foundCheckpointPut = false;
+                expectedLastSequence = "2";
+                while (!foundCheckpointPut) {
+                    RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+                    if (request.getMethod().equals("PUT")) {
+                        foundCheckpointPut = true;
+                        Assert.assertTrue(request.getUtf8Body().indexOf(expectedLastSequence) != -1);
+                        // wait until mock server responds to the checkpoint PUT request
+                        dispatcher.takeRecordedResponseBlocking(request);
+                    }
+                }
+
+                // make some assertions about the outgoing _bulk_docs requests for second doc
+                RecordedRequest bulkDocsRequest2 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
+                assertNotNull(bulkDocsRequest2);
+                assertBulkDocJsonContainsDoc(bulkDocsRequest2, doc2);
+
+                // cleanup
+                stopReplication(replicator);
+            }finally {
+                server.shutdown();
             }
-
-            // make some assertions about the outgoing _bulk_docs requests for second doc
-            RecordedRequest bulkDocsRequest2 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
-            assertNotNull(bulkDocsRequest2);
-            assertBulkDocJsonContainsDoc(bulkDocsRequest2, doc2);
-
-            // cleanup
-            stopReplication(replicator);
-
-            server.shutdown();
         } finally {
             RemoteRequestRetry.RETRY_DELAY_MS = previous;
         }
@@ -2804,38 +2847,42 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // fake _session response
-        MockSessionGet mockSessionGet = new MockSessionGet();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
+            // fake _session response
+            MockSessionGet mockSessionGet = new MockSessionGet();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
 
-        // fake _facebook response
-        MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponse());
+            // fake _facebook response
+            MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponse());
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // register bogus fb token
-        Authenticator facebookAuthenticator = AuthenticatorFactory.createFacebookAuthenticator("fake_access_token");
+            // register bogus fb token
+            Authenticator facebookAuthenticator = AuthenticatorFactory.createFacebookAuthenticator("fake_access_token");
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setAuthenticator(facebookAuthenticator);
-        pullReplication.setContinuous(false);
-        runReplication(pullReplication);
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setAuthenticator(facebookAuthenticator);
+            pullReplication.setContinuous(false);
+            runReplication(pullReplication);
 
-        // run replicator and make sure it has an error
-        assertNotNull(pullReplication.getLastError());
-        assertTrue(pullReplication.getLastError() instanceof HttpResponseException);
-        assertEquals(401 /* unauthorized */, ((HttpResponseException) pullReplication.getLastError()).getStatusCode());
+            // run replicator and make sure it has an error
+            assertNotNull(pullReplication.getLastError());
+            assertTrue(pullReplication.getLastError() instanceof HttpResponseException);
+            assertEquals(401 /* unauthorized */, ((HttpResponseException) pullReplication.getLastError()).getStatusCode());
 
-        // assert that the replicator sent the requests we expected it to send
-        RecordedRequest sessionReqeust = dispatcher.takeRequest(MockHelper.PATH_REGEX_SESSION);
-        assertNotNull(sessionReqeust);
-        RecordedRequest facebookRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
-        assertNotNull(facebookRequest);
-        dispatcher.verifyAllRecordedRequestsTaken();
+            // assert that the replicator sent the requests we expected it to send
+            RecordedRequest sessionReqeust = dispatcher.takeRequest(MockHelper.PATH_REGEX_SESSION);
+            assertNotNull(sessionReqeust);
+            RecordedRequest facebookRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
+            assertNotNull(facebookRequest);
+            dispatcher.verifyAllRecordedRequestsTaken();
+        }finally {
+            server.shutdown();
+        }
     }
 
 
@@ -2845,70 +2892,72 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint PUT or GET response (sticky)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(500);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT or GET response (sticky)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        server.play();
+            server.play();
 
-        Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("source", DEFAULT_TEST_DB);
+            Map<String, Object> properties = new HashMap<String, Object>();
+            properties.put("source", DEFAULT_TEST_DB);
 
-        // target with custom headers (cookie)
-        Map<String, Object> headers = new HashMap<String, Object>();
-        String coolieVal = "SyncGatewaySession=c38687c2696688a";
-        headers.put("Cookie", coolieVal);
+            // target with custom headers (cookie)
+            Map<String, Object> headers = new HashMap<String, Object>();
+            String coolieVal = "SyncGatewaySession=c38687c2696688a";
+            headers.put("Cookie", coolieVal);
 
-        Map<String, Object> targetProperties = new HashMap<String, Object>();
-        targetProperties.put("url", server.getUrl("/db").toExternalForm());
-        targetProperties.put("headers", headers);
+            Map<String, Object> targetProperties = new HashMap<String, Object>();
+            targetProperties.put("url", server.getUrl("/db").toExternalForm());
+            targetProperties.put("headers", headers);
 
-        properties.put("target", targetProperties);
+            properties.put("target", targetProperties);
 
-        Replication replicator = manager.getReplicator(properties);
-        assertNotNull(replicator);
-        assertEquals(server.getUrl("/db").toExternalForm(), replicator.getRemoteUrl().toExternalForm());
-        assertTrue(!replicator.isPull());
-        assertFalse(replicator.isContinuous());
-        assertFalse(replicator.isRunning());
-        assertTrue(replicator.getHeaders().containsKey("Cookie"));
-        assertEquals(replicator.getHeaders().get("Cookie"), coolieVal);
+            Replication replicator = manager.getReplicator(properties);
+            assertNotNull(replicator);
+            assertEquals(server.getUrl("/db").toExternalForm(), replicator.getRemoteUrl().toExternalForm());
+            assertTrue(!replicator.isPull());
+            assertFalse(replicator.isContinuous());
+            assertFalse(replicator.isRunning());
+            assertTrue(replicator.getHeaders().containsKey("Cookie"));
+            assertEquals(replicator.getHeaders().get("Cookie"), coolieVal);
 
-        // add replication observer
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-        replicator.addChangeListener(replicationFinishedObserver);
+            // add replication observer
+            CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+            ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+            replicator.addChangeListener(replicationFinishedObserver);
 
-        // start the replicator
-        Log.d(TAG, "Starting replicator " + replicator);
-        replicator.start();
+            // start the replicator
+            Log.d(TAG, "Starting replicator " + replicator);
+            replicator.start();
 
-        final CountDownLatch replicationStarted = new CountDownLatch(1);
-        replicator.addChangeListener(new ReplicationActiveObserver(replicationStarted));
+            final CountDownLatch replicationStarted = new CountDownLatch(1);
+            replicator.addChangeListener(new ReplicationActiveObserver(replicationStarted));
 
-        boolean success = replicationStarted.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            boolean success = replicationStarted.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        // now lets lookup existing replicator and stop it
-        Log.d(TAG, "Looking up replicator");
-        properties.put("cancel", true);
-        Replication activeReplicator = manager.getReplicator(properties);
-        Log.d(TAG, "Found replicator " + activeReplicator + " and calling stop()");
+            // now lets lookup existing replicator and stop it
+            Log.d(TAG, "Looking up replicator");
+            properties.put("cancel", true);
+            Replication activeReplicator = manager.getReplicator(properties);
+            Log.d(TAG, "Found replicator " + activeReplicator + " and calling stop()");
 
-        activeReplicator.stop();
-        Log.d(TAG, "called stop(), waiting for it to finish");
+            activeReplicator.stop();
+            Log.d(TAG, "called stop(), waiting for it to finish");
 
-        // wait for replication to finish
-        boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
-        Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
+            // wait for replication to finish
+            boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
+            Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
 
-        assertTrue(didNotTimeOut);
-        assertFalse(activeReplicator.isRunning());
-
-        server.shutdown();
+            assertTrue(didNotTimeOut);
+            assertFalse(activeReplicator.isRunning());
+        }finally {
+            server.shutdown();
+        }
     }
 
     public void testGetReplicator() throws Throwable {
@@ -2916,58 +2965,60 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint PUT or GET response (sticky)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(500);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT or GET response (sticky)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        server.play();
+            server.play();
 
-        Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("source", DEFAULT_TEST_DB);
-        properties.put("target", server.getUrl("/db").toExternalForm());
+            Map<String, Object> properties = new HashMap<String, Object>();
+            properties.put("source", DEFAULT_TEST_DB);
+            properties.put("target", server.getUrl("/db").toExternalForm());
 
-        Replication replicator = manager.getReplicator(properties);
-        assertNotNull(replicator);
-        assertEquals(server.getUrl("/db").toExternalForm(), replicator.getRemoteUrl().toExternalForm());
-        assertTrue(!replicator.isPull());
-        assertFalse(replicator.isContinuous());
-        assertFalse(replicator.isRunning());
+            Replication replicator = manager.getReplicator(properties);
+            assertNotNull(replicator);
+            assertEquals(server.getUrl("/db").toExternalForm(), replicator.getRemoteUrl().toExternalForm());
+            assertTrue(!replicator.isPull());
+            assertFalse(replicator.isContinuous());
+            assertFalse(replicator.isRunning());
 
-        // add replication observer
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-        replicator.addChangeListener(replicationFinishedObserver);
+            // add replication observer
+            CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+            ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+            replicator.addChangeListener(replicationFinishedObserver);
 
-        // start the replicator
-        Log.d(TAG, "Starting replicator " + replicator);
-        replicator.start();
+            // start the replicator
+            Log.d(TAG, "Starting replicator " + replicator);
+            replicator.start();
 
-        final CountDownLatch replicationStarted = new CountDownLatch(1);
-        replicator.addChangeListener(new ReplicationActiveObserver(replicationStarted));
+            final CountDownLatch replicationStarted = new CountDownLatch(1);
+            replicator.addChangeListener(new ReplicationActiveObserver(replicationStarted));
 
-        boolean success = replicationStarted.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            boolean success = replicationStarted.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        // now lets lookup existing replicator and stop it
-        Log.d(TAG, "Looking up replicator");
-        properties.put("cancel", true);
-        Replication activeReplicator = manager.getReplicator(properties);
-        Log.d(TAG, "Found replicator " + activeReplicator + " and calling stop()");
+            // now lets lookup existing replicator and stop it
+            Log.d(TAG, "Looking up replicator");
+            properties.put("cancel", true);
+            Replication activeReplicator = manager.getReplicator(properties);
+            Log.d(TAG, "Found replicator " + activeReplicator + " and calling stop()");
 
-        activeReplicator.stop();
-        Log.d(TAG, "called stop(), waiting for it to finish");
+            activeReplicator.stop();
+            Log.d(TAG, "called stop(), waiting for it to finish");
 
-        // wait for replication to finish
-        boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
-        Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
+            // wait for replication to finish
+            boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
+            Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
 
-        assertTrue(didNotTimeOut);
-        assertFalse(activeReplicator.isRunning());
-
-        server.shutdown();
+            assertTrue(didNotTimeOut);
+            assertFalse(activeReplicator.isRunning());
+        }finally {
+            server.shutdown();
+        }
     }
 
     public void testGetReplicatorWithAuth() throws Throwable {
@@ -3002,68 +3053,70 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // mock documents to be pulled
-        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
-        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+            // mock documents to be pulled
+            MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
 
-        // checkpoint GET response w/ 404
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // doc1 response
-        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
-        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+            // doc1 response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // respond with 409 error to mock checkpoint PUT
-        MockResponse checkpointResponse409 = new MockResponse();
-        checkpointResponse409.setStatus("HTTP/1.1 409 CONFLICT");
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, checkpointResponse409);
+            // respond with 409 error to mock checkpoint PUT
+            MockResponse checkpointResponse409 = new MockResponse();
+            checkpointResponse409.setStatus("HTTP/1.1 409 CONFLICT");
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, checkpointResponse409);
 
-        // the replicator should then try to do a checkpoint GET, and in this case
-        // it should return a value with a rev id
-        MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
-        mockCheckpointGet.setOk("true");
-        mockCheckpointGet.setRev("0-1");
-        mockCheckpointGet.setLastSequence("0");
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
+            // the replicator should then try to do a checkpoint GET, and in this case
+            // it should return a value with a rev id
+            MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
+            mockCheckpointGet.setOk("true");
+            mockCheckpointGet.setRev("0-1");
+            mockCheckpointGet.setLastSequence("0");
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
 
-        // the replicator should then try a checkpoint PUT again
-        // and we should respond with a 201
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // the replicator should then try a checkpoint PUT again
+            // and we should respond with a 201
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
 
-        // I had to set this to continuous, because in a one-shot replication it tries to
-        // save the checkpoint asynchronously as the replicator is shutting down, which
-        // breaks the retry logic in the case a 409 conflict is returned by server.
-        pullReplication.setContinuous(true);
+            // I had to set this to continuous, because in a one-shot replication it tries to
+            // save the checkpoint asynchronously as the replicator is shutting down, which
+            // breaks the retry logic in the case a 409 conflict is returned by server.
+            pullReplication.setContinuous(true);
 
-        pullReplication.start();
+            pullReplication.start();
 
-        // we should have gotten two requests to PATH_REGEX_CHECKPOINT:
-        // PUT -> 409 Conflict
-        // PUT -> 201 Created
-        for (int i = 1; i <= 2; i++) {
-            Log.v(TAG, "waiting for PUT checkpoint: %d", i);
-            waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc1.getDocSeq());
-            Log.d(TAG, "got PUT checkpoint: %d", i);
+            // we should have gotten two requests to PATH_REGEX_CHECKPOINT:
+            // PUT -> 409 Conflict
+            // PUT -> 201 Created
+            for (int i = 1; i <= 2; i++) {
+                Log.v(TAG, "waiting for PUT checkpoint: %d", i);
+                waitForPutCheckpointRequestWithSeq(dispatcher, mockDoc1.getDocSeq());
+                Log.d(TAG, "got PUT checkpoint: %d", i);
+            }
+
+            stopReplication(pullReplication);
+        }finally {
+            server.shutdown();
         }
-
-        stopReplication(pullReplication);
-
-        server.shutdown();
     }
 
 
@@ -3080,28 +3133,32 @@ public class ReplicationTest extends LiteTestCase {
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, 2, 2);
-        server.play();
+        try {
+            server.play();
 
-        // Setup validation to reject document with id: doc1
-        database.setValidation("validateOnlyDoc1", new Validator() {
-            @Override
-            public void validate(Revision newRevision, ValidationContext context) {
-                if ("doc1".equals(newRevision.getDocument().getId())) {
-                    context.reject();
+            // Setup validation to reject document with id: doc1
+            database.setValidation("validateOnlyDoc1", new Validator() {
+                @Override
+                public void validate(Revision newRevision, ValidationContext context) {
+                    if ("doc1".equals(newRevision.getDocument().getId())) {
+                        context.reject();
+                    }
                 }
-            }
-        });
+            });
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        runReplication(pullReplication);
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            runReplication(pullReplication);
 
-        assertNotNull(database);
-        // doc1 should not be in the store because of validation
-        assertNull(database.getExistingDocument("doc1"));
+            assertNotNull(database);
+            // doc1 should not be in the store because of validation
+            assertNull(database.getExistingDocument("doc1"));
 
-        // doc0 should be in the store, but it wont be because of the bug.
-        assertNotNull(database.getExistingDocument("doc0"));
+            // doc0 should be in the store, but it wont be because of the bug.
+            assertNotNull(database.getExistingDocument("doc0"));
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -3116,40 +3173,42 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint PUT or GET response (sticky)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT or GET response (sticky)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setChannels(Arrays.asList("foo", "bar"));
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setChannels(Arrays.asList("foo", "bar"));
 
-        runReplication(pullReplication);
+            runReplication(pullReplication);
 
-        // make assertions about outgoing requests from replicator -> mock
-        RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
-        assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
-        String body = getChangesFeedRequest.getUtf8Body();
-        Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(body, Map.class);
-        assertTrue(jsonMap.containsKey("filter"));
-        String filter = (String) jsonMap.get("filter");
-        assertEquals("sync_gateway/bychannel", filter);
+            // make assertions about outgoing requests from replicator -> mock
+            RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+            assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
+            String body = getChangesFeedRequest.getUtf8Body();
+            Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(body, Map.class);
+            assertTrue(jsonMap.containsKey("filter"));
+            String filter = (String) jsonMap.get("filter");
+            assertEquals("sync_gateway/bychannel", filter);
 
-        assertTrue(jsonMap.containsKey("channels"));
-        String channels = (String) jsonMap.get("channels");
-        assertTrue(channels.contains("foo"));
-        assertTrue(channels.contains("bar"));
-
-        server.shutdown();
+            assertTrue(jsonMap.containsKey("channels"));
+            String channels = (String) jsonMap.get("channels");
+            assertTrue(channels.contains("foo"));
+            assertTrue(channels.contains("bar"));
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -3165,49 +3224,52 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint GET response w/ 404
-        MockResponse fakeCheckpointResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
 
-        // add non-sticky changes response that returns no changes
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // add non-sticky changes response that returns no changes
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // add sticky _changes response that just blocks for 60 seconds to emulate
-        // server that doesn't have any new changes
-        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse.setDelayMs(60 * 1000);
-        mockChangesFeedNoResponse.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+            // add sticky _changes response that just blocks for 60 seconds to emulate
+            // server that doesn't have any new changes
+            MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+            mockChangesFeedNoResponse.setDelayMs(60 * 1000);
+            mockChangesFeedNoResponse.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
-        server.play();
+            server.play();
 
-        // create pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
+            // create pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
 
-        final CountDownLatch enteredIdleState = new CountDownLatch(1);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    enteredIdleState.countDown();
+            final CountDownLatch enteredIdleState = new CountDownLatch(1);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                        enteredIdleState.countDown();
+                    }
                 }
-            }
-        });
+            });
 
-        // start pull replication
-        pullReplication.start();
+            // start pull replication
+            pullReplication.start();
 
-        boolean success = enteredIdleState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            boolean success = enteredIdleState.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        Log.d(TAG, "Got IDLE event, stopping replication");
+            Log.d(TAG, "Got IDLE event, stopping replication");
 
-        stopReplication(pullReplication);
-        server.shutdown();
+            stopReplication(pullReplication);
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -3233,73 +3295,74 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(serverType);
+        try {
 
-        // mock documents to be pulled
-        List<MockDocumentGet.MockDocument> mockDocs = MockHelper.getMockDocuments(numMockDocsToServe);
+            // mock documents to be pulled
+            List<MockDocumentGet.MockDocument> mockDocs = MockHelper.getMockDocuments(numMockDocsToServe);
 
-        // respond to all GET (responds with 404) and PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // respond to all GET (responds with 404) and PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _changes response
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
-            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument));
-        }
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
-
-        // individual doc responses (expecting it to call _bulk_docs, but just in case)
-        for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
-            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
-            dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
-        }
-
-        // _bulk_get response
-        MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
-        for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
-            mockBulkGet.addDocument(mockDocument);
-        }
-        mockBulkGet.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
-
-        // start mock server
-        server.play();
-
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        runReplication(pullReplication);
-        assertTrue(pullReplication.getLastError() == null);
-
-        // wait until it pushes checkpoint of last doc
-        MockDocumentGet.MockDocument lastDoc = mockDocs.get(mockDocs.size() - 1);
-        waitForPutCheckpointRequestWithSequence(dispatcher, lastDoc.getDocSeq());
-
-        // dump out the outgoing requests for bulk docs
-        BlockingQueue<RecordedRequest> bulkGetRequests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_GET);
-        Iterator<RecordedRequest> iterator = bulkGetRequests.iterator();
-        boolean first = true;
-        while (iterator.hasNext()) {
-            RecordedRequest request = iterator.next();
-            byte[] body = MockHelper.getUncompressedBody(request);
-            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
-            List docs = (List) jsonMap.get("docs");
-            Log.w(TAG, "bulk get request: %s had %d docs", request, docs.size());
-            // except first one and last one, docs.size() should be (neary) equal with INBOX_CAPACTITY.
-            if (iterator.hasNext() && !first) {
-                // the bulk docs requests except for the last one should have max number of docs
-                // relax this a bit, so that it at least has to have greater than or equal to half max number of docs
-                assertTrue(docs.size() >= (ReplicationInternal.INBOX_CAPACITY / 2));
-                if (docs.size() != ReplicationInternal.INBOX_CAPACITY) {
-                    Log.w(TAG, "docs.size() %d != ReplicationInternal.INBOX_CAPACITY %d", docs.size(), ReplicationInternal.INBOX_CAPACITY);
-                }
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+                mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument));
             }
-            first = false;
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // individual doc responses (expecting it to call _bulk_docs, but just in case)
+            for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+                MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument);
+                dispatcher.enqueueResponse(mockDocument.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+            }
+
+            // _bulk_get response
+            MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+            for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+                mockBulkGet.addDocument(mockDocument);
+            }
+            mockBulkGet.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+            // start mock server
+            server.play();
+
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            runReplication(pullReplication);
+            assertTrue(pullReplication.getLastError() == null);
+
+            // wait until it pushes checkpoint of last doc
+            MockDocumentGet.MockDocument lastDoc = mockDocs.get(mockDocs.size() - 1);
+            waitForPutCheckpointRequestWithSequence(dispatcher, lastDoc.getDocSeq());
+
+            // dump out the outgoing requests for bulk docs
+            BlockingQueue<RecordedRequest> bulkGetRequests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_GET);
+            Iterator<RecordedRequest> iterator = bulkGetRequests.iterator();
+            boolean first = true;
+            while (iterator.hasNext()) {
+                RecordedRequest request = iterator.next();
+                byte[] body = MockHelper.getUncompressedBody(request);
+                Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
+                List docs = (List) jsonMap.get("docs");
+                Log.w(TAG, "bulk get request: %s had %d docs", request, docs.size());
+                // except first one and last one, docs.size() should be (neary) equal with INBOX_CAPACTITY.
+                if (iterator.hasNext() && !first) {
+                    // the bulk docs requests except for the last one should have max number of docs
+                    // relax this a bit, so that it at least has to have greater than or equal to half max number of docs
+                    assertTrue(docs.size() >= (ReplicationInternal.INBOX_CAPACITY / 2));
+                    if (docs.size() != ReplicationInternal.INBOX_CAPACITY) {
+                        Log.w(TAG, "docs.size() %d != ReplicationInternal.INBOX_CAPACITY %d", docs.size(), ReplicationInternal.INBOX_CAPACITY);
+                    }
+                }
+                first = false;
+            }
+        }finally {
+            server.shutdown();
+            ReplicationInternal.INBOX_CAPACITY = previous;
         }
-
-        server.shutdown();
-
-        ReplicationInternal.INBOX_CAPACITY = previous;
     }
 
     /**
@@ -3316,50 +3379,52 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        try {
 
-        // session GET response w/ 404 to /db/_session
-        MockResponse fakeSessionResponse = new MockResponse();
-        MockHelper.set404NotFoundJson(fakeSessionResponse);
-        WrappedSmartMockResponse wrappedSmartMockResponse = new WrappedSmartMockResponse(fakeSessionResponse);
-        wrappedSmartMockResponse.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, wrappedSmartMockResponse);
+            // session GET response w/ 404 to /db/_session
+            MockResponse fakeSessionResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeSessionResponse);
+            WrappedSmartMockResponse wrappedSmartMockResponse = new WrappedSmartMockResponse(fakeSessionResponse);
+            wrappedSmartMockResponse.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, wrappedSmartMockResponse);
 
-        // session GET response w/ 200 OK to /_session
-        MockResponse fakeSessionResponse2 = new MockResponse();
-        Map<String, Object> responseJson = new HashMap<String, Object>();
-        Map<String, Object> userCtx = new HashMap<String, Object>();
-        userCtx.put("name", "foo");
-        responseJson.put("userCtx", userCtx);
-        fakeSessionResponse2.setBody(Manager.getObjectMapper().writeValueAsBytes(responseJson));
-        MockHelper.set200OKJson(fakeSessionResponse2);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION_COUCHDB, fakeSessionResponse2);
+            // session GET response w/ 200 OK to /_session
+            MockResponse fakeSessionResponse2 = new MockResponse();
+            Map<String, Object> responseJson = new HashMap<String, Object>();
+            Map<String, Object> userCtx = new HashMap<String, Object>();
+            userCtx.put("name", "foo");
+            responseJson.put("userCtx", userCtx);
+            fakeSessionResponse2.setBody(Manager.getObjectMapper().writeValueAsBytes(responseJson));
+            MockHelper.set200OKJson(fakeSessionResponse2);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION_COUCHDB, fakeSessionResponse2);
 
-        // respond to all GET/PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // respond to all GET/PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setAuthenticator(new FacebookAuthorizer("justinbieber@glam.co"));
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-        pullReplication.addChangeListener(replicationFinishedObserver);
-        pullReplication.start();
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setAuthenticator(new FacebookAuthorizer("justinbieber@glam.co"));
+            CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+            ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+            pullReplication.addChangeListener(replicationFinishedObserver);
+            pullReplication.start();
 
-        // it should first try /db/_session
-        dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
+            // it should first try /db/_session
+            dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
 
-        // and then it should fallback to /_session
-        dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION_COUCHDB);
+            // and then it should fallback to /_session
+            dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION_COUCHDB);
 
-        boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
-        Assert.assertTrue(success);
-
-        server.shutdown();
+            boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
+            Assert.assertTrue(success);
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -3376,42 +3441,44 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // 404 response to _changes feed (sticky)
-        MockResponse mockChangesFeed = new MockResponse();
-        MockHelper.set404NotFoundJson(mockChangesFeed);
-        WrappedSmartMockResponse wrapped = new WrappedSmartMockResponse(mockChangesFeed);
-        wrapped.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, wrapped);
+            // 404 response to _changes feed (sticky)
+            MockResponse mockChangesFeed = new MockResponse();
+            MockHelper.set404NotFoundJson(mockChangesFeed);
+            WrappedSmartMockResponse wrapped = new WrappedSmartMockResponse(mockChangesFeed);
+            wrapped.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, wrapped);
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
 
-        final CountDownLatch changeEventError = new CountDownLatch(1);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getError() != null) {
-                    changeEventError.countDown();
+            final CountDownLatch changeEventError = new CountDownLatch(1);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getError() != null) {
+                        changeEventError.countDown();
+                    }
                 }
-            }
-        });
+            });
 
-        runReplication(pullReplication);
-        Assert.assertTrue(pullReplication.getLastError() != null);
+            runReplication(pullReplication);
+            Assert.assertTrue(pullReplication.getLastError() != null);
 
-        boolean success = changeEventError.await(5, TimeUnit.SECONDS);
-        Assert.assertTrue(success);
-
-        server.shutdown();
+            boolean success = changeEventError.await(5, TimeUnit.SECONDS);
+            Assert.assertTrue(success);
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -3444,110 +3511,114 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         final MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(500);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        server.play();
+            server.play();
 
-        // 2. Create replication
-        Replication replication = database.createPushReplication(server.getUrl("/db"));
-        replication.setContinuous(true);
-        CountDownLatch replicationIdle = new CountDownLatch(1);
-        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
-        replication.addChangeListener(idleObserver);
-        replication.start();
+            // 2. Create replication
+            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            replication.setContinuous(true);
+            CountDownLatch replicationIdle = new CountDownLatch(1);
+            ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
+            replication.addChangeListener(idleObserver);
+            replication.start();
 
-        // 3. Wait until idle (make sure replicator becomes IDLE state)
-        boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        replication.removeChangeListener(idleObserver);
+            // 3. Wait until idle (make sure replicator becomes IDLE state)
+            boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            replication.removeChangeListener(idleObserver);
 
-        // 4. make sure if /_local was called by replicator after start and before idle
-        RecordedRequest request1 = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
-        assertNotNull(request1);
-        dispatcher.takeRecordedResponseBlocking(request1);
-        assertEquals(1, server.getRequestCount());
+            // 4. make sure if /_local was called by replicator after start and before idle
+            RecordedRequest request1 = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            assertNotNull(request1);
+            dispatcher.takeRecordedResponseBlocking(request1);
+            assertEquals(1, server.getRequestCount());
 
-        // 5. Add replication change listener for transition to IDLE
-        class ReplicationTransitionToIdleObserver implements Replication.ChangeListener {
-            private CountDownLatch doneSignal;
-            private CountDownLatch checkSignal;
+            // 5. Add replication change listener for transition to IDLE
+            class ReplicationTransitionToIdleObserver implements Replication.ChangeListener {
+                private CountDownLatch doneSignal;
+                private CountDownLatch checkSignal;
 
-            public ReplicationTransitionToIdleObserver(CountDownLatch doneSignal, CountDownLatch checkSignal) {
-                this.doneSignal = doneSignal;
-                this.checkSignal = checkSignal;
-            }
+                public ReplicationTransitionToIdleObserver(CountDownLatch doneSignal, CountDownLatch checkSignal) {
+                    this.doneSignal = doneSignal;
+                    this.checkSignal = checkSignal;
+                }
 
-            public void changed(Replication.ChangeEvent event) {
-                Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] event => " + event.toString());
-                if (event.getTransition() != null) {
-                    if (event.getTransition().getSource() != event.getTransition().getDestination() &&
-                            event.getTransition().getDestination() == ReplicationState.IDLE) {
-                        Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Transition to  IDLE");
-                        Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Request Count => " + server.getRequestCount());
+                public void changed(Replication.ChangeEvent event) {
+                    Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] event => " + event.toString());
+                    if (event.getTransition() != null) {
+                        if (event.getTransition().getSource() != event.getTransition().getDestination() &&
+                                event.getTransition().getDestination() == ReplicationState.IDLE) {
+                            Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Transition to  IDLE");
+                            Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Request Count => " + server.getRequestCount());
 
-                        this.doneSignal.countDown();
+                            this.doneSignal.countDown();
 
-                        // When replicator becomes IDLE state, check if all requests are completed
-                        // assertEquals in inner class does not work....
-                        // Note: sometimes server.getRequestCount() returns expected number - 1.
-                        //       Is it timing issue?
-                        if (EXPECTED_REQUEST_COUNT == server.getRequestCount() ||
-                                EXPECTED_REQUEST_COUNT - 1 == server.getRequestCount()) {
-                            this.checkSignal.countDown();
+                            // When replicator becomes IDLE state, check if all requests are completed
+                            // assertEquals in inner class does not work....
+                            // Note: sometimes server.getRequestCount() returns expected number - 1.
+                            //       Is it timing issue?
+                            if (EXPECTED_REQUEST_COUNT == server.getRequestCount() ||
+                                    EXPECTED_REQUEST_COUNT - 1 == server.getRequestCount()) {
+                                this.checkSignal.countDown();
+                            }
                         }
                     }
                 }
             }
+            CountDownLatch checkStateToIdle = new CountDownLatch(1);
+            CountDownLatch checkRequestCount = new CountDownLatch(1);
+            ReplicationTransitionToIdleObserver replicationTransitionToIdleObserver =
+                    new ReplicationTransitionToIdleObserver(checkStateToIdle, checkRequestCount);
+            replication.addChangeListener(replicationTransitionToIdleObserver);
+            Log.w(Log.TAG_SYNC, "Added listener for transition to IDLE");
+
+            // 6. Add doc(s)
+            for (int i = 1; i <= 1; i++) {
+                Map<String, Object> properties1 = new HashMap<String, Object>();
+                properties1.put("doc" + String.valueOf(i), "testContinuousPushReplicationGoesIdleTooSoon " + String.valueOf(i));
+                final Document doc = createDocWithProperties(properties1);
+            }
+
+            // 7. Wait until idle (make sure replicator becomes IDLE state from other state)
+            // NOTE: 12/17/2014 - current code fails here because after adding listener, state never changed from IDLE
+            //       By implementing stateMachine for Replication completely, address this failure.
+            success = checkStateToIdle.await(20, TimeUnit.SECONDS); // check if state becomes IDLE from other state
+            assertTrue(success);
+            success = checkRequestCount.await(20, TimeUnit.SECONDS); // check if request count is 4 when state becomes IDLE
+            assertTrue(success);
+
+            // 8. Make sure some of requests are called
+            // _bulk_docs
+            RecordedRequest request3 = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+            assertNotNull(request3);
+            dispatcher.takeRecordedResponseBlocking(request3);
+
+            // double check total request
+            Log.w(Log.TAG_SYNC, "Total Requested Count before stop replicator => " + server.getRequestCount());
+            assertTrue(EXPECTED_REQUEST_COUNT == server.getRequestCount() ||
+                    EXPECTED_REQUEST_COUNT - 1 == server.getRequestCount());
+
+            // 9. Stop replicator
+            replication.removeChangeListener(replicationTransitionToIdleObserver);
+            stopReplication(replication);
+        }finally {
+            server.shutdown();
         }
-        CountDownLatch checkStateToIdle = new CountDownLatch(1);
-        CountDownLatch checkRequestCount = new CountDownLatch(1);
-        ReplicationTransitionToIdleObserver replicationTransitionToIdleObserver =
-                new ReplicationTransitionToIdleObserver(checkStateToIdle, checkRequestCount);
-        replication.addChangeListener(replicationTransitionToIdleObserver);
-        Log.w(Log.TAG_SYNC, "Added listener for transition to IDLE");
-
-        // 6. Add doc(s)
-        for (int i = 1; i <= 1; i++) {
-            Map<String, Object> properties1 = new HashMap<String, Object>();
-            properties1.put("doc" + String.valueOf(i), "testContinuousPushReplicationGoesIdleTooSoon " + String.valueOf(i));
-            final Document doc = createDocWithProperties(properties1);
-        }
-
-        // 7. Wait until idle (make sure replicator becomes IDLE state from other state)
-        // NOTE: 12/17/2014 - current code fails here because after adding listener, state never changed from IDLE
-        //       By implementing stateMachine for Replication completely, address this failure.
-        success = checkStateToIdle.await(20, TimeUnit.SECONDS); // check if state becomes IDLE from other state
-        assertTrue(success);
-        success = checkRequestCount.await(20, TimeUnit.SECONDS); // check if request count is 4 when state becomes IDLE
-        assertTrue(success);
-
-        // 8. Make sure some of requests are called
-        // _bulk_docs
-        RecordedRequest request3 = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
-        assertNotNull(request3);
-        dispatcher.takeRecordedResponseBlocking(request3);
-
-        // double check total request
-        Log.w(Log.TAG_SYNC, "Total Requested Count before stop replicator => " + server.getRequestCount());
-        assertTrue(EXPECTED_REQUEST_COUNT == server.getRequestCount() ||
-                EXPECTED_REQUEST_COUNT - 1 == server.getRequestCount());
-
-        // 9. Stop replicator
-        replication.removeChangeListener(replicationTransitionToIdleObserver);
-        stopReplication(replication);
     }
 
     /**
@@ -3585,83 +3656,85 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         final MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(500);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        mockRevsDiff.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        mockBulkDocs.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
-        server.play();
+        try {
+            // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            mockRevsDiff.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            mockBulkDocs.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            server.play();
 
-        // Create replicator
-        Replication replication = database.createPushReplication(server.getUrl("/db"));
-        replication.setContinuous(true);
-        // special change listener for this test case.
-        class ReplicationTransitionToIdleObserver implements Replication.ChangeListener {
-            private CountDownLatch enterIdleStateSignal;
+            // Create replicator
+            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            replication.setContinuous(true);
+            // special change listener for this test case.
+            class ReplicationTransitionToIdleObserver implements Replication.ChangeListener {
+                private CountDownLatch enterIdleStateSignal;
 
-            public ReplicationTransitionToIdleObserver(CountDownLatch enterIdleStateSignal) {
-                this.enterIdleStateSignal = enterIdleStateSignal;
-            }
+                public ReplicationTransitionToIdleObserver(CountDownLatch enterIdleStateSignal) {
+                    this.enterIdleStateSignal = enterIdleStateSignal;
+                }
 
-            public void changed(Replication.ChangeEvent event) {
-                Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] event => " + event.toString());
-                if (event.getTransition() != null) {
-                    if (event.getTransition().getSource() != event.getTransition().getDestination() &&
-                            event.getTransition().getDestination() == ReplicationState.IDLE) {
-                        Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Transition to  IDLE");
-                        Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Request Count => " + server.getRequestCount());
+                public void changed(Replication.ChangeEvent event) {
+                    Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] event => " + event.toString());
+                    if (event.getTransition() != null) {
+                        if (event.getTransition().getSource() != event.getTransition().getDestination() &&
+                                event.getTransition().getDestination() == ReplicationState.IDLE) {
+                            Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Transition to  IDLE");
+                            Log.w(Log.TAG_SYNC, "[ChangeListener.changed()] Request Count => " + server.getRequestCount());
 
-                        this.enterIdleStateSignal.countDown();
+                            this.enterIdleStateSignal.countDown();
+                        }
                     }
                 }
             }
+            CountDownLatch enterIdleStateSignal = new CountDownLatch(1);
+            ReplicationTransitionToIdleObserver replicationTransitionToIdleObserver = new ReplicationTransitionToIdleObserver(enterIdleStateSignal);
+            replication.addChangeListener(replicationTransitionToIdleObserver);
+            replication.start();
+
+            // Wait until idle (make sure replicator becomes IDLE state from other state)
+            boolean success = enterIdleStateSignal.await(20, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            // Once the replicator is idle get a snapshot of all the requests its made to _bulk_docs endpoint
+            int numDocsPushed = 0;
+            BlockingQueue<RecordedRequest> requests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_DOCS);
+            for (RecordedRequest request : requests) {
+                Log.i(Log.TAG_SYNC, "request: %s", request);
+                byte[] body = MockHelper.getUncompressedBody(request);
+                Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
+                List docs = (List) jsonMap.get("docs");
+                numDocsPushed += docs.size();
+            }
+
+            // WORKAROUND: CBL Java Unit Test on Jenkins rarely fails following.
+            // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
+            // It seems threading issue exists, and replicator becomes IDLE even tasks in batcher.
+            if (System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
+                // Assert that all docs have already been pushed by the time it goes IDLE
+                assertEquals(numDocs, numDocsPushed);
+            }
+
+            // Stop replicator and MockWebServer
+            stopReplication(replication);
+
+            // wait until checkpoint is pushed, since it can happen _after_ replication is finished.
+            // if this isn't done, there can be IOExceptions when calling server.shutdown()
+            waitForPutCheckpointRequestWithSeq(dispatcher, (int) database.getLastSequenceNumber());
+
+        }finally {
+            server.shutdown();
+            ReplicationInternal.INBOX_CAPACITY = previous;
         }
-        CountDownLatch enterIdleStateSignal = new CountDownLatch(1);
-        ReplicationTransitionToIdleObserver replicationTransitionToIdleObserver = new ReplicationTransitionToIdleObserver(enterIdleStateSignal);
-        replication.addChangeListener(replicationTransitionToIdleObserver);
-        replication.start();
-
-        // Wait until idle (make sure replicator becomes IDLE state from other state)
-        boolean success = enterIdleStateSignal.await(20, TimeUnit.SECONDS);
-        assertTrue(success);
-
-        // Once the replicator is idle get a snapshot of all the requests its made to _bulk_docs endpoint
-        int numDocsPushed = 0;
-        BlockingQueue<RecordedRequest> requests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_DOCS);
-        for (RecordedRequest request : requests) {
-            Log.i(Log.TAG_SYNC, "request: %s", request);
-            byte[] body = MockHelper.getUncompressedBody(request);
-            Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
-            List docs = (List) jsonMap.get("docs");
-            numDocsPushed += docs.size();
-        }
-
-        // WORKAROUND: CBL Java Unit Test on Jenkins rarely fails following.
-        // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
-        // It seems threading issue exists, and replicator becomes IDLE even tasks in batcher.
-        if (System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
-            // Assert that all docs have already been pushed by the time it goes IDLE
-            assertEquals(numDocs, numDocsPushed);
-        }
-
-        // Stop replicator and MockWebServer
-        stopReplication(replication);
-
-        // wait until checkpoint is pushed, since it can happen _after_ replication is finished.
-        // if this isn't done, there can be IOExceptions when calling server.shutdown()
-        waitForPutCheckpointRequestWithSeq(dispatcher, (int) database.getLastSequenceNumber());
-
-        server.shutdown();
-
-        ReplicationInternal.INBOX_CAPACITY = previous;
     }
 
     /**
@@ -3671,149 +3744,162 @@ public class ReplicationTest extends LiteTestCase {
      */
     public void testCheckSessionAndCheckpointWhenRetryingReplication() throws Exception {
 
-        RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
+        int prev_RETRY_DELAY_MS = RemoteRequestRetry.RETRY_DELAY_MS;
+        int prev_RETRY_DELAY_SECONDS = ReplicationInternal.RETRY_DELAY_SECONDS;
+        int prev_MAX_RETRIES = ReplicationInternal.MAX_RETRIES;
 
-        ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
-        ReplicationInternal.MAX_RETRIES = 3;         // speed up test execution (outer loop retry count)
+        try {
+            RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
+            ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
+            ReplicationInternal.MAX_RETRIES = 3;         // speed up test execution (outer loop retry count)
 
 
-        String fakeEmail = "myfacebook@gmail.com";
+            String fakeEmail = "myfacebook@gmail.com";
 
-        // create mockwebserver and custom dispatcher
-        MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
-        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            // create mockwebserver and custom dispatcher
+            MockDispatcher dispatcher = new MockDispatcher();
+            MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            try {
 
-        // set up request
-        {
-            // response for /db/_session
-            MockSessionGet mockSessionGet = new MockSessionGet();
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
+                // set up request
+                {
+                    // response for /db/_session
+                    MockSessionGet mockSessionGet = new MockSessionGet();
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
 
-            // response for /db/_facebook
-            MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponseForSuccess(fakeEmail));
+                    // response for /db/_facebook
+                    MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponseForSuccess(fakeEmail));
 
-            // response for /db/_local/.*
-            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-            mockCheckpointPut.setSticky(true);
-            mockCheckpointPut.setDelayMs(500);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+                    // response for /db/_local/.*
+                    MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+                    mockCheckpointPut.setSticky(true);
+                    mockCheckpointPut.setDelayMs(500);
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-            // response for /db/_revs_diff
-            MockRevsDiff mockRevsDiff = new MockRevsDiff();
-            mockRevsDiff.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+                    // response for /db/_revs_diff
+                    MockRevsDiff mockRevsDiff = new MockRevsDiff();
+                    mockRevsDiff.setSticky(true);
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-            // response for /db/_bulk_docs  -- 503 errors
-            MockResponse mockResponse = new MockResponse().setResponseCode(503);
-            WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
-            mockBulkDocs.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
-        }
-        server.play();
+                    // response for /db/_bulk_docs  -- 503 errors
+                    MockResponse mockResponse = new MockResponse().setResponseCode(503);
+                    WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
+                    mockBulkDocs.setSticky(true);
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+                }
+                server.play();
 
-        // register bogus fb token
-        Authenticator facebookAuthenticator = AuthenticatorFactory.createFacebookAuthenticator("fake_access_token");
+                // register bogus fb token
+                Authenticator facebookAuthenticator = AuthenticatorFactory.createFacebookAuthenticator("fake_access_token");
 
-        // create replication
-        Replication replication = database.createPushReplication(server.getUrl("/db"));
-        replication.setAuthenticator(facebookAuthenticator);
-        replication.setContinuous(true);
-        CountDownLatch replicationIdle = new CountDownLatch(1);
-        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
-        replication.addChangeListener(idleObserver);
-        replication.start();
+                // create replication
+                Replication replication = database.createPushReplication(server.getUrl("/db"));
+                replication.setAuthenticator(facebookAuthenticator);
+                replication.setContinuous(true);
+                CountDownLatch replicationIdle = new CountDownLatch(1);
+                ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
+                replication.addChangeListener(idleObserver);
+                replication.start();
 
-        // wait until idle
-        boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        replication.removeChangeListener(idleObserver);
+                // wait until idle
+                boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
+                assertTrue(success);
+                replication.removeChangeListener(idleObserver);
 
-        // create a doc in local db
-        Document doc1 = createDocumentForPushReplication("doc1", null, null);
+                // create a doc in local db
+                Document doc1 = createDocumentForPushReplication("doc1", null, null);
 
-        // initial request
-        {
-            // check /db/_session
-            RecordedRequest sessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
-            assertNotNull(sessionRequest);
-            dispatcher.takeRecordedResponseBlocking(sessionRequest);
+                // initial request
+                {
+                    // check /db/_session
+                    RecordedRequest sessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
+                    assertNotNull(sessionRequest);
+                    dispatcher.takeRecordedResponseBlocking(sessionRequest);
 
-            // check /db/_facebook
-            RecordedRequest facebookSessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
-            assertNotNull(facebookSessionRequest);
-            dispatcher.takeRecordedResponseBlocking(facebookSessionRequest);
+                    // check /db/_facebook
+                    RecordedRequest facebookSessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
+                    assertNotNull(facebookSessionRequest);
+                    dispatcher.takeRecordedResponseBlocking(facebookSessionRequest);
 
-            // check /db/_local/.*
-            RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
-            assertNotNull(checkPointRequest);
-            dispatcher.takeRecordedResponseBlocking(checkPointRequest);
+                    // check /db/_local/.*
+                    RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+                    assertNotNull(checkPointRequest);
+                    dispatcher.takeRecordedResponseBlocking(checkPointRequest);
 
-            // check /db/_revs_diff
-            RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
-            assertNotNull(revsDiffRequest);
-            dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
+                    // check /db/_revs_diff
+                    RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
+                    assertNotNull(revsDiffRequest);
+                    dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
 
-            // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
-            // 1st attempt
-            // numAttempts are number of times retry in 1 attempt.
-            int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
-            for (int i = 0; i < numAttempts; i++) {
-                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
-                assertNotNull(request);
-                dispatcher.takeRecordedResponseBlocking(request);
+                    // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
+                    // 1st attempt
+                    // numAttempts are number of times retry in 1 attempt.
+                    int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
+                    for (int i = 0; i < numAttempts; i++) {
+                        RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+                        assertNotNull(request);
+                        dispatcher.takeRecordedResponseBlocking(request);
+                    }
+                }
+
+                // To test following, requires to fix #299 (improve retry behavior)
+
+                // Retry requests
+                // outer retry loop
+                for (int j = 0; j < ReplicationInternal.MAX_RETRIES; j++) {
+
+                    // MockSessionGet does not support isSticky
+                    MockSessionGet mockSessionGet = new MockSessionGet();
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
+
+                    // MockFacebookAuthPost does not support isSticky
+                    MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponseForSuccess(fakeEmail));
+
+                    // *** Retry must include session & check point ***
+
+                    // check /db/_session
+                    RecordedRequest sessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
+                    assertNotNull(sessionRequest);
+                    dispatcher.takeRecordedResponseBlocking(sessionRequest);
+
+                    // check /db/_facebook
+                    RecordedRequest facebookSessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
+                    assertNotNull(facebookSessionRequest);
+                    dispatcher.takeRecordedResponseBlocking(facebookSessionRequest);
+
+                    // check /db/_local/.*
+                    RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+                    assertNotNull(checkPointRequest);
+                    dispatcher.takeRecordedResponseBlocking(checkPointRequest);
+
+                    // check /db/_revs_diff
+                    RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
+                    assertNotNull(revsDiffRequest);
+                    dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
+
+                    // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
+                    // 1st attempt
+                    // numAttempts are number of times retry in 1 attempt.
+                    int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
+                    for (int i = 0; i < numAttempts; i++) {
+                        RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+                        assertNotNull(request);
+                        dispatcher.takeRecordedResponseBlocking(request);
+                    }
+                }
+
+                stopReplication(replication);
+            } finally {
+                server.shutdown();
             }
+        }finally{
+            RemoteRequestRetry.RETRY_DELAY_MS = prev_RETRY_DELAY_MS;
+            ReplicationInternal.RETRY_DELAY_SECONDS = prev_RETRY_DELAY_SECONDS;
+            ReplicationInternal.MAX_RETRIES = prev_MAX_RETRIES;
         }
-
-        // To test following, requires to fix #299 (improve retry behavior)
-
-        // Retry requests
-        // outer retry loop
-        for (int j = 0; j < ReplicationInternal.MAX_RETRIES; j++) {
-
-            // MockSessionGet does not support isSticky
-            MockSessionGet mockSessionGet = new MockSessionGet();
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION, mockSessionGet.generateMockResponse());
-
-            // MockFacebookAuthPost does not support isSticky
-            MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH, mockFacebookAuthPost.generateMockResponseForSuccess(fakeEmail));
-
-            // *** Retry must include session & check point ***
-
-            // check /db/_session
-            RecordedRequest sessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_SESSION);
-            assertNotNull(sessionRequest);
-            dispatcher.takeRecordedResponseBlocking(sessionRequest);
-
-            // check /db/_facebook
-            RecordedRequest facebookSessionRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
-            assertNotNull(facebookSessionRequest);
-            dispatcher.takeRecordedResponseBlocking(facebookSessionRequest);
-
-            // check /db/_local/.*
-            RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
-            assertNotNull(checkPointRequest);
-            dispatcher.takeRecordedResponseBlocking(checkPointRequest);
-
-            // check /db/_revs_diff
-            RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
-            assertNotNull(revsDiffRequest);
-            dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
-
-            // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
-            // 1st attempt
-            // numAttempts are number of times retry in 1 attempt.
-            int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
-            for (int i = 0; i < numAttempts; i++) {
-                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
-                assertNotNull(request);
-                dispatcher.takeRecordedResponseBlocking(request);
-            }
-        }
-
-        stopReplication(replication);
     }
 
     /**
@@ -3918,78 +4004,82 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.play();
+        try {
+            server.play();
 
-        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        // create continuos replication
-        Replication pusher = database.createPushReplication(server.getUrl("/db"));
-        pusher.setContinuous(true);
+            // create continuos replication
+            Replication pusher = database.createPushReplication(server.getUrl("/db"));
+            pusher.setContinuous(true);
 
-        // add filter properties to the replicator
-        String filterName = "app/clientIdAndTablesSchemeDocIdFilter";
-        pusher.setFilter(filterName);
-        Map<String, Object> filterParams = new HashMap<String, Object>();
-        String filterParam = "tablesSchemeDocId";
-        String filterVal = "foo";
-        filterParams.put(filterParam, filterVal);
-        pusher.setFilterParams(filterParams);
+            // add filter properties to the replicator
+            String filterName = "app/clientIdAndTablesSchemeDocIdFilter";
+            pusher.setFilter(filterName);
+            Map<String, Object> filterParams = new HashMap<String, Object>();
+            String filterParam = "tablesSchemeDocId";
+            String filterVal = "foo";
+            filterParams.put(filterParam, filterVal);
+            pusher.setFilterParams(filterParams);
 
-        // doc ids
-        pusher.setDocIds(Arrays.asList(doc1.getId()));
+            // doc ids
+            pusher.setDocIds(Arrays.asList(doc1.getId()));
 
-        // custom authenticator
-        BasicAuthenticator authenticator = new BasicAuthenticator("foo", "bar");
-        pusher.setAuthenticator(authenticator);
+            // custom authenticator
+            BasicAuthenticator authenticator = new BasicAuthenticator("foo", "bar");
+            pusher.setAuthenticator(authenticator);
 
-        // custom request headers
-        Map<String, Object> requestHeaders = new HashMap<String, Object>();
-        requestHeaders.put("foo", "bar");
-        pusher.setHeaders(requestHeaders);
+            // custom request headers
+            Map<String, Object> requestHeaders = new HashMap<String, Object>();
+            requestHeaders.put("foo", "bar");
+            pusher.setHeaders(requestHeaders);
 
-        // create target
-        pusher.setCreateTarget(true);
+            // create target
+            pusher.setCreateTarget(true);
 
-        // start the continuous replication
-        CountDownLatch replicationIdleSignal = new CountDownLatch(1);
-        ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
-        pusher.addChangeListener(replicationIdleObserver);
-        pusher.start();
+            // start the continuous replication
+            CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+            ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
+            pusher.addChangeListener(replicationIdleObserver);
+            pusher.start();
 
-        // wait until we get an IDLE event
-        boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(successful);
+            // wait until we get an IDLE event
+            boolean successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(successful);
 
-        // restart the replication
-        CountDownLatch replicationIdleSignal2 = new CountDownLatch(1);
-        ReplicationIdleObserver replicationIdleObserver2 = new ReplicationIdleObserver(replicationIdleSignal2);
-        pusher.addChangeListener(replicationIdleObserver2);
-        pusher.restart();
+            // restart the replication
+            CountDownLatch replicationIdleSignal2 = new CountDownLatch(1);
+            ReplicationIdleObserver replicationIdleObserver2 = new ReplicationIdleObserver(replicationIdleSignal2);
+            pusher.addChangeListener(replicationIdleObserver2);
+            pusher.restart();
 
-        // wait until we get another IDLE event
-        successful = replicationIdleSignal2.await(30, TimeUnit.SECONDS);
-        assertTrue(successful);
+            // wait until we get another IDLE event
+            successful = replicationIdleSignal2.await(30, TimeUnit.SECONDS);
+            assertTrue(successful);
 
-        // verify the restarted replication still has the values we set up earlier
-        assertEquals(filterName, pusher.getFilter());
-        assertTrue(pusher.getFilterParams().size() == 1);
-        assertEquals(filterVal, pusher.getFilterParams().get(filterParam));
-        assertTrue(pusher.isContinuous());
-        assertEquals(Arrays.asList(doc1.getId()), pusher.getDocIds());
-        assertEquals(authenticator, pusher.getAuthenticator());
-        assertEquals(requestHeaders, pusher.getHeaders());
-        assertTrue(pusher.shouldCreateTarget());
+            // verify the restarted replication still has the values we set up earlier
+            assertEquals(filterName, pusher.getFilter());
+            assertTrue(pusher.getFilterParams().size() == 1);
+            assertEquals(filterVal, pusher.getFilterParams().get(filterParam));
+            assertTrue(pusher.isContinuous());
+            assertEquals(Arrays.asList(doc1.getId()), pusher.getDocIds());
+            assertEquals(authenticator, pusher.getAuthenticator());
+            assertEquals(requestHeaders, pusher.getHeaders());
+            assertTrue(pusher.shouldCreateTarget());
+        }finally {
+            server.shutdown();
+        }
     }
 
     /**
@@ -4006,126 +4096,137 @@ public class ReplicationTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/383
      */
     public void testContinuousPullReplicationGoesIdleTwice() throws Exception {
+        Log.e(TAG, "TEST START");
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
+            // checkpoint PUT or GET response (sticky)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // checkpoint PUT or GET response (sticky)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // add non-sticky changes response that returns no changes
+            // this will cause the pull replicator to go into the IDLE state
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // add non-sticky changes response that returns no changes
-        // this will cause the pull replicator to go into the IDLE state
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // add _changes response that just blocks for a few seconds to emulate
+            // server that doesn't have any new changes.  while the puller is blocked on this request
+            // to the _changes feed, the test will add a new changes listener that waits until it goes
+            // into the RUNNING state
+            MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+            // It seems 5 sec delay might not be necessary. It reduce test duration 5 sec
+            //mockChangesFeedNoResponse.setDelayMs(5 * 1000);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
-        // add _changes response that just blocks for a few seconds to emulate
-        // server that doesn't have any new changes.  while the puller is blocked on this request
-        // to the _changes feed, the test will add a new changes listener that waits until it goes
-        // into the RUNNING state
-        MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse.setDelayMs(5 * 1000);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
+            // 3.
+            // after the above changes feed response returns after 5 seconds, the next time
+            // the puller gets the _changes feed, return a response that there is 1 new doc.
+            // this will cause the puller to go from IDLE -> RUNNING
+            MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+            mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // 3.
-        // after the above changes feed response returns after 5 seconds, the next time
-        // the puller gets the _changes feed, return a response that there is 1 new doc.
-        // this will cause the puller to go from IDLE -> RUNNING
-        MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
-        mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
-        mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // at this point, the mock _changes feed is done simulating new docs on the sync gateway
+            // since we've done enough to reproduce the problem.  so at this point, just make the changes
+            // feed block for a long time.
+            MockChangesFeedNoResponse mockChangesFeedNoResponse2 = new MockChangesFeedNoResponse();
+            mockChangesFeedNoResponse2.setDelayMs(6000 * 1000);  // block for > 1hr
+            mockChangesFeedNoResponse2.setSticky(true);  // continue this behavior indefinitely
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse2);
 
-        // at this point, the mock _changes feed is done simulating new docs on the sync gateway
-        // since we've done enough to reproduce the problem.  so at this point, just make the changes
-        // feed block for a long time.
-        MockChangesFeedNoResponse mockChangesFeedNoResponse2 = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse2.setDelayMs(6000 * 1000);  // block for > 1hr
-        mockChangesFeedNoResponse2.setSticky(true);  // continue this behavior indefinitely
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse2);
+            // doc1 response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // doc1 response
-        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
-        dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            mockRevsDiff.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        mockRevsDiff.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            Log.e(TAG, "SERVER START");
 
-        server.play();
+            server.play();
 
-        // create pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
+            // create pull replication
+            final Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
 
-        final CountDownLatch enteredIdleState1 = new CountDownLatch(1);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    Log.e(TAG, "Replication is IDLE 1");
-                    enteredIdleState1.countDown();
-                }
-            }
-        });
-
-        // 1. start pull replication
-        pullReplication.start();
-
-        // 2. wait until its IDLE
-        boolean success = enteredIdleState1.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-
-        // 3. see server side preparation
-
-        // change listener to see if its RUNNING
-        // we can't add this earlier, because the countdown latch would get
-        // triggered too early (the other approach would be to set the countdown
-        // latch to a higher number)
-        final CountDownLatch enteredRunningState = new CountDownLatch(1);
-        final CountDownLatch enteredIdleState2 = new CountDownLatch(1);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
-                    Log.e(TAG, "Replication is RUNNING");
-                    enteredRunningState.countDown();
-                }
-                // second IDLE change listener
-                // handling IDLE event here. It seems IDLE event was fired before set IDLE event handler
-                else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    if (enteredRunningState.getCount() <= 0) {
-                        Log.e(TAG, "Replication is IDLE 2");
-                        enteredIdleState2.countDown();
+            final CountDownLatch enteredIdleState1 = new CountDownLatch(1);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                        Log.e(TAG, "Replication is IDLE 1");
+                        enteredIdleState1.countDown();
+                        pullReplication.removeChangeListener(this);
                     }
                 }
-            }
-        });
+            });
 
-        // 4. wait until its RUNNING
-        Log.e(TAG, "WAIT for RUNNING");
-        success = enteredRunningState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            Log.e(TAG, "REPLICATOR START");
 
-        // 5. wait until its IDLE again.  before the fix, it would never go IDLE again, and so
-        // this would timeout and the test would fail.
-        Log.e(TAG, "WAIT for IDLE");
-        success = enteredIdleState2.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            // 1. start pull replication
+            pullReplication.start();
 
-        Log.e(TAG, "STOP REPLICATOR");
+            // 2. wait until its IDLE
+            boolean success = enteredIdleState1.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        // clean up
-        stopReplication(pullReplication);
+            // 3. see server side preparation
 
-        Log.e(TAG, "STOP MOCK SERVER");
+            // change listener to see if its RUNNING
+            // we can't add this earlier, because the countdown latch would get
+            // triggered too early (the other approach would be to set the countdown
+            // latch to a higher number)
+            final CountDownLatch enteredRunningState = new CountDownLatch(1);
+            final CountDownLatch enteredIdleState2 = new CountDownLatch(1);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
+                        if (enteredRunningState.getCount() > 0) {
+                            Log.e(TAG, "Replication is RUNNING");
+                            enteredRunningState.countDown();
+                        }
+                    }
+                    // second IDLE change listener
+                    // handling IDLE event here. It seems IDLE event was fired before set IDLE event handler
+                    else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                        if (enteredRunningState.getCount() <= 0 && enteredIdleState2.getCount() > 0) {
+                            Log.e(TAG, "Replication is IDLE 2");
+                            enteredIdleState2.countDown();
+                        }
+                    }
+                }
+            });
 
-        server.shutdown();
+            // 4. wait until its RUNNING
+            Log.e(TAG, "WAIT for RUNNING");
+            success = enteredRunningState.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            // 5. wait until its IDLE again.  before the fix, it would never go IDLE again, and so
+            // this would timeout and the test would fail.
+            Log.e(TAG, "WAIT for IDLE");
+            success = enteredIdleState2.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            Log.e(TAG, "STOP REPLICATOR");
+
+            // clean up
+            stopReplication(pullReplication);
+
+            Log.e(TAG, "STOP MOCK SERVER");
+        }finally {
+            server.shutdown();
+        }
+
 
         Log.e(TAG, "TEST DONE");
     }
@@ -4141,59 +4242,61 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
+            // checkpoint PUT or GET response (sticky)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // checkpoint PUT or GET response (sticky)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // add non-sticky changes response that returns no changes
+            // this will cause the pull replicator to go into the IDLE state
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // add non-sticky changes response that returns no changes
-        // this will cause the pull replicator to go into the IDLE state
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            server.play();
 
-        server.play();
+            // create pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
 
-        // create pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
-
-        final CountDownLatch enteredIdleState = new CountDownLatch(1);
-        final CountDownLatch enteredStoppedState = new CountDownLatch(2);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    Log.d(TAG, "Replication is IDLE");
-                    enteredIdleState.countDown();
-                } else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
-                    Log.d(TAG, "Replication is STOPPED");
-                    enteredStoppedState.countDown();
+            final CountDownLatch enteredIdleState = new CountDownLatch(1);
+            final CountDownLatch enteredStoppedState = new CountDownLatch(2);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                        Log.d(TAG, "Replication is IDLE");
+                        enteredIdleState.countDown();
+                    } else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
+                        Log.d(TAG, "Replication is STOPPED");
+                        enteredStoppedState.countDown();
+                    }
                 }
-            }
-        });
+            });
 
-        // 1. start pull replication
-        pullReplication.start();
+            // 1. start pull replication
+            pullReplication.start();
 
-        // 2. wait until its IDLE
-        boolean success = enteredIdleState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            // 2. wait until its IDLE
+            boolean success = enteredIdleState.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        // 3. stop pull replication
-        stopReplication(pullReplication);
+            // 3. stop pull replication
+            stopReplication(pullReplication);
 
-        // 4. wait until its RUNNING
-        Log.d(TAG, "WAIT for STOPPED");
-        //success = enteredStoppedState.await(Replication.DEFAULT_MAX_TIMEOUT_FOR_SHUTDOWN + 30, TimeUnit.SECONDS); // replicator maximum shutdown timeout 60 sec + additional 30 sec for other stuff
-        // NOTE: 90 sec is too long for unit test. chnaged to 30 sec
-        success = enteredStoppedState.await(30, TimeUnit.SECONDS); // replicator maximum shutdown timeout 60 sec + additional 30 sec for other stuff
-        // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
-        assertEquals(1, enteredStoppedState.getCount());
-        assertFalse(success);
-
-        Log.d(TAG, "STOP MOCK SERVER");
-        server.shutdown();
+            // 4. wait until its RUNNING
+            Log.d(TAG, "WAIT for STOPPED");
+            //success = enteredStoppedState.await(Replication.DEFAULT_MAX_TIMEOUT_FOR_SHUTDOWN + 30, TimeUnit.SECONDS); // replicator maximum shutdown timeout 60 sec + additional 30 sec for other stuff
+            // NOTE: 90 sec is too long for unit test. chnaged to 30 sec
+            // NOTE2: 30 sec is still too long for unit test. changed to 15sec.
+            success = enteredStoppedState.await(15, TimeUnit.SECONDS); // replicator maximum shutdown timeout 60 sec + additional 30 sec for other stuff
+            // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
+            assertEquals(1, enteredStoppedState.getCount());
+            assertFalse(success);
+        }finally {
+            Log.d(TAG, "STOP MOCK SERVER");
+            server.shutdown();
+        }
 
         Log.d(TAG, "TEST DONE");
     }
@@ -4209,49 +4312,50 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint PUT or GET response (sticky)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT or GET response (sticky)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // add non-sticky changes response that returns no changes
-        // this will cause the pull replicator to go into the IDLE state
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // add non-sticky changes response that returns no changes
+            // this will cause the pull replicator to go into the IDLE state
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        server.play();
+            server.play();
 
-        // create pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(false);
+            // create pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(false);
 
-        // handle STOPPED notification
-        final CountDownLatch enteredStoppedState = new CountDownLatch(2);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED &&
-                        event.getTransition().getDestination() == ReplicationState.STOPPED) {
-                    Log.d(TAG, "Replication is STOPPED");
-                    enteredStoppedState.countDown();
+            // handle STOPPED notification
+            final CountDownLatch enteredStoppedState = new CountDownLatch(2);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED &&
+                            event.getTransition().getDestination() == ReplicationState.STOPPED) {
+                        Log.d(TAG, "Replication is STOPPED");
+                        enteredStoppedState.countDown();
+                    }
                 }
-            }
-        });
+            });
 
-        // 1. start pull replication
-        pullReplication.start();
+            // 1. start pull replication
+            pullReplication.start();
 
-
-        // 2. wait until its RUNNING
-        Log.d(TAG, "WAIT for STOPPED");
-        boolean success = enteredStoppedState.await(30, TimeUnit.SECONDS);
-        // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
-        assertEquals(1, enteredStoppedState.getCount());
-        assertFalse(success);
-
-        Log.d(TAG, "STOP MOCK SERVER");
-        server.shutdown();
+            // 2. wait until its RUNNING
+            Log.d(TAG, "WAIT for STOPPED");
+            boolean success = enteredStoppedState.await(15, TimeUnit.SECONDS);
+            // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
+            assertEquals(1, enteredStoppedState.getCount());
+            assertFalse(success);
+        }finally {
+            Log.d(TAG, "STOP MOCK SERVER");
+            server.shutdown();
+        }
 
         Log.d(TAG, "TEST DONE");
     }
@@ -4274,99 +4378,101 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint PUT or GET response (sticky) (for both push and pull)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT or GET response (sticky) (for both push and pull)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // add non-sticky changes response that returns no changes  (for pull)
-        // this will cause the pull replicator to go into the IDLE state
-        MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
+            // add non-sticky changes response that returns no changes  (for pull)
+            // this will cause the pull replicator to go into the IDLE state
+            MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // create pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
+            // create pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
 
-        // handler to wait for IDLE
-        final CountDownLatch pullInitialIdleState = new CountDownLatch(1);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    pullInitialIdleState.countDown();
-                }
-            }
-        });
-        
-        // start pull replication
-        //pushReplication.start();
-        pullReplication.start();
-
-        // 1. Wait till replicator becomes IDLE
-        boolean success = pullInitialIdleState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-
-        // clear out existing queued mock responses to make room for new ones
-        dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHANGES);
-
-
-        // 2. Update change event handler for handling ACTIVE and IDLE
-        final CountDownLatch activeSignal = new CountDownLatch(1);
-        final CountDownLatch idleSignal = new CountDownLatch(1);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                Log.e(TAG, "[changed] PULL -> " + event);
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    // make sure pull replicator becomes IDLE after ACTIVE state.
-                    // so ignore any IDLE state before ACTIVE.
-                    if (activeSignal.getCount() == 0) {
-                        idleSignal.countDown();
+            // handler to wait for IDLE
+            final CountDownLatch pullInitialIdleState = new CountDownLatch(1);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                        pullInitialIdleState.countDown();
                     }
-                } else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
-                    activeSignal.countDown();
                 }
-            }
-        });
+            });
 
-        // 3. Create document into local db
-        Document doc = database.createDocument();
-        Map<String, Object> props = new HashMap<String, Object>();
-        props.put("key", "1");
-        doc.putProperties(props);
+            // start pull replication
+            //pushReplication.start();
+            pullReplication.start();
 
-        // 4. Based on local doc information, prepare mock change response for 1st /_changes request
-        String docId = doc.getId();
-        String revId = doc.getCurrentRevisionId();
-        int lastSeq = (int) database.getLastSequenceNumber();
+            // 1. Wait till replicator becomes IDLE
+            boolean success = pullInitialIdleState.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq + 1);
-        mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            // clear out existing queued mock responses to make room for new ones
+            dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHANGES);
 
-        // 5. Prepare next mock change response for 2nd /_changes request (blocking for while)
-        MockChangesFeedNoResponse mockChangesFeedNoResponse2 = new MockChangesFeedNoResponse();
-        mockChangesFeedNoResponse2.setDelayMs(60 * 1000);
-        mockChangesFeedNoResponse2.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse2);
 
-        // 6. wait for Replication IDLE -> ACTIVE -> IDLE
-        success = activeSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        success = idleSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            // 2. Update change event handler for handling ACTIVE and IDLE
+            final CountDownLatch activeSignal = new CountDownLatch(1);
+            final CountDownLatch idleSignal = new CountDownLatch(1);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    Log.e(TAG, "[changed] PULL -> " + event);
+                    if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                        // make sure pull replicator becomes IDLE after ACTIVE state.
+                        // so ignore any IDLE state before ACTIVE.
+                        if (activeSignal.getCount() == 0) {
+                            idleSignal.countDown();
+                        }
+                    } else if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
+                        activeSignal.countDown();
+                    }
+                }
+            });
 
-        // stop pull replication
-        stopReplication(pullReplication);
+            // 3. Create document into local db
+            Document doc = database.createDocument();
+            Map<String, Object> props = new HashMap<String, Object>();
+            props.put("key", "1");
+            doc.putProperties(props);
 
-        server.shutdown();
+            // 4. Based on local doc information, prepare mock change response for 1st /_changes request
+            String docId = doc.getId();
+            String revId = doc.getCurrentRevisionId();
+            int lastSeq = (int) database.getLastSequenceNumber();
+
+            MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq + 1);
+            mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // 5. Prepare next mock change response for 2nd /_changes request (blocking for while)
+            MockChangesFeedNoResponse mockChangesFeedNoResponse2 = new MockChangesFeedNoResponse();
+            mockChangesFeedNoResponse2.setDelayMs(60 * 1000);
+            mockChangesFeedNoResponse2.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse2);
+
+            // 6. wait for Replication IDLE -> ACTIVE -> IDLE
+            success = activeSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            success = idleSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            // stop pull replication
+            stopReplication(pullReplication);
+        }finally {
+            server.shutdown();
+        }
 
         Log.d(TAG, "TEST DONE");
     }
@@ -4400,8 +4506,8 @@ public class ReplicationTest extends LiteTestCase {
         SavedRevision saved = newRev.save(true);
         String rev2ID = doc.getCurrentRevisionId();
 
-        Log.e(TAG, "saved => " + saved);
-        Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
+        Log.w(TAG, "saved => " + saved);
+        Log.w(TAG, "revID => " + doc.getCurrentRevisionId());
 
         // Create 5 revisions with 50 conflicts each
         int j = 3;
@@ -4413,7 +4519,7 @@ public class ReplicationTest extends LiteTestCase {
             props.put(key, value);
             RevisionInternal leaf = new RevisionInternal(props);
             database.forceInsert(leaf, new ArrayList<String>(), null);
-            Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
+            Log.w(TAG, "revID => " + doc.getCurrentRevisionId());
 
             for (int i = 0; i < 49; i++) {
                 // Create a conflict, won by the new revision:
@@ -4441,7 +4547,7 @@ public class ReplicationTest extends LiteTestCase {
                 revHistory.add(rev2ID);
                 revHistory.add(rev1ID);
                 database.forceInsert(leaf_conflict, revHistory, null);
-                Log.e(TAG, "revID => " + doc.getCurrentRevisionId());
+                Log.w(TAG, "revID => " + doc.getCurrentRevisionId());
             }
         }
 
@@ -4454,77 +4560,79 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
 
-        // checkpoint PUT or GET response (sticky) (for both push and pull)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint PUT or GET response (sticky) (for both push and pull)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
+            MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
 
-        // start mock server
-        server.play();
+            // start mock server
+            server.play();
 
-        // create pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
+            // create pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
 
-        final CountDownLatch idleSignal1 = new CountDownLatch(1);
-        final CountDownLatch idleSignal2 = new CountDownLatch(2);
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                Log.e(TAG, event.toString());
-                if (event.getError() != null) {
-                    Assert.fail("Should not have any error....");
+            final CountDownLatch idleSignal1 = new CountDownLatch(1);
+            final CountDownLatch idleSignal2 = new CountDownLatch(2);
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    Log.e(TAG, event.toString());
+                    if (event.getError() != null) {
+                        Assert.fail("Should not have any error....");
+                    }
+                    if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
+                        idleSignal1.countDown();
+                        idleSignal2.countDown();
+                    }
                 }
-                if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                    idleSignal1.countDown();
-                    idleSignal2.countDown();
-                }
-            }
-        });
+            });
 
-        // start pull replication
-        pullReplication.start();
+            // start pull replication
+            pullReplication.start();
 
-        boolean success = idleSignal1.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+            boolean success = idleSignal1.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
 
 
-        //
-        MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq + 1);
-        mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        //mockDocument1.setAttachmentName("attachment3.png");
+            //
+            MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq + 1);
+            mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
+            //mockDocument1.setAttachmentName("attachment3.png");
 
-        MockChangesFeed mockChangesFeed = new MockChangesFeed();
-        mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
 
-        // doc response
-        MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument1);
-        //mockDocumentGet.addAttachmentFilename(mockDocument1.getAttachmentName());
-        dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+            // doc response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument1);
+            //mockDocumentGet.addAttachmentFilename(mockDocument1.getAttachmentName());
+            dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
-        // check /db/docid?...
-        RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex());
-        Log.e(TAG, request.toString());
-        Map<String, String> queries = query2map(request.getPath());
-        String atts_since = URLDecoder.decode(queries.get("atts_since"), "UTF-8");
-        List<String> json = (List<String>) str2json(atts_since);
-        Log.e(TAG, json.toString());
-        assertNotNull(json);
-        // atts_since parameter should be limit to PullerInternal.MAX_NUMBER_OF_ATTS_SINCE
-        assertTrue(json.size() == PullerInternal.MAX_NUMBER_OF_ATTS_SINCE);
+            // check /db/docid?...
+            RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex());
+            Log.e(TAG, request.toString());
+            Map<String, String> queries = query2map(request.getPath());
+            String atts_since = URLDecoder.decode(queries.get("atts_since"), "UTF-8");
+            List<String> json = (List<String>) str2json(atts_since);
+            Log.e(TAG, json.toString());
+            assertNotNull(json);
+            // atts_since parameter should be limit to PullerInternal.MAX_NUMBER_OF_ATTS_SINCE
+            assertTrue(json.size() == PullerInternal.MAX_NUMBER_OF_ATTS_SINCE);
 
-        boolean success2 = idleSignal2.await(30, TimeUnit.SECONDS);
-        assertTrue(success2);
+            boolean success2 = idleSignal2.await(30, TimeUnit.SECONDS);
+            assertTrue(success2);
 
-        // stop pull replication
-        stopReplication(pullReplication);
-
-        server.shutdown();
+            // stop pull replication
+            stopReplication(pullReplication);
+        }finally {
+            server.shutdown();
+        }
 
         Log.d(TAG, "TEST END: testPullReplicatonWithManyAttachmentRevisions()");
     }
@@ -4598,73 +4706,75 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.play();
+        try {
+            server.play();
 
-        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        //
-        Replication pullReplication = database.createPushReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
-        final String checkpointId = pullReplication.remoteCheckpointDocID();  // save the checkpoint id for later usage
+            //
+            Replication pullReplication = database.createPushReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
+            final String checkpointId = pullReplication.remoteCheckpointDocID();  // save the checkpoint id for later usage
 
-        // Event handler for IDLE
-        CountDownLatch idleSignal = new CountDownLatch(1);
-        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(idleSignal);
-        pullReplication.addChangeListener(idleObserver);
+            // Event handler for IDLE
+            CountDownLatch idleSignal = new CountDownLatch(1);
+            ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(idleSignal);
+            pullReplication.addChangeListener(idleObserver);
 
-        // start the continuous replication
-        pullReplication.start();
+            // start the continuous replication
+            pullReplication.start();
 
-        // wait until we get an IDLE event
-        boolean successful = idleSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(successful);
-        pullReplication.removeChangeListener(idleObserver);
+            // wait until we get an IDLE event
+            boolean successful = idleSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(successful);
+            pullReplication.removeChangeListener(idleObserver);
 
-        // Event handler for ACTIVE
-        CountDownLatch activeSignal = new CountDownLatch(1);
-        ReplicationActiveObserver activeObserver = new ReplicationActiveObserver(activeSignal);
-        pullReplication.addChangeListener(activeObserver);
+            // Event handler for ACTIVE
+            CountDownLatch activeSignal = new CountDownLatch(1);
+            ReplicationActiveObserver activeObserver = new ReplicationActiveObserver(activeSignal);
+            pullReplication.addChangeListener(activeObserver);
 
-        // Event handler for IDLE2
-        CountDownLatch idleSignal2 = new CountDownLatch(1);
-        ReplicationIdleObserver idleObserver2 = new ReplicationIdleObserver(idleSignal2);
-        pullReplication.addChangeListener(idleObserver2);
+            // Event handler for IDLE2
+            CountDownLatch idleSignal2 = new CountDownLatch(1);
+            ReplicationIdleObserver idleObserver2 = new ReplicationIdleObserver(idleSignal2);
+            pullReplication.addChangeListener(idleObserver2);
 
-        // add docs
-        Map<String, Object> properties1 = new HashMap<String, Object>();
-        properties1.put("doc1", "testPushReplActiveState");
-        final Document doc1 = createDocWithProperties(properties1);
+            // add docs
+            Map<String, Object> properties1 = new HashMap<String, Object>();
+            properties1.put("doc1", "testPushReplActiveState");
+            final Document doc1 = createDocWithProperties(properties1);
 
-        // wait until we get an ACTIVE event
-        successful = activeSignal.await(30, TimeUnit.SECONDS);
-        assertTrue(successful);
-        pullReplication.removeChangeListener(activeObserver);
+            // wait until we get an ACTIVE event
+            successful = activeSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(successful);
+            pullReplication.removeChangeListener(activeObserver);
 
-        // check _bulk_docs
-        RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
-        assertNotNull(request);
-        assertTrue(MockHelper.getUtf8Body(request).contains("testPushReplActiveState"));
+            // check _bulk_docs
+            RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+            assertNotNull(request);
+            assertTrue(MockHelper.getUtf8Body(request).contains("testPushReplActiveState"));
 
-        // wait until we get an IDLE event
-        successful = idleSignal2.await(30, TimeUnit.SECONDS);
-        assertTrue(successful);
-        pullReplication.removeChangeListener(idleObserver2);
+            // wait until we get an IDLE event
+            successful = idleSignal2.await(30, TimeUnit.SECONDS);
+            assertTrue(successful);
+            pullReplication.removeChangeListener(idleObserver2);
 
-        // stop pull replication
-        stopReplication(pullReplication);
-
-        server.shutdown();
+            // stop pull replication
+            stopReplication(pullReplication);
+        }finally {
+            server.shutdown();
+        }
 
         Log.d(TAG, "TEST END: testPushReplActiveState()");
     }
@@ -4683,57 +4793,59 @@ public class ReplicationTest extends LiteTestCase {
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         MockWebServer server = new MockWebServer();
         server.setDispatcher(dispatcher);
-        server.play();
-
-        // checkpoint PUT or GET response (sticky) (for both push and pull)
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
-
-        // create pull replication & start it
-        Replication pull = database.createPullReplication(server.getUrl("/db"));
-        pull.setContinuous(true);
-        final CountDownLatch pullIdleState = new CountDownLatch(1);
-        ReplicationIdleObserver pullIdleObserver = new ReplicationIdleObserver(pullIdleState);
-        pull.addChangeListener(pullIdleObserver);
-        pull.start();
-
-        // create push replication & start it
-        Replication push = database.createPullReplication(server.getUrl("/db"));
-        push.setContinuous(true);
-        final CountDownLatch pushIdleState = new CountDownLatch(1);
-        ReplicationIdleObserver pushIdleObserver = new ReplicationIdleObserver(pushIdleState);
-        push.addChangeListener(pushIdleObserver);
-        push.start();
-
-        // wait till both push and pull replicators become idle.
-        success = pullIdleState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        pull.removeChangeListener(pullIdleObserver);
-        success = pushIdleState.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        push.removeChangeListener(pushIdleObserver);
-
-        // stop both pull and push replicators
-        stopReplication(pull);
-        stopReplication(push);
-
-        // give 5 sec to clean thread status.
         try {
-            Thread.sleep(5 * 1000);
-        } catch (Exception e) {
-        }
+            server.play();
 
-        // all threads which are associated with replicators should be terminated.
-        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-        for (Thread t : threadSet) {
-            if (t.isAlive()) {
-                assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+            // checkpoint PUT or GET response (sticky) (for both push and pull)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // create pull replication & start it
+            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            pull.setContinuous(true);
+            final CountDownLatch pullIdleState = new CountDownLatch(1);
+            ReplicationIdleObserver pullIdleObserver = new ReplicationIdleObserver(pullIdleState);
+            pull.addChangeListener(pullIdleObserver);
+            pull.start();
+
+            // create push replication & start it
+            Replication push = database.createPullReplication(server.getUrl("/db"));
+            push.setContinuous(true);
+            final CountDownLatch pushIdleState = new CountDownLatch(1);
+            ReplicationIdleObserver pushIdleObserver = new ReplicationIdleObserver(pushIdleState);
+            push.addChangeListener(pushIdleObserver);
+            push.start();
+
+            // wait till both push and pull replicators become idle.
+            success = pullIdleState.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            pull.removeChangeListener(pullIdleObserver);
+            success = pushIdleState.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            push.removeChangeListener(pushIdleObserver);
+
+            // stop both pull and push replicators
+            stopReplication(pull);
+            stopReplication(push);
+
+            // give 5 sec to clean thread status.
+            try {
+                Thread.sleep(5 * 1000);
+            } catch (Exception e) {
             }
-        }
 
-        // shutdown mock server
-        server.shutdown();
+            // all threads which are associated with replicators should be terminated.
+            Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+            for (Thread t : threadSet) {
+                if (t.isAlive()) {
+                    assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+                }
+            }
+        }finally {
+            // shutdown mock server
+            server.shutdown();
+        }
 
         Log.d(Log.TAG, "END testStop()");
     }
@@ -4753,62 +4865,66 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        server.play();
+        try {
+            server.play();
 
-        // checkpoint GET response w/ 404.  also receives checkpoint PUT's
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
 
-        // create 10 documents and delete 5
-        for (int i = 0; i < 10; i++) {
-            Document doc = null;
-            if (i % 2 == 0) {
-                doc = createDocument(i, true);
-            } else {
-                doc = createDocument(i, false);
-            }
-            if (i % 2 == 0) {
-                try {
-                    doc.delete();
-                } catch (CouchbaseLiteException e) {
-                    e.printStackTrace();
+            // create 10 documents and delete 5
+            for (int i = 0; i < 10; i++) {
+                Document doc = null;
+                if (i % 2 == 0) {
+                    doc = createDocument(i, true);
+                } else {
+                    doc = createDocument(i, false);
+                }
+                if (i % 2 == 0) {
+                    try {
+                        doc.delete();
+                    } catch (CouchbaseLiteException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+
+            final CountDownLatch latch = new CountDownLatch(10);
+            final CountDownLatch check = new CountDownLatch(10);
+            database.setFilter("unDeleted", new ReplicationFilter() {
+                @Override
+                public boolean filter(SavedRevision savedRevision, Map<String, Object> params) {
+                    Log.e(TAG, "unDeleted: params: " + params);
+                    if (params == null || !"hello".equals(params.get("name"))) {
+                        check.countDown();
+                    }
+                    latch.countDown();
+                    return !savedRevision.isDeletion();
+                }
+            });
+
+            Replication pushReplication = database.createPushReplication(server.getUrl("/db"));
+            pushReplication.setContinuous(false);
+            pushReplication.setFilter("unDeleted");
+            pushReplication.setFilterParams(Collections.<String, Object>singletonMap("name", "hello"));
+            pushReplication.start();
+
+            boolean success = latch.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            assertEquals(10, check.getCount());
+        }finally {
+            server.shutdown();
         }
-
-        final CountDownLatch latch = new CountDownLatch(10);
-        final CountDownLatch check = new CountDownLatch(10);
-        database.setFilter("unDeleted", new ReplicationFilter() {
-            @Override
-            public boolean filter(SavedRevision savedRevision, Map<String, Object> params) {
-                Log.e(TAG, "unDeleted: params: " + params);
-                if (params == null || !"hello".equals(params.get("name"))) {
-                    check.countDown();
-                }
-                latch.countDown();
-                return !savedRevision.isDeletion();
-            }
-        });
-
-        Replication pushReplication = database.createPushReplication(server.getUrl("/db"));
-        pushReplication.setContinuous(false);
-        pushReplication.setFilter("unDeleted");
-        pushReplication.setFilterParams(Collections.<String, Object>singletonMap("name", "hello"));
-        pushReplication.start();
-
-        boolean success = latch.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        assertEquals(10, check.getCount());
     }
 
     private Document createDocument(int number, boolean flag) {
@@ -4839,55 +4955,57 @@ public class ReplicationTest extends LiteTestCase {
         MockDispatcher dispatcher = new MockDispatcher();
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, 0, 0);
-        server.play();
+        try {
+            server.play();
 
 
-        // run pull replication
-        Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-        pullReplication.setContinuous(true);
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication.setContinuous(true);
 
-        // it should go idle twice, hence countdown latch = 2
-        final CountDownLatch replicationIdleFirstTime = new CountDownLatch(1);
-        final CountDownLatch replicationIdleSecondTime = new CountDownLatch(2);
-        final CountDownLatch replicationStoppedFirstTime = new CountDownLatch(1);
+            // it should go idle twice, hence countdown latch = 2
+            final CountDownLatch replicationIdleFirstTime = new CountDownLatch(1);
+            final CountDownLatch replicationIdleSecondTime = new CountDownLatch(2);
+            final CountDownLatch replicationStoppedFirstTime = new CountDownLatch(1);
 
-        pullReplication.addChangeListener(new Replication.ChangeListener() {
-            @Override
-            public void changed(Replication.ChangeEvent event) {
-                if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
-                    Log.e(Log.TAG, "IDLE");
-                    replicationIdleFirstTime.countDown();
-                    replicationIdleSecondTime.countDown();
-                } else if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.STOPPED) {
-                    Log.e(Log.TAG, "STOPPED");
-                    replicationStoppedFirstTime.countDown();
+            pullReplication.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
+                        Log.e(Log.TAG, "IDLE");
+                        replicationIdleFirstTime.countDown();
+                        replicationIdleSecondTime.countDown();
+                    } else if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.STOPPED) {
+                        Log.e(Log.TAG, "STOPPED");
+                        replicationStoppedFirstTime.countDown();
+                    }
                 }
-            }
-        });
+            });
 
-        pullReplication.start();
+            pullReplication.start();
 
 
-        // wait until replication goes idle
-        boolean success = replicationIdleFirstTime.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
+            // wait until replication goes idle
+            boolean success = replicationIdleFirstTime.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        pullReplication.stop();
+            pullReplication.stop();
 
-        // wait until replication stop
-        success = replicationStoppedFirstTime.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
+            // wait until replication stop
+            success = replicationStoppedFirstTime.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        pullReplication.restart();
+            pullReplication.restart();
 
-        // wait until replication goes idle again
-        success = replicationIdleSecondTime.await(60, TimeUnit.SECONDS);
-        assertTrue(success);
+            // wait until replication goes idle again
+            success = replicationIdleSecondTime.await(60, TimeUnit.SECONDS);
+            assertTrue(success);
 
-        stopReplication(pullReplication);
-
-        // cleanup / shutdown
-        server.shutdown();
+            stopReplication(pullReplication);
+        }finally {
+            // cleanup / shutdown
+            server.shutdown();
+        }
     }
 
     /**
@@ -4901,90 +5019,92 @@ public class ReplicationTest extends LiteTestCase {
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         server.setDispatcher(dispatcher);
-        server.play();
+        try {
+            server.play();
 
-        // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
-        MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-        mockCheckpointPut.setSticky(true);
-        mockCheckpointPut.setDelayMs(50);
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(50);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // _revs_diff response -- everything missing
-        MockRevsDiff mockRevsDiff = new MockRevsDiff();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-        // _bulk_docs response -- everything stored
-        MockBulkDocs mockBulkDocs = new MockBulkDocs();
-        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-        Replication repl = database.createPushReplication(server.getUrl("/db"));
-        assertNotNull(repl.getPendingDocumentIDs());
-        assertEquals(0, repl.getPendingDocumentIDs().size());
+            Replication repl = database.createPushReplication(server.getUrl("/db"));
+            assertNotNull(repl.getPendingDocumentIDs());
+            assertEquals(0, repl.getPendingDocumentIDs().size());
 
-        assertTrue(database.runInTransaction(
-                new TransactionalTask() {
-                    @Override
-                    public boolean run() {
-                        for (int i = 1; i <= 10; i++) {
-                            Document doc = database.getDocument(String.format("doc-%d", i));
-                            Map<String, Object> props = new HashMap<String, Object>();
-                            props.put("index", i);
-                            props.put("bar", false);
-                            try {
-                                doc.putProperties(props);
-                            } catch (CouchbaseLiteException e) {
-                                fail(e.getMessage());
+            assertTrue(database.runInTransaction(
+                    new TransactionalTask() {
+                        @Override
+                        public boolean run() {
+                            for (int i = 1; i <= 10; i++) {
+                                Document doc = database.getDocument(String.format("doc-%d", i));
+                                Map<String, Object> props = new HashMap<String, Object>();
+                                props.put("index", i);
+                                props.put("bar", false);
+                                try {
+                                    doc.putProperties(props);
+                                } catch (CouchbaseLiteException e) {
+                                    fail(e.getMessage());
+                                }
                             }
+                            return true;
                         }
-                        return true;
                     }
-                }
-        ));
+            ));
 
 
-        assertEquals(10, repl.getPendingDocumentIDs().size());
-        assertTrue(repl.isDocumentPending(database.getDocument("doc-1")));
+            assertEquals(10, repl.getPendingDocumentIDs().size());
+            assertTrue(repl.isDocumentPending(database.getDocument("doc-1")));
 
-        runReplication(repl);
+            runReplication(repl);
 
-        assertNotNull(repl.getPendingDocumentIDs());
-        assertEquals(0, repl.getPendingDocumentIDs().size());
-        assertFalse(repl.isDocumentPending(database.getDocument("doc-1")));
+            assertNotNull(repl.getPendingDocumentIDs());
+            assertEquals(0, repl.getPendingDocumentIDs().size());
+            assertFalse(repl.isDocumentPending(database.getDocument("doc-1")));
 
 
-        assertTrue(database.runInTransaction(
-                new TransactionalTask() {
-                    @Override
-                    public boolean run() {
-                        for (int i = 11; i <= 20; i++) {
-                            Document doc = database.getDocument(String.format("doc-%d", i));
-                            Map<String, Object> props = new HashMap<String, Object>();
-                            props.put("index", i);
-                            props.put("bar", false);
-                            try {
-                                doc.putProperties(props);
-                            } catch (CouchbaseLiteException e) {
-                                fail(e.getMessage());
+            assertTrue(database.runInTransaction(
+                    new TransactionalTask() {
+                        @Override
+                        public boolean run() {
+                            for (int i = 11; i <= 20; i++) {
+                                Document doc = database.getDocument(String.format("doc-%d", i));
+                                Map<String, Object> props = new HashMap<String, Object>();
+                                props.put("index", i);
+                                props.put("bar", false);
+                                try {
+                                    doc.putProperties(props);
+                                } catch (CouchbaseLiteException e) {
+                                    fail(e.getMessage());
+                                }
                             }
+                            return true;
                         }
-                        return true;
                     }
-                }
-        ));
+            ));
 
-        repl = database.createPushReplication(server.getUrl("/db"));
-        assertNotNull(repl.getPendingDocumentIDs());
-        assertEquals(10, repl.getPendingDocumentIDs().size());
-        assertTrue(repl.isDocumentPending(database.getDocument("doc-11")));
-        assertFalse(repl.isDocumentPending(database.getDocument("doc-1")));
+            repl = database.createPushReplication(server.getUrl("/db"));
+            assertNotNull(repl.getPendingDocumentIDs());
+            assertEquals(10, repl.getPendingDocumentIDs().size());
+            assertTrue(repl.isDocumentPending(database.getDocument("doc-11")));
+            assertFalse(repl.isDocumentPending(database.getDocument("doc-1")));
 
-        // pull replication
-        repl = database.createPullReplication(server.getUrl("/db"));
-        assertNull(repl.getPendingDocumentIDs());
-        runReplication(repl);
-        assertNull(repl.getPendingDocumentIDs());
-
-        // cleanup / shutdown
-        server.shutdown();
+            // pull replication
+            repl = database.createPullReplication(server.getUrl("/db"));
+            assertNull(repl.getPendingDocumentIDs());
+            runReplication(repl);
+            assertNull(repl.getPendingDocumentIDs());
+        }finally {
+            // cleanup / shutdown
+            server.shutdown();
+        }
     }
 }
