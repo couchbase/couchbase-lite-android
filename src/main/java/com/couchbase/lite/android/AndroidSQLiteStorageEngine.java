@@ -128,6 +128,15 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     }
 
     @Override
+    public long insertOrThrow(String table, String nullColumnHack, ContentValues values) throws SQLException {
+        try {
+            return database.insertOrThrow(table, nullColumnHack, AndroidSQLiteHelper.toAndroidContentValues(values));
+        } catch (android.database.SQLException e) {
+            throw new SQLException(e);
+        }
+    }
+
+    @Override
     public long insertWithOnConflict(String table, String nullColumnHack,
                                      ContentValues initialValues, int conflictAlgorithm) {
         return database.insertWithOnConflict(table, nullColumnHack,
