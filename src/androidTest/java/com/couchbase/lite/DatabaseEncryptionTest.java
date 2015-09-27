@@ -17,6 +17,8 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.util.Log;
+
 import junit.framework.Assert;
 
 import java.io.File;
@@ -48,7 +50,11 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testEncryptionFailsGracefully() throws Exception {
-        if (!isSQLiteDB() || !isAndriod())
+        if (!isSQLiteDB())
+            return;
+
+        // Disable the test for couchbase-lite-java as couchbase-lite-java has SQLCipher by default:
+        if (!isAndriod())
             return;
 
         manager.registerEncryptionKey("123456", "seekrit");
@@ -66,7 +72,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testUnEncryptedDB() throws Exception {
-        if (!isSQLiteDB() || !isAndriod())
+        if (!isSQLiteDB())
             return;
 
         Manager cryptoManager = getEncryptionTestManager();
@@ -98,7 +104,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testEncryptedDB() throws Exception {
-        if (!isSQLiteDB() || !isAndriod())
+        if (!isSQLiteDB())
             return;
 
         Manager cryptoManager = getEncryptionTestManager();
@@ -134,7 +140,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testDeleteEcryptedDB() throws Exception {
-        if (!isSQLiteDB() || !isAndriod())
+        if (!isSQLiteDB())
             return;
 
         Manager cryptoManager = getEncryptionTestManager();
@@ -178,7 +184,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testCompactEncryptedDB() throws Exception {
-        if (!isSQLiteDB() || !isAndriod())
+        if (!isSQLiteDB())
             return;
 
         Manager cryptoManager = getEncryptionTestManager();
@@ -188,13 +194,12 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Database seekrit = cryptoManager.getDatabase("seekrit");
         Assert.assertNotNull(seekrit);
 
-        File f0 = new File("/data/data/com.couchbase.lite.test/files/encryption/seekrit.cblite2/attachments/_encryption");
-        boolean exist0 = f0.exists();
-
         // Create a doc and then update it:
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("answer", "42");
-        Document doc = createDocumentWithProperties(seekrit, properties);
+        Document doc = seekrit.createDocument();
+        doc.putProperties(properties);
+
         doc.update(new Document.DocumentUpdater() {
             @Override
             public boolean update(UnsavedRevision rev) {
@@ -219,15 +224,8 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
             }
         });
 
-        File f = new File("/data/data/com.couchbase.lite.test/files/encryption/seekrit.cblite2/attachments/_encryption");
-        boolean exist = f.exists();
-
         // Close and reopen:
         Assert.assertTrue(seekrit.close());
-        cryptoManager.registerEncryptionKey("letmein", "seekrit");
-        File f1 = new File("/data/data/com.couchbase.lite.test/files/encryption/seekrit.cblite2/attachments/_encryption");
-        boolean exist1 = f1.exists();
-
         seekrit = cryptoManager.getDatabase("seekrit");
         Assert.assertNotNull(seekrit);
         Assert.assertEquals(1, seekrit.getDocumentCount());

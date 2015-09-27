@@ -41,8 +41,7 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
     public void runBare() throws Throwable {
         encrypt = false;
         super.runBare();
-        if(!isAndriod())
-            return;
+
         encrypt = true;
         super.runBare();
     }
@@ -85,7 +84,7 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
     }
 
     public void testBasic() throws Exception {
-        if (!isSQLiteDB() || !isAndriod()) return;
+        if (!isSQLiteDB()) return;
 
         byte[] item = "this is an item".getBytes("UTF8");
         BlobKey key = new BlobKey();
@@ -103,7 +102,7 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
     }
 
     public void testReopen() throws Exception {
-        if (!isSQLiteDB() || !isAndriod()) return;
+        if (!isSQLiteDB()) return;
 
         byte[] item = "this is an item".getBytes("UTF8");
         BlobKey key = new BlobKey();
@@ -121,7 +120,7 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
     }
 
     public void testBlobStoreWriter() throws Exception {
-        if (!isSQLiteDB() || !isAndriod()) return;
+        if (!isSQLiteDB()) return;
 
         BlobStoreWriter writer = new BlobStoreWriter(store);
         Assert.assertNotNull(writer);
