@@ -16,15 +16,15 @@
 
 package com.couchbase.lite.android;
 
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.os.Build;
+
 import com.couchbase.lite.storage.ContentValues;
 import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.storage.SQLException;
 import com.couchbase.lite.storage.SQLiteStorageEngine;
 import com.couchbase.lite.util.Log;
-
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.os.Build;
 
 public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     public static final String TAG = "AndroidSQLiteStorageEngine";
@@ -132,7 +132,10 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
         try {
             return database.insertOrThrow(table, nullColumnHack, AndroidSQLiteHelper.toAndroidContentValues(values));
         } catch (android.database.SQLException e) {
-            throw new SQLException(e);
+            if(e instanceof android.database.sqlite.SQLiteConstraintException)
+                throw new SQLException(SQLException.SQLITE_CONSTRAINT,e);
+            else
+                throw new SQLException(e);
         }
     }
 

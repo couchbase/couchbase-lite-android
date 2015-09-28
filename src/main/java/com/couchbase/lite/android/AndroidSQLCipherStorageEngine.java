@@ -114,7 +114,10 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
         try {
             return database.insertOrThrow(table, nullColumnHack, toContentValues(values));
         } catch (com.couchbase.lite.database.SQLException e) {
-            throw new SQLException(e);
+            if(e instanceof com.couchbase.lite.database.sqlite.exception.SQLiteConstraintException)
+                throw new SQLException(SQLException.SQLITE_CONSTRAINT, e);
+            else
+                throw new SQLException(e);
         }
     }
 
