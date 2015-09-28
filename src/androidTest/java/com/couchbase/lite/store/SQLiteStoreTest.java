@@ -13,6 +13,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by hideki on 7/18/15.
  */
 public class SQLiteStoreTest extends LiteTestCaseWithDB {
+
+    @Override
+    public void runBare() throws Throwable {
+        // Run Unit Test with SQLiteStore
+        useForestDB = false;
+        super.runBare();
+    }
+
     public void testWinningRevIDOfDoc() throws Exception {
         if(!isSQLiteDB())
             return;
