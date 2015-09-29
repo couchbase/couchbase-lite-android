@@ -22,6 +22,6 @@ public class LiteTestCase extends LiteTestCaseBase {
         long end = System.currentTimeMillis();
         String name = getName();
         long duration= (end - start)/1000;
-        Log.e(TAG, "DURATION: %s: %dsec%s", name, duration, duration >= 3 ? " - [SLOW]" : "");
+        Log.e(TAG, "DURATION: %s: %d sec%s", name, duration, duration >= 3 ? " - [SLOW]" : "");
     }
 }

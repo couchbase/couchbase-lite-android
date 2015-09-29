@@ -64,10 +64,26 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         return Manager.DEFAULT_STORE_CLASSNAME.equals(name);
     }
 
-
-
     protected boolean isUseForestDB() {
         return useForestDB;
+    }
+
+    @Override
+    public void runBare() throws Throwable {
+        long start = System.currentTimeMillis();
+
+        // Run Unit Test with SQLiteStore
+        useForestDB = false;
+        super.runBare();
+
+        // Run Unit Test with ForestDBStore
+        useForestDB = true;
+        super.runBare();
+
+        long end = System.currentTimeMillis();
+        String name = getName();
+        long duration= (end - start)/1000;
+        Log.e(TAG, "DURATION: %s: %d sec%s", name, duration, duration >= 6 ? " - [SLOW]" : "");
     }
 
     @Override
@@ -841,24 +857,4 @@ public class LiteTestCaseWithDB extends LiteTestCase {
             }
         }
     }
-
-    @Override
-    public void runBare() throws Throwable {
-        long start = System.currentTimeMillis();
-
-        // Run Unit Test with SQLiteStore
-        useForestDB = false;
-        super.runBare();
-
-        // Run Unit Test with ForestDBStore
-        useForestDB = true;
-        super.runBare();
-
-        long end = System.currentTimeMillis();
-        String name = getName();
-        long duration= (end - start)/1000;
-        Log.e(TAG, "DURATION: %s: %dsec%s", name, duration, duration >= 6 ? " - [SLOW]" : "");
-    }
-
-
 }
