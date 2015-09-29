@@ -59,7 +59,7 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCaseWithDB {
                         Map<String, Object> rev1Properties = new HashMap<String, Object>();
                         rev1Properties.put("foo", 1);
                         rev1Properties.put("bar", false);
-                        rev1Properties.put("_attachments", getAttachmentsDict(attach1, "attach", "text/plain", false));
+                        rev1Properties.put("_attachments", getAttachmentsDict(attach1, "attach", "text/plain"));
                         RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties), null, false, status);
                         assertNotNull(rev1);
                         Assert.assertEquals(Status.CREATED, status.getCode());
@@ -78,15 +78,13 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCaseWithDB {
         Log.e("PerformanceStats", TAG + "," + Long.valueOf(System.currentTimeMillis() - startMillis).toString() + "," + getNumberOfDocuments() + "," + getSizeOfAttachment());
     }
 
-    private static Map<String, Map<String, Object>> getAttachmentsDict(byte[] data, String name, String type, boolean gzipped) {
-        if (gzipped)
-            // TODO
-            ;
+    /**
+     * NOTE: gzipped attachment is not supported yet
+     */
+    private static Map<String, Map<String, Object>> getAttachmentsDict(byte[] data, String name, String type) {
         Map<String, Object> att = new HashMap<String, Object>();
         att.put("content_type", type);
         att.put("data", data);
-        if (gzipped)
-            att.put("encoding", "gzip");
         Map<String, Map<String, Object>> atts = new HashMap<String, Map<String, Object>>();
         atts.put(name, att);
         return atts;
