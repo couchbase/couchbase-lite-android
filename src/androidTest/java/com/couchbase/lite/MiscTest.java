@@ -56,6 +56,13 @@ public class MiscTest extends LiteTestCase {
         Log.i(TAG, "Decrypted String = " + new String(decrypted));
         Assert.assertTrue(Arrays.equals(clearText, decrypted));
 
+        // The incremental encryption test below hangs on Ubuntu. Disable it until
+        // the issue is fixed:
+        // https://github.com/couchbase/couchbase-lite-java-core/issues/769
+        if (!isAndriod()) {
+            return;
+        }
+
         // Incremental encryption:
         start = System.currentTimeMillis();
         SymmetricKey.Encryptor encryptor = key.createEncryptor();
