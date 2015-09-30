@@ -56,7 +56,8 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
 
         if (encrypt)
             Log.i(TAG, "---- Now enabling attachment encryption ----");
-        store = new BlobStore(storeFile.getPath(), (encrypt ? new SymmetricKey() : null), true);
+        store = new BlobStore(manager.getContext(),
+                storeFile.getPath(), (encrypt ? new SymmetricKey() : null), true);
 
         // If using encryption, the encryption marker must exist:
         File enMarkerFile = new File(storeFile, BlobStore.ENCRYPTION_MARKER_FILENAME);
@@ -108,7 +109,8 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
         BlobKey key = new BlobKey();
         Assert.assertTrue(store.storeBlob(item, key));
 
-        BlobStore store2 = new BlobStore(store.getPath(), store.getEncryptionKey(), true);
+        BlobStore store2 = new BlobStore(manager.getContext(),
+                store.getPath(), store.getEncryptionKey(), true);
         Assert.assertNotNull("Couldn't re-open store", store2);
 
         byte[] readItem = store2.blobForKey(key);
