@@ -37,38 +37,31 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCaseWithDB {
 
     public void testCreateDocsWithAttachmentsPerformance() throws CouchbaseLiteException {
 
-        if (!performanceTestsEnabled()) {
+        if (!performanceTestsEnabled())
             return;
+
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < getSizeOfAttachment(); i++) {
+            sb.append('1');
         }
+        final byte[] attach1 = sb.toString().getBytes();
 
         long startMillis = System.currentTimeMillis();
 
         boolean success = database.runInTransaction(new TransactionalTask() {
 
             public boolean run() {
-
-                StringBuffer sb = new StringBuffer();
-                for (int i = 0; i < getSizeOfAttachment(); i++) {
-                    sb.append('1');
-                }
-
-                byte[] attach1 = sb.toString().getBytes();
-
                 try {
 
                     Status status = new Status();
 
                     for (int i = 0; i < getNumberOfDocuments(); i++) {
-
                         Map<String, Object> rev1Properties = new HashMap<String, Object>();
                         rev1Properties.put("foo", 1);
                         rev1Properties.put("bar", false);
+                        rev1Properties.put("_attachments", getAttachmentsDict(attach1, "attach", "text/plain"));
                         RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties), null, false, status);
-
-                        Assert.assertEquals(Status.CREATED, status.getCode());
-
-                        // TODO Need to update
-                        //database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1), rev1.getSequence(), _testAttachmentName, "text/plain", rev1.getGeneration());
+                        assertNotNull(rev1);
                         Assert.assertEquals(Status.CREATED, status.getCode());
                     }
 
@@ -80,8 +73,21 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCaseWithDB {
                 return true;
             }
         });
+        assertTrue(success);
 
-        Log.v("PerformanceStats", TAG + "," + Long.valueOf(System.currentTimeMillis() - startMillis).toString() + "," + getNumberOfDocuments() + "," + getSizeOfAttachment());
+        Log.e("PerformanceStats", TAG + "," + Long.valueOf(System.currentTimeMillis() - startMillis).toString() + "," + getNumberOfDocuments() + "," + getSizeOfAttachment());
+    }
+
+    /**
+     * NOTE: gzipped attachment is not supported yet
+     */
+    private static Map<String, Map<String, Object>> getAttachmentsDict(byte[] data, String name, String type) {
+        Map<String, Object> att = new HashMap<String, Object>();
+        att.put("content_type", type);
+        att.put("data", data);
+        Map<String, Map<String, Object>> atts = new HashMap<String, Map<String, Object>>();
+        atts.put(name, att);
+        return atts;
     }
 
     private int getSizeOfAttachment() {
@@ -91,4 +97,5 @@ public class Test3_CreateDocsWithAttachments extends LiteTestCaseWithDB {
     private int getNumberOfDocuments() {
         return Integer.parseInt(System.getProperty("Test3_numberOfDocuments"));
     }
+
 }
