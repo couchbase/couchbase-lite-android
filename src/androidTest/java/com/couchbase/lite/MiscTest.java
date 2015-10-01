@@ -68,8 +68,10 @@ public class MiscTest extends LiteTestCase {
         SymmetricKey.Encryptor encryptor = key.createEncryptor();
         byte[] incrementalClearText = new byte[0];
         byte[] incrementalCiphertext = new byte[0];
+        SecureRandom random = new SecureRandom();
         for (int i = 0; i < 55; i++) {
-            byte[] data = new SecureRandom().generateSeed(555);
+            byte[] data = new byte[555];
+            random.nextBytes(data);
             byte[] cipherData = encryptor.encrypt(data);
             incrementalClearText = ArrayUtils.concat(incrementalClearText, data);
             incrementalCiphertext = ArrayUtils.concat(incrementalCiphertext, cipherData);
@@ -79,5 +81,16 @@ public class MiscTest extends LiteTestCase {
         Assert.assertTrue(Arrays.equals(incrementalClearText, decrypted));
         end = System.currentTimeMillis();
         Log.i(TAG, "Finished incremental encryption test in " + (end - start) + " msec.");
+    }
+
+    public void testCreateRandomSymmetricKey() throws Exception {
+        long start = System.currentTimeMillis();
+        SymmetricKey key = new SymmetricKey();
+        long end = System.currentTimeMillis();
+        Log.i(TAG, "Finished creating a random symmetric key in " + (end - start) + " msec.");
+        byte[] keyData = key.getKey();
+        Assert.assertNotNull(keyData);
+        Assert.assertEquals(32, keyData.length);
+        Log.i(TAG, "Key = " + key);
     }
 }
