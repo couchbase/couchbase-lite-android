@@ -32,25 +32,21 @@ import java.util.Map;
 public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     private static final String TEST_DIR = "encryption";
     private static final String NULL_PASSWORD = null;
-    private Manager currentManager;
+    private Manager cryptoManager;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         ManagerOptions options = new ManagerOptions();
         options.setEnableStorageEncryption(true);
-        currentManager = new Manager(getTestContext(TEST_DIR, true), options);
+        cryptoManager = new Manager(getTestContext(TEST_DIR, true), options);
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
-        if (currentManager != null)
-            currentManager.close();
-    }
-
-    private Manager getEncryptionTestManager() {
-        return currentManager;
+        if (cryptoManager != null)
+            cryptoManager.close();
     }
 
     public void testEncryptionFailsGracefully() throws Exception {
@@ -78,8 +74,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     public void testUnEncryptedDB() throws Exception {
         if (!isSQLiteDB())
             return;
-
-        Manager cryptoManager = getEncryptionTestManager();
 
         // Create unencrypted DB:
         Database seekrit = cryptoManager.getDatabase("seekrit");
@@ -110,8 +104,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     public void testEncryptedDB() throws Exception {
         if (!isSQLiteDB())
             return;
-
-        Manager cryptoManager = getEncryptionTestManager();
 
         // Create encrypted DB:
         cryptoManager.registerEncryptionKey("123456", "seekrit");
@@ -146,8 +138,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     public void testDeleteEcryptedDB() throws Exception {
         if (!isSQLiteDB())
             return;
-
-        Manager cryptoManager = getEncryptionTestManager();
 
         // Create encrypted DB:
         cryptoManager.registerEncryptionKey("letmein", "seekrit");
@@ -190,8 +180,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     public void testCompactEncryptedDB() throws Exception {
         if (!isSQLiteDB())
             return;
-
-        Manager cryptoManager = getEncryptionTestManager();
 
         // Create encrypted DB:
         cryptoManager.registerEncryptionKey("letmein", "seekrit");
@@ -239,7 +227,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         if (!isSQLiteDB())
             return;
 
-        Manager cryptoManager = getEncryptionTestManager();
         cryptoManager.registerEncryptionKey("letmein", "seekrit");
         Database seekrit = cryptoManager.getDatabase("seekrit");
         Assert.assertNotNull(seekrit);
@@ -271,9 +258,8 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
             return;
 
         // First run the encrypted-attachments test to populate the db:
-        testEncrypedAttachments();
-
-        Manager cryptoManager = getEncryptionTestManager();
+        testEncryptedAttachments();
+        
         Database seekrit = cryptoManager.getDatabase("seekrit");
         seekrit.changeEncryptionKey("letmeout");
 
