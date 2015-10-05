@@ -18,35 +18,35 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.TextUtils;
 
 import junit.framework.Assert;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     private static final String TEST_DIR = "encryption";
     private static final String NULL_PASSWORD = null;
-    private Manager currentManager;
+    private Manager cryptoManager;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         ManagerOptions options = new ManagerOptions();
         options.setEnableStorageEncryption(true);
-        currentManager = new Manager(getTestContext(TEST_DIR, true), options);
+        cryptoManager = new Manager(getTestContext(TEST_DIR, true), options);
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
-        if (currentManager != null)
-            currentManager.close();
-    }
-
-    private Manager getEncryptionTestManager() {
-        return currentManager;
+        if (cryptoManager != null)
+            cryptoManager.close();
     }
 
     public void testEncryptionFailsGracefully() throws Exception {
@@ -74,8 +74,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     public void testUnEncryptedDB() throws Exception {
         if (!isSQLiteDB())
             return;
-
-        Manager cryptoManager = getEncryptionTestManager();
 
         // Create unencrypted DB:
         Database seekrit = cryptoManager.getDatabase("seekrit");
@@ -106,8 +104,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     public void testEncryptedDB() throws Exception {
         if (!isSQLiteDB())
             return;
-
-        Manager cryptoManager = getEncryptionTestManager();
 
         // Create encrypted DB:
         cryptoManager.registerEncryptionKey("123456", "seekrit");
@@ -142,8 +138,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     public void testDeleteEcryptedDB() throws Exception {
         if (!isSQLiteDB())
             return;
-
-        Manager cryptoManager = getEncryptionTestManager();
 
         // Create encrypted DB:
         cryptoManager.registerEncryptionKey("letmein", "seekrit");
@@ -187,8 +181,6 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         if (!isSQLiteDB())
             return;
 
-        Manager cryptoManager = getEncryptionTestManager();
-
         // Create encrypted DB:
         cryptoManager.registerEncryptionKey("letmein", "seekrit");
         Database seekrit = cryptoManager.getDatabase("seekrit");
@@ -229,5 +221,66 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         seekrit = cryptoManager.getDatabase("seekrit");
         Assert.assertNotNull(seekrit);
         Assert.assertEquals(1, seekrit.getDocumentCount());
+    }
+
+    public void testEncryptedAttachments() throws Exception {
+        if (!isSQLiteDB())
+            return;
+
+        cryptoManager.registerEncryptionKey("letmein", "seekrit");
+        Database seekrit = cryptoManager.getDatabase("seekrit");
+        Assert.assertNotNull(seekrit);
+
+        // Save a doc with an attachment:
+        Document doc = seekrit.getDocument("att");
+        byte[] body = "This is a test attachment!".getBytes();
+        ByteArrayInputStream is = new ByteArrayInputStream(body);
+        UnsavedRevision rev = doc.createRevision();
+        rev.setAttachment("att.txt", "text/plain; charset=utf-8", is);
+        SavedRevision savedRev = rev.save();
+        Assert.assertNotNull(savedRev);
+
+        // Read the raw attachment file and make sure it's not clear text:
+        Map<String, Object> atts = (Map<String, Object>)savedRev.getProperties().get("_attachments");
+        Map<String, Object> att = (Map<String, Object>)atts.get("att.txt");
+        String digest = (String) att.get("digest");
+        Assert.assertNotNull(digest);
+
+        BlobKey key = new BlobKey(digest);
+        String path = seekrit.getAttachmentStore().getRawPathForKey(key);
+        byte[] raw = TextUtils.read(new FileInputStream(path));
+        Assert.assertNotNull(raw);
+        Assert.assertTrue(!Arrays.equals(raw, body));
+    }
+
+    public void testRekey() throws Exception {
+        if (!isSQLiteDB())
+            return;
+
+        // First run the encrypted-attachments test to populate the db:
+        testEncryptedAttachments();
+        
+        Database seekrit = cryptoManager.getDatabase("seekrit");
+        seekrit.changeEncryptionKey("letmeout");
+
+        // Close & reopen seekrit:
+        String dbName = seekrit.getName();
+        Assert.assertTrue(seekrit.close());
+        seekrit = null;
+
+        cryptoManager.registerEncryptionKey("letmeout", "seekrit");
+        Database seekrit2 = cryptoManager.getDatabase("seekrit");
+        Assert.assertNotNull(seekrit2);
+        seekrit = seekrit2;
+
+        // Check the document and its attachment:
+        SavedRevision savedRev = seekrit.getDocument("att").getCurrentRevision();
+        Assert.assertNotNull(savedRev);
+
+        Attachment att = savedRev.getAttachment("att.txt");
+        Assert.assertNotNull(att);
+        byte[] body = "This is a test attachment!".getBytes();
+        byte[] rawAtt = TextUtils.read(att.getContent());
+        Assert.assertTrue(Arrays.equals(rawAtt, body));
     }
 }

@@ -7,7 +7,6 @@ import com.couchbase.lite.storage.SQLiteStorageEngineFactory;
 import java.io.File;
 
 public class AndroidContext implements Context {
-
     private android.content.Context wrappedContext;
     private NetworkReachabilityManager networkReachabilityManager;
 
@@ -15,9 +14,18 @@ public class AndroidContext implements Context {
         this.wrappedContext = wrappedContext;
     }
 
+    public android.content.Context getWrappedContext() {
+        return wrappedContext;
+    }
+
     @Override
     public File getFilesDir() {
         return wrappedContext.getFilesDir();
+    }
+
+    @Override
+    public File getTempDir() {
+        return wrappedContext.getCacheDir();
     }
 
     @Override
@@ -33,13 +41,8 @@ public class AndroidContext implements Context {
         return networkReachabilityManager;
     }
 
-    public android.content.Context getWrappedContext() {
-        return wrappedContext;
-    }
-
     @Override
     public SQLiteStorageEngineFactory getSQLiteStorageEngineFactory() {
         return new AndroidSQLiteStorageEngineFactory();
     }
-
 }
