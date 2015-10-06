@@ -53,6 +53,7 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
         // Create blob store:
         File storeFile = new File(manager.getDirectory(), "BlobStoreTest");
         FileDirUtils.deleteRecursive(storeFile);
+        Assert.assertFalse(storeFile.exists());
 
         if (encrypt)
             Log.i(TAG, "---- Now enabling attachment encryption ----");
@@ -74,13 +75,20 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
     }
 
     private void verifyRawBlob(BlobKey key, byte[] clearText) throws IOException {
-        String path = store.getRawPathForKey(key);
-        byte[] raw = TextUtils.read(new FileInputStream(path));
-        Assert.assertNotNull(raw);
-        if (store.getEncryptionKey() == null) {
-            Assert.assertTrue(Arrays.equals(raw, clearText));
-        } else {
-            Assert.assertTrue(!Arrays.equals(raw, clearText));
+        InputStream is = null;
+        try {
+            String path = store.getRawPathForKey(key);
+            is = new FileInputStream(path);
+            byte[] raw = TextUtils.read(is);
+            Assert.assertNotNull(raw);
+            if (store.getEncryptionKey() == null) {
+                Assert.assertTrue(Arrays.equals(raw, clearText));
+            } else {
+                Assert.assertTrue(!Arrays.equals(raw, clearText));
+            }
+        } finally {
+            if (is != null)
+                is.close();
         }
     }
 
