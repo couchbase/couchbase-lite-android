@@ -17,131 +17,94 @@
 
 package com.couchbase.lite.performance;
 
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCaseWithDB;
+import com.couchbase.lite.TransactionalTask;
+import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.replicator.Replication;
-import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.util.Log;
 
-import junit.framework.Assert;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.ByteArrayOutputStream;
-
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test6_PushReplication extends LiteTestCaseWithDB {
-
+public class Test6_PushReplication extends PerformanceTestCase {
     public static final String TAG = "PushReplicationPerformance";
 
     @Override
+    protected String getTestTag() {
+        return TAG;
+    }
+
+    @Override
     protected void setUp() throws Exception {
-        Log.v(TAG, "DeleteDBPerformance setUp");
         super.setUp();
 
-        if (!performanceTestsEnabled()) {
+        if (!performanceTestsEnabled())
             return;
+
+        // Prepare and populate documents into the database:
+        char[] chars = new char[getSizeOfDocument()];
+        Arrays.fill(chars, 'a');
+        final String content = new String(chars);
+
+        int attSize = getSizeOfAttachment();
+        if (attSize > 0) {
+            chars = new char[getSizeOfDocument()];
+            Arrays.fill(chars, 'b');
         }
+        final byte[] attachment = attSize > 0 ? new String(chars).getBytes() : null;
 
-        String docIdTimestamp = Long.toString(System.currentTimeMillis());
-
-        for (int i = 0; i < getNumberOfDocuments(); i++) {
-            String docId = String.format("doc%d-%s", i, docIdTimestamp);
-
-            try {
-                addDocWithId(docId, "attachment.png", false);
-                //addDocWithId(docId, null, false);
-            } catch (IOException ioex) {
-                Log.e(TAG, "Add document directly to sync gateway failed", ioex);
-                fail();
+        boolean success = database.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                for (int i = 0; i < getNumberOfDocuments(); i++) {
+                    try {
+                        Map<String, Object> properties = new HashMap<String, Object>();
+                        properties.put("content", content);
+                        Document document = database.createDocument();
+                        UnsavedRevision unsaved = document.createRevision();
+                        unsaved.setProperties(properties);
+                        if (attachment != null)
+                            unsaved.setAttachment("attach", "text/plain",
+                                    new ByteArrayInputStream(attachment));
+                        assertNotNull(unsaved.save());
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error when creating documents", e);
+                        return false;
+                    }
+                }
+                return true;
             }
-        }
+        });
+        assertTrue(success);
     }
 
     public void testPushReplicationPerformance() throws Exception {
-
-        if (!performanceTestsEnabled()) {
+        if (!performanceTestsEnabled())
             return;
-        }
 
-        long startMillis = System.currentTimeMillis();
-
-        URL remote = getReplicationURL();
-
-        final Replication repl = database.createPushReplication(remote);
+        long start = System.currentTimeMillis();
+        URL remote = getReplicationUrl();
+        Replication repl = database.createPushReplication(remote);
         repl.setContinuous(false);
-        if (!isSyncGateway(remote)) {
-            repl.setCreateTarget(true);
-            Assert.assertTrue(repl.shouldCreateTarget());
-        }
-
         runReplication(repl);
-
-        Log.d(TAG, "testPusher() finished");
-
-        Log.v("PerformanceStats", TAG + "," + Long.valueOf(System.currentTimeMillis() - startMillis).toString() + "," + getNumberOfDocuments());
-
+        long end = System.currentTimeMillis();
+        logPerformanceStats((end-start), getNumberOfDocuments() + ", " +
+                getSizeOfDocument() + ", " + getSizeOfAttachment());
     }
 
-    private boolean isSyncGateway(URL remote) {
-        return (remote.getPort() == 4984 || remote.getPort() == 4984);
+    private int getSizeOfDocument() {
+        return Integer.parseInt(System.getProperty("test6.sizeOfDocument"));
     }
 
-    private void addDocWithId(String docId, String attachmentName, boolean gzipped) throws IOException, CouchbaseLiteException {
-
-        final String docJson;
-        final Map<String, Object> documentProperties = new HashMap<String, Object>();
-
-        if (attachmentName == null) {
-            documentProperties.put("foo", 1);
-            documentProperties.put("bar", false);
-            Document doc = database.getDocument(docId);
-            doc.putProperties(documentProperties);
-        } else {
-            // add attachment to document
-            InputStream attachmentStream = getAsset(attachmentName);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            IOUtils.copy(attachmentStream, baos);
-            if (gzipped == false) {
-                String attachmentBase64 = Base64.encodeBytes(baos.toByteArray());
-                documentProperties.put("foo", 1);
-                documentProperties.put("bar", false);
-                Map<String, Object> attachment = new HashMap<String, Object>();
-                attachment.put("content_type", "image/png");
-                attachment.put("data", attachmentBase64);
-                Map<String, Object> attachments = new HashMap<String, Object>();
-                attachments.put(attachmentName, attachment);
-                documentProperties.put("_attachments", attachments);
-                Document doc = database.getDocument(docId);
-                doc.putProperties(documentProperties);
-            } else {
-                byte[] bytes = baos.toByteArray();
-                String attachmentBase64 = Base64.encodeBytes(bytes, Base64.GZIP);
-                documentProperties.put("foo", 1);
-                documentProperties.put("bar", false);
-                Map<String, Object> attachment = new HashMap<String, Object>();
-                attachment.put("content_type", "image/png");
-                attachment.put("data", attachmentBase64);
-                attachment.put("encoding", "gzip");
-                attachment.put("length", bytes.length);
-
-                Map<String, Object> attachments = new HashMap<String, Object>();
-                attachments.put(attachmentName, attachment);
-                documentProperties.put("_attachments", attachments);
-                Document doc = database.getDocument(docId);
-                doc.putProperties(documentProperties);
-            }
-        }
+    private int getSizeOfAttachment() {
+        return Integer.parseInt(System.getProperty("test6.sizeOfAttachment"));
     }
-
 
     private int getNumberOfDocuments() {
-        return Integer.parseInt(System.getProperty("Test6_numberOfDocuments"));
+        return Integer.parseInt(System.getProperty("test6.numberOfDocuments"));
     }
 }
 

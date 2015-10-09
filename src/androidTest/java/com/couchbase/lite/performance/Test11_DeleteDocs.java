@@ -26,94 +26,77 @@ import com.couchbase.lite.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test11_DeleteDocs extends LiteTestCaseWithDB {
-
+public class Test11_DeleteDocs extends PerformanceTestCase {
     public static final String TAG = "DeleteDocsPerformance";
-
-    private static final String _propertyValue = "1234567";
 
     private Document[] docs;
 
     @Override
-    protected void setUp() throws Exception {
-        Log.v(TAG, "DeleteDocsPerformance setUp");
-        super.setUp();
+    protected String getTestTag() {
+        return super.getTestTag();
+    }
 
-        if (!performanceTestsEnabled()) {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        if (!performanceTestsEnabled())
             return;
-        }
 
         docs = new Document[getNumberOfDocuments()];
 
-        //Create docs that will be deleted in test case
-        assertTrue(database.runInTransaction(new TransactionalTask() {
-
+        // Create docs that will be updated:
+        boolean success = database.runInTransaction(new TransactionalTask() {
             public boolean run() {
-
-                String[] bigObj = new String[getSizeOfDocument()];
-
-                for (int i = 0; i < getSizeOfDocument(); i++) {
-                    bigObj[i] = _propertyValue;
-                }
-
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
                     //create a document
                     Map<String, Object> props = new HashMap<String, Object>();
-                    props.put("bigArray", bigObj);
+                    props.put("toogle", Boolean.TRUE);
 
                     Document doc = database.createDocument();
-
-                    docs[i] = doc;
-
                     try {
                         doc.putProperties(props);
-                    } catch (CouchbaseLiteException cblex) {
-                        Log.e(TAG, "Document creation failed", cblex);
+                        docs[i] = doc;
+                    } catch (CouchbaseLiteException e) {
+                        Log.e(TAG, "Document creation failed", e);
                         return false;
                     }
                 }
-
                 return true;
             }
-        }));
+        });
+        assertTrue(success);
     }
 
-    public void testDeleteDocsPerformance() throws CouchbaseLiteException {
-
-        if (!performanceTestsEnabled()) {
+    public void testDeleteDocsPerformance() throws Exception {
+        if (!performanceTestsEnabled())
             return;
-        }
 
-        long startMillis = System.currentTimeMillis();
-
-        assertTrue(database.runInTransaction(new TransactionalTask() {
-
+        long start = System.currentTimeMillis();
+        boolean success = database.runInTransaction(new TransactionalTask() {
             public boolean run() {
-
-                for (int i = 0; i < getNumberOfDocuments(); i++) {
-
-                    Document doc = docs[i];
+                for (Document doc : docs) {
                     try {
                         doc.delete();
-                    } catch (Throwable t) {
-                        Log.e(TAG, "Document delete failed", t);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Document delete failed", e);
                         return false;
                     }
                 }
-
                 return true;
             }
-        }));
+        });
+        assertTrue(success);
 
-        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments()+","+getSizeOfDocument());
-
+        long end = System.currentTimeMillis();
+        Log.v("PerformanceStats", TAG + "," + (end - start) + ", " +
+                getNumberOfDocuments() + "," + getSizeOfDocument());
     }
 
     private int getSizeOfDocument() {
-        return Integer.parseInt(System.getProperty("Test11_sizeOfDocument"));
+        return Integer.parseInt(System.getProperty("test11.sizeOfDocument"));
     }
 
     private int getNumberOfDocuments() {
-        return Integer.parseInt(System.getProperty("Test11_numberOfDocuments"));
+        return Integer.parseInt(System.getProperty("test11.numberOfDocuments"));
     }
 }

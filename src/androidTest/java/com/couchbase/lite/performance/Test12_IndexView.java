@@ -20,7 +20,6 @@ package com.couchbase.lite.performance;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Emitter;
-import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Reducer;
 import com.couchbase.lite.TransactionalTask;
@@ -31,88 +30,77 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Test12_IndexView extends LiteTestCaseWithDB {
-
+public class Test12_IndexView extends PerformanceTestCase {
     public static final String TAG = "IndexViewPerformance";
 
-    public void setUp() throws Exception {
+    @Override
+    protected String getTestTag() {
+        return TAG;
+    }
 
-        Log.v(TAG, "IndexViewPerformance setUp");
+    public void setUp() throws Exception {
         super.setUp();
 
-        if (!performanceTestsEnabled()) {
+        if (!performanceTestsEnabled())
             return;
-        }
 
         View view = database.getView("vacant");
-
         view.setMapReduce(
-                new Mapper() {
-                    public void map(Map<String, Object> document, Emitter emitter) {
-                        Boolean vacant = (Boolean) document.get("vacant");
-                        String name = (String) document.get("name");
-
-                        if (vacant && name != null) {
-                            emitter.emit(name, vacant);
-                        }
-                    }
-                },
-                new Reducer() {
-                    public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
-                        return View.totalValues(values);
-                    }
-                },
-                "1.0.0"
+            new Mapper() {
+                public void map(Map<String, Object> document, Emitter emitter) {
+                    Boolean vacant = (Boolean) document.get("vacant");
+                    String name = (String) document.get("name");
+                    if (vacant && name != null)
+                        emitter.emit(name, vacant);
+                }
+            },
+            new Reducer() {
+                public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                    return View.totalValues(values);
+                }
+            },
+            "1.0.0"
         );
 
         boolean success = database.runInTransaction(new TransactionalTask() {
-
             public boolean run() {
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
-
-                    String name = String.format("%s%s","n",i);
+                    String name = String.format("%s%s", "n", i);
                     boolean vacant = ((i + 2) % 2 == 0) ? true : false;
                     Map<String,Object> props = new HashMap<String,Object>();
-
-                    props.put("name",name);
-                    props.put("apt",i);
-                    props.put("phone",408100000 + i);
-                    props.put("vacant",vacant);
+                    props.put("name", name);
+                    props.put("apt", i);
+                    props.put("phone", 408100000 + i);
+                    props.put("vacant", vacant);
 
                     Document doc = database.createDocument();
-
                     try {
                         doc.putProperties(props);
-                    }
-                    catch(CouchbaseLiteException cblex)
-                    {
-                        Log.e(TAG,"!!! Failed to create doc "+props,cblex);
+                    } catch(CouchbaseLiteException e) {
+                        Log.e(TAG,"!!! Failed to create doc " + props, e);
                         return false;
                     }
                 }
                 return true;
             }
         });
+        assertTrue(success);
     }
 
 
     public void testViewIndexPerformance() throws CouchbaseLiteException {
-
-        if (!performanceTestsEnabled()) {
+        if (!performanceTestsEnabled())
             return;
-        }
 
-        long startMillis = System.currentTimeMillis();
-
+        long start = System.currentTimeMillis();
         View view = database.getView("vacant");
         view.updateIndex();
-
-        Log.v("PerformanceStats",TAG+":testViewIndexPerformance,"+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments());
-
+        long end = System.currentTimeMillis();
+        logPerformanceStats((end - start), getNumberOfDocuments() + "");
+        Log.v("PerformanceStats", TAG + "," + (end - start) + "," + getNumberOfDocuments());
     }
 
     private int getNumberOfDocuments() {
-        return Integer.parseInt(System.getProperty("Test12_numberOfDocuments"));
+        return Integer.parseInt(System.getProperty("test12.numberOfDocuments"));
     }
-
 }
