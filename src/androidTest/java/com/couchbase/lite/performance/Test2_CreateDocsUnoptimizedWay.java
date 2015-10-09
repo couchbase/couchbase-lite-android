@@ -17,59 +17,44 @@
 
 package com.couchbase.lite.performance;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.LiteTestCaseWithDB;
-import com.couchbase.lite.Status;
-import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.util.Log;
+import com.couchbase.lite.Document;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test2_CreateDocsUnoptimizedWay extends LiteTestCaseWithDB {
-
+public class Test2_CreateDocsUnoptimizedWay extends PerformanceTestCase {
     public static final String TAG = "CreateDocsUnoptimizedWayPerformance";
 
-    private static final String _propertyValue = "1234567";
-
-    public void testCreateDocsUnoptimizedWayPerformance() throws CouchbaseLiteException {
-
-        if (!performanceTestsEnabled()) {
-            return;
-        }
-
-        long startMillis = System.currentTimeMillis();
-
-        String[] bigObj = new String[getSizeOfDocument()];
-
-        for (int i = 0; i < getSizeOfDocument(); i++) {
-            bigObj[i] = _propertyValue;
-        }
-
-        for (int i = 0; i < getNumberOfDocuments(); i++) {
-            //create a document
-            Map<String, Object> props = new HashMap<String, Object>();
-            props.put("bigArray", bigObj);
-
-            Body body = new Body(props);
-            RevisionInternal rev1 = new RevisionInternal(body);
-
-            Status status = new Status();
-
-            rev1 = database.putRevision(rev1, null, false, status);
-        }
-
-        Log.v("PerformanceStats", TAG + "," + Long.valueOf(System.currentTimeMillis() - startMillis).toString()+ "," + getNumberOfDocuments() + "," + getSizeOfDocument() );
-
+    @Override
+    protected String getTestTag() {
+        return TAG;
     }
 
+    public void testCreateDocsUnoptimizedWayPerformance() throws Exception {
+        if (!performanceTestsEnabled())
+            return;
+
+        char[] chars = new char[getSizeOfDocument()];
+        Arrays.fill(chars, 'a');
+        final String content = new String(chars);
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < getNumberOfDocuments(); i++) {
+            Map<String, Object> props = new HashMap<String, Object>();
+            props.put("content", content);
+            Document doc = database.createDocument();
+            doc.putProperties(props);
+        }
+        long end = System.currentTimeMillis();
+        logPerformanceStats((end - start), getNumberOfDocuments() + ", " + getSizeOfDocument());
+    }
 
     private int getSizeOfDocument() {
-        return Integer.parseInt(System.getProperty("Test2_sizeOfDocument"));
+        return Integer.parseInt(System.getProperty("test2.sizeOfDocument"));
     }
 
     private int getNumberOfDocuments() {
-        return Integer.parseInt(System.getProperty("Test2_numberOfDocuments"));
+        return Integer.parseInt(System.getProperty("test2.numberOfDocuments"));
     }
 }

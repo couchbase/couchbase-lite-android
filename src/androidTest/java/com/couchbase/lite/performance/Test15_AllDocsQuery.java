@@ -1,8 +1,7 @@
 /**
- * Original iOS version by  Jens Alfke
- * Ported to Android by Marty Schoch
+ * Created by Pasin Suriyentrakorn on 10/6/15
  *
- * Copyright (c) 2012 Couchbase, Inc. All rights reserved.
+ * Copyright (c) 2015 Couchbase, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
@@ -19,6 +18,9 @@ package com.couchbase.lite.performance;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Document;
+import com.couchbase.lite.Query;
+import com.couchbase.lite.QueryEnumerator;
+import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.util.Log;
 
@@ -26,8 +28,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test9_LoadDB extends PerformanceTestCase {
-    public static final String TAG = "LoadDBPerformance";
+public class Test15_AllDocsQuery extends PerformanceTestCase {
+    public static final String TAG = "AllDocsQueryPerformance";
 
     @Override
     protected String getTestTag() {
@@ -65,30 +67,27 @@ public class Test9_LoadDB extends PerformanceTestCase {
         assertTrue(success);
     }
 
-    public void testLoadDBPerformance() throws Exception {
+    public void testAllDocsQueryPerformance() throws CouchbaseLiteException {
         if (!performanceTestsEnabled())
             return;
 
         long start = System.currentTimeMillis();
-        for (int i = 0; i < getNumberOfRounds(); i++) {
-            assertTrue(database.close());
-            database = manager.getDatabase(DEFAULT_TEST_DB);
-            assertNotNull(database);
+        Query query = database.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.ALL_DOCS);
+        QueryEnumerator rowEnum = query.run();
+        while (rowEnum.hasNext()) {
+            QueryRow row = rowEnum.next();
+            assertNotNull(row.getDocument());
         }
         long end = System.currentTimeMillis();
-        logPerformanceStats((end - start), getNumberOfDocuments() + ", " +
-                getSizeOfDocument() + ", " + getNumberOfRounds());
+        logPerformanceStats((end - start), getNumberOfDocuments() + ", " + getSizeOfDocument());
     }
 
     private int getSizeOfDocument() {
-        return Integer.parseInt(System.getProperty("test9.sizeOfDocument"));
+        return Integer.parseInt(System.getProperty("test15.sizeOfDocument"));
     }
 
     private int getNumberOfDocuments() {
-        return Integer.parseInt(System.getProperty("test9.numberOfDocuments"));
-    }
-
-    private int getNumberOfRounds() {
-        return Integer.parseInt(System.getProperty("test9.numberOfRounds"));
+        return Integer.parseInt(System.getProperty("test15.numberOfDocuments"));
     }
 }

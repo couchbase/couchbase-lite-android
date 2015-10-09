@@ -102,10 +102,6 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         startDatabase();
     }
 
-    protected static boolean performanceTestsEnabled() {
-        return Boolean.parseBoolean(System.getProperty("performanceTestsEnabled"));
-    }
-
     protected static boolean syncgatewayTestsEnabled() {
         return Boolean.parseBoolean(System.getProperty("syncgatewayTestsEnabled"));
     }

@@ -19,98 +19,71 @@ package com.couchbase.lite.performance;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Document;
-import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test8_DocRevisions extends LiteTestCaseWithDB {
-
+public class Test8_DocRevisions extends PerformanceTestCase {
     public static final String TAG = "DocRevisionsPerformance";
 
     private Document[] docs;
 
     @Override
     protected void setUp() throws Exception {
-        Log.v(TAG, "DocRevisionsPerformance setUp");
         super.setUp();
 
-        if (!performanceTestsEnabled()) {
+        if (!performanceTestsEnabled())
             return;
-        }
 
         docs = new Document[getNumberOfDocuments()];
 
-        //Create docs that will be updated in test case
-        assertTrue(database.runInTransaction(new TransactionalTask() {
-
+        // Create docs that will be updated:
+        boolean success = database.runInTransaction(new TransactionalTask() {
             public boolean run() {
-
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
-
                     //create a document
                     Map<String, Object> props = new HashMap<String, Object>();
                     props.put("toogle", Boolean.TRUE);
 
                     Document doc = database.createDocument();
-
-                    docs[i] = doc;
-
                     try {
                         doc.putProperties(props);
-                    } catch (CouchbaseLiteException cblex) {
-                        Log.e(TAG, "Document creation failed", cblex);
+                        docs[i] = doc;
+                    } catch (CouchbaseLiteException e) {
+                        Log.e(TAG, "Document creation failed", e);
                         return false;
                     }
                 }
-
                 return true;
             }
-        }));
-
+        });
+        assertTrue(success);
     }
 
-    public void testDocRevisionsPerformance() throws CouchbaseLiteException {
-
-        if (!performanceTestsEnabled()) {
+    public void testDocRevisionsPerformance() throws Exception {
+        if (!performanceTestsEnabled())
             return;
-        }
 
-        long startMillis = System.currentTimeMillis();
-
-        for (int j = 0; j < getNumberOfDocuments(); j++) {
-
-            Document doc = docs[j];
-
-            for (int k = 0; k < getNumberOfUpdates(); k++) {
+        long start = System.currentTimeMillis();
+        for (Document doc : docs) {
+            for (int i = 0; i < getNumberOfUpdates(); i++) {
                 Map<String, Object> contents = new HashMap(doc.getProperties());
-
                 Boolean wasChecked = (Boolean) contents.get("toogle");
-
-                //toggle value of check property
                 contents.put("toogle", !wasChecked);
-
-                try {
-                    doc.putProperties(contents);
-                } catch (CouchbaseLiteException cblex) {
-                    Log.e(TAG, "Document update failed", cblex);
-                    //return false;
-                    throw cblex;
-                }
+                doc.putProperties(contents);
             }
         }
-
-        Log.v("PerformanceStats",TAG+","+Long.valueOf(System.currentTimeMillis()-startMillis).toString()+","+getNumberOfDocuments()+",,,,"+getNumberOfUpdates());
-
+        long end = System.currentTimeMillis();
+        logPerformanceStats((end - start), getNumberOfDocuments() + ", " + getNumberOfUpdates());
     }
 
     private int getNumberOfDocuments() {
-        return Integer.parseInt(System.getProperty("Test8_numberOfDocuments"));
+        return Integer.parseInt(System.getProperty("test8.numberOfDocuments"));
     }
 
     private int getNumberOfUpdates() {
-        return Integer.parseInt(System.getProperty("Test8_numberOfUpdates"));
+        return Integer.parseInt(System.getProperty("test8.numberOfUpdates"));
     }
 }
