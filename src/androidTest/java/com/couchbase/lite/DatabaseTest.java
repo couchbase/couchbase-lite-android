@@ -227,4 +227,26 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         }));
         assertTrue(latch.await(0, TimeUnit.SECONDS));
     }
+
+    public void testClose() throws Exception {
+        // Get the database:
+        Database db = manager.getDatabase(DEFAULT_TEST_DB);
+        assertNotNull(db);
+        // Test that the database is remembered by the manager:
+        assertEquals(db, manager.getDatabase(DEFAULT_TEST_DB));
+        assertTrue(manager.allOpenDatabases().contains(db));
+
+        // Create a new document:
+        Document doc = db.getDocument("doc1");
+        assertNotNull(doc.putProperties(new HashMap<String, Object>()));
+        // Test that the document is remebered by the database:
+        assertEquals(doc, db.getCachedDocument("doc1"));
+
+        // Close database:
+        database.close();
+        // The cache should be clear:
+        assertNull(db.getCachedDocument("doc1"));
+        // This that the database is forgotten:
+        assertFalse(manager.allOpenDatabases().contains(db));
+    }
 }
