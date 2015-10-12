@@ -55,7 +55,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
         List<String> databaseNames = manager.getAllDatabaseNames();
         assertTrue(!databaseNames.contains("foo"));
 
-        assertTrue(db.open());
+        db.open();
         assertTrue(db.exists());
 
         databaseNames = manager.getAllDatabaseNames();
