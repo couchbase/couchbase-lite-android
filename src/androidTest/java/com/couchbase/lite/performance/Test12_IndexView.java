@@ -97,7 +97,6 @@ public class Test12_IndexView extends PerformanceTestCase {
         view.updateIndex();
         long end = System.currentTimeMillis();
         logPerformanceStats((end - start), getNumberOfDocuments() + "");
-        Log.v("PerformanceStats", TAG + "," + (end - start) + "," + getNumberOfDocuments());
     }
 
     private int getNumberOfDocuments() {

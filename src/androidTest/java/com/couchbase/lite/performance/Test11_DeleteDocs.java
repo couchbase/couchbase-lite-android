@@ -88,8 +88,7 @@ public class Test11_DeleteDocs extends PerformanceTestCase {
         assertTrue(success);
 
         long end = System.currentTimeMillis();
-        Log.v("PerformanceStats", TAG + "," + (end - start) + ", " +
-                getNumberOfDocuments() + "," + getSizeOfDocument());
+        logPerformanceStats((end - start), getNumberOfDocuments() + "," + getSizeOfDocument());
     }
 
     private int getSizeOfDocument() {
