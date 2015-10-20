@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.store.ForestDBStore;
 import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
@@ -85,7 +84,7 @@ public class ApiTest extends LiteTestCaseWithDB {
         if(isSQLiteDB())
             assertTrue(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
         else
-            assertTrue(new File(deleteme.getPath(), ForestDBStore.kDBFilename).exists());
+            assertTrue(new File(deleteme.getPath(), "db.forest.0").exists()); // hard-coded instead of ForestDBStore.kDBFilename
 
         deleteme.delete();
         assertFalse(deleteme.exists());
@@ -980,8 +979,8 @@ public class ApiTest extends LiteTestCaseWithDB {
                     QueryRow row = it.next();
                     assertEquals(row.getDocument().getDatabase(), db);
                     Object key = row.getKey();
-                    if(key instanceof Double)
-                        key = ((Double)key).intValue();
+                    if (key instanceof Double)
+                        key = ((Double) key).intValue();
                     assertEquals(expectedKey, key);
                     ++expectedKey;
                 }
@@ -1001,8 +1000,10 @@ public class ApiTest extends LiteTestCaseWithDB {
      * running in the background server.
      */
     public void testSharedMapBlocks() throws Exception {
-        Manager mgr = new Manager(getTestContext("API_SharedMapBlocks", true),
-                Manager.DEFAULT_OPTIONS);
+        ManagerOptions options = new ManagerOptions();
+        if(useForestDB)
+            options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
+        Manager mgr = new Manager(getTestContext("API_SharedMapBlocks", true), options);
         Database db = mgr.getDatabase("db");
         db.open();
         db.setFilter("phil", new ReplicationFilter() {
@@ -1058,7 +1059,10 @@ public class ApiTest extends LiteTestCaseWithDB {
     }
 
     public void testChangeUUID() throws Exception {
-        Manager mgr = new Manager(getTestContext("ChangeUUID", true), Manager.DEFAULT_OPTIONS);
+        ManagerOptions options = new ManagerOptions();
+        if(useForestDB)
+            options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
+        Manager mgr = new Manager(getTestContext("ChangeUUID", true), options);
         Database db = mgr.getDatabase("db");
         db.open();
         String pub = db.publicUUID();
