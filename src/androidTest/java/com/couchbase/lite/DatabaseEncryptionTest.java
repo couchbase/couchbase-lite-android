@@ -216,8 +216,11 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
             }
         });
 
-        // Close and reopen:
+        // Close and then reopen the database:
         Assert.assertTrue(seekrit.close());
+        // Reregister the encryption key:
+        cryptoManager.registerEncryptionKey("letmein", "seekrit");
+        // Reopen the database:
         seekrit = cryptoManager.getDatabase("seekrit");
         Assert.assertNotNull(seekrit);
         Assert.assertEquals(1, seekrit.getDocumentCount());
