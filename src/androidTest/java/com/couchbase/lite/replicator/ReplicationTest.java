@@ -4904,7 +4904,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             database.setFilter("unDeleted", new ReplicationFilter() {
                 @Override
                 public boolean filter(SavedRevision savedRevision, Map<String, Object> params) {
-                    Log.e(TAG, "unDeleted: params: " + params);
+                    //Log.e(TAG, "unDeleted: params: " + params);
                     if (params == null || !"hello".equals(params.get("name"))) {
                         check.countDown();
                     }

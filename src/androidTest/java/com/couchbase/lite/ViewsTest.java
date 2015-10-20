@@ -42,7 +42,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
     public static final String TAG = "Views";
 
     public void testQueryDefaultIndexUpdateMode() {
-
         View view = database.getView("aview");
         Query query = view.createQuery();
         assertEquals(Query.IndexUpdateMode.BEFORE, query.getIndexUpdateMode());
@@ -211,7 +210,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
         return result;
     }
 
-
     public void putNDocs(Database db, int n) throws CouchbaseLiteException {
         for (int i = 0; i < n; i++) {
             Map<String, Object> doc = new HashMap<String, Object>();
@@ -256,12 +254,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         dict2.put("key", "two");
         Map<String, Object> dict3 = new HashMap<String, Object>();
         dict3.put("key", "three");
+        Map<String, Object> dictW = new HashMap<String, Object>();
+        dictW.put("_id", "_design/foo");
         Map<String, Object> dictX = new HashMap<String, Object>();
         dictX.put("clef", "quatre");
 
         RevisionInternal rev1 = putDoc(database, dict1);
         RevisionInternal rev2 = putDoc(database, dict2);
         RevisionInternal rev3 = putDoc(database, dict3);
+        putDoc(database, dictW);
         putDoc(database, dictX);
 
         class InstrumentedMapBlock implements Mapper {
@@ -295,11 +296,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.v(TAG, "View dump: " + dumpResult);
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"one\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals(1, dumpResult.get(0).get("seq"));
+        Assert.assertEquals(1L, dumpResult.get(0).get("seq"));
         Assert.assertEquals("\"two\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals(2, dumpResult.get(2).get("seq"));
+        Assert.assertEquals(2L, dumpResult.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals(3, dumpResult.get(1).get("seq"));
+        Assert.assertEquals(3L, dumpResult.get(1).get("seq"));
 
         //no-op reindex
         Assert.assertFalse(view.isStale());
@@ -322,9 +323,9 @@ public class ViewsTest extends LiteTestCaseWithDB {
         view.updateIndex();
 
         // Make sure the map function was only invoked one more time (for the document that was added)
-        Assert.assertEquals(mapBlock.getNumTimesInvoked(), numTimesMapFunctionInvoked + 1);
+        Assert.assertEquals(numTimesMapFunctionInvoked + 1, mapBlock.getNumTimesInvoked());
 
-        Map<String, Object> dict4 = new HashMap<String, Object>();
+        Map<String, Object> dict4 = new HashMap<>();
         dict4.put("key", "four");
         RevisionInternal rev4 = putDoc(database, dict4);
 
@@ -340,11 +341,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.v(TAG, "View dump: " + dumpResult);
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"one\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals(1, dumpResult.get(2).get("seq"));
+        Assert.assertEquals(1L, dumpResult.get(2).get("seq"));
         Assert.assertEquals("\"3hree\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals(5, dumpResult.get(0).get("seq"));
+        Assert.assertEquals(6L, dumpResult.get(0).get("seq"));
         Assert.assertEquals("\"four\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals(6, dumpResult.get(1).get("seq"));
+        Assert.assertEquals(7L, dumpResult.get(1).get("seq"));
 
         // Now do a real query:
         List<QueryRow> rows = view.query(null);
@@ -558,12 +559,12 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Assert.assertEquals(dict1.get("key"), rows.get(0).getKey());
         Assert.assertEquals(dict1.get("value"), rows.get(0).getValue());
 
-
         // Specific keys:
         options = new QueryOptions();
         List<Object> keys = new ArrayList<Object>();
         keys.add("two");
         keys.add("four");
+
         options.setKeys(keys);
 
         rows = view.query(options);
@@ -572,6 +573,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         expectedRows.add(dict2);
         expectedRows.add(dict4);
 
+        assertNotNull(rows);
         Assert.assertEquals(2, rows.size());
         Assert.assertEquals(dict2.get("key"), rows.get(0).getKey());
         Assert.assertEquals(dict2.get("value"), rows.get(0).getValue());
@@ -670,12 +672,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         keys.add(new Object[]{"red", "model2"});
         options.setKeys(keys);
         rows = view.query(options);
+        assertNotNull(rows);
         Assert.assertEquals(2, rows.size());
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model1"}, ((List) rows.get(0).getKey()).toArray()));
         Assert.assertTrue(Arrays.equals(new Object[]{"red", "model2"}, ((List) rows.get(1).getKey()).toArray()));
-
     }
-
 
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/139
@@ -728,6 +729,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
     /**
+     * - (void) test13_NumericKeys in ViewInternal_Tests.m
      * https://github.com/couchbase/couchbase-lite-android/issues/260
      */
     public void testViewNumericKeys() throws CouchbaseLiteException {
@@ -945,18 +947,16 @@ public class ViewsTest extends LiteTestCaseWithDB {
         view.updateIndex();
 
         List<Map<String, Object>> dumpResult = view.dump();
-        Log.v(TAG, "View dump: " + dumpResult);
         Assert.assertEquals(3, dumpResult.size());
-        Object obj = dumpResult.get(0).get("key");
         Assert.assertEquals("\"App\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals("1.95", dumpResult.get(0).get("value"));
-        Assert.assertEquals(2, dumpResult.get(0).get("seq"));
+        Assert.assertEquals(1.95, dumpResult.get(0).get("value"));
+        Assert.assertEquals(2L, dumpResult.get(0).get("seq"));
         Assert.assertEquals("\"CD\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals("8.99", dumpResult.get(1).get("value"));
-        Assert.assertEquals(1, dumpResult.get(1).get("seq"));
+        Assert.assertEquals(8.99, dumpResult.get(1).get("value"));
+        Assert.assertEquals(1L, dumpResult.get(1).get("seq"));
         Assert.assertEquals("\"Dessert\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals("6.5", dumpResult.get(2).get("value"));
-        Assert.assertEquals(3, dumpResult.get(2).get("seq"));
+        Assert.assertEquals(6.5, dumpResult.get(2).get("value"));
+        Assert.assertEquals(3L, dumpResult.get(2).get("seq"));
 
         QueryOptions options = new QueryOptions();
         options.setReduce(true);
@@ -1075,6 +1075,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         QueryOptions options = new QueryOptions();
         options.setReduce(true);
         List<QueryRow> rows = view.query(options);
+        assertNotNull(rows);
 
         List<Map<String, Object>> expectedRows = new ArrayList<Map<String, Object>>();
         Map<String, Object> row1 = new HashMap<String, Object>();
@@ -1264,6 +1265,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         QueryOptions options = new QueryOptions();
         options.setGroupLevel(1);
         List<QueryRow> rows = view.query(options);
+        assertNotNull(rows);
 
         List<Map<String, Object>> expectedRows = new ArrayList<Map<String, Object>>();
         Map<String, Object> row1 = new HashMap<String, Object>();
@@ -1337,7 +1339,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         //setGroup without reduce function
         options.setGroupLevel(1);
         List<QueryRow> rows = view.query(options);
-
+        assertNotNull(rows);
         assertEquals(3, rows.size());
 
         Map<String, Object> row1 = new HashMap<String, Object>();
@@ -1379,6 +1381,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         QueryOptions options = new QueryOptions();
         options.setGroupLevel(1);
         List<QueryRow> rows = view.query(options);
+        assertNotNull(rows);
         assertEquals(0, rows.size());
     }
 
@@ -1462,7 +1465,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         options.setReduce(true);
         options.setGroupLevel(2);
         List<QueryRow> rows = view.query(options);
-
+        assertNotNull(rows);
         assertEquals(3, rows.size());
 
         List<Map<String, Object>> expectedRows = new ArrayList<Map<String, Object>>();
@@ -1904,7 +1907,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
             }
         }, null, "1");
 
-
         for (int i = 0; i < 2; i++) {
 
             Query query = view.createQuery();
@@ -1919,10 +1921,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
                 assertTrue(behaviorField.containsKey("style"));
                 assertTrue(behaviorField.containsKey("attack"));
             }
-
         }
-
-
     }
 
     public void testStringPrefixMatch() throws Exception {
@@ -1968,7 +1967,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         options.setStartKey(Arrays.asList("f"));
         options.setEndKey(options.getStartKey());
         List<QueryRow> rows = view.query(options);
-
+        assertNotNull(rows);
         Assert.assertEquals(2, rows.size());
         Assert.assertEquals(Arrays.asList("f", "five"), rows.get(0).getKey());
         Assert.assertEquals(Arrays.asList("f", "four"), rows.get(1).getKey());
@@ -2108,7 +2107,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Query query = database.createAllDocumentsQuery();
         query.setPostFilter(new Predicate<QueryRow>() {
             public boolean apply(QueryRow type) {
-                Log.e(TAG, "apply()");
                 if (type.getDocument().getProperty("skin") != null && type.getDocument().getProperty("skin") instanceof String) {
                     String skin = (String) type.getDocument().getProperty("skin");
                     if (skin.endsWith("y")) {
@@ -2144,15 +2142,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, dump.get(0).get("seq"));
+        Assert.assertEquals(5L, dump.get(0).get("seq"));
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, dump.get(1).get("seq"));
+        Assert.assertEquals(2L, dump.get(1).get("seq"));
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals(3L, dump.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals(4L, dump.get(3).get("seq"));
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, dump.get(4).get("seq"));
+        Assert.assertEquals(1L, dump.get(4).get("seq"));
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2170,15 +2168,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"40ur\"", dump.get(0).get("key"));
-        Assert.assertEquals(6, dump.get(0).get("seq"));
+        Assert.assertEquals(6L, dump.get(0).get("seq"));
         Assert.assertEquals("\"five\"", dump.get(1).get("key"));
-        Assert.assertEquals(5, dump.get(1).get("seq"));
+        Assert.assertEquals(5L, dump.get(1).get("seq"));
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals(3L, dump.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals(4L, dump.get(3).get("seq"));
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, dump.get(4).get("seq"));
+        Assert.assertEquals(1L, dump.get(4).get("seq"));
     }
 
     /**
@@ -2200,15 +2198,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, dump.get(0).get("seq"));
+        Assert.assertEquals(5L, dump.get(0).get("seq"));
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, dump.get(1).get("seq"));
+        Assert.assertEquals(2L, dump.get(1).get("seq"));
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals(3L, dump.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals(4L, dump.get(3).get("seq"));
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, dump.get(4).get("seq"));
+        Assert.assertEquals(1L, dump.get(4).get("seq"));
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2226,15 +2224,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, dump.get(0).get("seq"));
+        Assert.assertEquals(5L, dump.get(0).get("seq"));
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, dump.get(1).get("seq"));
+        Assert.assertEquals(2L, dump.get(1).get("seq"));
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals(3L, dump.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals(4L, dump.get(3).get("seq"));
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, dump.get(4).get("seq"));
+        Assert.assertEquals(1L, dump.get(4).get("seq"));
     }
 
     /**
@@ -2259,15 +2257,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, dump.get(0).get("seq"));
+        Assert.assertEquals(5L, dump.get(0).get("seq"));
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, dump.get(1).get("seq"));
+        Assert.assertEquals(2L, dump.get(1).get("seq"));
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals(3L, dump.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals(4L, dump.get(3).get("seq"));
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, dump.get(4).get("seq"));
+        Assert.assertEquals(1L, dump.get(4).get("seq"));
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2286,15 +2284,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"40ur\"", dump.get(0).get("key"));
-        Assert.assertEquals(6, dump.get(0).get("seq"));
+        Assert.assertEquals(6L, dump.get(0).get("seq"));
         Assert.assertEquals("\"five\"", dump.get(1).get("key"));
-        Assert.assertEquals(5, dump.get(1).get("seq"));
+        Assert.assertEquals(5L, dump.get(1).get("seq"));
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals(3L, dump.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals(4L, dump.get(3).get("seq"));
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, dump.get(4).get("seq"));
+        Assert.assertEquals(1L, dump.get(4).get("seq"));
 
         // create new revision with delete
         RevisionInternal leaf3 = new RevisionInternal("44444", null, true);
@@ -2308,17 +2306,17 @@ public class ViewsTest extends LiteTestCaseWithDB {
         dump = view.dump();
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
-        int forSeq = (int)(isSQLiteDB()?leaf1.getSequence():leaf3.getSequence());
+        long forSeq = (isSQLiteDB()?leaf1.getSequence():leaf3.getSequence());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, dump.get(0).get("seq"));
+        Assert.assertEquals(5L, dump.get(0).get("seq"));
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
         Assert.assertEquals(forSeq, dump.get(1).get("seq"));
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, dump.get(2).get("seq"));
+        Assert.assertEquals(3L, dump.get(2).get("seq"));
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, dump.get(3).get("seq"));
+        Assert.assertEquals(4L, dump.get(3).get("seq"));
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, dump.get(4).get("seq"));
+        Assert.assertEquals(1L, dump.get(4).get("seq"));
     }
 
     /**

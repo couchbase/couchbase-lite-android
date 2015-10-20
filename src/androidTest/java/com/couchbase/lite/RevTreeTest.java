@@ -125,7 +125,8 @@ public class RevTreeTest extends LiteTestCaseWithDB {
         RevisionList expectedChanges = new RevisionList();
         expectedChanges.add(conflict);
         expectedChanges.add(other);
-        assertEquals(changes, expectedChanges);
+        assertEquals(expectedChanges, changes);
+
         options.setIncludeConflicts(true);
         changes = database.changesSince(0, options, null, null);
         expectedChanges = new RevisionList();
@@ -139,7 +140,7 @@ public class RevTreeTest extends LiteTestCaseWithDB {
             expectedChanges.add(rev);
             expectedChanges.add(other);
         }
-        assertEquals(changes, expectedChanges);
+        assertEquals(expectedChanges, changes);
     }
 
     /**

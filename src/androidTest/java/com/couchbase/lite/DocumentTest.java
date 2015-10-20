@@ -531,7 +531,6 @@ public class DocumentTest extends LiteTestCaseWithDB {
      * NOTE: Use Document.update()
      */
     public void testMultipleUpdatesInTransactionWithUpdate() throws CouchbaseLiteException {
-        Log.e(TAG, "testMultipleUpdatesInTransactionWithUpdate() START");
         final Document doc = database.createDocument();
         HashMap<String, Object> properties = new HashMap<String, Object>();
         properties.put("key", "value1");
@@ -544,7 +543,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
                             doc.update(new Document.DocumentUpdater() {
                                 @Override
                                 public boolean update(UnsavedRevision newRevision) {
-                                    Log.e(TAG, "Trying to update key to value 2");
+                                    Log.i(TAG, "Trying to update key to value 2");
                                     Map<String, Object> properties = newRevision.getUserProperties();
                                     properties.put("key", "value2");
                                     newRevision.setUserProperties(properties);
@@ -554,7 +553,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
                             doc.update(new Document.DocumentUpdater() {
                                 @Override
                                 public boolean update(UnsavedRevision newRevision) {
-                                    Log.e(TAG, "Trying to update key to value 3");
+                                    Log.i(TAG, "Trying to update key to value 3");
                                     Map<String, Object> properties = newRevision.getUserProperties();
                                     properties.put("key", "value3");
                                     newRevision.setUserProperties(properties);
@@ -570,8 +569,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
                     }
                 });
         Map<String, Object> properties4 = doc.getProperties();
-        Log.e(TAG, "properties4 = " + properties4);
-        Log.e(TAG, "testMultipleUpdatesInTransactionWithUpdate() END");
+        Log.i(TAG, "properties4 = " + properties4);
     }
 
     /**
@@ -579,12 +577,11 @@ public class DocumentTest extends LiteTestCaseWithDB {
      * with using Document.putProperties()
      */
     public void testMultipleUpdatesInTransactionWithPutProperties() throws CouchbaseLiteException {
-        Log.e(TAG, "testMultipleUpdatesInTransactionWithPutProperties() START");
         final Document doc = database.createDocument();
         HashMap<String, Object> properties1 = new HashMap<String, Object>();
         properties1.put("key", "value1");
         doc.putProperties(properties1);
-        database.runInTransaction(
+        assertTrue(database.runInTransaction(
                 new TransactionalTask() {
                     @Override
                     public boolean run() {
@@ -608,11 +605,10 @@ public class DocumentTest extends LiteTestCaseWithDB {
                         }
                         return true;
                     }
-                });
+                }));
         Map<String, Object> properties4 = doc.getProperties();
-        Log.e(TAG, "properties4 = " + properties4);
+        Log.i(TAG, "properties4 = " + properties4);
         assertEquals("value3", properties4.get("key"));
-        Log.e(TAG, "testMultipleUpdatesInTransactionWithPutProperties() END");
     }
 
     public static SavedRevision createRevisionWithProps(SavedRevision createRevFrom,

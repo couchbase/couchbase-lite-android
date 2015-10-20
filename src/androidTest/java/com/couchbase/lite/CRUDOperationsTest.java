@@ -29,6 +29,10 @@ public class CRUDOperationsTest extends LiteTestCaseWithDB implements Database.C
 
     public static final String TAG = "CRUDOperations";
 
+    /**
+     * in DatabaseInternal_Tests.m
+     * - (void) test01_CRUD
+     */
     public void testCRUDOperations() throws CouchbaseLiteException {
 
         database.addChangeListener(this);
@@ -39,18 +43,20 @@ public class CRUDOperationsTest extends LiteTestCaseWithDB implements Database.C
         assertTrue(privateUUID.length() >= 20);
         assertTrue(publicUUID.length() >= 20);
 
+        // Get a nonexistent document
+        assertNull(database.getDocument("nonexistent", null, true));
+
         //create a document
         Map<String, Object> documentProperties = new HashMap<String, Object>();
         documentProperties.put("foo", 1);
         documentProperties.put("bar", false);
-        documentProperties.put("baz", "touch");
-
+        //documentProperties.put("baz", "touch");
         Body body = new Body(documentProperties);
         RevisionInternal rev1 = new RevisionInternal(body);
-
+        assertNotNull(rev1);
         Status status = new Status();
         rev1 = database.putRevision(rev1, null, false, status);
-
+        assertEquals(Status.CREATED, status.getCode());
         Log.v(TAG, "Created " + rev1);
         assertTrue(rev1.getDocID().length() >= 10);
         assertTrue(rev1.getRevID().startsWith("1-"));
@@ -59,7 +65,7 @@ public class CRUDOperationsTest extends LiteTestCaseWithDB implements Database.C
         RevisionInternal readRev = database.getDocument(rev1.getDocID(), null, true);
         assertNotNull(readRev);
         Map<String, Object> readRevProps = readRev.getProperties();
-        assertEquals(userProperties(readRevProps), userProperties(body.getProperties()));
+        assertEquals(userProperties(body.getProperties()), userProperties(readRevProps));
 
         //now update it
         documentProperties = readRev.getProperties();
@@ -68,7 +74,8 @@ public class CRUDOperationsTest extends LiteTestCaseWithDB implements Database.C
         RevisionInternal rev2 = new RevisionInternal(body);
         RevisionInternal rev2input = rev2;
         rev2 = database.putRevision(rev2, rev1.getRevID(), false, status);
-        Log.v(TAG, "Updated " + rev1);
+        assertEquals(Status.CREATED, status.getCode());
+        Log.v(TAG, "Updated " + rev2);
         assertEquals(rev1.getDocID(), rev2.getDocID());
         assertTrue(rev2.getRevID().startsWith("2-"));
 
@@ -78,13 +85,12 @@ public class CRUDOperationsTest extends LiteTestCaseWithDB implements Database.C
         assertEquals(userProperties(readRev.getProperties()), userProperties(body.getProperties()));
 
         // Try to update the first rev, which should fail:
-        boolean gotExpectedError = false;
         try {
             database.putRevision(rev2input, rev1.getRevID(), false, status);
+            fail("Should be failed");
         } catch (CouchbaseLiteException e) {
-            gotExpectedError = e.getCBLStatus().getCode() == Status.CONFLICT;
+            assertEquals(Status.CONFLICT, e.getCBLStatus().getCode());
         }
-        assertTrue(gotExpectedError);
 
         // Check the changes feed, with and without filters:
         RevisionList changes = database.changesSince(0, null, null, null);
@@ -112,15 +118,14 @@ public class CRUDOperationsTest extends LiteTestCaseWithDB implements Database.C
         // Delete it:
         RevisionInternal revD = new RevisionInternal(rev2.getDocID(), null, true);
         RevisionInternal revResult = null;
-        gotExpectedError = false;
         try {
             revResult = database.putRevision(revD, null, false, status);
+            fail("Should be failed");
         } catch (CouchbaseLiteException e) {
-            gotExpectedError = e.getCBLStatus().getCode() == Status.CONFLICT;
+            assertEquals(Status.CONFLICT, e.getCBLStatus().getCode());
         }
-        assertTrue(gotExpectedError);
-
         assertNull(revResult);
+
         revD = database.putRevision(revD, rev2.getRevID(), false, status);
         assertEquals(Status.OK, status.getCode());
         assertEquals(revD.getDocID(), rev2.getDocID());
@@ -128,13 +133,13 @@ public class CRUDOperationsTest extends LiteTestCaseWithDB implements Database.C
 
         // Delete nonexistent doc:
         RevisionInternal revFake = new RevisionInternal("fake", null, true);
-        gotExpectedError = false;
         try {
             database.putRevision(revFake, null, false, status);
+            fail("Should be failed");
         } catch (CouchbaseLiteException e) {
-            gotExpectedError = e.getCBLStatus().getCode() == Status.NOT_FOUND;
+            assertEquals(Status.NOT_FOUND, e.getCBLStatus().getCode());
         }
-        assertTrue(gotExpectedError);
+
 
         // Read it back (should fail):
         readRev = database.getDocument(revD.getDocID(), null, true);
@@ -142,7 +147,7 @@ public class CRUDOperationsTest extends LiteTestCaseWithDB implements Database.C
 
         // Get Changes feed
         changes = database.changesSince(0, null, null, null);
-        assertTrue(changes.size() == 1);
+        assertEquals(1, changes.size());
 
         // Get Revision History
         List<RevisionInternal> history = database.getRevisionHistory(revD);
