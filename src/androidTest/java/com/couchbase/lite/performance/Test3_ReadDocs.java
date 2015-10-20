@@ -40,6 +40,9 @@ public class Test3_ReadDocs extends PerformanceTestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
+        if (!performanceTestsEnabled())
+            return;
+
         char[] chars = new char[getSizeOfDocument()];
         Arrays.fill(chars, 'a');
         final String content = new String(chars);

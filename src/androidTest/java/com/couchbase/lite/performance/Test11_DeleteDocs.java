@@ -39,6 +39,7 @@ public class Test11_DeleteDocs extends PerformanceTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+
         if (!performanceTestsEnabled())
             return;
 
