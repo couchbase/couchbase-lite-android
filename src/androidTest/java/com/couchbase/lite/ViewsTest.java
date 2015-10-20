@@ -296,11 +296,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.v(TAG, "View dump: " + dumpResult);
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"one\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals(1L, dumpResult.get(0).get("seq"));
+        Assert.assertEquals(1, ((Number)dumpResult.get(0).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals(2L, dumpResult.get(2).get("seq"));
+        Assert.assertEquals(2, ((Number)dumpResult.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals(3L, dumpResult.get(1).get("seq"));
+        Assert.assertEquals(3, ((Number)dumpResult.get(1).get("seq")).intValue());
 
         //no-op reindex
         Assert.assertFalse(view.isStale());
@@ -341,11 +341,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.v(TAG, "View dump: " + dumpResult);
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"one\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals(1L, dumpResult.get(2).get("seq"));
+        Assert.assertEquals(1, ((Number)dumpResult.get(2).get("seq")).intValue());
         Assert.assertEquals("\"3hree\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals(6L, dumpResult.get(0).get("seq"));
+        Assert.assertEquals(6, ((Number)dumpResult.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals(7L, dumpResult.get(1).get("seq"));
+        Assert.assertEquals(7, ((Number)dumpResult.get(1).get("seq")).intValue());
 
         // Now do a real query:
         List<QueryRow> rows = view.query(null);
@@ -949,14 +949,14 @@ public class ViewsTest extends LiteTestCaseWithDB {
         List<Map<String, Object>> dumpResult = view.dump();
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"App\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals(1.95, dumpResult.get(0).get("value"));
-        Assert.assertEquals(2L, dumpResult.get(0).get("seq"));
+        Assert.assertEquals(1.95, dumpResult.get(0).get("value") instanceof String ? Double.parseDouble((String)dumpResult.get(0).get("value")) : dumpResult.get(0).get("value"));
+        Assert.assertEquals(2, ((Number)dumpResult.get(0).get("seq")).intValue());
         Assert.assertEquals("\"CD\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals(8.99, dumpResult.get(1).get("value"));
-        Assert.assertEquals(1L, dumpResult.get(1).get("seq"));
+        Assert.assertEquals(8.99, dumpResult.get(1).get("value") instanceof String ? Double.parseDouble((String)dumpResult.get(1).get("value")) : dumpResult.get(1).get("value"));
+        Assert.assertEquals(1, ((Number)dumpResult.get(1).get("seq")).intValue());
         Assert.assertEquals("\"Dessert\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals(6.5, dumpResult.get(2).get("value"));
-        Assert.assertEquals(3L, dumpResult.get(2).get("seq"));
+        Assert.assertEquals(6.5, dumpResult.get(2).get("value") instanceof String ? Double.parseDouble((String)dumpResult.get(2).get("value")) : dumpResult.get(2).get("value"));
+        Assert.assertEquals(3, ((Number)dumpResult.get(2).get("seq")).intValue());
 
         QueryOptions options = new QueryOptions();
         options.setReduce(true);
@@ -2142,15 +2142,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5L, dump.get(0).get("seq"));
+        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2L, dump.get(1).get("seq"));
+        Assert.assertEquals(2, ((Number)dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3L, dump.get(2).get("seq"));
+        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4L, dump.get(3).get("seq"));
+        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1L, dump.get(4).get("seq"));
+        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2168,15 +2168,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"40ur\"", dump.get(0).get("key"));
-        Assert.assertEquals(6L, dump.get(0).get("seq"));
+        Assert.assertEquals(6, ((Number)dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"five\"", dump.get(1).get("key"));
-        Assert.assertEquals(5L, dump.get(1).get("seq"));
+        Assert.assertEquals(5, ((Number)dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3L, dump.get(2).get("seq"));
+        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4L, dump.get(3).get("seq"));
+        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1L, dump.get(4).get("seq"));
+        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
     }
 
     /**
@@ -2198,15 +2198,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5L, dump.get(0).get("seq"));
+        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2L, dump.get(1).get("seq"));
+        Assert.assertEquals(2, ((Number)dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3L, dump.get(2).get("seq"));
+        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4L, dump.get(3).get("seq"));
+        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1L, dump.get(4).get("seq"));
+        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2224,15 +2224,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5L, dump.get(0).get("seq"));
+        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2L, dump.get(1).get("seq"));
+        Assert.assertEquals(2, ((Number)dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3L, dump.get(2).get("seq"));
+        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4L, dump.get(3).get("seq"));
+        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1L, dump.get(4).get("seq"));
+        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
     }
 
     /**
@@ -2257,15 +2257,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5L, dump.get(0).get("seq"));
+        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2L, dump.get(1).get("seq"));
+        Assert.assertEquals(2, ((Number)dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3L, dump.get(2).get("seq"));
+        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4L, dump.get(3).get("seq"));
+        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1L, dump.get(4).get("seq"));
+        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2284,15 +2284,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"40ur\"", dump.get(0).get("key"));
-        Assert.assertEquals(6L, dump.get(0).get("seq"));
+        Assert.assertEquals(6, ((Number)dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"five\"", dump.get(1).get("key"));
-        Assert.assertEquals(5L, dump.get(1).get("seq"));
+        Assert.assertEquals(5, ((Number)dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3L, dump.get(2).get("seq"));
+        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4L, dump.get(3).get("seq"));
+        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1L, dump.get(4).get("seq"));
+        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
 
         // create new revision with delete
         RevisionInternal leaf3 = new RevisionInternal("44444", null, true);
@@ -2308,15 +2308,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Assert.assertEquals(5, dump.size());
         long forSeq = (isSQLiteDB()?leaf1.getSequence():leaf3.getSequence());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5L, dump.get(0).get("seq"));
+        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(forSeq, dump.get(1).get("seq"));
+        Assert.assertEquals(forSeq, ((Number) dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3L, dump.get(2).get("seq"));
+        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4L, dump.get(3).get("seq"));
+        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1L, dump.get(4).get("seq"));
+        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
     }
 
     /**
