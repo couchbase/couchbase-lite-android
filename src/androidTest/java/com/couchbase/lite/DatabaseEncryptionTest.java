@@ -237,9 +237,9 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         // Save a doc with an attachment:
         Document doc = seekrit.getDocument("att");
         byte[] body = "This is a test attachment!".getBytes();
-        ByteArrayInputStream is = new ByteArrayInputStream(body);
+        ByteArrayInputStream bis = new ByteArrayInputStream(body);
         UnsavedRevision rev = doc.createRevision();
-        rev.setAttachment("att.txt", "text/plain; charset=utf-8", is);
+        rev.setAttachment("att.txt", "text/plain; charset=utf-8", bis);
         SavedRevision savedRev = rev.save();
         Assert.assertNotNull(savedRev);
 
@@ -251,9 +251,16 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
 
         BlobKey key = new BlobKey(digest);
         String path = seekrit.getAttachmentStore().getRawPathForKey(key);
-        byte[] raw = TextUtils.read(new FileInputStream(path));
-        Assert.assertNotNull(raw);
-        Assert.assertTrue(!Arrays.equals(raw, body));
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(path);
+            byte[] raw = TextUtils.read(fis);
+            Assert.assertNotNull(raw);
+            Assert.assertTrue(!Arrays.equals(raw, body));
+        } finally {
+            if (fis != null)
+                fis.close();
+        }
     }
 
     public void testRekey() throws Exception {
