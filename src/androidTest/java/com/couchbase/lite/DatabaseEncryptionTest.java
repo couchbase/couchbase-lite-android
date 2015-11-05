@@ -17,14 +17,16 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.support.security.SymmetricKey;
+import com.couchbase.lite.util.ArrayUtils;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
 
 import junit.framework.Assert;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileInputStream;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +49,58 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         super.tearDown();
         if (cryptoManager != null)
             cryptoManager.close();
+    }
+
+    public void testSymmetricKey() throws Exception {
+        Database database = cryptoManager.getDatabase("seekrit");
+
+        long start = System.currentTimeMillis();
+        SymmetricKey key = database.createSymmetricKey("letmein123456");
+        long end = System.currentTimeMillis();
+        Log.i(TAG, "Finished getting a symmetric key in " + (end - start) + " msec.");
+        byte[] keyData = key.getKey();
+        Log.i(TAG, "Key = " + key);
+
+        // Encrypt using the key:
+        byte[] clearText = "This is the clear text.".getBytes();
+        byte[] ciphertext = key.encryptData(clearText);
+        Log.i(TAG, "Encrypted = " + new String(ciphertext));
+        Assert.assertNotNull(ciphertext);
+
+        // Decrypt using the key:
+        byte[] decrypted = key.decryptData(ciphertext);
+        Log.i(TAG, "Decrypted String = " + new String(decrypted));
+        Assert.assertTrue(Arrays.equals(clearText, decrypted));
+
+        // Incremental encryption:
+        start = System.currentTimeMillis();
+        SymmetricKey.Encryptor encryptor = key.createEncryptor();
+        byte[] incrementalClearText = new byte[0];
+        byte[] incrementalCiphertext = new byte[0];
+        SecureRandom random = new SecureRandom();
+        for (int i = 0; i < 55; i++) {
+            byte[] data = new byte[555];
+            random.nextBytes(data);
+            byte[] cipherData = encryptor.encrypt(data);
+            incrementalClearText = ArrayUtils.concat(incrementalClearText, data);
+            incrementalCiphertext = ArrayUtils.concat(incrementalCiphertext, cipherData);
+        }
+        incrementalCiphertext = ArrayUtils.concat(incrementalCiphertext, encryptor.encrypt(null));
+        decrypted = key.decryptData(incrementalCiphertext);
+        Assert.assertTrue(Arrays.equals(incrementalClearText, decrypted));
+        end = System.currentTimeMillis();
+        Log.i(TAG, "Finished incremental encryption test in " + (end - start) + " msec.");
+    }
+
+    public void testCreateRandomSymmetricKey() throws Exception {
+        long start = System.currentTimeMillis();
+        SymmetricKey key = new SymmetricKey();
+        long end = System.currentTimeMillis();
+        Log.i(TAG, "Finished creating a random symmetric key in " + (end - start) + " msec.");
+        byte[] keyData = key.getKey();
+        Assert.assertNotNull(keyData);
+        Assert.assertEquals(32, keyData.length);
+        Log.i(TAG, "Key = " + key);
     }
 
     public void testEncryptionFailsGracefully() throws Exception {

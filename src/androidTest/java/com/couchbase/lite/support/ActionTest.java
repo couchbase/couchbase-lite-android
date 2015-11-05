@@ -15,8 +15,9 @@
  *
  */
 
-package com.couchbase.lite;
+package com.couchbase.lite.support;
 
+import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.support.action.Action;
 import com.couchbase.lite.support.action.ActionBlock;
 import com.couchbase.lite.support.action.ActionException;

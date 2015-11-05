@@ -77,7 +77,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
 
     @Override
     public boolean isOpen() {
-        return database.isOpen();
+        return database != null && database.isOpen();
     }
 
     @Override
@@ -166,6 +166,11 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     @Override
     public boolean supportEncryption() {
         return false;
+    }
+
+    @Override
+    public byte[] derivePBKDF2SHA256Key(String password, byte[] salt, int rounds) {
+        throw new UnsupportedOperationException("The storage doesn't support encryption");
     }
 
     @Override
