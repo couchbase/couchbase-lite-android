@@ -16,6 +16,7 @@
 
 package com.couchbase.lite.android;
 
+import com.couchbase.lite.database.security.Key;
 import com.couchbase.lite.storage.ContentValues;
 import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.storage.SQLException;
@@ -27,8 +28,6 @@ import com.couchbase.lite.database.sqlite.SQLiteDatabase;
 import java.util.Map;
 
 public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
-    private static final boolean SUPPORT_ENCRYPTION = true;
-
     private SQLiteDatabase database;
 
     public AndroidSQLCipherStorageEngine() {
@@ -63,7 +62,7 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
 
     @Override
     public boolean isOpen() {
-        return database.isOpen();
+        return database != null && database.isOpen();
     }
 
     @Override
@@ -143,8 +142,14 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
         database.close();
     }
 
+    @Override
     public boolean supportEncryption() {
-        return SUPPORT_ENCRYPTION;
+        return true;
+    }
+
+    @Override
+    public byte[] derivePBKDF2SHA256Key(String password, byte[] salt, int rounds) {
+        return Key.derivePBKDF2SHA256Key(password, salt, rounds);
     }
 
     @Override
