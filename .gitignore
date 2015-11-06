@@ -18,3 +18,5 @@ local-perftest.properties
 
 *.o
 *.o.d
+libSQLiteJsonCollator.so
+libSQLiteRevCollator.so
