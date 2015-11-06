@@ -294,7 +294,7 @@ static int compareStringsUnicode(const char** in1, const char** in2) {
         coll = Collator::createInstance(locale, status);
         if(!U_SUCCESS(status)) {
             LOGE("Failed to create Collator instance: status=%d", status);
-            return -3;  
+            return 0;
         }
     }
     result = (int)coll->compare(*in1, *in2);
@@ -576,16 +576,18 @@ JNIEXPORT jint JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_testDi
 }
 
 JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_setICURoot
-    (JNIEnv *env, jclass clazz, jstring ICURoot)
+    (JNIEnv *env, jclass clazz, jstring jICURoot)
 {
-    char const * ICURootPath = env->GetStringUTFChars(ICURoot, NULL);
+    if(jICURoot == NULL) return;
+    char const * ICURootPath = env->GetStringUTFChars(jICURoot, NULL);
     setenv("CBL_ICU_PREFIX", ICURootPath, 1);
-    env->ReleaseStringUTFChars(ICURoot, ICURootPath);
+    env->ReleaseStringUTFChars(jICURoot, ICURootPath);
 }
 
 JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_setLocale
     (JNIEnv *env, jclass clazz, jstring jlocale)
 {
+    if(jlocale == NULL) return;
     char const * localeStr = env->GetStringUTFChars(jlocale, NULL);
     if(strlen(localeStr) < 256)
         strcpy(locale, localeStr);

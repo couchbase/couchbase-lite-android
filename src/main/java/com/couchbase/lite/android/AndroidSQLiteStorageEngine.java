@@ -60,9 +60,11 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
             database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
 
+            // initialize ICU4C for JSON Collator
+            loadICU4C(context, context.getFilesDir());
+
             // Register custom collator:
             String sqliteDatabaseClassName = "android/database/sqlite/SQLiteDatabase";
-            loadICU4C(context, context.getFilesDir());
             SQLiteRevCollator.register(database, sqliteDatabaseClassName, Build.VERSION.SDK_INT);
             SQLiteJsonCollator.register(database, sqliteDatabaseClassName, Build.VERSION.SDK_INT);
         } catch(SQLiteException e) {
@@ -170,6 +172,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
     @Override
     public void close() {
         database.close();
+        SQLiteJsonCollator.releaseICU();
         Log.v(Log.TAG_DATABASE, "%s: Closed Android sqlite db", this);
     }
 
@@ -185,17 +188,21 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
                 "}";
     }
 
-    private static synchronized void loadICU4C(android.content.Context context, File workingDir) {
+    private static synchronized void loadICU4C(android.content.Context context, File workingDir) throws SQLException {
         boolean systemICUFileExists = new File("/system/usr/icu/icudt53l.dat").exists();
         String icuRootPath = systemICUFileExists ? "/system/usr" : workingDir.getAbsolutePath();
         SQLiteJsonCollator.setICURoot(icuRootPath);
         if(!systemICUFileExists){
-            loadICUData(context, workingDir);
+            try {
+                loadICUData(context, workingDir);
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
         }
         SQLiteJsonCollator.setLocale(Locale.getDefault().toString());
     }
 
-    private static void loadICUData(android.content.Context context, File workingDir) {
+    private static void loadICUData(android.content.Context context, File workingDir) throws IOException{
         OutputStream out = null;
         ZipInputStream in = null;
         File icuDir = new File(workingDir, "icu");
@@ -213,12 +220,12 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
                 }
             }
         }
-        catch (Exception ex) {
+        catch (IOException ex) {
             Log.e(TAG, "Error copying icu dat file", ex);
             if(icuDataFile.exists()){
                 icuDataFile.delete();
             }
-            throw new RuntimeException(ex);
+            throw ex;
         }
         finally {
             try {
@@ -231,7 +238,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
                 }
             } catch (IOException ioe){
                 Log.e(TAG, "Error in closing streams IO streams after expanding ICU dat file", ioe);
-                throw new RuntimeException(ioe);
+                throw ioe;
             }
         }
     }
