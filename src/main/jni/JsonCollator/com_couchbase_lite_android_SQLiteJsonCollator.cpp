@@ -52,14 +52,6 @@ struct SQLiteConnection {
 
 #define DEFAULT_COLLATOR_LOCALE "en_US"
 
-/**
- * Core JNI stuff to cache class and method references for faster use later
- */
-
-//JavaVM *cached_jvm;
-//jclass collatorClass;
-//jmethodID compareMethod;
-
 // For ICU4C Collator
 char locale[256];
 Collator *coll;
@@ -68,42 +60,16 @@ JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
     JNIEnv *env;
-    // jclass cls;
-    //cached_jvm = jvm; /* cache the JavaVM pointer */
-    
     if (jvm->GetEnv((void **)&env, JNI_VERSION_1_2)) {
         return JNI_ERR; /* JNI version not supported */
     }
-    // cls = env->FindClass("com/couchbase/lite/android/SQLiteJsonCollator");
-    // if (cls == NULL) {
-    //     return JNI_ERR;
-    // }
-    /* Use weak global ref to allow C class to be unloaded */
-    // collatorClass = reinterpret_cast<jclass>(env->NewGlobalRef(cls));
-    // if (collatorClass == NULL) {
-    //     return JNI_ERR;
-    // }
-    /* Compute and cache the method ID */
-    // compareMethod = env->GetStaticMethodID(cls, "compareStringsUnicode", "(Ljava/lang/String;Ljava/lang/String;)I");
-    // if (compareMethod == NULL) {
-    //     return JNI_ERR;
-    // }
-    
-    
+
     // initialize collator and its locale
     strcpy(locale, DEFAULT_COLLATOR_LOCALE);
     coll = NULL;
 
     return JNI_VERSION_1_2;
 }
-
-/*
-JNIEnv *getEnv() {
-    JNIEnv *env;
-    cached_jvm->GetEnv((void **) &env, JNI_VERSION_1_2);
-    return env;
-}
-*/
 
 JNIEXPORT void JNICALL
 JNI_OnUnload(JavaVM *jvm, void *reserved)
@@ -112,7 +78,6 @@ JNI_OnUnload(JavaVM *jvm, void *reserved)
     if (jvm->GetEnv((void **)&env, JNI_VERSION_1_2)) {
         return;
     }
-    //env->DeleteWeakGlobalRef(collatorClass);
     return;
 }
 
@@ -146,7 +111,6 @@ static void initializeCharPriorityMap(void) {
     for (uint8_t c = 'a'; c <= 'z'; c++)
         kCharPriorityCaseInsensitive[c] = kCharPriority[toupper(c)];
 }
-
 
 // Types of values, ordered according to CouchDB collation order (see view_collation.js tests)
 typedef enum {
@@ -198,7 +162,6 @@ static ValueType valueTypeOf(char c) {
             return kIllegal;
     }
 }
-
 
 /**
  * Defining my own digittoint because Android ctype.h doesn't do it for me
@@ -320,50 +283,6 @@ static int compareStringsUnicodeFast(const char** in1, const char** in2) {
     return 0;
 }
 
-/*
-static jstring createJavaStringFromJSON(const char** in) {
-    // Scan the JSON string to find its end and whether it contains escapes:
-    const char* start = ++*in;
-    unsigned escapes = 0;
-    const char* str;
-    for (str = start; *str != '"'; ++str) {
-        if (*str == '\\') {
-            ++str;
-            if (*str == 'u') {
-                escapes += 5;  // \uxxxx adds 5 bytes
-                str += 4;
-            } else
-                escapes += 1;
-        }
-    }
-    *in = str + 1;
-    size_t length = str - start;
-    
-    char* buf = NULL;
-    length -= escapes;
-    buf = (char*) malloc(length + 1);
-    char* dst = buf;
-    char c;
-    for (str = start; (c = *str) != '"'; ++str) {
-        if (c == '\\')
-            c = convertEscape(&str);
-        *dst++ = c;
-    }
-    *dst++ = 0; //null terminate
-    start = buf;
-    //LOGV("After stripping escapes string is: %s", start);
-    
-    JNIEnv *env = getEnv();
-    jstring result = env->NewStringUTF(start);
-    if (buf != NULL) {
-        free(buf);
-    }
-    if (result == NULL) {
-        LOGE("Failed to convert to string: start=%p, length=%u", start, length);
-    }
-    return result;
-}
-*/
 static int compareStringsUnicode(const char** in1, const char** in2) {
     int result = compareStringsUnicodeFast(in1, in2);
     if (result > -2)
