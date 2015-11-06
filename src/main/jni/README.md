@@ -14,3 +14,6 @@ Currently there is very limited support for building multiple native libraries b
 
 6. `$ rm -rf libs obj` (Clean up)
 
+### About ICU4C static library
+* Please refer [icu4c-android](https://github.com/couchbaselabs/icu4c-android) for compile library.
+* Please refer [data](https://github.com/couchbaselabs/icu4c-android) for dictionary file.
