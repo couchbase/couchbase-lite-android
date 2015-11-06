@@ -9,8 +9,10 @@ import com.couchbase.lite.storage.SQLiteStorageEngineFactory;
  * Android SQLiteStorageEngineFactory implementation
  */
 public class AndroidSQLiteStorageEngineFactory implements SQLiteStorageEngineFactory {
-    public AndroidSQLiteStorageEngineFactory() {
-        
+    private android.content.Context context = null;
+
+    public AndroidSQLiteStorageEngineFactory(android.content.Context context) {
+        this.context = context;
     }
 
     @Override
@@ -24,7 +26,7 @@ public class AndroidSQLiteStorageEngineFactory implements SQLiteStorageEngineFac
                         "Encryption not availabe (app not built with SQLCipher)",
                         Status.NOT_IMPLEMENTED);
         else
-            return new AndroidSQLiteStorageEngine();
+            return new AndroidSQLiteStorageEngine(context);
     }
 
     private boolean hasSQLCipher() {

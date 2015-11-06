@@ -15,3 +15,6 @@ local.properties
 local-test.properties
 local-perftest.properties
 #settings.gradle
+
+*.o
+*.o.d

@@ -3,6 +3,9 @@
 #include <dlfcn.h>
 #include <ctype.h>
 
+// ICU4C - icu::Collator
+#include <unicode/coll.h>
+
 #include "sqlite3.h"
 #include "com_couchbase_lite_android_SQLiteJsonCollator.h"
 #include "android/log.h"
@@ -47,46 +50,60 @@ struct SQLiteConnection {
 // ASCII mode, which is like CouchDB default except that strings are compared as binary UTF-8
 #define kJsonCollator_ASCII ((void*)2)
 
+#define DEFAULT_COLLATOR_LOCALE "en_US"
+
 /**
  * Core JNI stuff to cache class and method references for faster use later
  */
 
-JavaVM *cached_jvm;
-jclass collatorClass;
-jmethodID compareMethod;
+//JavaVM *cached_jvm;
+//jclass collatorClass;
+//jmethodID compareMethod;
+
+// For ICU4C Collator
+char locale[256];
+Collator *coll;
+
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
     JNIEnv *env;
-    jclass cls;
-    cached_jvm = jvm; /* cache the JavaVM pointer */
+    // jclass cls;
+    //cached_jvm = jvm; /* cache the JavaVM pointer */
     
     if (jvm->GetEnv((void **)&env, JNI_VERSION_1_2)) {
         return JNI_ERR; /* JNI version not supported */
     }
-    cls = env->FindClass("com/couchbase/lite/android/SQLiteJsonCollator");
-    if (cls == NULL) {
-        return JNI_ERR;
-    }
+    // cls = env->FindClass("com/couchbase/lite/android/SQLiteJsonCollator");
+    // if (cls == NULL) {
+    //     return JNI_ERR;
+    // }
     /* Use weak global ref to allow C class to be unloaded */
-    collatorClass = reinterpret_cast<jclass>(env->NewGlobalRef(cls));
-    if (collatorClass == NULL) {
-        return JNI_ERR;
-    }
+    // collatorClass = reinterpret_cast<jclass>(env->NewGlobalRef(cls));
+    // if (collatorClass == NULL) {
+    //     return JNI_ERR;
+    // }
     /* Compute and cache the method ID */
-    compareMethod = env->GetStaticMethodID(cls, "compareStringsUnicode", "(Ljava/lang/String;Ljava/lang/String;)I");
-    if (compareMethod == NULL) {
-        return JNI_ERR;
-    }
+    // compareMethod = env->GetStaticMethodID(cls, "compareStringsUnicode", "(Ljava/lang/String;Ljava/lang/String;)I");
+    // if (compareMethod == NULL) {
+    //     return JNI_ERR;
+    // }
     
+    
+    // initialize collator and its locale
+    strcpy(locale, DEFAULT_COLLATOR_LOCALE);
+    coll = NULL;
+
     return JNI_VERSION_1_2;
 }
 
+/*
 JNIEnv *getEnv() {
     JNIEnv *env;
     cached_jvm->GetEnv((void **) &env, JNI_VERSION_1_2);
     return env;
 }
+*/
 
 JNIEXPORT void JNICALL
 JNI_OnUnload(JavaVM *jvm, void *reserved)
@@ -95,7 +112,7 @@ JNI_OnUnload(JavaVM *jvm, void *reserved)
     if (jvm->GetEnv((void **)&env, JNI_VERSION_1_2)) {
         return;
     }
-    env->DeleteWeakGlobalRef(collatorClass);
+    //env->DeleteWeakGlobalRef(collatorClass);
     return;
 }
 
@@ -303,6 +320,7 @@ static int compareStringsUnicodeFast(const char** in1, const char** in2) {
     return 0;
 }
 
+/*
 static jstring createJavaStringFromJSON(const char** in) {
     // Scan the JSON string to find its end and whether it contains escapes:
     const char* start = ++*in;
@@ -345,18 +363,23 @@ static jstring createJavaStringFromJSON(const char** in) {
     }
     return result;
 }
-
+*/
 static int compareStringsUnicode(const char** in1, const char** in2) {
     int result = compareStringsUnicodeFast(in1, in2);
     if (result > -2)
         return result;
-    // Fast compare failed, so resort to using NSString:
-    jstring str1 = createJavaStringFromJSON(in1);
-    jstring str2 = createJavaStringFromJSON(in2);
-    JNIEnv *env = getEnv();
-    result = env->CallStaticIntMethod(collatorClass, compareMethod, str1, str2);
-    env->DeleteLocalRef(str1);
-    env->DeleteLocalRef(str2);
+
+    // ICU4C - Collator
+    if(coll == NULL){
+        UErrorCode status = U_ZERO_ERROR; 
+        coll = Collator::createInstance(locale, status);
+        if(!U_SUCCESS(status)) {
+            LOGE("Failed to create Collator instance: status=%d", status);
+            return -3;  
+        }
+    }
+    result = (int)coll->compare(*in1, *in2);
+
     return result;
 }
 
@@ -631,4 +654,30 @@ JNIEXPORT jint JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_testDi
 (JNIEnv *env, jclass clazz, jint digit) {
     int result = digittoint(digit);
     return result;
+}
+
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_setICURoot
+    (JNIEnv *env, jclass clazz, jstring ICURoot)
+{
+    char const * ICURootPath = env->GetStringUTFChars(ICURoot, NULL);
+    setenv("CBL_ICU_PREFIX", ICURootPath, 1);
+    env->ReleaseStringUTFChars(ICURoot, ICURootPath);
+}
+
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_setLocale
+    (JNIEnv *env, jclass clazz, jstring jlocale)
+{
+    char const * localeStr = env->GetStringUTFChars(jlocale, NULL);
+    if(strlen(localeStr) < 256)
+        strcpy(locale, localeStr);
+    env->ReleaseStringUTFChars(jlocale, localeStr);
+}
+
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_releaseICU
+    (JNIEnv *env, jclass clazz)
+{
+    if(coll != NULL){
+        delete coll;
+        coll = NULL;
+    }
 }
