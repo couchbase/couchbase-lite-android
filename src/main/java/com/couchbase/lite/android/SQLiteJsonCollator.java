@@ -1,7 +1,5 @@
 package com.couchbase.lite.android;
 
-import java.text.Collator;
-
 public class SQLiteJsonCollator {
     private static native void nativeRegister(Object database, String databaseClassName, int sdkVersion);
 
@@ -9,15 +7,14 @@ public class SQLiteJsonCollator {
         nativeRegister(database, databaseClassName, sdkVersion);
     }
 
-    public static int compareStringsUnicode(String a, String b) {
-        Collator c = Collator.getInstance();
-        int res = c.compare(a, b);
-        return res;
-    }
-
     public static native int testCollateJSON(int mode, int len1, String string1, int len2, String string2);
     public static native char testEscape(String source);
     public static native int testDigitToInt(int digit);
+
+    // Sets the root directory to search for the ICU data file
+    public static native void setICURoot(String path);
+    public static native void setLocale(String locale);
+    public static native void releaseICU();
 
     /**
      * Convenience wrapper around testCollateJSON which calculates lengths based on string lengths

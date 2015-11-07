@@ -7,12 +7,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import junit.framework.Assert;
 
-public class CollationTest extends LiteTestCase {
+import java.text.Collator;
+import java.util.Locale;
+
+public class CollationTest extends LiteTestCaseWithDB {
     public static String TAG = "Collation";
 
     private static final int kJsonCollator_Unicode = 0;
     private static final int kJsonCollator_Raw = 1;
     private static final int kJsonCollator_ASCII = 2;
+
+    public void runBare() throws Throwable {
+        // Run only for SQLite
+        super.runBare(false);
+    }
 
     // create the same JSON encoding used by TouchDB
     // this lets us test comparisons as they would be encoded
@@ -97,6 +105,49 @@ public class CollationTest extends LiteTestCase {
         int mode = kJsonCollator_Unicode;
         Assert.assertEquals(1, SQLiteJsonCollator.testCollateJSONWrapper(mode, "[[]]", "[]"));
         Assert.assertEquals(-1, SQLiteJsonCollator.testCollateJSONWrapper(mode, "[1,[2,3],4]", "[1,[2,3.1],4,5,6]"));
+    }
+
+    public void testCollateJapaneseStrings() {
+
+        int mode = kJsonCollator_Unicode;
+
+        // en_US
+        try {
+            Collator c = Collator.getInstance(new Locale("en_US"));
+            Assert.assertEquals(-1, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("あ"), encode("い")));
+            Assert.assertEquals(1, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("い"), encode("あ")));
+            Assert.assertEquals(0, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("あ"), encode("あ")));
+            Assert.assertEquals(c.compare("カー", "カア"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("カー"), encode("カア")));
+            Assert.assertEquals(c.compare("鞍", "倉"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("鞍"), encode("倉")));
+            Assert.assertEquals(c.compare("鞍", "蔵"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("鞍"), encode("蔵")));
+            Assert.assertEquals(c.compare("倉", "蔵"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("倉"), encode("蔵")));
+            Assert.assertEquals(c.compare("倉", "鞍"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("倉"), encode("鞍")));
+            Assert.assertEquals(c.compare("蔵", "鞍"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("蔵"), encode("鞍")));
+            Assert.assertEquals(c.compare("蔵", "倉"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("蔵"), encode("倉")));
+        }finally {
+            SQLiteJsonCollator.releaseICU();
+            SQLiteJsonCollator.setLocale("en_US");
+        }
+
+        // ja
+        try{
+            Collator c1 = Collator.getInstance(new Locale("ja"));
+            SQLiteJsonCollator.releaseICU();
+            SQLiteJsonCollator.setLocale("ja");
+            Assert.assertEquals(-1, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("あ"), encode("い")));
+            Assert.assertEquals(1, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("い"), encode("あ")));
+            Assert.assertEquals(0, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("あ"), encode("あ")));
+            Assert.assertEquals(c1.compare("カー", "カア"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("カー"), encode("カア")));
+            Assert.assertEquals(c1.compare("鞍", "倉"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("鞍"), encode("倉")));
+            Assert.assertEquals(c1.compare("鞍", "蔵"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("鞍"), encode("蔵")));
+            Assert.assertEquals(c1.compare("倉", "蔵"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("倉"), encode("蔵")));
+            Assert.assertEquals(c1.compare("倉", "鞍"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("倉"), encode("鞍")));
+            Assert.assertEquals(c1.compare("蔵", "鞍"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("蔵"), encode("鞍")));
+            Assert.assertEquals(c1.compare("蔵", "倉"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("蔵"), encode("倉")));
+        }finally {
+            SQLiteJsonCollator.releaseICU();
+            SQLiteJsonCollator.setLocale("en_US");
+        }
     }
 
     public void testCollateUnicodeStrings() {

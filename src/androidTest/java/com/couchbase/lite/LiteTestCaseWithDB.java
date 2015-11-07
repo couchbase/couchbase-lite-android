@@ -86,6 +86,18 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         Log.e(TAG, "DURATION: %s: %d sec%s", name, duration, duration >= 6 ? " - [SLOW]" : "");
     }
 
+    public void runBare(boolean forestDB) throws Throwable {
+        long start = System.currentTimeMillis();
+
+        useForestDB = forestDB;
+        super.runBare();
+
+        long end = System.currentTimeMillis();
+        String name = getName();
+        long duration= (end - start)/1000;
+        Log.e(TAG, "DURATION: %s: %d sec%s", name, duration, duration >= 6 ? " - [SLOW]" : "");
+    }
+
     @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp");

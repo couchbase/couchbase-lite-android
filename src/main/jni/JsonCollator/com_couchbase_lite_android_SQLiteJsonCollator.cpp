@@ -3,6 +3,9 @@
 #include <dlfcn.h>
 #include <ctype.h>
 
+// ICU4C - icu::Collator
+#include <unicode/coll.h>
+
 #include "sqlite3.h"
 #include "com_couchbase_lite_android_SQLiteJsonCollator.h"
 #include "android/log.h"
@@ -47,45 +50,25 @@ struct SQLiteConnection {
 // ASCII mode, which is like CouchDB default except that strings are compared as binary UTF-8
 #define kJsonCollator_ASCII ((void*)2)
 
-/**
- * Core JNI stuff to cache class and method references for faster use later
- */
+#define DEFAULT_COLLATOR_LOCALE "en_US"
 
-JavaVM *cached_jvm;
-jclass collatorClass;
-jmethodID compareMethod;
+// For ICU4C Collator
+char locale[256];
+Collator *coll;
+
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
     JNIEnv *env;
-    jclass cls;
-    cached_jvm = jvm; /* cache the JavaVM pointer */
-    
     if (jvm->GetEnv((void **)&env, JNI_VERSION_1_2)) {
         return JNI_ERR; /* JNI version not supported */
     }
-    cls = env->FindClass("com/couchbase/lite/android/SQLiteJsonCollator");
-    if (cls == NULL) {
-        return JNI_ERR;
-    }
-    /* Use weak global ref to allow C class to be unloaded */
-    collatorClass = reinterpret_cast<jclass>(env->NewGlobalRef(cls));
-    if (collatorClass == NULL) {
-        return JNI_ERR;
-    }
-    /* Compute and cache the method ID */
-    compareMethod = env->GetStaticMethodID(cls, "compareStringsUnicode", "(Ljava/lang/String;Ljava/lang/String;)I");
-    if (compareMethod == NULL) {
-        return JNI_ERR;
-    }
-    
-    return JNI_VERSION_1_2;
-}
 
-JNIEnv *getEnv() {
-    JNIEnv *env;
-    cached_jvm->GetEnv((void **) &env, JNI_VERSION_1_2);
-    return env;
+    // initialize collator and its locale
+    strcpy(locale, DEFAULT_COLLATOR_LOCALE);
+    coll = NULL;
+
+    return JNI_VERSION_1_2;
 }
 
 JNIEXPORT void JNICALL
@@ -95,7 +78,6 @@ JNI_OnUnload(JavaVM *jvm, void *reserved)
     if (jvm->GetEnv((void **)&env, JNI_VERSION_1_2)) {
         return;
     }
-    env->DeleteWeakGlobalRef(collatorClass);
     return;
 }
 
@@ -129,7 +111,6 @@ static void initializeCharPriorityMap(void) {
     for (uint8_t c = 'a'; c <= 'z'; c++)
         kCharPriorityCaseInsensitive[c] = kCharPriority[toupper(c)];
 }
-
 
 // Types of values, ordered according to CouchDB collation order (see view_collation.js tests)
 typedef enum {
@@ -181,7 +162,6 @@ static ValueType valueTypeOf(char c) {
             return kIllegal;
     }
 }
-
 
 /**
  * Defining my own digittoint because Android ctype.h doesn't do it for me
@@ -303,60 +283,28 @@ static int compareStringsUnicodeFast(const char** in1, const char** in2) {
     return 0;
 }
 
-static jstring createJavaStringFromJSON(const char** in) {
-    // Scan the JSON string to find its end and whether it contains escapes:
-    const char* start = ++*in;
-    unsigned escapes = 0;
-    const char* str;
-    for (str = start; *str != '"'; ++str) {
-        if (*str == '\\') {
-            ++str;
-            if (*str == 'u') {
-                escapes += 5;  // \uxxxx adds 5 bytes
-                str += 4;
-            } else
-                escapes += 1;
-        }
-    }
-    *in = str + 1;
-    size_t length = str - start;
-    
-    char* buf = NULL;
-    length -= escapes;
-    buf = (char*) malloc(length + 1);
-    char* dst = buf;
-    char c;
-    for (str = start; (c = *str) != '"'; ++str) {
-        if (c == '\\')
-            c = convertEscape(&str);
-        *dst++ = c;
-    }
-    *dst++ = 0; //null terminate
-    start = buf;
-    //LOGV("After stripping escapes string is: %s", start);
-    
-    JNIEnv *env = getEnv();
-    jstring result = env->NewStringUTF(start);
-    if (buf != NULL) {
-        free(buf);
-    }
-    if (result == NULL) {
-        LOGE("Failed to convert to string: start=%p, length=%u", start, length);
-    }
-    return result;
-}
-
 static int compareStringsUnicode(const char** in1, const char** in2) {
     int result = compareStringsUnicodeFast(in1, in2);
     if (result > -2)
         return result;
-    // Fast compare failed, so resort to using NSString:
-    jstring str1 = createJavaStringFromJSON(in1);
-    jstring str2 = createJavaStringFromJSON(in2);
-    JNIEnv *env = getEnv();
-    result = env->CallStaticIntMethod(collatorClass, compareMethod, str1, str2);
-    env->DeleteLocalRef(str1);
-    env->DeleteLocalRef(str2);
+
+    // ICU4C - Collator
+    if(coll == NULL){
+        UErrorCode status = U_ZERO_ERROR; 
+        coll = Collator::createInstance(locale, status);
+        if(!U_SUCCESS(status)) {
+            LOGE("Failed to create Collator instance: locale=%s, status=%d", locale, status);
+            LOGW("Create Collator instance with Locale: %s", DEFAULT_COLLATOR_LOCALE);
+            coll = Collator::createInstance(DEFAULT_COLLATOR_LOCALE, status);
+            if(!U_SUCCESS(status)) {
+                LOGE("Failed to create Collator instance: locale=%s, status=%d", DEFAULT_COLLATOR_LOCALE, status);
+                return 0;
+            }
+
+        }
+    }
+    result = (int)coll->compare(*in1, *in2);
+
     return result;
 }
 
@@ -631,4 +579,32 @@ JNIEXPORT jint JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_testDi
 (JNIEnv *env, jclass clazz, jint digit) {
     int result = digittoint(digit);
     return result;
+}
+
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_setICURoot
+    (JNIEnv *env, jclass clazz, jstring jICURoot)
+{
+    if(jICURoot == NULL) return;
+    char const * ICURootPath = env->GetStringUTFChars(jICURoot, NULL);
+    setenv("CBL_ICU_PREFIX", ICURootPath, 1);
+    env->ReleaseStringUTFChars(jICURoot, ICURootPath);
+}
+
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_setLocale
+    (JNIEnv *env, jclass clazz, jstring jlocale)
+{
+    if(jlocale == NULL) return;
+    char const * localeStr = env->GetStringUTFChars(jlocale, NULL);
+    if(strlen(localeStr) < 256)
+        strcpy(locale, localeStr);
+    env->ReleaseStringUTFChars(jlocale, localeStr);
+}
+
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_releaseICU
+    (JNIEnv *env, jclass clazz)
+{
+    if(coll != NULL){
+        delete coll;
+        coll = NULL;
+    }
 }

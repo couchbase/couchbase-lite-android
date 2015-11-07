@@ -39,6 +39,30 @@ JNIEXPORT jchar JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_testE
 JNIEXPORT jint JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_testDigitToInt
   (JNIEnv *, jclass, jint);
 
+/*
+ * Class:     com_couchbase_lite_android_SQLiteJsonCollator
+ * Method:    setICURoot
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_setICURoot
+        (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     com_couchbase_lite_android_SQLiteJsonCollator
+ * Method:    setLocale
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_setLocale
+        (JNIEnv *, jclass, jstring);
+        
+/*
+ * Class:     com_couchbase_lite_android_SQLiteJsonCollator
+ * Method:    releaseICU
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_android_SQLiteJsonCollator_releaseICU
+        (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
