@@ -293,8 +293,14 @@ static int compareStringsUnicode(const char** in1, const char** in2) {
         UErrorCode status = U_ZERO_ERROR; 
         coll = Collator::createInstance(locale, status);
         if(!U_SUCCESS(status)) {
-            LOGE("Failed to create Collator instance: status=%d", status);
-            return 0;
+            LOGE("Failed to create Collator instance: locale=%s, status=%d", locale, status);
+            LOGW("Create Collator instance with Locale: %s", DEFAULT_COLLATOR_LOCALE);
+            coll = Collator::createInstance(DEFAULT_COLLATOR_LOCALE, status);
+            if(!U_SUCCESS(status)) {
+                LOGE("Failed to create Collator instance: locale=%s, status=%d", DEFAULT_COLLATOR_LOCALE, status);
+                return 0;
+            }
+
         }
     }
     result = (int)coll->compare(*in1, *in2);
