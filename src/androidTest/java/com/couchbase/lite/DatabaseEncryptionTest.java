@@ -32,16 +32,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
-    private static final String TEST_DIR = "encryption";
+    private static final String TEST_ENC_DIR = "encryption";
+    private static final String TEST_NONENC_DIR = "nonencryption";
     private static final String NULL_PASSWORD = null;
     private Manager cryptoManager;
+    private Manager nonCryptoManager;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+
         ManagerOptions options = new ManagerOptions();
         options.setEnableStorageEncryption(true);
-        cryptoManager = new Manager(getTestContext(TEST_DIR, true), options);
+        cryptoManager = new Manager(getTestContext(TEST_ENC_DIR, true), options);
+
+        options = new ManagerOptions();
+        options.setEnableStorageEncryption(false);
+        nonCryptoManager = new Manager(getTestContext(TEST_NONENC_DIR, true),
+                Manager.DEFAULT_OPTIONS);
     }
 
     @Override
@@ -49,6 +57,8 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         super.tearDown();
         if (cryptoManager != null)
             cryptoManager.close();
+        if (nonCryptoManager != null)
+            nonCryptoManager.close();
     }
 
     public void testSymmetricKey() throws Exception {
@@ -111,12 +121,12 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         if (!isAndriod())
             return;
 
-        manager.registerEncryptionKey("123456", "seekrit");
+        nonCryptoManager.registerEncryptionKey("123456", "seekrit");
         Database seekrit = null;
         CouchbaseLiteException error = null;
         try {
             seekrit = null;
-            seekrit = manager.getDatabase("seekrit");
+            seekrit = nonCryptoManager.getDatabase("seekrit");
         } catch (CouchbaseLiteException e) {
             error = e;
         }

@@ -59,6 +59,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected boolean useForestDB = false;
 
+    protected boolean useSQLCipher = false;
+
     protected boolean isSQLiteDB(){
         String name = database.getStore().getClass().getName();
         return Manager.DEFAULT_STORE_CLASSNAME.equals(name);
@@ -79,6 +81,11 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         // Run Unit Test with ForestDBStore
         useForestDB = true;
         super.runBare();
+
+        if (sqlcipherStorageEngineTestsEnabled()) {
+            useSQLCipher = true;
+            super.runBare();
+        }
 
         long end = System.currentTimeMillis();
         String name = getName();
@@ -118,6 +125,10 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         return Boolean.parseBoolean(System.getProperty("syncgatewayTestsEnabled"));
     }
 
+    protected static boolean sqlcipherStorageEngineTestsEnabled() {
+        return Boolean.parseBoolean(System.getProperty("sqlcipherStorageEngineTestsEnabled"));
+    }
+
     protected InputStream getAsset(String name) {
         return this.getClass().getResourceAsStream("/assets/" + name);
     }
@@ -150,14 +161,15 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         Manager.enableLogging(Log.TAG_REMOTE_REQUEST, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_ROUTER, Log.VERBOSE);
 
-        // forestdb
-        if(useForestDB) {
+        if(useForestDB) { // forestdb
             ManagerOptions options = new ManagerOptions();
             options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
             manager = new Manager(context, options);
-        }
-        // SQLite
-        else{
+        } else if (useSQLCipher) { // SQLCipher
+            ManagerOptions options = Manager.DEFAULT_OPTIONS;
+            options.setEnableStorageEncryption(true);
+            manager = new Manager(context, options);
+        } else { // SQLite
             manager = new Manager(context, Manager.DEFAULT_OPTIONS);
         }
     }
