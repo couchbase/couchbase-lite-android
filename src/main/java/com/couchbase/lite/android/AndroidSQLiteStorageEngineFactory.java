@@ -20,7 +20,7 @@ public class AndroidSQLiteStorageEngineFactory implements SQLiteStorageEngineFac
             throws CouchbaseLiteException {
         if (enableEncryption)
             if (hasSQLCipher())
-                return new AndroidSQLCipherStorageEngine();
+                return new AndroidSQLCipherStorageEngine(context);
             else
                 throw new CouchbaseLiteException(
                         "Encryption not availabe (app not built with SQLCipher)",

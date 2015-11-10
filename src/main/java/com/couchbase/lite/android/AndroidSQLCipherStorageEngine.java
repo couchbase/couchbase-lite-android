@@ -17,6 +17,7 @@
 package com.couchbase.lite.android;
 
 import com.couchbase.lite.database.security.Key;
+import com.couchbase.lite.database.sqlite.SQLiteDatabaseConfiguration;
 import com.couchbase.lite.storage.ContentValues;
 import com.couchbase.lite.storage.Cursor;
 import com.couchbase.lite.storage.SQLException;
@@ -25,13 +26,21 @@ import com.couchbase.lite.util.Log;
 
 import com.couchbase.lite.database.sqlite.SQLiteDatabase;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
+import java.util.zip.ZipInputStream;
 
 public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
     private SQLiteDatabase database;
+    private android.content.Context context = null;
+    private String icuDataPath = null;
 
-    public AndroidSQLCipherStorageEngine() {
-        // Do Nothing
+    public AndroidSQLCipherStorageEngine(android.content.Context context) {
+        this.context = context;
     }
 
     @Override
@@ -39,8 +48,14 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
         if(database != null && database.isOpen())
             return true;
         try {
+            if (icuDataPath == null)
+                icuDataPath = loadICU4C();
+            SQLiteDatabaseConfiguration.ICU_DATA_PATH = icuDataPath;
             database = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.CREATE_IF_NECESSARY);
             Log.v(Log.TAG_DATABASE, "%s: Opened Android sqlite db", this);
+        } catch (IOException e) {
+            Log.e(Log.TAG_DATABASE, "Error when loading ICU DAT File", e);
+            throw new SQLException("Error when loading ICU DAT File", e);
         } catch(com.couchbase.lite.database.SQLException e) {
             Log.e(Log.TAG_DATABASE, "Unable to open the SQLite database", e);
             if (database != null)
@@ -48,6 +63,47 @@ public class AndroidSQLCipherStorageEngine implements SQLiteStorageEngine {
             throw new SQLException(e);
         }
         return database.isOpen();
+    }
+
+    private String loadICU4C() throws IOException {
+        if (new File("/system/usr/icu/icudt53l.dat").exists())
+            return "/system/usr";
+        else {
+            File destDir = context.getFilesDir();
+            loadICUData(destDir);
+            return destDir.getAbsolutePath();
+        }
+    }
+
+    private void loadICUData(File destDir) throws IOException {
+        OutputStream out = null;
+        ZipInputStream in = null;
+        File icuDir = new File(destDir, "icu");
+        File icuDataFile = new File(icuDir, "icudt53l.dat");
+        try {
+            if (!icuDir.exists()) icuDir.mkdirs();
+            if (!icuDataFile.exists()) {
+                in = new ZipInputStream(context.getAssets().open("icudt53l.zip"));
+                in.getNextEntry();
+                out =  new FileOutputStream(icuDataFile);
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+        } catch (IOException e) {
+            if (icuDataFile.exists())
+                icuDataFile.delete();
+            throw e;
+        } finally {
+            if (in != null)
+                in.close();
+            if (out != null) {
+                out.flush();
+                out.close();
+            }
+        }
     }
 
     @Override

@@ -242,7 +242,7 @@ public class AndroidSQLiteStorageEngine implements SQLiteStorageEngine {
                     out.close();
                 }
             } catch (IOException ioe){
-                Log.e(TAG, "Error in closing streams IO streams after expanding ICU dat file", ioe);
+                Log.e(TAG, "Error in closing IO streams after expanding ICU dat file", ioe);
                 throw ioe;
             }
         }
