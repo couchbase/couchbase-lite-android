@@ -59,8 +59,7 @@ public class CollationTest extends LiteTestCaseWithDB {
         Assert.assertEquals(-1, SQLiteJsonCollator.testCollateJSONWrapper(mode, "\"~\"", "\"A\""));
         Assert.assertEquals(-1, SQLiteJsonCollator.testCollateJSONWrapper(mode, "\"_\"", "\"A\""));
     }
-
-
+    
     public void testCollateASCII() {
         int mode = kJsonCollator_ASCII;
         Assert.assertEquals(1, SQLiteJsonCollator.testCollateJSONWrapper(mode, "true", "false"));
@@ -108,7 +107,6 @@ public class CollationTest extends LiteTestCaseWithDB {
     }
 
     public void testCollateJapaneseStrings() {
-
         int mode = kJsonCollator_Unicode;
 
         // en_US
@@ -124,13 +122,13 @@ public class CollationTest extends LiteTestCaseWithDB {
             Assert.assertEquals(c.compare("倉", "鞍"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("倉"), encode("鞍")));
             Assert.assertEquals(c.compare("蔵", "鞍"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("蔵"), encode("鞍")));
             Assert.assertEquals(c.compare("蔵", "倉"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("蔵"), encode("倉")));
-        }finally {
+        } finally {
             SQLiteJsonCollator.releaseICU();
             SQLiteJsonCollator.setLocale("en_US");
         }
 
         // ja
-        try{
+        try {
             Collator c1 = Collator.getInstance(new Locale("ja"));
             SQLiteJsonCollator.releaseICU();
             SQLiteJsonCollator.setLocale("ja");
@@ -144,7 +142,7 @@ public class CollationTest extends LiteTestCaseWithDB {
             Assert.assertEquals(c1.compare("倉", "鞍"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("倉"), encode("鞍")));
             Assert.assertEquals(c1.compare("蔵", "鞍"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("蔵"), encode("鞍")));
             Assert.assertEquals(c1.compare("蔵", "倉"), SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("蔵"), encode("倉")));
-        }finally {
+        } finally {
             SQLiteJsonCollator.releaseICU();
             SQLiteJsonCollator.setLocale("en_US");
         }
@@ -156,7 +154,6 @@ public class CollationTest extends LiteTestCaseWithDB {
         // Assert.assertEquals(1, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("�m�"), encode("omo")));
         Assert.assertEquals(-1, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("\t"), encode(" ")));
         Assert.assertEquals(-1, SQLiteJsonCollator.testCollateJSONWrapper(mode, encode("\001"), encode(" ")));
-
     }
 
     public void testConvertEscape() {
@@ -197,5 +194,4 @@ public class CollationTest extends LiteTestCaseWithDB {
         Assert.assertEquals(SQLiteRevCollator.testCollateRevIds("bogus", "yo"), -1);
         Assert.assertEquals(SQLiteRevCollator.testCollateRevIds("bogus-x", "yo-y"), -1);
     }
-
 }
