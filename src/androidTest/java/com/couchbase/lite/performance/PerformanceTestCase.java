@@ -21,6 +21,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.ManagerOptions;
+import com.couchbase.lite.storage.SQLiteNativeLibrary;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
@@ -54,6 +55,12 @@ public class PerformanceTestCase extends LiteTestCase {
         if (testTag != null)
             Manager.enableLogging(testTag, Log.VERBOSE);
 
+        // SQLite native library:
+        String storeClass = getStoreClassName();
+        if (storeClass.endsWith("SQLiteStore")) {
+            setupSQLiteNativeLibrary();
+        }
+
         // Manager:
         Context context = getDefaultTestContext(true);
         ManagerOptions options = new ManagerOptions();
@@ -69,6 +76,18 @@ public class PerformanceTestCase extends LiteTestCase {
 
         // Database:
         startDatabase();
+    }
+
+    protected void setupSQLiteNativeLibrary() {
+        int library = getSQLiteLibrary();
+        if (library == 0)
+            SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.NATIVE_SQLITE_SYSTEM_LIBRARY;
+        else if (library == 1)
+            SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.NATIVE_SQLITE_CUSTOM_LIBRARY;
+        else if (library == 2)
+            SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.NATIVE_SQLCIPHER_LIBRARY;
+        else
+            throw new IllegalArgumentException("Invalid SQLiteDatabase Library : " + library);
     }
 
     @Override
@@ -124,8 +143,12 @@ public class PerformanceTestCase extends LiteTestCase {
         return System.getProperty("storeClassName");
     }
 
+    protected static int getSQLiteLibrary() {
+        return Integer.parseInt(System.getProperty("sqliteLibrary"));
+    }
+
     protected static boolean getEncryptionEnabled() {
-        return Boolean.parseBoolean(System.getProperty("encryptionEnabled"));
+        return getSQLiteLibrary() == 2;
     }
 
     protected static String getEncryptionPassword() {

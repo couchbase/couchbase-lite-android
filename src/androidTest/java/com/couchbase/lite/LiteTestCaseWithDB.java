@@ -11,10 +11,10 @@ import com.couchbase.lite.router.Router;
 import com.couchbase.lite.router.RouterCallbackBlock;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.router.URLStreamHandlerFactory;
+import com.couchbase.lite.storage.SQLiteNativeLibrary;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.util.Log;
-import com.couchbase.lite.util.URIUtils;
 import com.couchbase.lite.util.Utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,6 +45,8 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import javax.crypto.Cipher;
 
 public class LiteTestCaseWithDB extends LiteTestCase {
     public static final String TAG = "LiteTestCaseWithDB";
@@ -103,19 +106,52 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         Log.v(TAG, "setUp");
         super.setUp();
 
+        loadCustomProperties();
+
+        if (!useForestDB)
+            setupSQLiteNativeLibrary();
+
         //for some reason a traditional static initializer causes junit to die
         if (!initializedUrlHandler) {
             URLStreamHandlerFactory.registerSelfIgnoreError();
             initializedUrlHandler = true;
         }
 
-        loadCustomProperties();
         startCBLite();
         startDatabase();
     }
 
+    protected void setupSQLiteNativeLibrary() {
+        int library = getSQLiteLibrary();
+        if (library == 0)
+            SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.NATIVE_SQLITE_SYSTEM_LIBRARY;
+        else if (library == 1)
+            SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.NATIVE_SQLITE_CUSTOM_LIBRARY;
+        else if (library == 2)
+            SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.NATIVE_SQLCIPHER_LIBRARY;
+        else
+            throw new IllegalArgumentException("Invalid Native Library : " + library);
+    }
+
     protected static boolean syncgatewayTestsEnabled() {
         return Boolean.parseBoolean(System.getProperty("syncgatewayTestsEnabled"));
+    }
+
+    protected static int getSQLiteLibrary() {
+        return Integer.parseInt(System.getProperty("sqliteLibrary"));
+    }
+
+    protected boolean isEncryptionTestEnabled() {
+        if (!isAndriod()) {
+            boolean support256Key = false;
+            try {
+                support256Key = Cipher.getMaxAllowedKeyLength("AES") >= 256;
+            } catch (NoSuchAlgorithmException e) { }
+            if (!support256Key)
+                return false;
+        }
+        return isSQLiteDB() &&
+                SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME == SQLiteNativeLibrary.NATIVE_SQLCIPHER_LIBRARY;
     }
 
     protected InputStream getAsset(String name) {
@@ -213,72 +249,17 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         }
     }
 
-    protected String getReplicationProtocol() {
-        return System.getProperty("replicationProtocol");
-    }
-
-    protected String getReplicationServer() {
-        return System.getProperty("replicationServer");
-    }
-
-    protected int getReplicationPort() {
-        return Integer.parseInt(System.getProperty("replicationPort"));
-    }
-
-    protected String getReplicationAdminUser() {
-        return System.getProperty("replicationAdminUser");
-    }
-
-    protected String getReplicationAdminPassword() {
-        return System.getProperty("replicationAdminPassword");
-    }
-
-    protected String getReplicationDatabase() {
-        return System.getProperty("replicationDatabase");
-    }
-
-    protected URL getReplicationURL() {
-        try {
-            if (getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
-                String username = URIUtils.encode(getReplicationAdminUser());
-                String password = URIUtils.encode(getReplicationAdminPassword());
-                return new URL(String.format("%s://%s:%s@%s:%d/%s", getReplicationProtocol(),
-                        username, password, getReplicationServer(),
-                        getReplicationPort(), getReplicationDatabase()));
-            } else {
-                return new URL(String.format("%s://%s:%d/%s", getReplicationProtocol(),
-                        getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
-            }
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    protected URL getReplicationSubURL(String subIndex) {
-        try {
-            if (getReplicationAdminUser() != null && getReplicationAdminUser().trim().length() > 0) {
-                String username = URIUtils.encode(getReplicationAdminUser());
-                String password = URIUtils.encode(getReplicationAdminPassword());
-                return new URL(String.format("%s://%s:%s@%s:%d/%s%s", getReplicationProtocol(),
-                        username, password, getReplicationServer(), getReplicationPort(),
-                        getReplicationDatabase(), subIndex));
-            } else {
-                return new URL(String.format("%s://%s:%d/%s%s", getReplicationProtocol(),
-                        getReplicationServer(), getReplicationPort(),
-                        getReplicationDatabase(), subIndex));
-            }
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(e);
-        }
+    protected URL getReplicationURL() throws MalformedURLException {
+        return new URL(System.getProperty("replicationUrl"));
     }
 
     protected boolean isTestingAgainstSyncGateway() {
-        return getReplicationPort() == 4984;
-    }
-
-    protected URL getReplicationURLWithoutCredentials() throws MalformedURLException {
-        return new URL(String.format("%s://%s:%d/%s", getReplicationProtocol(),
-                getReplicationServer(), getReplicationPort(), getReplicationDatabase()));
+        try {
+            URL url = getReplicationURL();
+            return url.getPort() == 4984;
+        } catch (MalformedURLException e) {
+            return false;
+        }
     }
 
     @Override

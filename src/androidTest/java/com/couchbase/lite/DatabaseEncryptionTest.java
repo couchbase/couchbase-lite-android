@@ -39,6 +39,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+
         ManagerOptions options = new ManagerOptions();
         options.setEnableStorageEncryption(true);
         cryptoManager = new Manager(getTestContext(TEST_DIR, true), options);
@@ -47,11 +48,15 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
+
         if (cryptoManager != null)
             cryptoManager.close();
     }
 
     public void testSymmetricKey() throws Exception {
+        if (!isEncryptionTestEnabled())
+            return;
+
         Database database = cryptoManager.getDatabase("seekrit");
 
         long start = System.currentTimeMillis();
@@ -93,6 +98,9 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testCreateRandomSymmetricKey() throws Exception {
+        if (!isEncryptionTestEnabled())
+            return;
+
         long start = System.currentTimeMillis();
         SymmetricKey key = new SymmetricKey();
         long end = System.currentTimeMillis();
@@ -111,6 +119,9 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         if (!isAndriod())
             return;
 
+        if (isEncryptionTestEnabled())
+            return;
+
         manager.registerEncryptionKey("123456", "seekrit");
         Database seekrit = null;
         CouchbaseLiteException error = null;
@@ -126,7 +137,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testUnEncryptedDB() throws Exception {
-        if (!isSQLiteDB())
+        if (!isEncryptionTestEnabled())
             return;
 
         // Create unencrypted DB:
@@ -156,7 +167,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testEncryptedDB() throws Exception {
-        if (!isSQLiteDB())
+        if (!isEncryptionTestEnabled())
             return;
 
         // Create encrypted DB:
@@ -190,7 +201,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testDeleteEcryptedDB() throws Exception {
-        if (!isSQLiteDB())
+        if (!isEncryptionTestEnabled())
             return;
 
         // Create encrypted DB:
@@ -232,7 +243,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testCompactEncryptedDB() throws Exception {
-        if (!isSQLiteDB())
+        if (!isEncryptionTestEnabled())
             return;
 
         // Create encrypted DB:
@@ -281,7 +292,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testEncryptedAttachments() throws Exception {
-        if (!isSQLiteDB())
+        if (!isEncryptionTestEnabled())
             return;
 
         cryptoManager.registerEncryptionKey("letmein", "seekrit");
@@ -318,7 +329,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testRekey() throws Exception {
-        if (!isSQLiteDB())
+        if (!isEncryptionTestEnabled())
             return;
 
         // First run the encrypted-attachments test to populate the db:

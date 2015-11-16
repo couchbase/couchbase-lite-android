@@ -126,13 +126,10 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         }
     }
 
-    public void testChangeTrackerWithConflictsIncluded() {
-
+    public void testChangeTrackerWithConflictsIncluded() throws Throwable {
         URL testURL = getReplicationURL();
         ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, true, 0, null);
-
         assertEquals("_changes?feed=longpoll&limit=50&heartbeat=300000&style=all_docs&since=0", changeTracker.getChangesFeedPath());
-
     }
 
     public void testChangeTrackerWithFilterURL() throws Throwable {
@@ -154,8 +151,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
 
     }
 
-    public void testChangeTrackerWithDocsIds() {
-
+    public void testChangeTrackerWithDocsIds() throws Exception {
         URL testURL = getReplicationURL();
 
         ChangeTracker changeTrackerDocIds = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, null);
@@ -176,14 +172,12 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         assertEquals(docIds, postBodyMap.get("doc_ids"));
         String postBody = changeTrackerDocIds.changesFeedPOSTBody();
         assertTrue(postBody.contains(docIdsUnencoded));
-
     }
 
     public void testChangeTrackerBackoffExceptions() throws Throwable {
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderThrowExceptionAllRequests();
         testChangeTrackerBackoff(mockHttpClient);
-
     }
 
     public void testChangeTrackerBackoffInvalidJson() throws Throwable {

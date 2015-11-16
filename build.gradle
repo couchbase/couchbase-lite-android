@@ -44,13 +44,6 @@ android {
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/NOTICE'
     }
-
-    sourceSets {
-        main {
-            jni.srcDirs = []
-            jniLibs.srcDir file('jniLibs')
-        }
-    }
 }
 
 def buildAndroidWithArtifacts = System.getProperty("buildAndroidWithArtifacts")
@@ -64,11 +57,20 @@ dependencies {
             project(':libraries:couchbase-lite-java-forestdb') :
             'com.couchbase.lite:couchbase-lite-java-forestdb:' + version
 
+    // SQLite library options: sqlite-system, sqlite, sqlcipher.
     compile buildAndroidWithArtifacts == null ?
-            project(':libraries:couchbase-lite-java-sqlcipher') :
-            'com.couchbase.lite:couchbase-lite-java-sqlcipher:' + version
+            project(':libraries:couchbase-lite-java-native:sqlite-system') :
+            'com.couchbase.lite:couchbase-lite-java-native-sqlite-system' + version
 
     // Libraries required for tests only:
+    //androidTestCompile buildAndroidWithArtifacts == null ?
+    //        project(':libraries:couchbase-lite-java-native:sqlite') :
+    //        'com.couchbase.lite:couchbase-lite-java-native-sqlite' + version
+
+    //androidTestCompile buildAndroidWithArtifacts == null ?
+    //        project(':libraries:couchbase-lite-java-native:sqlcipher') :
+    //        'com.couchbase.lite:couchbase-lite-java-native-sqlcipher' + version
+
     androidTestCompile 'commons-io:commons-io:2.0.1'
     androidTestCompile 'com.squareup.okhttp:mockwebserver:2.0.0'
 }

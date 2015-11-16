@@ -664,7 +664,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         sendBody("POST", "/db/_revs_diff", revsDiffRequest, Status.OK, revsDiffResponse);
     }
 
-    public void testFacebookToken() {
+    public void testFacebookToken() throws Exception {
         send("PUT", "/db", Status.CREATED, null);
 
         Map<String, Object> doc1 = new HashMap<String, Object>();

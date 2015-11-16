@@ -11,7 +11,7 @@ public class ChangesTest extends LiteTestCaseWithDB {
 
     private int changeNotifications = 0;
 
-    public void testChangeNotification() throws CouchbaseLiteException {
+    public void testChangeNotification() throws Exception {
         changeNotifications = 0;
 
         Database.ChangeListener changeListener = new Database.ChangeListener() {
@@ -39,7 +39,7 @@ public class ChangesTest extends LiteTestCaseWithDB {
         assertEquals(1, changeNotifications);
     }
 
-    public void testLocalChangesAreNotExternal() throws CouchbaseLiteException {
+    public void testLocalChangesAreNotExternal() throws Exception {
         changeNotifications = 0;
         Database.ChangeListener changeListener = new Database.ChangeListener() {
             @Override
@@ -58,7 +58,7 @@ public class ChangesTest extends LiteTestCaseWithDB {
         assertEquals(1, changeNotifications);
     }
 
-    public void testPulledChangesAreExternal() throws CouchbaseLiteException {
+    public void testPulledChangesAreExternal() throws Exception {
         changeNotifications = 0;
         Database.ChangeListener changeListener = new Database.ChangeListener() {
             @Override
