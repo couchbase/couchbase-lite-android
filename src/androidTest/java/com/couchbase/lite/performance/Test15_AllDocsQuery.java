@@ -77,7 +77,8 @@ public class Test15_AllDocsQuery extends PerformanceTestCase {
         QueryEnumerator rowEnum = query.run();
         while (rowEnum.hasNext()) {
             QueryRow row = rowEnum.next();
-            assertNotNull(row.getDocument());
+            assertNotNull(row.getDocumentId());
+            assertNotNull(row.getDocumentRevisionId());
         }
         long end = System.currentTimeMillis();
         logPerformanceStats((end - start), getNumberOfDocuments() + ", " + getSizeOfDocument());
