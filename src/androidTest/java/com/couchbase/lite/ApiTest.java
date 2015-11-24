@@ -1189,4 +1189,47 @@ public class ApiTest extends LiteTestCaseWithDB {
         assertEquals(numberOfDocuments * numberOfUpdates, numDocsUpdated.get());
         assertEquals(0, numExceptions.get());
     }
+
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/685#issuecomment-158917064
+     */
+    public void testRevPruning() throws IOException, CouchbaseLiteException {
+        final int DOC_COUNT = 10;
+        final int REV_COUNT = 20;
+        final int MAX_REV_TREE_DEPTH = 10;
+
+        database.setMaxRevTreeDepth(MAX_REV_TREE_DEPTH);
+
+        for (int j = 0; j < DOC_COUNT; j++) {
+            final Document document = database.createDocument();
+            for (int i = 0; i < REV_COUNT; i++) {
+                final String value = "rev " + i;
+                document.update(new Document.DocumentUpdater() {
+                    @Override
+                    public boolean update(final UnsavedRevision newRevision) {
+                        newRevision.getProperties().put("key", value);
+                        return true;
+                    }
+                });
+            }
+
+            // ForestDBStore, each revision insertion checks maxRevTreeDepth.
+            if(isUseForestDB())
+                assertEquals(MAX_REV_TREE_DEPTH, document.getRevisionHistory().size());
+            // SQLiteStore, revision inserstion does not check maxRevTreeDepth.
+            else
+                assertEquals(REV_COUNT, document.getRevisionHistory().size());
+        }
+
+        database.compact();
+
+        Query query = database.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.ALL_DOCS);
+        QueryEnumerator rowEnum = query.run();
+        while (rowEnum.hasNext()) {
+            QueryRow row = rowEnum.next();
+            assertEquals(MAX_REV_TREE_DEPTH, row.getDocument().getRevisionHistory().size());
+        }
+    }
 }

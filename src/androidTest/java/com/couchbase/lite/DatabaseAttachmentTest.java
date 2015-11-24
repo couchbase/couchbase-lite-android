@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,7 +45,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
-public class AttachmentsTest extends LiteTestCaseWithDB {
+/**
+ * Tests ported from DatabaseAttachment_Tests.m
+ */
+public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "Attachments";
 
@@ -58,13 +62,13 @@ public class AttachmentsTest extends LiteTestCaseWithDB {
         Assert.assertEquals(0, attachments.count());
         Assert.assertEquals(new HashSet<Object>(), attachments.allKeys());
 
+        // Add a revision and an attachment to it:
         Status status = new Status(Status.OK);
         byte[] attach1 = "This is the body of attach1".getBytes();
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("foo", 1);
         props.put("bar", false);
         props.put("_attachments", getAttachmentsDict(attach1, "attach", "text/plain", false));
-
         RevisionInternal rev1 = database.putRevision(new RevisionInternal(props), null, false, status);
         Assert.assertEquals(Status.CREATED, status.getCode());
 
@@ -75,6 +79,7 @@ public class AttachmentsTest extends LiteTestCaseWithDB {
         Assert.assertEquals("text/plain", att.getContentType());
         Assert.assertEquals(AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone, att.getEncoding());
 
+        // Check the attachment dict:
         Map<String, Object> itemDict = new HashMap<String, Object>();
         itemDict.put("content_type", "text/plain");
         itemDict.put("digest", "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
@@ -165,6 +170,28 @@ public class AttachmentsTest extends LiteTestCaseWithDB {
         Set<BlobKey> expected2 = new HashSet<BlobKey>();
         expected2.add(BlobStore.keyForBlob(attach2));
         Assert.assertEquals(expected2, attachments.allKeys());
+    }
+
+    /**
+     * - (void) test13_GarbageCollectAttachments
+     */
+    public void test13_GarbageCollectAttachments() throws CouchbaseLiteException{
+        List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
+        for(int i = 0; i < 100; i++)
+            revs.add(this.putDocWithAttachment(String.format("doc-%d", i), String.format("Attachment #%d", i), false));
+        for (int i = 0; i < 40; i++) {
+            revs.set(i,
+                    database.updateAttachment(
+                            "attach",
+                            null,
+                            null,
+                            AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone,
+                            revs.get(i).getDocID(),
+                            revs.get(i).getRevID(),
+                            null));
+        }
+        database.compact();
+        assertEquals(60, database.getAttachmentStore().count());
     }
 
     /**
@@ -515,9 +542,7 @@ public class AttachmentsTest extends LiteTestCaseWithDB {
             String attachmentDataRetrievedString = new String(attachmentDataRetrieved);
             String attachBodyString = new String(attachBodyBytes);
             assertEquals(attachBodyString, attachmentDataRetrievedString);
-
         }
-
     }
 
     /**

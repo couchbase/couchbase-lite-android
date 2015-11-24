@@ -27,7 +27,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         Document doc = createDocumentWithProperties(database, properties);
         SavedRevision rev = doc.getCurrentRevision();
 
-        database.setMaxRevTreeDepth(1);
+        database.setMaxRevTreeDepth(2);
         for (int i = 0; i < 10; i++) {
             Map<String, Object> properties2 = new HashMap<String, Object>(properties);
             properties2.put("tag", i);
@@ -38,7 +38,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         Document fetchedDoc = database.getDocument(doc.getId());
         List<SavedRevision> revisions = fetchedDoc.getRevisionHistory();
-        assertEquals(1, revisions.size());
+        assertEquals(2, revisions.size());
     }
 
     /**
