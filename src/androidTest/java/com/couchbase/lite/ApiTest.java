@@ -1189,4 +1189,40 @@ public class ApiTest extends LiteTestCaseWithDB {
         assertEquals(numberOfDocuments * numberOfUpdates, numDocsUpdated.get());
         assertEquals(0, numExceptions.get());
     }
+
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-android/issues/685#issuecomment-158917064
+     */
+    public void testRevPruning() throws IOException, CouchbaseLiteException {
+        final int DOC_COUNT = 2;//10;
+        final int REV_COUNT = 20;
+        final int MAX_REV_TREE_DEPTH = 10;
+
+        database.setMaxRevTreeDepth(MAX_REV_TREE_DEPTH);
+
+        for (int j = 0; j < DOC_COUNT; j++) {
+            final Document document = database.createDocument();
+            for (int i = 0; i < REV_COUNT; i++) {
+                final String value = "rev " + i;
+                document.update(new Document.DocumentUpdater() {
+                    @Override
+                    public boolean update(final UnsavedRevision newRevision) {
+                        newRevision.getProperties().put("key", value);
+                        return true;
+                    }
+                });
+            }
+
+            assertEquals(REV_COUNT, document.getRevisionHistory().size());
+        }
+
+        database.compact();
+
+        final Map<String, Object> allDocs = database.getAllDocs(new QueryOptions());
+        final ArrayList<QueryRow> rows = (ArrayList) allDocs.get("rows");
+        for (final QueryRow row : rows) {
+            assertEquals(MAX_REV_TREE_DEPTH, row.getDocument().getRevisionHistory().size()); // fails with size REV_COUNT
+        }
+    }
 }
