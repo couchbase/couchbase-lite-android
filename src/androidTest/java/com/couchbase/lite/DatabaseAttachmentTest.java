@@ -956,7 +956,7 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
         assertTrue(Arrays.equals(bytes, receivedBytes));
     }
 
-    public RevisionInternal putDocWithAttachment(String docID, String attachmentText, boolean compress) throws CouchbaseLiteException {
+    private RevisionInternal putDocWithAttachment(String docID, String attachmentText, boolean compress) throws CouchbaseLiteException {
         byte[] attachmentData = attachmentText.getBytes();
         String encoding = null;
         int length = 0;
