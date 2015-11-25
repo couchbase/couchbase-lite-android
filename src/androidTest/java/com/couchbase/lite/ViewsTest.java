@@ -19,6 +19,8 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.View.TDViewCollation;
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.store.Store;
+import com.couchbase.lite.store.StoreDelegate;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -2498,5 +2500,108 @@ public class ViewsTest extends LiteTestCaseWithDB {
             QueryRow row = it.next();
             Log.i("deleteIndexTest", (String) row.getValue());
         }
+    }
+
+    /**
+     * View update skips winning revisions
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/709
+     */
+    public void testViewUpdateSkipsWinningRevisions() throws CouchbaseLiteException{
+
+        // seq  | doc_id | revid | parent | current | deleted
+        // -----+--------+-------+--------+---------+--------
+        // 2753 | 172    | 1-6b  | NULL   | 0       | 0
+        // 2754 | 172    | 2-1a  | 2753   | 0       | 0
+        // 2761 | 172    | 3-d7  | 2754   | 0       | 0
+        // 2763 | 172    | 3-06  | 2754   | 1       | 0
+        // 2764 | 172    | 4-80  | 2761   | 1       | 1
+
+        // create view
+        View view = createView(database);
+
+        // crete doc
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("_id", "172");
+        props.put("key", "1");
+        RevisionInternal rev1 = new RevisionInternal(props);
+        RevisionInternal leaf1 = database.putRevision(rev1, null, false);
+        Log.e(TAG, String.format("leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
+
+        // Need to override StoreDelegate to control revision ID for generation 2-.
+        Store store = database.getStore();
+        StoreDelegate delegate = store.getDelegate();
+
+        // set Revision ID "2-0002"
+        store.setDelegate(new StoreDelegate() {
+            @Override
+            public void storageExitedTransaction(boolean committed) {
+            }
+            @Override
+            public void databaseStorageChanged(DocumentChange change) {
+            }
+            @Override
+            public String generateRevID(byte[] json, boolean deleted, String prevRevID) {
+                return "2-0002";
+            }
+            @Override
+            public boolean runFilter(ReplicationFilter filter, Map<String, Object> filterParams, RevisionInternal rev) {
+                return false;
+            }
+        });
+
+        // create conflicts rev2a and rev2b
+        props.put("_rev", leaf1.getRevID());
+        props.put("key", "2a");
+        RevisionInternal rev2a = new RevisionInternal(props);
+        RevisionInternal leaf2a = database.putRevision(rev2a, leaf1.getRevID(), true);
+        Log.e(TAG, String.format("leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
+
+        // set Revision ID "2-0001" which is same generation but lower revision ID than previous one
+        store.setDelegate(new StoreDelegate() {
+            @Override
+            public void storageExitedTransaction(boolean committed) {
+            }
+            @Override
+            public void databaseStorageChanged(DocumentChange change) {
+            }
+            @Override
+            public String generateRevID(byte[] json, boolean deleted, String prevRevID) {
+                return "2-0001";
+            }
+            @Override
+            public boolean runFilter(ReplicationFilter filter, Map<String, Object> filterParams, RevisionInternal rev) {
+                return false;
+            }
+        });
+
+        props.put("key", "2b");
+        RevisionInternal rev2b = new RevisionInternal(props);
+        RevisionInternal leaf2b = database.putRevision(rev2b, leaf1.getRevID(), true);
+        Log.e(TAG, String.format("leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
+
+        store.setDelegate(delegate);
+
+        // make sure which rev wins
+        RevisionInternal winning = leaf2a.getRevID().compareTo(leaf2b.getRevID()) > 0 ? leaf2a : leaf2b; // Should be leaf2a
+        RevisionInternal looser = leaf2a.getRevID().compareTo(leaf2b.getRevID()) < 0 ? leaf2a : leaf2b; // Should be leaf2b
+        assertEquals(leaf2a.getRevID(), winning.getRevID());
+        assertEquals(leaf2b.getRevID(), looser.getRevID());
+
+        // update index
+        view.updateIndex();
+        List<QueryRow> rows = view.query(null);
+        Log.e(TAG, rows.toString());
+        assertEquals(winning.getProperties().get("key"), rows.get(0).getKey());
+
+        // Delete winning rev
+        RevisionInternal leaf3 = new RevisionInternal("172", null, true);
+        leaf3 = database.putRevision(leaf3, winning.getRevID(), true);
+        Log.e(TAG, String.format("leaf3: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3.getSequence(), leaf3.getDocID(), leaf3.getRevID(), leaf3.isDeleted() ? "true" : "false"));
+
+        // update index
+        view.updateIndex();
+        rows = view.query(null);
+        Log.e(TAG, rows.toString());
+        assertEquals(looser.getProperties().get("key"), rows.get(0).getKey());
     }
 }
