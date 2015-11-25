@@ -1667,7 +1667,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         }
     }
 
-    public void testServerIsSyncGatewayVersion() {
+    public void testServerIsSyncGatewayVersion() throws Exception {
         Replication pusher = database.createPushReplication(getReplicationURL());
         assertFalse(pusher.serverIsSyncGatewayVersion("0.01"));
         pusher.setServerType("Couchbase Sync Gateway/0.93");
