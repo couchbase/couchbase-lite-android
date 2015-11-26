@@ -150,8 +150,9 @@ public class LiteTestCaseWithDB extends LiteTestCase {
             if (!support256Key)
                 return false;
         }
-        return isSQLiteDB() &&
-                SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME == SQLiteNativeLibrary.JNI_SQLCIPHER_LIBRARY;
+
+        return !isSQLiteDB() ||
+                (isSQLiteDB() && SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME == SQLiteNativeLibrary.JNI_SQLCIPHER_LIBRARY);
     }
 
     protected InputStream getAsset(String name) {
@@ -164,13 +165,12 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected Context getTestContext(String dirName, boolean deleteContent) {
         Context context = getTestContext(dirName);
-        if (deleteContent)
-            FileDirUtils.cleanDirectory(context.getFilesDir());
+        if (deleteContent && context.getFilesDir().exists())
+            assertTrue(FileDirUtils.cleanDirectory(context.getFilesDir()));
         return context;
     }
 
     protected void startCBLite() throws IOException {
-        Context context = getDefaultTestContext(true);
         Manager.enableLogging(TAG, Log.VERBOSE);
         Manager.enableLogging(Log.TAG, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_SYNC, Log.VERBOSE);
@@ -186,16 +186,15 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         Manager.enableLogging(Log.TAG_REMOTE_REQUEST, Log.VERBOSE);
         Manager.enableLogging(Log.TAG_ROUTER, Log.VERBOSE);
 
-        // forestdb
-        if(useForestDB) {
-            ManagerOptions options = new ManagerOptions();
+        Context context = getDefaultTestContext(true);
+        manager = createManager(context);
+    }
+
+    protected Manager createManager(Context context) throws IOException {
+        ManagerOptions options = new ManagerOptions();
+        if(useForestDB)
             options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
-            manager = new Manager(context, options);
-        }
-        // SQLite
-        else{
-            manager = new Manager(context, Manager.DEFAULT_OPTIONS);
-        }
+        return new Manager(context, options);
     }
 
     protected void stopCBLite() {
