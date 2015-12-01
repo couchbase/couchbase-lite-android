@@ -39,10 +39,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-
-        ManagerOptions options = new ManagerOptions();
-        options.setEnableStorageEncryption(true);
-        cryptoManager = new Manager(getTestContext(TEST_DIR, true), options);
+        cryptoManager = createManager(getTestContext(TEST_DIR, true));
     }
 
     @Override
@@ -145,10 +142,12 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("answer", "42");
         createDocumentWithProperties(seekrit, properties);
+
+        // Close DB:
         Assert.assertTrue(seekrit.close());
 
-        // Try to reopen with password (fails):
-        cryptoManager.registerEncryptionKey("wrong", "seekrit");
+        // Try to reopen with a password which should be failed:
+        cryptoManager.registerEncryptionKey("letmein", "seekrit");
         CouchbaseLiteException error = null;
         try {
             seekrit = null;
