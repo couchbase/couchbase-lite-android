@@ -1401,6 +1401,9 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             runReplication(pullReplication);
             assertNull(pullReplication.getLastError());
 
+            // With the faster device, stop event is fired before mock server receive request.
+            try { Thread.sleep(1000); } catch (Exception ex) { }
+
             // assertions about outgoing requests
             RecordedRequest changesRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
             assertNotNull(changesRequest);
