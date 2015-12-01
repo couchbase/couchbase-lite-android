@@ -17,10 +17,13 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.store.EncryptableStore;
+import com.couchbase.lite.store.Store;
 import com.couchbase.lite.support.security.SymmetricKey;
 import com.couchbase.lite.util.ArrayUtils;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
+import com.couchbase.lite.util.Utils;
 
 import junit.framework.Assert;
 
@@ -106,6 +109,25 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Assert.assertNotNull(keyData);
         Assert.assertEquals(32, keyData.length);
         Log.i(TAG, "Key = " + key);
+    }
+
+    public void testKeyDerivation() throws Exception {
+        if (!isEncryptionTestEnabled())
+            return;
+
+        Store store = database.getStore();
+        if (store instanceof EncryptableStore) {
+            EncryptableStore ens = (EncryptableStore)store;
+            final byte[] salt =  "Salty McNaCl".getBytes();
+            final int rounds = 64000;
+
+            byte[] result = ens.derivePBKDF2SHA256Key("letmein", salt, rounds);
+            Assert.assertNotNull(result);
+            String hexData = Utils.bytesToHex(result);
+            Assert.assertEquals("6a9bd780221f4fe8a594fc728a94ba633b882983fe5613db427bb61242bfef0f",
+                    hexData);
+        } else
+            Assert.fail("No encryptable store");
     }
 
     public void testEncryptionFailsGracefully() throws Exception {
