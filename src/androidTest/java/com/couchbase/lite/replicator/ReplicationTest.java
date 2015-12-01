@@ -3275,8 +3275,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
     /**
      * Spotted in https://github.com/couchbase/couchbase-lite-java-core/issues/313
      * But there is another ticket that is linked off 313
-     * <p/>
-     * TODO: This test fails because of Batcher is not implemented correct.
      */
     public void testMockPullBulkDocsSyncGw() throws Exception {
         mockPullBulkDocs(MockDispatcher.ServerType.SYNC_GW);
@@ -3285,8 +3283,10 @@ public class ReplicationTest extends LiteTestCaseWithDB {
     public void mockPullBulkDocs(MockDispatcher.ServerType serverType) throws Exception {
 
         // set INBOX_CAPACITY to a smaller value so that processing times don't skew the test
-        int previous = ReplicationInternal.INBOX_CAPACITY;
+        int defaultCapacity = ReplicationInternal.INBOX_CAPACITY;
         ReplicationInternal.INBOX_CAPACITY = 10;
+        int defaultDelay = ReplicationInternal.PROCESSOR_DELAY;
+        ReplicationInternal.PROCESSOR_DELAY = ReplicationInternal.PROCESSOR_DELAY * 10;
 
         // serve 25 mock docs
         int numMockDocsToServe = (ReplicationInternal.INBOX_CAPACITY * 2) + (ReplicationInternal.INBOX_CAPACITY / 2);
@@ -3360,8 +3360,9 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 first = false;
             }
         }finally {
+            ReplicationInternal.INBOX_CAPACITY = defaultCapacity;
+            ReplicationInternal.PROCESSOR_DELAY = defaultDelay;
             server.shutdown();
-            ReplicationInternal.INBOX_CAPACITY = previous;
         }
     }
 
