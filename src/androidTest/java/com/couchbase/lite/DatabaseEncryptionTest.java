@@ -36,7 +36,9 @@ import java.util.Map;
 
 public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     private static final String TEST_DIR = "encryption";
+    private static final String SEEKRIT_DB_NAME = "seekrit";
     private static final String NULL_PASSWORD = null;
+    private static final boolean USE_OPENDATABASE_API = true;
     private Manager cryptoManager;
 
     @Override
@@ -53,11 +55,23 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
             cryptoManager.close();
     }
 
+    private Database openSeekritDatabase(Object key) throws CouchbaseLiteException {
+        if (USE_OPENDATABASE_API) {
+            DatabaseOptions options = new DatabaseOptions();
+            options.setCreate(true);
+            options.setEncryptionKey(key);
+            return cryptoManager.openDatabase(SEEKRIT_DB_NAME, options);
+        } else {
+            cryptoManager.registerEncryptionKey(key, SEEKRIT_DB_NAME);
+            return cryptoManager.getDatabase(SEEKRIT_DB_NAME);
+        }
+    }
+
     public void testSymmetricKey() throws Exception {
         if (!isEncryptionTestEnabled())
             return;
 
-        Database database = cryptoManager.getDatabase("seekrit");
+        Database database = openSeekritDatabase(null);
 
         long start = System.currentTimeMillis();
         SymmetricKey key = database.createSymmetricKey("letmein123456");
@@ -131,22 +145,13 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
     }
 
     public void testEncryptionFailsGracefully() throws Exception {
-        if (!isSQLiteDB())
-            return;
-
-        // Disable the test for couchbase-lite-java as couchbase-lite-java has SQLCipher by default:
-        if (!isAndriod())
-            return;
-
         if (isEncryptionTestEnabled())
             return;
 
-        manager.registerEncryptionKey("123456", "seekrit");
         Database seekrit = null;
         CouchbaseLiteException error = null;
         try {
-            seekrit = null;
-            seekrit = manager.getDatabase("seekrit");
+            seekrit = openSeekritDatabase("123456");
         } catch (CouchbaseLiteException e) {
             error = e;
         }
@@ -160,7 +165,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
             return;
 
         // Create unencrypted DB:
-        Database seekrit = cryptoManager.getDatabase("seekrit");
+        Database seekrit = openSeekritDatabase(null);
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("answer", "42");
         createDocumentWithProperties(seekrit, properties);
@@ -169,11 +174,10 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Assert.assertTrue(seekrit.close());
 
         // Try to reopen with a password which should be failed:
-        cryptoManager.registerEncryptionKey("letmein", "seekrit");
         CouchbaseLiteException error = null;
         try {
             seekrit = null;
-            seekrit = cryptoManager.getDatabase("seekrit");
+            seekrit = openSeekritDatabase("letmein");
         } catch (CouchbaseLiteException e) {
             error = e;
         }
@@ -182,8 +186,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Assert.assertNull(seekrit);
 
         // Reopen with no password:
-        cryptoManager.registerEncryptionKey(NULL_PASSWORD, "seekrit");
-        seekrit = cryptoManager.getDatabase("seekrit");
+        seekrit = openSeekritDatabase(NULL_PASSWORD);
         Assert.assertNotNull(seekrit);
     }
 
@@ -192,8 +195,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
             return;
 
         // Create encrypted DB:
-        cryptoManager.registerEncryptionKey("123456", "seekrit");
-        Database seekrit = cryptoManager.getDatabase("seekrit");
+        Database seekrit = openSeekritDatabase("123456");
         Assert.assertNotNull(seekrit);
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("answer", "42");
@@ -201,11 +203,10 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Assert.assertTrue(seekrit.close());
 
         // Try to reopen without the password (fails):
-        cryptoManager.registerEncryptionKey(NULL_PASSWORD, "seekrit");
         CouchbaseLiteException error = null;
         try {
             seekrit = null;
-            seekrit = cryptoManager.getDatabase("seekrit");
+            seekrit = openSeekritDatabase(NULL_PASSWORD);
         } catch (CouchbaseLiteException e) {
             error = e;
         }
@@ -214,8 +215,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Assert.assertNull(seekrit);
 
         // Reopen with correct password:
-        cryptoManager.registerEncryptionKey("123456", "seekrit");
-        seekrit = cryptoManager.getDatabase("seekrit");
+        seekrit = openSeekritDatabase("123456");
         Assert.assertNotNull(seekrit);
         Assert.assertEquals(1, seekrit.getDocumentCount());
         Assert.assertTrue(seekrit.close());
@@ -226,8 +226,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
             return;
 
         // Create encrypted DB:
-        cryptoManager.registerEncryptionKey("letmein", "seekrit");
-        Database seekrit = cryptoManager.getDatabase("seekrit");
+        Database seekrit = openSeekritDatabase("letmein");
         Assert.assertNotNull(seekrit);
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("answer", "42");
@@ -237,24 +236,22 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         seekrit.delete();
 
         // Re-create database:
-        seekrit = cryptoManager.getDatabase("seekrit");
+        seekrit = openSeekritDatabase(null);
         Assert.assertNotNull(seekrit);
         Assert.assertEquals(0, seekrit.getDocumentCount());
         Assert.assertTrue(seekrit.close());
 
         // Make sure it doesn't need a password now:
-        cryptoManager.registerEncryptionKey(NULL_PASSWORD, "seekrit");
-        seekrit = cryptoManager.getDatabase("seekrit");
+        seekrit = openSeekritDatabase(NULL_PASSWORD);
         Assert.assertNotNull(seekrit);
         Assert.assertEquals(0, seekrit.getDocumentCount());
         Assert.assertTrue(seekrit.close());
 
         // Make sure old password doesn't work:
-        cryptoManager.registerEncryptionKey("letmein", "seekrit");
         CouchbaseLiteException error = null;
         try {
             seekrit = null;
-            seekrit = cryptoManager.getDatabase("seekrit");
+            seekrit = openSeekritDatabase("letmein");
         } catch (CouchbaseLiteException e) {
             error = e;
         }
@@ -268,8 +265,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
             return;
 
         // Create encrypted DB:
-        cryptoManager.registerEncryptionKey("letmein", "seekrit");
-        Database seekrit = cryptoManager.getDatabase("seekrit");
+        Database seekrit = openSeekritDatabase("letmein");
         Assert.assertNotNull(seekrit);
 
         // Create a doc and then update it:
@@ -304,10 +300,10 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
 
         // Close and then reopen the database:
         Assert.assertTrue(seekrit.close());
-        // Reregister the encryption key:
-        cryptoManager.registerEncryptionKey("letmein", "seekrit");
+
         // Reopen the database:
-        seekrit = cryptoManager.getDatabase("seekrit");
+        seekrit = null;
+        seekrit = openSeekritDatabase("letmein");
         Assert.assertNotNull(seekrit);
         Assert.assertEquals(1, seekrit.getDocumentCount());
     }
@@ -316,8 +312,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         if (!isEncryptionTestEnabled())
             return;
 
-        cryptoManager.registerEncryptionKey("letmein", "seekrit");
-        Database seekrit = cryptoManager.getDatabase("seekrit");
+        Database seekrit = openSeekritDatabase("letmein");
         Assert.assertNotNull(seekrit);
 
         // Save a doc with an attachment:
@@ -356,7 +351,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         // First run the encrypted-attachments test to populate the db:
         testEncryptedAttachments();
         
-        Database seekrit = cryptoManager.getDatabase("seekrit");
+        Database seekrit = openSeekritDatabase("letmein");
         seekrit.changeEncryptionKey("letmeout");
 
         // Close & reopen seekrit:
@@ -365,7 +360,7 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         seekrit = null;
 
         cryptoManager.registerEncryptionKey("letmeout", "seekrit");
-        Database seekrit2 = cryptoManager.getDatabase("seekrit");
+        Database seekrit2 = openSeekritDatabase("letmeout");
         Assert.assertNotNull(seekrit2);
         seekrit = seekrit2;
 

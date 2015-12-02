@@ -56,17 +56,16 @@ public class PerformanceTestCase extends LiteTestCase {
             Manager.enableLogging(testTag, Log.VERBOSE);
 
         // SQLite native library:
-        String storeClass = getStoreClassName();
-        if (storeClass.endsWith("SQLiteStore")) {
+        String storageType = getStorageType();
+        if (Manager.SQLITE_STORAGE.equals(storageType)) {
             setupSQLiteNativeLibrary();
         }
 
         // Manager:
         Context context = getDefaultTestContext(true);
         ManagerOptions options = new ManagerOptions();
-        options.setStoreClassName(getStoreClassName());
-        options.setEnableStorageEncryption(getEncryptionEnabled());
         manager = new Manager(context, options);
+        manager.setStorageType(getStorageType());
 
         // Encryption:
         if (getEncryptionEnabled()) {
@@ -139,8 +138,8 @@ public class PerformanceTestCase extends LiteTestCase {
         return Boolean.parseBoolean(System.getProperty("enabled"));
     }
 
-    protected static String getStoreClassName() {
-        return System.getProperty("storeClassName");
+    protected static String getStorageType() {
+        return System.getProperty("storageType");
     }
 
     protected static int getSQLiteLibrary() {

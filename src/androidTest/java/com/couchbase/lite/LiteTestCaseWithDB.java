@@ -12,6 +12,7 @@ import com.couchbase.lite.router.RouterCallbackBlock;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.router.URLStreamHandlerFactory;
 import com.couchbase.lite.storage.SQLiteNativeLibrary;
+import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.util.Log;
@@ -63,9 +64,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected boolean useForestDB = false;
 
-    protected boolean isSQLiteDB(){
-        String name = database.getStore().getClass().getName();
-        return Manager.DEFAULT_STORE_CLASSNAME.equals(name);
+    protected boolean isSQLiteDB() {
+        return SQLiteStore.class.equals(database.getStore().getClass());
     }
 
     protected boolean isUseForestDB() {
@@ -193,9 +193,10 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected Manager createManager(Context context) throws IOException {
         ManagerOptions options = new ManagerOptions();
-        if(useForestDB)
-            options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
-        return new Manager(context, options);
+        Manager manager = new Manager(context, options);
+        if (useForestDB)
+            manager.setStorageType(Manager.FORESTDB_STORAGE);
+        return manager;
     }
 
     protected void stopCBLite() {
