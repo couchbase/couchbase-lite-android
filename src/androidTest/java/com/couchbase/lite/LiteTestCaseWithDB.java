@@ -45,6 +45,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.crypto.Cipher;
 
@@ -595,15 +596,21 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         return doc1Id;
     }
 
+    // timeout - second
     public void runReplication(Replication replication) throws Exception {
+        runReplication(replication, 120);
+    }
+
+    // timeout - second
+    public void runReplication(Replication replication, long timeout) throws Exception {
         final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
         replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
         replication.start();
-        boolean success = replicationDoneSignal.await(120, TimeUnit.SECONDS);
+        boolean success = replicationDoneSignal.await(timeout, TimeUnit.SECONDS);
         assertTrue(success);
     }
 
-    public void waitForPutCheckpointRequestWithSeq(MockDispatcher dispatcher, int seq) {
+    public void waitForPutCheckpointRequestWithSeq(MockDispatcher dispatcher, int seq) throws TimeoutException {
         while (true) {
             RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
             if (request.getMethod().equals("PUT")) {
@@ -619,7 +626,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected List<RecordedRequest> waitForPutCheckpointRequestWithSequence(MockDispatcher dispatcher,
                                                                             int expectedLastSequence)
-            throws IOException {
+            throws IOException, TimeoutException {
 
         Log.d(TAG, "Wait for PUT checkpoint request with lastSequence: %s", expectedLastSequence);
 

@@ -10,6 +10,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Custom dispatcher which allows to queue up MockResponse objects
@@ -77,7 +79,7 @@ public class MockDispatcher extends Dispatcher {
                 if (!responseQueue.isEmpty()) {
                     SmartMockResponse smartMockResponse = null;
                     synchronized (lockResponseQueue) {
-                        smartMockResponse = responseQueue.take();
+                        smartMockResponse = responseQueue.take(); // as checked isEmpty() before, chance of blocking is low....
                         if (smartMockResponse.isSticky()) {
                             responseQueue.put(smartMockResponse); // if it's sticky, put it back in queue
                         }
@@ -143,7 +145,11 @@ public class MockDispatcher extends Dispatcher {
         }
     }
 
-    public RecordedRequest takeRequest(String pathRegex) {
+    public RecordedRequest takeRequest(String pathRegex) throws TimeoutException{
+        return takeRequest(pathRegex, 10000);
+    }
+
+    public RecordedRequest takeRequest(String pathRegex, long timeout) throws TimeoutException{
         BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
         if (queue == null) {
             return null;
@@ -152,7 +158,10 @@ public class MockDispatcher extends Dispatcher {
             return null;
         }
         try {
-            return queue.take();
+            RecordedRequest request = queue.poll(timeout, TimeUnit.MILLISECONDS);
+            if(request == null)
+                throw new TimeoutException();
+            return request;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -167,7 +176,13 @@ public class MockDispatcher extends Dispatcher {
         return result;
     }
 
-    public MockResponse takeRecordedResponseBlocking(RecordedRequest request) {
+    public MockResponse takeRecordedResponseBlocking(RecordedRequest request) throws TimeoutException {
+        return takeRecordedResponseBlocking(request, 10000);
+    }
+
+    public MockResponse takeRecordedResponseBlocking(RecordedRequest request, long timeout) throws TimeoutException {
+        long start = System.currentTimeMillis();
+
         while (true) {
             if (!recordedReponseMap.containsKey(request)) {
                 try {
@@ -182,17 +197,24 @@ public class MockDispatcher extends Dispatcher {
                     return response;
                 }
             }
-
+            if (System.currentTimeMillis() - start > timeout)
+                throw new TimeoutException();
         }
     }
 
-    public RecordedRequest takeRequestBlocking(String pathRegex) {
+    public RecordedRequest takeRequestBlocking(String pathRegex) throws TimeoutException {
+        return takeRequestBlocking(pathRegex, 10000);
+    }
+    public RecordedRequest takeRequestBlocking(String pathRegex, long timeout) throws TimeoutException {
+        long start = System.currentTimeMillis();
 
         BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
 
         // since the queue itself will be created lazily, we need to do a silly
         // polling loop until the queue appears (if ever -- otherwise this will never return)
         while (queue == null) {
+            if (System.currentTimeMillis() - start > timeout)
+                throw new TimeoutException();
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -202,7 +224,10 @@ public class MockDispatcher extends Dispatcher {
         }
 
         try {
-            return queue.take();
+            RecordedRequest request = queue.poll(timeout, TimeUnit.MILLISECONDS);
+            if(request == null)
+                throw new TimeoutException();
+            return request;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

@@ -3331,7 +3331,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // run pull replication
             Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
-            runReplication(pullReplication);
+            runReplication(pullReplication, 3 * 60);
             assertTrue(pullReplication.getLastError() == null);
 
             // wait until it pushes checkpoint of last doc
@@ -4600,11 +4600,9 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             boolean success = idleSignal1.await(30, TimeUnit.SECONDS);
             assertTrue(success);
 
-
             //
             MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(docId, revId, lastSeq + 1);
             mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-            //mockDocument1.setAttachmentName("attachment3.png");
 
             MockChangesFeed mockChangesFeed = new MockChangesFeed();
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
@@ -4612,11 +4610,10 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // doc response
             MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDocument1);
-            //mockDocumentGet.addAttachmentFilename(mockDocument1.getAttachmentName());
             dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
             // check /db/docid?...
-            RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex());
+            RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex(), 30*1000);
             Log.e(TAG, request.toString());
             Map<String, String> queries = query2map(request.getPath());
             String atts_since = URLDecoder.decode(queries.get("atts_since"), "UTF-8");
@@ -4830,17 +4827,39 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             stopReplication(pull);
             stopReplication(push);
 
-            // give 5 sec to clean thread status.
+            boolean observedCBLRequestWorker = false;
+
+            // First give 5 sec to clean thread status.
             try {
                 Thread.sleep(5 * 1000);
             } catch (Exception e) {
             }
-
             // all threads which are associated with replicators should be terminated.
             Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
             for (Thread t : threadSet) {
                 if (t.isAlive()) {
-                    assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+                    observedCBLRequestWorker = true;
+                    if(t.getName().indexOf("CBLRequestWorker")!=-1) {
+                        observedCBLRequestWorker = true;
+                        break;
+                    }
+                }
+            }
+
+            // second attemtpt, if still observe CBLRequestWorker thread, makes error
+            if(observedCBLRequestWorker) {
+                // give 10 sec to clean thread status.
+                try {
+                    Thread.sleep(10 * 1000);
+                } catch (Exception e) {
+                }
+
+                // all threads which are associated with replicators should be terminated.
+                Set<Thread> threadSet2 = Thread.getAllStackTraces().keySet();
+                for (Thread t : threadSet2) {
+                    if (t.isAlive()) {
+                        assertEquals(-1, t.getName().indexOf("CBLRequestWorker"));
+                    }
                 }
             }
         }finally {
