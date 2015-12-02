@@ -1000,10 +1000,7 @@ public class ApiTest extends LiteTestCaseWithDB {
      * running in the background server.
      */
     public void testSharedMapBlocks() throws Exception {
-        ManagerOptions options = new ManagerOptions();
-        if(useForestDB)
-            options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
-        Manager mgr = new Manager(getTestContext("API_SharedMapBlocks", true), options);
+        Manager mgr = createManager(getTestContext("API_SharedMapBlocks", true));
         Database db = mgr.getDatabase("db");
         db.open();
         db.setFilter("phil", new ReplicationFilter() {
@@ -1059,10 +1056,7 @@ public class ApiTest extends LiteTestCaseWithDB {
     }
 
     public void testChangeUUID() throws Exception {
-        ManagerOptions options = new ManagerOptions();
-        if(useForestDB)
-            options.setStoreClassName("com.couchbase.lite.store.ForestDBStore");
-        Manager mgr = new Manager(getTestContext("ChangeUUID", true), options);
+        Manager mgr = createManager(getTestContext("ChangeUUID", true));
         Database db = mgr.getDatabase("db");
         db.open();
         String pub = db.publicUUID();
