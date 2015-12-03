@@ -9,6 +9,8 @@ import com.couchbase.lite.support.RevisionUtils;
 import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,5 +250,29 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertNull(db.getCachedDocument("doc1"));
         // This that the database is forgotten:
         assertFalse(manager.allOpenDatabases().contains(db));
+    }
+
+    public void testAndroid2MLimit() throws Exception {
+        char[] chars = new char[3 * 1024 * 1024];
+        Arrays.fill(chars, 'a');
+        final String content = new String(chars);
+
+        // Add a 2M+ document into the database:
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("content", content);
+        Document doc = database.createDocument();
+        assertNotNull(doc.putProperties(props));
+        String docId = doc.getId();
+
+        // Close and reopen the database:
+        database.close();
+        database = manager.getDatabase(DEFAULT_TEST_DB);
+
+        // Try to read the document:
+        doc = database.getDocument(docId);
+        assertNotNull(doc);
+        Map<String,Object> properties = doc.getProperties();
+        assertNotNull(properties);
+        assertEquals(content, properties.get("content"));
     }
 }
