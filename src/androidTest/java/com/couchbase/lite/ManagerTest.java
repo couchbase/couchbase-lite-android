@@ -5,7 +5,6 @@ import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
-import com.couchbase.lite.store.ForestDBStore;
 import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
@@ -615,7 +614,8 @@ public class ManagerTest extends LiteTestCaseWithDB {
         assertNotNull(replacedb);
 
         // Verify storage type matchs what we requested:
-        Class storeClass = isSQLiteDB() ? SQLiteStore.class : ForestDBStore.class;
+        Class forestDBStoreClass = Class.forName("com.couchbase.lite.store.ForestDBStore");
+        Class storeClass = isSQLiteDB() ? SQLiteStore.class : forestDBStoreClass;
         assertTrue(replacedb.getStore().getClass().equals(storeClass));
 
         // Test db contents:
