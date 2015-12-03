@@ -5,6 +5,7 @@ import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
@@ -547,7 +548,6 @@ public class ManagerTest extends LiteTestCaseWithDB {
         // iOS 1.2.0
         File srcDir = new File(manager.getContext().getFilesDir(), "iosdb.cblite2");
         FileDirUtils.deleteRecursive(srcDir);
-        File fDir = manager.getContext().getFilesDir();
         ZipUtils.unzip(getAsset("iosdb.cblite2.zip"), manager.getContext().getFilesDir());
 
         testReplaceDatabaseWithCBLite2("replacedb", srcDir.getAbsolutePath(), new ReplaceDatabaseCallback() {
@@ -570,8 +570,8 @@ public class ManagerTest extends LiteTestCaseWithDB {
         void onComplete(QueryEnumerator e);
     }
 
-    void testReplaceDatabaseWithCBLite2(String name, String dataabaseDir, ReplaceDatabaseCallback callback) throws CouchbaseLiteException {
-        assertTrue(manager.replaceDatabase(name, dataabaseDir));
+    void testReplaceDatabaseWithCBLite2(String name, String databaseDir, ReplaceDatabaseCallback callback) throws CouchbaseLiteException {
+        assertTrue(manager.replaceDatabase(name, databaseDir));
         checkReplacedDatabase(name, callback);
         Database replacedb = manager.getDatabase(name);
         replacedb.delete();
@@ -598,5 +598,61 @@ public class ManagerTest extends LiteTestCaseWithDB {
 
         if(callback != null)
             callback.onComplete(e);
+    }
+
+    public void testUpgradeDatabase() throws Exception {
+        // Install a canned database:
+        File srcDir = new File(manager.getContext().getFilesDir(), "iosdb.cblite2");
+        FileDirUtils.deleteRecursive(srcDir);
+        ZipUtils.unzip(getAsset("iosdb.cblite2.zip"), manager.getContext().getFilesDir());
+        manager.replaceDatabase("replacedb", srcDir.getAbsolutePath());
+
+        // Open installed db with storageType set to this test's storage type:
+        DatabaseOptions options = new DatabaseOptions();
+        options.setStorageType(isSQLiteDB() ? Manager.SQLITE_STORAGE : Manager.FORESTDB_STORAGE);
+        Database replacedb = manager.openDatabase("replacedb", options);
+        assertNotNull(replacedb);
+
+        // Verify storage type matchs what we requested:
+        Class forestDBStoreClass = Class.forName("com.couchbase.lite.store.ForestDBStore");
+        Class storeClass = isSQLiteDB() ? SQLiteStore.class : forestDBStoreClass;
+        assertTrue(replacedb.getStore().getClass().equals(storeClass));
+
+        // Test db contents:
+        checkReplacedDatabase("replacedb", new ReplaceDatabaseCallback() {
+            @Override
+            public void onComplete(QueryEnumerator e) {
+                assertEquals(1, e.getCount());
+                Document doc = e.getRow(0).getDocument();
+                assertNotNull(doc);
+                assertEquals("doc1", doc.getId());
+                assertEquals(2, doc.getCurrentRevision().getAttachments().size());
+                Attachment att1 = doc.getCurrentRevision().getAttachment("attach1");
+                assertNotNull(att1);
+                Attachment att2 = doc.getCurrentRevision().getAttachment("attach2");
+                assertNotNull(att2);
+            }
+        });
+
+        // Close and re-open the db using SQLite storage type. Should fail if it used to be ForestDB:
+        assertTrue(replacedb.close());
+        options.setStorageType(Manager.SQLITE_STORAGE);
+
+        CouchbaseLiteException error = null;
+        try {
+            replacedb = null;
+            replacedb = manager.openDatabase("replacedb", options);
+        } catch (CouchbaseLiteException e) {
+            error = e;
+        }
+
+        if (isSQLiteDB()) {
+            assertNotNull(replacedb);
+        } else {
+            assertNull("Incorrectly re-opened ForestDB db as SQLite", replacedb);
+            assertNotNull(error);
+            assertEquals(Status.INVALID_STORAGE_TYPE, error.getCBLStatus().getCode());
+            assertEquals(406, error.getCBLStatus().getHTTPCode());
+        }
     }
 }
