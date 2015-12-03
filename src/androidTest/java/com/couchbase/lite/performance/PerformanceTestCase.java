@@ -80,7 +80,7 @@ public class PerformanceTestCase extends LiteTestCase {
     protected void setupSQLiteNativeLibrary() {
         int library = getSQLiteLibrary();
         if (library == 0)
-            SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.JNI_SQLITE_SYSTEM_LIBRARY;
+            SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.JNI_SQLITE_DEFAULT_LIBRARY;
         else if (library == 1)
             SQLiteNativeLibrary.TEST_NATIVE_LIBRARY_NAME = SQLiteNativeLibrary.JNI_SQLITE_CUSTOM_LIBRARY;
         else if (library == 2)
