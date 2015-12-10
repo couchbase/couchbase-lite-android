@@ -30,6 +30,7 @@ public class ApiTest extends LiteTestCaseWithDB {
 
     //SERVER & DOCUMENTS
 
+    // - (void) test00_Manager in Database_Tests.m
     public void testAPIManager() throws Exception {
         Manager manager = this.manager;
         Assert.assertTrue(manager != null);
@@ -52,6 +53,30 @@ public class ApiTest extends LiteTestCaseWithDB {
         Assert.assertTrue(dbNames.contains(DEFAULT_TEST_DB));
     }
 
+    // - (void) test02_DeleteDatabase in Database_Tests.m
+    public void testDeleteDatabase() throws Exception {
+
+        Database deleteme = manager.getDatabase("deleteme");
+        assertTrue(deleteme.exists());
+        assertTrue(new File(deleteme.getPath()).exists());
+        assertTrue(new File(deleteme.getAttachmentStorePath()).exists());
+        if(isSQLiteDB())
+            assertTrue(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
+        else
+            assertTrue(new File(deleteme.getPath(), "db.forest.0").exists()); // hard-coded instead of ForestDBStore.kDBFilename
+
+        deleteme.delete();
+        assertFalse(deleteme.exists());
+        assertFalse(new File(deleteme.getPath()).exists());
+        assertFalse(new File(deleteme.getAttachmentStorePath()).exists());
+        assertFalse(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
+
+        deleteme.delete();  // delete again, even though already deleted
+        Database deletemeFetched = manager.getExistingDatabase("deleteme");
+        assertNull(deletemeFetched);
+    }
+
+    // - (void) test03_CreateDocument in Database_Tests.m
     public void testCreateDocument() throws CouchbaseLiteException {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testCreateDocument");
@@ -73,28 +98,6 @@ public class ApiTest extends LiteTestCaseWithDB {
         assertEquals(doc2.getCurrentRevisionId(), currentRevisionID);
 
         assertNull(db.getExistingDocument("b0gus"));
-    }
-
-    public void testDeleteDatabase() throws Exception {
-
-        Database deleteme = manager.getDatabase("deleteme");
-        assertTrue(deleteme.exists());
-        assertTrue(new File(deleteme.getPath()).exists());
-        assertTrue(new File(deleteme.getAttachmentStorePath()).exists());
-        if(isSQLiteDB())
-            assertTrue(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
-        else
-            assertTrue(new File(deleteme.getPath(), "db.forest.0").exists()); // hard-coded instead of ForestDBStore.kDBFilename
-
-        deleteme.delete();
-        assertFalse(deleteme.exists());
-        assertFalse(new File(deleteme.getPath()).exists());
-        assertFalse(new File(deleteme.getAttachmentStorePath()).exists());
-        assertFalse(new File(deleteme.getPath(), SQLiteStore.kDBFilename).exists());
-
-        deleteme.delete();  // delete again, even though already deleted
-        Database deletemeFetched = manager.getExistingDatabase("deleteme");
-        assertNull(deletemeFetched);
     }
 
     public void testDatabaseCompaction() throws Exception {
@@ -149,6 +152,7 @@ public class ApiTest extends LiteTestCaseWithDB {
         assertEquals("baz", docRev2.getProperty("foo"));
     }
 
+    // - (void) test05_CreateRevisions in Database_Tests.m
     public void testCreateRevisions() throws Exception {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testCreateRevisions");
@@ -211,6 +215,7 @@ public class ApiTest extends LiteTestCaseWithDB {
         assertEquals(rev3.getUserProperties(), newRev.getUserProperties());
     }
 
+    // - (void) test07_CreateNewRevisions in Database_Tests.m
     public void testCreateNewRevisions() throws Exception {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testCreateRevisions");
@@ -298,6 +303,7 @@ public class ApiTest extends LiteTestCaseWithDB {
     //API_SaveMultipleUnsavedDocuments on IOS
     //API_DeleteMultipleDocuments commented on IOS
 
+    // - (void) test09_DeleteDocument in Database_Tests.m
     public void testDeleteDocument() throws Exception {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testDeleteDocument");
@@ -311,6 +317,7 @@ public class ApiTest extends LiteTestCaseWithDB {
         assertNull(doc.getCurrentRevision());
     }
 
+    // - (void) test10_PurgeDocument in Database_Tests.m
     public void testPurgeDocument() throws Exception {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testPurgeDocument");
@@ -344,6 +351,7 @@ public class ApiTest extends LiteTestCaseWithDB {
 
     }
 
+    // - (void) test12_AllDocuments in Database_Tests.m
     public void testAllDocuments() throws Exception {
         Database db = startDatabase();
         int kNDocs = 5;
@@ -375,6 +383,73 @@ public class ApiTest extends LiteTestCaseWithDB {
         assertEquals(n, kNDocs);
     }
 
+    // - (void) test12_AllDocumentsPrefixMatchLevel in Database_Tests.m
+
+    // - (void) test12_AllDocumentsBySequence in Database_Tests.m
+    public void test12_AllDocumentsBySequence() throws Exception {
+        Database db = startDatabase();
+        int kNDocs = 10;
+        createDocuments(db, kNDocs);
+
+        // clear the cache so all documents/revisions will be re-fetched:
+        db.clearDocumentCache();
+
+        Query query = db.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.BY_SEQUENCE);
+        QueryEnumerator rows = query.run();
+        long n = 0;
+        for (QueryRow row : rows) {
+            n++;
+            Document doc = row.getDocument();
+            assertNotNull(doc);
+            assertEquals(n, doc.getCurrentRevision().getSequence());
+        }
+        assertEquals(n, kNDocs);
+
+        query = db.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.BY_SEQUENCE);
+        query.setStartKey(3);
+        rows = query.run();
+        n = 2;
+        for (QueryRow row : rows) {
+            n++;
+            Document doc = row.getDocument();
+            assertNotNull(doc);
+            assertEquals(n, doc.getCurrentRevision().getSequence());
+        }
+        assertEquals(kNDocs, n);
+
+        query = db.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.BY_SEQUENCE);
+        query.setEndKey(6);
+        rows = query.run();
+        n = 0;
+        for (QueryRow row : rows) {
+            n++;
+            Document doc = row.getDocument();
+            assertNotNull(doc);
+            assertEquals(n, doc.getCurrentRevision().getSequence());
+        }
+        assertEquals(6, n);
+
+        query = db.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.BY_SEQUENCE);
+        query.setStartKey(3);
+        query.setEndKey(6);
+        query.setInclusiveStart(false);
+        query.setInclusiveEnd(false);
+        rows = query.run();
+        n = 3;
+        for (QueryRow row : rows) {
+            n++;
+            Document doc = row.getDocument();
+            assertNotNull(doc);
+            assertEquals(n, doc.getCurrentRevision().getSequence());
+        }
+        assertEquals(5, n);
+    }
+
+    // - (void) test13_LocalDocs in Database_Tests.m
     public void testLocalDocs() throws Exception {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "bar");
