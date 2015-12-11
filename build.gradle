@@ -52,12 +52,7 @@ dependencies {
     compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-core') :
             'com.couchbase.lite:couchbase-lite-java-core:' + version
-	
-	compile buildAndroidWithArtifacts == null ?
-            project(':libraries:couchbase-lite-java-forestdb') :
-            'com.couchbase.lite:couchbase-lite-java-forestdb:' + version
-
-    // SQLite library options: sqlite-system, sqlite, sqlcipher.
+    
     compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-native:sqlite-default') :
             'com.couchbase.lite:couchbase-lite-android-sqlite-default' + version
@@ -70,6 +65,10 @@ dependencies {
     androidTestCompile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-native:sqlcipher') :
             'com.couchbase.lite:couchbase-lite-android-sqlcipher' + version
+
+    androidTestCompile buildAndroidWithArtifacts == null ?
+            project(':libraries:couchbase-lite-java-forestdb') :
+            'com.couchbase.lite:couchbase-lite-android-forestdb:' + version
 
     androidTestCompile 'commons-io:commons-io:2.0.1'
     androidTestCompile 'com.squareup.okhttp:mockwebserver:2.0.0'
