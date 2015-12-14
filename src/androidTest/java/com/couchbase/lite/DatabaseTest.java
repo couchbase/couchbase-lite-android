@@ -7,8 +7,12 @@ import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.RevisionUtils;
 import com.couchbase.lite.util.Log;
+import com.couchbase.lite.util.TextUtils;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DatabaseTest extends LiteTestCaseWithDB {
-
     /**
      * in DatabaseInternal_Tests.m
      * - (void) test27_ChangesSinceSequence
@@ -334,5 +337,74 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         Map<String,Object> properties = doc.getProperties();
         assertNotNull(properties);
         assertEquals(content, properties.get("content"));
+    }
+
+    // Database_Tests.m : test18_Attachments
+    public void testAttachments() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("testName", "testAttachments");
+        properties.put("count", 1);
+
+        final Document doc = createDocumentWithProperties(database, properties);
+        SavedRevision rev = doc.getCurrentRevision();
+        assertEquals(0, rev.getAttachments().size());
+        assertEquals(0, rev.getAttachmentNames().size());
+        assertNull(rev.getAttachment("index.html"));
+
+        String content = "This is a test attachments!";
+        ByteArrayInputStream body = new ByteArrayInputStream(content.getBytes());
+        UnsavedRevision rev2 = doc.createRevision();
+        rev2.setAttachment("index.html", "text/plain; charset=utf-8", body);
+
+        assertEquals(1, rev2.getAttachments().size());
+        assertEquals(1, rev2.getAttachmentNames().size());
+        assertEquals("index.html", rev2.getAttachmentNames().get(0));
+        Attachment attach = rev2.getAttachment("index.html");
+        assertNotNull(attach);
+        assertNull(attach.getRevision()); // No revision set
+        assertNull(attach.getDocument()); // No revision set
+        assertEquals("index.html", attach.getName());
+        assertEquals("text/plain; charset=utf-8", attach.getContentType());
+
+        SavedRevision rev3 = rev2.save();
+        assertNotNull(rev3);
+        assertEquals(1, rev3.getAttachments().size());
+        assertEquals(1, rev3.getAttachmentNames().size());
+        assertEquals("index.html", rev3.getAttachmentNames().get(0));
+
+        attach = rev3.getAttachment("index.html");
+        assertNotNull(attach);
+        assertNotNull(attach.getRevision());
+        assertNotNull(attach.getDocument());
+        assertEquals(doc, attach.getDocument());
+        assertEquals("index.html", attach.getName());
+        assertEquals("text/plain; charset=utf-8", attach.getContentType());
+        assertTrue(Arrays.equals(content.getBytes(), TextUtils.read(attach.getContent())));
+
+        // Look at the attachment's file:
+        URL bodyURL = attach.getContentURL();
+        if (isEncryptedAttachmentStore()) {
+            assertNull(bodyURL);
+        } else {
+            assertNotNull(bodyURL);
+            assertTrue(Arrays.equals(content.getBytes(),
+                    TextUtils.read(new File(bodyURL.toURI())).getBytes()));
+        }
+
+        UnsavedRevision newRev = rev3.createRevision();
+        newRev.removeAttachment(attach.getName());
+        SavedRevision rev4 = newRev.save();
+        assertNotNull(rev4);
+        assertEquals(0, rev4.getAttachments().size());
+        assertEquals(0, rev4.getAttachmentNames().size());
+    }
+
+    public void testAttachmentsWithEncryption() throws Exception {
+        setEncryptedAttachmentStore(true);
+        try {
+            testAttachments();
+        } finally {
+            setEncryptedAttachmentStore(false);
+        }
     }
 }

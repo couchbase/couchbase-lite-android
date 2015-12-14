@@ -15,6 +15,9 @@ import com.couchbase.lite.storage.SQLiteNativeLibrary;
 import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.HttpClientFactory;
+import com.couchbase.lite.support.action.ActionException;
+import com.couchbase.lite.support.security.SymmetricKey;
+import com.couchbase.lite.support.security.SymmetricKeyException;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -63,6 +66,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     protected static final String DEFAULT_TEST_DIR_NAME = "test";
 
     protected boolean useForestDB = false;
+
+    private boolean encryptedAttachmentStore = false;
 
     protected boolean isSQLiteDB() {
         return SQLiteStore.class.equals(database.getStore().getClass());
@@ -281,6 +286,17 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         }
 
         return result;
+    }
+
+    public boolean isEncryptedAttachmentStore() {
+        return encryptedAttachmentStore;
+    }
+
+    public void setEncryptedAttachmentStore(boolean encrypted)
+            throws Exception {
+        SymmetricKey key = encrypted ? new SymmetricKey() : null;
+        database.getAttachmentStore().changeEncryptionKey(key);
+        encryptedAttachmentStore = encrypted;
     }
 
     public Map<String, Object> getReplicationAuthParsedJson() throws IOException {
