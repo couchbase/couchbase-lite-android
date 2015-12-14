@@ -40,8 +40,10 @@ import com.couchbase.lite.mockserver.MockFacebookAuthPost;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.mockserver.MockRevsDiff;
 import com.couchbase.lite.mockserver.MockSessionGet;
+import com.couchbase.lite.mockserver.SmartMockResponseImpl;
 import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
 import com.couchbase.lite.support.Base64;
+import com.couchbase.lite.support.CouchbaseLiteHttpClientFactory;
 import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.support.MultipartReader;
 import com.couchbase.lite.support.MultipartReaderDelegate;
@@ -5124,6 +5126,88 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         }finally {
             // cleanup / shutdown
             server.shutdown();
+        }
+    }
+
+    // NOTE: This test should be manually tested. This test uses delay, timeout, wait,...
+    // this could break test on Jenkins because it run on VM with ARM emulator.
+    // To run test, please remove "manual" from test method name.
+    //
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/736
+    // https://github.com/couchbase/couchbase-lite-net/issues/356
+    public void manualTestBulkGetTimeout() throws Exception {
+
+        int def1 = CouchbaseLiteHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT_SECONDS;
+        int def2 = CouchbaseLiteHttpClientFactory.DEFAULT_SO_TIMEOUT_SECONDS;
+        int def3 = ReplicationInternal.MAX_RETRIES;
+        int def4 = ReplicationInternal.RETRY_DELAY_SECONDS;
+
+        try {
+            // TIMEOUT 1 SEC
+            CouchbaseLiteHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT_SECONDS = 1;
+            CouchbaseLiteHttpClientFactory.DEFAULT_SO_TIMEOUT_SECONDS = 1;
+            ReplicationInternal.MAX_RETRIES = 2;
+            ReplicationInternal.RETRY_DELAY_SECONDS = 0;
+
+            // serve 3 mock docs
+            int numMockDocsToServe = 2;
+
+            // create mockwebserver and custom dispatcher
+            MockDispatcher dispatcher = new MockDispatcher();
+            MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+            try {
+
+                // mock documents to be pulled
+                List<MockDocumentGet.MockDocument> mockDocs = MockHelper.getMockDocuments(numMockDocsToServe);
+
+                // respond to all GET (responds with 404) and PUT Checkpoint requests
+                MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+                mockCheckpointPut.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+                // _changes response
+                MockChangesFeed mockChangesFeed = new MockChangesFeed();
+                for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+                    mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument));
+                }
+                SmartMockResponseImpl smartMockResponse = new SmartMockResponseImpl(mockChangesFeed.generateMockResponse());
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, smartMockResponse);
+
+                // _bulk_get response
+                MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+                for (MockDocumentGet.MockDocument mockDocument : mockDocs) {
+                    mockBulkGet.addDocument(mockDocument);
+                }
+                // _bulk_get delays 4 SEC, which is longer custom timeout 5sec.
+                // so this cause timeout.
+                mockBulkGet.setDelayMs(4 * 1000);
+                // makes sticky for retry reponse
+                mockBulkGet.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+                // start mock server
+                server.play();
+
+                // run pull replication
+                Replication pullReplication = database.createPullReplication(server.getUrl("/db"));
+                runReplication(pullReplication, 3 * 60);
+                assertNotNull(pullReplication.getLastError());
+                assertTrue(pullReplication.getLastError() instanceof java.net.SocketTimeoutException);
+
+                // dump out the outgoing requests for bulk docs
+                BlockingQueue<RecordedRequest> bulkGetRequests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_GET);
+                // +1 for initial request
+                assertEquals(ReplicationInternal.MAX_RETRIES + 1, bulkGetRequests.size());
+            } finally {
+                server.shutdown();
+            }
+        } finally {
+            CouchbaseLiteHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT_SECONDS = def1;
+            CouchbaseLiteHttpClientFactory.DEFAULT_SO_TIMEOUT_SECONDS = def2;
+            ReplicationInternal.MAX_RETRIES = def3;
+            ReplicationInternal.RETRY_DELAY_SECONDS = def4;
         }
     }
 }
