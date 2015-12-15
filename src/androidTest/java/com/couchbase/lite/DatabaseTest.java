@@ -9,7 +9,6 @@ import com.couchbase.lite.support.RevisionUtils;
 import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +18,67 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DatabaseTest extends LiteTestCaseWithDB {
+
+    /**
+     * in DatabaseInternal_Tests.m
+     * - (void) test27_ChangesSinceSequence
+     */
+    public void test27_ChangesSinceSequence() throws CouchbaseLiteException {
+        // Create 10 docs:
+        createDocuments(database, 10);
+
+        // Create a new doc with a conflict:
+        RevisionInternal rev = new RevisionInternal("MyDocID", "1-1111", false);
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("_id", rev.getDocID());
+        properties.put("_rev", rev.getRevID());
+        properties.put("message", "hi");
+        rev.setProperties(properties);
+        List<String> history = Arrays.asList(rev.getRevID());
+        database.forceInsert(rev, history, null);
+        rev = new RevisionInternal("MyDocID", "1-ffff", false);
+        properties = new HashMap<String, Object>();
+        properties.put("_id", rev.getDocID());
+        properties.put("_rev", rev.getRevID());
+        properties.put("message", "bye");
+        rev.setProperties(properties);
+        history = Arrays.asList(rev.getRevID());
+        database.forceInsert(rev, history, null);
+
+        // Create another doc with a merged conflict:
+        rev = new RevisionInternal("MyDocID2", "1-1111", false);
+        properties = new HashMap<String, Object>();
+        properties.put("_id", rev.getDocID());
+        properties.put("_rev", rev.getRevID());
+        properties.put("message", "hi");
+        rev.setProperties(properties);
+        history = Arrays.asList(rev.getRevID());
+        database.forceInsert(rev, history, null);
+        rev = new RevisionInternal("MyDocID2", "1-ffff", true);
+        properties = new HashMap<String, Object>();
+        properties.put("_id", rev.getDocID());
+        properties.put("_rev", rev.getRevID());
+        rev.setProperties(properties);
+        history = Arrays.asList(rev.getRevID());
+        database.forceInsert(rev, history, null);
+
+        // Get changes, testing all combinations of includeConflicts and includeDocs:
+        for (int conflicts = 0; conflicts <= 1; conflicts++) {
+            for (int bodies = 0; bodies <= 1; bodies++) {
+                ChangesOptions options = new ChangesOptions();
+                options.setIncludeConflicts(conflicts != 0);
+                options.setIncludeDocs(bodies != 0);
+                RevisionList changes = database.changesSince(0, options, null, null);
+                assertEquals(12 + 2 * conflicts, changes.size());
+                for (RevisionInternal change : changes) {
+                    if (bodies != 0)
+                        assertNotNull(change.getBody());
+                    else
+                        assertNull(change.getBody());
+                }
+            }
+        }
+    }
 
     public void testPruneRevsToMaxDepthViaCompact() throws Exception {
 
