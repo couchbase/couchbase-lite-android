@@ -2604,4 +2604,31 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.e(TAG, rows.toString());
         assertEquals(looser.getProperties().get("key"), rows.get(0).getKey());
     }
+
+    // View_Tests.m: test21_TotalRows
+    public void testTotalRows() throws Exception {
+        View view = database.getView("vu");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("sequence"), null);
+            }
+        }, "1");
+        assertNotNull(view.getMap());
+        assertEquals(0, view.getTotalRows());
+
+        // Add 20 documents:
+        createDocuments(database, 20);
+        assertTrue(view.isStale());
+        assertEquals(20, view.getTotalRows());
+        assertTrue(!view.isStale());
+
+        // Add another 20 documents, query, and check totalRows:
+        createDocuments(database, 20);
+        Query query = view.createQuery();
+        QueryEnumerator rows = query.run();
+        assertEquals(40, rows.getCount());
+        assertEquals(40, view.getTotalRows());
+    }
 }
