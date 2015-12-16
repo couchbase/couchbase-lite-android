@@ -298,11 +298,19 @@ public class MockDocumentGet {
         private int docSeq;
         private String attachmentName;
         private Map<String, Object> jsonMap;
+        private boolean missing = false;
 
         public MockDocument(String docId, String docRev, int docSeq) {
             this.docId = docId;
             this.docRev = docRev;
             this.docSeq = docSeq;
+        }
+
+        public MockDocument(String docId, String docRev, int docSeq, boolean missing) {
+            this.docId = docId;
+            this.docRev = docRev;
+            this.docSeq = docSeq;
+            this.missing = missing;
         }
 
         /**
@@ -312,13 +320,20 @@ public class MockDocumentGet {
          */
         private Map<String, Object> generateDocumentMap(boolean attachmentFollows) {
             Map<String, Object> docMap = new HashMap<String, Object>();
-            docMap.put("_id", getDocId());
-            docMap.put("_rev", getDocRev());
-
-            if (hasAttachment()) {
-                docMap.put("_attachments", generateAttachmentsMap(attachmentFollows));
+            if (missing) {
+                docMap.put("id", getDocId());
+                docMap.put("rev", getDocRev());
+                docMap.put("error", "not_found");
+                docMap.put("reason", "missing");
+                docMap.put("status", 404);
+            } else {
+                docMap.put("_id", getDocId());
+                docMap.put("_rev", getDocRev());
+                if (hasAttachment()) {
+                    docMap.put("_attachments", generateAttachmentsMap(attachmentFollows));
+                }
+                docMap.putAll(jsonMap);
             }
-            docMap.putAll(jsonMap);
             return docMap;
         }
 
@@ -411,6 +426,14 @@ public class MockDocumentGet {
 
         public void setDocSeq(int docSeq) {
             this.docSeq = docSeq;
+        }
+
+        public boolean isMissing() {
+            return missing;
+        }
+
+        public void setMissing(boolean missing) {
+            this.missing = missing;
         }
     }
 }

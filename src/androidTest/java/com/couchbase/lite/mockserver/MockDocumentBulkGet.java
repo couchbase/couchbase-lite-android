@@ -71,6 +71,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
     private Map<String, MockDocumentGet.MockDocument> documents;
     private boolean isSticky;
     private long delayMs;
+    private boolean is404 = false;
 
     public MockDocumentBulkGet() {
         this.documents = new HashMap<String, MockDocumentGet.MockDocument>();
@@ -78,6 +79,13 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
     @Override
     public MockResponse generateMockResponse(RecordedRequest request) {
+
+        if (is404) {
+            MockResponse mockResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(mockResponse);
+            return mockResponse;
+        }
+
         try {
             byte[] body = MockHelper.getUncompressedBody(request);
             Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
@@ -102,7 +110,8 @@ public class MockDocumentBulkGet implements SmartMockResponse {
                 Map<String, Object> documentMap = (Map) doc;
                 String docId = (String) documentMap.get("id");
                 MockDocumentGet.MockDocument mockDocument = documents.get(docId);
-
+                if(mockDocument == null)
+                    continue;
                 boolean addEmptyLine = false;
                 if (i > 0) {
                     addEmptyLine = true;
@@ -140,13 +149,19 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
         append(o, "--").append(o, boundary).append(o, "\r\n");
 
-        if (!mockDocument.hasAttachment()) {
+        if(mockDocument.isMissing()){
+            // missing revision
+            append(o, "Content-Type: application/json; error=\"true\"");
+            append(o, "\r\n\r\n");
+            append(o, mockDocument.generateDocumentBody(attachmentFollows));
+            append(o, "\r\n");
+        }
+        else if (!mockDocument.hasAttachment()) {
             // no attachment, add json part
             append(o, "Content-Type: application/json");
             append(o, "\r\n\r\n");
             append(o, mockDocument.generateDocumentBody(attachmentFollows));
             append(o, "\r\n");
-
         } else {
             // has attachment
 
@@ -183,11 +198,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
             // final boundary to mark end of part
             append(o, "\r\n").append(o, "--").append(o, innerBoundary).append(o, "--");
-
         }
-
-
-
     }
 
     private MockDocumentBulkGet append(ByteArrayOutputStream baos, String string) throws Exception {
@@ -222,4 +233,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
     }
 
 
+    public void set404(boolean is404) {
+        this.is404 = is404;
+    }
 }
