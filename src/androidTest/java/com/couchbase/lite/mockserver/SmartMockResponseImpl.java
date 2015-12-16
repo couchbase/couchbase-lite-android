@@ -16,20 +16,16 @@ package com.couchbase.lite.mockserver;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
-public class WrappedSmartMockResponse implements SmartMockResponse {
-
+/**
+ * Created by hideki on 12/11/15.
+ */
+public class SmartMockResponseImpl implements SmartMockResponse {
     private MockResponse mockResponse;
+    private boolean isSticky;
     private long delayMs;
-    private boolean sticky;
 
-
-    public WrappedSmartMockResponse(MockResponse mockResponse) {
+    public SmartMockResponseImpl(MockResponse mockResponse) {
         this.mockResponse = mockResponse;
-    }
-
-    public WrappedSmartMockResponse(MockResponse mockResponse, boolean sticky) {
-        this.mockResponse = mockResponse;
-        this.sticky = sticky;
     }
 
     @Override
@@ -39,16 +35,16 @@ public class WrappedSmartMockResponse implements SmartMockResponse {
 
     @Override
     public boolean isSticky() {
-        return this.sticky;
-    }
-
-    public void setSticky(boolean sticky) {
-        this.sticky = sticky;
+        return this.isSticky;
     }
 
     @Override
     public long delayMs() {
         return delayMs;
+    }
+
+    public void setSticky(boolean isSticky) {
+        this.isSticky = isSticky;
     }
 
     public void setDelayMs(long delayMs) {
