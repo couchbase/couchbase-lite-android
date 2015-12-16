@@ -1223,11 +1223,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * Regression test for issue couchbase/couchbase-lite-android#174
      */
     public void testAllLeafRevisionsArePushed() throws Exception {
-
-        // currently this test fails with ForestDBStore
-        if(!isSQLiteDB())
-            return;
-
         final CustomizableMockHttpClient mockHttpClient = new CustomizableMockHttpClient();
         mockHttpClient.addResponderRevDiffsAllMissing();
         mockHttpClient.setResponseDelayMilliseconds(250);
