@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by hideki on 12/15/15.
  */
-public class PullerInternalTest  extends LiteTestCaseWithDB {
+public class ReplicationInternalTest extends LiteTestCaseWithDB {
 
     // one shot pull replication with _bulk_get - successful scenario
     public void testOneShotPullReplBulkGet() throws Exception {
@@ -43,9 +43,9 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
 
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument( doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument( doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -126,7 +126,7 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
             String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
             String lastSequence = database.lastSequenceWithCheckpointId(pull.remoteCheckpointDocID());
             assertEquals(doc3Seq, lastSequence);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -139,9 +139,9 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
 
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument( doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument( doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -223,7 +223,7 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
             String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
             String lastSequence = database.lastSequenceWithCheckpointId(pull.remoteCheckpointDocID());
             assertEquals(doc3Seq, lastSequence);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -252,9 +252,9 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
 
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument( doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument( doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -324,7 +324,7 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
             Document doc3 = database.getDocument(doc3Id);
             assertNotNull(doc3);
             assertEquals("1-0003", doc3.getCurrentRevision().getId());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -337,9 +337,9 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
 
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument( doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument( doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -414,7 +414,7 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
             assertNotNull(doc3);
             assertNotNull(doc3.getCurrentRevision());
             assertEquals("1-0003", doc3.getCurrentRevision().getId());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -427,9 +427,9 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
 
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument( doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument( doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -487,7 +487,7 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
             Log.d(TAG, "Replication had error: ", pull.getLastError());
 
             assertEquals(0, database.getDocumentCount());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -501,9 +501,9 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
 
         final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument( doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument( doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -565,7 +565,7 @@ public class PullerInternalTest  extends LiteTestCaseWithDB {
 
             assertEquals(0, database.getDocumentCount());
 
-        }finally {
+        } finally {
             server.shutdown();
         }
     }

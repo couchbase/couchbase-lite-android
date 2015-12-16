@@ -176,8 +176,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             Log.d(Log.TAG, "Got PUT checkpoint request with seq: %d", mockDoc1.getDocSeq());
 
             stopReplication(pullReplication);
-        }
-        finally {
+        } finally {
             server.shutdown();
         }
 
@@ -475,8 +474,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 assertTrue(doc2Request.getMethod().equals("GET"));
                 assertTrue(doc2Request.getPath().matches(mockDoc2.getDocPathRegex()));
             }
-        }
-        finally{
+        } finally {
             // Shut down the server. Instances cannot be reused.
             if (shutdownMockWebserver) {
                 server.shutdown();
@@ -598,8 +596,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // assert completed count makes sense
             assertEquals(pullReplication.getChangesCount(), pullReplication.getCompletedChangesCount());
-        }
-        finally {
+        } finally {
             if (shutdownMockWebserver) {
                 server.shutdown();
             }
@@ -681,8 +678,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // this avoids ugly and confusing exceptions in the logs.
             List<RecordedRequest> checkpointRequests = waitForPutCheckpointRequestWithSequence(dispatcher, numMockRemoteDocs - 1);
             validateCheckpointRequestsRevisions(checkpointRequests);
-        }
-        finally {
+        } finally {
             if (shutdownMockWebserver) {
                 server.shutdown();
             }
@@ -784,7 +780,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // make sure doc has attachments
             Document doc1Fetched = database.getDocument(doc1.getId());
             assertTrue(doc1Fetched.getCurrentRevision().getAttachments().size() > 0);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -919,7 +915,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // gave up replication!!!
 
             stopReplication(replication);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -1044,8 +1040,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // assert completed count makes sense
             assertEquals(replication.getChangesCount(), replication.getCompletedChangesCount());
 
-        }
-        finally {
+        } finally {
             // Shut down the server. Instances cannot be reused.
             if (shutdownMockWebserver) {
                 server.shutdown();
@@ -1143,7 +1138,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             successful = replicationIdleSignal.await(30, TimeUnit.SECONDS);
             assertTrue(successful);
             stopReplication(secondPusher);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -1210,7 +1205,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
                 // cleanup
                 stopReplication(pull);
-            }finally {
+            } finally {
                 server.shutdown();
             }
 
@@ -1406,7 +1401,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // Make sure the conflict was resolved locally.
             assertEquals(1, doc.getConflictingRevisions().size());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -1857,7 +1852,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
             String lastSequence = database.lastSequenceWithCheckpointId(pullReplication.remoteCheckpointDocID());
             assertEquals(doc3Seq, lastSequence);
-        }finally {
+        } finally {
             //stop mock server
             server.shutdown();
         }
@@ -2121,7 +2116,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // assert doc is not in local db
             Document doc = database.getDocument(mockDocument.getDocId());
             assertNull(doc.getCurrentRevision());  // doc should have been rejected by validation, and therefore not present
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -2199,7 +2194,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertTrue(success);
 
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             // cleanup / shutdown
             server.shutdown();
         }
@@ -2400,7 +2395,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 // assert completed count makes sense
                 assertEquals(pusher.getChangesCount(), pusher.getCompletedChangesCount());
             }
-        }finally {
+        } finally {
             // Shut down the server. Instances cannot be reused.
             server.shutdown();
         }
@@ -2587,7 +2582,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // cleanup
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -2702,7 +2697,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // shutdown
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -2824,7 +2819,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
                 // cleanup
                 stopReplication(replicator);
-            }finally {
+            } finally {
                 server.shutdown();
             }
         } finally {
@@ -2875,7 +2870,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             RecordedRequest facebookRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_FACEBOOK_AUTH);
             assertNotNull(facebookRequest);
             dispatcher.verifyAllRecordedRequestsTaken();
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -2950,7 +2945,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             assertTrue(didNotTimeOut);
             assertFalse(activeReplicator.isRunning());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3011,7 +3006,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             assertTrue(didNotTimeOut);
             assertFalse(activeReplicator.isRunning());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3109,7 +3104,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             }
 
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3151,7 +3146,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // doc0 should be in the store, but it wont be because of the bug.
             assertNotNull(database.getExistingDocument("doc0"));
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3201,7 +3196,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             String channels = (String) jsonMap.get("channels");
             assertTrue(channels.contains("foo"));
             assertTrue(channels.contains("bar"));
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3262,7 +3257,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             Log.d(TAG, "Got IDLE event, stopping replication");
 
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3354,7 +3349,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 }
                 first = false;
             }
-        }finally {
+        } finally {
             ReplicationInternal.INBOX_CAPACITY = defaultCapacity;
             ReplicationInternal.PROCESSOR_DELAY = defaultDelay;
             server.shutdown();
@@ -3418,7 +3413,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             boolean success = replicationDoneSignal.await(30, TimeUnit.SECONDS);
             Assert.assertTrue(success);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3472,7 +3467,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             boolean success = changeEventError.await(5, TimeUnit.SECONDS);
             Assert.assertTrue(success);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3612,7 +3607,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // 9. Stop replicator
             replication.removeChangeListener(replicationTransitionToIdleObserver);
             stopReplication(replication);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -3727,7 +3722,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // if this isn't done, there can be IOExceptions when calling server.shutdown()
             waitForPutCheckpointRequestWithSeq(dispatcher, (int) database.getLastSequenceNumber());
 
-        }finally {
+        } finally {
             server.shutdown();
             ReplicationInternal.INBOX_CAPACITY = previous;
         }
@@ -3891,7 +3886,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             } finally {
                 server.shutdown();
             }
-        }finally{
+        } finally {
             RemoteRequestRetry.RETRY_DELAY_MS = prev_RETRY_DELAY_MS;
             ReplicationInternal.RETRY_DELAY_SECONDS = prev_RETRY_DELAY_SECONDS;
             ReplicationInternal.MAX_RETRIES = prev_MAX_RETRIES;
@@ -4073,7 +4068,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertEquals(authenticator, pusher.getAuthenticator());
             assertEquals(requestHeaders, pusher.getHeaders());
             assertTrue(pusher.shouldCreateTarget());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -4219,7 +4214,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             stopReplication(pullReplication);
 
             Log.e(TAG, "STOP MOCK SERVER");
-        }finally {
+        } finally {
             server.shutdown();
         }
 
@@ -4289,7 +4284,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
             assertEquals(1, enteredStoppedState.getCount());
             assertFalse(success);
-        }finally {
+        } finally {
             Log.d(TAG, "STOP MOCK SERVER");
             server.shutdown();
         }
@@ -4348,7 +4343,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             // if STOPPED notification was sent twice, enteredStoppedState becomes 0.
             assertEquals(1, enteredStoppedState.getCount());
             assertFalse(success);
-        }finally {
+        } finally {
             Log.d(TAG, "STOP MOCK SERVER");
             server.shutdown();
         }
@@ -4466,7 +4461,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // stop pull replication
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             server.shutdown();
         }
 
@@ -4537,7 +4532,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 RevisionInternal leaf_conflict = new RevisionInternal(props_conflict);
                 List<String> revHistory = new ArrayList<String>();
                 revHistory.add(leaf_conflict.getRevID());
-                for(int k = j - 1; k > 2; k--){
+                for (int k = j - 1; k > 2; k--) {
                     revHistory.add(String.format("%d-0000", k));
                 }
                 revHistory.add(rev2ID);
@@ -4608,7 +4603,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(mockDocument1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
 
             // check /db/docid?...
-            RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex(), 30*1000);
+            RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex(), 30 * 1000);
             Log.e(TAG, request.toString());
             Map<String, String> queries = query2map(request.getPath());
             String atts_since = URLDecoder.decode(queries.get("atts_since"), "UTF-8");
@@ -4623,7 +4618,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // stop pull replication
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             server.shutdown();
         }
 
@@ -4765,7 +4760,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // stop pull replication
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             server.shutdown();
         }
 
@@ -4834,7 +4829,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             for (Thread t : threadSet) {
                 if (t.isAlive()) {
                     observedCBLRequestWorker = true;
-                    if(t.getName().indexOf("CBLRequestWorker")!=-1) {
+                    if (t.getName().indexOf("CBLRequestWorker") != -1) {
                         observedCBLRequestWorker = true;
                         break;
                     }
@@ -4842,7 +4837,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             }
 
             // second attemtpt, if still observe CBLRequestWorker thread, makes error
-            if(observedCBLRequestWorker) {
+            if (observedCBLRequestWorker) {
                 // give 10 sec to clean thread status.
                 try {
                     Thread.sleep(10 * 1000);
@@ -4857,7 +4852,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                     }
                 }
             }
-        }finally {
+        } finally {
             // shutdown mock server
             server.shutdown();
         }
@@ -4936,7 +4931,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             boolean success = latch.await(30, TimeUnit.SECONDS);
             assertTrue(success);
             assertEquals(10, check.getCount());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -5016,7 +5011,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertTrue(success);
 
             stopReplication(pullReplication);
-        }finally {
+        } finally {
             // cleanup / shutdown
             server.shutdown();
         }
@@ -5116,7 +5111,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertNull(repl.getPendingDocumentIDs());
             runReplication(repl);
             assertNull(repl.getPendingDocumentIDs());
-        }finally {
+        } finally {
             // cleanup / shutdown
             server.shutdown();
         }
@@ -5124,9 +5119,9 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/328
-     *
+     * <p/>
      * Without bug fix, we observe extra PUT /{db}/_local/xxx for each _bulk_docs request
-     *
+     * <p/>
      * 1. Create 200 docs
      * 2. Start push replicator
      * 3. GET  /{db}/_local/xxx
@@ -5135,12 +5130,11 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * 6. PUT  /{db}/_local/xxx
      */
     public void testExcessiveCheckpointingDuringPushReplication() throws Exception {
-
         final int NUM_DOCS = 199;
         List<Document> docs = new ArrayList<Document>();
 
         // 1. Add more than 100 docs, as chunk size is 100
-        for(int i = 0; i < NUM_DOCS; i++) {
+        for (int i = 0; i < NUM_DOCS; i++) {
             Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("testExcessiveCheckpointingDuringPushReplication", String.valueOf(i));
             Document doc = createDocumentWithProperties(database, properties);
@@ -5181,7 +5175,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // 3. Wait for document to be pushed
 
-
             // NOTE: (Not 100% reproducible) With CBL Java on Jenkins (Super slow environment),
             //       Replicator becomes IDLE between batches for this case, after 100 push replicated.
             // TODO: Need to investigate
@@ -5213,12 +5206,9 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertNotNull(bulkDocsRequest1);
 
             if (System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
-
-                // TODO: Need to fix
                 RecordedRequest bulkDocsRequest2 = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
                 assertNotNull(bulkDocsRequest2);
 
-                // TODO: Need to fix: https://github.com/couchbase/couchbase-lite-java-core/issues/446
                 // TODO: this is not valid if device can not handle all replication data at once
                 // order may not be guaranteed
                 assertTrue(isBulkDocJsonContainsDoc(bulkDocsRequest1, docs.get(0)) || isBulkDocJsonContainsDoc(bulkDocsRequest2, docs.get(0)));
@@ -5231,7 +5221,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // cleanup
             stopReplication(replicator);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
