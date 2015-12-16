@@ -5309,4 +5309,26 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             ReplicationInternal.RETRY_DELAY_SECONDS = def4;
         }
     }
+
+    // ReplicatorInternal.m: test_UseRemoteUUID
+    public void testUseRemoteUUID() throws Exception {
+        URL remoteURL1 = new URL("http://alice.local:55555/db");
+        Replication r1 = database.createPullReplication(remoteURL1);
+        r1.setRemoteUUID("cafebabe");
+        String check1 = r1.replicationInternal.remoteCheckpointDocID();
+
+        // Different URL, but same remoteUUID:
+        URL remoteURL2 = new URL("http://alice17.local:44444/db");
+        Replication r2 = database.createPullReplication(remoteURL2);
+        r2.setRemoteUUID("cafebabe");
+        String check2 = r2.replicationInternal.remoteCheckpointDocID();
+        assertEquals(check1, check2);
+
+        // Same UUID but different filter settings:
+        Replication r3 = database.createPullReplication(remoteURL2);
+        r3.setRemoteUUID("cafebabe");
+        r3.setFilter("Melitta");
+        String check3 = r3.replicationInternal.remoteCheckpointDocID();
+        assertNotSame(check2, check3);
+    }
 }
