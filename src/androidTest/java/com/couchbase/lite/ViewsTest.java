@@ -31,6 +31,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -227,9 +228,12 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
     public static View createView(Database db) {
-        View view = db.getView("aview");
-        view.setMapReduce(new Mapper() {
+        return createView(db, "aview");
+    }
 
+    public static View createView(Database db, String name) {
+        View view = db.getView(name);
+        view.setMapReduce(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 Assert.assertNotNull(document.get("_id"));
@@ -2630,5 +2634,140 @@ public class ViewsTest extends LiteTestCaseWithDB {
         QueryEnumerator rows = query.run();
         assertEquals(40, rows.getCount());
         assertEquals(40, view.getTotalRows());
+    }
+
+    // ViewInternal_Tests.m : test04_IndexMultiple
+    public void testIndexMultiple() throws Exception {
+        if (!isSQLiteDB())
+            return;
+
+        View v1 = createView(database, "agroup/view1");
+        View v2 = createView(database, "other/view2");
+        View v3 = createView(database, "other/view3");
+        View vX = createView(database, "other/viewX");
+        View v4 = createView(database, "view4");
+        View v5 = createView(database, "view5");
+
+        View[] v1Groups = sortViews(v1.getViewsInGroup());
+        assertTrue(Arrays.equals(new View[] {v1}, v1Groups));
+
+        View[] v2Groups = sortViews(v2.getViewsInGroup());
+        assertTrue(Arrays.equals(new View[] {v2, v3, vX}, v2Groups));
+
+        View[] v3Groups = sortViews(v3.getViewsInGroup());
+        assertTrue(Arrays.equals(new View[] {v2, v3, vX}, v3Groups));
+
+        View[] vXGroups = sortViews(vX.getViewsInGroup());
+        assertTrue(Arrays.equals(new View[] {v2, v3, vX}, vXGroups));
+
+        View[] v4Groups = sortViews(v4.getViewsInGroup());
+        assertTrue(Arrays.equals(new View[] {v4}, v4Groups));
+
+        View[] v5Groups = sortViews(v5.getViewsInGroup());
+        assertTrue(Arrays.equals(new View[] {v5}, v5Groups));
+
+        final int numDocs = 10;
+        for (int i = 0; i < numDocs; i++) {
+            Map <String, Object> props = new HashMap<>();
+            props.put("key", i);
+            putDoc(database, props);
+
+            if (i == numDocs/2) {
+                Status status = v1.updateIndex();
+                assertEquals(Status.OK, status.getCode());
+            }
+        }
+
+        Status status = v2.updateIndexAlone();
+        assertEquals(Status.OK, status.getCode());
+
+        status = v2.updateIndex();
+        assertEquals(Status.NOT_MODIFIED, status.getCode());
+
+        List<View> views = Arrays.asList(new View[] {v1, v2, v3});
+        status = v3.updateIndexes(views);
+        assertEquals(Status.OK, status.getCode());
+
+        for (View view : new View[] {v2, v3}) {
+            assertEquals(numDocs, view.getLastSequenceIndexed());
+        }
+    }
+
+    private View[] sortViews(List<View> views) {
+        List<View> result = new ArrayList<>(views);
+        Collections.sort(result, new Comparator<View>() {
+            @Override
+            public int compare(View lhs, View rhs) {
+                return lhs.getName().compareTo(rhs.getName());
+            }
+        });
+        return result.toArray(new View[result.size()]);
+    }
+
+    // View_Tests.m : test22_MapFn_Conflicts
+    public void testMapFnConflicts() throws Exception {
+        if (!isSQLiteDB())
+            return;
+
+        View view = database.getView("vu");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), document.get("_conflicts"));
+            }
+        }, "1");
+        assertNotNull(view.getMap());
+
+        Map <String, Object> properties = new HashMap<>();
+        properties.put("foo", "bar");
+        Document doc = createDocWithProperties(properties);
+        SavedRevision rev1 = doc.getCurrentRevision();
+
+        properties = new HashMap<>(doc.getProperties());
+        properties.put("tag", "1");
+        SavedRevision rev2a = doc.putProperties(properties);
+        assertNotNull(rev2a);
+
+        // No conflicts:
+        Query query = view.createQuery();
+        QueryEnumerator rows = query.run();
+        assertEquals(1, rows.getCount());
+        QueryRow row = rows.getRow(0);
+        assertEquals(doc.getId(), row.getKey());
+        assertNull(row.getValue());
+
+        // Create a conflict revision:
+        properties = new HashMap<>(rev1.getProperties());
+        properties.put("tag", "2");
+        UnsavedRevision newRev = rev1.createRevision();
+        newRev.setProperties(properties);
+        SavedRevision rev2b = newRev.save(true);
+        assertNotNull(rev2b);
+
+        rows = query.run();
+        assertEquals(1, rows.getCount());
+        row = rows.getRow(0);
+        assertEquals(doc.getId(), row.getKey());
+        List<String> v = (List<String>)row.getValue();
+        assertNotNull(v);
+        assertTrue(Arrays.equals(new String[] {rev2a.getId()}, v.toArray(new String[v.size()])));
+
+        // Create another conflict revision:
+        properties = new HashMap<>(rev1.getProperties());
+        properties.put("tag", "3");
+        newRev = rev1.createRevision();
+        newRev.setProperties(properties);
+        SavedRevision rev2c = newRev.save(true);
+        assertNotNull(rev2c);
+
+        rows = query.run();
+        assertEquals(1, rows.getCount());
+        row = rows.getRow(0);
+        assertEquals(doc.getId(), row.getKey());
+        v = (List<String>)row.getValue();
+        assertNotNull(v);
+        assertTrue(Arrays.equals(new String[] {rev2b.getId(), rev2a.getId()},
+                v.toArray(new String[v.size()])));
     }
 }
