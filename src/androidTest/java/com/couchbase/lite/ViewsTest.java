@@ -2637,7 +2637,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
     // ViewInternal_Tests.m : test04_IndexMultiple
-    public void testIndexMultiple() throws Exception {
+    public void testIndexMultipleViews() throws Exception {
         if (!isSQLiteDB())
             return;
 
@@ -2702,6 +2702,78 @@ public class ViewsTest extends LiteTestCaseWithDB {
             }
         });
         return result.toArray(new View[result.size()]);
+    }
+
+    public void testIndexMultipleViewsDifferentMaps() throws Exception {
+        if (!isSQLiteDB())
+            return;
+
+        View view1 = database.getView("a/1");
+        view1.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), "a/1");
+            }
+        }, "1");
+
+        View view2 = database.getView("a/2");
+        view2.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), "a/2");
+            }
+        }, "1");
+
+        View view3 = database.getView("b/1");
+        view3.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), "b/1");
+            }
+        }, "1");
+
+        createDocuments(database, 5);
+
+        assertTrue(view1.isStale());
+        assertTrue(view2.isStale());
+        assertTrue(view3.isStale());
+
+        Status status = view1.updateIndex();
+        assertEquals(Status.OK, status.getCode());
+
+        status = view2.updateIndex();
+        assertEquals(Status.NOT_MODIFIED, status.getCode());
+
+        status = view3.updateIndex();
+        assertEquals(Status.OK, status.getCode());
+
+        assertEquals(5, view1.getTotalRows());
+        assertEquals(5, view2.getTotalRows());
+        assertEquals(5, view3.getTotalRows());
+
+        Query query1 = view1.createQuery();
+        QueryEnumerator rows1 = query1.run();
+        assertEquals(5, rows1.getCount());
+        while (rows1.hasNext()) {
+            QueryRow row = rows1.next();
+            assertEquals("a/1", row.getValue());
+        }
+
+        Query query2 = view2.createQuery();
+        QueryEnumerator rows2 = query2.run();
+        assertEquals(5, rows1.getCount());
+        while (rows2.hasNext()) {
+            QueryRow row = rows2.next();
+            assertEquals("a/2", row.getValue());
+        }
+
+        Query query3 = view3.createQuery();
+        QueryEnumerator rows3 = query3.run();
+        assertEquals(5, rows1.getCount());
+        while (rows3.hasNext()) {
+            QueryRow row = rows3.next();
+            assertEquals("b/1", row.getValue());
+        }
     }
 
     // View_Tests.m : test22_MapFn_Conflicts
