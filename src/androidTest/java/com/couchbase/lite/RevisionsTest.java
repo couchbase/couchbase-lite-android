@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -363,5 +364,34 @@ public class RevisionsTest extends LiteTestCaseWithDB {
 
     private static RevisionInternal mkrev(String revID) {
         return new RevisionInternal("docid", revID, false);
+    }
+
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/878:
+    public void failingTestGenerateRevisionID() throws Exception {
+        Map <String, Object> properties = new HashMap<>();
+        properties.put("_id", UUID.randomUUID());
+        properties.put("foo", "bar");
+        byte[] json1 = RevisionUtils.asCanonicalJSON(properties);
+        assertNotNull(json1);
+        assertEquals(13, json1.length);
+        String revID1 = RevisionUtils.generateRevID(json1, false, null);
+        assertEquals("1-aaa6c063924b64a141c98820efcc0022", revID1);
+
+        properties = new HashMap<>(properties);
+        properties.put("_rev", revID1);
+        properties.put("tag", "1");
+        byte[] json2 = RevisionUtils.asCanonicalJSON(properties);
+        assertNotNull(json2);
+        assertEquals(23, json2.length);
+        String revID2 = RevisionUtils.generateRevID(json2, false, revID1);
+        assertEquals("2-cb1210b093cbdcdf5a353df2a898c891", revID2);
+
+        properties = new HashMap<>(properties);
+        properties.put("tag", "2");
+        byte[] json3 = RevisionUtils.asCanonicalJSON(properties);
+        assertNotNull(json3);
+        assertEquals(23, json3.length);
+        String revID3 = RevisionUtils.generateRevID(json3, false, revID1);
+        assertEquals("2-dc83321a829c8ae2849492b05478c9ed", revID3);
     }
 }
