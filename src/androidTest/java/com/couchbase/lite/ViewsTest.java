@@ -331,7 +331,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // Make sure the map function was only invoked one more time (for the document that was added)
         Assert.assertEquals(numTimesMapFunctionInvoked + 1, mapBlock.getNumTimesInvoked());
 
-        Map<String, Object> dict4 = new HashMap<>();
+        Map<String, Object> dict4 = new HashMap<String, Object>();
         dict4.put("key", "four");
         RevisionInternal rev4 = putDoc(database, dict4);
 
@@ -2668,7 +2668,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
         final int numDocs = 10;
         for (int i = 0; i < numDocs; i++) {
-            Map <String, Object> props = new HashMap<>();
+            Map <String, Object> props = new HashMap<String, Object>();
             props.put("key", i);
             putDoc(database, props);
 
@@ -2694,7 +2694,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
     private View[] sortViews(List<View> views) {
-        List<View> result = new ArrayList<>(views);
+        List<View> result = new ArrayList<View>(views);
         Collections.sort(result, new Comparator<View>() {
             @Override
             public int compare(View lhs, View rhs) {
@@ -2791,12 +2791,12 @@ public class ViewsTest extends LiteTestCaseWithDB {
         }, "1");
         assertNotNull(view.getMap());
 
-        Map <String, Object> properties = new HashMap<>();
+        Map <String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "bar");
         Document doc = createDocWithProperties(properties);
         SavedRevision rev1 = doc.getCurrentRevision();
 
-        properties = new HashMap<>(doc.getProperties());
+        properties = new HashMap<String, Object>(doc.getProperties());
         properties.put("tag", "1");
         SavedRevision rev2a = doc.putProperties(properties);
         assertNotNull(rev2a);
@@ -2810,7 +2810,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertNull(row.getValue());
 
         // Create a conflict revision:
-        properties = new HashMap<>(rev1.getProperties());
+        properties = new HashMap<String, Object>(rev1.getProperties());
         properties.put("tag", "2");
         UnsavedRevision newRev = rev1.createRevision();
         newRev.setProperties(properties);
@@ -2826,7 +2826,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertTrue(Arrays.equals(new String[] {rev2a.getId()}, v.toArray(new String[v.size()])));
 
         // Create another conflict revision:
-        properties = new HashMap<>(rev1.getProperties());
+        properties = new HashMap<String, Object>(rev1.getProperties());
         properties.put("tag", "3");
         newRev = rev1.createRevision();
         newRev.setProperties(properties);
