@@ -2777,7 +2777,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
     // View_Tests.m : test22_MapFn_Conflicts
-    public void failingTestMapFnConflicts() throws Exception {
+    public void testMapFnConflicts() throws Exception {
         if (!isSQLiteDB())
             return;
 
@@ -2839,7 +2839,20 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(doc.getId(), row.getKey());
         v = (List<String>)row.getValue();
         assertNotNull(v);
-        assertTrue(Arrays.equals(new String[] {rev2b.getId(), rev2a.getId()},
-                v.toArray(new String[v.size()])));
+
+        // _conflicts in the map function are sorted by RevID desc. Therefore
+        // the order will depend on the actual RevID string content.
+        //
+        // Currently there is an issue that the RevIDs generated on different Android APIs may
+        // not be the same (https://github.com/couchbase/couchbase-lite-java-core/issues/878).
+        // As a result we couldn't guarantee the order or the conflicting RevIDs when writing
+        // the assertion tests.
+        //
+        // Workaround: sort the conflicting revs IDs for comparison:
+        String[] conflicts = new String[] {rev2a.getId(), rev2b.getId()};
+        Arrays.sort(conflicts);
+        String[] _conflicts = v.toArray(new String[v.size()]);
+        Arrays.sort(_conflicts);
+        assertTrue(Arrays.equals(conflicts, _conflicts));
     }
 }
