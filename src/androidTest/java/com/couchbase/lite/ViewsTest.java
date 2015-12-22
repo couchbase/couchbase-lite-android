@@ -2770,6 +2770,88 @@ public class ViewsTest extends LiteTestCaseWithDB {
         }
     }
 
+    // test20_DocTypes in View_Tests.m
+    public void testDocTypes() throws Exception {
+        View view1 = database.getView("test/peepsNames");
+        view1.setDocumentType("person");
+        view1.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                assertEquals("person", document.get("type"));
+                emitter.emit(document.get("name"), null);
+            }
+        }, "1");
+
+        View view2 = database.getView("test/aardvarks");
+        view2.setDocumentType("aardvark");
+        view2.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                assertEquals("aardvark", document.get("type"));
+                emitter.emit(document.get("name"), null);
+            }
+        }, "1");
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("type", "person");
+        properties.put("name", "mick");
+        createDocWithProperties(properties);
+
+        properties = new HashMap<String, Object>();
+        properties.put("type", "person");
+        properties.put("name", "keef");
+        createDocWithProperties(properties);
+
+        properties.put("type", "aardvark");
+        properties.put("name", "cerebus");
+        final Document doc = createDocWithProperties(properties);
+
+        Query query = view1.createQuery();
+        QueryEnumerator rows = query.run();
+        assertEquals(2, rows.getCount());
+        assertEquals("keef", rows.getRow(0).getKey());
+        assertEquals("mick", rows.getRow(1).getKey());
+
+        query = view2.createQuery();
+        rows = query.run();
+        assertEquals(1, rows.getCount());
+        assertEquals("cerebus", rows.getRow(0).getKey());
+
+        // Make sure that documents that are updated to no longer match the view's documentType get
+        // removed from its index:
+        SavedRevision rev = doc.update(new Document.DocumentUpdater() {
+            @Override
+            public boolean update(UnsavedRevision rev) {
+                Map<String, Object> props = rev.getProperties();
+                props.put("type", "person");
+                rev.setProperties(props);
+                return true;
+            }
+        });
+        assertNotNull(rev);
+
+        rows = query.run();
+        assertEquals(0, rows.getCount());
+
+        // Make sure a view without a docType will coexist:
+        properties = new HashMap<String, Object>();
+        properties.put("type", "elf");
+        properties.put("name", "regency elf");
+        createDocWithProperties(properties);
+
+        View view3 = database.getView("test/all");
+        view3.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("name"), null);
+            }
+        }, "1");
+
+        query = view3.createQuery();
+        rows = query.run();
+        assertEquals(4, rows.getCount());
+    }
+
     // test22_MapFn_Conflicts in View_Tests.m
     public void testMapFnConflicts() throws Exception {
         View view = database.getView("vu");
