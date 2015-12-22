@@ -2609,7 +2609,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(looser.getProperties().get("key"), rows.get(0).getKey());
     }
 
-    // View_Tests.m: test21_TotalRows
+    // test21_TotalRows in View_Tests.m
     public void testTotalRows() throws Exception {
         View view = database.getView("vu");
         assertNotNull(view);
@@ -2636,11 +2636,8 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(40, view.getTotalRows());
     }
 
-    // ViewInternal_Tests.m : test04_IndexMultiple
+    // test04_IndexMultiple in ViewInternal_Tests.m
     public void testIndexMultipleViews() throws Exception {
-        if (!isSQLiteDB())
-            return;
-
         View v1 = createView(database, "agroup/view1");
         View v2 = createView(database, "other/view2");
         View v3 = createView(database, "other/view3");
@@ -2705,9 +2702,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
     public void testIndexMultipleViewsDifferentMaps() throws Exception {
-        if (!isSQLiteDB())
-            return;
-
         View view1 = database.getView("a/1");
         view1.setMap(new Mapper() {
             @Override
@@ -2776,11 +2770,8 @@ public class ViewsTest extends LiteTestCaseWithDB {
         }
     }
 
-    // View_Tests.m : test22_MapFn_Conflicts
+    // test22_MapFn_Conflicts in View_Tests.m
     public void testMapFnConflicts() throws Exception {
-        if (!isSQLiteDB())
-            return;
-
         View view = database.getView("vu");
         assertNotNull(view);
         view.setMap(new Mapper() {
@@ -2823,7 +2814,13 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(doc.getId(), row.getKey());
         List<String> v = (List<String>)row.getValue();
         assertNotNull(v);
-        assertTrue(Arrays.equals(new String[] {rev2a.getId()}, v.toArray(new String[v.size()])));
+
+        String conflictRevID;
+        if (rev2b.getId().equals(doc.getCurrentRevisionId()))
+            conflictRevID = rev2a.getId();
+        else
+            conflictRevID = rev2b.getId();
+        assertTrue(Arrays.equals(new String[] {conflictRevID}, v.toArray(new String[v.size()])));
 
         // Create another conflict revision:
         properties = new HashMap<String, Object>(rev1.getProperties());
@@ -2849,7 +2846,12 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // the assertion tests.
         //
         // Workaround: sort the conflicting revs IDs for comparison:
-        String[] conflicts = new String[] {rev2a.getId(), rev2b.getId()};
+        List<String> conflictRevs = new ArrayList<String>();
+        for (SavedRevision rev : doc.getConflictingRevisions()) {
+            if (!rev.getId().equals(doc.getCurrentRevisionId()))
+                conflictRevs.add(rev.getId());
+        }
+        String[] conflicts = conflictRevs.toArray(new String[conflictRevs.size()]);
         Arrays.sort(conflicts);
         String[] _conflicts = v.toArray(new String[v.size()]);
         Arrays.sort(_conflicts);
