@@ -2823,7 +2823,13 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(doc.getId(), row.getKey());
         List<String> v = (List<String>)row.getValue();
         assertNotNull(v);
-        assertTrue(Arrays.equals(new String[] {rev2a.getId()}, v.toArray(new String[v.size()])));
+
+        String conflictRevID;
+        if (rev2b.getId().equals(doc.getCurrentRevisionId()))
+            conflictRevID = rev2a.getId();
+        else
+            conflictRevID = rev2b.getId();
+        assertTrue(Arrays.equals(new String[] {conflictRevID}, v.toArray(new String[v.size()])));
 
         // Create another conflict revision:
         properties = new HashMap<String, Object>(rev1.getProperties());
@@ -2849,7 +2855,12 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // the assertion tests.
         //
         // Workaround: sort the conflicting revs IDs for comparison:
-        String[] conflicts = new String[] {rev2a.getId(), rev2b.getId()};
+        List<String> conflictRevs = new ArrayList<String>();
+        for (SavedRevision rev : doc.getConflictingRevisions()) {
+            if (!rev.getId().equals(doc.getCurrentRevisionId()))
+                conflictRevs.add(rev.getId());
+        }
+        String[] conflicts = conflictRevs.toArray(new String[conflictRevs.size()]);
         Arrays.sort(conflicts);
         String[] _conflicts = v.toArray(new String[v.size()]);
         Arrays.sort(_conflicts);
