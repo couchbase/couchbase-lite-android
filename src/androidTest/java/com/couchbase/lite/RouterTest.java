@@ -24,6 +24,7 @@ public class RouterTest extends LiteTestCaseWithDB {
 
     public static final String TAG = "Router";
 
+    // - (void) test_Server in Router_Tests.m
     public void testServer() {
         Map<String, Object> responseBody = new HashMap<String, Object>();
         responseBody.put("CBLite", "Welcome");
@@ -51,6 +52,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         send("POST", "/", Status.NOT_FOUND, null);
     }
 
+    // - (void) test_Databases in Router_Tests.m
     public void testDatabase() {
         send("PUT", "/database", Status.CREATED, null);
         Map entries = new HashMap<String, Map<String, Object>>();
@@ -161,6 +163,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         return value;
     }
 
+    // - (void) test_Docs in Router_Tests.m
     public void testDocs() {
         send("PUT", "/db", Status.CREATED, null);
 
@@ -290,6 +293,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         Log.d(TAG, "Finished put with _deleted to delete a doc");
     }
 
+    // - (void) test_LocalDocs in Router_Tests.m
     public void testLocalDocs() {
         send("PUT", "/db", Status.CREATED, null);
 
@@ -312,6 +316,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         send("GET", "/db/_changes", Status.OK, expectedChanges);
     }
 
+    // - (void) test_AllDocs in Router_Tests.m
     public void testAllDocs() {
         send("PUT", "/db", Status.CREATED, null);
 
@@ -389,10 +394,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals(expectedRowsWithDocs, rows);
     }
 
-    /**
-     * in Router_Tests.m
-     * - (void) test_Views
-     */
+    // - (void) test_Views in Router_Tests.m
     public void testViews() throws CouchbaseLiteException {
         send("PUT", "/db", Status.CREATED, null);
 
@@ -1082,5 +1084,72 @@ public class RouterTest extends LiteTestCaseWithDB {
             // cleanup
             server.shutdown();
         }
+    }
+
+    public void testChangesIncludeDocs() throws CouchbaseLiteException {
+        // Create a conflict on purpose
+        Document doc = database.createDocument();
+        SavedRevision rev1 = doc.createRevision().save();
+        SavedRevision rev2a = createRevisionWithRandomProps(rev1, false);
+        SavedRevision rev2b = createRevisionWithRandomProps(rev1, true);
+
+        SavedRevision winningRev = null;
+        SavedRevision losingRev = null;
+        if (doc.getCurrentRevisionId().equals(rev2a.getId())) {
+            winningRev = rev2a;
+            losingRev = rev2b;
+        } else {
+            winningRev = rev2b;
+            losingRev = rev2a;
+        }
+        assertEquals(2, doc.getConflictingRevisions().size());
+        assertEquals(2, doc.getLeafRevisions().size());
+
+        // /{db}/_changes with default parameter -> in changes, one revisions [winning rev]
+        String url = String.format("/%s/_changes", DEFAULT_TEST_DB);
+        Map<String, Object> res = (Map<String, Object>) send("GET", url, Status.OK, null);
+        Log.e(TAG, "[%s] %s", url, res);
+        String[] revIDs = obtainChangesRevIDs(res);
+        assertEquals(1, revIDs.length);
+        assertEquals(winningRev.getId(), revIDs[0]);
+
+        // /{db}/_changes with style=all_docs parameter -> in changes, two revisions [winning rev and losing rev]
+        url = String.format("/%s/_changes?style=all_docs", DEFAULT_TEST_DB);
+        res = (Map<String, Object>) send("GET", url, Status.OK, null);
+        Log.e(TAG, "[%s] %s", url, res);
+        revIDs = obtainChangesRevIDs(res);
+        assertEquals(2, revIDs.length);
+        assertEquals(winningRev.getId(), revIDs[0]);
+        assertEquals(losingRev.getId(), revIDs[1]);
+
+        // /{db}/_changes with include_docs=true parameter -> in changes, one revisions [winning rev] and  doc is only winning rev
+        url = String.format("/%s/_changes?include_docs=true", DEFAULT_TEST_DB);
+        res = (Map<String, Object>) send("GET", url, Status.OK, null);
+        Log.e(TAG, "[%s] %s", url, res);
+        revIDs = obtainChangesRevIDs(res);
+        assertEquals(1, revIDs.length);
+        assertEquals(winningRev.getId(), revIDs[0]);
+
+        // /{db}/_changes with include_docs=true & style=all_docs parameters -> in changes, one revisions [winning rev] and doc is only winning rev
+        url = String.format("/%s/_changes?include_docs=true&style=all_docs", DEFAULT_TEST_DB);
+        res = (Map<String, Object>) send("GET", url, Status.OK, null);
+        Log.e(TAG, "[%s] %s", url, res);
+        revIDs = obtainChangesRevIDs(res);
+        assertEquals(2, revIDs.length);
+        assertEquals(winningRev.getId(), revIDs[0]);
+        assertEquals(losingRev.getId(), revIDs[1]);
+
+        // NOTE: To test feed=longpoll, use AndroidLiteServ
+    }
+
+    private static String[] obtainChangesRevIDs(Map<String, Object> res){
+        List<String> revIDs = new ArrayList<String>();
+        List<Map<String, Object>> results = (List<Map<String, Object>>)res.get("results");
+        Map<String, Object> result = results.get(0);
+        List<Map<String, Object>> changes = (List<Map<String, Object>>)result.get("changes");
+        for(Map<String, Object> change :changes){
+            revIDs.add((String)change.get("rev"));
+        }
+        return revIDs.toArray(new String[revIDs.size()]);
     }
 }

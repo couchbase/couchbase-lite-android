@@ -15,9 +15,7 @@ import com.couchbase.lite.storage.SQLiteNativeLibrary;
 import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.HttpClientFactory;
-import com.couchbase.lite.support.action.ActionException;
 import com.couchbase.lite.support.security.SymmetricKey;
-import com.couchbase.lite.support.security.SymmetricKeyException;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -755,7 +753,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     public static SavedRevision createRevisionWithRandomProps(SavedRevision createRevFrom,
                                                               boolean allowConflict)
-            throws Exception {
+            throws CouchbaseLiteException {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put(UUID.randomUUID().toString(), "val");
         UnsavedRevision unsavedRevision = createRevFrom.createRevision();
