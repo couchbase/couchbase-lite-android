@@ -5331,4 +5331,88 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         String check3 = r3.replicationInternal.remoteCheckpointDocID();
         assertNotSame(check2, check3);
     }
+
+    public void testPullWithGzippedChangesFeed() throws Exception {
+        MockWebServer server = null;
+        try {
+            // Create mock server and play:
+            MockDispatcher dispatcher = new MockDispatcher();
+            server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            server.play();
+
+            // Mock documents to be pulled:
+            MockDocumentGet.MockDocument mockDoc1 =
+                    new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+            MockDocumentGet.MockDocument mockDoc2 =
+                    new MockDocumentGet.MockDocument("doc2", "1-563b", 2);
+            mockDoc2.setJsonMap(MockHelper.generateRandomJsonMap());
+
+            // // checkpoint GET response w/ 404:
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+            // _changes response:
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse(/*gzip*/true));
+
+            // doc1 response:
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(),
+                    mockDocumentGet.generateMockResponse());
+
+            // doc2 response:
+            mockDocumentGet = new MockDocumentGet(mockDoc2);
+            dispatcher.enqueueResponse(mockDoc2.getDocPathRegex(),
+                    mockDocumentGet.generateMockResponse());
+
+            // _bulk_get response:
+            MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+            mockBulkGet.addDocument(mockDoc1);
+            mockBulkGet.addDocument(mockDoc2);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+            // Respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // Setup database change listener:
+            final List<String> changeDocIDs = new ArrayList<String>();
+            database.addChangeListener(new Database.ChangeListener() {
+                @Override
+                public void changed(Database.ChangeEvent event) {
+                    for (DocumentChange change : event.getChanges()) {
+                        changeDocIDs.add(change.getDocumentId());
+                    }
+                }
+            });
+
+            // Run pull replication:
+            Replication replication = database.createPullReplication(server.getUrl("/db"));
+            runReplication(replication);
+
+            // Check result:
+            assertEquals(2, changeDocIDs.size());
+            String[] docIDs = changeDocIDs.toArray(new String[changeDocIDs.size()]);
+            Arrays.sort(docIDs);
+            assertTrue(Arrays.equals(new String[]{"doc1", "doc2"}, docIDs));
+
+            // Check changes feed request:
+            RecordedRequest changesFeedRequest =
+                    dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+            String acceptEncoding = changesFeedRequest.getHeader("Accept-Encoding");
+            assertNotNull(acceptEncoding);
+            assertTrue(acceptEncoding.contains("gzip"));
+        } finally {
+            if (server != null)
+                server.shutdown();
+        }
+    }
 }

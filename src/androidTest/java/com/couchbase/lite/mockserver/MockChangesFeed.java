@@ -23,6 +23,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import okio.Buffer;
+import okio.BufferedSink;
+import okio.GzipSink;
+import okio.Okio;
+
 /*
 
     Generate mock changes feed, eg:
@@ -99,11 +104,36 @@ public class MockChangesFeed {
     }
 
     public MockResponse generateMockResponse() {
+        return generateMockResponse(false);
+    }
+
+    public MockResponse generateMockResponse(boolean gzip) {
         MockResponse mockResponse = new MockResponse();
-        mockResponse.setBody(generateChangesBody());
+        if (gzip) {
+            mockResponse.setBody(gzip(generateChangesBody()));
+            mockResponse.addHeader("Content-Encoding: gzip");
+        } else  {
+            mockResponse.setBody(generateChangesBody());
+        }
         MockHelper.set200OKJson(mockResponse);
         return mockResponse;
     }
+
+    private Buffer gzip(String data) {
+        Buffer result = new Buffer();
+        BufferedSink sink = null;
+        try {
+            sink = Okio.buffer(new GzipSink(result));
+            sink.writeUtf8(data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (sink != null)
+                try { sink.close(); } catch (IOException e) { }
+        }
+        return result;
+    }
+
 
     public static class MockChangedDoc {
 
