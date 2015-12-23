@@ -1680,8 +1680,8 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         filterParams.put("a", "aval");
         filterParams.put("b", "bval");
         List<String> docIds = Arrays.asList("doc3", "doc1", "doc2");
-        pullerWithFilter1.setDocumentIDs(docIds);
-        assertEquals(docIds, pullerWithFilter1.getDocumentIDs());
+        pullerWithFilter1.setDocIds(docIds);
+        assertEquals(docIds, pullerWithFilter1.getDocIds());
         pullerWithFilter1.setFilterParams(filterParams);
 
         String withFilterCheckpointDocId = pullerWithFilter1.remoteCheckpointDocID();
@@ -1692,7 +1692,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         filterParams = new HashMap<String, Object>();
         filterParams.put("b", "bval");
         filterParams.put("a", "aval");
-        pullerWithFilter2.setDocumentIDs(Arrays.asList("doc2", "doc3", "doc1"));
+        pullerWithFilter2.setDocIds(Arrays.asList("doc2", "doc3", "doc1"));
         pullerWithFilter2.setFilterParams(filterParams);
 
         String withFilterCheckpointDocId2 = pullerWithFilter2.remoteCheckpointDocID();
@@ -4026,7 +4026,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             pusher.setFilterParams(filterParams);
 
             // doc ids
-            pusher.setDocumentIDs(Arrays.asList(doc1.getId()));
+            pusher.setDocIds(Arrays.asList(doc1.getId()));
 
             // custom authenticator
             BasicAuthenticator authenticator = new BasicAuthenticator("foo", "bar");
@@ -4065,7 +4065,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertTrue(pusher.getFilterParams().size() == 1);
             assertEquals(filterVal, pusher.getFilterParams().get(filterParam));
             assertTrue(pusher.isContinuous());
-            assertEquals(Arrays.asList(doc1.getId()), pusher.getDocumentIDs());
+            assertEquals(Arrays.asList(doc1.getId()), pusher.getDocIds());
             assertEquals(authenticator, pusher.getAuthenticator());
             assertEquals(requestHeaders, pusher.getHeaders());
             assertTrue(pusher.shouldCreateTarget());
@@ -5362,7 +5362,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // Create push replication:
             Replication replication = database.createPushReplication(server.getUrl("/db"));
-            replication.setDocumentIDs(Arrays.asList(new String[] {"doc2", "doc3"}));
+            replication.setDocIds(Arrays.asList(new String[] {"doc2", "doc3"}));
 
             // check pending document IDs:
             Set<String> pendingDocIDs = replication.getPendingDocumentIDs();
@@ -5408,7 +5408,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // Run pull replication:
             Replication replication = database.createPullReplication(server.getUrl("/db"));
-            replication.setDocumentIDs(Arrays.asList(new String[] {"doc2", "doc3"}));
+            replication.setDocIds(Arrays.asList(new String[] {"doc2", "doc3"}));
             runReplication(replication);
 
             // Check changes feed request:
