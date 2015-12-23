@@ -1671,7 +1671,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * https://github.com/couchbase/couchbase-lite-android/issues/243
      */
     public void testDifferentCheckpointsFilteredReplication() throws Exception {
-
         Replication pullerNoFilter = database.createPullReplication(getReplicationURL());
         String noFilterCheckpointDocId = pullerNoFilter.remoteCheckpointDocID();
 
@@ -5330,6 +5329,105 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         r3.setFilter("Melitta");
         String check3 = r3.replicationInternal.remoteCheckpointDocID();
         assertNotSame(check2, check3);
+    }
+
+    public void testPushReplicationSetDocumentIDs() throws Exception {
+        // Create documents:
+        createDocumentForPushReplication("doc1", null, null);
+        createDocumentForPushReplication("doc2", null, null);
+        createDocumentForPushReplication("doc3", null, null);
+        createDocumentForPushReplication("doc4", null, null);
+
+        MockWebServer server = null;
+        try {
+            // Create mock server and play:
+            MockDispatcher dispatcher = new MockDispatcher();
+            server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            server.play();
+
+            // Checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests:
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(50);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // _revs_diff response -- everything missing:
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+
+            // Create push replication:
+            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            replication.setDocIds(Arrays.asList(new String[] {"doc2", "doc3"}));
+
+            // check pending document IDs:
+            Set<String> pendingDocIDs = replication.getPendingDocumentIDs();
+            assertEquals(2, pendingDocIDs.size());
+            assertFalse(pendingDocIDs.contains("doc1"));
+            assertTrue(pendingDocIDs.contains("doc2"));
+            assertTrue(pendingDocIDs.contains("doc3"));
+            assertFalse(pendingDocIDs.contains("doc4"));
+
+            // Run replication:
+            runReplication(replication);
+
+            // Check result:
+            RecordedRequest bulkDocsRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_BULK_DOCS);
+            assertNotNull(bulkDocsRequest);
+            assertFalse(MockHelper.getUtf8Body(bulkDocsRequest).contains("doc1"));
+            assertTrue(MockHelper.getUtf8Body(bulkDocsRequest).contains("doc2"));
+            assertTrue(MockHelper.getUtf8Body(bulkDocsRequest).contains("doc3"));
+            assertFalse(MockHelper.getUtf8Body(bulkDocsRequest).contains("doc4"));
+        } finally {
+            if (server != null)
+                server.shutdown();
+        }
+    }
+
+    public void testPullReplicationSetDocumentIDs() throws Exception {
+        MockWebServer server = null;
+        try {
+            // Create mock server and play:
+            MockDispatcher dispatcher = new MockDispatcher();
+            server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            server.play();
+
+            // checkpoint PUT or GET response (sticky):
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // _changes response:
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // Run pull replication:
+            Replication replication = database.createPullReplication(server.getUrl("/db"));
+            replication.setDocIds(Arrays.asList(new String[] {"doc2", "doc3"}));
+            runReplication(replication);
+
+            // Check changes feed request:
+            RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+            assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
+            String body = getChangesFeedRequest.getUtf8Body();
+            Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(body, Map.class);
+            assertTrue(jsonMap.containsKey("filter"));
+            String filter = (String) jsonMap.get("filter");
+            assertEquals("_doc_ids", filter);
+            List<String> docIDs = (List<String>) jsonMap.get("doc_ids");
+            assertNotNull(docIDs);
+            assertEquals(2, docIDs.size());
+            assertTrue(docIDs.contains("doc2"));
+            assertTrue(docIDs.contains("doc3"));
+        } finally {
+            if (server != null)
+                server.shutdown();
+        }
     }
 
     public void testPullWithGzippedChangesFeed() throws Exception {
