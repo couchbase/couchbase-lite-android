@@ -817,7 +817,6 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     }
 
     public static class ReplicationFinishedObserver implements Replication.ChangeListener {
-
         private CountDownLatch doneSignal;
 
         public ReplicationFinishedObserver(CountDownLatch doneSignal) {
@@ -826,7 +825,6 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-
             if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
                 doneSignal.countDown();
                 assertEquals(event.getChangeCount(), event.getCompletedChangeCount());
