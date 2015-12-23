@@ -368,7 +368,7 @@ public class RevisionsTest extends LiteTestCaseWithDB {
 
     // https://github.com/couchbase/couchbase-lite-java-core/issues/878:
     public void failingTestGenerateRevisionID() throws Exception {
-        Map <String, Object> properties = new HashMap<>();
+        Map <String, Object> properties = new HashMap<String, Object>();
         properties.put("_id", UUID.randomUUID());
         properties.put("foo", "bar");
         byte[] json1 = RevisionUtils.asCanonicalJSON(properties);
@@ -377,7 +377,7 @@ public class RevisionsTest extends LiteTestCaseWithDB {
         String revID1 = RevisionUtils.generateRevID(json1, false, null);
         assertEquals("1-aaa6c063924b64a141c98820efcc0022", revID1);
 
-        properties = new HashMap<>(properties);
+        properties = new HashMap<String, Object>(properties);
         properties.put("_rev", revID1);
         properties.put("tag", "1");
         byte[] json2 = RevisionUtils.asCanonicalJSON(properties);
@@ -386,7 +386,7 @@ public class RevisionsTest extends LiteTestCaseWithDB {
         String revID2 = RevisionUtils.generateRevID(json2, false, revID1);
         assertEquals("2-cb1210b093cbdcdf5a353df2a898c891", revID2);
 
-        properties = new HashMap<>(properties);
+        properties = new HashMap<String, Object>(properties);
         properties.put("tag", "2");
         byte[] json3 = RevisionUtils.asCanonicalJSON(properties);
         assertNotNull(json3);
