@@ -1,0 +1,6 @@
+include ':couchbase-lite-android',
+        ':libraries:couchbase-lite-java-core',
+        ':libraries:couchbase-lite-java-forestdb',
+        ':libraries:couchbase-lite-java-native:sqlite-default',
+        ':libraries:couchbase-lite-java-native:sqlite-custom',
+        ':libraries:couchbase-lite-java-native:sqlcipher'
