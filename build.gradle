@@ -55,16 +55,16 @@ dependencies {
     
     compile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-native:sqlite-default') :
-            'com.couchbase.lite:couchbase-lite-android-sqlite-default' + version
+            'com.couchbase.lite:couchbase-lite-android-sqlite-default:' + version
 
     // Libraries required for tests only:
     androidTestCompile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-native:sqlite-custom') :
-            'com.couchbase.lite:couchbase-lite-android-sqlite-custom' + version
+            'com.couchbase.lite:couchbase-lite-android-sqlite-custom:' + version
 
     androidTestCompile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-native:sqlcipher') :
-            'com.couchbase.lite:couchbase-lite-android-sqlcipher' + version
+            'com.couchbase.lite:couchbase-lite-android-sqlcipher:' + version
 
     androidTestCompile buildAndroidWithArtifacts == null ?
             project(':libraries:couchbase-lite-java-forestdb') :
