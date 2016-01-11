@@ -2,6 +2,7 @@ package com.couchbase.lite.support;
 
 import com.couchbase.lite.Database;
 import com.couchbase.lite.LiteTestCase;
+import com.couchbase.lite.Manager;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
 
@@ -17,12 +18,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class BatcherTest extends LiteTestCase {
 
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        Manager.enableLogging(Log.TAG_BATCHER, Log.VERBOSE);
+    }
+
     /**
      * Add 100 items in a batcher and make sure that the processor
      * is correctly called back with the first batch.
      */
     public void testBatcherSingleBatch() throws Exception {
-
         int numBatches = 3;
         final CountDownLatch doneSignal = new CountDownLatch(numBatches);
 
@@ -61,7 +67,6 @@ public class BatcherTest extends LiteTestCase {
      * Also make sure that they appear in the correct order within a batch.
      */
     public void testBatcherBatchSize5() throws Exception {
-
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
 
         int inboxCapacity = 10;
@@ -112,9 +117,7 @@ public class BatcherTest extends LiteTestCase {
      * This sporadically fails on the genymotion emulator and Nexus 5 device.
      */
     public void testBatcherThreadSafe() throws Exception {
-
         // 10 threads using the same batcher
-
         // each thread queues a bunch of items and makes sure they were all processed
 
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
@@ -143,9 +146,7 @@ public class BatcherTest extends LiteTestCase {
                     allItemsProcessed.countDown();
                 }
             }
-
         });
-
 
         for (int i = 0; i < numThreads; i++) {
             final String iStr = Integer.toString(i);
@@ -165,8 +166,6 @@ public class BatcherTest extends LiteTestCase {
                 }
             };
             new Thread(runnable).start();
-
-
         }
 
         Log.d(TAG, "waiting for allItemsProcessed");
@@ -194,12 +193,10 @@ public class BatcherTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/329
      */
     public void testBatcherWaitsForProcessorDelay1() throws Exception {
-
         long timeBeforeQueue;
         long timeAfterCallback;
         long delta;
         boolean success;
-
 
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
         int inboxCapacity = 5;
@@ -207,7 +204,6 @@ public class BatcherTest extends LiteTestCase {
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(2);
-
 
         final Batcher batcher = new Batcher<String>(workExecutor, inboxCapacity, processorDelay, new BatchProcessor<String>() {
             @Override
@@ -253,7 +249,6 @@ public class BatcherTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/329
      */
     public void testBatcherWaitsForProcessorDelay2() throws Exception {
-
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
         int inboxCapacity = 5;
         int processorDelay = 1000;
@@ -312,7 +307,6 @@ public class BatcherTest extends LiteTestCase {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/329
      */
     public void testWaitForPendingFutures() throws Exception {
-
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
         int inboxCapacity = 3;
         int processorDelay = 100;
@@ -351,10 +345,9 @@ public class BatcherTest extends LiteTestCase {
      * - As soon as we've hit capacity, it should call processor shortly after
      */
     public void testInvokeProcessorAfterReachingCapacity() throws Exception {
-
         ScheduledExecutorService workExecutor = new ScheduledThreadPoolExecutor(1);
-        final int inboxCapacity = 10;
-        final int numItemsToSubmit = inboxCapacity * 25;
+        final int inboxCapacity = 5;
+        final int numItemsToSubmit = 100;
         final int processorDelay = 1000; // 1000ms
 
         final CountDownLatch latchFirstProcess = new CountDownLatch(1);
@@ -379,9 +372,7 @@ public class BatcherTest extends LiteTestCase {
                 for (int i = 0; i < numItemsToSubmit; i++) {
                     if (i == inboxCapacity)
                         latchSubmittedCapacity.countDown();
-                    ArrayList<String> objectsToQueue = new ArrayList<String>();
-                    objectsToQueue.add(Integer.toString(i));
-                    batcher.queueObjects(objectsToQueue);
+                    batcher.queueObject(Integer.toString(i));
                     Log.d(TAG, "Submitted object %d", i);
                 }
                 monitorThread.countDown();
