@@ -58,12 +58,27 @@
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
-                                 <!-- locally packaged  -->
         <file>
-            <source> ${ZIP_HOME}/${JAR_AND_CLASS} </source>
+            <source> ${ZIP_HOME}/couchbase-lite-android-forestdb-${REVISION}.aar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
+        <file>
+            <source> ${ZIP_HOME}/couchbase-lite-android-sqlite-default-${REVISION}.aar</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
+        <file>
+            <source> ${ZIP_HOME}/couchbase-lite-android-sqlite-custom-${REVISION}.aar</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
+        <file>
+            <source> ${ZIP_HOME}/couchbase-lite-android-sqlcipher-${REVISION}.aar</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
+
         <file>
             <source> ${ZIP_HOME}/${JAR_COLLATORS} </source>
             <outputDirectory>/</outputDirectory>

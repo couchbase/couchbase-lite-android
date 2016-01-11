@@ -97,6 +97,35 @@
             <version>${REVISION}</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.couchbase.lite</groupId>
+            <artifactId>couchbase-lite-android-forestdb</artifactId>
+            <type>aar</type>
+            <version>${REVISION}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.couchbase.lite</groupId>
+            <artifactId>couchbase-lite-android-sqlcipher</artifactId>
+            <type>aar</type>
+            <version>${REVISION}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.couchbase.lite</groupId>
+            <artifactId>couchbase-lite-android-sqlite-default</artifactId>
+            <type>aar</type>
+            <version>${REVISION}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.couchbase.lite</groupId>
+            <artifactId>couchbase-lite-android-sqlite-custom</artifactId>
+            <type>aar</type>
+            <version>${REVISION}</version>
+            <scope>compile</scope>
+        </dependency>
+
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -301,7 +330,19 @@
                                  <copy file="${POM_SRC_JA_SCRIPT}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
                                  <copy file="${POM_SRC_JLISTENER}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
 
-                                 <!-- locally packaged  -->
+                                <copy file="${TARGET_DIR}/couchbase-lite-android-forestdb/${REVISION}/couchbase-lite-android-forestdb-${REVISION}.aar" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy file="${TARGET_DIR}/couchbase-lite-android-forestdb/${REVISION}/couchbase-lite-android-forestdb-${REVISION}.pom" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                <copy file="${TARGET_DIR}/couchbase-lite-android-sqlite-default/${REVISION}/couchbase-lite-android-sqlite-default-${REVISION}.aar" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy file="${TARGET_DIR}/couchbase-lite-android-sqlite-default/${REVISION}/couchbase-lite-android-sqlite-default-${REVISION}.pom" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                <copy file="${TARGET_DIR}/couchbase-lite-android-sqlite-custom/${REVISION}/couchbase-lite-android-sqlite-custom-${REVISION}.aar" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy file="${TARGET_DIR}/couchbase-lite-android-sqlite-custom/${REVISION}/couchbase-lite-android-sqlite-custom-${REVISION}.pom" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                <copy file="${TARGET_DIR}/couchbase-lite-android-sqlcipher/${REVISION}/couchbase-lite-android-sqlcipher-${REVISION}.aar" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+                                <copy file="${TARGET_DIR}/couchbase-lite-android-sqlcipher/${REVISION}/couchbase-lite-android-sqlcipher-${REVISION}.pom" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
+
+                                <!-- locally packaged  -->
                                  <echo message="DEBUG:::   locally packaged android JARs" />
                                  
                                  <copy file="${JAR_DST_AND_CLASS}" todir="${ZIP_HOME}"  preservelastmodified="true" flatten="true" verbose="true" />
