@@ -570,7 +570,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
         }
     }
 
-    public void testServerIsSyncGatewayVersion(){
+    public void testServerIsSyncGatewayVersion() {
 
         // sync gateway 1.2
         assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "1.3"));
@@ -603,5 +603,84 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
         assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.93"));
         assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.92"));
         assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.81"));
+    }
+
+    public void testUserAgent() throws Exception{
+        String doc1Id = "doc1";
+        String doc2Id = "doc2";
+        String doc3Id = "doc3";
+
+        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
+        mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
+        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
+        mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
+        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
+        mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
+
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
+
+            //add response to _local request
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+            //add response to _changes request
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // _bulk_get response for odd indexed documents
+            MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+            mockBulkGet.addDocument(mockDocument1);
+            mockBulkGet.addDocument(mockDocument2);
+            mockBulkGet.addDocument(mockDocument3);
+            mockBulkGet.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+            // checkpoint PUT response
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+
+            // start mock server
+            server.play();
+
+            //create replication
+            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            pull.setContinuous(false);
+
+            //add change listener to notify when the replication is finished
+            CountDownLatch replicationIdleSignal = new CountDownLatch(1);
+            pull.addChangeListener(new ReplicationFinishedObserver(replicationIdleSignal));
+
+            //start replication
+            pull.start();
+
+            boolean success = replicationIdleSignal.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+
+            if (pull.getLastError() != null)
+                Log.d(TAG, "Replication had error: ", pull.getLastError());
+            assertNull(pull.getLastError());
+
+            // wait until the replicator PUT's checkpoint with mockDocument3's sequence
+            waitForPutCheckpointRequestWithSeq(dispatcher, mockDocument3.getDocSeq());
+
+            // Check User-Agent Header value for /_changes and /_bulk_get
+            // CheckPoint is validated by waitForPutCheckpointRequestWithSeq() method
+            checkUserAgent(dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES));
+            checkUserAgent(dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_GET));
+        } finally {
+            server.shutdown();
+        }
     }
 }
