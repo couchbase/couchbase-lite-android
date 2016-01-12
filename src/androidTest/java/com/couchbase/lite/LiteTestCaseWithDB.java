@@ -645,8 +645,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         assertNotNull(request);
         String userAgent = request.getHeader("User-Agent");
         assertNotNull(userAgent);
+        Log.v(TAG, "[checkUserAgent(RecordedRequest()] UserAgent: " + userAgent);
         assertTrue(userAgent.indexOf(Manager.PRODUCT_NAME + "/" + Version.SYNC_PROTOCOL_VERSION) != -1);
-        Log.e(TAG, "UserAgent: " + userAgent);
     }
 
     protected List<RecordedRequest> waitForPutCheckpointRequestWithSequence(MockDispatcher dispatcher,
