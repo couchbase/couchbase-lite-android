@@ -15,6 +15,7 @@ import com.couchbase.lite.storage.SQLiteNativeLibrary;
 import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.HttpClientFactory;
+import com.couchbase.lite.support.Version;
 import com.couchbase.lite.support.security.SymmetricKey;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
@@ -628,6 +629,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     public void waitForPutCheckpointRequestWithSeq(MockDispatcher dispatcher, int seq) throws TimeoutException {
         while (true) {
             RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+            checkUserAgent(request);
             if (request.getMethod().equals("PUT")) {
                 String body = request.getUtf8Body();
                 if (body.indexOf(Integer.toString(seq)) != -1) {
@@ -637,6 +639,14 @@ public class LiteTestCaseWithDB extends LiteTestCase {
                 }
             }
         }
+    }
+
+    protected void checkUserAgent(RecordedRequest request){
+        assertNotNull(request);
+        String userAgent = request.getHeader("User-Agent");
+        assertNotNull(userAgent);
+        Log.v(TAG, "[checkUserAgent(RecordedRequest()] UserAgent: " + userAgent);
+        assertTrue(userAgent.indexOf(Manager.PRODUCT_NAME + "/" + Version.SYNC_PROTOCOL_VERSION) != -1);
     }
 
     protected List<RecordedRequest> waitForPutCheckpointRequestWithSequence(MockDispatcher dispatcher,

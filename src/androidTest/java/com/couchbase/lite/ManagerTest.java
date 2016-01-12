@@ -7,6 +7,7 @@ import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.support.FileDirUtils;
+import com.couchbase.lite.support.Version;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
 import com.couchbase.lite.util.ZipUtils;
@@ -654,5 +655,10 @@ public class ManagerTest extends LiteTestCaseWithDB {
             assertEquals(Status.INVALID_STORAGE_TYPE, error.getCBLStatus().getCode());
             assertEquals(406, error.getCBLStatus().getHTTPCode());
         }
+    }
+
+    public void testGetUserAgent(){
+        String userAgent = manager.getUserAgent();
+        assertTrue(userAgent.indexOf(Manager.PRODUCT_NAME+ "/"+ Version.SYNC_PROTOCOL_VERSION) != -1);
     }
 }
