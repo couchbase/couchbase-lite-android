@@ -15,9 +15,12 @@
 
 package com.couchbase.lite.android;
 
+import android.os.Build;
+
 import com.couchbase.lite.Context;
 import com.couchbase.lite.NetworkReachabilityManager;
 import com.couchbase.lite.storage.SQLiteStorageEngineFactory;
+import com.couchbase.lite.support.Version;
 
 import java.io.File;
 
@@ -59,5 +62,15 @@ public class AndroidContext implements Context {
     @Override
     public SQLiteStorageEngineFactory getSQLiteStorageEngineFactory() {
         return new AndroidSQLiteStorageEngineFactory(wrappedContext);
+    }
+
+    @Override
+    public String getUserAgent() {
+        return String.format("CouchbaseLite/%s (Android %s/%s %s/%s)",
+                Version.SYNC_PROTOCOL_VERSION,
+                Build.VERSION.RELEASE,
+                Build.CPU_ABI,
+                Version.getVersionName(),
+                Version.getCommitHash());
     }
 }
