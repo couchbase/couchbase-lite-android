@@ -570,6 +570,41 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
         }
     }
 
+    public void testServerIsSyncGatewayVersion() {
+
+        // sync gateway 1.2
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "1.3"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "1.2"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "1.1"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "0.93"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "0.92"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "0.81"));
+
+        // sync gateway 1.0 or 1.1
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "1.3"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "1.2"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "1.1"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "0.93"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "0.92"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "0.81"));
+
+        // before 1.0 release (beta)
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "1.3"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "1.2"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "1.1"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "0.93"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "0.92"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "0.81"));
+
+        // developer build 1.1 or earlier ('a' > '0')
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "1.3"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "1.2"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "1.1"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.93"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.92"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.81"));
+    }
+
     public void testUserAgent() throws Exception{
         String doc1Id = "doc1";
         String doc2Id = "doc2";
