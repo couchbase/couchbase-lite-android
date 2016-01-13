@@ -35,7 +35,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
         // add document
         String docId = "doc1";
         String docPathRegex = String.format("/db/%s.*", docId);
-        String docAttachName = "a.png";
+        String docAttachName = "attachment.png";
         String contentType = "image/png";
         Document doc = createDocumentForPushReplication(docId, docAttachName, contentType);
 
