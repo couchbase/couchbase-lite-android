@@ -18,7 +18,7 @@ package com.couchbase.lite.android;
 
 import android.os.Looper;
 
-import com.couchbase.lite.database.DatabasePlatformSupport;
+import com.couchbase.lite.internal.database.DatabasePlatformSupport;
 import com.couchbase.lite.storage.SQLiteStorageEngineBase;
 import com.couchbase.lite.util.ICUUtils;
 
