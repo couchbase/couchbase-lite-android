@@ -428,87 +428,70 @@ public class ManagerTest extends LiteTestCaseWithDB {
     // #pragma mark - REPLACE DATABASE:
 
     public void test23_ReplaceOldVersionDatabase() throws Exception {
+
+        List<String[]> dbInfoList =new ArrayList<>();
         // Android 1.2.0 (SQLite)
-        {
-            File srcDir = new File(manager.getContext().getFilesDir(), "android120.cblite2");
-            FileDirUtils.deleteRecursive(srcDir);
-            ZipUtils.unzip(getAsset("replacedb/android120.cblite2.zip"), manager.getContext().getFilesDir());
-
-            testReplaceDatabaseWithCBLite2("replacedb", srcDir.getAbsolutePath(), new ReplaceDatabaseCallback() {
-                @Override
-                public void onComplete(QueryEnumerator e) throws CouchbaseLiteException, IOException {
-                    assertEquals(2, e.getCount());
-                    for (int i = 0; i < 2; i++) {
-                        Document doc = e.getRow(i).getDocument();
-                        assertNotNull(doc);
-                        assertEquals("doc" + i, doc.getId());
-                        Map<String, Object> props = doc.getProperties();
-                        assertEquals(i, Integer.parseInt((String) props.get("key")));
-                        assertEquals(1, doc.getCurrentRevision().getAttachments().size());
-                        Attachment att = doc.getCurrentRevision().getAttachment("file_" + String.valueOf(i) + ".txt");
-                        assertNotNull(att);
-                        BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
-                        String str = br.readLine();
-                        assertEquals("content " + String.valueOf(i), str);
-                        br.close();
-                    }
-                }
-            });
-        }
-
+        String[] android120sqlite={"1", "Android 1.2.0 SQLite", "android120sqlite.cblite2", "replacedb/android120sqlite.cblite2.zip"};
+        dbInfoList.add(android120sqlite);
         // Android 1.2.0 (ForestDB)
+        String[] android120forest={"1", "Android 1.2.0 ForestDB", "android120forest.cblite2", "replacedb/android120forest.cblite2.zip"};
+        dbInfoList.add(android120sqlite) ;
+        // iOS 1.2.0 (SQLite)
+        String[] ios120sqlite={"2", "iOS 1.2.0 SQLite", "ios120/iosdb.cblite2", "replacedb/ios120.zip"};
+        dbInfoList.add(ios120sqlite);
+        // iOS 1.2.0 (ForestDB)
+        String[] ios120forest={"2", "iOS 1.2.0 ForestDB", "ios120-forestdb/iosdb.cblite2", "replacedb/ios120-forestdb.zip"};
+        dbInfoList.add(ios120forest) ;
+
+        for(final String[] dbInfo : dbInfoList)
         {
-            File srcDir = new File(manager.getContext().getFilesDir(), "android120forest.cblite2");
+            Log.i(TAG, "DB Type: " + dbInfo[1]);
+            File srcDir = new File(manager.getContext().getFilesDir(), dbInfo[2]);
             FileDirUtils.deleteRecursive(srcDir);
-            ZipUtils.unzip(getAsset("replacedb/android120forest.cblite2.zip"), manager.getContext().getFilesDir());
+            ZipUtils.unzip(getAsset(dbInfo[3]), manager.getContext().getFilesDir());
 
             testReplaceDatabaseWithCBLite2("replacedb", srcDir.getAbsolutePath(), new ReplaceDatabaseCallback() {
                 @Override
-                public void onComplete(QueryEnumerator e) throws CouchbaseLiteException, IOException {
+                public void onComplete(Database db, QueryEnumerator e) throws CouchbaseLiteException, IOException {
+
+                    // Check Stored Documents
                     assertEquals(2, e.getCount());
                     for (int i = 0; i < 2; i++) {
                         Document doc = e.getRow(i).getDocument();
                         assertNotNull(doc);
-                        assertEquals("doc" + i, doc.getId());
+                        assertEquals("doc" + (i + 1), doc.getId());
+                        assertEquals(2, doc.getRevisionHistory().size());
                         Map<String, Object> props = doc.getProperties();
-                        assertEquals(i, Integer.parseInt((String) props.get("key")));
+                        if(dbInfo[0].equals("1"))//android
+                            assertEquals(i+1, Integer.parseInt((String) props.get("key")));
+                        else if(dbInfo[0].equals("2")) // ios
+                            assertEquals("bar", (String)props.get("foo"));
                         assertEquals(1, doc.getCurrentRevision().getAttachments().size());
-                        Attachment att = doc.getCurrentRevision().getAttachment("file_" + String.valueOf(i) + ".txt");
+                        Attachment att = doc.getCurrentRevision().getAttachment("attach" + String.valueOf(i+1));
                         assertNotNull(att);
                         BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
                         String str = br.readLine();
-                        assertEquals("content " + String.valueOf(i), str);
+                        assertEquals("attach" + String.valueOf(i+1), str);
                         br.close();
                     }
-                }
-            });
-        }
 
-        // iOS 1.2.0 (SQLite)
-        {
-            File srcDir = new File(manager.getContext().getFilesDir(), "iosdb.cblite2");
-            FileDirUtils.deleteRecursive(srcDir);
-            ZipUtils.unzip(getAsset("replacedb/iosdb120.cblite2.zip"), manager.getContext().getFilesDir());
-
-            testReplaceDatabaseWithCBLite2("replacedb", srcDir.getAbsolutePath(), new ReplaceDatabaseCallback() {
-                @Override
-                public void onComplete(QueryEnumerator e) {
-                    assertEquals(1, e.getCount());
-                    Document doc = e.getRow(0).getDocument();
-                    assertNotNull(doc);
-                    assertEquals("doc1", doc.getId());
-                    assertEquals(2, doc.getCurrentRevision().getAttachments().size());
-                    Attachment att1 = doc.getCurrentRevision().getAttachment("attach1");
-                    assertNotNull(att1);
-                    Attachment att2 = doc.getCurrentRevision().getAttachment("attach2");
-                    assertNotNull(att2);
+                    // Check Local Doc
+                    Map<String, Object> local = db.getExistingLocalDocument("local1");
+                    assertNotNull(local);
+                    //assertEquals(3, local.size());
+                    if(dbInfo[0].equals("1"))//android
+                        assertEquals("local1", local.get("key"));
+                    else if(dbInfo[0].equals("2")) // ios
+                        assertEquals("bar", local.get("foo"));
+                    assertEquals("1-local", local.get("_rev"));
+                    assertEquals("_local/local1", local.get("_id"));
                 }
             });
         }
     }
 
     interface ReplaceDatabaseCallback {
-        void onComplete(QueryEnumerator e) throws CouchbaseLiteException, IOException;
+        void onComplete(Database db, QueryEnumerator e) throws CouchbaseLiteException, IOException;
     }
 
     void testReplaceDatabaseWithCBLite2(String name, String databaseDir, ReplaceDatabaseCallback callback)
@@ -540,14 +523,14 @@ public class ManagerTest extends LiteTestCaseWithDB {
         assertNotNull(e);
 
         if (callback != null)
-            callback.onComplete(e);
+            callback.onComplete(replaceDb, e);
     }
 
     public void testUpgradeDatabase() throws Exception {
         // Install a canned database:
-        File srcDir = new File(manager.getContext().getFilesDir(), "iosdb.cblite2");
+        File srcDir = new File(manager.getContext().getFilesDir(), "ios120/iosdb.cblite2");
         FileDirUtils.deleteRecursive(srcDir);
-        ZipUtils.unzip(getAsset("replacedb/iosdb120.cblite2.zip"), manager.getContext().getFilesDir());
+        ZipUtils.unzip(getAsset("replacedb/ios120.zip"), manager.getContext().getFilesDir());
         manager.replaceDatabase("replacedb", srcDir.getAbsolutePath());
 
         // Open installed db with storageType set to this test's storage type:
@@ -564,16 +547,26 @@ public class ManagerTest extends LiteTestCaseWithDB {
         // Test db contents:
         checkReplacedDatabase("replacedb", new ReplaceDatabaseCallback() {
             @Override
-            public void onComplete(QueryEnumerator e) {
-                assertEquals(1, e.getCount());
-                Document doc = e.getRow(0).getDocument();
-                assertNotNull(doc);
-                assertEquals("doc1", doc.getId());
-                assertEquals(2, doc.getCurrentRevision().getAttachments().size());
-                Attachment att1 = doc.getCurrentRevision().getAttachment("attach1");
-                assertNotNull(att1);
-                Attachment att2 = doc.getCurrentRevision().getAttachment("attach2");
-                assertNotNull(att2);
+            public void onComplete(Database db, QueryEnumerator e) throws CouchbaseLiteException, IOException{
+                // Check Stored Documents
+                assertEquals(2, e.getCount());
+                for (int i = 0; i < 2; i++) {
+                    Document doc = e.getRow(i).getDocument();
+                    assertNotNull(doc);
+                    assertEquals("doc" + (i + 1), doc.getId());
+                    assertEquals(2, doc.getRevisionHistory().size());
+                    Map<String, Object> props = doc.getProperties();
+                    assertEquals("bar", (String)props.get("foo"));
+                    assertEquals(1, doc.getCurrentRevision().getAttachments().size());
+                    Attachment att = doc.getCurrentRevision().getAttachment("attach" + String.valueOf(i+1));
+                    assertNotNull(att);
+                    BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
+                    String str = br.readLine();
+                    assertEquals("attach" + String.valueOf(i+1), str);
+                    br.close();
+                }
+
+                // NOTE: Upgrade does not support local doc??
             }
         });
 
