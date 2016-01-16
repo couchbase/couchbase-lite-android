@@ -429,19 +429,25 @@ public class ManagerTest extends LiteTestCaseWithDB {
 
     public void test23_ReplaceOldVersionDatabase() throws Exception {
 
-        List<String[]> dbInfoList =new ArrayList<>();
+        List<String[]> dbInfoList = new ArrayList<>();
         // Android 1.2.0 (SQLite)
-        String[] android120sqlite={"1", "Android 1.2.0 SQLite", "android120sqlite.cblite2", "replacedb/android120sqlite.cblite2.zip"};
+        String[] android120sqlite = {"1", "Android 1.2.0 SQLite", "android120sqlite.cblite2", "replacedb/android120sqlite.cblite2.zip"};
         dbInfoList.add(android120sqlite);
         // Android 1.2.0 (ForestDB)
-        String[] android120forest={"1", "Android 1.2.0 ForestDB", "android120forest.cblite2", "replacedb/android120forest.cblite2.zip"};
-        dbInfoList.add(android120sqlite) ;
+        String[] android120forest = {"1", "Android 1.2.0 ForestDB", "android120forest.cblite2", "replacedb/android120forest.cblite2.zip"};
+        dbInfoList.add(android120sqlite);
         // iOS 1.2.0 (SQLite)
-        String[] ios120sqlite={"2", "iOS 1.2.0 SQLite", "ios120/iosdb.cblite2", "replacedb/ios120.zip"};
+        String[] ios120sqlite = {"2", "iOS 1.2.0 SQLite", "ios120/iosdb.cblite2", "replacedb/ios120.zip"};
         dbInfoList.add(ios120sqlite);
         // iOS 1.2.0 (ForestDB)
-        String[] ios120forest={"2", "iOS 1.2.0 ForestDB", "ios120-forestdb/iosdb.cblite2", "replacedb/ios120-forestdb.zip"};
-        dbInfoList.add(ios120forest) ;
+        String[] ios120forest = {"2", "iOS 1.2.0 ForestDB", "ios120-forestdb/iosdb.cblite2", "replacedb/ios120-forestdb.zip"};
+        dbInfoList.add(ios120forest);
+        // .NET 1.2.0 (SQLite)
+        String[] net120sqlite = {"3", ".NET 1.2.0 SQLite", "netdb.cblite2", "replacedb/net120-sqlite.zip"};
+        dbInfoList.add(net120sqlite);
+        // .NET 1.2.0 (ForestDB)
+        String[] net120forest = {"3", ".NET 1.2.0 ForestDB", "netdb.cblite2", "replacedb/net120-forestdb.zip"};
+        dbInfoList.add(net120forest);
 
         for(final String[] dbInfo : dbInfoList)
         {
@@ -469,10 +475,12 @@ public class ManagerTest extends LiteTestCaseWithDB {
                         assertEquals(1, doc.getCurrentRevision().getAttachments().size());
                         Attachment att = doc.getCurrentRevision().getAttachment("attach" + String.valueOf(i+1));
                         assertNotNull(att);
-                        BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
-                        String str = br.readLine();
-                        assertEquals("attach" + String.valueOf(i+1), str);
-                        br.close();
+                        if(!dbInfo[0].equals("3")) {//!NET
+                            BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
+                            String str = br.readLine();
+                            assertEquals("attach" + String.valueOf(i + 1), str);
+                            br.close();
+                        }
                     }
 
                     // Check Local Doc
