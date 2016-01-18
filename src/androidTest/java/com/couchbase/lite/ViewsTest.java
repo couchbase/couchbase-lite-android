@@ -233,16 +233,18 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
     public static View createView(Database db, String name) {
         View view = db.getView(name);
-        view.setMapReduce(new Mapper() {
-            @Override
-            public void map(Map<String, Object> document, Emitter emitter) {
-                Assert.assertNotNull(document.get("_id"));
-                Assert.assertNotNull(document.get("_rev"));
-                if (document.get("key") != null) {
-                    emitter.emit(document.get("key"), null);
+        if (view != null) {
+            view.setMapReduce(new Mapper() {
+                @Override
+                public void map(Map<String, Object> document, Emitter emitter) {
+                    Assert.assertNotNull(document.get("_id"));
+                    Assert.assertNotNull(document.get("_rev"));
+                    if (document.get("key") != null) {
+                        emitter.emit(document.get("key"), null);
+                    }
                 }
-            }
-        }, null, "1");
+            }, null, "1");
+        }
         return view;
     }
 
@@ -2938,5 +2940,52 @@ public class ViewsTest extends LiteTestCaseWithDB {
         String[] _conflicts = v.toArray(new String[v.size()]);
         Arrays.sort(_conflicts);
         assertTrue(Arrays.equals(conflicts, _conflicts));
+    }
+
+    public void testViewNameWithSpecialChars() throws Exception {
+
+        // NOTE: On Windows, following characters are not allowed to use as folder name: "<>:\"/\\|?*"
+
+        // view name start with period "." => Not Allow with forestdb
+        View v1 = database.getView(".view");
+        if (isSQLiteDB())
+            assertNotNull(v1);
+        else
+            assertNull(v1);
+
+        // view name that includes colon ":" => Not Allow with forestdb
+        View v2 = database.getView("group:view");
+        if (isSQLiteDB())
+            assertNotNull(v2);
+        else
+            assertNull(v2);
+
+        // view name that includes forward slash "/" => Allow
+        View v3 = database.getView("group/view");
+        assertNotNull(v3);
+
+        // view name that includes forward slash "\"
+        View v4 = database.getView("group\\view");
+        assertNotNull(v4);
+
+        // view name that includes less than & larger than "<>"
+        View v5 = database.getView("<group>view");
+        assertNotNull(v5);
+
+        // view name that includes double quote '"'
+        View v6 = database.getView("\"group\"view");
+        assertNotNull(v6);
+
+        // view name that includes vertical bar '|'
+        View v7 = database.getView("group|view");
+        assertNotNull(v7);
+
+        // view name that includes question mark '?'
+        View v8 = database.getView("group?view");
+        assertNotNull(v8);
+
+        // view name that includes asterisk '*'
+        View v9 = database.getView("group*view");
+        assertNotNull(v9);
     }
 }
