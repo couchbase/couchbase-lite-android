@@ -107,11 +107,21 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     }
 
     @Override
+    protected void runTest() throws Throwable {
+        if((getTestStorageType() == 1 && useForestDB) || (getTestStorageType() == 2 && !useForestDB))
+            return;
+        super.runTest();
+    }
+
+    @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp");
         super.setUp();
 
         loadCustomProperties();
+
+        if((getTestStorageType() == 1 && useForestDB) || (getTestStorageType() == 2 && !useForestDB))
+            return;
 
         if (!useForestDB)
             setupSQLiteNativeLibrary();
@@ -144,6 +154,10 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected static int getSQLiteLibrary() {
         return Integer.parseInt(System.getProperty("sqliteLibrary"));
+    }
+
+    protected static int getTestStorageType() {
+        return Integer.parseInt(System.getProperty("storageType"));
     }
 
     protected boolean isEncryptionTestEnabled() {
