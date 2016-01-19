@@ -80,13 +80,19 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     public void runBare() throws Throwable {
         long start = System.currentTimeMillis();
 
+        loadCustomProperties();
+
         // Run Unit Test with SQLiteStore
-        useForestDB = false;
-        super.runBare();
+        if(getTestStorageType() != 2) {
+            useForestDB = false;
+            super.runBare();
+        }
 
         // Run Unit Test with ForestDBStore
-        useForestDB = true;
-        super.runBare();
+        if(getTestStorageType() != 1) {
+            useForestDB = true;
+            super.runBare();
+        }
 
         long end = System.currentTimeMillis();
         String name = getName();
@@ -107,21 +113,11 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     }
 
     @Override
-    protected void runTest() throws Throwable {
-        if((getTestStorageType() == 1 && useForestDB) || (getTestStorageType() == 2 && !useForestDB))
-            return;
-        super.runTest();
-    }
-
-    @Override
     protected void setUp() throws Exception {
         Log.v(TAG, "setUp");
         super.setUp();
 
         loadCustomProperties();
-
-        if((getTestStorageType() == 1 && useForestDB) || (getTestStorageType() == 2 && !useForestDB))
-            return;
 
         if (!useForestDB)
             setupSQLiteNativeLibrary();
