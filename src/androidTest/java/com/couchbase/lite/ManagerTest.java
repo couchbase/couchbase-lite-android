@@ -570,11 +570,17 @@ public class ManagerTest extends LiteTestCaseWithDB {
                     assertNotNull(att);
                     BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
                     String str = br.readLine();
-                    assertEquals("attach" + String.valueOf(i+1), str);
+                    assertEquals("attach" + String.valueOf(i + 1), str);
                     br.close();
                 }
 
                 // NOTE: Upgrade does not support local doc??
+                // check local doc
+                Map<String, Object> local = db.getExistingLocalDocument("local1");
+                assertNotNull(local);
+                assertEquals("bar", local.get("foo"));
+                assertEquals("1-local", local.get("_rev"));
+                assertEquals("_local/local1", local.get("_id"));
             }
         });
 
