@@ -1,9 +1,12 @@
 package com.couchbase.lite.syncgateway;
 
 import com.couchbase.lite.Attachment;
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
+import com.couchbase.lite.DatabaseOptions;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.LiteTestCaseWithDB;
+import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.Base64;
 import com.couchbase.lite.util.Log;
@@ -153,5 +156,88 @@ public class GzippedAttachmentTest extends LiteTestCaseWithDB {
             return null;
         }
         return os.toByteArray();
+    }
+
+    public void testImageAttachmentReplication() throws Exception {
+        if (!syncgatewayTestsEnabled()) {
+            return;
+        }
+
+        URL remote = getReplicationURL();
+
+        Database pushDB = getDatabase("pushdb");
+        pushDB.delete();
+        pushDB = getDatabase("pushdb");
+
+        Database pullDB = getDatabase("pulldb");
+        pullDB.delete();
+        pullDB = getDatabase("pulldb");
+
+        // Create a document with an image attached:
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("foo", "bar");
+
+        Document doc = pushDB.createDocument();
+        doc.putProperties(props);
+        UnsavedRevision newRev = doc.createRevision();
+        newRev.setAttachment("attachment", "image/png", getAsset("attachment.png"));
+        newRev.save();
+        String docId = doc.getId();
+
+        // Push:
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        Replication pusher = pushDB.createPushReplication(remote);
+        pusher.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                Log.e(TAG, "push 1:" + event.toString());
+                if (event.getCompletedChangeCount() > 0) {
+                    latch1.countDown();
+                }
+            }
+        });
+        runReplication(pusher);
+        assertTrue(latch1.await(5, TimeUnit.SECONDS));
+
+        // Pull:
+        Replication puller = pullDB.createPullReplication(remote);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        puller.addChangeListener(new Replication.ChangeListener() {
+            @Override
+            public void changed(Replication.ChangeEvent event) {
+                Log.e(TAG, "pull 1:" + event.toString());
+                if (event.getCompletedChangeCount() > 0) {
+                    latch2.countDown();
+                }
+            }
+        });
+        runReplication(puller);
+        assertTrue(latch2.await(5, TimeUnit.SECONDS));
+
+        // Check document:
+        Document pullDoc = pullDB.getDocument(docId);
+        assertNotNull(pullDoc);
+        assertTrue(pullDoc.getCurrentRevisionId().startsWith("2-"));
+
+        // Check attachment:
+        Attachment attachment = pullDoc.getCurrentRevision().getAttachment("attachment");
+        byte[] originalBytes = getBytesFromInputStream(getAsset("attachment.png"));
+        assertEquals(originalBytes.length, attachment.getLength());
+        assertEquals("image/png", attachment.getContentType());
+        assertTrue(Arrays.equals(originalBytes, getBytesFromInputStream(attachment.getContent())));
+
+        pushDB.close();
+        pullDB.close();
+
+        pushDB.delete();
+        pullDB.delete();
+    }
+
+    private Database getDatabase(String name) throws CouchbaseLiteException {
+        DatabaseOptions options = new DatabaseOptions();
+        options.setCreate(true);
+        if (isEncryptionTestEnabled())
+            options.setEncryptionKey("seekrit");
+        return manager.openDatabase(name, options);
     }
 }
