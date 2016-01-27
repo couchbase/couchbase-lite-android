@@ -475,9 +475,12 @@ public class ApiTest extends LiteTestCaseWithDB {
         props = db.getExistingLocalDocument("dock");
         assertNull(props);
 
-        assertNotNull("Second delete should have failed", !db.deleteLocalDocument("dock"));
-        //TODO issue: deleteLocalDocument should return error.code( see ios)
-
+        try{
+            db.deleteLocalDocument("dock");
+            fail("Should throw Exception");
+        }catch(CouchbaseLiteException ex){
+            assertEquals(Status.NOT_FOUND, ex.getCBLStatus().getCode());
+        }
     }
 
     // HISTORY
