@@ -98,6 +98,55 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ReplicationTest extends LiteTestCaseWithDB {
 
     /**
+     * TestCase(CreateReplicators) in ReplicationAPITests.m
+     */
+    public void testCreateReplicators() throws Exception {
+        URL fakeRemoteURL = new URL("http://fake.fake/fakedb");
+
+        // Create a replicaton:
+        assertEquals(0, database.getAllReplications().size());
+        Replication r1 = database.createPushReplication(fakeRemoteURL);
+        assertNotNull(r1);
+
+        // Check the replication's properties:
+        assertEquals(database, r1.getLocalDatabase());
+        assertEquals(fakeRemoteURL, r1.getRemoteUrl());
+        assertFalse(r1.isPull());
+        assertFalse(r1.isContinuous());
+        assertFalse(r1.shouldCreateTarget());
+        assertNull(r1.getFilter());
+        assertNull(r1.getFilterParams());
+        assertNull(r1.getDocIds());
+        assertEquals(0, r1.getHeaders().size());
+
+        // Check that the replication hasn't started running:
+        assertFalse(r1.isRunning());
+        assertEquals(Replication.ReplicationStatus.REPLICATION_STOPPED, r1.getStatus());
+        assertEquals(0, r1.getChangesCount());
+        assertEquals(0, r1.getCompletedChangesCount());
+        assertNull(r1.getLastError());
+
+        // Create another replication:
+        Replication r2 = database.createPullReplication(fakeRemoteURL);
+        assertNotNull(r2);
+        assertTrue(r1 != r2);
+
+        // Check the replication's properties:
+        assertEquals(database, r2.getLocalDatabase());
+        assertEquals(fakeRemoteURL, r2.getRemoteUrl());
+        assertTrue(r2.isPull());
+
+
+        Replication r3 = database.createPullReplication(fakeRemoteURL);
+        assertNotNull(r3);
+        assertTrue(r3 != r2);
+        r3.setDocIds(Arrays.asList("doc1", "doc2"));
+
+        Replication repl = database.getManager().getReplicator(r3.getProperties());
+        assertEquals(r3.getDocIds(), repl.getDocIds());
+    }
+
+    /**
      * Continuous puller starts offline
      * Wait for a while .. (til what?)
      * Add remote document (simulate w/ mock webserver)
@@ -5331,6 +5380,10 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         assertNotSame(check2, check3);
     }
 
+    /**
+     * This test is almost identical with
+     *  TestCase(CBL_Pusher_DocIDs) in CBLReplicator_Tests.m
+     */
     public void testPushReplicationSetDocumentIDs() throws Exception {
         // Create documents:
         createDocumentForPushReplication("doc1", null, null);
