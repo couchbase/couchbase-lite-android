@@ -136,7 +136,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         assertEquals(fakeRemoteURL, r2.getRemoteUrl());
         assertTrue(r2.isPull());
 
-
         Replication r3 = database.createPullReplication(fakeRemoteURL);
         assertNotNull(r3);
         assertTrue(r3 != r2);
