@@ -2988,4 +2988,91 @@ public class ViewsTest extends LiteTestCaseWithDB {
         View v9 = database.getView("group*view");
         assertNotNull(v9);
     }
+
+    // https://github.com/couchbase/couchbase-lite-ios/issues/1082
+    public void test23_ViewWithDocDeletion() throws Exception {
+        View view = database.getView("vu");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                if ("task".equals(document.get("type"))) {
+                    List<Object> keys = new ArrayList<Object>();
+                    keys.add(document.get("list_id"));
+                    keys.add(document.get("created_at"));
+                    emitter.emit(keys, document);
+                }
+            }
+        }, "1");
+        assertNotNull(view.getMap());
+        assertEquals(0, view.getCurrentTotalRows());
+
+        String listId = "list1";
+
+        // Create 3 documents:
+        Map<String, Object> props1 = new HashMap<String, Object>();
+        props1.put("_id", "doc1");
+        props1.put("type", "task");
+        props1.put("created_at", "2016-01-29T22:25:01.000Z");
+        props1.put("list_id", listId);
+        Document doc1 = createDocWithProperties(props1);
+
+        Map<String, Object> props2 = new HashMap<String, Object>();
+        props2.put("_id", "doc2");
+        props2.put("type", "task");
+        props2.put("created_at", "2016-01-29T22:25:02.000Z");
+        props2.put("list_id", listId);
+        Document doc2 = createDocWithProperties(props2);
+
+        Map<String, Object> props3 = new HashMap<String, Object>();
+        props3.put("_id", "doc3");
+        props3.put("type", "task");
+        props3.put("created_at", "2016-01-29T22:25:03.000Z");
+        props3.put("list_id", listId);
+        Document doc3 = createDocWithProperties(props3);
+
+        // Check query result:
+        Query query = view.createQuery();
+        query.setDescending(true);
+        List<Object> startKeys = new ArrayList<Object>();
+        startKeys.add(listId);
+        startKeys.add(new HashMap<String, Object>());
+        query.setStartKey(startKeys);
+        List<Object> endKeys = new ArrayList<Object>();
+        endKeys.add(listId);
+        query.setEndKey(endKeys);
+
+        QueryEnumerator rows = query.run();
+        Log.e(TAG, "First query: rows.getCount() = " + rows.getCount());
+        assertEquals(3, rows.getCount());
+        assertEquals(doc3.getId(), rows.getRow(0).getDocumentId());
+        assertEquals(doc2.getId(), rows.getRow(1).getDocumentId());
+        assertEquals(doc1.getId(), rows.getRow(2).getDocumentId());
+
+        // Delete doc2:
+        assertNotNull(doc2);
+        assertTrue(doc2.delete());
+        Log.e(TAG, "Deleted doc2");
+
+        // Check ascending query result:
+        query.setDescending(false);
+        query.setStartKey(endKeys);
+        query.setEndKey(startKeys);
+        rows = query.run();
+        Log.e(TAG, "Ascending query: rows.getCount() = " + rows.getCount());
+        assertEquals(2, rows.getCount());
+        assertEquals(doc1.getId(), rows.getRow(0).getDocumentId());
+        assertEquals(doc3.getId(), rows.getRow(1).getDocumentId());
+
+        // Check descending query result:
+        query.setDescending(true);
+        query.setStartKey(startKeys);
+        query.setEndKey(endKeys);
+
+        rows = query.run();
+        Log.e(TAG, "Descending query: rows.getCount() = " + rows.getCount());
+        assertEquals(2, rows.getCount());
+        assertEquals(doc3.getId(), rows.getRow(0).getDocumentId());
+        assertEquals(doc1.getId(), rows.getRow(1).getDocumentId());
+    }
 }
