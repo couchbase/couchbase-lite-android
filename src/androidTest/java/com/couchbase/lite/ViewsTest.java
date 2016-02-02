@@ -958,12 +958,12 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"App\"", dumpResult.get(0).get("key"));
         Assert.assertEquals(1.95, dumpResult.get(0).get("value") instanceof String ? Double.parseDouble((String)dumpResult.get(0).get("value")) : dumpResult.get(0).get("value"));
-        Assert.assertEquals(2, ((Number)dumpResult.get(0).get("seq")).intValue());
+        Assert.assertEquals(2, ((Number) dumpResult.get(0).get("seq")).intValue());
         Assert.assertEquals("\"CD\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals(8.99, dumpResult.get(1).get("value") instanceof String ? Double.parseDouble((String)dumpResult.get(1).get("value")) : dumpResult.get(1).get("value"));
-        Assert.assertEquals(1, ((Number)dumpResult.get(1).get("seq")).intValue());
+        Assert.assertEquals(8.99, dumpResult.get(1).get("value") instanceof String ? Double.parseDouble((String) dumpResult.get(1).get("value")) : dumpResult.get(1).get("value"));
+        Assert.assertEquals(1, ((Number) dumpResult.get(1).get("seq")).intValue());
         Assert.assertEquals("\"Dessert\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals(6.5, dumpResult.get(2).get("value") instanceof String ? Double.parseDouble((String)dumpResult.get(2).get("value")) : dumpResult.get(2).get("value"));
+        Assert.assertEquals(6.5, dumpResult.get(2).get("value") instanceof String ? Double.parseDouble((String) dumpResult.get(2).get("value")) : dumpResult.get(2).get("value"));
         Assert.assertEquals(3, ((Number)dumpResult.get(2).get("seq")).intValue());
 
         QueryOptions options = new QueryOptions();
@@ -3074,5 +3074,52 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(2, rows.getCount());
         assertEquals(doc3.getId(), rows.getRow(0).getDocumentId());
         assertEquals(doc1.getId(), rows.getRow(1).getDocumentId());
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/971
+     *
+     * ForestDB: Query with descending order against empty db
+     */
+    public void test24_ViewDecendingOrderWithEmptyDB() throws Exception {
+        View view = database.getView("vu");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                if ("task".equals(document.get("type"))) {
+                    List<Object> keys = new ArrayList<Object>();
+                    keys.add(document.get("list_id"));
+                    keys.add(document.get("created_at"));
+                    emitter.emit(keys, document);
+                }
+            }
+        }, "1");
+        assertNotNull(view.getMap());
+        assertEquals(0, view.getCurrentTotalRows());
+
+        String listId = "list1";
+
+        // Check ascending query result:
+        Query query = view.createQuery();
+        query.setDescending(false);
+        List<Object> startKeys = new ArrayList<Object>();
+        startKeys.add(listId);
+        startKeys.add(new HashMap<String, Object>());
+        List<Object> endKeys = new ArrayList<Object>();
+        endKeys.add(listId);
+        query.setStartKey(endKeys);
+        query.setEndKey(startKeys);
+        QueryEnumerator rows = query.run();
+        Log.e(TAG, "Ascending query: rows.getCount() = " + rows.getCount());
+        assertEquals(0, rows.getCount());
+
+        // Check descending query result:
+        query.setDescending(true);
+        query.setStartKey(startKeys);
+        query.setEndKey(endKeys);
+        rows = query.run();
+        Log.e(TAG, "Descending query: rows.getCount() = " + rows.getCount());
+        assertEquals(0, rows.getCount());
     }
 }
