@@ -607,7 +607,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
     }
 
     public void testGetUserAgent() {
-        String userAgent = manager.getUserAgent();
+        String userAgent = Manager.getUserAgent();
         assertTrue(userAgent.indexOf(Manager.PRODUCT_NAME + "/" + Version.SYNC_PROTOCOL_VERSION) != -1);
     }
 }

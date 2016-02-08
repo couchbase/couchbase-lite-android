@@ -12,14 +12,18 @@ import java.util.List;
 
 public class PersistentCookieStoreTest extends LiteTestCaseWithDB {
 
-    public void testEncodeDecodeCookie() throws Exception {
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/964
+    public void testClear() throws Exception {
+        PersistentCookieStore cookieStore = new PersistentCookieStore(database);
+        cookieStore.clear();
+    }
 
+    public void testEncodeDecodeCookie() throws Exception {
         PersistentCookieStore cookieStore = new PersistentCookieStore(database);
 
         String cookieName = "foo";
         String cookieVal = "bar";
         boolean isSecure = false;
-        boolean httpOnly = false;
         String cookiePath = "baz";
         String cookieDomain = "foo.com";
 
@@ -44,18 +48,15 @@ public class PersistentCookieStoreTest extends LiteTestCaseWithDB {
         assertEquals(expirationDate, fetchedCookie.getExpiryDate());
         assertEquals(cookiePath, fetchedCookie.getPath());
         assertEquals(cookieDomain, fetchedCookie.getDomain());
-
     }
 
     public void testPersistentCookiestore() throws Exception {
-
         CookieStore cookieStore = new PersistentCookieStore(database);
         assertEquals(0, cookieStore.getCookies().size());
 
         String cookieName = "foo";
         String cookieVal = "bar";
         boolean isSecure = false;
-        boolean httpOnly = false;
         String cookiePath = "baz";
         String cookieDomain = "foo.com";
 
@@ -74,7 +75,6 @@ public class PersistentCookieStoreTest extends LiteTestCaseWithDB {
 
         cookieStore.addCookie(cookie);
 
-        CookieStore cookieStore2 = new PersistentCookieStore(database);
         assertEquals(1, cookieStore.getCookies().size());
         List<Cookie> fetchedCookies = cookieStore.getCookies();
         Cookie fetchedCookie = fetchedCookies.get(0);
@@ -83,8 +83,5 @@ public class PersistentCookieStoreTest extends LiteTestCaseWithDB {
         assertEquals(expirationDate, fetchedCookie.getExpiryDate());
         assertEquals(cookiePath, fetchedCookie.getPath());
         assertEquals(cookieDomain, fetchedCookie.getDomain());
-
     }
-
-
 }

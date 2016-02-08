@@ -50,10 +50,6 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         URL testURL = getReplicationURL();
 
         ChangeTrackerClient client = new ChangeTrackerClient() {
-            @Override
-            public String getUserAgent() {
-                return manager.getUserAgent();
-            }
 
             @Override
             public void changeTrackerStopped(ChangeTracker tracker) {
@@ -223,11 +219,6 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
 
         ChangeTrackerClient client = new ChangeTrackerClient() {
             @Override
-            public String getUserAgent() {
-                return manager.getUserAgent();
-            }
-
-            @Override
             public void changeTrackerStopped(ChangeTracker tracker) {
                 changeTrackerFinishedSignal.countDown();
             }
@@ -301,11 +292,6 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         final CountDownLatch changeTrackerFinishedSignal = new CountDownLatch(1);
 
         ChangeTrackerClient client = new ChangeTrackerClient() {
-            @Override
-            public String getUserAgent() {
-                return manager.getUserAgent();
-            }
-
             @Override
             public void changeTrackerStopped(ChangeTracker tracker) {
                 Log.v(TAG, "changeTrackerStopped");
@@ -383,11 +369,6 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         URL testURL = getReplicationURL();
 
         ChangeTrackerClient client = new ChangeTrackerClient() {
-            @Override
-            public String getUserAgent() {
-                return manager.getUserAgent();
-            }
-
             @Override
             public void changeTrackerStopped(ChangeTracker tracker) {
                 changeTrackerFinishedSignal.countDown();
