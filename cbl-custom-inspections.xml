@@ -172,19 +172,31 @@
   <inspection_tool class="AndroidLintWrongCase" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="AndroidLintWrongFolder" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="AndroidLintWrongViewCast" enabled="false" level="ERROR" enabled_by_default="false" />
-  <inspection_tool class="AnonymousClassComplexity" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="AnonymousClassMethodCount" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="AnonymousClassComplexity" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_limit" value="3" />
+  </inspection_tool>
+  <inspection_tool class="AnonymousClassMethodCount" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_limit" value="1" />
+  </inspection_tool>
   <inspection_tool class="AnonymousInnerClassMayBeStatic" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="ApiName" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="ApiNamespace" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="ApiParameter" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="AssertEqualsBetweenInconvertibleTypesTestNG" enabled="false" level="WARNING" enabled_by_default="false" />
   <inspection_tool class="AssignmentToCatchBlockParameter" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="AssignmentToCollectionFieldFromParameter" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="AssignmentToDateFieldFromParameter" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="AssignmentToForLoopParameter" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="AssignmentToCollectionFieldFromParameter" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignorePrivateMethods" value="true" />
+  </inspection_tool>
+  <inspection_tool class="AssignmentToDateFieldFromParameter" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignorePrivateMethods" value="true" />
+  </inspection_tool>
+  <inspection_tool class="AssignmentToForLoopParameter" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_checkForeachParameters" value="false" />
+  </inspection_tool>
   <inspection_tool class="AssignmentToLambdaParameter" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="AssignmentToMethodParameter" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="AssignmentToMethodParameter" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoreTransformationOfOriginalParameter" value="false" />
+  </inspection_tool>
   <inspection_tool class="AssignmentToNull" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="AssignmentToStaticFieldFromInstanceMethod" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="AssignmentToSuperclassField" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -204,17 +216,29 @@
     <option name="onlyReportPrivateSetter" value="false" />
   </inspection_tool>
   <inspection_tool class="CastToConcreteClass" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="ChannelResource" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="ChannelResource" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="insideTryAllowed" value="false" />
+  </inspection_tool>
   <inspection_tool class="CheckDtdRefs" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="CheckEmptyScriptTag" enabled="false" level="WARNING" enabled_by_default="false" />
   <inspection_tool class="CheckValidXmlInScriptTagBody" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="CheckXmlFileWithXercesValidator" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="ClashingTraitMethods" enabled="false" level="WARNING" enabled_by_default="false" />
-  <inspection_tool class="ClassComplexity" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="ClassCoupling" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="ClassInheritanceDepth" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="ClassComplexity" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_limit" value="80" />
+  </inspection_tool>
+  <inspection_tool class="ClassCoupling" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_includeJavaClasses" value="false" />
+    <option name="m_includeLibraryClasses" value="false" />
+    <option name="m_limit" value="15" />
+  </inspection_tool>
+  <inspection_tool class="ClassInheritanceDepth" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_limit" value="2" />
+  </inspection_tool>
   <inspection_tool class="ClassLoaderInstantiation" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="ClassNestingDepth" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="ClassNestingDepth" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_limit" value="1" />
+  </inspection_tool>
   <inspection_tool class="ClassNewInstance" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="ClassReferencesSubclass" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="CloneInNonCloneableClass" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -225,13 +249,19 @@
   <inspection_tool class="ConditionSignal" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="ConstantValueVariableUse" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="Constructor" enabled="false" level="ERROR" enabled_by_default="false" />
-  <inspection_tool class="ConstructorCount" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="ConstructorCount" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoreDeprecatedConstructors" value="false" />
+    <option name="m_limit" value="5" />
+  </inspection_tool>
   <inspection_tool class="CustomClassloader" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="CustomSecurityManager" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="CyclomaticComplexity" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="m_limit" value="10" />
   </inspection_tool>
-  <inspection_tool class="DeclareCollectionAsInterface" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="DeclareCollectionAsInterface" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoreLocalVariables" value="false" />
+    <option name="ignorePrivateMethodsAndFields" value="false" />
+  </inspection_tool>
   <inspection_tool class="DelegatesTo" enabled="false" level="WARNING" enabled_by_default="false" />
   <inspection_tool class="DeserializableClassInSecureContext" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="DesignForExtension" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -250,7 +280,12 @@
   <inspection_tool class="FieldAccessedSynchronizedAndUnsynchronized" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="countGettersAndSetters" value="false" />
   </inspection_tool>
-  <inspection_tool class="FieldCount" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="FieldCount" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_countConstantFields" value="false" />
+    <option name="m_considerStaticFinalFieldsConstant" value="false" />
+    <option name="myCountEnumConstants" value="false" />
+    <option name="m_limit" value="10" />
+  </inspection_tool>
   <inspection_tool class="FieldMayBeStatic" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="FullJavaName" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="FullMethodName" enabled="false" level="ERROR" enabled_by_default="false" />
@@ -325,12 +360,17 @@
     <option name="myCustomValuesEnabled" value="true" />
   </inspection_tool>
   <inspection_tool class="HtmlUnknownTarget" enabled="false" level="WARNING" enabled_by_default="false" />
-  <inspection_tool class="IOResource" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="IOResource" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoredTypesString" value="java.io.ByteArrayOutputStream,java.io.ByteArrayInputStream,java.io.StringBufferInputStream,java.io.CharArrayWriter,java.io.CharArrayReader,java.io.StringWriter,java.io.StringReader" />
+    <option name="insideTryAllowed" value="false" />
+  </inspection_tool>
   <inspection_tool class="IncrementDecrementUsedAsExpression" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="InnerClassMayBeStatic" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="InstanceGuardedByStatic" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="InstanceVariableOfConcreteClass" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="InstanceofChain" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="InstanceofChain" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoreInstanceofOnLibraryClasses" value="false" />
+  </inspection_tool>
   <inspection_tool class="InstanceofInterfaces" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="InstanceofThis" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="InvalidParameterAnnotations" enabled="false" level="ERROR" enabled_by_default="false" />
@@ -355,7 +395,11 @@
   <inspection_tool class="MavenDuplicatePluginInspection" enabled="false" level="WARNING" enabled_by_default="false" />
   <inspection_tool class="MavenModelInspection" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="MavenRedundantGroupId" enabled="false" level="WARNING" enabled_by_default="false" />
-  <inspection_tool class="MethodCount" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="MethodCount" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_limit" value="20" />
+    <option name="ignoreGettersAndSetters" value="false" />
+    <option name="ignoreOverridingMethods" value="false" />
+  </inspection_tool>
   <inspection_tool class="MethodCoupling" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="m_includeJavaClasses" value="false" />
     <option name="m_includeLibraryClasses" value="false" />
@@ -367,7 +411,11 @@
   </inspection_tool>
   <inspection_tool class="MethodMayBeSynchronized" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="MethodName" enabled="false" level="ERROR" enabled_by_default="false" />
-  <inspection_tool class="MethodOnlyUsedFromInnerClass" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="MethodOnlyUsedFromInnerClass" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoreMethodsAccessedFromAnonymousClass" value="false" />
+    <option name="ignoreStaticMethodsFromNonStaticInnerClass" value="false" />
+    <option name="onlyReportStaticMethods" value="false" />
+  </inspection_tool>
   <inspection_tool class="MethodParameterType" enabled="false" level="ERROR" enabled_by_default="false" />
   <inspection_tool class="MethodReturnOfConcreteClass" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="MethodReturnType" enabled="false" level="ERROR" enabled_by_default="false" />
@@ -398,7 +446,9 @@
   <inspection_tool class="ObsoleteCollection" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="ignoreRequiredObsoleteCollectionTypes" value="false" />
   </inspection_tool>
-  <inspection_tool class="OverlyStrongTypeCast" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="OverlyStrongTypeCast" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoreInMatchingInstanceof" value="false" />
+  </inspection_tool>
   <inspection_tool class="PackageVisibleField" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="PackageVisibleInnerClass" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="ignoreEnums" value="false" />
@@ -406,11 +456,19 @@
   </inspection_tool>
   <inspection_tool class="ParameterOfConcreteClass" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="PublicFieldAccessedInSynchronizedContext" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="PublicMethodNotExposedInInterface" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="PublicMethodNotExposedInInterface" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignorableAnnotations">
+      <value />
+    </option>
+    <option name="onlyWarnIfContainingClassImplementsAnInterface" value="false" />
+  </inspection_tool>
   <inspection_tool class="PublicStaticArrayField" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="PublicStaticCollectionField" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="RandomDoubleForRandomInteger" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="ReplaceAssignmentWithOperatorAssignment" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="ReplaceAssignmentWithOperatorAssignment" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoreLazyOperators" value="true" />
+    <option name="ignoreObscureOperators" value="false" />
+  </inspection_tool>
   <inspection_tool class="RequiredAttributes" enabled="false" level="WARNING" enabled_by_default="false">
     <option name="myAdditionalRequiredHtmlAttributes" value="" />
   </inspection_tool>
@@ -427,8 +485,17 @@
   <inspection_tool class="SignalWithoutCorrespondingAwait" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="Since15" enabled="true" level="ERROR" enabled_by_default="true" />
   <inspection_tool class="SleepWhileHoldingLock" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="SocketResource" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="StaticCollection" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="SocketResource" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="insideTryAllowed" value="false" />
+  </inspection_tool>
+  <inspection_tool class="SpellCheckingInspection" enabled="false" level="TYPO" enabled_by_default="false">
+    <option name="processCode" value="true" />
+    <option name="processLiterals" value="true" />
+    <option name="processComments" value="true" />
+  </inspection_tool>
+  <inspection_tool class="StaticCollection" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="m_ignoreWeakCollections" value="false" />
+  </inspection_tool>
   <inspection_tool class="StaticGuardedByInstance" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="StaticMethodOnlyUsedInOneClass" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="StaticVariableOfConcreteClass" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -476,7 +543,12 @@
   <inspection_tool class="TrailingSpacesInProperty" enabled="false" level="WARNING" enabled_by_default="false" />
   <inspection_tool class="TrivialStringConcatenation" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="TypeCustomizer" enabled="false" level="WARNING" enabled_by_default="false" />
-  <inspection_tool class="TypeMayBeWeakened" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="TypeMayBeWeakened" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="useRighthandTypeAsWeakestTypeInAssignments" value="true" />
+    <option name="useParameterizedTypeForCollectionMethods" value="true" />
+    <option name="doNotWeakenToJavaLangObject" value="true" />
+    <option name="onlyWeakentoInterface" value="true" />
+  </inspection_tool>
   <inspection_tool class="UnconditionalWait" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="UnknownGuard" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="UnnecessaryQualifiedReference" enabled="false" level="WARNING" enabled_by_default="false" />
