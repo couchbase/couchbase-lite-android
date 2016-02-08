@@ -2651,9 +2651,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         RevisionInternal leaf2b = database.putRevision(rev2b, leaf1.getRevID(), true);
         Log.e(TAG, String.format("leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
 
+        // update index
+        view.updateIndex();
+        List<QueryRow> rows = view.query(null);
+        assertNotNull(rows);
+        Log.e(TAG, rows.toString());
+        assertEquals(1, rows.size()); // one 2 must win
+
         // Need to override StoreDelegate to control revision ID for generation 2-.
         Store store = database.getStore();
-        StoreDelegate delegate = store.getDelegate();
 
         // set Revision ID "3-cccc"
         store.setDelegate(new StoreDelegate() {
@@ -2705,9 +2711,9 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // make sure 3-d is higher revision than 3-c
         assertTrue(leaf3d.getRevID().compareTo(leaf3c.getRevID()) > 0);
 
-        // update index
+        // update index again ... now we must receive 3-c
         view.updateIndex();
-        List<QueryRow>rows = view.query(null);
+        rows = view.query(null);
         assertNotNull(rows);
         Log.e(TAG, rows.toString());
         assertEquals(1, rows.size());
