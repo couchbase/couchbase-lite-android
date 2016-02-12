@@ -33,6 +33,7 @@ import com.couchbase.lite.mockserver.MockChangesFeedNoResponse;
 import com.couchbase.lite.mockserver.MockCheckpointGet;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
+import com.couchbase.lite.mockserver.MockDocumentAllDocs;
 import com.couchbase.lite.mockserver.MockDocumentBulkGet;
 import com.couchbase.lite.mockserver.MockDocumentGet;
 import com.couchbase.lite.mockserver.MockDocumentPut;
@@ -364,11 +365,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
 
     public void testMockContinuousPullCouchDb() throws Exception {
-
-        // TODO: (IMPORTANT, FORESTDB) lastSequence for checkpoint does not match and couase dead lock
-        // if(!isSQLiteDB())
-        //    fail("FORESTDB casues deadlock becasue of lastSequence mismatch for checkpoint");
-
         boolean shutdownMockWebserver = true;
         mockContinuousPull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB);
     }
@@ -412,6 +408,9 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // Empty _all_docs response to pass unit tests
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_ALL_DOCS, new MockDocumentAllDocs());
 
             // doc1 response
             MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
@@ -583,6 +582,9 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(mockChangedDoc1);
             MockResponse fakeChangesResponse = mockChangesFeed.generateMockResponse();
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, fakeChangesResponse);
+
+            // Empty _all_docs response to pass unit tests
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_ALL_DOCS, new MockDocumentAllDocs());
 
             // doc1 response
             Map<String, Object> doc1JsonMap = MockHelper.generateRandomJsonMap();
@@ -1826,6 +1828,9 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             MockResponse fakeCheckpointResponse = new MockResponse();
             MockHelper.set404NotFoundJson(fakeCheckpointResponse);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+            // Empty _all_docs response to pass unit tests
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_ALL_DOCS, new MockDocumentAllDocs());
 
             //add response to _changes request
             // _changes response
@@ -3171,7 +3176,10 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
+        // Empty _all_docs response to pass unit tests
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_ALL_DOCS, new MockDocumentAllDocs());
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, 2, 2);
+
         try {
             server.play();
 
