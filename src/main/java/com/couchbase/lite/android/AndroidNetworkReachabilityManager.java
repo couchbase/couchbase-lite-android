@@ -62,6 +62,10 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
         }
     }
 
+    public  boolean isOnline(){
+        return isOnline(wrappedContext);
+    }
+
     private boolean isOnline(android.content.Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();

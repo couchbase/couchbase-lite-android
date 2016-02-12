@@ -42,6 +42,7 @@ public class MockHelper {
     public static final String PATH_REGEX_SESSION_COUCHDB = "/_session.*";
     public static final String PATH_REGEX_FACEBOOK_AUTH = "/db/_facebook.*";
     public static final String PATH_REGEX_BULK_GET = "/db/_bulk_get.*";
+    public static final String PATH_REGEX_ALL_DOCS = "/db/_all_docs.*";
 
     public static MockWebServer getMockWebServer(MockDispatcher dispatcher) {
 
