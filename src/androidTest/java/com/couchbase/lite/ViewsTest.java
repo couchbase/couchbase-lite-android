@@ -3231,4 +3231,48 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.e(TAG, "Descending query: rows.getCount() = " + rows.getCount());
         assertEquals(0, rows.getCount());
     }
+
+    //
+    public void testEmitWithNullKey() throws Exception {
+        // set up view
+        View view = database.getView("vu");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                // null key
+                emitter.emit(null, null);
+            }
+        }, "1");
+        assertNotNull(view.getMap());
+        assertEquals(0, view.getCurrentTotalRows());
+
+        // insert 1 doc
+        Map<String, Object> dict = new HashMap<String, Object>();
+        dict.put("_id", "11111");
+        assertNotNull(putDoc(database, dict));
+
+        // regular query
+        Query query = view.createQuery();
+        assertNotNull(query);
+        QueryEnumerator e = query.run();
+        assertNotNull(e);
+        assertEquals(1, e.getCount());
+        QueryRow row = e.getRow(0);
+        assertNotNull(row);
+        assertNull(row.getKey());
+        assertEquals("11111", row.getDocumentId());
+        assertNull(row.getValue());
+
+        // query with null key
+        query.setKeys(Collections.singletonList(null));
+        e = query.run();
+        assertNotNull(e);
+        assertEquals(1, e.getCount());
+        row = e.getRow(0);
+        assertNotNull(row);
+        assertNull(row.getKey());
+        assertEquals("11111", row.getDocumentId());
+        assertNull(row.getValue());
+    }
 }
