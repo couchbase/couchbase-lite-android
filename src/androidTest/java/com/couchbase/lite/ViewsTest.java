@@ -3231,4 +3231,38 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.e(TAG, "Descending query: rows.getCount() = " + rows.getCount());
         assertEquals(0, rows.getCount());
     }
+
+    //
+    public void testEmitWithNullKey() throws Exception {
+        // set up view
+        View view = database.getView("vu");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                // null key -> ignored
+                emitter.emit(null, null);
+            }
+        }, "1");
+        assertNotNull(view.getMap());
+        assertEquals(0, view.getCurrentTotalRows());
+
+        // insert 1 doc
+        Map<String, Object> dict = new HashMap<String, Object>();
+        dict.put("_id", "11111");
+        assertNotNull(putDoc(database, dict));
+
+        // regular query
+        Query query = view.createQuery();
+        assertNotNull(query);
+        QueryEnumerator e = query.run();
+        assertNotNull(e);
+        assertEquals(0, e.getCount());
+
+        // query with null key. it should be ignored. this caused exception previously for sqlite
+        query.setKeys(Collections.singletonList(null));
+        e = query.run();
+        assertNotNull(e);
+        assertEquals(0, e.getCount());
+    }
 }
