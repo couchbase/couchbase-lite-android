@@ -13,6 +13,7 @@ import com.squareup.okhttp.mockwebserver.MockWebServer;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -406,5 +407,26 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         } finally {
             setEncryptedAttachmentStore(false);
         }
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/783
+    public void testNonStringForTypeField() throws CouchbaseLiteException {
+        // Non String as type
+        List<Integer> type1 = new ArrayList();
+        type1.add(0);
+        type1.add(1);
+        Map<String, Object> props1 = new HashMap<String, Object>();
+        props1.put("key", "value");
+        props1.put("type", type1);
+        Document doc1 = database.createDocument();
+        doc1.putProperties(props1);
+
+        //  String as type
+        String type2 = "STRING";
+        Map<String, Object> props2 = new HashMap<String, Object>();
+        props1.put("key", "value");
+        props1.put("type", type2);
+        Document doc2 = database.createDocument();
+        doc2.putProperties(props1);
     }
 }
