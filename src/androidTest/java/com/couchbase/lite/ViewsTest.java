@@ -3232,7 +3232,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(0, rows.getCount());
     }
 
-    //
+    // - (void) test28_Nil_Key
     public void testEmitWithNullKey() throws Exception {
         // set up view
         View view = database.getView("vu");
@@ -3241,7 +3241,8 @@ public class ViewsTest extends LiteTestCaseWithDB {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 // null key -> ignored
-                emitter.emit(null, null);
+                emitter.emit(null,  "foo");
+                emitter.emit("name", "bar");
             }
         }, "1");
         assertNotNull(view.getMap());
@@ -3257,7 +3258,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertNotNull(query);
         QueryEnumerator e = query.run();
         assertNotNull(e);
-        assertEquals(0, e.getCount());
+        assertEquals(1, e.getCount());
+        QueryRow row = e.getRow(0);
+        assertNotNull(row);
+        assertEquals("name", row.getKey());
+        assertEquals("bar", row.getValue());
 
         // query with null key. it should be ignored. this caused exception previously for sqlite
         query.setKeys(Collections.singletonList(null));
