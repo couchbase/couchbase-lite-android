@@ -268,6 +268,10 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         return new URL(System.getProperty("replicationUrl"));
     }
 
+    protected URL getAdminReplicationURL() throws MalformedURLException {
+        return new URL(System.getProperty("adminReplicationUrl"));
+    }
+
     protected boolean isTestingAgainstSyncGateway() {
         try {
             URL url = getReplicationURL();
