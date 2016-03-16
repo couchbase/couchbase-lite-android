@@ -429,4 +429,29 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         Document doc2 = database.createDocument();
         doc2.putProperties(props1);
     }
+
+    // ClassCastException when upgrading from 1.1 to 1.2
+    // https://github.com/couchbase/couchbase-lite-android/issues/790
+    public void testForceInsertWithNonStringForTypeField() throws CouchbaseLiteException {
+        // Non String as type
+        RevisionInternal rev = new RevisionInternal("MyDocID", "1-1111", false);
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("_id", rev.getDocID());
+        properties.put("_rev", rev.getRevID());
+        List<Integer> type1 = Arrays.asList(0, 1);
+        properties.put("type", type1);
+        rev.setProperties(properties);
+        List<String> history = Arrays.asList(rev.getRevID());
+        database.forceInsert(rev, history, null);
+
+        // String as type
+        rev = new RevisionInternal("MyDocID", "1-ffff", false);
+        properties = new HashMap<String, Object>();
+        properties.put("_id", rev.getDocID());
+        properties.put("_rev", rev.getRevID());
+        properties.put("type", "STRING");
+        rev.setProperties(properties);
+        history = Arrays.asList(rev.getRevID());
+        database.forceInsert(rev, history, null);
+    }
 }
