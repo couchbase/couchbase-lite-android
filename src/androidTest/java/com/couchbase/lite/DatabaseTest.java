@@ -191,7 +191,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
             assertEquals(0, database.getActiveReplications().size());
 
             final CountDownLatch replicationRunning = new CountDownLatch(1);
-            replication.addChangeListener(new ReplicationActiveObserver(replicationRunning));
+            replication.addChangeListener(new ReplicationRunningObserver(replicationRunning));
 
             replication.start();
 
