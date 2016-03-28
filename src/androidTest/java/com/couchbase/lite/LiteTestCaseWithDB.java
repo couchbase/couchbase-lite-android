@@ -7,6 +7,7 @@ import com.couchbase.lite.mockserver.MockDocumentGet;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.CustomizableMockHttpClient;
 import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.replicator.ReplicationState;
 import com.couchbase.lite.router.Router;
 import com.couchbase.lite.router.RouterCallbackBlock;
 import com.couchbase.lite.router.URLConnection;
@@ -824,18 +825,16 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     }
 
     public static class ReplicationIdleObserver implements Replication.ChangeListener {
+        private CountDownLatch idleSignal;
 
-        private CountDownLatch doneSignal;
-
-        public ReplicationIdleObserver(CountDownLatch doneSignal) {
-            this.doneSignal = doneSignal;
+        public ReplicationIdleObserver(CountDownLatch idleSignal) {
+            this.idleSignal = idleSignal;
         }
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-
-            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_IDLE) {
-                doneSignal.countDown();
+            if (event.getTransition().getDestination() == ReplicationState.IDLE) {
+                idleSignal.countDown();
             }
         }
     }
@@ -849,7 +848,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
+            if (event.getTransition().getDestination() == ReplicationState.STOPPED) {
                 doneSignal.countDown();
                 assertEquals(event.getChangeCount(), event.getCompletedChangeCount());
             }
@@ -857,35 +856,31 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     }
 
     public static class ReplicationOfflineObserver implements Replication.ChangeListener {
+        private CountDownLatch offlineSignal;
 
-        private CountDownLatch doneSignal;
-
-        public ReplicationOfflineObserver(CountDownLatch doneSignal) {
-            this.doneSignal = doneSignal;
+        public ReplicationOfflineObserver(CountDownLatch offlineSignal) {
+            this.offlineSignal = offlineSignal;
         }
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-
-            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_OFFLINE) {
-                doneSignal.countDown();
+            if (event.getTransition().getDestination() == ReplicationState.OFFLINE) {
+                offlineSignal.countDown();
             }
         }
     }
 
-    public static class ReplicationActiveObserver implements Replication.ChangeListener {
+    public static class ReplicationRunningObserver implements Replication.ChangeListener {
+        private CountDownLatch runningSignal;
 
-        private CountDownLatch doneSignal;
-
-        public ReplicationActiveObserver(CountDownLatch doneSignal) {
-            this.doneSignal = doneSignal;
+        public ReplicationRunningObserver(CountDownLatch runningSignal) {
+            this.runningSignal = runningSignal;
         }
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-
-            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
-                doneSignal.countDown();
+            if (event.getTransition().getDestination() == ReplicationState.RUNNING) {
+                runningSignal.countDown();
             }
         }
     }

@@ -21,8 +21,9 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.ManagerOptions;
-import com.couchbase.lite.storage.SQLiteNativeLibrary;
 import com.couchbase.lite.replicator.Replication;
+import com.couchbase.lite.replicator.ReplicationState;
+import com.couchbase.lite.storage.SQLiteNativeLibrary;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
@@ -205,7 +206,7 @@ public class PerformanceTestCase extends LiteTestCase {
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-            if (event.getSource().getStatus() == Replication.ReplicationStatus.REPLICATION_STOPPED) {
+            if (event.getTransition().getDestination() == ReplicationState.STOPPED) {
                 doneSignal.countDown();
                 assertEquals(event.getChangeCount(), event.getCompletedChangeCount());
             }
