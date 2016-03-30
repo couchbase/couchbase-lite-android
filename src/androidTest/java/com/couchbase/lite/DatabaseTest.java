@@ -454,4 +454,101 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         history = Arrays.asList(rev.getRevID());
         database.forceInsert(rev, history, null);
     }
+
+    /**
+     * Missing changes in Database Change Notification
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/1147
+     */
+    public void testDatabaseChangeNotification() throws Exception {
+        if (!this.isSQLiteDB())
+            return;
+
+        final int numDocs = 1000;
+        final int batchSize = 20;
+        final AtomicInteger totalChangesCount = new AtomicInteger(0);
+        final CountDownLatch changesCountDownLatch = new CountDownLatch(1);
+        final CountDownLatch createDocsCountDownLatch = new CountDownLatch(2);
+
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                synchronized (totalChangesCount) {
+                    int total = totalChangesCount.addAndGet(event.getChanges().size());
+                    Log.e(TAG, "Total changes : " + total + " > " + Thread.currentThread().getName());
+                    if (total == numDocs * 2) {
+                        changesCountDownLatch.countDown();
+                    }
+                }
+            }
+        });
+
+        final Thread t1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int numRounds = numDocs / batchSize;
+                for (int i = 0; i < numRounds; i++) {
+                    database.runInTransaction(new TransactionalTask() {
+                        @Override
+                        public boolean run() {
+                            for (int j = 0; j < batchSize; j++) {
+                                Document doc = database.createDocument();
+                                Map<String, Object> props = new HashMap<String, Object>();
+                                props.put("foo", "bar");
+                                try {
+                                    doc.putProperties(props);
+                                } catch (CouchbaseLiteException e) {
+                                    Log.e(TAG, "Error creating a document", e);
+                                    return false;
+                                }
+                            }
+                            return true;
+                        }
+                    });
+                }
+                synchronized (createDocsCountDownLatch) {
+                    createDocsCountDownLatch.countDown();
+                }
+            }
+        }, "T1");
+        t1.start();
+
+        final Thread t2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int numRounds = numDocs / batchSize;
+                for (int i = 0; i < numRounds; i++) {
+                    database.runInTransaction(new TransactionalTask() {
+                        @Override
+                        public boolean run() {
+                            for (int j = 0; j < batchSize; j++) {
+                                Document doc = database.createDocument();
+                                Map<String, Object> props = new HashMap<String, Object>();
+                                props.put("foo", "bar");
+                                try {
+                                    doc.putProperties(props);
+                                } catch (CouchbaseLiteException e) {
+                                    Log.e(TAG, "Error creating a document", e);
+                                    return false;
+                                }
+                            }
+                            return true;
+                        }
+                    });
+                }
+                synchronized (createDocsCountDownLatch) {
+                    createDocsCountDownLatch.countDown();
+                }
+            }
+        }, "T2");
+        t2.start();
+
+        createDocsCountDownLatch.await();
+        Log.e(TAG, "Both T1 and T2 are done creating docs : " + database.getDocumentCount());
+
+        assertTrue(changesCountDownLatch.await(60, TimeUnit.SECONDS));
+        assertEquals(numDocs * 2, totalChangesCount.get());
+
+        // If not sleeping, sometimes not get all logging messages after the unit test got tear down.
+        Thread.sleep(5000);
+    }
 }
