@@ -4144,7 +4144,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/383
      */
     public void testContinuousPullReplicationGoesIdleTwice() throws Exception {
-        Log.e(TAG, "TEST START");
+        Log.d(TAG, "TEST START");
 
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
@@ -4197,8 +4197,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             mockRevsDiff.setSticky(true);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-            Log.e(TAG, "SERVER START");
-
             server.play();
 
             // create pull replication
@@ -4209,15 +4207,13 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             pullReplication.addChangeListener(new Replication.ChangeListener() {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
-                    if (event.getTransition().getDestination() == ReplicationState.IDLE) {
-                        Log.e(TAG, "Replication is IDLE 1");
+                    if (event.getTransition() != null &&
+                            event.getTransition().getDestination() == ReplicationState.IDLE) {
+                        Log.d(TAG, "Replication is IDLE 1");
                         enteredIdleState1.countDown();
-                        pullReplication.removeChangeListener(this);
                     }
                 }
             });
-
-            Log.e(TAG, "REPLICATOR START");
 
             // 1. start pull replication
             pullReplication.start();
@@ -4237,17 +4233,19 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             pullReplication.addChangeListener(new Replication.ChangeListener() {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
-                    if (event.getTransition().getDestination() == ReplicationState.RUNNING) {
+                    if (event.getTransition() != null &&
+                            event.getTransition().getDestination() == ReplicationState.RUNNING) {
                         if (enteredRunningState.getCount() > 0) {
-                            Log.e(TAG, "Replication is RUNNING");
+                            Log.d(TAG, "Replication is RUNNING");
                             enteredRunningState.countDown();
                         }
                     }
                     // second IDLE change listener
                     // handling IDLE event here. It seems IDLE event was fired before set IDLE event handler
-                    else if (event.getTransition().getDestination() == ReplicationState.IDLE) {
+                    else if (event.getTransition() != null &&
+                            event.getTransition().getDestination() == ReplicationState.IDLE) {
                         if (enteredRunningState.getCount() <= 0 && enteredIdleState2.getCount() > 0) {
-                            Log.e(TAG, "Replication is IDLE 2");
+                            Log.d(TAG, "Replication is IDLE 2");
                             enteredIdleState2.countDown();
                         }
                     }
@@ -4255,28 +4253,28 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             });
 
             // 4. wait until its RUNNING
-            Log.e(TAG, "WAIT for RUNNING");
+            Log.d(TAG, "WAIT for RUNNING");
             success = enteredRunningState.await(30, TimeUnit.SECONDS);
             assertTrue(success);
 
             // 5. wait until its IDLE again.  before the fix, it would never go IDLE again, and so
             // this would timeout and the test would fail.
-            Log.e(TAG, "WAIT for IDLE");
+            Log.d(TAG, "WAIT for IDLE");
             success = enteredIdleState2.await(30, TimeUnit.SECONDS);
             assertTrue(success);
 
-            Log.e(TAG, "STOP REPLICATOR");
+            Log.d(TAG, "STOP REPLICATOR");
 
             // clean up
             stopReplication(pullReplication);
 
-            Log.e(TAG, "STOP MOCK SERVER");
+            Log.d(TAG, "STOP MOCK SERVER");
         } finally {
             server.shutdown();
         }
 
 
-        Log.e(TAG, "TEST DONE");
+        Log.d(TAG, "TEST DONE");
     }
 
     /**
@@ -4317,7 +4315,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                         enteredIdleState.countDown();
                     } else if (event.getTransition().getDestination() == ReplicationState.STOPPED) {
                         event.getTransition().getDestination();
-                        Log.e(TAG, "Replication is STOPPED", new Exception("HELLO WORLD"));
+                        Log.d(TAG, "Replication is STOPPED");
                         enteredStoppedState.countDown();
                     }
                 }
@@ -4450,7 +4448,8 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             pullReplication.addChangeListener(new Replication.ChangeListener() {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
-                    if (event.getTransition().getDestination() == ReplicationState.IDLE) {
+                    if (event.getTransition() != null &&
+                            event.getTransition().getDestination() == ReplicationState.IDLE) {
                         pullInitialIdleState.countDown();
                     }
                 }
@@ -4475,13 +4474,15 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
                     Log.e(TAG, "[changed] PULL -> " + event);
-                    if (event.getTransition().getDestination() == ReplicationState.IDLE) {
+                    if (event.getTransition() != null &&
+                            event.getTransition().getDestination() == ReplicationState.IDLE) {
                         // make sure pull replicator becomes IDLE after ACTIVE state.
                         // so ignore any IDLE state before ACTIVE.
                         if (runningSignal.getCount() == 0) {
                             idleSignal.countDown();
                         }
-                    } else if (event.getTransition().getDestination() == ReplicationState.RUNNING) {
+                    } else if (event.getTransition() != null &&
+                            event.getTransition().getDestination() == ReplicationState.RUNNING) {
                         runningSignal.countDown();
                     }
                 }
@@ -4554,9 +4555,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         SavedRevision saved = newRev.save(true);
         String rev2ID = doc.getCurrentRevisionId();
 
-        Log.w(TAG, "saved => " + saved);
-        Log.w(TAG, "revID => " + doc.getCurrentRevisionId());
-
         // Create 5 revisions with 50 conflicts each
         int j = 3;
         for (; j < 5; j++) {
@@ -4567,7 +4565,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             props.put(key, value);
             RevisionInternal leaf = new RevisionInternal(props);
             database.forceInsert(leaf, new ArrayList<String>(), null);
-            Log.w(TAG, "revID => " + doc.getCurrentRevisionId());
 
             for (int i = 0; i < 49; i++) {
                 // Create a conflict, won by the new revision:
@@ -4595,7 +4592,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 revHistory.add(rev2ID);
                 revHistory.add(rev1ID);
                 database.forceInsert(leaf_conflict, revHistory, null);
-                Log.w(TAG, "revID => " + doc.getCurrentRevisionId());
             }
         }
 
@@ -4634,7 +4630,8 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                     if (event.getError() != null) {
                         Assert.fail("Should not have any error....");
                     }
-                    if (event.getTransition().getDestination() == ReplicationState.IDLE) {
+                    if (event.getTransition() != null &&
+                            event.getTransition().getDestination() == ReplicationState.IDLE) {
                         idleSignal1.countDown();
                         idleSignal2.countDown();
                     }

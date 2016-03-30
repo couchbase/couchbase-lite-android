@@ -833,7 +833,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-            if (event.getTransition().getDestination() == ReplicationState.IDLE) {
+            if (event.getTransition() != null &&
+                    event.getTransition().getDestination() == ReplicationState.IDLE) {
                 idleSignal.countDown();
             }
         }
@@ -848,7 +849,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-            if (event.getTransition().getDestination() == ReplicationState.STOPPED) {
+            if (event.getTransition() != null &&
+                    event.getTransition().getDestination() == ReplicationState.STOPPED) {
                 doneSignal.countDown();
                 assertEquals(event.getChangeCount(), event.getCompletedChangeCount());
             }
@@ -864,7 +866,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-            if (event.getTransition().getDestination() == ReplicationState.OFFLINE) {
+            if (event.getTransition() != null &&
+                    event.getTransition().getDestination() == ReplicationState.OFFLINE) {
                 offlineSignal.countDown();
             }
         }
@@ -879,7 +882,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-            if (event.getTransition().getDestination() == ReplicationState.RUNNING) {
+            if (event.getTransition() != null &&
+                    event.getTransition().getDestination() == ReplicationState.RUNNING) {
                 runningSignal.countDown();
             }
         }
