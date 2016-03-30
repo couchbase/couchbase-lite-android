@@ -355,6 +355,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         try {
             URL url = new URL("cblite://" + path);
             URLConnection conn = (URLConnection) url.openConnection();
+            conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
             conn.setRequestMethod(method);
             if (headers != null) {
@@ -420,6 +421,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     protected Object sendBody(String method, String path, Object bodyObj,
                               int expectedStatus, Object expectedResult) {
         URLConnection conn = sendRequest(method, path, null, bodyObj);
+        conn.setRequestProperty("Content-Type", "application/json");
         Object result = parseJSONResponse(conn);
         Log.v(TAG, "%s %s --> %d", method, path, conn.getResponseCode());
         Assert.assertEquals(expectedStatus, conn.getResponseCode());
