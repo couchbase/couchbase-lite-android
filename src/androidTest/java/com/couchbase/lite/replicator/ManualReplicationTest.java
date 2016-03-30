@@ -101,7 +101,7 @@ public class ManualReplicationTest extends LiteTestCaseWithDB {
 
         // this was a useless test, the replication wasn't even started
         final CountDownLatch wentOnline = new CountDownLatch(1);
-        Replication.ChangeListener changeListener = new ReplicationActiveObserver(wentOnline);
+        Replication.ChangeListener changeListener = new ReplicationRunningObserver(wentOnline);
         replication.addChangeListener(changeListener);
 
         replication.goOnline();
