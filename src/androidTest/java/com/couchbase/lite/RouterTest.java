@@ -134,21 +134,46 @@ public class RouterTest extends LiteTestCaseWithDB {
         //https://github.com/couchbase/couchbase-lite-android-core/issues/12
         //content_type becomes null for attachments in responses, should be as set in Content-Type
         String contentTypeField = (String) attachmentResult.get("content_type");
-        ;
         assertTrue(attachmentResult.containsKey("content_type"));
         assertNotNull(contentTypeField);
 
+        // no Accept
         URLConnection conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", null, null);
         String contentType = conn.getHeaderField("Content-Type");
         assertNotNull(contentType);
         assertTrue(contentType.contains("text/plain"));
-
         StringWriter writer = new StringWriter();
         InputStream is = conn.getInputStream();
         IOUtils.copy(is, writer, "UTF-8");
         is.close();
         String responseString = writer.toString();
         assertTrue(responseString.contains(inlineTextString));
+        writer.close();
+
+        // With Accept: text/plain
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Accept", "text/plain");
+        conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", headers, null);
+        contentType = conn.getHeaderField("Content-Type");
+        assertNotNull(contentType);
+        assertTrue(contentType.contains("text/plain"));
+        writer = new StringWriter();
+        is = conn.getInputStream();
+        IOUtils.copy(is, writer, "UTF-8");
+        is.close();
+        responseString = writer.toString();
+        assertTrue(responseString.contains(inlineTextString));
+        writer.close();
+
+        // With Accept: application/json
+        headers.put("Accept", "application/json");
+        conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", headers, null);
+        assertEquals(Status.NOT_ACCEPTABLE, conn.getResponseCode());
+        is = conn.getInputStream();
+        Map<String, Object> body = Manager.getObjectMapper().readValue(is, Map.class);
+        is.close();
+        assertEquals(406, body.get("status"));
+        assertEquals("not_acceptable", body.get("error"));
     }
 
     private Map<String, Object> valueMapWithRev(String revId) {
