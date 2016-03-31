@@ -7,18 +7,13 @@
     </formats>
     <files>
         <file>
-            <source> ${ZIP_HOME}/LICENSE.TXT     </source>
+            <source> ${ZIP_HOME}/LICENSE.TXT </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
-                                 <!-- locally built  -->
+        <!-- locally built  -->
         <file>
             <source> ${ZIP_HOME}/${JAR_JAVA_CORE} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-        <file>
-            <source> ${ZIP_HOME}/${JAR_AND_CLASS} </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
@@ -34,27 +29,6 @@
         </file>
         <file>
             <source> ${ZIP_HOME}/${JAR_JLISTENER} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-
-        <file>
-            <source> ${ZIP_HOME}/${POM_JAVA_CORE} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-        <file>
-            <source> ${ZIP_HOME}/${POM_AND_CLASS} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-        <file>
-            <source> ${ZIP_HOME}/${POM_JA_SCRIPT} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-        <file>
-            <source> ${ZIP_HOME}/${POM_JLISTENER} </source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
@@ -78,13 +52,7 @@
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
-
-        <file>
-            <source> ${ZIP_HOME}/${JAR_COLLATORS} </source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
-                                 <!-- third-party    -->
+        <!-- third-party    -->
         <file>
             <source> ${ZIP_HOME}/rhino-${rhino.version}.jar                </source>
             <outputDirectory>/</outputDirectory>
