@@ -28,6 +28,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
     /**
      * This test is too slow to run with ARM Emulator API 19 on Jenkins.
      * As default, test is disabled.
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/1108
      */
     public void manualTestPushWithManyAttachment() throws Exception {
         // add document
