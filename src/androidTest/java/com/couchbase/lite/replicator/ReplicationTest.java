@@ -2028,7 +2028,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
     /**
      * Regression test for https://github.com/couchbase/couchbase-lite-java-core/issues/72
      */
-    public void failingTestPusherBatching() throws Throwable {
+    public void testPusherBatching() throws Throwable {
 
         int previous = ReplicationInternal.INBOX_CAPACITY;
         ReplicationInternal.INBOX_CAPACITY = 5;
