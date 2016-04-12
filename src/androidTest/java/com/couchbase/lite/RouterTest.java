@@ -299,9 +299,16 @@ public class RouterTest extends LiteTestCaseWithDB {
         expectedChanges.put("results", results);
         send("GET", "/db/_changes?since=4", Status.OK, expectedChanges);
 
+        Map<String, Object> body = new HashMap<>();
+        body.put("since", 4);
+        sendBody("POST", "/db/_changes", body, Status.OK, expectedChanges);
+
         results.remove(result1);
         expectedChanges.put("results", results);
         send("GET", "/db/_changes?since=5", Status.OK, expectedChanges);
+
+        body.put("since", 5);
+        sendBody("POST", "/db/_changes", body, Status.OK, expectedChanges);
 
         // Put with _deleted to delete a doc:
         Log.d(TAG, "Put with _deleted to delete a doc");
@@ -340,6 +347,8 @@ public class RouterTest extends LiteTestCaseWithDB {
         expectedChanges.put("last_seq", 0);
         expectedChanges.put("results", new ArrayList<Object>());
         send("GET", "/db/_changes", Status.OK, expectedChanges);
+
+        sendBody("POST", "/db/_changes", new HashMap<>(), Status.OK, expectedChanges);
     }
 
     // - (void) test_AllDocs in Router_Tests.m
