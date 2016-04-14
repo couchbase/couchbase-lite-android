@@ -48,8 +48,11 @@ public class RouterTest extends LiteTestCaseWithDB {
 
         send("GET", "/non-existant", Status.NOT_FOUND, null);
         send("GET", "/BadName", Status.BAD_REQUEST, null);
-        send("PUT", "/", Status.NOT_FOUND, null);
-        send("POST", "/", Status.NOT_FOUND, null);
+        Map<String, Object> expectedBody = new HashMap<String, Object>();
+        expectedBody.put("error", "method_not_allowed");
+        expectedBody.put("status", 405);
+        send("PUT", "/", Status.METHOD_NOT_ALLOWED, expectedBody);
+        send("POST", "/", Status.METHOD_NOT_ALLOWED, expectedBody);
     }
 
     // - (void) test_Databases in Router_Tests.m
@@ -302,6 +305,14 @@ public class RouterTest extends LiteTestCaseWithDB {
         Map<String, Object> body = new HashMap<>();
         body.put("since", 4);
         sendBody("POST", "/db/_changes", body, Status.OK, expectedChanges);
+
+        Map<String, Object> expectedBody = new HashMap<String, Object>();
+        expectedBody.put("error", "method_not_allowed");
+        expectedBody.put("status", 405);
+        // 405 - PUT /{db}/_changes is not supported
+        sendBody("PUT", "/db/_changes", body, Status.METHOD_NOT_ALLOWED, expectedBody);
+        // 405 - DELETE /{db}/_changes is not supported
+        send("DELETE", "/db/_changes", Status.METHOD_NOT_ALLOWED, expectedBody);
 
         results.remove(result1);
         expectedChanges.put("results", results);
