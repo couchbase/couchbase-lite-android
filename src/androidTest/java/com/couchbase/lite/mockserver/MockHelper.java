@@ -31,7 +31,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Misc helper methods for MockWebserver-based Mock objects
  */
 public class MockHelper {
-
     public static final String PATH_REGEX_CHECKPOINT = "/db/_local.*";
     public static final String PATH_REGEX_CHANGES = "/db/_changes.*";
     public static final String PATH_REGEX_CHANGES_NORMAL = "/db/_changes\\?feed=normal.*";
@@ -45,13 +44,9 @@ public class MockHelper {
     public static final String PATH_REGEX_ALL_DOCS = "/db/_all_docs.*";
 
     public static MockWebServer getMockWebServer(MockDispatcher dispatcher) {
-
         MockWebServer server = new MockWebServer();
-
         server.setDispatcher(dispatcher);
-
         return server;
-
     }
 
     /**
@@ -65,23 +60,26 @@ public class MockHelper {
      * @param numDocsPerChangesResponse how many docs to add to each _changes response?  MAXINT for all.
      *
      */
-    public static MockWebServer getPreloadedPullTargetMockCouchDB(MockDispatcher dispatcher, int numMockDocsToServe, int numDocsPerChangesResponse) {
-
-        return new MockPreloadedPullTarget(dispatcher, numMockDocsToServe, numDocsPerChangesResponse).getMockWebServer();
-
+    public static MockWebServer getPreloadedPullTargetMockCouchDB(MockDispatcher dispatcher,
+                                                                  int numMockDocsToServe,
+                                                                  int numDocsPerChangesResponse) {
+        return new MockPreloadedPullTarget(dispatcher, numMockDocsToServe,
+                numDocsPerChangesResponse).getMockWebServer();
     }
 
-
     public static void set200OKJson(MockResponse mockResponse) {
-        mockResponse.setStatus("HTTP/1.1 200 OK").setHeader("Content-Type", "application/json");
+        mockResponse.setStatus("HTTP/1.1 200 OK")
+                .setHeader("Content-Type", "application/json");
     }
 
     public static void set201OKJson(MockResponse mockResponse) {
-        mockResponse.setStatus("HTTP/1.1 201 OK").setHeader("Content-Type", "application/json");
+        mockResponse.setStatus("HTTP/1.1 201 OK")
+                .setHeader("Content-Type", "application/json");
     }
 
     public static void set404NotFoundJson(MockResponse mockResponse) {
-        mockResponse.setStatus("HTTP/1.1 404 NOT FOUND").setHeader("Content-Type", "application/json");
+        mockResponse.setStatus("HTTP/1.1 404 NOT FOUND")
+                .setHeader("Content-Type", "application/json");
     }
 
     public static void addFake404CheckpointResponse(MockWebServer mockWebServer) {
@@ -103,7 +101,8 @@ public class MockHelper {
         return new WrappedSmartMockResponse(mockResponse);
     }
 
-    public static Map<String, Object> getJsonMapFromRequest(byte[] requestBody) throws IOException {
+    public static Map<String, Object> getJsonMapFromRequest(byte[] requestBody)
+            throws IOException {
         return Manager.getObjectMapper().readValue(requestBody, Map.class);
     }
 
@@ -161,27 +160,21 @@ public class MockHelper {
             }
             return batch;
         }
-
-
     }
 
     public static List<MockDocumentGet.MockDocument> getMockDocuments(int numDocs) {
         List<MockDocumentGet.MockDocument> mockDocs = new ArrayList<MockDocumentGet.MockDocument>();
         for (int i=0; i<numDocs; i++) {
-
             String docId = String.format("doc%s", i);
             String revIdHash = Misc.CreateUUID().substring(0, 4);
             String revId = String.format("1-%s", revIdHash);
             int seq = i;
-
             // mock documents to be pulled
-            MockDocumentGet.MockDocument mockDoc = new MockDocumentGet.MockDocument(docId, revId, seq);
+            MockDocumentGet.MockDocument mockDoc =
+                    new MockDocumentGet.MockDocument(docId, revId, seq);
             mockDoc.setJsonMap(MockHelper.generateRandomJsonMap());
             mockDocs.add(mockDoc);
-
         }
         return mockDocs;
     }
-
-
 }
