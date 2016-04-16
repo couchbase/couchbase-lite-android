@@ -488,11 +488,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertTrue(getCheckpointRequest.getMethod().equals("GET"));
             assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
             RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
-            if (serverType == MockDispatcher.ServerType.SYNC_GW) {
-                assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
-            } else {
-                assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
-            }
+            assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
             assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
 
             // wait until the mock webserver receives a PUT checkpoint request with doc #2's sequence
@@ -618,13 +614,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertTrue(getCheckpointRequest.getMethod().equals("GET"));
             assertTrue(getCheckpointRequest.getPath().matches(MockHelper.PATH_REGEX_CHECKPOINT));
             RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
-
-            if (serverType == MockDispatcher.ServerType.SYNC_GW) {
-                assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
-
-            } else {
-                assertTrue(getChangesFeedRequest.getMethod().equals("GET"));
-            }
+            assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
             assertTrue(getChangesFeedRequest.getPath().matches(MockHelper.PATH_REGEX_CHANGES));
             if (serverType == MockDispatcher.ServerType.SYNC_GW) {
                 Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(getChangesFeedRequest.getUtf8Body(), Map.class);
