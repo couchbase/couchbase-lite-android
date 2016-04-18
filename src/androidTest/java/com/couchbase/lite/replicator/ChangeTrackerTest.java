@@ -128,7 +128,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
 
     public void testChangeTrackerWithConflictsIncluded() throws Throwable {
         URL testURL = getReplicationURL();
-        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, true, 0, null);
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, true, 0L, null);
         changeTracker.setUsePOST(false);
         assertEquals("_changes?feed=longpoll&heartbeat=300000&style=all_docs&since=0&limit=50", changeTracker.getChangesFeedPath());
 
@@ -136,16 +136,32 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         assertEquals("_changes?feed=longpoll&heartbeat=300000&style=all_docs&since=0&limit=50", changeTracker.getChangesFeedPath());
         Map<String, Object> postBodyMap = changeTracker.changesFeedPOSTBodyMap();
         assertEquals("longpoll", postBodyMap.get("feed"));
+        assertEquals(50, (int) postBodyMap.get("limit"));
+        assertEquals(300000L, (long) postBodyMap.get("heartbeat"));
+        assertEquals("all_docs", postBodyMap.get("style"));
+        assertEquals(0L, (long)postBodyMap.get("since"));
+    }
+
+    public void testChangeTrackerWithCompoundLastSequence() throws Throwable {
+        URL testURL = getReplicationURL();
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, true, "1234:56", null);
+        changeTracker.setUsePOST(false);
+        assertEquals("_changes?feed=longpoll&heartbeat=300000&style=all_docs&since=1234%3A56&limit=50", changeTracker.getChangesFeedPath());
+
+        changeTracker.setUsePOST(true);
+        assertEquals("_changes?feed=longpoll&heartbeat=300000&style=all_docs&since=1234%3A56&limit=50", changeTracker.getChangesFeedPath());
+        Map<String, Object> postBodyMap = changeTracker.changesFeedPOSTBodyMap();
+        assertEquals("longpoll", postBodyMap.get("feed"));
         assertEquals(50, (int)postBodyMap.get("limit"));
         assertEquals(300000L, (long)postBodyMap.get("heartbeat"));
         assertEquals("all_docs", postBodyMap.get("style"));
-        assertEquals(0L, (long)postBodyMap.get("since"));
+        assertEquals("1234:56", postBodyMap.get("since"));
     }
 
     public void testChangeTrackerWithFilterURL() throws Throwable {
 
         URL testURL = getReplicationURL();
-        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, null);
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0L, null);
 
 
         // set filter
@@ -173,7 +189,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
     public void testChangeTrackerWithDocsIds() throws Exception {
         URL testURL = getReplicationURL();
 
-        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, null);
+        ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0L, null);
         changeTracker.setUsePOST(false);
         List<String> docIds = new ArrayList<String>();
         docIds.add("doc1");
@@ -284,7 +300,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
 
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, mode, false, 0L, client);
         changeTracker.setUsePOST(isTestingAgainstSyncGateway());
         changeTracker.start();
 
@@ -341,7 +357,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.LongPoll, false, 0L, client);
         changeTracker.setUsePOST(isTestingAgainstSyncGateway());
         changeTracker.start();
 
@@ -416,7 +432,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
             }
         };
 
-        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, false, 0, client);
+        final ChangeTracker changeTracker = new ChangeTracker(testURL, ChangeTracker.ChangeTrackerMode.Continuous, false, 0L, client);
         changeTracker.setUsePOST(isTestingAgainstSyncGateway());
         changeTracker.start();
 
