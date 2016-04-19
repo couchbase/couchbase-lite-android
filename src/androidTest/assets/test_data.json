@@ -1,0 +1,2609 @@
+[
+    {
+        "lon": -50.32804666666666,
+        "monitoramentos": [],
+        "channels": [
+            "036.792.879-50",
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Pré-Plantio",
+        "_rev": "1-cce2bed4fa1ef253fc20c9edfa12d992",
+        "_id": "c564bebe-ed91-4d78-8381-082ca3b7a37a",
+        "_revisions": {
+            "ids": [
+                "cce2bed4fa1ef253fc20c9edfa12d992"
+            ],
+            "start": 1
+        },
+        "owner": "036.792.879-50",
+        "cultura": "Soja",
+        "date_time": 1447336297,
+        "lat": -26.37066666666666,
+        "contorno_id": "a6f5747f89067a879235f6c5b918090a"
+    },
+    {
+        "lon": -50.34721651,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-177f4d4076c1f000c7419f1cfb4003fa",
+        "_id": "966a04b1-1dd4-4ac5-94ce-fb7a7426d4a5",
+        "_revisions": {
+            "ids": [
+                "177f4d4076c1f000c7419f1cfb4003fa"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1456144729,
+        "lat": -26.39614115,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34527982,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-c76b98be41724bf939831e3a27af613f",
+        "_id": "7d368cf9-dfde-4d09-9a70-3a7c22f586db",
+        "_revisions": {
+            "ids": [
+                "c76b98be41724bf939831e3a27af613f"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1456144006,
+        "lat": -26.39337263,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.3449268,
+        "monitoramentos": [
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 1,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "9639dea947a069506eff701fd6fa2b54",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "d54bb1d98df62abd0ba155978947ebda",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 7,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-ca4a6ecd7360b8e378fb86e488cee9b8",
+        "_id": "cfd3679a-f08b-46fc-924e-c9e257edc952",
+        "_revisions": {
+            "ids": [
+                "ca4a6ecd7360b8e378fb86e488cee9b8"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1456143610,
+        "lat": -26.39206447,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34528822,
+        "monitoramentos": [
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 7,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-872916a19ad676e8e584a77f831ca6d7",
+        "_id": "03e29353-baa5-46dc-b1dd-3b749fb1c248",
+        "_revisions": {
+            "ids": [
+                "872916a19ad676e8e584a77f831ca6d7"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1456143218,
+        "lat": -26.3907894,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34609133,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 7,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 5
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-370a87b19acdc175823689bdf92b1ce1",
+        "_id": "02d420db-9cc9-49c9-bcf8-13846d1ec3e5",
+        "_revisions": {
+            "ids": [
+                "370a87b19acdc175823689bdf92b1ce1"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1456142780,
+        "lat": -26.38927478,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34782466,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 9,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-3d0b2f86cb8e99ba496e98936a0f9525",
+        "_id": "3c59b112-35f1-467f-891c-e9d2708a89f0",
+        "_revisions": {
+            "ids": [
+                "3d0b2f86cb8e99ba496e98936a0f9525"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1456142346,
+        "lat": -26.38957387,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34761003,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-b4078de1d6be20a574e96d596038380c",
+        "_id": "f83f7a97-8a6a-4a21-ba16-aad84927581e",
+        "_revisions": {
+            "ids": [
+                "b4078de1d6be20a574e96d596038380c"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1455022477,
+        "lat": -26.39651373,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34293824,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 6,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 1,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 2
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-1785e1089da69c1379f22604456689f9",
+        "_id": "bcf35c60-5761-4c2e-8612-f4d3dbefc18b",
+        "_revisions": {
+            "ids": [
+                "1785e1089da69c1379f22604456689f9"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1455022074,
+        "lat": -26.39632814,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34634142,
+        "monitoramentos": [
+            {
+                "praga_id": "d54bb1d98df62abd0ba155978947ebda",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 11,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 1,
+                "qtde_2": 8
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-551fa4d921aba65faf2ede9335af676d",
+        "_id": "16f9ddf1-9cf8-47c6-a487-909ee9d42ac6",
+        "_revisions": {
+            "ids": [
+                "551fa4d921aba65faf2ede9335af676d"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1455021657,
+        "lat": -26.39034422,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.3442096,
+        "monitoramentos": [
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 2,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 3
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-3a21e47933cb2f3eefcafccffbb84126",
+        "_id": "698fc60b-a09f-4236-9343-1adf59aeea33",
+        "_revisions": {
+            "ids": [
+                "3a21e47933cb2f3eefcafccffbb84126"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1455021146,
+        "lat": -26.38976675,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34466201,
+        "monitoramentos": [
+            {
+                "praga_id": "a2b20ad2f60cbe7b489ac085ad41779b",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 3,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 9,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-04e96ba441e5d9b2aaf7b103d5807245",
+        "_id": "4a077d68-6c92-4c97-a564-fa2223c53f37",
+        "_revisions": {
+            "ids": [
+                "04e96ba441e5d9b2aaf7b103d5807245"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1455020748,
+        "lat": -26.38855713,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34544569,
+        "monitoramentos": [
+            {
+                "praga_id": "d54bb1d98df62abd0ba155978947ebda",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 1,
+                "qtde_2": 3
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-5d85b72f893dbd534b116341151c8a57",
+        "_id": "666b614c-58bf-4c6d-b62d-2515ac087148",
+        "_revisions": {
+            "ids": [
+                "5d85b72f893dbd534b116341151c8a57"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1455020317,
+        "lat": -26.38631642,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34402858,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-bd285e17e63a7351935048bbaa64da14",
+        "_id": "e02edbd6-951a-4eb0-ad5b-a88586c030a4",
+        "_revisions": {
+            "ids": [
+                "bd285e17e63a7351935048bbaa64da14"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1453319613,
+        "lat": -26.38870607,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34560251,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 8,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-ebf94bc6746972bf8a20bfed3d801955",
+        "_id": "a890a903-3a54-4d5f-881b-b94ef34d3e35",
+        "_revisions": {
+            "ids": [
+                "ebf94bc6746972bf8a20bfed3d801955"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1453319358,
+        "lat": -26.38642319,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34620168,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 13,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-6584d9515d711585bf97758b43205516",
+        "_id": "f910e835-a2a7-4e19-a1fe-20936ae6cadf",
+        "_revisions": {
+            "ids": [
+                "6584d9515d711585bf97758b43205516"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1453318973,
+        "lat": -26.39036993,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.3454572,
+        "monitoramentos": [
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 13,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-846b44e42b3ec5a178fbaee497235477",
+        "_id": "39bce51a-c92e-46a0-a9bd-4cbcb9eb1c51",
+        "_revisions": {
+            "ids": [
+                "846b44e42b3ec5a178fbaee497235477"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1453318673,
+        "lat": -26.3931913,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34387222,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-366682ef423d5763ebbda50f2ada99ee",
+        "_id": "e324af2f-d679-445c-a6e1-cb507a654879",
+        "_revisions": {
+            "ids": [
+                "366682ef423d5763ebbda50f2ada99ee"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1453318253,
+        "lat": -26.39632687,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34839823,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 10,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-117879f21f0bf3f0a679982034ef1956",
+        "_id": "8e26c88e-95b4-4a39-8083-f53362085825",
+        "_revisions": {
+            "ids": [
+                "117879f21f0bf3f0a679982034ef1956"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1453317659,
+        "lat": -26.39869511,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34804681,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 17,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-dddb26239e92619c3c9e4266fc5ddcc0",
+        "_id": "7635e009-a346-46bd-8dda-05c3ae88a30e",
+        "_revisions": {
+            "ids": [
+                "dddb26239e92619c3c9e4266fc5ddcc0"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1453317489,
+        "lat": -26.39719289,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34836072,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 7,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 6,
+                "qtde_2": 3
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-62c77ae0330622913fa45ad1c74fb95b",
+        "_id": "2a9667cf-7d99-4d82-857d-ec38f95212c5",
+        "_revisions": {
+            "ids": [
+                "62c77ae0330622913fa45ad1c74fb95b"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1452107445,
+        "lat": -26.39878576,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34720208,
+        "monitoramentos": [
+            {
+                "praga_id": "ccd2d6e89514244f170db6ade3efb132",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 1,
+                "qtde_2": 3
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 13,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-86f9f0e88c054c4a180c1aa15b51f0eb",
+        "_id": "7850db66-d937-483b-9e45-20798bee5d5c",
+        "_revisions": {
+            "ids": [
+                "86f9f0e88c054c4a180c1aa15b51f0eb"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1452107089,
+        "lat": -26.39681684,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34526834,
+        "monitoramentos": [
+            {
+                "praga_id": "15dca3342bb49077dc98ff6ae1e2ee3f",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 12,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 1,
+                "qtde_2": 3
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-d1b196d95f1f7461b23f71328f8d8b99",
+        "_id": "b7692769-6664-4a80-ba2c-6d0e806afc3a",
+        "_revisions": {
+            "ids": [
+                "d1b196d95f1f7461b23f71328f8d8b99"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1452106590,
+        "lat": -26.39432798,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34395198,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 1,
+                "qtde_2": 2
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-018437b931d7b881db7cb99abd2cc736",
+        "_id": "4cdf772d-7ead-42ec-b137-90cab71f6bf8",
+        "_revisions": {
+            "ids": [
+                "018437b931d7b881db7cb99abd2cc736"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1452106576,
+        "lat": -26.39474673,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.3444094,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 6,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 6
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-9bd062235ec44eee742784d42f05eb59",
+        "_id": "53b2ea00-b648-4351-bf78-7b98f6b61acd",
+        "_revisions": {
+            "ids": [
+                "9bd062235ec44eee742784d42f05eb59"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1452106308,
+        "lat": -26.39257688,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34516042,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 7,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 5,
+                "qtde_2": 8
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-1b55dae4d2559093c8ef3ff249e6e668",
+        "_id": "1ceda756-c353-4cc3-87a9-608ead381ccb",
+        "_revisions": {
+            "ids": [
+                "1b55dae4d2559093c8ef3ff249e6e668"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1452106206,
+        "lat": -26.39198956,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34420592,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 3,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-294bbc30149ac285979e22057fab8a6e",
+        "_id": "154d8689-ad3d-4dd6-b366-87a3c9960c40",
+        "_revisions": {
+            "ids": [
+                "294bbc30149ac285979e22057fab8a6e"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1452106011,
+        "lat": -26.39086416,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34631835,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "0d4ab20e4a88e1d2c369ee442c96ee86",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 6,
+                "qtde_2": 4
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-de6f23eb301e6db4ad97481d84c40900",
+        "_id": "08a09908-bccc-496b-aa5b-46c8ede9d5fb",
+        "_revisions": {
+            "ids": [
+                "de6f23eb301e6db4ad97481d84c40900"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1452105832,
+        "lat": -26.39035365,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34518999,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 6,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 1,
+                "qtde_2": 2
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-ca7f57f222129a47354c401e48f8c484",
+        "_id": "859f4b55-c87f-4bda-9d65-3bf9bc73e45c",
+        "_revisions": {
+            "ids": [
+                "ca7f57f222129a47354c401e48f8c484"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1452105794,
+        "lat": -26.38973357,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34792193,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 6,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 2
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-2e51c48d7f5e995635d1ef1d96709fdd",
+        "_id": "c65a892d-7995-44f6-a992-d6524a5b575b",
+        "_revisions": {
+            "ids": [
+                "2e51c48d7f5e995635d1ef1d96709fdd"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1452105582,
+        "lat": -26.38963252,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34659765,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 8,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-205d0e72301f5452bb8826ea030b0fff",
+        "_id": "daa5a405-80c4-4ccd-8327-ad1a08746a4f",
+        "_revisions": {
+            "ids": [
+                "205d0e72301f5452bb8826ea030b0fff"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1452105575,
+        "lat": -26.3890649,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34796882,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 15,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-608fd67129d8b4024ca5f2b13142f6d7",
+        "_id": "5ca48648-e8ce-4b12-b6b6-04128ba4de42",
+        "_revisions": {
+            "ids": [
+                "608fd67129d8b4024ca5f2b13142f6d7"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1451299599,
+        "lat": -26.39727606,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34257716,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-a352fce7ac4d30d31474a04c7885c317",
+        "_id": "efb3cd45-f9e5-45d4-9808-f57723f769e9",
+        "_revisions": {
+            "ids": [
+                "a352fce7ac4d30d31474a04c7885c317"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1451299298,
+        "lat": -26.39630838,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34564942,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 7,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-c6337ed3bb13dee1b86420d011cb18f0",
+        "_id": "b7ac7026-2162-45dd-addc-14db6ab48736",
+        "_revisions": {
+            "ids": [
+                "c6337ed3bb13dee1b86420d011cb18f0"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1451299170,
+        "lat": -26.39411039,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34426489,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 6,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-36bc19f14e93a0ddc9491fb1ca099a89",
+        "_id": "89f8eafe-78df-4aa3-8470-7da17882266e",
+        "_revisions": {
+            "ids": [
+                "36bc19f14e93a0ddc9491fb1ca099a89"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1451298980,
+        "lat": -26.39381826,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34530164,
+        "monitoramentos": [
+            {
+                "praga_id": "d54bb1d98df62abd0ba155978947ebda",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 6,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-763eeb48478539ddd73bf671babbb7dd",
+        "_id": "bcd77af5-c996-4f52-b2ab-e21fa86afb4c",
+        "_revisions": {
+            "ids": [
+                "763eeb48478539ddd73bf671babbb7dd"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1451298864,
+        "lat": -26.39178853,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34460316,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-a84f0b266d302e7777641ff7fa36c56b",
+        "_id": "f206c811-08d4-41b2-9490-25038d4c0475",
+        "_revisions": {
+            "ids": [
+                "a84f0b266d302e7777641ff7fa36c56b"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1451298710,
+        "lat": -26.39127879,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34595673,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 10,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 3
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-eb8b23d732844f03099e4e97f38dcfb6",
+        "_id": "d00039dc-772c-44e0-83d7-00ae76f6cb96",
+        "_revisions": {
+            "ids": [
+                "eb8b23d732844f03099e4e97f38dcfb6"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1451298579,
+        "lat": -26.39021931,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34549061,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 9,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 1,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-020210e76ea7abd421db34b13a58af15",
+        "_id": "3960f1fb-941d-454d-9672-7813eb00d99e",
+        "_revisions": {
+            "ids": [
+                "020210e76ea7abd421db34b13a58af15"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1451298418,
+        "lat": -26.38899802,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34773243,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 8,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 2,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-e7b125fc492b3556f6651d4c762f4a62",
+        "_id": "6702e8cd-3bfb-4f9c-b29c-332170cf4896",
+        "_revisions": {
+            "ids": [
+                "e7b125fc492b3556f6651d4c762f4a62"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1451298256,
+        "lat": -26.38941342,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34736822,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 3,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-b55447998e09d52ca391dd744a76f556",
+        "_id": "c41b293c-fa1b-4903-b1b5-fbda98fe04c6",
+        "_revisions": {
+            "ids": [
+                "b55447998e09d52ca391dd744a76f556"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1451298152,
+        "lat": -26.3881111,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34481785,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-645e9a585d67db7d3d280f2142411f03",
+        "_id": "0d724e4a-f86f-497d-9a09-370fe842f431",
+        "_revisions": {
+            "ids": [
+                "645e9a585d67db7d3d280f2142411f03"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1450778591,
+        "lat": -26.39564475,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34753433,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-35ad574e32ab90f930dbef8e84772a2b",
+        "_id": "224dbd24-d86b-4ecb-811b-ec81bc3602a6",
+        "_revisions": {
+            "ids": [
+                "35ad574e32ab90f930dbef8e84772a2b"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1450778290,
+        "lat": -26.39659885,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34222124,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50",
+            "059.291.919-64",
+            "059.291.919-64",
+            "059.291.919-64",
+            "059.291.919-64"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-a2f36964e95bf311860f8d0406d4a123",
+        "_id": "619cfcd1-fea0-41bc-8be9-0061f88e7aac",
+        "_revisions": {
+            "ids": [
+                "a2f36964e95bf311860f8d0406d4a123"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1450778282,
+        "lat": -26.39593758,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34429784,
+        "monitoramentos": [
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50",
+            "059.291.919-64",
+            "059.291.919-64",
+            "059.291.919-64"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-6bd5f2b7aa7e6d5c596f074b727c2cd1",
+        "_id": "d171b091-d712-451a-a4c1-98d887686e47",
+        "_revisions": {
+            "ids": [
+                "6bd5f2b7aa7e6d5c596f074b727c2cd1"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1450777965,
+        "lat": -26.39397709,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34600765,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-f844a7aac437356ac65756bbf8e247c9",
+        "_id": "43243a74-f5be-4438-922e-d5e07130667f",
+        "_revisions": {
+            "ids": [
+                "f844a7aac437356ac65756bbf8e247c9"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1450777768,
+        "lat": -26.39230417,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.3450069,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50",
+            "059.291.919-64",
+            "059.291.919-64"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-9f40d004c8d690d6da6ab115a7e39cd0",
+        "_id": "1b74a59d-0863-44fb-9d45-e43fe3b09335",
+        "_revisions": {
+            "ids": [
+                "9f40d004c8d690d6da6ab115a7e39cd0"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1450777688,
+        "lat": -26.39108789,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34573888,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-69f5d747812f3c81a514bb0d54e2c451",
+        "_id": "d3c1b031-3b29-42e0-a76b-8e1fdff382f8",
+        "_revisions": {
+            "ids": [
+                "69f5d747812f3c81a514bb0d54e2c451"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1450777514,
+        "lat": -26.38975111,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34485624,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 1,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50",
+            "059.291.919-64"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-63918f3d9d4d9f55f505c6ee2247a9b0",
+        "_id": "ce393cf0-1e4d-407b-a208-feca54357168",
+        "_revisions": {
+            "ids": [
+                "63918f3d9d4d9f55f505c6ee2247a9b0"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1450777484,
+        "lat": -26.3892331,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34706743,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-dc73be1626b9dbcae25a78af4fd5b551",
+        "_id": "cf054e5e-e4fe-4925-91a1-d4f4ba0cba6f",
+        "_revisions": {
+            "ids": [
+                "dc73be1626b9dbcae25a78af4fd5b551"
+            ],
+            "start": 1
+        },
+        "owner": "059.291.919-64",
+        "cultura": "Soja",
+        "date_time": 1450777230,
+        "lat": -26.38806176,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34808425,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 1,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-b57bd26c9729001ff8d7948e3e2d7bf8",
+        "_id": "16db64f6-d4ec-414c-ab64-b91123fb8c9d",
+        "_revisions": {
+            "ids": [
+                "b57bd26c9729001ff8d7948e3e2d7bf8"
+            ],
+            "start": 1
+        },
+        "owner": "072.630.879-01",
+        "cultura": "Soja",
+        "date_time": 1450777219,
+        "lat": -26.38954451,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34516947,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Emergência",
+        "_rev": "1-742bc641b413114de054e1eb11e615b8",
+        "_id": "0193fa32-95d2-413e-b7af-1080bc0e0adf",
+        "_revisions": {
+            "ids": [
+                "742bc641b413114de054e1eb11e615b8"
+            ],
+            "start": 1
+        },
+        "owner": "036.792.879-50",
+        "cultura": "Soja",
+        "date_time": 1450294611,
+        "lat": -26.39533652,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.3445664,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 6,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Emergência",
+        "_rev": "1-3119cf0bcc08824b696ffcd6d6997434",
+        "_id": "ee7d55c3-b3bd-4268-8c0f-c06e687ed09a",
+        "_revisions": {
+            "ids": [
+                "3119cf0bcc08824b696ffcd6d6997434"
+            ],
+            "start": 1
+        },
+        "owner": "036.792.879-50",
+        "cultura": "Soja",
+        "date_time": 1450294415,
+        "lat": -26.39549876,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34445649,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 7,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Emergência",
+        "_rev": "1-93ec0ffc2805c437159021afaffc2dd6",
+        "_id": "5928e9fa-7de9-466b-88f7-64810bd63766",
+        "_revisions": {
+            "ids": [
+                "93ec0ffc2805c437159021afaffc2dd6"
+            ],
+            "start": 1
+        },
+        "owner": "036.792.879-50",
+        "cultura": "Soja",
+        "date_time": 1450294320,
+        "lat": -26.39552977,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34519486,
+        "monitoramentos": [
+            {
+                "praga_id": "e70feab19a5c89d86853f338e9e83f3b",
+                "qtde_1": 5,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a15a146484d9b06b85eab9d46e8190d0",
+                "qtde_1": 0,
+                "qtde_2": 5
+            },
+            {
+                "praga_id": "db33379c495255aead2bb6f778fa9aeb",
+                "qtde_1": 5,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50",
+            "247.770.130-49"
+        ],
+        "type": "amostragem",
+        "fase": "Enlongação",
+        "_rev": "1-55221a7ed736ca6473d00c21c7769c1c",
+        "_id": "30d29bd3-dcf4-4665-b434-1691c218490c",
+        "_revisions": {
+            "ids": [
+                "55221a7ed736ca6473d00c21c7769c1c"
+            ],
+            "start": 1
+        },
+        "owner": "247.770.130-49",
+        "cultura": "Trigo",
+        "date_time": 1439494544,
+        "lat": -26.39603983,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34587623,
+        "monitoramentos": [
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-d5d9deab37b8ae74404f9218beeb7b92",
+        "_id": "61e4c4b95cfc6ba38e8599dec279d833",
+        "_revisions": {
+            "ids": [
+                "d5d9deab37b8ae74404f9218beeb7b92"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1419616952,
+        "lat": -26.38726949,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.3457445,
+        "monitoramentos": [
+            {
+                "praga_id": "15dca3342bb49077dc98ff6ae1e2ee3f",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-a2723e6b567869e40da8424e5610aab2",
+        "_id": "826cc61002c2723551e92bf70a502436",
+        "_revisions": {
+            "ids": [
+                "a2723e6b567869e40da8424e5610aab2"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1419616734,
+        "lat": -26.38629078,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34560764,
+        "monitoramentos": [
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 2,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a66270620d87ca0282068bb6789c4341",
+                "qtde_1": 0,
+                "qtde_2": 2
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-0f928b96e29624cbf97f63290c0a00d1",
+        "_id": "ed7eb66593a73570d0f7b9417e7720d0",
+        "_revisions": {
+            "ids": [
+                "0f928b96e29624cbf97f63290c0a00d1"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1419615979,
+        "lat": -26.3933866,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34569908,
+        "monitoramentos": [
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 3,
+                "qtde_2": 4
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-c7913ec804d390a4af6b9b919d8ea271",
+        "_id": "75afa579df99056c437e9fccf2439a6a",
+        "_revisions": {
+            "ids": [
+                "c7913ec804d390a4af6b9b919d8ea271"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1419615643,
+        "lat": -26.39422361,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34668071,
+        "monitoramentos": [
+            {
+                "praga_id": "ccd2d6e89514244f170db6ade3efb132",
+                "qtde_1": 0,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 6,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "a86d031aa258a6d2c15ff12655ab83ea",
+                "qtde_1": 0,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-49771158e0208e8f4beb4c8fdd4b7c7b",
+        "_id": "f00dfd047c1814093ef94f5d79935521",
+        "_revisions": {
+            "ids": [
+                "49771158e0208e8f4beb4c8fdd4b7c7b"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1419615211,
+        "lat": -26.39542465,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34672472,
+        "monitoramentos": [
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 7,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "2dee2e127c725357983a73378e73893f",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-305f78fc1814081bfd6cf2c4f72f92c2",
+        "_id": "a781f8b139b600d0ebd4b00079301801",
+        "_revisions": {
+            "ids": [
+                "305f78fc1814081bfd6cf2c4f72f92c2"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1419614940,
+        "lat": -26.39523354,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34648628,
+        "monitoramentos": [
+            {
+                "praga_id": "1f7d70121fda21fe99f9af294f74437a",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "ccd2d6e89514244f170db6ade3efb132",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 1,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "3228773fe460cb623bbd02655e8e7c1b",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Floração",
+        "_rev": "1-f04d9fa039bef4dfb87b6ab0842057db",
+        "_id": "b8c462fc1a8bcfb2060f777e384b04f1",
+        "_revisions": {
+            "ids": [
+                "f04d9fa039bef4dfb87b6ab0842057db"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1419614710,
+        "lat": -26.39474906,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34182491,
+        "monitoramentos": [
+            {
+                "praga_id": "9202a80fc0595fee32b3ffedddcae8d0",
+                "qtde_1": 2,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-aeb1338290a207bcae99e279766f0c47",
+        "_id": "0716bee9f41cf45bfd4c30fd81c3b10f",
+        "_revisions": {
+            "ids": [
+                "aeb1338290a207bcae99e279766f0c47"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1418132634,
+        "lat": -26.39611586,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34358892,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-6dad49b1d8339ff7960f16eec42b8aef",
+        "_id": "decd6d799651e8adc0812f79f07c7573",
+        "_revisions": {
+            "ids": [
+                "6dad49b1d8339ff7960f16eec42b8aef"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1418132406,
+        "lat": -26.39478597,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.3450068,
+        "monitoramentos": [
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "ec56b024b02402df903861b9250f91e6",
+                "qtde_1": 0,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "9202a80fc0595fee32b3ffedddcae8d0",
+                "qtde_1": 1,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-28d689b065bd8f39854faed794503413",
+        "_id": "729996f52ada632e3836ff0612b1d2f9",
+        "_revisions": {
+            "ids": [
+                "28d689b065bd8f39854faed794503413"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1418132075,
+        "lat": -26.39312918,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34727316,
+        "monitoramentos": [
+            {
+                "praga_id": "f7b891d6e2bf3dc64c1dc66449560203",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 6,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-e4e7828e2bcc0e0c7ed718b86efef2e3",
+        "_id": "1281be5e2a553247e40c40efba19bd48",
+        "_revisions": {
+            "ids": [
+                "e4e7828e2bcc0e0c7ed718b86efef2e3"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1418131440,
+        "lat": -26.39554449,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34733914,
+        "monitoramentos": [
+            {
+                "praga_id": "15dca3342bb49077dc98ff6ae1e2ee3f",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "9202a80fc0595fee32b3ffedddcae8d0",
+                "qtde_1": 7,
+                "qtde_2": 3
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-ae295dd4947f4cd45082ed58b3066e1a",
+        "_id": "43911a4db51bf9108c04e2938ca98200",
+        "_revisions": {
+            "ids": [
+                "ae295dd4947f4cd45082ed58b3066e1a"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1418131163,
+        "lat": -26.39561298,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34790052,
+        "monitoramentos": [
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 0,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "9202a80fc0595fee32b3ffedddcae8d0",
+                "qtde_1": 6,
+                "qtde_2": 5
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-75679e3cbd1de35ceb47f462f9890ae8",
+        "_id": "528d16bbf9dbbffb66ff5e6fb17e35ec",
+        "_revisions": {
+            "ids": [
+                "75679e3cbd1de35ceb47f462f9890ae8"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1418130581,
+        "lat": -26.39746378,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34725834,
+        "monitoramentos": [
+            {
+                "praga_id": "c58d8a5d3add572cb6e48f89cce9097f",
+                "qtde_1": 0,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "9202a80fc0595fee32b3ffedddcae8d0",
+                "qtde_1": 5,
+                "qtde_2": 3
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-f682b01fd9192c89346fb7d6e8f35ee9",
+        "_id": "746ed6092973c6c4104a79b6acf6b5c3",
+        "_revisions": {
+            "ids": [
+                "f682b01fd9192c89346fb7d6e8f35ee9"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1418130288,
+        "lat": -26.39679527,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34641794,
+        "monitoramentos": [
+            {
+                "praga_id": "9202a80fc0595fee32b3ffedddcae8d0",
+                "qtde_1": 4,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-96746c50a22ff9e4c20f03221151b2cc",
+        "_id": "8b7602b6096d509c16c93672e9bbe2f7",
+        "_revisions": {
+            "ids": [
+                "96746c50a22ff9e4c20f03221151b2cc"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1418129938,
+        "lat": -26.39595516,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34462231,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 3,
+                "qtde_2": 0
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-2c883bd59185676763731ddc9467dbdc",
+        "_id": "cf34aaf937574989028d279fc1bc25e9",
+        "_revisions": {
+            "ids": [
+                "2c883bd59185676763731ddc9467dbdc"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1417114649,
+        "lat": -26.38863823,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34639161,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 5,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "9202a80fc0595fee32b3ffedddcae8d0",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "ccd2d6e89514244f170db6ade3efb132",
+                "qtde_1": 0,
+                "qtde_2": 1
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 2
+            },
+            {
+                "praga_id": "1f7d70121fda21fe99f9af294f74437a",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-211f8701c965519a7c26cc9a9621d47b",
+        "_id": "1977eeb2fd7f3cba4d384cfb6e6f4e7f",
+        "_revisions": {
+            "ids": [
+                "211f8701c965519a7c26cc9a9621d47b"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1417114194,
+        "lat": -26.38932593,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34802612,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 2,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "a3e08423646d89867190664e32fdae5c",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-a21da8ef4fae97cf67f6f0b59e934a51",
+        "_id": "9961e4f65e4623f9547f145d26cbe1c2",
+        "_revisions": {
+            "ids": [
+                "a21da8ef4fae97cf67f6f0b59e934a51"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1417111547,
+        "lat": -26.38851698,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.34854619,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 4,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "ec56b024b02402df903861b9250f91e6",
+                "qtde_1": 0,
+                "qtde_2": 1
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-a3a5d319de1f3007a238403bee41ea02",
+        "_id": "fef76b659054a9ab36eaf78ffb7a0380",
+        "_revisions": {
+            "ids": [
+                "a3a5d319de1f3007a238403bee41ea02"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1417111282,
+        "lat": -26.38887296,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.329851,
+        "monitoramentos": [
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 11,
+                "qtde_2": 19
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Desenvolvimento de Vagens",
+        "_rev": "1-ae5b6e413cfe07a7c4807ff408c96c24",
+        "_id": "ec77a1f327d3d4be9d5c95b2e49578e3",
+        "_revisions": {
+            "ids": [
+                "ae5b6e413cfe07a7c4807ff408c96c24"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1411999159,
+        "lat": -26.36525089,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.32986464,
+        "monitoramentos": [
+            {
+                "praga_id": "a3fd5eefd3302ab57a919825cc8ee834",
+                "qtde_1": 3,
+                "qtde_2": 5
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Vegetativo",
+        "_rev": "1-9eae795be688e43dd36bb49cdb70e470",
+        "_id": "5221cca22c0a27a78bf8a4edc112e2fa",
+        "_revisions": {
+            "ids": [
+                "9eae795be688e43dd36bb49cdb70e470"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1411998948,
+        "lat": -26.36528812,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.32965664,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 58,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "15dca3342bb49077dc98ff6ae1e2ee3f",
+                "qtde_1": 0,
+                "qtde_2": 5
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Pré-Plantio",
+        "_rev": "1-b8cbc19a1242f0d9900e2aecf61096e4",
+        "_id": "85e9ba00741dd86cc90a1b23a8335cbf",
+        "_revisions": {
+            "ids": [
+                "b8cbc19a1242f0d9900e2aecf61096e4"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1411998119,
+        "lat": -26.3650862,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    },
+    {
+        "lon": -50.32995842,
+        "monitoramentos": [
+            {
+                "praga_id": "b09a5ae46c21331ca31e3b2d76af0159",
+                "qtde_1": 1,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "9202a80fc0595fee32b3ffedddcae8d0",
+                "qtde_1": 2,
+                "qtde_2": 0
+            },
+            {
+                "praga_id": "15dca3342bb49077dc98ff6ae1e2ee3f",
+                "qtde_1": 3,
+                "qtde_2": 4
+            }
+        ],
+        "channels": [
+            "036.792.879-50"
+        ],
+        "type": "amostragem",
+        "fase": "Pré-Plantio",
+        "_rev": "1-73d65503bae02f79f19b731fa1438ebe",
+        "_id": "a2ba590e7c68381641774a3cb7340184",
+        "_revisions": {
+            "ids": [
+                "73d65503bae02f79f19b731fa1438ebe"
+            ],
+            "start": 1
+        },
+        "cultura": "Soja",
+        "date_time": 1411997861,
+        "lat": -26.36509222,
+        "contorno_id": "9b6bea7d7c2767405da7689d0100e536"
+    }
+]

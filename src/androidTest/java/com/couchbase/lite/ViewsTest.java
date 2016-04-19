@@ -25,6 +25,7 @@ import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -32,10 +33,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2666,13 +2670,16 @@ public class ViewsTest extends LiteTestCaseWithDB {
             @Override
             public void storageExitedTransaction(boolean committed) {
             }
+
             @Override
             public void databaseStorageChanged(DocumentChange change) {
             }
+
             @Override
             public String generateRevID(byte[] json, boolean deleted, String prevRevID) {
                 return "3-cccc";// 3-c is not appropriate revision id for forestdb
             }
+
             @Override
             public boolean runFilter(ReplicationFilter filter, Map<String, Object> filterParams, RevisionInternal rev) {
                 return false;
@@ -3241,7 +3248,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 // null key -> ignored
-                emitter.emit(null,  "foo");
+                emitter.emit(null, "foo");
                 emitter.emit("name", "bar");
             }
         }, "1");
@@ -3269,5 +3276,165 @@ public class ViewsTest extends LiteTestCaseWithDB {
         e = query.run();
         assertNotNull(e);
         assertEquals(0, e.getCount());
+    }
+
+    /**
+     * compound key & descending order
+     * https://github.com/couchbase/couchbase-lite-android/issues/795
+     */
+    public void testCompoundKeyAndDescendingOrder() throws Exception {
+        View view = database.getView("vu");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                if ("task".equals(document.get("type"))) {
+                    List<Object> keys = new ArrayList<>();
+                    keys.add(document.get("list_id"));
+                    keys.add(document.get("created_at"));
+                    emitter.emit(keys, null);
+                }
+            }
+        }, "1");
+        assertNotNull(view.getMap());
+        assertEquals(0, view.getCurrentTotalRows());
+
+        String listId0 = "list0";
+        String listId1 = "list1";
+        String listId2 = "list2";
+
+        // Create 1 document with list0:
+        Map<String, Object> props0 = new HashMap<String, Object>();
+        props0.put("_id", "doc1");
+        props0.put("type", "task");
+        props0.put("created_at", "2016-01-29T22:25:01.000Z");
+        props0.put("list_id", listId0);
+        Document doc0 = createDocWithProperties(props0);
+
+        // Create 3 documents with list1:
+        Map<String, Object> props1 = new HashMap<String, Object>();
+        props1.put("_id", "doc1");
+        props1.put("type", "task");
+        props1.put("created_at", "2016-01-29T22:25:01.000Z");
+        props1.put("list_id", listId1);
+        Document doc1 = createDocWithProperties(props1);
+
+        Map<String, Object> props2 = new HashMap<String, Object>();
+        props2.put("_id", "doc2");
+        props2.put("type", "task");
+        props2.put("created_at", "2016-01-29T22:25:02.000Z");
+        props2.put("list_id", listId1);
+        Document doc2 = createDocWithProperties(props2);
+
+        Map<String, Object> props3 = new HashMap<String, Object>();
+        props3.put("_id", "doc3");
+        props3.put("type", "task");
+        props3.put("created_at", "2016-01-29T22:25:03.000Z");
+        props3.put("list_id", listId1);
+        Document doc3 = createDocWithProperties(props3);
+
+        // Create 1 document with list2:
+        Map<String, Object> props4 = new HashMap<String, Object>();
+        props4.put("_id", "doc4");
+        props4.put("type", "task");
+        props4.put("created_at", "2016-01-29T22:25:03.000Z");
+        props4.put("list_id", listId2);
+        Document doc4 = createDocWithProperties(props4);
+
+        // Check query result:
+        Query query = view.createQuery();
+        query.setDescending(true);
+        query.setStartKey(Arrays.asList(listId1, new HashMap<String, Object>()));
+        query.setEndKey(Arrays.asList(listId1, null));
+        QueryEnumerator rows = query.run();
+        Log.e(TAG, "First query: rows.getCount() = " + rows.getCount());
+        assertEquals(3, rows.getCount());
+        assertEquals(doc3.getId(), rows.getRow(0).getDocumentId());
+        assertEquals(doc2.getId(), rows.getRow(1).getDocumentId());
+        assertEquals(doc1.getId(), rows.getRow(2).getDocumentId());
+    }
+
+    /**
+     * compound key & descending order
+     * https://github.com/couchbase/couchbase-lite-android/issues/795
+     */
+    public void testCompoundKeyAndDescendingOrder2() throws Exception {
+
+        // 1. Setup View
+        View view = database.getView("viewAmostragens");
+        assertNotNull(view);
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                if (document.get("type") != null) {
+                    String type = document.get("type").toString();
+                    if ("amostragem".equals(type)) {
+                        Object odate_time = document.get("date_time");
+                        Date date = new Date(((Integer) odate_time).longValue());
+                        //int fase_order = dbUtils.getNumericFase(String.valueOf(document.get("cultura")), String.valueOf(document.get("fase")));
+                        int fase_order = document.get("cultura").hashCode()
+                                + document.get("fase").hashCode();
+                        emitter.emit(
+                                Arrays.asList(
+                                        document.get("contorno_id"),
+                                        date.getYear() + 1900,
+                                        date.getMonth(),
+                                        date.getDate(),
+                                        document.get("cultura"),
+                                        fase_order,
+                                        document.get("fase"),
+                                        odate_time.toString()),
+                                document.get("amostragens"));
+                    }
+                }
+            }
+        }, "1");
+        assertNotNull(view.getMap());
+        assertEquals(0, view.getCurrentTotalRows());
+
+        String contornoId = "9b6bea7d7c2767405da7689d0100e536";
+
+        int expectedRowCount = 0;
+
+        // 2. Setup data
+        InputStream jsonStream = getAsset("test_data.json");
+        List<Map<String, Object>> records = Manager.getObjectMapper().readValue(jsonStream, List.class);
+        for (Map<String, Object> record : records) {
+            Log.e(TAG, "rec=" + record);
+            String _id = (String) record.get("_id");
+            String _rev = (String) record.get("_rev");
+            record.remove("_revisions");
+            String contorno_id = (String) record.get("contorno_id");
+            if (contorno_id != null && contorno_id.equals(contornoId))
+                expectedRowCount++;
+            // Create a new doc with a conflict:
+            RevisionInternal rev = new RevisionInternal(_id, _rev, false);
+            rev.setProperties(record);
+            List<String> history = Arrays.asList(_rev);
+            database.forceInsert(rev, history, null);
+        }
+        jsonStream.close();
+
+        // 3. Check query result:
+        Query query = view.createQuery();
+        query.setDescending(true);
+        query.setStartKey(Arrays.asList(contornoId, new HashMap<String, Object>()));
+        query.setEndKey(Arrays.asList(contornoId, null));
+        QueryEnumerator rows = query.run();
+        assertEquals(expectedRowCount, rows.getCount());
+        Set<String> docIDs = new HashSet<String>();
+        for (QueryRow row : rows) {
+            Object key = row.getKey();
+            if (key instanceof List) {
+                List keys = (List) key;
+                String key0 = (String) keys.get(0);
+                assertNotNull(key0);
+                assertEquals(contornoId, key0);
+            } else {
+                fail("unknown key: " + key);
+            }
+            assertFalse(docIDs.contains(row.getDocumentId()));
+            docIDs.add(row.getDocumentId());
+        }
     }
 }
