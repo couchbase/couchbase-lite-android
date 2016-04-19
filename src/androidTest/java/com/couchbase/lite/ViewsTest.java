@@ -957,14 +957,14 @@ public class ViewsTest extends LiteTestCaseWithDB {
         List<Map<String, Object>> dumpResult = view.dump();
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"App\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals(1.95, dumpResult.get(0).get("value") instanceof String ? Double.parseDouble((String)dumpResult.get(0).get("value")) : dumpResult.get(0).get("value"));
+        Assert.assertEquals(1.95, dumpResult.get(0).get("value") instanceof String ? Double.parseDouble((String) dumpResult.get(0).get("value")) : dumpResult.get(0).get("value"));
         Assert.assertEquals(2, ((Number) dumpResult.get(0).get("seq")).intValue());
         Assert.assertEquals("\"CD\"", dumpResult.get(1).get("key"));
         Assert.assertEquals(8.99, dumpResult.get(1).get("value") instanceof String ? Double.parseDouble((String) dumpResult.get(1).get("value")) : dumpResult.get(1).get("value"));
         Assert.assertEquals(1, ((Number) dumpResult.get(1).get("seq")).intValue());
         Assert.assertEquals("\"Dessert\"", dumpResult.get(2).get("key"));
         Assert.assertEquals(6.5, dumpResult.get(2).get("value") instanceof String ? Double.parseDouble((String) dumpResult.get(2).get("value")) : dumpResult.get(2).get("value"));
-        Assert.assertEquals(3, ((Number)dumpResult.get(2).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dumpResult.get(2).get("seq")).intValue());
 
         QueryOptions options = new QueryOptions();
         options.setReduce(true);
@@ -2542,13 +2542,16 @@ public class ViewsTest extends LiteTestCaseWithDB {
             @Override
             public void storageExitedTransaction(boolean committed) {
             }
+
             @Override
             public void databaseStorageChanged(DocumentChange change) {
             }
+
             @Override
             public String generateRevID(byte[] json, boolean deleted, String prevRevID) {
                 return "2-0002";
             }
+
             @Override
             public boolean runFilter(ReplicationFilter filter, Map<String, Object> filterParams, RevisionInternal rev) {
                 return false;
@@ -2567,13 +2570,16 @@ public class ViewsTest extends LiteTestCaseWithDB {
             @Override
             public void storageExitedTransaction(boolean committed) {
             }
+
             @Override
             public void databaseStorageChanged(DocumentChange change) {
             }
+
             @Override
             public String generateRevID(byte[] json, boolean deleted, String prevRevID) {
                 return "2-0001";
             }
+
             @Override
             public boolean runFilter(ReplicationFilter filter, Map<String, Object> filterParams, RevisionInternal rev) {
                 return false;
@@ -2666,13 +2672,16 @@ public class ViewsTest extends LiteTestCaseWithDB {
             @Override
             public void storageExitedTransaction(boolean committed) {
             }
+
             @Override
             public void databaseStorageChanged(DocumentChange change) {
             }
+
             @Override
             public String generateRevID(byte[] json, boolean deleted, String prevRevID) {
                 return "3-cccc";// 3-c is not appropriate revision id for forestdb
             }
+
             @Override
             public boolean runFilter(ReplicationFilter filter, Map<String, Object> filterParams, RevisionInternal rev) {
                 return false;
@@ -3099,7 +3108,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
     // https://github.com/couchbase/couchbase-lite-ios/issues/1082
-    public void test23_ViewWithDocDeletion() throws Exception {
+    public void test23_ViewWithDocDeletion() throws CouchbaseLiteException {
+        _testViewWithDocDeletionOrPurge(false);
+    }
+
+    public void test24_ViewWithDocPurge() throws CouchbaseLiteException {
+        _testViewWithDocDeletionOrPurge(true);
+    }
+
+    public void _testViewWithDocDeletionOrPurge(boolean purge) throws CouchbaseLiteException {
         View view = database.getView("vu");
         assertNotNull(view);
         view.setMap(new Mapper() {
@@ -3160,7 +3177,10 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
         // Delete doc2:
         assertNotNull(doc2);
-        assertTrue(doc2.delete());
+        if (purge)
+            doc2.purge();
+        else
+            assertTrue(doc2.delete());
         Log.e(TAG, "Deleted doc2");
 
         // Check ascending query result:
@@ -3190,7 +3210,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
      *
      * ForestDB: Query with descending order against empty db
      */
-    public void test24_ViewDecendingOrderWithEmptyDB() throws Exception {
+    public void testViewDecendingOrderWithEmptyDB() throws Exception {
         View view = database.getView("vu");
         assertNotNull(view);
         view.setMap(new Mapper() {
