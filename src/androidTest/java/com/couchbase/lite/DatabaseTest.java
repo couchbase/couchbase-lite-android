@@ -25,6 +25,46 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DatabaseTest extends LiteTestCaseWithDB {
     /**
      * in DatabaseInternal_Tests.m
+     * -(void) test26_ReAddAfterPurge
+     */
+    public void test26_ReAddAfterPurge() throws CouchbaseLiteException {
+        String docId = "test26-ReAddAfterPurge";
+
+        RevisionInternal rev = new RevisionInternal(docId, "1-1111", false);
+        Map<String, Object> props = new HashMap<>();
+        props.put("_id", rev.getDocID());
+        props.put("_rev", rev.getRevID());
+        props.put("testName", "test26_ReAddAfterPurge");
+        rev.setProperties(props);
+        database.forceInsert(rev, null, null);
+
+        Document redoc = database.getExistingDocument(docId);
+        assertNotNull(redoc);
+
+        Log.i(TAG, "Before purge, lastSequence = %d", database.getLastSequenceNumber());
+
+        Log.i(TAG, "PURGE");
+        redoc.purge();
+        Log.i(TAG, "After purge, lastSequence = %d", database.getLastSequenceNumber());
+
+        assertNull(database.getExistingDocument(docId));
+
+        reopenTestDB();
+
+        Log.i(TAG, "After reopen, lastSequence = %d", database.getLastSequenceNumber());
+        assertNull(database.getExistingDocument(docId));
+
+        RevisionInternal revAfterPurge = new RevisionInternal(docId, "1-1111", false);
+        Map<String, Object> props2 = new HashMap<>();
+        props2.put("_id", rev.getDocID());
+        props2.put("_rev", rev.getRevID());
+        props2.put("testName", "test26_ReAddAfterPurge");
+        revAfterPurge.setProperties(props2);
+        database.forceInsert(revAfterPurge, null, null);
+    }
+
+    /**
+     * in DatabaseInternal_Tests.m
      * - (void) test27_ChangesSinceSequence
      */
     public void test27_ChangesSinceSequence() throws CouchbaseLiteException {

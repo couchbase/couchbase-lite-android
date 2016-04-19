@@ -890,4 +890,16 @@ public class LiteTestCaseWithDB extends LiteTestCase {
             }
         }
     }
+
+    protected void reopenTestDB() throws CouchbaseLiteException {
+        Log.i(TAG, "---- closing db ----");
+        String dbName = database.getName();
+        assertTrue(database.close());
+
+        Log.i(TAG, "---- reopening db ----");
+        Database db2 = manager.getDatabase(dbName);
+        assertNotNull(db2);
+        assertTrue(db2 != database);
+        database = db2;
+    }
 }
