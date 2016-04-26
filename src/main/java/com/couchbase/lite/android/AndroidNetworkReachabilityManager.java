@@ -25,7 +25,8 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
         if (!listening) {
             IntentFilter filter = new IntentFilter();
             filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-            Log.v(Log.TAG_SYNC, "%s: startListening() registering %s with context %s", this, receiver, wrappedContext);
+            Log.v(Log.TAG_SYNC, "%s: startListening() registering %s with context %s",
+                    this, receiver, wrappedContext);
             wrappedContext.registerReceiver(receiver, filter);
             listening = true;
         }
@@ -34,10 +35,13 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
     public synchronized void stopListening() {
         if (listening) {
             try {
-                Log.v(Log.TAG_SYNC, "%s: stopListening() unregistering %s with context %s", this, receiver, wrappedContext);
+                Log.v(Log.TAG_SYNC, "%s: stopListening() unregistering %s with context %s",
+                        this, receiver, wrappedContext);
                 wrappedContext.unregisterReceiver(receiver);
             } catch (Exception e) {
-                Log.e(Log.TAG_SYNC, "%s: stopListening() exception unregistering %s with context %s", e, this, receiver, wrappedContext);
+                Log.e(Log.TAG_SYNC,
+                        "%s: stopListening() exception unregistering %s with context %s",
+                        e, this, receiver, wrappedContext);
             }
             listening = false;
         }
@@ -62,12 +66,13 @@ public class AndroidNetworkReachabilityManager extends NetworkReachabilityManage
         }
     }
 
-    public  boolean isOnline(){
+    public boolean isOnline() {
         return isOnline(wrappedContext);
     }
 
     private boolean isOnline(android.content.Context context) {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(
+                android.content.Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return activeNetwork != null && activeNetwork.isConnected();
     }
