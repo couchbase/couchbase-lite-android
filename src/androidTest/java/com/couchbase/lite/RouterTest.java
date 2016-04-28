@@ -1198,4 +1198,87 @@ public class RouterTest extends LiteTestCaseWithDB {
         }
         return revIDs.toArray(new String[revIDs.size()]);
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/660
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/191
+    public void test_do_DELETE_Attachment() throws IOException {
+        String inlineTextString = "Inline text string created by cblite functional test";
+
+        // PUT /{db}
+        send("PUT", "/db", Status.CREATED, null);
+
+        // PUT /{db}/{doc}
+        Map<String, Object> attachment = new HashMap<String, Object>();
+        attachment.put("content_type", "text/plain");
+        attachment.put("data", "SW5saW5lIHRleHQgc3RyaW5nIGNyZWF0ZWQgYnkgY2JsaXRlIGZ1bmN0aW9uYWwgdGVzdA==");
+        Map<String, Object> attachments = new HashMap<String, Object>();
+        attachments.put("inline.txt", attachment);
+        Map<String, Object> docWithAttachment = new HashMap<String, Object>();
+        docWithAttachment.put("_id", "docWithAttachment");
+        docWithAttachment.put("text", inlineTextString);
+        docWithAttachment.put("_attachments", attachments);
+        Map<String, Object> result = (Map<String, Object>) sendBody("PUT", "/db/docWithAttachment", docWithAttachment, Status.CREATED, null);
+
+        // GET /{db}/{doc}
+        result = (Map<String, Object>) send("GET", "/db/docWithAttachment", Status.OK, null);
+        Map<String, Object> attachmentsResult = (Map<String, Object>) result.get("_attachments");
+        Map<String, Object> attachmentResult = (Map<String, Object>) attachmentsResult.get("inline.txt");
+        // there should be either a content_type or content-type field.
+        //https://github.com/couchbase/couchbase-lite-android-core/issues/12
+        //content_type becomes null for attachments in responses, should be as set in Content-Type
+        String contentTypeField = (String) attachmentResult.get("content_type");
+        assertTrue(attachmentResult.containsKey("content_type"));
+        assertNotNull(contentTypeField);
+
+        String revID = (String) result.get("_rev");
+        assertNotNull(revID);
+
+        // GET /{db}/{doc}/{attachment}
+        // no Accept
+        URLConnection conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", null, null);
+        String contentType = conn.getHeaderField("Content-Type");
+        assertNotNull(contentType);
+        assertTrue(contentType.contains("text/plain"));
+        StringWriter writer = new StringWriter();
+        InputStream is = conn.getInputStream();
+        IOUtils.copy(is, writer, "UTF-8");
+        is.close();
+        String responseString = writer.toString();
+        assertTrue(responseString.contains(inlineTextString));
+        writer.close();
+
+        // DELETE /{db}/{doc}/{attachment} - without rev query parameter.
+        send("DELETE", "/db/docWithAttachment/inline.txt", Status.BAD_REQUEST, null);
+
+        // DELETE /{db}/{doc}/{attachment}
+        result = (Map<String, Object>) send("DELETE", "/db/docWithAttachment/inline.txt?rev=" + revID, Status.OK, null);
+        assertNotNull(result);
+        assertEquals("docWithAttachment", (String) result.get("id"));
+        assertNotNull(result.get("rev"));
+        assertEquals(Boolean.TRUE, (Boolean) result.get("ok"));
+
+        revID = (String) result.get("rev");
+
+        // GET /{db}/{doc}
+        result = (Map<String, Object>) send("GET", "/db/docWithAttachment", Status.OK, null);
+        assertEquals("docWithAttachment", (String) result.get("_id"));
+        assertNotNull(result.get("_rev"));
+        assertEquals(revID, (String) result.get("_rev"));
+        assertEquals(inlineTextString, (String) result.get("text"));
+        assertNull(result.get("_attachments"));
+
+        // GET /{db}/{doc}/{attachment}
+        // no Accept
+        conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", null, null);
+        assertEquals(404, conn.getResponseCode());
+        contentType = conn.getHeaderField("Content-Type");
+        writer = new StringWriter();
+        is = conn.getInputStream();
+        IOUtils.copy(is, writer, "UTF-8");
+        is.close();
+        responseString = writer.toString();
+        assertTrue(responseString.contains("404"));
+        assertTrue(responseString.contains("not_found"));
+        writer.close();
+    }
 }
