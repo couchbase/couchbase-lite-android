@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DatabaseTest extends LiteTestCaseWithDB {
@@ -590,5 +591,53 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         // If not sleeping, sometimes not get all logging messages after the unit test got tear down.
         Thread.sleep(5000);
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/742
+    public void testDocumentUpdate() throws CouchbaseLiteException {
+
+        final AtomicBoolean latch = new AtomicBoolean(false);
+
+        // create initial document
+        Document doc = database.getDocument("11111");
+        Map<String, Object> dict = new HashMap<String, Object>();
+        dict.put("X", "Y");
+        doc.putProperties(dict);
+
+        // set changeListener
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                List<DocumentChange> changes = event.getChanges();
+                assertEquals(1, changes.size());
+                DocumentChange change = changes.get(0);
+                assertNotNull(change);
+                assertEquals("11111", change.getDocumentId());
+
+                Document doc = database.getDocument("11111");
+                Map<String, Object> props = doc.getUserProperties();
+                assertEquals("Z", props.get("X"));
+
+                synchronized (latch) {
+                    latch.set("Z".equals(props.get("X")));
+                    latch.notifyAll();
+                }
+            }
+        });
+
+        // update document
+        dict = new HashMap<>(doc.getProperties());
+        dict.put("X", "Z");
+        doc.putProperties(dict);
+
+        // wait till ChangeListener is called. timeout -> 10sec
+        synchronized (latch) {
+            try {
+                latch.wait(10 * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        assertTrue(latch.get());
     }
 }
