@@ -3290,4 +3290,54 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertNotNull(e);
         assertEquals(0, e.getCount());
     }
+
+    /**
+     * Issue: https://github.com/couchbase/couchbase-lite-android/issues/709
+     * Documentation: http://developer.couchbase.com/documentation/mobile/1.2/develop/references/couchbase-lite/couchbase-lite/query/query/index.html#boolean-includedeleted--get-set-
+     */
+    public void testAllDocsWithIncludeDeleted() throws CouchbaseLiteException {
+
+
+        // create 5 docs
+        putDocs(database);
+
+        // create view
+        View view = createView(database);
+
+        // create regular query
+        Query regQuery = view.createQuery();
+
+        // create all docs query
+        Query allQuery = database.createAllDocumentsQuery();
+
+        // Regular query: should return 5 result
+        QueryEnumerator e = regQuery.run();
+        assertEquals(5, e.getCount());
+
+        // All docs query: should return 5 result
+        e = allQuery.run();
+        assertEquals(5, e.getCount());
+
+        // delete one doc
+        Document doc = database.getDocument("33333");
+        doc.delete();
+
+        // Regular query: should return 4 result
+        e = regQuery.run();
+        assertEquals(4, e.getCount());
+
+        // All docs query: should return 4 result
+        e = allQuery.run();
+        assertEquals(4, e.getCount());
+
+        // Regular query: should return 4 result as IncludedDeleted does not effect for reg query
+        regQuery.setIncludeDeleted(true);
+        e = regQuery.run();
+        assertEquals(4, e.getCount());
+
+        // All docs query: should return 5 result
+        allQuery.setIncludeDeleted(true);
+        e = allQuery.run();
+        assertEquals(5, e.getCount());
+    }
 }
