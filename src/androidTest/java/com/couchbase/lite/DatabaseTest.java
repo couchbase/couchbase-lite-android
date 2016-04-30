@@ -57,8 +57,8 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         RevisionInternal revAfterPurge = new RevisionInternal(docId, "1-1111", false);
         Map<String, Object> props2 = new HashMap<>();
-        props2.put("_id", rev.getDocID());
-        props2.put("_rev", rev.getRevID());
+        props2.put("_id", revAfterPurge.getDocID());
+        props2.put("_rev", revAfterPurge.getRevID());
         props2.put("testName", "test26_ReAddAfterPurge");
         revAfterPurge.setProperties(props2);
         database.forceInsert(revAfterPurge, null, null);
