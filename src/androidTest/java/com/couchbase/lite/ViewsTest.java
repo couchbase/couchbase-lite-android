@@ -50,6 +50,9 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(Query.IndexUpdateMode.BEFORE, query.getIndexUpdateMode());
     }
 
+    /**
+     * - (void) test01_Create
+     */
     public void testViewCreation() {
         Assert.assertNull(database.getExistingView("aview"));
 
@@ -227,21 +230,24 @@ public class ViewsTest extends LiteTestCaseWithDB {
         }
     }
 
+    // - (CBLView*) createView
     public static View createView(Database db) {
         return createView(db, "aview");
     }
 
+    // - (CBLView*) createViewNamed: (NSString*)name
     public static View createView(Database db, String name) {
         View view = db.getView(name);
         if (view != null) {
             view.setMapReduce(new Mapper() {
                 @Override
                 public void map(Map<String, Object> document, Emitter emitter) {
-                    Assert.assertNotNull(document.get("_id"));
-                    Assert.assertNotNull(document.get("_rev"));
-                    if (document.get("key") != null) {
+                    assertNotNull(document.get("_id"));
+                    assertNotNull(document.get("_rev"));
+                    assertNotNull(document.get("_local_seq"));
+                    assertTrue(document.get("_local_seq") instanceof Number);
+                    if (document.get("key") != null)
                         emitter.emit(document.get("key"), null);
-                    }
                 }
             }, null, "1");
         }
