@@ -7,6 +7,7 @@ import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
+import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.apache.commons.io.IOUtils;
 
@@ -1299,5 +1300,42 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertTrue(responseString.contains("404"));
         assertTrue(responseString.contains("not_found"));
         writer.close();
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/476
+    public void testReplicateWithDocIDs() throws Exception {
+        // create mock sync gateway that will serve as a pull target and return random docs
+        int numMockDocsToServe = 0;
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
+        dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
+        server.setDispatcher(dispatcher);
+        try {
+            server.play();
+            // kick off replication via REST api
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            List<String> docIDs = new ArrayList();
+            docIDs.add("doc0");
+            replicateJsonMap.put("doc_ids", docIDs);
+            Log.i(TAG, "map: " + replicateJsonMap);
+            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            Log.i(TAG, "result: " + result);
+            assertNotNull(result.get("session_id"));
+
+            // Check if /_changes calls includes doc_ids in body.
+            RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+            assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
+            String body = getChangesFeedRequest.getUtf8Body();
+            Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(body, Map.class);
+            assertTrue(jsonMap.containsKey("filter"));
+            String filter = (String) jsonMap.get("filter");
+            assertEquals("_doc_ids", filter);
+            List<String> docids = (List<String>) jsonMap.get("doc_ids");
+            assertNotNull(docids);
+            assertEquals(1, docids.size());
+            assertTrue(docIDs.contains("doc0"));
+        }finally {
+            server.shutdown();
+        }
     }
 }
