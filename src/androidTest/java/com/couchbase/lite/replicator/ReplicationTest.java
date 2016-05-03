@@ -886,79 +886,80 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * @throws Exception
      */
     public void testContinuousPushRetryBehavior() throws Exception {
-
+        final int VALIDATION_RETRIES = 3;
+        final int TEMP_RETRY_DELAY_MS = RemoteRequestRetry.RETRY_DELAY_MS;
+        final int TEMP_RETRY_DELAY_SECONDS = ReplicationInternal.RETRY_DELAY_SECONDS;
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
         ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
-        ReplicationInternal.MAX_RETRIES = 3;         // spped up test execution (outer loop retry count)
-
-        // create mockwebserver and custom dispatcher
-        MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
-        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         try {
+            // create mockwebserver and custom dispatcher
+            MockDispatcher dispatcher = new MockDispatcher();
+            MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            try {
+                // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
+                MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+                mockCheckpointPut.setSticky(true);
+                mockCheckpointPut.setDelayMs(500);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-            // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
-            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-            mockCheckpointPut.setSticky(true);
-            mockCheckpointPut.setDelayMs(500);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+                // _revs_diff response -- everything missing
+                MockRevsDiff mockRevsDiff = new MockRevsDiff();
+                mockRevsDiff.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-            // _revs_diff response -- everything missing
-            MockRevsDiff mockRevsDiff = new MockRevsDiff();
-            mockRevsDiff.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+                // _bulk_docs response -- 503 errors
+                MockResponse mockResponse = new MockResponse().setResponseCode(503);
+                WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
+                mockBulkDocs.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
-            // _bulk_docs response -- 503 errors
-            MockResponse mockResponse = new MockResponse().setResponseCode(503);
-            WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
-            mockBulkDocs.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+                server.play();
 
-            server.play();
+                // create replication
+                Replication replication = database.createPushReplication(server.getUrl("/db"));
+                replication.setContinuous(true);
+                CountDownLatch replicationIdle = new CountDownLatch(1);
+                ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
+                replication.addChangeListener(idleObserver);
+                replication.start();
 
-            // create replication
-            Replication replication = database.createPushReplication(server.getUrl("/db"));
-            replication.setContinuous(true);
-            CountDownLatch replicationIdle = new CountDownLatch(1);
-            ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
-            replication.addChangeListener(idleObserver);
-            replication.start();
+                // wait until idle
+                boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
+                assertTrue(success);
+                replication.removeChangeListener(idleObserver);
 
-            // wait until idle
-            boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
-            assertTrue(success);
-            replication.removeChangeListener(idleObserver);
+                // create a doc in local db
+                Document doc1 = createDocumentForPushReplication("doc1", null, null);
 
-            // create a doc in local db
-            Document doc1 = createDocumentForPushReplication("doc1", null, null);
-
-            // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
-            // 1st attempt
-            // numAttempts are number of times retry in 1 attempt.
-            int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
-            for (int i = 0; i < numAttempts; i++) {
-                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
-                assertNotNull(request);
-                dispatcher.takeRecordedResponseBlocking(request);
-            }
-
-            // By 12/16/2014, CBL core java tries RemoteRequestRetry.MAX_RETRIES + 1 see above.
-            // Without fixing #299, following code should cause hang.
-
-            // outer retry loop
-            for (int j = 0; j < ReplicationInternal.MAX_RETRIES; j++) {
-                // inner retry loop
+                // we should expect to at least see numAttempts attempts at doing POST to _bulk_docs
+                // 1st attempt
+                // numAttempts are number of times retry in 1 attempt.
+                int numAttempts = RemoteRequestRetry.MAX_RETRIES + 1; // total number of attempts = 4 (1 initial + MAX_RETRIES)
                 for (int i = 0; i < numAttempts; i++) {
                     RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
                     assertNotNull(request);
                     dispatcher.takeRecordedResponseBlocking(request);
                 }
-            }
-            // gave up replication!!!
 
-            stopReplication(replication);
+                // outer retry loop
+                for (int j = 0; j < VALIDATION_RETRIES; j++) {
+                    // inner retry loop
+                    for (int i = 0; i < numAttempts; i++) {
+                        RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+                        assertNotNull(request);
+                        dispatcher.takeRecordedResponseBlocking(request);
+                    }
+                }
+                // gave up replication!!!
+
+                stopReplication(replication);
+            } finally {
+                server.shutdown();
+            }
         } finally {
-            server.shutdown();
+            RemoteRequestRetry.RETRY_DELAY_MS = TEMP_RETRY_DELAY_MS;
+            ReplicationInternal.RETRY_DELAY_SECONDS = TEMP_RETRY_DELAY_SECONDS;
         }
     }
 
@@ -3781,16 +3782,12 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * When retrying a replication, make sure to get session & checkpoint.
      */
     public void testCheckSessionAndCheckpointWhenRetryingReplication() throws Exception {
-
-        int prev_RETRY_DELAY_MS = RemoteRequestRetry.RETRY_DELAY_MS;
-        int prev_RETRY_DELAY_SECONDS = ReplicationInternal.RETRY_DELAY_SECONDS;
-        int prev_MAX_RETRIES = ReplicationInternal.MAX_RETRIES;
-
+        final int VALIDATION_RETRIES = 3;
+        final int TEMP_RETRY_DELAY_MS = RemoteRequestRetry.RETRY_DELAY_MS;
+        final int TEMP_RETRY_DELAY_SECONDS = ReplicationInternal.RETRY_DELAY_SECONDS;
         try {
             RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
             ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
-            ReplicationInternal.MAX_RETRIES = 3;         // speed up test execution (outer loop retry count)
-
 
             String fakeEmail = "myfacebook@gmail.com";
 
@@ -3886,7 +3883,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
                 // Retry requests
                 // outer retry loop
-                for (int j = 0; j < ReplicationInternal.MAX_RETRIES; j++) {
+                for (int j = 0; j < VALIDATION_RETRIES; j++) {
 
                     // MockSessionGet does not support isSticky
                     MockSessionGet mockSessionGet = new MockSessionGet();
@@ -3934,9 +3931,8 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 server.shutdown();
             }
         } finally {
-            RemoteRequestRetry.RETRY_DELAY_MS = prev_RETRY_DELAY_MS;
-            ReplicationInternal.RETRY_DELAY_SECONDS = prev_RETRY_DELAY_SECONDS;
-            ReplicationInternal.MAX_RETRIES = prev_MAX_RETRIES;
+            RemoteRequestRetry.RETRY_DELAY_MS = TEMP_RETRY_DELAY_MS;
+            ReplicationInternal.RETRY_DELAY_SECONDS = TEMP_RETRY_DELAY_SECONDS;
         }
     }
 
@@ -3946,83 +3942,88 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * Makes the replicator stop, even if it is continuous, when it receives a permanent-type error
      */
     public void failingTestStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception {
+        final int TEMP_RETRY_DELAY_MS = RemoteRequestRetry.RETRY_DELAY_MS;
+        final int TEMP_RETRY_DELAY_SECONDS = ReplicationInternal.RETRY_DELAY_SECONDS;
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
         ReplicationInternal.RETRY_DELAY_SECONDS = 1; // speed up test execution (outer loop retry delay)
-        ReplicationInternal.MAX_RETRIES = 3;         // speed up test execution (outer loop retry count)
+        try {
+            // create mockwebserver and custom dispatcher
+            MockDispatcher dispatcher = new MockDispatcher();
+            MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            // set up request
+            {
+                // response for /db/_local/.*
+                MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+                mockCheckpointPut.setSticky(true);
+                mockCheckpointPut.setDelayMs(500);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-        // create mockwebserver and custom dispatcher
-        MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
-        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-        // set up request
-        {
-            // response for /db/_local/.*
-            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
-            mockCheckpointPut.setSticky(true);
-            mockCheckpointPut.setDelayMs(500);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+                // response for /db/_revs_diff
+                MockRevsDiff mockRevsDiff = new MockRevsDiff();
+                mockRevsDiff.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
-            // response for /db/_revs_diff
-            MockRevsDiff mockRevsDiff = new MockRevsDiff();
-            mockRevsDiff.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+                // response for /db/_bulk_docs  -- 400 Bad Request (not transient error)
+                MockResponse mockResponse = new MockResponse().setResponseCode(400);
+                WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
+                mockBulkDocs.setSticky(true);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            }
+            server.play();
 
-            // response for /db/_bulk_docs  -- 400 Bad Request (not transient error)
-            MockResponse mockResponse = new MockResponse().setResponseCode(400);
-            WrappedSmartMockResponse mockBulkDocs = new WrappedSmartMockResponse(mockResponse, false);
-            mockBulkDocs.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+            // create replication
+            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            replication.setContinuous(true);
+            // add replication observer for IDLE state
+            CountDownLatch replicationIdle = new CountDownLatch(1);
+            ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
+            replication.addChangeListener(idleObserver);
+            // add replication observer for finished
+            CountDownLatch replicationDoneSignal = new CountDownLatch(1);
+            ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
+            replication.addChangeListener(replicationFinishedObserver);
+
+            replication.start();
+
+            // wait until idle
+            boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
+            assertTrue(success);
+            replication.removeChangeListener(idleObserver);
+
+            // create a doc in local db
+            Document doc1 = createDocumentForPushReplication("doc1", null, null);
+
+            // initial request
+            {
+                // check /db/_local/.*
+                RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
+                assertNotNull(checkPointRequest);
+                dispatcher.takeRecordedResponseBlocking(checkPointRequest);
+
+                // check /db/_revs_diff
+                RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
+                assertNotNull(revsDiffRequest);
+                dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
+
+                // we should observe only one POST to _bulk_docs request because error is not transient error
+                RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
+                assertNotNull(request);
+                dispatcher.takeRecordedResponseBlocking(request);
+            }
+
+            // Without fixing CBL Java Core #352, following code causes hang.
+
+            // wait for replication to finish
+            boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
+            Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
+            assertFalse(replication.isRunning());
+
+            server.shutdown();
+        } finally {
+            RemoteRequestRetry.RETRY_DELAY_MS = TEMP_RETRY_DELAY_MS;
+            ReplicationInternal.RETRY_DELAY_SECONDS = TEMP_RETRY_DELAY_SECONDS;
         }
-        server.play();
-
-        // create replication
-        Replication replication = database.createPushReplication(server.getUrl("/db"));
-        replication.setContinuous(true);
-        // add replication observer for IDLE state
-        CountDownLatch replicationIdle = new CountDownLatch(1);
-        ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdle);
-        replication.addChangeListener(idleObserver);
-        // add replication observer for finished
-        CountDownLatch replicationDoneSignal = new CountDownLatch(1);
-        ReplicationFinishedObserver replicationFinishedObserver = new ReplicationFinishedObserver(replicationDoneSignal);
-        replication.addChangeListener(replicationFinishedObserver);
-
-        replication.start();
-
-        // wait until idle
-        boolean success = replicationIdle.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
-        replication.removeChangeListener(idleObserver);
-
-        // create a doc in local db
-        Document doc1 = createDocumentForPushReplication("doc1", null, null);
-
-        // initial request
-        {
-            // check /db/_local/.*
-            RecordedRequest checkPointRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
-            assertNotNull(checkPointRequest);
-            dispatcher.takeRecordedResponseBlocking(checkPointRequest);
-
-            // check /db/_revs_diff
-            RecordedRequest revsDiffRequest = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_REVS_DIFF);
-            assertNotNull(revsDiffRequest);
-            dispatcher.takeRecordedResponseBlocking(revsDiffRequest);
-
-            // we should observe only one POST to _bulk_docs request because error is not transient error
-            RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_DOCS);
-            assertNotNull(request);
-            dispatcher.takeRecordedResponseBlocking(request);
-        }
-
-        // Without fixing CBL Java Core #352, following code causes hang. 
-
-        // wait for replication to finish
-        boolean didNotTimeOut = replicationDoneSignal.await(180, TimeUnit.SECONDS);
-        Log.d(TAG, "replicationDoneSignal.await done, didNotTimeOut: " + didNotTimeOut);
-        assertFalse(replication.isRunning());
-
-        server.shutdown();
     }
 
     /**
@@ -5277,17 +5278,13 @@ public class ReplicationTest extends LiteTestCaseWithDB {
     // https://github.com/couchbase/couchbase-lite-java-core/issues/736
     // https://github.com/couchbase/couchbase-lite-net/issues/356
     public void manualTestBulkGetTimeout() throws Exception {
-
-        int def1 = CouchbaseLiteHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT_SECONDS;
-        int def2 = CouchbaseLiteHttpClientFactory.DEFAULT_SO_TIMEOUT_SECONDS;
-        int def3 = ReplicationInternal.MAX_RETRIES;
-        int def4 = ReplicationInternal.RETRY_DELAY_SECONDS;
-
+        final int TEMP_DEFAULT_CONNECTION_TIMEOUT_SECONDS = CouchbaseLiteHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT_SECONDS;
+        final int TEMP_DEFAULT_SO_TIMEOUT_SECONDS = CouchbaseLiteHttpClientFactory.DEFAULT_SO_TIMEOUT_SECONDS;
+        final int TEMP_RETRY_DELAY_SECONDS = ReplicationInternal.RETRY_DELAY_SECONDS;
         try {
             // TIMEOUT 1 SEC
             CouchbaseLiteHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT_SECONDS = 1;
             CouchbaseLiteHttpClientFactory.DEFAULT_SO_TIMEOUT_SECONDS = 1;
-            ReplicationInternal.MAX_RETRIES = 2;
             ReplicationInternal.RETRY_DELAY_SECONDS = 0;
 
             // serve 3 mock docs
@@ -5339,16 +5336,14 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
                 // dump out the outgoing requests for bulk docs
                 BlockingQueue<RecordedRequest> bulkGetRequests = dispatcher.getRequestQueueSnapshot(MockHelper.PATH_REGEX_BULK_GET);
-                // +1 for initial request
-                assertEquals(ReplicationInternal.MAX_RETRIES + 1, bulkGetRequests.size());
+                assertTrue(bulkGetRequests.size() > 3); // verify at least 3 times retried
             } finally {
                 server.shutdown();
             }
         } finally {
-            CouchbaseLiteHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT_SECONDS = def1;
-            CouchbaseLiteHttpClientFactory.DEFAULT_SO_TIMEOUT_SECONDS = def2;
-            ReplicationInternal.MAX_RETRIES = def3;
-            ReplicationInternal.RETRY_DELAY_SECONDS = def4;
+            CouchbaseLiteHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT_SECONDS = TEMP_DEFAULT_CONNECTION_TIMEOUT_SECONDS;
+            CouchbaseLiteHttpClientFactory.DEFAULT_SO_TIMEOUT_SECONDS = TEMP_DEFAULT_SO_TIMEOUT_SECONDS;
+            ReplicationInternal.RETRY_DELAY_SECONDS = TEMP_RETRY_DELAY_SECONDS;
         }
     }
 
@@ -5376,7 +5371,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
     /**
      * This test is almost identical with
-     *  TestCase(CBL_Pusher_DocIDs) in CBLReplicator_Tests.m
+     * TestCase(CBL_Pusher_DocIDs) in CBLReplicator_Tests.m
      */
     public void testPushReplicationSetDocumentIDs() throws Exception {
         // Create documents:
@@ -5409,7 +5404,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // Create push replication:
             Replication replication = database.createPushReplication(server.getUrl("/db"));
-            replication.setDocIds(Arrays.asList(new String[] {"doc2", "doc3"}));
+            replication.setDocIds(Arrays.asList(new String[]{"doc2", "doc3"}));
 
             // check pending document IDs:
             Set<String> pendingDocIDs = replication.getPendingDocumentIDs();
@@ -5455,7 +5450,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // Run pull replication:
             Replication replication = database.createPullReplication(server.getUrl("/db"));
-            replication.setDocIds(Arrays.asList(new String[] {"doc2", "doc3"}));
+            replication.setDocIds(Arrays.asList(new String[]{"doc2", "doc3"}));
             runReplication(replication);
 
             // Check changes feed request:
