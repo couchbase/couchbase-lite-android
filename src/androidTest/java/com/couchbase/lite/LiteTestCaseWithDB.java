@@ -724,14 +724,19 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         }
     }
 
-    protected Document createDocWithProperties(Map<String, Object> properties1)
+    protected Document createDocWithProperties(Map<String, Object> props)
             throws CouchbaseLiteException {
-        Document doc1 = database.createDocument();
-        UnsavedRevision revUnsaved = doc1.createRevision();
-        revUnsaved.setUserProperties(properties1);
+        return createDocWithProperties(props, database);
+    }
+
+    protected Document createDocWithProperties(Map<String, Object> props, Database db)
+            throws CouchbaseLiteException {
+        Document doc = db.createDocument();
+        UnsavedRevision revUnsaved = doc.createRevision();
+        revUnsaved.setUserProperties(props);
         SavedRevision rev = revUnsaved.save();
         assertNotNull(rev);
-        return doc1;
+        return doc;
     }
 
     protected HttpClientFactory mockFactoryFactory(final CustomizableMockHttpClient mockHttpClient) {
