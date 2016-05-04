@@ -125,6 +125,25 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         }
     }
 
+    /**
+     * in DatabaseInternal_Tests.m
+     * - (void) test28_enableAutoCompact
+     */
+    public void test28_enableAutoCompact() throws CouchbaseLiteException {
+        // Ensure that a database created without auto-compact (by CBL 1.1, or prior to 10/5/15) can
+        // still be opened, since it has to be switched to auto-compact mode.
+        Database.setAutoCompact(false);
+        Database manualDB = manager.getDatabase("manualcompact");
+        assertNotNull(manualDB);
+        this.createDocWithProperties(new HashMap<String, Object>(), manualDB);
+        manualDB.close();
+
+        Database.setAutoCompact(true);
+        manualDB = manager.getDatabase("manualcompact");
+        assertNotNull(manualDB);
+        manualDB.close();
+    }
+
     public void testPruneRevsToMaxDepthViaCompact() throws Exception {
 
         Map<String, Object> properties = new HashMap<String, Object>();
