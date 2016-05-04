@@ -659,4 +659,65 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         }
         assertTrue(latch.get());
     }
+
+    /**
+     * in DatabaseInternal_Tests.m
+     * - (void) test29_autoPruneOnPut
+     * https://github.com/couchbase/couchbase-lite-ios/issues/1165
+     */
+    public void test29_autoPruneOnPut() throws CouchbaseLiteException {
+        database.setMaxRevTreeDepth(5);
+
+        RevisionInternal lastRev = null;
+        List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
+        for (int gen = 1; gen <= 10; gen++) {
+            Map<String, Object> props = new HashMap<String, Object>();
+            props.put("_id", "foo");
+            props.put("gen", gen);
+            RevisionInternal newRev = new RevisionInternal(props);
+            RevisionInternal rev = database.putRevision(newRev, lastRev == null ? null : lastRev.getRevID(), false);
+            revs.add(rev);
+            lastRev = rev;
+        }
+
+        // Verify that the first five revs are no longer available:
+        for (int gen = 1; gen <= 10; gen++) {
+            RevisionInternal rev = database.getDocument("foo", revs.get(gen - 1).getRevID(), true);
+            if (gen <= 5)
+                assertNull(rev);
+            else
+                assertNotNull(rev);
+        }
+    }
+
+    /**
+     * in DatabaseInternal_Tests.m
+     * - (void) test29_autoPruneOnForceInsert
+     * https://github.com/couchbase/couchbase-lite-ios/issues/1165
+     */
+    public void test29_autoPruneOnForceInsert() throws CouchbaseLiteException {
+        database.setMaxRevTreeDepth(5);
+
+        List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
+        List<String> history = new ArrayList<String>();
+        for (int gen = 1; gen <= 10; gen++) {
+            Map<String, Object> props = new HashMap<String, Object>();
+            props.put("_id", "foo");
+            props.put("_rev", String.format("%d-cafebabe", gen));
+            props.put("gen", gen);
+            RevisionInternal rev = new RevisionInternal(props);
+            database.forceInsert(rev, history, null);
+            history.add(0, rev.getRevID());
+            revs.add(rev);
+        }
+
+        // Verify that the first five revs are no longer available:
+        for (int gen = 1; gen <= 10; gen++) {
+            RevisionInternal rev = database.getDocument("foo", revs.get(gen - 1).getRevID(), true);
+            if (gen <= 5)
+                assertNull(rev);
+            else
+                assertNotNull(rev);
+        }
+    }
 }

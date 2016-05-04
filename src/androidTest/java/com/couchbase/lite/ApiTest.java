@@ -1285,13 +1285,7 @@ public class ApiTest extends LiteTestCaseWithDB {
                     }
                 });
             }
-
-            // ForestDBStore, each revision insertion checks maxRevTreeDepth.
-            if(isUseForestDB())
-                assertEquals(MAX_REV_TREE_DEPTH, document.getRevisionHistory().size());
-            // SQLiteStore, revision inserstion does not check maxRevTreeDepth.
-            else
-                assertEquals(REV_COUNT, document.getRevisionHistory().size());
+            assertEquals(MAX_REV_TREE_DEPTH, document.getRevisionHistory().size());
         }
 
         database.compact();
