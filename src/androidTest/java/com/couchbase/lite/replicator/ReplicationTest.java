@@ -5005,7 +5005,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/575
      */
     public void testRestartWithStoppedReplicator() throws Exception {
-
         MockDispatcher dispatcher = new MockDispatcher();
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, 0, 0);
@@ -5056,6 +5055,59 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertTrue(success);
 
             stopReplication(pullReplication);
+        } finally {
+            // cleanup / shutdown
+            server.shutdown();
+        }
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/696
+     * in Unit-Tests/Replication_Tests.m
+     * - (void)test17_RemovedRevision
+     */
+    public void test17_RemovedRevision() throws Exception {
+        MockDispatcher dispatcher = new MockDispatcher();
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        try {
+            // checkpoint GET response w/ 404.  also receives checkpoint PUT's
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // _revs_diff response -- everything missing
+            MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
+
+            // _bulk_docs response -- everything stored
+            MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
+
+            server.play();
+
+            Document doc = database.getDocument("doc1");
+            UnsavedRevision unsaved = doc.createRevision();
+            Map<String, Object> props = new HashMap<String, Object>();
+            props.put("_removed", true);
+            unsaved.setProperties(props);
+            SavedRevision rev = unsaved.save();
+            assertNotNull(rev);
+
+            // create and start push replication
+            Replication push = database.createPushReplication(server.getUrl("/db"));
+            CountDownLatch latch = new CountDownLatch(1);
+            push.addChangeListener(new ReplicationFinishedObserver(latch));
+            push.start();
+
+            assertTrue(push.isDocumentPending(doc));
+
+            assertTrue(latch.await(30, TimeUnit.SECONDS));
+
+            assertNull(push.lastError);
+            assertEquals(0, push.getCompletedChangesCount());
+            assertEquals(0, push.getChangesCount());
+            assertFalse(push.isDocumentPending(doc));
         } finally {
             // cleanup / shutdown
             server.shutdown();
