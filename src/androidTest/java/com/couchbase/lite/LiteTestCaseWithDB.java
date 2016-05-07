@@ -687,8 +687,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
                 Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(
                         request.getUtf8Body(), Map.class);
-                Log.e(TAG, "lastSequence=" +jsonMap.get("lastSequence"));
-                Log.e(TAG, "checkpoint request=" + jsonMap);
+                Log.i(TAG, "lastSequence=" +jsonMap.get("lastSequence"));
+                Log.i(TAG, "checkpoint request=" + jsonMap);
                 if (jsonMap.containsKey("lastSequence") &&
                         ((String) jsonMap.get("lastSequence")).equals(expectedLastSequenceStr)) {
                     foundExpectedLastSeq = true;

@@ -1174,7 +1174,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         // /{db}/_changes with default parameter -> in changes, one revisions [winning rev]
         String url = String.format("/%s/_changes", DEFAULT_TEST_DB);
         Map<String, Object> res = (Map<String, Object>) send("GET", url, Status.OK, null);
-        Log.e(TAG, "[%s] %s", url, res);
+        Log.i(TAG, "[%s] %s", url, res);
         String[] revIDs = obtainChangesRevIDs(res);
         assertEquals(1, revIDs.length);
         assertEquals(winningRev.getId(), revIDs[0]);
@@ -1182,7 +1182,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         // /{db}/_changes with style=all_docs parameter -> in changes, two revisions [winning rev and losing rev]
         url = String.format("/%s/_changes?style=all_docs", DEFAULT_TEST_DB);
         res = (Map<String, Object>) send("GET", url, Status.OK, null);
-        Log.e(TAG, "[%s] %s", url, res);
+        Log.i(TAG, "[%s] %s", url, res);
         revIDs = obtainChangesRevIDs(res);
         assertEquals(2, revIDs.length);
         assertEquals(winningRev.getId(), revIDs[0]);
@@ -1191,7 +1191,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         // /{db}/_changes with include_docs=true parameter -> in changes, one revisions [winning rev] and  doc is only winning rev
         url = String.format("/%s/_changes?include_docs=true", DEFAULT_TEST_DB);
         res = (Map<String, Object>) send("GET", url, Status.OK, null);
-        Log.e(TAG, "[%s] %s", url, res);
+        Log.i(TAG, "[%s] %s", url, res);
         revIDs = obtainChangesRevIDs(res);
         assertEquals(1, revIDs.length);
         assertEquals(winningRev.getId(), revIDs[0]);
@@ -1199,7 +1199,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         // /{db}/_changes with include_docs=true & style=all_docs parameters -> in changes, one revisions [winning rev] and doc is only winning rev
         url = String.format("/%s/_changes?include_docs=true&style=all_docs", DEFAULT_TEST_DB);
         res = (Map<String, Object>) send("GET", url, Status.OK, null);
-        Log.e(TAG, "[%s] %s", url, res);
+        Log.i(TAG, "[%s] %s", url, res);
         revIDs = obtainChangesRevIDs(res);
         assertEquals(2, revIDs.length);
         assertEquals(winningRev.getId(), revIDs[0]);

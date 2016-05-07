@@ -683,4 +683,97 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             server.shutdown();
         }
     }
+
+    public void testStopReplication() throws Exception {
+        MockWebServer server = null;
+        try {
+            // Create mock server and play:
+            MockDispatcher dispatcher = new MockDispatcher();
+            server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            server.play();
+
+            // Mock documents to be pulled:
+            MockDocumentGet.MockDocument mockDoc1 =
+                    new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+            MockDocumentGet.MockDocument mockDoc2 =
+                    new MockDocumentGet.MockDocument("doc2", "1-563b", 2);
+            mockDoc2.setJsonMap(MockHelper.generateRandomJsonMap());
+
+            // // checkpoint GET response w/ 404:
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+            // _changes response:
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc2));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse(/*gzip*/true));
+
+            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
+            // server that doesn't have any new changes
+            MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+            mockChangesFeedNoResponse.setDelayMs(120 * 1000);
+            mockChangesFeedNoResponse.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_LONGPOLL, mockChangesFeedNoResponse);
+
+            // doc1 response:
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(),
+                    mockDocumentGet.generateMockResponse());
+
+            // doc2 response:
+            mockDocumentGet = new MockDocumentGet(mockDoc2);
+            dispatcher.enqueueResponse(mockDoc2.getDocPathRegex(),
+                    mockDocumentGet.generateMockResponse());
+
+            // _bulk_get response:
+            MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+            mockBulkGet.addDocument(mockDoc1);
+            mockBulkGet.addDocument(mockDoc2);
+            mockBulkGet.setDelayMs(120*1000);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+            // Respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // Run pull replication:
+            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            pull.setContinuous(true);
+
+            final CountDownLatch doneSignal = new CountDownLatch(1);
+            pull.addChangeListener(new ReplicationFinishedObserver(doneSignal));
+
+            final CountDownLatch idleSignal = new CountDownLatch(1);
+            pull.addChangeListener(new ReplicationIdleObserver(idleSignal));
+
+            final CountDownLatch changeSignal = new CountDownLatch(1);
+            pull.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if (event.getChangeCount() > 0)
+                        changeSignal.countDown();
+                }
+            });
+
+            pull.start();
+
+            // wait until idle
+            assertTrue(changeSignal.await(30, TimeUnit.SECONDS));
+
+            pull.stop();
+
+            assertTrue(doneSignal.await(30, TimeUnit.SECONDS));
+        } finally {
+            if (server != null)
+                server.shutdown();
+        }
+    }
+
 }

@@ -534,7 +534,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
             public void changed(Database.ChangeEvent event) {
                 synchronized (totalChangesCount) {
                     int total = totalChangesCount.addAndGet(event.getChanges().size());
-                    Log.e(TAG, "Total changes : " + total + " > " + Thread.currentThread().getName());
+                    Log.w(TAG, "Total changes : " + total + " > " + Thread.currentThread().getName());
                     if (total == numDocs * 2) {
                         changesCountDownLatch.countDown();
                     }
@@ -603,7 +603,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         t2.start();
 
         createDocsCountDownLatch.await();
-        Log.e(TAG, "Both T1 and T2 are done creating docs : " + database.getDocumentCount());
+        Log.i(TAG, "Both T1 and T2 are done creating docs : " + database.getDocumentCount());
 
         assertTrue(changesCountDownLatch.await(60, TimeUnit.SECONDS));
         assertEquals(numDocs * 2, totalChangesCount.get());

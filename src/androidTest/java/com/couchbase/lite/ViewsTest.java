@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ViewsTest extends LiteTestCaseWithDB {
 
-    public static final String TAG = "Views";
+    public static final String TAG = "ViewsTest";
 
     public void testQueryDefaultIndexUpdateMode() {
         View view = database.getView("aview");
@@ -2537,7 +2537,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "1");
         RevisionInternal rev1 = new RevisionInternal(props);
         RevisionInternal leaf1 = database.putRevision(rev1, null, false);
-        Log.e(TAG, String.format("leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
 
         // Need to override StoreDelegate to control revision ID for generation 2-.
         Store store = database.getStore();
@@ -2569,7 +2569,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "2a");
         RevisionInternal rev2a = new RevisionInternal(props);
         RevisionInternal leaf2a = database.putRevision(rev2a, leaf1.getRevID(), true);
-        Log.e(TAG, String.format("leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
 
         // set Revision ID "2-0001" which is same generation but lower revision ID than previous one
         store.setDelegate(new StoreDelegate() {
@@ -2595,7 +2595,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "2b");
         RevisionInternal rev2b = new RevisionInternal(props);
         RevisionInternal leaf2b = database.putRevision(rev2b, leaf1.getRevID(), true);
-        Log.e(TAG, String.format("leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
 
         store.setDelegate(delegate);
 
@@ -2608,18 +2608,18 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // update index
         view.updateIndex();
         List<QueryRow> rows = view.query(null);
-        Log.e(TAG, rows.toString());
+        Log.i(TAG, rows.toString());
         assertEquals(winning.getProperties().get("key"), rows.get(0).getKey());
 
         // Delete winning rev
         RevisionInternal leaf3 = new RevisionInternal("172", null, true);
         leaf3 = database.putRevision(leaf3, winning.getRevID(), true);
-        Log.e(TAG, String.format("leaf3: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3.getSequence(), leaf3.getDocID(), leaf3.getRevID(), leaf3.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf3: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3.getSequence(), leaf3.getDocID(), leaf3.getRevID(), leaf3.isDeleted() ? "true" : "false"));
 
         // update index
         view.updateIndex();
         rows = view.query(null);
-        Log.e(TAG, rows.toString());
+        Log.i(TAG, rows.toString());
         assertEquals(looser.getProperties().get("key"), rows.get(0).getKey());
     }
 
@@ -2649,25 +2649,25 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "1-x");
         RevisionInternal rev1 = new RevisionInternal(props);
         RevisionInternal leaf1 = database.putRevision(rev1, null, false);
-        Log.e(TAG, String.format("leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
 
         // create conflicts rev2a and rev2b
         props.put("_rev", leaf1.getRevID());
         props.put("key", "2-a");
         RevisionInternal rev2a = new RevisionInternal(props);
         RevisionInternal leaf2a = database.putRevision(rev2a, leaf1.getRevID(), true);
-        Log.e(TAG, String.format("leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
 
         props.put("key", "2-b");
         RevisionInternal rev2b = new RevisionInternal(props);
         RevisionInternal leaf2b = database.putRevision(rev2b, leaf1.getRevID(), true);
-        Log.e(TAG, String.format("leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
 
         // update index
         view.updateIndex();
         List<QueryRow> rows = view.query(null);
         assertNotNull(rows);
-        Log.e(TAG, rows.toString());
+        Log.i(TAG, rows.toString());
         assertEquals(1, rows.size()); // one 2 must win
 
         // Need to override StoreDelegate to control revision ID for generation 2-.
@@ -2698,7 +2698,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "3-c");
         RevisionInternal rev3c = new RevisionInternal(props);
         RevisionInternal leaf3c = database.putRevision(rev3c, leaf2a.getRevID(), true);
-        Log.e(TAG, String.format("leaf3c: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3c.getSequence(), leaf3c.getDocID(), leaf3c.getRevID(), leaf3c.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf3c: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3c.getSequence(), leaf3c.getDocID(), leaf3c.getRevID(), leaf3c.isDeleted() ? "true" : "false"));
 
         // set Revision ID "3-dddd"
         store.setDelegate(new StoreDelegate() {
@@ -2720,7 +2720,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // create rev3d from rev2b with delete
         RevisionInternal leaf3d = new RevisionInternal("doc1", null, true);
         leaf3d = database.putRevision(leaf3d, leaf2b.getRevID(), true);
-        Log.e(TAG, String.format("leaf3d: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3d.getSequence(), leaf3d.getDocID(), leaf3d.getRevID(), leaf3d.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format("leaf3d: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3d.getSequence(), leaf3d.getDocID(), leaf3d.getRevID(), leaf3d.isDeleted() ? "true" : "false"));
         assertTrue(leaf3d.isDeleted());
 
         // make sure 3-d is higher revision than 3-c
@@ -2730,7 +2730,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         view.updateIndex();
         rows = view.query(null);
         assertNotNull(rows);
-        Log.e(TAG, rows.toString());
+        Log.i(TAG, rows.toString());
         assertEquals(1, rows.size());
         assertEquals("3-c", rows.get(0).getKey());
     }
@@ -3175,7 +3175,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         query.setEndKey(endKeys);
 
         QueryEnumerator rows = query.run();
-        Log.e(TAG, "First query: rows.getCount() = " + rows.getCount());
+        Log.i(TAG, "First query: rows.getCount() = " + rows.getCount());
         assertEquals(3, rows.getCount());
         assertEquals(doc3.getId(), rows.getRow(0).getDocumentId());
         assertEquals(doc2.getId(), rows.getRow(1).getDocumentId());
@@ -3187,14 +3187,14 @@ public class ViewsTest extends LiteTestCaseWithDB {
             doc2.purge();
         else
             assertTrue(doc2.delete());
-        Log.e(TAG, "Deleted doc2");
+        Log.i(TAG, "Deleted doc2");
 
         // Check ascending query result:
         query.setDescending(false);
         query.setStartKey(endKeys);
         query.setEndKey(startKeys);
         rows = query.run();
-        Log.e(TAG, "Ascending query: rows.getCount() = " + rows.getCount());
+        Log.i(TAG, "Ascending query: rows.getCount() = " + rows.getCount());
         assertEquals(2, rows.getCount());
         assertEquals(doc1.getId(), rows.getRow(0).getDocumentId());
         assertEquals(doc3.getId(), rows.getRow(1).getDocumentId());
@@ -3205,7 +3205,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         query.setEndKey(endKeys);
 
         rows = query.run();
-        Log.e(TAG, "Descending query: rows.getCount() = " + rows.getCount());
+        Log.i(TAG, "Descending query: rows.getCount() = " + rows.getCount());
         assertEquals(2, rows.getCount());
         assertEquals(doc3.getId(), rows.getRow(0).getDocumentId());
         assertEquals(doc1.getId(), rows.getRow(1).getDocumentId());
@@ -3246,7 +3246,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         query.setStartKey(endKeys);
         query.setEndKey(startKeys);
         QueryEnumerator rows = query.run();
-        Log.e(TAG, "Ascending query: rows.getCount() = " + rows.getCount());
+        Log.i(TAG, "Ascending query: rows.getCount() = " + rows.getCount());
         assertEquals(0, rows.getCount());
 
         // Check descending query result:
@@ -3254,7 +3254,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         query.setStartKey(startKeys);
         query.setEndKey(endKeys);
         rows = query.run();
-        Log.e(TAG, "Descending query: rows.getCount() = " + rows.getCount());
+        Log.i(TAG, "Descending query: rows.getCount() = " + rows.getCount());
         assertEquals(0, rows.getCount());
     }
 

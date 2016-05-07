@@ -154,9 +154,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
      * Make sure doc is pulled
      */
     public void testGoOnlinePuller() throws Exception {
-
         Log.d(Log.TAG, "testGoOnlinePuller");
-
         // create mock server
         MockWebServer server = new MockWebServer();
         try {
@@ -230,7 +228,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         } finally {
             server.shutdown();
         }
-
     }
 
     /**
@@ -714,7 +711,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             assertTrue(success);
 
             long lastSeq = database.getLastSequenceNumber();
-            Log.e(TAG, "lastSequence = %d", lastSeq);
+            Log.i(TAG, "lastSequence = %d", lastSeq);
 
             // wait until the mock webserver receives a PUT checkpoint request with last do's sequence,
             // this avoids ugly and confusing exceptions in the logs.
@@ -1049,7 +1046,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             Map<String, Object> doc4Map = MockBulkDocs.findDocById(bulkDocsJson, doc4Id);
             assertTrue(((Boolean) doc4Map.get("_deleted")).booleanValue() == true);
             String str = MockHelper.getUtf8Body(bulkDocsRequest);
-            Log.e(TAG, str);
+            Log.i(TAG, str);
             assertFalse(MockHelper.getUtf8Body(bulkDocsRequest).contains(doc2Id));
 
             RecordedRequest doc2putRequest = dispatcher.takeRequest(doc2PathRegex);
@@ -2570,7 +2567,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             pullReplication.addChangeListener(new Replication.ChangeListener() {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
-                    Log.e(Log.TAG_SYNC, "event.getCompletedChangeCount() = " + event.getCompletedChangeCount());
+                    Log.i(Log.TAG_SYNC, "event.getCompletedChangeCount() = " + event.getCompletedChangeCount());
                     if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
                         idleCountdownLatch.countDown();
                     }
@@ -4464,7 +4461,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             pullReplication.addChangeListener(new Replication.ChangeListener() {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
-                    Log.e(TAG, "[changed] PULL -> " + event);
+                    Log.i(TAG, "[changed] PULL -> " + event);
                     if (event.getTransition() != null &&
                             event.getTransition().getDestination() == ReplicationState.IDLE) {
                         // make sure pull replicator becomes IDLE after ACTIVE state.
@@ -4617,7 +4614,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
             pullReplication.addChangeListener(new Replication.ChangeListener() {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
-                    Log.e(TAG, event.toString());
+                    Log.i(TAG, event.toString());
                     if (event.getError() != null) {
                         Assert.fail("Should not have any error....");
                     }
@@ -4649,11 +4646,11 @@ public class ReplicationTest extends LiteTestCaseWithDB {
 
             // check /db/docid?...
             RecordedRequest request = dispatcher.takeRequestBlocking(mockDocument1.getDocPathRegex(), 30 * 1000);
-            Log.e(TAG, request.toString());
+            Log.i(TAG, request.toString());
             Map<String, String> queries = query2map(request.getPath());
             String atts_since = URLDecoder.decode(queries.get("atts_since"), "UTF-8");
             List<String> json = (List<String>) str2json(atts_since);
-            Log.e(TAG, json.toString());
+            Log.i(TAG, json.toString());
             assertNotNull(json);
             // atts_since parameter should be limit to PullerInternal.MAX_NUMBER_OF_ATTS_SINCE
             assertTrue(json.size() == PullerInternal.MAX_NUMBER_OF_ATTS_SINCE);
@@ -5026,11 +5023,11 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
                     if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.IDLE) {
-                        Log.e(Log.TAG, "IDLE");
+                        Log.i(Log.TAG, "IDLE");
                         replicationIdleFirstTime.countDown();
                         replicationIdleSecondTime.countDown();
                     } else if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.STOPPED) {
-                        Log.e(Log.TAG, "STOPPED");
+                        Log.i(Log.TAG, "STOPPED");
                         replicationStoppedFirstTime.countDown();
                     }
                 }
@@ -5236,7 +5233,7 @@ public class ReplicationTest extends LiteTestCaseWithDB {
                 if (request.getMethod().equals("PUT")) {
                     foundCheckpointPut = true;
                     String body = request.getUtf8Body();
-                    Log.e("testExcessiveCheckpointingDuringPushReplication", "body => " + body);
+                    Log.i("testExcessiveCheckpointingDuringPushReplication", "body => " + body);
                     // TODO: this is not valid if device can not handle all replication data at once
                     if (System.getProperty("java.vm.name").equalsIgnoreCase("Dalvik")) {
                         assertTrue(body.indexOf(expectedLastSequence) != -1);
