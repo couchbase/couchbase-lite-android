@@ -72,17 +72,17 @@ In the application level `build.gradle` file, add following in `dependencies` se
 compile 'com.couchbase.lite:couchbase-lite-android:{latest-version}'
 ```
 
-In case of using couchbase lite 1.1.0
+In case of using couchbase lite 1.2.1
 ```
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:21.0.3'
-    compile 'com.couchbase.lite:couchbase-lite-android:1.1.0'
+    compile 'com.couchbase.lite:couchbase-lite-android:1.2.1'
 }
 ```
 
 
-Where ${latest_version} should be replaced by something that looks like `1.1.0`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
+Where ${latest_version} should be replaced by something that looks like `1.1.1`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
 
 ### Using master branch version (bleeding edge)
 
