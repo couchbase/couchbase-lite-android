@@ -69,7 +69,6 @@ public class BulkDownloaderTest extends LiteTestCaseWithDB {
 
             // create a bulkdownloader
             BulkDownloader bulkDownloader = new BulkDownloader(
-                    workExecutorService,
                     factory,
                     url,
                     revs,
