@@ -32,7 +32,6 @@ public class BulkDownloaderTest extends LiteTestCaseWithDB {
      * https://github.com/couchbase/couchbase-lite-java-core/issues/331
      */
     public void testErrorHandling() throws Exception {
-
         PersistentCookieStore cookieStore = database.getPersistentCookieStore();
         CouchbaseLiteHttpClientFactory factory = new CouchbaseLiteHttpClientFactory(cookieStore);
 
@@ -72,6 +71,7 @@ public class BulkDownloaderTest extends LiteTestCaseWithDB {
                     workExecutorService,
                     factory,
                     url,
+                    true,
                     revs,
                     database,
                     null,

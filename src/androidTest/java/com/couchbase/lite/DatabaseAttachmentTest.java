@@ -74,7 +74,7 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
 
         AttachmentInternal att = database.getAttachment(rev1, "attach");
         Assert.assertNotNull(att);
-        Log.e(TAG, new String(att.getContent()));
+        Log.i(TAG, new String(att.getContent()));
         Assert.assertTrue(Arrays.equals(attach1, att.getContent()));
         Assert.assertEquals("text/plain", att.getContentType());
         Assert.assertEquals(AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone, att.getEncoding());

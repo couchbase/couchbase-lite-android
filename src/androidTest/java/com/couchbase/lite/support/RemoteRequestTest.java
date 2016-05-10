@@ -90,6 +90,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
                     factory,
                     "GET",
                     url,
+                    true,
                     requestBody,
                     database,
                     requestHeaders,
@@ -174,6 +175,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
                     factory,
                     "GET",
                     url,
+                    true,
                     requestBody,
                     database,
                     requestHeaders,
@@ -215,7 +217,6 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
      * @throws Exception
      */
     public void failingTestRetryQueueDeadlock() throws Exception {
-
         // lower retry to speed up test
         RemoteRequestRetry.RETRY_DELAY_MS = 5;
 
@@ -237,15 +238,13 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
 
             server.play();
 
-            String urlString = String.format("%s/%s", server.getUrl("/db"), "_local");
-            URL url = new URL(urlString);
+            URL url = new URL(String.format("%s/%s", server.getUrl("/db"), "_local"));
 
             Map<String, Object> requestBody = new HashMap<String, Object>();
             requestBody.put("foo", "bar");
 
             Map<String, Object> requestHeaders = new HashMap<String, Object>();
 
-            int threadPoolSize = 5;
             int numRequests = 10;
 
             final CountDownLatch received503Error = new CountDownLatch(numRequests);
@@ -266,10 +265,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
             ScheduledExecutorService workExecutorService = Executors.newSingleThreadScheduledExecutor();
 
             List<Future> requestFutures = new ArrayList<Future>();
-
             for (int i = 0; i < numRequests; i++) {
-
-                // ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(4);
                 RemoteRequestRetry request = new RemoteRequestRetry(
                         RemoteRequestRetry.RemoteRequestType.REMOTE_REQUEST,
                         requestExecutorService,
@@ -277,19 +273,17 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
                         factory,
                         "GET",
                         url,
+                        true,
                         requestBody,
                         database,
                         requestHeaders,
-                        completionBlock
-                );
-
+                        completionBlock);
                 Future future = request.submit();
                 requestFutures.add(future);
             }
 
-            for (Future future : requestFutures) {
+            for (Future future : requestFutures)
                 future.get();
-            }
 
             boolean success = received503Error.await(120, TimeUnit.SECONDS);
             assertTrue(success);
@@ -297,7 +291,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
             // Note: ExecutorService should be called shutdown()
             Utils.shutdownAndAwaitTermination(requestExecutorService);
             Utils.shutdownAndAwaitTermination(workExecutorService);
-        }finally{
+        } finally {
             server.shutdown();
         }
     }
