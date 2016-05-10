@@ -720,4 +720,85 @@ public class DatabaseTest extends LiteTestCaseWithDB {
                 assertNotNull(rev);
         }
     }
+
+    /**
+     * in DatabaseInternal_Tests.m
+     * - (void) test30_conflictAfterPrune
+     * https://github.com/couchbase/couchbase-lite-ios/issues/1217
+     */
+    public void test30_conflictAfterPrune() throws CouchbaseLiteException {
+        // Create a conflict where one branch is more than maxRevTreeDepth generations deeper than
+        // the other: (#1217)
+        database.setMaxRevTreeDepth(5);
+
+        Status status = new Status();
+        RevisionInternal base = database.put("robin", new HashMap<String, Object>(), null, false, null, status);
+        assertNotNull(base);
+
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("branch", "short");
+        RevisionInternal shortBranch = database.put("robin",props,base.getRevID(),false, null, status);
+        assertNotNull(shortBranch);
+
+        RevisionInternal longBranch = base;
+        for(int i = 0; i < 8; i++){
+            props = new HashMap<String, Object>();
+            props.put("branch","long");
+            longBranch = database.put("robin", props, longBranch.getRevID(), i == 0, null, status);
+            assertNotNull(longBranch);
+        }
+
+        Log.i(TAG, "All revisions = %s", database.getStore().getAllRevisions("robin", false));
+
+        List <SavedRevision> all = database.getDocument("robin").getConflictingRevisions();
+        Log.i(TAG, "Conflicts = %s", all);
+
+        assertEquals(2, all.size());
+        List<String> allRevIDs = new ArrayList<String>();
+        for(SavedRevision rev:all)
+            allRevIDs.add(rev.getId());
+        assertTrue(allRevIDs.contains(shortBranch.getRevID()));
+        assertTrue(allRevIDs.contains(longBranch.getRevID()));
+
+        RevisionInternal shortConflict = shortBranch;
+        RevisionInternal longConflict = longBranch;
+
+        // Resolve the conflict by adding to the long branch and deleting the short one:
+        List<RevisionInternal> shortHistory = database.getRevisionHistory(shortBranch);
+        List<RevisionInternal> longHistory = database.getRevisionHistory(longBranch);
+
+        props = new HashMap<String, Object>();
+        props.put("_deleted",true);
+        shortBranch = database.put("robin", props, shortBranch.getRevID(), false, null, status);
+        assertNotNull(shortBranch);
+        props = new HashMap<String, Object>();
+        props.put("branch", "merged");
+        longBranch = database.put("robin", props, longBranch.getRevID(), false, null, status);
+        assertNotNull(longBranch);
+
+        Log.i(TAG, "After merge, all revisions = %s", database.getStore().getAllRevisions("robin", false));
+
+        all = database.getDocument("robin").getConflictingRevisions();
+        Log.i(TAG, "After merge, conflicts = %s", all);
+
+        assertEquals(1, all.size());
+        assertEquals(longBranch.getRevID(), all.get(0).getId());
+
+        // Add the conflicting revisions back, as a pull replication might do:
+        List<String> history = new ArrayList<String>();
+        for(RevisionInternal rev:shortHistory)
+            history.add(rev.getRevID());
+        database.forceInsert(shortConflict, history, null);
+        history.clear();
+        for(RevisionInternal rev:longHistory)
+            history.add(rev.getRevID());
+        database.forceInsert(longConflict, history, null);
+
+        // Make sure this doesn't re-create the conflict:
+        all = database.getDocument("robin").getConflictingRevisions();
+        Log.i(TAG, "After pull, conflicts = %s", all);
+        assertEquals(1, all.size());
+        assertEquals(longBranch.getRevID(), longBranch.getRevID());
+    }
+
 }
