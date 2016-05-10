@@ -852,7 +852,6 @@ public class ReplicationTest extends LiteTestCaseWithDB {
         allDocsLiveQuery.addChangeListener(new LiveQuery.ChangeListener() {
             @Override
             public void changed(LiveQuery.ChangeEvent event) {
-                int numTimesCalled = 0;
                 if (event.getError() != null) {
                     throw new RuntimeException(event.getError());
                 }
