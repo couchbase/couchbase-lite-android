@@ -347,15 +347,11 @@ public class ManagerTest extends LiteTestCaseWithDB {
      */
     public void testClose() throws Exception {
         Log.d(Log.TAG, "START testClose()");
-
-        boolean success = false;
-
-        // create mock server
-        MockDispatcher dispatcher = new MockDispatcher();
-        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         MockWebServer server = new MockWebServer();
-        server.setDispatcher(dispatcher);
         try {
+            MockDispatcher dispatcher = new MockDispatcher();
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            server.setDispatcher(dispatcher);
             server.play();
 
             // checkpoint PUT or GET response (sticky) (for both push and pull)
@@ -380,11 +376,9 @@ public class ManagerTest extends LiteTestCaseWithDB {
             push.start();
 
             // wait till both push and pull replicators become idle.
-            success = pullIdleState.await(30, TimeUnit.SECONDS);
-            assertTrue(success);
+            assertTrue(pullIdleState.await(30, TimeUnit.SECONDS));
+            assertTrue(pushIdleState.await(30, TimeUnit.SECONDS));
             pull.removeChangeListener(pullIdleObserver);
-            success = pushIdleState.await(30, TimeUnit.SECONDS);
-            assertTrue(success);
             push.removeChangeListener(pushIdleObserver);
 
             final CountDownLatch pullStoppedState = new CountDownLatch(1);
@@ -397,9 +391,12 @@ public class ManagerTest extends LiteTestCaseWithDB {
             // close Manager, which close database(s) and replicator(s)
             manager.close();
 
-            // not need to wait. manager.close() should wait till replicators are closed.
-            assertEquals(0, pullStoppedState.getCount());
-            assertEquals(0, pushStoppedState.getCount());
+            // manager.close() should wait till replicators are closed.
+            // However, notification from replicator is sent by replicator thread.
+            // So it is not synchronized with main thread.
+            // just give 10 sec.
+            assertTrue(pullStoppedState.await(10, TimeUnit.SECONDS));
+            assertTrue(pushStoppedState.await(10, TimeUnit.SECONDS));
             pull.removeChangeListener(pullStoppedObserver);
             push.removeChangeListener(pushStoppedObserver);
 
@@ -421,7 +418,6 @@ public class ManagerTest extends LiteTestCaseWithDB {
             // shutdown mock server
             server.shutdown();
         }
-
         Log.d(Log.TAG, "END testClose()");
     }
 
