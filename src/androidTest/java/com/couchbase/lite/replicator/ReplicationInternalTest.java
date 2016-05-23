@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 Couchbase, Inc. All rights reserved.
+ * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,6 @@
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.Document;
@@ -41,11 +40,14 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
         String doc2Id = "doc2";
         String doc3Id = "doc3";
 
-        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
+        final MockDocumentGet.MockDocument mockDocument1 =
+                new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 =
+                new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 =
+                new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -66,7 +68,8 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse());
 
             // _bulk_get response for odd indexed documents
             MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
@@ -124,7 +127,8 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
 
             //last saved seq must be equal to last pulled document seq
             String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
-            String lastSequence = database.lastSequenceWithCheckpointId(pull.remoteCheckpointDocID());
+            String lastSequence = database.lastSequenceWithCheckpointId(
+                    pull.remoteCheckpointDocID());
             assertEquals(doc3Seq, lastSequence);
         } finally {
             server.shutdown();
@@ -137,11 +141,14 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
         String doc2Id = "doc2";
         String doc3Id = "doc3";
 
-        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
+        final MockDocumentGet.MockDocument mockDocument1 =
+                new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 =
+                new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 =
+                new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -162,10 +169,11 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse());
 
-            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
-            // server that doesn't have any new changes
+            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds
+            // to emulate server that doesn't have any new changes
             MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
             mockChangesFeedNoResponse.setDelayMs(60 * 1000);
             mockChangesFeedNoResponse.setSticky(true);
@@ -221,40 +229,28 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             waitForPutCheckpointRequestWithSeq(dispatcher, mockDocument3.getDocSeq());
 
             String doc3Seq = Integer.toString(mockDocument3.getDocSeq());
-            String lastSequence = database.lastSequenceWithCheckpointId(pull.remoteCheckpointDocID());
+            String lastSequence = database.lastSequenceWithCheckpointId(
+                    pull.remoteCheckpointDocID());
             assertEquals(doc3Seq, lastSequence);
         } finally {
             server.shutdown();
         }
     }
 
-    /*
-        // Sample response for _bulk_get with missing revision
-        curl -i -H "Content-Type: application/json" -X POST -d '{"docs":[{"atts_since":null,"id":"5b344b64-0aaa-4a24-806e-d7e6abc771a7","rev":"2-ceaee13c1bae76a11ebfa9371009ae8d"}]}' http://localhost:4985/db/_bulk_get?revs=true&attachments=true
-
-        HTTP/1.1 200 OK
-        Content-Type: multipart/mixed; boundary="be4a1c7b5e3b180aade8a7753fd285a54e55415314ddc1134ceb36021f7e"
-        Server: Couchbase Sync Gateway/1.2 branch/master commit/9bc164c+CHANGES
-        Date: Wed, 16 Dec 2015 02:35:08 GMT
-        Content-Length: 320
-
-        --be4a1c7b5e3b180aade8a7753fd285a54e55415314ddc1134ceb36021f7e
-        Content-Type: application/json; error="true"
-
-        {"error":"not_found","id":"5b344b64-0aaa-4a24-806e-d7e6abc771a7","reason":"missing","rev":"2-ceaee13c1bae76a11ebfa9371009ae8d","status":404}
-        --be4a1c7b5e3b180aade8a7753fd285a54e55415314ddc1134ceb36021f7e--
-    */
     // continuous pull replication with _bulk_get with missing revision - erro scenario
     public void testOneShotPullReplBulkGetWithMissingRev() throws Exception {
         String doc1Id = "doc1";
         String doc2Id = "doc2";
         String doc3Id = "doc3";
 
-        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
+        final MockDocumentGet.MockDocument mockDocument1 =
+                new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 =
+                new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 =
+                new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -275,7 +271,8 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse());
 
             // _bulk_get response for odd indexed documents
             MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
@@ -335,11 +332,14 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
         String doc2Id = "doc2";
         String doc3Id = "doc3";
 
-        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
+        final MockDocumentGet.MockDocument mockDocument1 =
+                new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 =
+                new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 =
+                new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -360,10 +360,11 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse());
 
-            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
-            // server that doesn't have any new changes
+            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds
+            // to emulate server that doesn't have any new changes
             MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
             mockChangesFeedNoResponse.setDelayMs(60 * 1000);
             mockChangesFeedNoResponse.setSticky(true);
@@ -425,11 +426,14 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
         String doc2Id = "doc2";
         String doc3Id = "doc3";
 
-        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
+        final MockDocumentGet.MockDocument mockDocument1 =
+                new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 =
+                new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 =
+                new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -450,7 +454,8 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse());
 
             // _bulk_get response for odd indexed documents
             MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
@@ -499,11 +504,14 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
         String doc2Id = "doc2";
         String doc3Id = "doc3";
 
-        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
+        final MockDocumentGet.MockDocument mockDocument1 =
+                new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 =
+                new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 =
+                new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -524,11 +532,13 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse());
 
-            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
-            // server that doesn't have any new changes
-            MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
+            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds
+            // to emulate server that doesn't have any new changes
+            MockChangesFeedNoResponse mockChangesFeedNoResponse =
+                    new MockChangesFeedNoResponse();
             mockChangesFeedNoResponse.setDelayMs(60 * 1000);
             mockChangesFeedNoResponse.setSticky(true);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
@@ -573,48 +583,81 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
     public void testServerIsSyncGatewayVersion() {
 
         // sync gateway 1.2
-        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "1.3"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "1.2"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "1.1"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "0.93"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "0.92"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES", "0.81"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES",
+                "1.3"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES",
+                "1.2"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES",
+                "1.1"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES",
+                "0.93"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES",
+                "0.92"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES",
+                "0.81"));
 
         // sync gateway 1.0 or 1.1
-        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "1.3"));
-        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "1.2"));
-        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "1.1"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "0.93"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "0.92"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/1.0", "0.81"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.0", "1.3"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.0", "1.2"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.0", "1.1"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.0", "0.93"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.0", "0.92"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/1.0", "0.81"));
 
         // before 1.0 release (beta)
-        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "1.3"));
-        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "1.2"));
-        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "1.1"));
-        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "0.93"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "0.92"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/0.92", "0.81"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/0.92", "1.3"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/0.92", "1.2"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/0.92", "1.1"));
+        assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/0.92", "0.93"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/0.92", "0.92"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/0.92", "0.81"));
 
         // developer build 1.1 or earlier ('a' > '0')
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "1.3"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "1.2"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "1.1"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.93"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.92"));
-        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion("Couchbase Sync Gateway/unofficial", "0.81"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/unofficial", "1.3"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/unofficial", "1.2"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/unofficial", "1.1"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/unofficial", "0.93"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/unofficial", "0.92"));
+        assertTrue(ReplicationInternal.serverIsSyncGatewayVersion(
+                "Couchbase Sync Gateway/unofficial", "0.81"));
     }
 
-    public void testUserAgent() throws Exception{
+    public void testUserAgent() throws Exception {
         String doc1Id = "doc1";
         String doc2Id = "doc2";
         String doc3Id = "doc3";
 
-        final MockDocumentGet.MockDocument mockDocument1 = new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
+        final MockDocumentGet.MockDocument mockDocument1 =
+                new MockDocumentGet.MockDocument(doc1Id, "1-0001", 1);
         mockDocument1.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument2 = new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
+        final MockDocumentGet.MockDocument mockDocument2 =
+                new MockDocumentGet.MockDocument(doc2Id, "1-0002", 2);
         mockDocument2.setJsonMap(MockHelper.generateRandomJsonMap());
-        final MockDocumentGet.MockDocument mockDocument3 = new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
+        final MockDocumentGet.MockDocument mockDocument3 =
+                new MockDocumentGet.MockDocument(doc3Id, "1-0003", 3);
         mockDocument3.setJsonMap(MockHelper.generateRandomJsonMap());
 
         // create mockwebserver and custom dispatcher
@@ -635,7 +678,8 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument1));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument2));
             mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDocument3));
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
+                    mockChangesFeed.generateMockResponse());
 
             // _bulk_get response for odd indexed documents
             MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
@@ -704,7 +748,8 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             // // checkpoint GET response w/ 404:
             MockResponse fakeCheckpointResponse = new MockResponse();
             MockHelper.set404NotFoundJson(fakeCheckpointResponse);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT,
+                    fakeCheckpointResponse);
 
             // _changes response:
             MockChangesFeed mockChangesFeed = new MockChangesFeed();
@@ -713,12 +758,13 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES,
                     mockChangesFeed.generateMockResponse(/*gzip*/true));
 
-            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds to emulate
-            // server that doesn't have any new changes
+            // add sticky _changes response to feed=longpoll that just blocks for 60 seconds
+            // to emulate server that doesn't have any new changes
             MockChangesFeedNoResponse mockChangesFeedNoResponse = new MockChangesFeedNoResponse();
             mockChangesFeedNoResponse.setDelayMs(120 * 1000);
             mockChangesFeedNoResponse.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_LONGPOLL, mockChangesFeedNoResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES_LONGPOLL,
+                    mockChangesFeedNoResponse);
 
             // doc1 response:
             MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
@@ -734,7 +780,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
             mockBulkGet.addDocument(mockDoc1);
             mockBulkGet.addDocument(mockDoc2);
-            mockBulkGet.setDelayMs(120*1000);
+            mockBulkGet.setDelayMs(120 * 1000);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
 
             // Respond to all PUT Checkpoint requests
@@ -775,5 +821,4 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
                 server.shutdown();
         }
     }
-
 }

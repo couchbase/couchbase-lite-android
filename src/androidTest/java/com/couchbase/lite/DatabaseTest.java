@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
@@ -12,6 +25,7 @@ import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -440,7 +454,12 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertEquals(doc, attach.getDocument());
         assertEquals("index.html", attach.getName());
         assertEquals("text/plain; charset=utf-8", attach.getContentType());
-        assertTrue(Arrays.equals(content.getBytes(), TextUtils.read(attach.getContent())));
+        InputStream in = attach.getContent();
+        try {
+            assertTrue(Arrays.equals(content.getBytes(), TextUtils.read(in)));
+        } finally {
+            in.close();
+        }
 
         // Look at the attachment's file:
         URL bodyURL = attach.getContentURL();

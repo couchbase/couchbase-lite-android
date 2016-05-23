@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.Body;
@@ -5,7 +18,6 @@ import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockDocumentGet;
 import com.couchbase.lite.mockserver.MockHelper;
-import com.couchbase.lite.replicator.CustomizableMockHttpClient;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.replicator.ReplicationState;
 import com.couchbase.lite.router.Router;
@@ -15,7 +27,6 @@ import com.couchbase.lite.router.URLStreamHandlerFactory;
 import com.couchbase.lite.storage.SQLiteNativeLibrary;
 import com.couchbase.lite.store.SQLiteStore;
 import com.couchbase.lite.support.FileDirUtils;
-import com.couchbase.lite.support.HttpClientFactory;
 import com.couchbase.lite.support.Version;
 import com.couchbase.lite.support.security.SymmetricKey;
 import com.couchbase.lite.util.Log;
@@ -28,9 +39,6 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.HttpClient;
-import org.apache.http.cookie.Cookie;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -737,28 +745,6 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         SavedRevision rev = revUnsaved.save();
         assertNotNull(rev);
         return doc;
-    }
-
-    protected HttpClientFactory mockFactoryFactory(final CustomizableMockHttpClient mockHttpClient) {
-        return new HttpClientFactory() {
-            @Override
-            public HttpClient getHttpClient() {
-                return mockHttpClient;
-            }
-
-            @Override
-            public void addCookies(List<Cookie> cookies) {
-            }
-
-            @Override
-            public void deleteCookie(String name) {
-            }
-
-            @Override
-            public CookieStore getCookieStore() {
-                return null;
-            }
-        };
     }
 
     protected void attachmentAsserts(String docAttachName, Document doc)

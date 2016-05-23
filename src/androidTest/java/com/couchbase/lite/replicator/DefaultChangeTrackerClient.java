@@ -11,22 +11,34 @@
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.couchbase.lite;
+package com.couchbase.lite.replicator;
 
-import com.couchbase.lite.util.Log;
+import java.util.Map;
+
+import okhttp3.OkHttpClient;
 
 /**
- * Created by hideki on 2/20/15.
+ * Created by hideki on 5/17/16.
  */
-public class BlobKeyTest extends LiteTestCase {
-    public void testConvertToHex(){
-        String src = "Hello World!";
-        Log.i(Log.TAG, "SRC => " + src);
-        String hex = BlobKey.convertToHex(src.getBytes());
-        Log.i(Log.TAG, "HEX => " + hex);
-        String dest = new String(BlobKey.convertFromHex(hex));
-        Log.i(Log.TAG, "DEST => " + dest);
-        assertEquals(src, dest);
-        assertEquals(hex.toUpperCase(), hex);
+public class DefaultChangeTrackerClient implements ChangeTrackerClient {
+    @Override
+    public OkHttpClient getOkHttpClient() {
+        return null;
+    }
+
+    @Override
+    public void changeTrackerReceivedChange(Map<String, Object> change) {
+    }
+
+    @Override
+    public void changeTrackerStopped(ChangeTracker tracker) {
+    }
+
+    @Override
+    public void changeTrackerFinished(ChangeTracker tracker) {
+    }
+
+    @Override
+    public void changeTrackerCaughtUp() {
     }
 }
