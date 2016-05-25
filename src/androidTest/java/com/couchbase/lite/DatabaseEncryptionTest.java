@@ -12,7 +12,6 @@
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
- *
  */
 
 package com.couchbase.lite;
@@ -29,6 +28,7 @@ import junit.framework.Assert;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -131,8 +131,8 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
 
         Store store = database.getStore();
         if (store instanceof EncryptableStore) {
-            EncryptableStore ens = (EncryptableStore)store;
-            final byte[] salt =  "Salty McNaCl".getBytes();
+            EncryptableStore ens = (EncryptableStore) store;
+            final byte[] salt = "Salty McNaCl".getBytes();
             final int rounds = 64000;
 
             byte[] result = ens.derivePBKDF2SHA256Key("letmein", salt, rounds);
@@ -325,23 +325,24 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Assert.assertNotNull(savedRev);
 
         // Read the raw attachment file and make sure it's not clear text:
-        Map<String, Object> atts = (Map<String, Object>)savedRev.getProperties().get("_attachments");
-        Map<String, Object> att = (Map<String, Object>)atts.get("att.txt");
+        Map<String, Object> atts = (Map<String, Object>) savedRev.getProperties().get("_attachments");
+        Map<String, Object> att = (Map<String, Object>) atts.get("att.txt");
         String digest = (String) att.get("digest");
         Assert.assertNotNull(digest);
 
         BlobKey key = new BlobKey(digest);
         String path = seekrit.getAttachmentStore().getRawPathForKey(key);
         FileInputStream fis = null;
+
+        fis = new FileInputStream(path);
+        byte[] raw;
         try {
-            fis = new FileInputStream(path);
-            byte[] raw = TextUtils.read(fis);
-            Assert.assertNotNull(raw);
-            Assert.assertTrue(!Arrays.equals(raw, body));
+            raw = TextUtils.read(fis);
         } finally {
-            if (fis != null)
-                fis.close();
+            fis.close();
         }
+        Assert.assertNotNull(raw);
+        Assert.assertTrue(!Arrays.equals(raw, body));
     }
 
     public void testRekey() throws Exception {
@@ -350,14 +351,12 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
 
         // First run the encrypted-attachments test to populate the db:
         testEncryptedAttachments();
-        
+
         Database seekrit = openSeekritDatabase("letmein");
         seekrit.changeEncryptionKey("letmeout");
 
         // Close & reopen seekrit:
-        String dbName = seekrit.getName();
         Assert.assertTrue(seekrit.close());
-        seekrit = null;
 
         cryptoManager.registerEncryptionKey("letmeout", "seekrit");
         Database seekrit2 = openSeekritDatabase("letmeout");
@@ -371,7 +370,13 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Attachment att = savedRev.getAttachment("att.txt");
         Assert.assertNotNull(att);
         byte[] body = "This is a test attachment!".getBytes();
-        byte[] rawAtt = TextUtils.read(att.getContent());
+        InputStream in = att.getContent();
+        byte[] rawAtt;
+        try {
+            rawAtt = TextUtils.read(in);
+        } finally {
+            in.close();
+        }
         Assert.assertTrue(Arrays.equals(rawAtt, body));
     }
 }

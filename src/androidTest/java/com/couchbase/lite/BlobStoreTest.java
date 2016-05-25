@@ -75,20 +75,19 @@ public class BlobStoreTest extends LiteTestCaseWithDB {
     }
 
     private void verifyRawBlob(BlobKey key, byte[] clearText) throws IOException {
-        InputStream is = null;
+        String path = store.getRawPathForKey(key);
+        byte[] raw;
+        InputStream is = new FileInputStream(path);
         try {
-            String path = store.getRawPathForKey(key);
-            is = new FileInputStream(path);
-            byte[] raw = TextUtils.read(is);
-            Assert.assertNotNull(raw);
-            if (store.getEncryptionKey() == null) {
-                Assert.assertTrue(Arrays.equals(raw, clearText));
-            } else {
-                Assert.assertTrue(!Arrays.equals(raw, clearText));
-            }
+            raw = TextUtils.read(is);
         } finally {
-            if (is != null)
-                is.close();
+            is.close();
+        }
+        Assert.assertNotNull(raw);
+        if (store.getEncryptionKey() == null) {
+            Assert.assertTrue(Arrays.equals(raw, clearText));
+        } else {
+            Assert.assertTrue(!Arrays.equals(raw, clearText));
         }
     }
 

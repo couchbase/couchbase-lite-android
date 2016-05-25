@@ -11,22 +11,38 @@
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.couchbase.lite;
+package com.couchbase.lite.replicator;
 
-import com.couchbase.lite.util.Log;
+import com.couchbase.lite.support.HttpClientFactory;
+
+import java.util.List;
+
+import okhttp3.Cookie;
+import okhttp3.CookieJar;
+import okhttp3.OkHttpClient;
 
 /**
- * Created by hideki on 2/20/15.
+ * Created by hideki on 5/17/16.
  */
-public class BlobKeyTest extends LiteTestCase {
-    public void testConvertToHex(){
-        String src = "Hello World!";
-        Log.i(Log.TAG, "SRC => " + src);
-        String hex = BlobKey.convertToHex(src.getBytes());
-        Log.i(Log.TAG, "HEX => " + hex);
-        String dest = new String(BlobKey.convertFromHex(hex));
-        Log.i(Log.TAG, "DEST => " + dest);
-        assertEquals(src, dest);
-        assertEquals(hex.toUpperCase(), hex);
+public class DefaultHttpClientFactory implements HttpClientFactory {
+
+    @Override
+    public OkHttpClient getOkHttpClient() {
+        return null;
+    }
+
+    @Override
+    public void addCookies(List<Cookie> cookies) {
+
+    }
+
+    @Override
+    public void deleteCookie(String name) {
+
+    }
+
+    @Override
+    public CookieJar getCookieStore() {
+        return null;
     }
 }

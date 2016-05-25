@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 Couchbase, Inc. All rights reserved.
+ * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
@@ -17,22 +17,23 @@ import com.couchbase.lite.BlobKey;
 import com.couchbase.lite.BlobStore;
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.support.Base64;
-import com.couchbase.org.apache.http.entity.mime.MultipartEntity;
-import com.couchbase.org.apache.http.entity.mime.content.InputStreamBody;
-import com.couchbase.org.apache.http.entity.mime.content.StringBody;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 
 import org.apache.commons.io.IOUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import okio.Buffer;
 
 /*
     Generate mock document GET response, eg
@@ -197,70 +198,47 @@ public class MockDocumentGet {
     }
 
     private String generateDocumentBody() {
-        Map documentMap = generateDocumentMap();
         try {
-            return Manager.getObjectMapper().writeValueAsString(documentMap);
+            return Manager.getObjectMapper().writeValueAsString(generateDocumentMap());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public MockResponse generateMockResponse() {
-
         MockResponse mockResponse = new MockResponse();
         if (attachmentFileNames.isEmpty()) {
             mockResponse.setBody(generateDocumentBody());
             mockResponse.setHeader("Content-Type", "application/json");
-
         } else {
             createMultipartResponse(mockResponse);
         }
-
         mockResponse.setStatus("HTTP/1.1 200 OK");
-
         return mockResponse;
     }
 
     private void createMultipartResponse(MockResponse mockResponse) {
-
-        InputStream stream;
-        ByteArrayOutputStream baos;
-
-        try {
-
-            MultipartEntity multiPart = new MultipartEntity();
-            String partNameIgnored = "part";  // this never seems to appear anywhere in response
-            multiPart.addPart(partNameIgnored, new StringBody(generateDocumentBody(),
-                    "application/json", Charset.forName("UTF-8")));
-
-            for (String attachmentName : attachmentFileNames) {
-
-                byte[] attachmentBytes = getAssetByteArray(attachmentName);
-
-                int contentLength = attachmentBytes.length;
-
-                if (this.isIncludeAttachmentPart()) {
-                    multiPart.addPart(attachmentName, new InputStreamBody(
-                            new ByteArrayInputStream(attachmentBytes),
-                            "image/png", attachmentName, contentLength));
-                }
-
-                baos = new ByteArrayOutputStream();
-                multiPart.writeTo(baos);
-
-                mockResponse.setHeader(multiPart.getContentType().getName(),
-                        multiPart.getContentType().getValue());
-
-                byte[] body = baos.toByteArray();
-                mockResponse.setBody(body);
-
-                String bodyString = new String(body);
-
-                baos.close();
+        final MediaType MEDIA_TYPE_PNG = MediaType.parse("image/png");
+        for (String attachmentName : attachmentFileNames) {
+            Buffer buffer = new Buffer();
+            MultipartBody.Builder builder = new MultipartBody.Builder()
+                    .setType(MediaType.parse("multipart/related"))
+                    .addPart(RequestBody.create(MediaType.parse("application/json; charset=UTF-8"),
+                            generateDocumentBody()));
+            if (isIncludeAttachmentPart()) {
+                Headers.Builder hb = new Headers.Builder();
+                hb.add("Content-Disposition", String.format("attachment; filename=\"%s\"", attachmentName));
+                hb.add("Content-Transfer-Encoding", "binary");
+                builder.addPart(hb.build(), RequestBody.create(MEDIA_TYPE_PNG, getAssetByteArray(attachmentName)));
             }
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            MultipartBody requestBody = builder.build();
+            try {
+                requestBody.writeTo(buffer);
+                mockResponse.setHeader("Content-Type", requestBody.contentType().toString());
+                mockResponse.setBody(buffer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

@@ -479,7 +479,6 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
      * https://github.com/couchbase/couchbase-lite-android/issues/134
      */
     public void testGetAttachmentBodyUsingPrefetch() throws CouchbaseLiteException, IOException {
-
         // add a doc with an attachment
         Document doc = database.createDocument();
         UnsavedRevision rev = doc.createRevision();
@@ -509,7 +508,6 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
             }
         }, null, "1");
 
-
         // try to get the attachment
 
         Query query = view.createQuery();
@@ -518,16 +516,10 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
         QueryEnumerator results = query.run();
 
         while (results.hasNext()) {
-
             QueryRow row = results.next();
-
-
             // This returns the revision just fine, but the sequence number
             // is set to 0.
             SavedRevision revision = row.getDocument().getCurrentRevision();
-
-            List<String> attachments = revision.getAttachmentNames();
-
             // This returns an Attachment object which looks ok, except again
             // its sequence number is 0. The metadata property knows about
             // the length and mime type of the attachment. It also says
@@ -537,8 +529,12 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
             // This throws a CouchbaseLiteException with Status.NOT_FOUND.
             InputStream is = attachmentRetrieved.getContent();
             assertNotNull(is);
-            byte[] attachmentDataRetrieved = TextUtils.read(is);
-            is.close();
+            byte[] attachmentDataRetrieved;
+            try {
+                attachmentDataRetrieved = TextUtils.read(is);
+            } finally {
+                is.close();
+            }
             String attachmentDataRetrievedString = new String(attachmentDataRetrieved);
             String attachBodyString = new String(attachBodyBytes);
             assertEquals(attachBodyString, attachmentDataRetrievedString);

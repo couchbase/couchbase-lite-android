@@ -1,11 +1,23 @@
+/**
+ * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
 package com.couchbase.lite;
 
+import com.couchbase.lite.support.CustomByteArrayOutputStream;
 import com.couchbase.lite.support.MultipartReaderDelegate;
 import com.couchbase.lite.support.Range;
 
 import junit.framework.Assert;
-
-import org.apache.http.util.ByteArrayBuffer;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
@@ -18,21 +30,18 @@ import java.util.Map;
 public class MultipartReaderTest extends LiteTestCase {
 
     class TestMultipartReaderDelegate implements MultipartReaderDelegate {
-
-        private ByteArrayBuffer currentPartData;
+        private CustomByteArrayOutputStream currentPartData;
         private List<Map<String, String>> headersList;
-        private List<ByteArrayBuffer> partList;
+        private List<CustomByteArrayOutputStream> partList;
 
         public void startedPart(Map<String, String> headers) {
             Assert.assertNull(currentPartData);
-            if (partList == null) {
-                partList = new ArrayList<ByteArrayBuffer>();
-            }
-            currentPartData = new ByteArrayBuffer(1024);
+            if (partList == null)
+                partList = new ArrayList<CustomByteArrayOutputStream>();
+            currentPartData = new CustomByteArrayOutputStream(1024);
             partList.add(currentPartData);
-            if (headersList == null) {
+            if (headersList == null)
                 headersList = new ArrayList<Map<String, String>>();
-            }
             headersList.add(headers);
         }
 
@@ -40,10 +49,9 @@ public class MultipartReaderTest extends LiteTestCase {
             appendToPart(data, 0, data.length);
         }
 
-        public void appendToPart(final byte[] data, int off, int len)
-        {
+        public void appendToPart(final byte[] data, int off, int len) {
             Assert.assertNotNull(currentPartData);
-            currentPartData.append(data, off, len);
+            currentPartData.write(data, off, len);
         }
 
         public void finishedPart() {
@@ -99,8 +107,7 @@ public class MultipartReaderTest extends LiteTestCase {
 
     }
 
-    public void testReaderOperation()
-    {
+    public void testReaderOperation() {
         Charset utf8 = Charset.forName("UTF-8");
 
         byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
@@ -112,7 +119,7 @@ public class MultipartReaderTest extends LiteTestCase {
         StringBuffer mime3Buffer = new StringBuffer();
         StringBuffer mime3BufferFirstPart = new StringBuffer();
         mime3Buffer.append("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\n");
-        for (int i=0; i<10000; i++) {
+        for (int i = 0; i < 10000; i++) {
             mime3BufferFirstPart.append("large_part_data");
         }
         mime3Buffer.append(mime3BufferFirstPart);
@@ -121,15 +128,14 @@ public class MultipartReaderTest extends LiteTestCase {
         readerOperationWithMime(mime3, mime3BufferFirstPart.toString(), "2nd part", 1024);
     }
 
-    private void readerOperationWithMime(byte[] mime, String part1ExpectedStr, String part2ExpectedStr, int recommendedChunkSize)
-    {
+    private void readerOperationWithMime(byte[] mime, String part1ExpectedStr, String part2ExpectedStr, int recommendedChunkSize) {
         Charset utf8 = Charset.forName("UTF-8");
 
         // if the caller passes in a special chunksize, which is not equal to mime.length, then
         // lets test the algorithm _only_ at that chunksize.  otherwise, test it at every chunksize
         // between 1 and mime.length.  (this is needed because when testing with a very large mime value,
         // the test takes too long to test at every single chunk size)
-        int chunkSize=1;
+        int chunkSize = 1;
         if (recommendedChunkSize != mime.length) {
             chunkSize = recommendedChunkSize;
         }
@@ -158,8 +164,8 @@ public class MultipartReaderTest extends LiteTestCase {
 
             byte[] part1Expected = part1ExpectedStr.getBytes(utf8);
             byte[] part2Expected = part2ExpectedStr.getBytes(utf8);
-            ByteArrayBuffer part1 = delegate.partList.get(0);
-            ByteArrayBuffer part2 = delegate.partList.get(1);
+            CustomByteArrayOutputStream part1 = delegate.partList.get(0);
+            CustomByteArrayOutputStream part2 = delegate.partList.get(1);
             Assert.assertTrue(Arrays.equals(part1.toByteArray(), part1Expected));
             Assert.assertTrue(Arrays.equals(part2.toByteArray(), part2Expected));
 
