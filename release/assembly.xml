@@ -7,89 +7,89 @@
     </formats>
     <files>
         <file>
-            <source> ${ZIP_HOME}/LICENSE.TXT </source>
+            <source>${ZIP_HOME}/LICENSE.TXT</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <!-- locally built  -->
         <file>
-            <source> ${ZIP_HOME}/${JAR_JAVA_CORE} </source>
+            <source>${ZIP_HOME}/${JAR_JAVA_CORE}</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/${AND_CLASS_AAR} </source>
+            <source>${ZIP_HOME}/${AND_CLASS_AAR}</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/${JAR_JA_SCRIPT} </source>
+            <source>${ZIP_HOME}/${JAR_JA_SCRIPT}</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/${JAR_JLISTENER} </source>
+            <source>${ZIP_HOME}/${JAR_JLISTENER}</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/couchbase-lite-android-forestdb-${REVISION}.aar</source>
+            <source>${ZIP_HOME}/couchbase-lite-android-forestdb-${REVISION}.aar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/couchbase-lite-android-sqlite-default-${REVISION}.aar</source>
+            <source>${ZIP_HOME}/couchbase-lite-android-sqlite-default-${REVISION}.aar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/couchbase-lite-android-sqlite-custom-${REVISION}.aar</source>
+            <source>${ZIP_HOME}/couchbase-lite-android-sqlite-custom-${REVISION}.aar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/couchbase-lite-android-sqlcipher-${REVISION}.aar</source>
+            <source>${ZIP_HOME}/couchbase-lite-android-sqlcipher-${REVISION}.aar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <!-- third-party    -->
         <file>
-            <source> ${ZIP_HOME}/rhino-${rhino.version}.jar                </source>
+            <source>${ZIP_HOME}/rhino-${rhino.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/stateless4j-${stateless4j.version}.jar    </source>
+            <source>${ZIP_HOME}/stateless4j-${stateless4j.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/commons-io-${commons-io.version}.jar      </source>
+            <source>${ZIP_HOME}/commons-io-${commons-io.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/jackson-annotations-${jackson.version}.jar   </source>
+            <source>${ZIP_HOME}/jackson-annotations-${jackson.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/jackson-core-${jackson.version}.jar </source>
+            <source>${ZIP_HOME}/jackson-core-${jackson.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/jackson-databind-${jackson.version}.jar </source>
+            <source>${ZIP_HOME}/jackson-databind-${jackson.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/servlet-${servlet.version}.jar            </source>
+            <source>${ZIP_HOME}/servlet-${servlet.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
         <file>
-            <source> ${ZIP_HOME}/webserver-${servlet.version}.jar          </source>
+            <source>${ZIP_HOME}/webserver-${servlet.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
