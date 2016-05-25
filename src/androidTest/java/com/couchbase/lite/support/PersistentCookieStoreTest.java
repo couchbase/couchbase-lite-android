@@ -85,6 +85,7 @@ public class PersistentCookieStoreTest extends LiteTestCaseWithDB {
                 .path(cookiePath)
                 .build();
 
+        // TODO: HttpUrl parameter should be revisited.
         cookieJar.saveFromResponse(null, Arrays.asList(cookie));
 
         assertEquals(1, cookieJar.loadForRequest(null).size());
