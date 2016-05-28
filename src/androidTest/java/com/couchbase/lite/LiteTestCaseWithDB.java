@@ -189,8 +189,20 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected Context getTestContext(String dirName, boolean deleteContent) {
         Context context = getTestContext(dirName);
-        if (deleteContent && context.getFilesDir().exists())
-            assertTrue(FileDirUtils.cleanDirectory(context.getFilesDir()));
+        if (deleteContent && context.getFilesDir().exists()) {
+            // NOTE: retry and sleep is only for Windows. Other platforms never fail.
+            int counter = 0;
+            while (!FileDirUtils.cleanDirectory(context.getFilesDir()) && counter < 10) {
+                // NOTE: forestdb releses resources in Object.destroy()
+                System.gc();
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                }
+                counter++;
+            }
+            assertTrue(counter < 10);
+        }
         return context;
     }
 
