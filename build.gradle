@@ -31,10 +31,15 @@ android {
         versionCode 1
         versionName "1.0"
     }
+    
     buildTypes {
         release {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
+    }
+
+    lintOptions {
+        abortOnError false
     }
 
     // workaround for "duplicate files during packaging of APK" issue
