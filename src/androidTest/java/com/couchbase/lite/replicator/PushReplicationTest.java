@@ -43,7 +43,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
      * As default, test is disabled.
      * https://github.com/couchbase/couchbase-lite-java-core/issues/1108
      */
-    public void testPushWithManyAttachment() throws Exception {
+    public void manualTestPushWithManyAttachment() throws Exception {
         // add document
         String docId = "doc1";
         String docPathRegex = String.format("/db/%s.*", docId);
