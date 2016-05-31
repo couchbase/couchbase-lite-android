@@ -166,7 +166,6 @@ public class BackFillTest extends LiteTestCaseWithDB {
             QueryRow row = rows.get(i);
             Log.v(Log.TAG, "docID=" + row.getDocumentId());
             Log.v(Log.TAG, "sequenceNumber=" + row.getSequenceNumber());
-            Log.v(Log.TAG, "properties=" + row.getDocument().getProperties().toString());
         }
     }
 }
