@@ -782,8 +782,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
             Map<String, Object> value = new HashMap<String, Object>();
             value.put("rev", rev.getRevID());
             value.put("_conflicts", new ArrayList<String>());
-            QueryRow queryRow = new QueryRow(rev.getDocID(), 0, rev.getDocID(), value, null, null);
-            //queryRow.setDatabase(database);
+            QueryRow queryRow = new QueryRow(rev.getDocID(), 0, rev.getDocID(), value, null);
             expectedRow.add(queryRow);
         }
 
