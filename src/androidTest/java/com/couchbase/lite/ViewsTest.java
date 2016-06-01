@@ -3395,9 +3395,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
                     props.put("phone_mobile", String.format("*3816400%04d", 1));
                     props.put("name", String.format("Miloš Micić - Micke - %d", 1));
                     props.put("origin", "couchdb");
-                    //props.put("id_origin", "266392");
                     props.put("type", "client");
-                    //props.put("device_imei", "352584060971220");
                     Document doc = database.createDocument();
                     doc.putProperties(props);
 
@@ -3405,8 +3403,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
                     props.put("time_create", new Date());
                     props.put("phone_mobile", String.format("*3816400%04d", 1));
                     props.put("name", String.format("Miloš Micić - Micke - %d", 1));
-                    //props.put("origin", "couchdb");
-                    //props.put("id_origin", "266392");
                     props.put("type", "client");
                     props.put("device_imei", "352584060971220");
                     doc = database.createDocument();
@@ -3416,8 +3412,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
                     props.put("time_create", new Date());
                     props.put("phone_mobile", String.format("*3816400%04d", 1));
                     props.put("name", String.format("Miloš Micić - Micke - %d", 1));
-                    //props.put("origin", "couchdb");
-                    //props.put("id_origin", "266392");
                     props.put("type", "test_type");
                     props.put("device_imei", "352584060971220");
                     doc = database.createDocument();
@@ -3436,22 +3430,18 @@ public class ViewsTest extends LiteTestCaseWithDB {
             Query orderedQuery = view.createQuery();
             orderedQuery.setStartKey(Arrays.asList(deviceIMEI, null));
             orderedQuery.setEndKey(Arrays.asList(deviceIMEI, new HashMap<String, Object>()));
-            try {
-                Log.v(TAG, String.format("orderedQuery.run()"));
-                QueryEnumerator results = orderedQuery.run();
-                /* Iterate through the rows to get the document ids */
-                int counter = 0;
-                for (Iterator<QueryRow> it = results; it.hasNext(); ) {
-                    QueryRow row = it.next();
-                    Log.v(TAG, String.format("[%d] Document ID: %s added to view %s", counter, row.getDocumentId(), "client_by_name_device"));
-                    counter++;
-                }
-                Log.v(TAG, String.format("Iterrator done"));
-                assertEquals(500, counter);
-            } catch (CouchbaseLiteException e) {
-                Log.e(TAG, String.format("Error querying view %s.", "client_by_name_device"), e);
-                assertTrue(false);
+            Log.v(TAG, String.format("orderedQuery.run()"));
+            QueryEnumerator results = orderedQuery.run();
+            /* Iterate through the rows to get the document ids */
+            int counter = 0;
+            for (Iterator<QueryRow> it = results; it.hasNext(); ) {
+                QueryRow row = it.next();
+                Log.v(TAG, String.format("[%d] Document ID: %s added to view %s",
+                        counter, row.getDocumentId(), "client_by_name_device"));
+                counter++;
             }
+            assertEquals(500, counter);
+            Log.v(TAG, String.format("Iterrator done"));
         }
     }
 
@@ -3481,7 +3471,10 @@ public class ViewsTest extends LiteTestCaseWithDB {
                 "Nenad Stojnić",
                 "Miloš Micić",
                 "Ненад Стојнић",
-                "Милош Мицић"
+                "Милош Мицић",
+                "øæåÆØÅ",
+                "↪",
+                "日本語"
         };
 
         // Insert Documents
@@ -3509,27 +3502,24 @@ public class ViewsTest extends LiteTestCaseWithDB {
             }
         });
 
-        // Query
+        // Query by Key
         for (int i = 0; i < names.length; i++) {
             Query orderedQuery = view.createQuery();
             orderedQuery.setStartKey(names[i]);
             orderedQuery.setEndKey(names[i]);
-            try {
-                Log.v(TAG, String.format("orderedQuery.run()"));
-                QueryEnumerator results = orderedQuery.run();
-                /* Iterate through the rows to get the document ids */
-                int counter = 0;
-                for (Iterator<QueryRow> it = results; it.hasNext(); ) {
-                    QueryRow row = it.next();
-                    Log.v(TAG, String.format("[%d] Document ID: %s added to view %s", counter, row.getDocumentId(), "client_by_name"));
-                    counter++;
-                }
-                Log.v(TAG, String.format("Iterrator done"));
-                assertEquals(1, counter);
-            } catch (CouchbaseLiteException e) {
-                Log.e(TAG, String.format("Error querying view %s.", "client_by_name"), e);
-                assertTrue(false);
+            Log.v(TAG, String.format("orderedQuery.run()"));
+            QueryEnumerator results = orderedQuery.run();
+            /* Iterate through the rows to get the document ids */
+            int counter = 0;
+            for (Iterator<QueryRow> it = results; it.hasNext(); ) {
+                QueryRow row = it.next();
+                Log.e(TAG, String.format("[%d] Document ID: %s added to view %s",
+                        counter, row.getDocumentId(), "client_by_name"));
+                assertEquals(names[i], (String) row.getKey());
+                counter++;
             }
+            assertEquals(1, counter);
+            Log.v(TAG, String.format("Iterrator done"));
         }
     }
 }
