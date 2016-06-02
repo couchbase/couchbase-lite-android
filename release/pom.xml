@@ -47,13 +47,6 @@
         </JAR_SRC_AND_CLASS>
         <JAR_DST_AND_CLASS>${STAGING}/${JAR_AND_CLASS}</JAR_DST_AND_CLASS>
 
-
-        <JAR_COLLATORS>cbl_collator_so-${REVISION}.jar</JAR_COLLATORS>
-        <JNI_SRC_DIR>${basedir}/couchbase-lite-android/jniLibs</JNI_SRC_DIR>
-        <COLLATOR_STAGING>${basedir}/staging_collator</COLLATOR_STAGING>
-        <JNI_DST_DIR>${COLLATOR_STAGING}/lib</JNI_DST_DIR>
-        <JAR_SRC_COLLATORS>${STAGING}/${JAR_COLLATORS}</JAR_SRC_COLLATORS>
-
         <POM_AND_CLASS>couchbase-lite-android-${REVISION}.pom</POM_AND_CLASS>
         <POM_JAVA_CORE>couchbase-lite-java-core-${REVISION}.pom</POM_JAVA_CORE>
         <POM_JA_SCRIPT>couchbase-lite-java-javascript-${REVISION}.pom</POM_JA_SCRIPT>
@@ -243,8 +236,6 @@
                         <configuration>
                             <tasks>
                                 <delete dir="${JNI_DST_DIR}" failonerror="true" verbose="true"/>
-                                <delete dir="${COLLATOR_STAGING}" failonerror="true"
-                                        verbose="true"/>
                                 <delete dir="${ZIP_HOME}" failonerror="true" verbose="true"/>
                             </tasks>
                         </configuration>
@@ -259,8 +250,6 @@
                             <tasks>
                                 <delete failonerror="true" file="${JAR_DST_AND_CLASS}"
                                         verbose="true"/>
-                                <delete failonerror="true" file="${JAR_SRC_COLLATORS}"
-                                        verbose="true"/>
                             </tasks>
                         </configuration>
                     </execution>
@@ -274,26 +263,8 @@
                         <configuration>
                             <tasks>
                                 <mkdir dir="${STAGING}"/>
-                                <mkdir dir="${COLLATOR_STAGING}"/>
                                 <mkdir dir="${JNI_DST_DIR}"/>
                                 <mkdir dir="${ZIP_HOME}"/>
-                            </tasks>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <phase>prepare-package</phase>
-                        <id>create_collator_jar</id>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <tasks>
-                                <echo message="DEBUG:::   CREATE collator JAR"/>
-                                <copy flatten="false" todir="${JNI_DST_DIR}">
-                                    <fileset dir="${JNI_SRC_DIR}"/>
-                                </copy>
-                                <jar basedir="${COLLATOR_STAGING}" destfile="${JAR_SRC_COLLATORS}"/>
                             </tasks>
                         </configuration>
                     </execution>
@@ -397,8 +368,6 @@
                                 <echo message="DEBUG:::   locally packaged android JARs"/>
 
                                 <copy file="${JAR_DST_AND_CLASS}" flatten="true"
-                                      preservelastmodified="true" todir="${ZIP_HOME}" verbose="true"/>
-                                <copy file="${JAR_SRC_COLLATORS}" flatten="true"
                                       preservelastmodified="true" todir="${ZIP_HOME}" verbose="true"/>
 
                                 <!-- third-party    -->

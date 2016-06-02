@@ -181,8 +181,6 @@
                         <configuration>
                             <tasks>
                                 <delete dir="${JNI_DST_DIR}" failonerror="true" verbose="true"/>
-                                <delete dir="${COLLATOR_STAGING}" failonerror="true"
-                                        verbose="true"/>
                                 <delete dir="${ZIP_HOME}" failonerror="true" verbose="true"/>
                             </tasks>
                         </configuration>
@@ -197,8 +195,6 @@
                             <tasks>
                                 <delete failonerror="true" file="${JAR_DST_AND_CLASS}"
                                         verbose="true"/>
-                                <delete failonerror="true" file="${JAR_SRC_COLLATORS}"
-                                        verbose="true"/>
                             </tasks>
                         </configuration>
                     </execution>
@@ -212,26 +208,8 @@
                         <configuration>
                             <tasks>
                                 <mkdir dir="${STAGING}"/>
-                                <mkdir dir="${COLLATOR_STAGING}"/>
                                 <mkdir dir="${JNI_DST_DIR}"/>
                                 <mkdir dir="${ZIP_HOME}"/>
-                            </tasks>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <phase>prepare-package</phase>
-                        <id>create_collator_jar</id>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <tasks>
-                                <echo message="DEBUG:::   CREATE collator JAR"/>
-                                <copy flatten="false" todir="${JNI_DST_DIR}">
-                                    <fileset dir="${JNI_SRC_DIR}"/>
-                                </copy>
-                                <jar basedir="${COLLATOR_STAGING}" destfile="${JAR_SRC_COLLATORS}"/>
                             </tasks>
                         </configuration>
                     </execution>
@@ -287,8 +265,6 @@
                                 <echo message="DEBUG:::   locally packaged android JARs"/>
 
                                 <copy file="${JAR_DST_AND_CLASS}" flatten="true"
-                                      preservelastmodified="true" todir="${ZIP_HOME}" verbose="true"/>
-                                <copy file="${JAR_SRC_COLLATORS}" flatten="true"
                                       preservelastmodified="true" todir="${ZIP_HOME}" verbose="true"/>
 
                                 <!-- third-party    -->

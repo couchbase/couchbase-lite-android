@@ -44,11 +44,6 @@
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
-        <file>
-            <source>${ZIP_HOME}/${JAR_COLLATORS}</source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>false</filtered>
-        </file>
 
         <!-- third-party    -->
         <file>
