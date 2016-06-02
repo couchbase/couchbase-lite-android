@@ -4,8 +4,8 @@
 : ${MAVEN_UPLOAD_PASSWORD:?"Need to set MAVEN_UPLOAD_PASSWORD non-empty"}
 : ${MAVEN_UPLOAD_REPO_URL:?"Need to set MAVEN_UPLOAD_REPO_URL non-empty"}
 
-./gradlew :libraries:couchbase-lite-java-core:build :libraries:couchbase-lite-java-forestdb:build :libraries:couchbase-lite-java-native:sqlcipher:build :libraries:couchbase-lite-java-native:sql-custom:build :libraries:couchbase-lite-java-native:sql-default:build &&
-./gradlew :libraries:couchbase-lite-java-core:uploadArchivesWrapper :libraries:couchbase-lite-java-forestdb:uploadArchivesWrapper :libraries:couchbase-lite-java-native:sqlcipher:uploadArchivesWrapper :libraries:couchbase-lite-java-native:sql-custom:uploadArchivesWrapper :libraries:couchbase-lite-java-native:sql-default:uploadArchivesWrapper
+./gradlew :libraries:couchbase-lite-java-core:build :libraries:couchbase-lite-java-forestdb:build :libraries:couchbase-lite-java-native:sqlcipher:build :libraries:couchbase-lite-java-native:sql-custom:build &&
+./gradlew :libraries:couchbase-lite-java-core:uploadArchivesWrapper :libraries:couchbase-lite-java-forestdb:uploadArchivesWrapper :libraries:couchbase-lite-java-native:sqlcipher:uploadArchivesWrapper :libraries:couchbase-lite-java-native:sql-custom:uploadArchivesWrapper
 
 
  wget http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android-forestdb/${MAVEN_UPLOAD_VERSION}/couchbase-lite-android-forestdb-${MAVEN_UPLOAD_VERSION}.pom
