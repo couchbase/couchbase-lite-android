@@ -116,13 +116,6 @@
         </dependency>
         <dependency>
             <groupId>com.couchbase.lite</groupId>
-            <artifactId>couchbase-lite-android-sqlite-default</artifactId>
-            <type>aar</type>
-            <version>${REVISION}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.couchbase.lite</groupId>
             <artifactId>couchbase-lite-android-sqlite-custom</artifactId>
             <type>aar</type>
             <version>${REVISION}</version>
@@ -334,15 +327,6 @@
                                     verbose="true"/>
                                 <copy
                                     file="${TARGET_DIR}/couchbase-lite-android-forestdb/${REVISION}/couchbase-lite-android-forestdb-${REVISION}.pom"
-                                    flatten="true" preservelastmodified="true" todir="${ZIP_HOME}"
-                                    verbose="true"/>
-
-                                <copy
-                                    file="${TARGET_DIR}/couchbase-lite-android-sqlite-default/${REVISION}/couchbase-lite-android-sqlite-default-${REVISION}.aar"
-                                    flatten="true" preservelastmodified="true" todir="${ZIP_HOME}"
-                                    verbose="true"/>
-                                <copy
-                                    file="${TARGET_DIR}/couchbase-lite-android-sqlite-default/${REVISION}/couchbase-lite-android-sqlite-default-${REVISION}.pom"
                                     flatten="true" preservelastmodified="true" todir="${ZIP_HOME}"
                                     verbose="true"/>
 
