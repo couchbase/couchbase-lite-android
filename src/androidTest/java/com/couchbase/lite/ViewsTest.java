@@ -25,6 +25,7 @@ import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -3521,5 +3522,56 @@ public class ViewsTest extends LiteTestCaseWithDB {
             assertEquals(1, counter);
             Log.v(TAG, String.format("Iterrator done"));
         }
+    }
+
+    /*
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/1249
+     */
+    public void testPurge() throws IOException, CouchbaseLiteException {
+        View view = database.getView("bookmarks");
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                String type = (String) document.get("type");
+                if (type.equals("bookmark")) {
+                    String name = (String) document.get("name");
+                    emitter.emit(name, null);
+                }
+            }
+        }, "1");
+
+        Document document1 = database.createDocument();
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("type", "bookmark");
+        properties.put("name", "test");
+        document1.putProperties(properties);
+
+        Document document2 = database.createDocument();
+        properties = new HashMap<>();
+        properties.put("type", "tag");
+        properties.put("name", "sample");
+        document2.putProperties(properties);
+
+        Query query = database.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.INCLUDE_DELETED);
+        QueryEnumerator enumerator = query.run();
+        assertEquals(2, enumerator.getCount());
+
+        query = view.createQuery();
+        enumerator = query.run();
+        assertEquals(1, enumerator.getCount());
+        assertEquals("test", enumerator.next().getDocument().getProperty("name"));
+
+        document1.purge();
+        document2.purge();
+
+        query = database.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.INCLUDE_DELETED);
+        enumerator = query.run();
+        assertEquals(0, enumerator.getCount());
+
+        query = view.createQuery();
+        enumerator = query.run();
+        assertEquals(0, enumerator.getCount());
     }
 }
