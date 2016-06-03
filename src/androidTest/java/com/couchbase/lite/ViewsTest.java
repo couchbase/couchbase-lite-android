@@ -3574,4 +3574,50 @@ public class ViewsTest extends LiteTestCaseWithDB {
         enumerator = query.run();
         assertEquals(0, enumerator.getCount());
     }
+
+    public void testJapaneseAsKey() throws CouchbaseLiteException {
+        // Setup View
+        View view = database.getView("japanese");
+        if (view != null) {
+            view.setMap(new Mapper() {
+                @Override
+                public void map(Map<String, Object> document, Emitter emitter) {
+                    emitter.emit(document.get("key"), null);
+                }
+            }, "1");
+        }
+
+        final String[] keys = {"日本語", "あ", "い"};
+        final String[] expected = {"あ", "い", "日本語"};
+
+        // Insert Documents
+        database.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                try {
+                    for (int i = 0; i < keys.length; i++) {
+                        Map<String, Object> props = new HashMap<>();
+                        props.put("key", keys[i]);
+                        Document doc = database.createDocument();
+                        doc.putProperties(props);
+                    }
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Failed to store document", e);
+                    return false;
+                }
+                return true;
+            }
+        });
+
+        // Query by Key
+        QueryEnumerator results = view.createQuery().run();
+        int i = 0;
+        for (Iterator<QueryRow> it = results; it.hasNext(); ) {
+            QueryRow row = it.next();
+            Log.e(TAG, "row=" + row.asJSONDictionary());
+            assertEquals(expected[i], row.getKey());
+            i++;
+        }
+        assertEquals(expected.length, i);
+    }
 }
