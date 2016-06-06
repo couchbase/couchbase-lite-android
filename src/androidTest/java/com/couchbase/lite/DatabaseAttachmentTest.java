@@ -173,153 +173,11 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
     }
 
     /**
-     * - (void) test13_GarbageCollectAttachments
-     */
-    public void test13_GarbageCollectAttachments() throws CouchbaseLiteException{
-        List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
-        for(int i = 0; i < 100; i++)
-            revs.add(this.putDocWithAttachment(String.format("doc-%d", i), String.format("Attachment #%d", i), false));
-        for (int i = 0; i < 40; i++) {
-            revs.set(i,
-                    database.updateAttachment(
-                            "attach",
-                            null,
-                            null,
-                            AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone,
-                            revs.get(i).getDocID(),
-                            revs.get(i).getRevID(),
-                            null));
-        }
-        database.compact();
-        assertEquals(60, database.getAttachmentStore().count());
-    }
-
-    /**
-     * NOTE: Most of methods that are used in this test are no longer available with 1.2.0 or later
-     * (With new table schema (iOS 1.1). If necessary, re-implment this test with new methods and
-     * expected values.
-     *
-     @SuppressWarnings("unchecked")
-     public void testPutLargeAttachment() throws Exception {
-
-     String testAttachmentName = "test_attachment";
-
-     BlobStore attachments = database.getAttachments();
-     attachments.deleteBlobs();
-     Assert.assertEquals(0, attachments.count());
-
-     Status status = new Status();
-     Map<String, Object> rev1Properties = new HashMap<String, Object>();
-     rev1Properties.put("foo", 1);
-     rev1Properties.put("bar", false);
-     RevisionInternal rev1 = database.putRevision(new RevisionInternal(rev1Properties), null, false, status);
-
-     Assert.assertEquals(Status.CREATED, status.getCode());
-
-     StringBuffer largeAttachment = new StringBuffer();
-     for (int i = 0; i < Database.kBigAttachmentLength; i++) {
-     largeAttachment.append("big attachment!");
-     }
-     byte[] attach1 = largeAttachment.toString().getBytes();
-     database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach1),
-     rev1.getSequence(), testAttachmentName, "text/plain", rev1.getGeneration());
-
-     Attachment attachment = database.getAttachmentForSequence(rev1.getSequence(), testAttachmentName);
-     Assert.assertEquals("text/plain", attachment.getContentType());
-     InputStream is = attachment.getContent();
-     byte[] data = IOUtils.toByteArray(is);
-     is.close();
-     Assert.assertTrue(Arrays.equals(attach1, data));
-
-     EnumSet<Database.TDContentOptions> contentOptions = EnumSet.of(
-     Database.TDContentOptions.TDIncludeAttachments,
-     Database.TDContentOptions.TDBigAttachmentsFollow
-     );
-
-     Map<String, Object> attachmentDictForSequence = database.getAttachmentsDictForSequenceWithContent(
-     rev1.getSequence(),
-     contentOptions
-     );
-
-     Map<String, Object> innerDict = (Map<String, Object>) attachmentDictForSequence.get(testAttachmentName);
-
-     if (innerDict.containsKey("stub")) {
-     if (((Boolean) innerDict.get("stub")).booleanValue() == true) {
-     throw new RuntimeException("Did not expected attachment dict 'stub' key to be true");
-     } else {
-     throw new RuntimeException("Did not expected attachment dict to have 'stub' key");
-     }
-     }
-
-     if (!innerDict.containsKey("follows")) {
-     throw new RuntimeException("Expected attachment dict to have 'follows' key");
-     }
-
-     RevisionInternal rev1WithAttachments = database.getDocumentWithIDAndRev(rev1.getDocId(), rev1.getRevId(), contentOptions);
-
-     Map<String, Object> rev1WithAttachmentsProperties = rev1WithAttachments.getProperties();
-
-     Map<String, Object> rev2Properties = new HashMap<String, Object>();
-     rev2Properties.put("_id", rev1WithAttachmentsProperties.get("_id"));
-     rev2Properties.put("foo", 2);
-
-     RevisionInternal newRev = new RevisionInternal(rev2Properties);
-     RevisionInternal rev2 = database.putRevision(newRev, rev1WithAttachments.getRevId(), false, status);
-     Assert.assertEquals(Status.CREATED, status.getCode());
-
-     database.copyAttachmentNamedFromSequenceToSequence(
-     testAttachmentName,
-     rev1WithAttachments.getSequence(),
-     rev2.getSequence());
-
-     // Check the 2nd revision's attachment:
-     Attachment rev2FetchedAttachment = database.getAttachmentForSequence(rev2.getSequence(), testAttachmentName);
-     Assert.assertEquals(attachment.getLength(), rev2FetchedAttachment.getLength());
-     Assert.assertEquals(attachment.getMetadata(), rev2FetchedAttachment.getMetadata());
-     Assert.assertEquals(attachment.getContentType(), rev2FetchedAttachment.getContentType());
-     // Because of how getAttachmentForSequence works rev2FetchedAttachment has an open stream as a body, we have to close it.
-     rev2FetchedAttachment.getContent().close();
-
-     // Add a third revision of the same document:
-     Map<String, Object> rev3Properties = new HashMap<String, Object>();
-     rev3Properties.put("_id", rev2.getProperties().get("_id"));
-     rev3Properties.put("foo", 3);
-     rev3Properties.put("baz", false);
-
-     RevisionInternal rev3 = new RevisionInternal(rev3Properties);
-     rev3 = database.putRevision(rev3, rev2.getRevId(), false, status);
-     Assert.assertEquals(Status.CREATED, status.getCode());
-
-     byte[] attach3 = "<html><blink>attach3</blink></html>".getBytes();
-     database.insertAttachmentForSequenceWithNameAndType(new ByteArrayInputStream(attach3),
-     rev3.getSequence(), testAttachmentName, "text/html", rev3.getGeneration());
-
-     // Check the 3rd revision's attachment:
-     Attachment rev3FetchedAttachment = database.getAttachmentForSequence(rev3.getSequence(), testAttachmentName);
-
-     InputStream isRev3 = rev3FetchedAttachment.getContent();
-     data = IOUtils.toByteArray(isRev3);
-     isRev3.close();
-     Assert.assertTrue(Arrays.equals(attach3, data));
-     Assert.assertEquals("text/html", rev3FetchedAttachment.getContentType());
-
-     // TODO: why doesn't this work?
-     // Assert.assertEquals(attach3.length, rev3FetchedAttachment.getLength());
-
-     Set<BlobKey> blobKeys = database.getAttachments().allKeys();
-     Assert.assertEquals(2, blobKeys.size());
-     database.compact();
-     blobKeys = database.getAttachments().allKeys();
-     Assert.assertEquals(1, blobKeys.size());
-     }
-     */
-
-    /**
      * in DatabaseAttachment_Tests.m
      * - (void) test11_PutAttachment
      */
     @SuppressWarnings("unchecked")
-    public void testPutAttachment() throws Exception {
+    public void test11_PutAttachment() throws Exception {
 
         // Put a revision that includes an _attachments dict:
         RevisionInternal rev1 = putDocWithAttachment(null, "This is the body of attach1", false);
@@ -438,6 +296,28 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
         // Get the updated revision:
         RevisionInternal gotRev3 = database.getDocument(rev3.getDocID(), rev3.getRevID(), true);
         Assert.assertNull(gotRev3.getAttachments());
+    }
+
+    /**
+     * - (void) test13_GarbageCollectAttachments
+     */
+    public void test13_GarbageCollectAttachments() throws CouchbaseLiteException {
+        List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
+        for (int i = 0; i < 100; i++)
+            revs.add(this.putDocWithAttachment(String.format("doc-%d", i), String.format("Attachment #%d", i), false));
+        for (int i = 0; i < 40; i++) {
+            revs.set(i,
+                    database.updateAttachment(
+                            "attach",
+                            null,
+                            null,
+                            AttachmentInternal.AttachmentEncoding.AttachmentEncodingNone,
+                            revs.get(i).getDocID(),
+                            revs.get(i).getRevID(),
+                            null));
+        }
+        database.compact();
+        assertEquals(60, database.getAttachmentStore().count());
     }
 
     public void testAddAndGetAttachment() throws CouchbaseLiteException {
