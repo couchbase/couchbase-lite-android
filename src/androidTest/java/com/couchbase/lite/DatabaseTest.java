@@ -19,6 +19,7 @@ import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.support.FileDirUtils;
 import com.couchbase.lite.support.RevisionUtils;
+import com.couchbase.lite.util.IOUtils;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
@@ -415,7 +416,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
     }
 
     // Database_Tests.m : test18_Attachments
-    public void testAttachments() throws Exception {
+    public void test18_Attachments() throws Exception {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testAttachments");
         properties.put("count", 1);
@@ -477,12 +478,29 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertNotNull(rev4);
         assertEquals(0, rev4.getAttachments().size());
         assertEquals(0, rev4.getAttachmentNames().size());
+
+        // Add an attachment with revpos=0 (see #1200)
+        Map<String, Object> props = new HashMap<>(rev3.getProperties());
+        Map<String, Object> atts = new HashMap<>((Map<String, Object>) props.get("_attachments"));
+        props.put("_attachments", atts);
+        Map<String, Object> att = new HashMap<>();
+        att.put("content_type", "text/plain");
+        att.put("revpos", 0);
+        att.put("following", true);
+        atts.put("zero.txt", att);
+        Map<String, Object> attachment = new HashMap<>();
+        attachment.put("zero.txt", "zero".getBytes());
+        List<String> history = Arrays.asList("3-0000", rev3.getId(), rev.getId());
+        assertTrue(doc.putExistingRevision(props, attachment, history, null));
+
+        Revision rev5 = doc.getRevision("3-0000");
+        assertNotNull(rev5.getAttachment("zero.txt"));
     }
 
     public void testAttachmentsWithEncryption() throws Exception {
         setEncryptedAttachmentStore(true);
         try {
-            testAttachments();
+            test18_Attachments();
         } finally {
             setEncryptedAttachmentStore(false);
         }
@@ -820,4 +838,88 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertEquals(longBranch.getRevID(), longBranch.getRevID());
     }
 
+    /**
+     * - (void) test071_PutExistingRevision in Unit-Tests/Database_Tests.m
+     */
+    public void test071_PutExistingRevision() throws CouchbaseLiteException {
+        Map<String, Object> props = new HashMap<>();
+        props.put("foo", 1);
+        Document doc = createDocWithProperties(props);
+
+        props.clear();
+        props.put("foo", 2);
+        List<String> history = Arrays.asList("3-cafebabe", "2-feedba95", doc.getCurrentRevisionId());
+
+        assertTrue(doc.putExistingRevision(props, null, history, null));
+
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("_id", doc.getId());
+        expected.put("_rev", "3-cafebabe");
+        expected.put("foo", 2);
+        Revision rev = doc.getRevision("3-cafebabe");
+        assertNotNull(rev);
+        assertFalse(rev.isDeletion());
+        assertEquals(expected, rev.getProperties());
+
+        // Repeat; should be no error:
+        assertTrue(doc.putExistingRevision(props, null, history, null));
+
+        // Add a deleted revision:
+        props.clear();
+        props.put("foo", -1);
+        props.put("_deleted", true);
+        history = Arrays.asList("3-deadbeef", "2-feedba95", doc.getCurrentRevisionId());
+        assertTrue(doc.putExistingRevision(props, null, history, null));
+
+        expected.clear();
+        expected.put("_id", doc.getId());
+        expected.put("_rev", "3-deadbeef");
+        expected.put("_deleted", true);
+        expected.put("foo", -1);
+
+        rev = doc.getRevision("3-deadbeef");
+        assertNotNull(rev);
+        assertTrue(rev.isDeletion());
+        assertEquals(expected, rev.getProperties());
+    }
+
+    /**
+     * - (void) test072_PutExistingRevisionWithAttachment in Unit-Tests/Database_Tests.m
+     */
+    public void test072_PutExistingRevisionWithAttachment() throws Exception {
+        Document doc = database.getDocument("some-doc");
+
+        byte[] content = "hi there".getBytes("UTF-8");
+
+        Map<String, Object> foo = new HashMap<>();
+        foo.put("content_type", "text/plain");
+        Map<String, Object> bar = new HashMap<>();
+        bar.put("content_type", "text/plain");
+        bar.put("stub", true);
+        Map<String, Map<String, Object>> atts = new HashMap<>();
+        atts.put("foo.txt", foo);
+        atts.put("bar.txt", bar);
+        Map<String, Object> props = new HashMap<>();
+        props.put("_attachments", atts);
+
+        Map<String, Object> attachments = new HashMap<>();
+        attachments.put("foo.txt", content);
+        attachments.put("bar.txt", content);
+
+        assertTrue(doc.putExistingRevision(props, attachments, Arrays.asList("1-cafebabe"), null));
+
+        Revision rev = doc.getCurrentRevision();
+        assertNotNull(rev);
+        assertFalse(rev.isDeletion());
+        assertEquals("1-cafebabe", rev.getId());
+        Attachment a = rev.getAttachment("foo.txt");
+        assertNotNull(a);
+        assertEquals("text/plain", a.getContentType());
+        assertEquals("hi there", new String(IOUtils.toByteArray(a.getContent()), "UTF-8"));
+
+        a = rev.getAttachment("bar.txt");
+        assertNotNull(a);
+        assertEquals("text/plain", a.getContentType());
+        assertEquals("hi there", new String(IOUtils.toByteArray(a.getContent()), "UTF-8"));
+    }
 }
