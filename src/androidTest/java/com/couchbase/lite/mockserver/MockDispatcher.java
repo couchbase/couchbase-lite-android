@@ -116,7 +116,6 @@ public class MockDispatcher extends Dispatcher {
                         }
                     }
                     MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
-                    System.out.println(String.format(Locale.ENGLISH, "Response: %s", mockResponse.getBody()));
                     addHeaders(mockResponse);
                     recordedReponseMap.put(request, mockResponse);
                     return mockResponse;
