@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -19,8 +19,6 @@ import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.apache.commons.io.IOUtils;
 
@@ -34,6 +32,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 
 public class RouterTest extends LiteTestCaseWithDB {
 
@@ -195,17 +196,17 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals("not_acceptable", body.get("error"));
 
         // with attachments=true query parameter
-        result = (Map<String, Object>)send("GET", "/db/docWithAttachment?attachments=true", Status.OK, null);
+        result = (Map<String, Object>) send("GET", "/db/docWithAttachment?attachments=true", Status.OK, null);
         assertNotNull(result);
         assertNotNull(result.get("_attachments"));
         Map<String, Object> att = (Map<String, Object>) ((Map<String, Object>) result.get("_attachments")).get("inline.txt");
         assertNotNull(att);
         assertNotNull(att.get("data"));
-        assertTrue(((String)att.get("data")).length() > 0);
+        assertTrue(((String) att.get("data")).length() > 0);
         assertFalse(att.containsKey("stub"));
 
         // without attachments=true query parameter
-        result = (Map<String, Object>)send("GET", "/db/docWithAttachment", Status.OK, null);
+        result = (Map<String, Object>) send("GET", "/db/docWithAttachment", Status.OK, null);
         assertNotNull(result);
         assertNotNull(result.get("_attachments"));
         att = (Map<String, Object>) ((Map<String, Object>) result.get("_attachments")).get("inline.txt");
@@ -783,9 +784,9 @@ public class RouterTest extends LiteTestCaseWithDB {
             MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
 
-            server.play();
+            server.start();
 
-            Map<String, Object> replicateJsonMap = getPushReplicationParsedJson(server.getUrl("/db"));
+            Map<String, Object> replicateJsonMap = getPushReplicationParsedJson(server.url("/db").url());
 
             Log.v(TAG, "map: " + replicateJsonMap);
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
@@ -794,7 +795,7 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             boolean success = waitForReplicationToFinish();
             assertTrue(success);
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -827,10 +828,10 @@ public class RouterTest extends LiteTestCaseWithDB {
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         try {
-            server.play();
+            server.start();
 
             // kick off replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
             Log.v(TAG, "map: " + replicateJsonMap);
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             Log.v(TAG, "result: " + result);
@@ -839,7 +840,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             // wait for replication to finish
             boolean success = waitForReplicationToFinish();
             assertTrue(success);
-        }finally {
+        } finally {
             // cleanup
             server.shutdown();
         }
@@ -999,10 +1000,10 @@ public class RouterTest extends LiteTestCaseWithDB {
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         try {
-            server.play();
+            server.start();
 
             // kick off 1st replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
             Log.i(TAG, "map: " + replicateJsonMap);
 
             Log.i(TAG, "Call 1st /_replicate");
@@ -1039,7 +1040,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             assertFalse(sessionId1.equals(sessionId2));
             assertFalse(sessionId1.equals(sessionId3));
             assertFalse(sessionId2.equals(sessionId3));
-        }finally {
+        } finally {
             // cleanup
             server.shutdown();
         }
@@ -1057,10 +1058,10 @@ public class RouterTest extends LiteTestCaseWithDB {
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         try {
-            server.play();
+            server.start();
 
             // kick off 1st replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
             replicateJsonMap.put("continuous", true);
             Log.i(TAG, "map: " + replicateJsonMap);
 
@@ -1082,15 +1083,15 @@ public class RouterTest extends LiteTestCaseWithDB {
             // WAIT replicator becomes IDLE
             List<CountDownLatch> replicationIdleSignals = new ArrayList<CountDownLatch>();
             List<Replication> repls = database.getActiveReplications();
-            for(Replication repl : repls){
-                if(repl.getStatus()== Replication.ReplicationStatus.REPLICATION_ACTIVE){
+            for (Replication repl : repls) {
+                if (repl.getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
                     final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
                     ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdleSignal);
                     repl.addChangeListener(idleObserver);
                     replicationIdleSignals.add(replicationIdleSignal);
                 }
             }
-            for(CountDownLatch signal : replicationIdleSignals){
+            for (CountDownLatch signal : replicationIdleSignals) {
                 assertTrue(signal.await(30, TimeUnit.SECONDS));
             }
 
@@ -1104,15 +1105,15 @@ public class RouterTest extends LiteTestCaseWithDB {
             // WAIT replicator becomes IDLE
             replicationIdleSignals = new ArrayList<CountDownLatch>();
             repls = database.getActiveReplications();
-            for(Replication repl : repls){
-                if(repl.getStatus()== Replication.ReplicationStatus.REPLICATION_ACTIVE){
+            for (Replication repl : repls) {
+                if (repl.getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
                     final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
                     ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(replicationIdleSignal);
                     repl.addChangeListener(idleObserver);
                     replicationIdleSignals.add(replicationIdleSignal);
                 }
             }
-            for(CountDownLatch signal : replicationIdleSignals){
+            for (CountDownLatch signal : replicationIdleSignals) {
                 assertTrue(signal.await(30, TimeUnit.SECONDS));
             }
 
@@ -1129,7 +1130,7 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             assertTrue(sessionId1.equals(sessionId2));
             assertTrue(sessionId1.equals(sessionId3));
-        }finally {
+        } finally {
             // cleanup
             server.shutdown();
         }
@@ -1144,10 +1145,10 @@ public class RouterTest extends LiteTestCaseWithDB {
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         try {
-            server.play();
+            server.start();
 
             // kick off replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
             Log.i(TAG, "map: " + replicateJsonMap);
 
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
@@ -1160,7 +1161,7 @@ public class RouterTest extends LiteTestCaseWithDB {
                 Map<String, Object> resp = (Map<String, Object>) obj;
                 assertEquals("Stopped", resp.get("status"));
             }
-        }finally {
+        } finally {
             // cleanup
             server.shutdown();
         }
@@ -1222,13 +1223,13 @@ public class RouterTest extends LiteTestCaseWithDB {
         // NOTE: To test feed=longpoll, use AndroidLiteServ
     }
 
-    private static String[] obtainChangesRevIDs(Map<String, Object> res){
+    private static String[] obtainChangesRevIDs(Map<String, Object> res) {
         List<String> revIDs = new ArrayList<String>();
-        List<Map<String, Object>> results = (List<Map<String, Object>>)res.get("results");
+        List<Map<String, Object>> results = (List<Map<String, Object>>) res.get("results");
         Map<String, Object> result = results.get(0);
-        List<Map<String, Object>> changes = (List<Map<String, Object>>)result.get("changes");
-        for(Map<String, Object> change :changes){
-            revIDs.add((String)change.get("rev"));
+        List<Map<String, Object>> changes = (List<Map<String, Object>>) result.get("changes");
+        for (Map<String, Object> change : changes) {
+            revIDs.add((String) change.get("rev"));
         }
         return revIDs.toArray(new String[revIDs.size()]);
     }
@@ -1325,9 +1326,9 @@ public class RouterTest extends LiteTestCaseWithDB {
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         try {
-            server.play();
+            server.start();
             // kick off replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.getUrl("/db"));
+            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
             List<String> docIDs = new ArrayList();
             docIDs.add("doc0");
             replicateJsonMap.put("doc_ids", docIDs);
@@ -1348,7 +1349,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             assertNotNull(docids);
             assertEquals(1, docids.size());
             assertTrue(docIDs.contains("doc0"));
-        }finally {
+        } finally {
             server.shutdown();
         }
     }

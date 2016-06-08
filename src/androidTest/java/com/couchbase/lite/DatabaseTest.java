@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -22,7 +22,6 @@ import com.couchbase.lite.support.RevisionUtils;
 import com.couchbase.lite.util.IOUtils;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.TextUtils;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -38,6 +37,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import okhttp3.mockwebserver.MockWebServer;
 
 public class DatabaseTest extends LiteTestCaseWithDB {
     /**
@@ -259,9 +260,9 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
         try {
-            server.play();
+            server.start();
 
-            final Replication replication = database.createPullReplication(server.getUrl("/db"));
+            final Replication replication = database.createPullReplication(server.url("/db").url());
 
             assertEquals(0, database.getAllReplications().size());
             assertEquals(0, database.getActiveReplications().size());
@@ -290,7 +291,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
             assertEquals(1, database.getAllReplications().size());
             assertEquals(0, database.getActiveReplications().size());
-        }finally {
+        } finally {
             server.shutdown();
         }
     }
@@ -411,7 +412,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         // Try to read the document:
         doc = database.getDocument(docId);
         assertNotNull(doc);
-        Map<String,Object> properties = doc.getProperties();
+        Map<String, Object> properties = doc.getProperties();
         assertNotNull(properties);
         assertEquals(content, properties.get("content"));
     }
@@ -775,25 +776,25 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("branch", "short");
-        RevisionInternal shortBranch = database.put("robin",props,base.getRevID(),false, null, status);
+        RevisionInternal shortBranch = database.put("robin", props, base.getRevID(), false, null, status);
         assertNotNull(shortBranch);
 
         RevisionInternal longBranch = base;
-        for(int i = 0; i < 8; i++){
+        for (int i = 0; i < 8; i++) {
             props = new HashMap<String, Object>();
-            props.put("branch","long");
+            props.put("branch", "long");
             longBranch = database.put("robin", props, longBranch.getRevID(), i == 0, null, status);
             assertNotNull(longBranch);
         }
 
         Log.i(TAG, "All revisions = %s", database.getStore().getAllRevisions("robin", false));
 
-        List <SavedRevision> all = database.getDocument("robin").getConflictingRevisions();
+        List<SavedRevision> all = database.getDocument("robin").getConflictingRevisions();
         Log.i(TAG, "Conflicts = %s", all);
 
         assertEquals(2, all.size());
         List<String> allRevIDs = new ArrayList<String>();
-        for(SavedRevision rev:all)
+        for (SavedRevision rev : all)
             allRevIDs.add(rev.getId());
         assertTrue(allRevIDs.contains(shortBranch.getRevID()));
         assertTrue(allRevIDs.contains(longBranch.getRevID()));
@@ -806,7 +807,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         List<RevisionInternal> longHistory = database.getRevisionHistory(longBranch);
 
         props = new HashMap<String, Object>();
-        props.put("_deleted",true);
+        props.put("_deleted", true);
         shortBranch = database.put("robin", props, shortBranch.getRevID(), false, null, status);
         assertNotNull(shortBranch);
         props = new HashMap<String, Object>();
@@ -824,11 +825,11 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         // Add the conflicting revisions back, as a pull replication might do:
         List<String> history = new ArrayList<String>();
-        for(RevisionInternal rev:shortHistory)
+        for (RevisionInternal rev : shortHistory)
             history.add(rev.getRevID());
         database.forceInsert(shortConflict, history, null);
         history.clear();
-        for(RevisionInternal rev:longHistory)
+        for (RevisionInternal rev : longHistory)
             history.add(rev.getRevID());
         database.forceInsert(longConflict, history, null);
 
