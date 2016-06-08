@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -14,8 +14,6 @@
 package com.couchbase.lite.mockserver;
 
 import com.couchbase.lite.Manager;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,8 +22,11 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/*
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.RecordedRequest;
+import okio.Buffer;
 
+/*
     Mock checkpoint response for a 201 PUT request to update the checkpoint
 
     {
@@ -112,9 +113,11 @@ public class MockCheckpointPut implements SmartMockResponse {
 
             // extract the _rev field from the request
             try {
-                Map <String, Object> jsonMap = Manager.getObjectMapper().readValue(request.getUtf8Body(), Map.class);
+                // Request.getUtf8Body() consumes Buffer. So need to clone.
+                Buffer clone = request.getBody().clone();
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(clone.readByteArray(), Map.class);
                 if (jsonMap.containsKey("_rev")) {
-                    setRev((String)jsonMap.get("_rev"));
+                    setRev((String) jsonMap.get("_rev"));
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);

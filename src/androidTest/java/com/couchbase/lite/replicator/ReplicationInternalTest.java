@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -23,11 +23,12 @@ import com.couchbase.lite.mockserver.MockDocumentBulkGet;
 import com.couchbase.lite.mockserver.MockDocumentGet;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.util.Log;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 
 /**
  * Created by hideki on 12/15/15.
@@ -84,12 +85,11 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             mockCheckpointPut.setSticky(true);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
-
             // start mock server
-            server.play();
+            server.start();
 
             //create replication
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(false);
 
             //add change listener to notify when the replication is finished
@@ -131,7 +131,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
                     pull.remoteCheckpointDocID());
             assertEquals(doc3Seq, lastSequence);
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
@@ -193,10 +193,10 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
             // start mock server
-            server.play();
+            server.start();
 
             //create replication
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(true);
 
             CountDownLatch replicationIdleSignal = new CountDownLatch(1);
@@ -233,7 +233,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
                     pull.remoteCheckpointDocID());
             assertEquals(doc3Seq, lastSequence);
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
@@ -289,10 +289,10 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
             // start mock server
-            server.play();
+            server.start();
 
             //create replication
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(false);
 
             //add change listener to notify when the replication is finished
@@ -322,7 +322,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             assertNotNull(doc3);
             assertEquals("1-0003", doc3.getCurrentRevision().getId());
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
@@ -385,10 +385,10 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
             // start mock server
-            server.play();
+            server.start();
 
             //create replication
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(true);
 
             CountDownLatch replicationIdleSignal = new CountDownLatch(1);
@@ -416,7 +416,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             assertNotNull(doc3.getCurrentRevision());
             assertEquals("1-0003", doc3.getCurrentRevision().getId());
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
@@ -472,10 +472,10 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
             // start mock server
-            server.play();
+            server.start();
 
             //create replication
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(false);
 
             //add change listener to notify when the replication is finished
@@ -493,7 +493,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
 
             assertEquals(0, database.getDocumentCount());
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
@@ -558,10 +558,10 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
             // start mock server
-            server.play();
+            server.start();
 
             //create replication
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(true);
 
             CountDownLatch replicationDoneSignal = new CountDownLatch(1);
@@ -576,12 +576,11 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             assertEquals(0, database.getDocumentCount());
 
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
     public void testServerIsSyncGatewayVersion() {
-
         // sync gateway 1.2
         assertFalse(ReplicationInternal.serverIsSyncGatewayVersion(
                 "Couchbase Sync Gateway/1.2 branch/fix/server_header commit/5bfcf79+CHANGES",
@@ -696,10 +695,10 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
 
 
             // start mock server
-            server.play();
+            server.start();
 
             //create replication
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(false);
 
             //add change listener to notify when the replication is finished
@@ -724,18 +723,18 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             checkUserAgent(dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES));
             checkUserAgent(dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_BULK_GET));
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
     public void testStopReplication() throws Exception {
         MockWebServer server = null;
+        MockDispatcher dispatcher = new MockDispatcher();
         try {
             // Create mock server and play:
-            MockDispatcher dispatcher = new MockDispatcher();
             server = MockHelper.getMockWebServer(dispatcher);
             dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
-            server.play();
+            server.start();
 
             // Mock documents to be pulled:
             MockDocumentGet.MockDocument mockDoc1 =
@@ -790,7 +789,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
             // Run pull replication:
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(true);
 
             final CountDownLatch doneSignal = new CountDownLatch(1);
@@ -817,8 +816,7 @@ public class ReplicationInternalTest extends LiteTestCaseWithDB {
 
             assertTrue(doneSignal.await(30, TimeUnit.SECONDS));
         } finally {
-            if (server != null)
-                server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 }

@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -21,9 +21,6 @@ import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
 import com.couchbase.lite.support.CouchbaseLiteHttpClientFactory;
 import com.couchbase.lite.support.PersistentCookieJar;
 import com.couchbase.lite.util.Utils;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,6 +34,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Response;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 
 public class RemoteRequestTest extends LiteTestCaseWithDB {
 
@@ -69,9 +69,9 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
         dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
         try {
-            server.play();
+            server.start();
 
-            String urlString = String.format("%s/%s", server.getUrl("/db"), "_local");
+            String urlString = String.format("%s/%s", server.url("/db").url(), "_local");
             URL url = new URL(urlString);
 
             Map<String, Object> requestBody = new HashMap<String, Object>();
@@ -133,7 +133,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
             Utils.shutdownAndAwaitTermination(requestExecutorService);
             Utils.shutdownAndAwaitTermination(workExecutorService);
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
@@ -156,9 +156,9 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
                     new MockResponse().setResponseCode(503));
         }
         try {
-            server.play();
+            server.start();
 
-            String urlString = String.format("%s/%s", server.getUrl("/db"), "_local");
+            String urlString = String.format("%s/%s", server.url("/db").url(), "_local");
             URL url = new URL(urlString);
 
             Map<String, Object> requestBody = new HashMap<String, Object>();
@@ -221,10 +221,9 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
             Utils.shutdownAndAwaitTermination(requestExecutorService);
             Utils.shutdownAndAwaitTermination(workExecutorService);
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
-
 
     /**
      * Reproduce a severe issue where the pusher stops working because it's remoteRequestExecutor
@@ -250,9 +249,9 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
             wrapped.setSticky(true);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, wrapped);
 
-            server.play();
+            server.start();
 
-            URL url = new URL(String.format("%s/%s", server.getUrl("/db"), "_local"));
+            URL url = new URL(String.format("%s/%s", server.url("/db").url(), "_local"));
 
             Map<String, Object> requestBody = new HashMap<String, Object>();
             requestBody.put("foo", "bar");
@@ -309,7 +308,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
             Utils.shutdownAndAwaitTermination(requestExecutorService);
             Utils.shutdownAndAwaitTermination(workExecutorService);
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 }

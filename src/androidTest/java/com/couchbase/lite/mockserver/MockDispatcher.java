@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -13,9 +13,6 @@
  */
 package com.couchbase.lite.mockserver;
 
-import com.squareup.okhttp.mockwebserver.Dispatcher;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +22,10 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.RecordedRequest;
 
 /**
  * Custom dispatcher which allows to queue up MockResponse objects
@@ -48,7 +49,9 @@ public class MockDispatcher extends Dispatcher {
     // add these headers to every request
     private Map<String, String> headers;
 
-    public enum ServerType { SYNC_GW, COUCHDB }
+    public enum ServerType {SYNC_GW, COUCHDB}
+
+    private boolean shutdown = false;
 
     public MockDispatcher() {
         super();
@@ -56,6 +59,14 @@ public class MockDispatcher extends Dispatcher {
         recordedRequestQueueMap = new ConcurrentHashMap<String, BlockingQueue<RecordedRequest>>();
         recordedReponseMap = new ConcurrentHashMap<RecordedRequest, MockResponse>();
         headers = new HashMap<String, String>();
+    }
+
+    public boolean isShutdown() {
+        return shutdown;
+    }
+
+    public void setShutdown(boolean shutdown) {
+        this.shutdown = shutdown;
     }
 
     public Map<String, String> getHeaders() {
@@ -81,7 +92,7 @@ public class MockDispatcher extends Dispatcher {
     @Override
     public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
         System.out.println(String.format("Request: %s", request));
-        for(String pathRegex: queueMap.keySet()){
+        for (String pathRegex : queueMap.keySet()) {
             if (regexMatches(pathRegex, request.getPath())) {
                 recordRequest(pathRegex, request);
                 BlockingQueue<SmartMockResponse> responseQueue = queueMap.get(pathRegex);
@@ -99,7 +110,11 @@ public class MockDispatcher extends Dispatcher {
                     }
                     if (smartMockResponse.delayMs() > 0) {
                         System.out.println(String.format("Delaying response %s for %d ms (path: %s)", smartMockResponse, smartMockResponse.delayMs(), pathRegex));
-                        Thread.sleep(smartMockResponse.delayMs());
+                        long delay = smartMockResponse.delayMs();
+                        while (delay > 0 && !shutdown) {
+                            Thread.sleep(100);
+                            delay -= 100;
+                        }
                         System.out.println(String.format("Finished delaying response %s for %d (path: %s)", smartMockResponse, smartMockResponse.delayMs(), pathRegex));
                     }
                     MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
@@ -158,11 +173,11 @@ public class MockDispatcher extends Dispatcher {
         }
     }
 
-    public RecordedRequest takeRequest(String pathRegex) throws TimeoutException{
+    public RecordedRequest takeRequest(String pathRegex) throws TimeoutException {
         return takeRequest(pathRegex, 10000);
     }
 
-    public RecordedRequest takeRequest(String pathRegex, long timeout) throws TimeoutException{
+    public RecordedRequest takeRequest(String pathRegex, long timeout) throws TimeoutException {
         BlockingQueue<RecordedRequest> queue = recordedRequestQueueMap.get(pathRegex);
         if (queue == null) {
             return null;
@@ -172,7 +187,7 @@ public class MockDispatcher extends Dispatcher {
         }
         try {
             RecordedRequest request = queue.poll(timeout, TimeUnit.MILLISECONDS);
-            if(request == null)
+            if (request == null)
                 throw new TimeoutException();
             return request;
         } catch (InterruptedException e) {
@@ -218,6 +233,7 @@ public class MockDispatcher extends Dispatcher {
     public RecordedRequest takeRequestBlocking(String pathRegex) throws TimeoutException {
         return takeRequestBlocking(pathRegex, 10000);
     }
+
     public RecordedRequest takeRequestBlocking(String pathRegex, long timeout) throws TimeoutException {
         long start = System.currentTimeMillis();
 
@@ -238,7 +254,7 @@ public class MockDispatcher extends Dispatcher {
 
         try {
             RecordedRequest request = queue.poll(timeout, TimeUnit.MILLISECONDS);
-            if(request == null)
+            if (request == null)
                 throw new TimeoutException();
             return request;
         } catch (InterruptedException e) {

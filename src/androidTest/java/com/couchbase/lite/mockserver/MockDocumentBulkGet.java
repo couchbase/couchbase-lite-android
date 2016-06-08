@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -13,13 +13,15 @@
  */
 package com.couchbase.lite.mockserver;
 
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.RecordedRequest;
+import okio.Buffer;
 
 /*
 
@@ -89,7 +91,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
         try {
             byte[] body = MockHelper.getUncompressedBody(request);
             Map<String, Object> jsonMap = MockHelper.getJsonMapFromRequest(body);
-            List docs = (List)jsonMap.get("docs");
+            List docs = (List) jsonMap.get("docs");
 
             MockResponse mockResponse = new MockResponse();
 
@@ -101,8 +103,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
 
             /*
-                    byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
-
+             * byte[] mime = new String("--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--").getBytes(utf8);
              */
 
             int i = 0;
@@ -110,7 +111,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
                 Map<String, Object> documentMap = (Map) doc;
                 String docId = (String) documentMap.get("id");
                 MockDocumentGet.MockDocument mockDocument = documents.get(docId);
-                if(mockDocument == null)
+                if (mockDocument == null)
                     continue;
                 boolean addEmptyLine = false;
                 if (i > 0) {
@@ -125,8 +126,9 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
             byte[] byteArray = o.toByteArray();
 
-            mockResponse.setBody(byteArray);
-
+            Buffer buffer = new Buffer();
+            buffer.write(byteArray, 0, byteArray.length);
+            mockResponse.setBody(buffer);
             mockResponse.setStatus("HTTP/1.1 200 OK");
 
             return mockResponse;
@@ -135,8 +137,6 @@ public class MockDocumentBulkGet implements SmartMockResponse {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
-
-
     }
 
     private void addMockDocument(ByteArrayOutputStream o, MockDocumentGet.MockDocument mockDocument, String boundary, boolean addEmptyLine) throws Exception {
@@ -149,14 +149,13 @@ public class MockDocumentBulkGet implements SmartMockResponse {
 
         append(o, "--").append(o, boundary).append(o, "\r\n");
 
-        if(mockDocument.isMissing()){
+        if (mockDocument.isMissing()) {
             // missing revision
             append(o, "Content-Type: application/json; error=\"true\"");
             append(o, "\r\n\r\n");
             append(o, mockDocument.generateDocumentBody(attachmentFollows));
             append(o, "\r\n");
-        }
-        else if (!mockDocument.hasAttachment()) {
+        } else if (!mockDocument.hasAttachment()) {
             // no attachment, add json part
             append(o, "Content-Type: application/json");
             append(o, "\r\n\r\n");

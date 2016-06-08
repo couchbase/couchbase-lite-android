@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -15,24 +15,18 @@ package com.couchbase.lite.mockserver;
 
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.util.Log;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *
- *
- * Eg, given
- */
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.RecordedRequest;
 
 /*
     By default, return a _revs_diff response which says everything is missing.
 
     Given:
-
     {
        "doc1-1403051744202":[
           "2-3ec9ce8f9d323071505e895ba56ec946"
@@ -43,7 +37,6 @@ import java.util.Map;
     }
 
     Return:
-
     {
        "doc1-1403051744202":{
           "missing":[
@@ -56,8 +49,8 @@ import java.util.Map;
           ]
        }
     }
-
  */
+
 public class MockRevsDiff implements SmartMockResponse {
 
     private boolean isSticky;
@@ -89,15 +82,13 @@ public class MockRevsDiff implements SmartMockResponse {
                 responseMap.put(key, missingMap);
             }
 
-            mockResponse.setBody(Manager.getObjectMapper().writeValueAsBytes(responseMap));
+            mockResponse.setBody(new String(Manager.getObjectMapper().writeValueAsBytes(responseMap)));
             MockHelper.set200OKJson(mockResponse);
             return mockResponse;
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-
     }
 
     @Override

@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -33,7 +33,6 @@ import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import junit.framework.Assert;
 
@@ -60,6 +59,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.crypto.Cipher;
+
+import okhttp3.mockwebserver.RecordedRequest;
+import okio.Buffer;
 
 public class LiteTestCaseWithDB extends LiteTestCase {
     public static final String TAG = "LiteTestCaseWithDB";
@@ -92,20 +94,20 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         loadCustomProperties();
 
         // Run Unit Test with SQLiteStore
-        if(getTestStorageType() != 2) {
+        if (getTestStorageType() != 2) {
             useForestDB = false;
             super.runBare();
         }
 
         // Run Unit Test with ForestDBStore
-        if(getTestStorageType() != 1) {
+        if (getTestStorageType() != 1) {
             useForestDB = true;
             super.runBare();
         }
 
         long end = System.currentTimeMillis();
         String name = getName();
-        long duration= (end - start)/1000;
+        long duration = (end - start) / 1000;
         Log.e(TAG, "DURATION: %s: %d sec%s", name, duration, duration >= 6 ? " - [SLOW]" : "");
     }
 
@@ -117,7 +119,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
         long end = System.currentTimeMillis();
         String name = getName();
-        long duration= (end - start)/1000;
+        long duration = (end - start) / 1000;
         Log.e(TAG, "DURATION: %s: %d sec%s", name, duration, duration >= 6 ? " - [SLOW]" : "");
     }
 
@@ -168,7 +170,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
             boolean support256Key = false;
             try {
                 support256Key = Cipher.getMaxAllowedKeyLength("AES") >= 256;
-            } catch (NoSuchAlgorithmException e) { }
+            } catch (NoSuchAlgorithmException e) {
+            }
             if (!support256Key)
                 return false;
         }
@@ -239,8 +242,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
             if (manager != null) {
                 manager.close();
             }
-        }
-        finally{
+        } finally {
             Utils.DEFAULT_TIME_TO_WAIT_4_SHUTDOWN = DEFAULT_VALUE;
         }
     }
@@ -366,7 +368,6 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         properties.put("target", DEFAULT_TEST_DB);
         return properties;
     }
-
 
     protected URLConnection sendRequest(String method, String path,
                                         Map<String, String> headers, Object bodyObj) {
@@ -666,7 +667,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
             RecordedRequest request = dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHECKPOINT);
             checkUserAgent(request);
             if (request.getMethod().equals("PUT")) {
-                String body = request.getUtf8Body();
+                Buffer clone = request.getBody().clone();
+                String body = clone.readUtf8();
                 if (body.indexOf(Integer.toString(seq)) != -1) {
                     // block until response returned
                     dispatcher.takeRecordedResponseBlocking(request);
@@ -676,7 +678,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         }
     }
 
-    protected void checkUserAgent(RecordedRequest request){
+    protected void checkUserAgent(RecordedRequest request) {
         assertNotNull(request);
         String userAgent = request.getHeader("User-Agent");
         assertNotNull(userAgent);
@@ -702,10 +704,9 @@ public class LiteTestCaseWithDB extends LiteTestCase {
             if (request.getMethod().equals("PUT")) {
 
                 recordedRequests.add(request);
-
-                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(
-                        request.getUtf8Body(), Map.class);
-                Log.i(TAG, "lastSequence=" +jsonMap.get("lastSequence"));
+                Buffer clone = request.getBody().clone();
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(clone.readByteArray(), Map.class);
+                Log.i(TAG, "lastSequence=" + jsonMap.get("lastSequence"));
                 Log.i(TAG, "checkpoint request=" + jsonMap);
                 if (jsonMap.containsKey("lastSequence") &&
                         ((String) jsonMap.get("lastSequence")).equals(expectedLastSequenceStr)) {
@@ -726,8 +727,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         try {
             int i = 0;
             for (RecordedRequest request : checkpointRequests) {
-                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(
-                        request.getUtf8Body(), Map.class);
+                Buffer clone = request.getBody().clone();
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(clone.readByteArray(), Map.class);
                 if (i == 0) {
                     // the first request is not expected to have a _rev field
                     assertFalse(jsonMap.containsKey("_rev"));
@@ -806,8 +807,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     protected void assertBulkDocJsonContainsDoc(RecordedRequest request, Document doc)
             throws Exception {
 
-        Map<String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(
-                request.getUtf8Body(), Map.class);
+        Buffer clone = request.getBody().clone();
+        Map<String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(clone.readByteArray(), Map.class);
         List docs = (List) bulkDocsJson.get("docs");
         Map<String, Object> firstDoc = (Map<String, Object>) docs.get(0);
         assertEquals(doc.getId(), firstDoc.get("_id"));
@@ -815,8 +816,8 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected boolean isBulkDocJsonContainsDoc(RecordedRequest request, Document doc)
             throws Exception {
-        Map<String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(
-                request.getUtf8Body(), Map.class);
+        Buffer clone = request.getBody().clone();
+        Map<String, Object> bulkDocsJson = Manager.getObjectMapper().readValue(clone.readByteArray(), Map.class);
         List docs = (List) bulkDocsJson.get("docs");
         Iterator<Object> itr = docs.iterator();
         while (itr.hasNext()) {
