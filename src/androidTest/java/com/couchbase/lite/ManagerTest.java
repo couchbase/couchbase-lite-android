@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -24,7 +24,6 @@ import com.couchbase.lite.support.Version;
 import com.couchbase.lite.util.Log;
 import com.couchbase.lite.util.Utils;
 import com.couchbase.lite.util.ZipUtils;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -43,6 +42,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.mockwebserver.MockWebServer;
 
 public class ManagerTest extends LiteTestCaseWithDB {
 
@@ -83,7 +84,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
         // public void replaceDatabase(String, InputStream, Map<String, InputStream>) is
         // for .cblite. This is only applicable for SQLite
         if (!isSQLiteDB()) return;
-        
+
         //Copy database from assets to local storage
         InputStream dbStream = getAsset("noattachments.cblite");
         manager.replaceDatabase("replaced", dbStream, null);
@@ -365,7 +366,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
             MockDispatcher dispatcher = new MockDispatcher();
             dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
             server.setDispatcher(dispatcher);
-            server.play();
+            server.start();
 
             // checkpoint PUT or GET response (sticky) (for both push and pull)
             MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
@@ -373,7 +374,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
 
             // create pull replication & start it
-            Replication pull = database.createPullReplication(server.getUrl("/db"));
+            Replication pull = database.createPullReplication(server.url("/db").url());
             pull.setContinuous(true);
             final CountDownLatch pullIdleState = new CountDownLatch(1);
             ReplicationIdleObserver pullIdleObserver = new ReplicationIdleObserver(pullIdleState);
@@ -381,7 +382,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
             pull.start();
 
             // create push replication & start it
-            Replication push = database.createPullReplication(server.getUrl("/db"));
+            Replication push = database.createPullReplication(server.url("/db").url());
             push.setContinuous(true);
             final CountDownLatch pushIdleState = new CountDownLatch(1);
             ReplicationIdleObserver pushIdleObserver = new ReplicationIdleObserver(pushIdleState);
@@ -458,8 +459,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
         String[] net120forest = {"3", ".NET 1.2.0 ForestDB", "netdb.cblite2", "replacedb/net120-forestdb.zip"};
         dbInfoList.add(net120forest);
 
-        for(final String[] dbInfo : dbInfoList)
-        {
+        for (final String[] dbInfo : dbInfoList) {
             Log.i(TAG, "DB Type: " + dbInfo[1]);
             File srcDir = new File(manager.getContext().getFilesDir(), dbInfo[2]);
             FileDirUtils.deleteRecursive(srcDir);
@@ -477,14 +477,14 @@ public class ManagerTest extends LiteTestCaseWithDB {
                         assertEquals("doc" + (i + 1), doc.getId());
                         assertEquals(2, doc.getRevisionHistory().size());
                         Map<String, Object> props = doc.getProperties();
-                        if(dbInfo[0].equals("1"))//android
-                            assertEquals(i+1, Integer.parseInt((String) props.get("key")));
-                        else if(dbInfo[0].equals("2")) // ios
-                            assertEquals("bar", (String)props.get("foo"));
+                        if (dbInfo[0].equals("1"))//android
+                            assertEquals(i + 1, Integer.parseInt((String) props.get("key")));
+                        else if (dbInfo[0].equals("2")) // ios
+                            assertEquals("bar", (String) props.get("foo"));
                         assertEquals(1, doc.getCurrentRevision().getAttachments().size());
-                        Attachment att = doc.getCurrentRevision().getAttachment("attach" + String.valueOf(i+1));
+                        Attachment att = doc.getCurrentRevision().getAttachment("attach" + String.valueOf(i + 1));
                         assertNotNull(att);
-                        if(!dbInfo[0].equals("3")) {//!NET
+                        if (!dbInfo[0].equals("3")) {//!NET
                             BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
                             String str = br.readLine();
                             assertEquals("attach" + String.valueOf(i + 1), str);
@@ -496,9 +496,9 @@ public class ManagerTest extends LiteTestCaseWithDB {
                     Map<String, Object> local = db.getExistingLocalDocument("local1");
                     assertNotNull(local);
                     //assertEquals(3, local.size());
-                    if(dbInfo[0].equals("1"))//android
+                    if (dbInfo[0].equals("1"))//android
                         assertEquals("local1", local.get("key"));
-                    else if(dbInfo[0].equals("2")) // ios
+                    else if (dbInfo[0].equals("2")) // ios
                         assertEquals("bar", local.get("foo"));
                     assertEquals("1-local", local.get("_rev"));
                     assertEquals("_local/local1", local.get("_id"));
@@ -564,7 +564,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
         // Test db contents:
         checkReplacedDatabase("replacedb", new ReplaceDatabaseCallback() {
             @Override
-            public void onComplete(Database db, QueryEnumerator e) throws CouchbaseLiteException, IOException{
+            public void onComplete(Database db, QueryEnumerator e) throws CouchbaseLiteException, IOException {
                 // Check Stored Documents
                 assertEquals(2, e.getCount());
                 for (int i = 0; i < 2; i++) {
@@ -573,9 +573,9 @@ public class ManagerTest extends LiteTestCaseWithDB {
                     assertEquals("doc" + (i + 1), doc.getId());
                     assertEquals(2, doc.getRevisionHistory().size());
                     Map<String, Object> props = doc.getProperties();
-                    assertEquals("bar", (String)props.get("foo"));
+                    assertEquals("bar", (String) props.get("foo"));
                     assertEquals(1, doc.getCurrentRevision().getAttachments().size());
-                    Attachment att = doc.getCurrentRevision().getAttachment("attach" + String.valueOf(i+1));
+                    Attachment att = doc.getCurrentRevision().getAttachment("attach" + String.valueOf(i + 1));
                     assertNotNull(att);
                     BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
                     String str = br.readLine();

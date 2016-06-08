@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -15,9 +15,7 @@ package com.couchbase.lite.mockserver;
 
 import com.couchbase.lite.Manager;
 import com.couchbase.lite.Misc;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
+import com.couchbase.lite.util.Log;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import okio.Buffer;
 
 /**
  * Misc helper methods for MockWebserver-based Mock objects
@@ -109,9 +112,12 @@ public class MockHelper {
     /**
      * returns decompressed byte[] body
      */
-    public static byte[] getUncompressedBody(RecordedRequest request){
-        byte[] body = request.getBody();
-        if(isGzip(request)){
+    public static byte[] getUncompressedBody(RecordedRequest request) {
+        // NOTE: Buffer.readByteArray() consumes content. As we might reuse content later,
+        //       so needs to clone buffer.
+        Buffer clone = request.getBody().clone();
+        byte[] body = clone.readByteArray();
+        if (isGzip(request)) {
             body = com.couchbase.lite.util.Utils.decompressByGzip(body);
         }
         return body;
@@ -120,16 +126,16 @@ public class MockHelper {
     /**
      * returns decompressed String body
      */
-    public static String getUtf8Body(RecordedRequest request) throws Exception{
+    public static String getUtf8Body(RecordedRequest request) throws Exception {
         return new String(getUncompressedBody(request), "UTF-8");
     }
 
     /*
      * check if gzip is used for request body
      */
-    public static boolean isGzip(RecordedRequest request){
+    public static boolean isGzip(RecordedRequest request) {
         return request.getHeader("Content-Encoding") != null &&
-               request.getHeader("Content-Encoding").contains("gzip");
+                request.getHeader("Content-Encoding").contains("gzip");
     }
 
     public static class Batcher<T> {
@@ -148,7 +154,7 @@ public class MockHelper {
 
         public List<T> nextBatch() {
             List<T> batch = new ArrayList<T>();
-            for (int i=0; i<batchSize; i++) {
+            for (int i = 0; i < batchSize; i++) {
                 if (!this.items.isEmpty()) {
                     try {
                         T item = this.items.take();
@@ -164,7 +170,7 @@ public class MockHelper {
 
     public static List<MockDocumentGet.MockDocument> getMockDocuments(int numDocs) {
         List<MockDocumentGet.MockDocument> mockDocs = new ArrayList<MockDocumentGet.MockDocument>();
-        for (int i=0; i<numDocs; i++) {
+        for (int i = 0; i < numDocs; i++) {
             String docId = String.format("doc%s", i);
             String revIdHash = Misc.CreateUUID().substring(0, 4);
             String revId = String.format("1-%s", revIdHash);
@@ -176,5 +182,30 @@ public class MockHelper {
             mockDocs.add(mockDoc);
         }
         return mockDocs;
+    }
+
+    public static boolean shutdown(MockWebServer server, MockDispatcher dispatcher) {
+        if (dispatcher != null)
+            dispatcher.setShutdown(true);
+        return shutdown(server);
+    }
+
+    public static boolean shutdown(MockWebServer server) {
+        return shutdown(server, 10);
+    }
+
+    public static boolean shutdown(MockWebServer server, int maxRetry) {
+        if (server == null) return false;
+
+        boolean ok = false;
+        while (!ok && maxRetry-- > 0) {
+            try {
+                server.shutdown();
+                ok = true;
+            } catch (IOException ioe) {
+                Log.e(Log.TAG, "Failed to shutdown MockWebServer", ioe);
+            }
+        }
+        return ok;
     }
 }

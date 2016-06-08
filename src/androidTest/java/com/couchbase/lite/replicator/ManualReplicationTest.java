@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -19,11 +19,12 @@ import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
 import com.couchbase.lite.util.Log;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.mockwebserver.MockWebServer;
 
 public class ManualReplicationTest extends LiteTestCaseWithDB {
 
@@ -37,11 +38,11 @@ public class ManualReplicationTest extends LiteTestCaseWithDB {
         Replication pullReplication = null;
         // create mock server
         MockWebServer server = new MockWebServer();
+        MockDispatcher dispatcher = new MockDispatcher();
         try {
-            MockDispatcher dispatcher = new MockDispatcher();
             dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
             server.setDispatcher(dispatcher);
-            server.play();
+            server.start();
 
             // checkpoint PUT or GET response (sticky)
             MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
@@ -56,7 +57,7 @@ public class ManualReplicationTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedNoResponse);
 
             // create and start replication
-            pullReplication = database.createPullReplication(server.getUrl("/db"));
+            pullReplication = database.createPullReplication(server.url("/db").url());
             pullReplication.setContinuous(true);
             pullReplication.start();
             Log.d(Log.TAG, "Started pullReplication: %s", pullReplication);
@@ -87,7 +88,7 @@ public class ManualReplicationTest extends LiteTestCaseWithDB {
 
         } finally {
             stopReplication(pullReplication);
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
@@ -109,7 +110,6 @@ public class ManualReplicationTest extends LiteTestCaseWithDB {
     }
 
     private void putReplicationOnline(Replication replication) throws InterruptedException {
-
         Log.d(Log.TAG, "putReplicationOnline: %s", replication);
 
         // this was a useless test, the replication wasn't even started

@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -27,11 +27,12 @@ import com.couchbase.lite.mockserver.MockRevsDiff;
 import com.couchbase.lite.support.MultipartReader;
 import com.couchbase.lite.support.MultipartReaderDelegate;
 import com.couchbase.lite.util.Utils;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.util.Arrays;
 import java.util.Map;
+
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 
 /**
  * Created by hideki on 5/11/15.
@@ -59,7 +60,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         try {
-            server.play();
+            server.start();
 
             // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
             MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
@@ -81,7 +82,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(docPathRegex, mockDocPut.generateMockResponse());
 
             // run replication
-            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            Replication replication = database.createPushReplication(server.url("/db").url());
             replication.setContinuous(false);
             runReplication(replication);
 
@@ -101,10 +102,10 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
             CustomMultipartReaderDelegate delegate = new CustomMultipartReaderDelegate();
             MultipartReader reader = new MultipartReader(
                     docPutRequest.getHeader("Content-Type"), delegate);
-            reader.appendData(docPutRequest.getBody());
+            reader.appendData(docPutRequest.getBody().readByteArray());
             assertTrue(delegate.json.contains(docId));
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
@@ -127,7 +128,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         try {
-            server.play();
+            server.start();
 
             // checkpoint GET response w/ 404 + respond to all PUT Checkpoint requests
             MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
@@ -149,7 +150,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
             dispatcher.enqueueResponse(docPathRegex, mockDocPut.generateMockResponse());
 
             // run replication
-            Replication replication = database.createPushReplication(server.getUrl("/db"));
+            Replication replication = database.createPushReplication(server.url("/db").url());
             replication.setContinuous(false);
             runReplication(replication);
 
@@ -171,12 +172,12 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
             CustomMultipartReaderDelegate delegate = new CustomMultipartReaderDelegate();
             MultipartReader reader = new MultipartReader(
                     docPutRequest.getHeader("Content-Type"), delegate);
-            reader.appendData(docPutRequest.getBody());
+            reader.appendData(docPutRequest.getBody().readByteArray());
             assertTrue(delegate.json.contains(docId));
             byte[] attachmentBytes = MockDocumentGet.getAssetByteArray(docAttachName);
             assertTrue(Arrays.equals(attachmentBytes, delegate.attachment));
         } finally {
-            server.shutdown();
+            assertTrue(MockHelper.shutdown(server, dispatcher));
         }
     }
 
