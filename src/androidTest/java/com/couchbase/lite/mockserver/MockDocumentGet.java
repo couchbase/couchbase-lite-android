@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import okhttp3.Headers;
@@ -193,7 +194,7 @@ public class MockDocumentGet {
         byte[] attachmentBytes = MockDocumentGet.getAssetByteArray(attachmentAssetName);
         BlobKey blobKey = BlobStore.keyForBlob(attachmentBytes);
         String base64Sha1Digest = Base64.encodeBytes(blobKey.getBytes());
-        String sha1 = String.format("sha1-%s", base64Sha1Digest);
+        String sha1 = String.format(Locale.ENGLISH, "sha1-%s", base64Sha1Digest);
         return sha1;
     }
 
@@ -227,7 +228,7 @@ public class MockDocumentGet {
                             generateDocumentBody()));
             if (isIncludeAttachmentPart()) {
                 Headers.Builder hb = new Headers.Builder();
-                hb.add("Content-Disposition", String.format("attachment; filename=\"%s\"", attachmentName));
+                hb.add("Content-Disposition", String.format(Locale.ENGLISH, "attachment; filename=\"%s\"", attachmentName));
                 hb.add("Content-Transfer-Encoding", "binary");
                 builder.addPart(hb.build(), RequestBody.create(MEDIA_TYPE_PNG, getAssetByteArray(attachmentName)));
             }
@@ -379,7 +380,7 @@ public class MockDocumentGet {
         }
 
         public String getDocPathRegex() {
-            return String.format("/db/%s\\?.*", getDocId());
+            return String.format(Locale.ENGLISH, "/db/%s\\?.*", getDocId());
         }
 
         public String getDocId() {

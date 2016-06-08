@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -740,7 +741,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         for (int gen = 1; gen <= 10; gen++) {
             Map<String, Object> props = new HashMap<String, Object>();
             props.put("_id", "foo");
-            props.put("_rev", String.format("%d-cafebabe", gen));
+            props.put("_rev", String.format(Locale.ENGLISH, "%d-cafebabe", gen));
             props.put("gen", gen);
             RevisionInternal rev = new RevisionInternal(props);
             database.forceInsert(rev, history, null);

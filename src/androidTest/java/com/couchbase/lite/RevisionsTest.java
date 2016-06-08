@@ -22,6 +22,7 @@ import junit.framework.Assert;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -337,7 +338,7 @@ public class RevisionsTest extends LiteTestCaseWithDB {
             public void changed(Document.ChangeEvent event) {
                 DocumentChange docChange = event.getChange();
                 String msg = "New revision added: %s.  Conflict: %s";
-                msg = String.format(msg, docChange.getAddedRevision(), docChange.isConflict());
+                msg = String.format(Locale.ENGLISH, msg, docChange.getAddedRevision(), docChange.isConflict());
                 Log.d(TAG, msg);
                 documentChanged.countDown();
             }

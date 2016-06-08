@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -225,7 +226,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
         assertNotNull(dbStream);
         Map<String, InputStream> attachmentStreams = new HashMap<String, InputStream>();
         for (String attachment : attachmentNames) {
-            InputStream blobStream = getAsset(String.format("%s/%s", attachmentDirectory, attachment));
+            InputStream blobStream = getAsset(String.format(Locale.ENGLISH, "%s/%s", attachmentDirectory, attachment));
             assertNotNull(blobStream);
             attachmentStreams.put(attachment, blobStream);
         }

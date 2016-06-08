@@ -30,6 +30,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -290,7 +291,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals(expectedRows, rows);
 
         // DELETE:
-        result = (Map<String, Object>) send("DELETE", String.format("/db/doc1?rev=%s", revID), Status.OK, null);
+        result = (Map<String, Object>) send("DELETE", String.format(Locale.ENGLISH, "/db/doc1?rev=%s", revID), Status.OK, null);
         revID = (String) result.get("rev");
         assertTrue(revID.startsWith("3-"));
 
@@ -535,7 +536,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         // Check the ETag:
         URLConnection conn = sendRequest("GET", "/db/_design/design/_view/view", null, null);
         String etag = conn.getHeaderField("Etag");
-        assertEquals(String.format("\"%d\"", view.getLastSequenceIndexed()), etag);
+        assertEquals(String.format(Locale.ENGLISH, "\"%d\"", view.getLastSequenceIndexed()), etag);
 
         // Try a conditional GET:
         Map<String, String> headers = new HashMap<String, String>();
@@ -870,7 +871,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals(2, doc.getConflictingRevisions().size());
         assertEquals(2, doc.getLeafRevisions().size());
 
-        result = (Map<String, Object>) send("GET", String.format("/%s/%s?conflicts=true", DEFAULT_TEST_DB, doc.getId()), Status.OK, null);
+        result = (Map<String, Object>) send("GET", String.format(Locale.ENGLISH, "/%s/%s?conflicts=true", DEFAULT_TEST_DB, doc.getId()), Status.OK, null);
         List<String> conflicts = (List) result.get("_conflicts");
         assertEquals(1, conflicts.size());
         String conflictingRevId = conflicts.get(0);
@@ -878,9 +879,9 @@ public class RouterTest extends LiteTestCaseWithDB {
 
         assertNotNull(database.getDocument(doc.getId()));
 
-        result = (Map<String, Object>) send("DELETE", String.format("/%s/%s?rev=%s", DEFAULT_TEST_DB, doc.getId(), conflictingRevId), Status.OK, null);
+        result = (Map<String, Object>) send("DELETE", String.format(Locale.ENGLISH, "/%s/%s?rev=%s", DEFAULT_TEST_DB, doc.getId(), conflictingRevId), Status.OK, null);
 
-        result = (Map<String, Object>) send("GET", String.format("/%s/%s?conflicts=true", DEFAULT_TEST_DB, doc.getId()), Status.OK, null);
+        result = (Map<String, Object>) send("GET", String.format(Locale.ENGLISH, "/%s/%s?conflicts=true", DEFAULT_TEST_DB, doc.getId()), Status.OK, null);
 
         conflicts = (List) result.get("_conflicts");
         assertEquals(0, conflicts.size());
@@ -949,7 +950,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         // Check the ETag:
         URLConnection conn = sendRequest("GET", "/db/_design/design/_view/view", null, null);
         String etag = conn.getHeaderField("Etag");
-        assertEquals(String.format("\"%d\"", view.getLastSequenceIndexed()), etag);
+        assertEquals(String.format(Locale.ENGLISH, "\"%d\"", view.getLastSequenceIndexed()), etag);
 
         // Try a conditional GET:
         Map<String, String> headers = new HashMap<String, String>();
@@ -1185,7 +1186,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals(2, doc.getLeafRevisions().size());
 
         // /{db}/_changes with default parameter -> in changes, one revisions [winning rev]
-        String url = String.format("/%s/_changes", DEFAULT_TEST_DB);
+        String url = String.format(Locale.ENGLISH, "/%s/_changes", DEFAULT_TEST_DB);
         Map<String, Object> res = (Map<String, Object>) send("GET", url, Status.OK, null);
         Log.i(TAG, "[%s] %s", url, res);
         String[] revIDs = obtainChangesRevIDs(res);
@@ -1193,7 +1194,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals(winningRev.getId(), revIDs[0]);
 
         // /{db}/_changes with style=all_docs parameter -> in changes, two revisions [winning rev and losing rev]
-        url = String.format("/%s/_changes?style=all_docs", DEFAULT_TEST_DB);
+        url = String.format(Locale.ENGLISH, "/%s/_changes?style=all_docs", DEFAULT_TEST_DB);
         res = (Map<String, Object>) send("GET", url, Status.OK, null);
         Log.i(TAG, "[%s] %s", url, res);
         revIDs = obtainChangesRevIDs(res);
@@ -1202,7 +1203,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals(losingRev.getId(), revIDs[1]);
 
         // /{db}/_changes with include_docs=true parameter -> in changes, one revisions [winning rev] and  doc is only winning rev
-        url = String.format("/%s/_changes?include_docs=true", DEFAULT_TEST_DB);
+        url = String.format(Locale.ENGLISH, "/%s/_changes?include_docs=true", DEFAULT_TEST_DB);
         res = (Map<String, Object>) send("GET", url, Status.OK, null);
         Log.i(TAG, "[%s] %s", url, res);
         revIDs = obtainChangesRevIDs(res);
@@ -1210,7 +1211,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals(winningRev.getId(), revIDs[0]);
 
         // /{db}/_changes with include_docs=true & style=all_docs parameters -> in changes, one revisions [winning rev] and doc is only winning rev
-        url = String.format("/%s/_changes?include_docs=true&style=all_docs", DEFAULT_TEST_DB);
+        url = String.format(Locale.ENGLISH, "/%s/_changes?include_docs=true&style=all_docs", DEFAULT_TEST_DB);
         res = (Map<String, Object>) send("GET", url, Status.OK, null);
         Log.i(TAG, "[%s] %s", url, res);
         revIDs = obtainChangesRevIDs(res);

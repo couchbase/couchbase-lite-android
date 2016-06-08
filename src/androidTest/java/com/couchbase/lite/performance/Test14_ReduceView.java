@@ -20,7 +20,6 @@ package com.couchbase.lite.performance;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Emitter;
-import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
@@ -32,6 +31,7 @@ import com.couchbase.lite.util.Log;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class Test14_ReduceView extends PerformanceTestCase {
@@ -69,7 +69,7 @@ public class Test14_ReduceView extends PerformanceTestCase {
         boolean success = database.runInTransaction(new TransactionalTask() {
             public boolean run() {
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
-                    String name = String.format("%s%s", "n", i);
+                    String name = String.format(Locale.ENGLISH, "%s%s", "n", i);
                     boolean vacant = ((i + 2) % 2 == 0) ? true : false;
                     Map<String,Object> props = new HashMap<String,Object>();
                     props.put("name", name);

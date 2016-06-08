@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -58,7 +59,7 @@ public class PushReplTest extends LiteTestCaseWithDB {
 
         // initial 100 docs
         for (int i = 0; i < INIT_DOCS; i++) {
-            Document doc = database.getDocument("doc-" + String.format("%03d", i));
+            Document doc = database.getDocument("doc-" + String.format(Locale.ENGLISH, "%03d", i));
             Map<String, Object> props = new HashMap<>();
             props.put("key", i);
             try {
@@ -76,7 +77,7 @@ public class PushReplTest extends LiteTestCaseWithDB {
             @Override
             public void run() {
                 for (int i = INIT_DOCS; i < TOTAL_DOCS; i++) {
-                    Document doc = database.getDocument("doc-" + String.format("%03d", i));
+                    Document doc = database.getDocument("doc-" + String.format(Locale.ENGLISH, "%03d", i));
                     Map<String, Object> props = new HashMap<>();
                     props.put("key", i);
                     try {

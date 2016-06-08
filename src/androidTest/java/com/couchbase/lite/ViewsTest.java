@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -221,12 +222,12 @@ public class ViewsTest extends LiteTestCaseWithDB {
     public void putNDocs(Database db, int n) throws CouchbaseLiteException {
         for (int i = 0; i < n; i++) {
             Map<String, Object> doc = new HashMap<String, Object>();
-            doc.put("_id", String.format("%d", i));
+            doc.put("_id", String.format(Locale.ENGLISH, "%d", i));
             List<String> key = new ArrayList<String>();
             for (int j = 0; j < 256; j++) {
                 key.add("key");
             }
-            key.add(String.format("key-%d", i));
+            key.add(String.format(Locale.ENGLISH, "key-%d", i));
             doc.put("key", key);
             putDocViaUntitledDoc(db, doc);
         }
@@ -2538,7 +2539,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "1");
         RevisionInternal rev1 = new RevisionInternal(props);
         RevisionInternal leaf1 = database.putRevision(rev1, null, false);
-        Log.i(TAG, String.format("leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
 
         // Need to override StoreDelegate to control revision ID for generation 2-.
         Store store = database.getStore();
@@ -2570,7 +2571,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "2a");
         RevisionInternal rev2a = new RevisionInternal(props);
         RevisionInternal leaf2a = database.putRevision(rev2a, leaf1.getRevID(), true);
-        Log.i(TAG, String.format("leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
 
         // set Revision ID "2-0001" which is same generation but lower revision ID than previous one
         store.setDelegate(new StoreDelegate() {
@@ -2596,7 +2597,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "2b");
         RevisionInternal rev2b = new RevisionInternal(props);
         RevisionInternal leaf2b = database.putRevision(rev2b, leaf1.getRevID(), true);
-        Log.i(TAG, String.format("leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
 
         store.setDelegate(delegate);
 
@@ -2615,7 +2616,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // Delete winning rev
         RevisionInternal leaf3 = new RevisionInternal("172", null, true);
         leaf3 = database.putRevision(leaf3, winning.getRevID(), true);
-        Log.i(TAG, String.format("leaf3: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3.getSequence(), leaf3.getDocID(), leaf3.getRevID(), leaf3.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf3: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3.getSequence(), leaf3.getDocID(), leaf3.getRevID(), leaf3.isDeleted() ? "true" : "false"));
 
         // update index
         view.updateIndex();
@@ -2650,19 +2651,19 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "1-x");
         RevisionInternal rev1 = new RevisionInternal(props);
         RevisionInternal leaf1 = database.putRevision(rev1, null, false);
-        Log.i(TAG, String.format("leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf1: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf1.getSequence(), leaf1.getDocID(), leaf1.getRevID(), leaf1.isDeleted() ? "true" : "false"));
 
         // create conflicts rev2a and rev2b
         props.put("_rev", leaf1.getRevID());
         props.put("key", "2-a");
         RevisionInternal rev2a = new RevisionInternal(props);
         RevisionInternal leaf2a = database.putRevision(rev2a, leaf1.getRevID(), true);
-        Log.i(TAG, String.format("leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf2a: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2a.getSequence(), leaf2a.getDocID(), leaf2a.getRevID(), leaf2a.isDeleted() ? "true" : "false"));
 
         props.put("key", "2-b");
         RevisionInternal rev2b = new RevisionInternal(props);
         RevisionInternal leaf2b = database.putRevision(rev2b, leaf1.getRevID(), true);
-        Log.i(TAG, String.format("leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf2b: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf2b.getSequence(), leaf2b.getDocID(), leaf2b.getRevID(), leaf2b.isDeleted() ? "true" : "false"));
 
         // update index
         view.updateIndex();
@@ -2699,7 +2700,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         props.put("key", "3-c");
         RevisionInternal rev3c = new RevisionInternal(props);
         RevisionInternal leaf3c = database.putRevision(rev3c, leaf2a.getRevID(), true);
-        Log.i(TAG, String.format("leaf3c: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3c.getSequence(), leaf3c.getDocID(), leaf3c.getRevID(), leaf3c.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf3c: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3c.getSequence(), leaf3c.getDocID(), leaf3c.getRevID(), leaf3c.isDeleted() ? "true" : "false"));
 
         // set Revision ID "3-dddd"
         store.setDelegate(new StoreDelegate() {
@@ -2721,7 +2722,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // create rev3d from rev2b with delete
         RevisionInternal leaf3d = new RevisionInternal("doc1", null, true);
         leaf3d = database.putRevision(leaf3d, leaf2b.getRevID(), true);
-        Log.i(TAG, String.format("leaf3d: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3d.getSequence(), leaf3d.getDocID(), leaf3d.getRevID(), leaf3d.isDeleted() ? "true" : "false"));
+        Log.i(TAG, String.format(Locale.ENGLISH, "leaf3d: seq=%d, doc_id=%s, rev_id=%s deleted=%s", leaf3d.getSequence(), leaf3d.getDocID(), leaf3d.getRevID(), leaf3d.isDeleted() ? "true" : "false"));
         assertTrue(leaf3d.isDeleted());
 
         // make sure 3-d is higher revision than 3-c
@@ -3381,8 +3382,8 @@ public class ViewsTest extends LiteTestCaseWithDB {
                     for (int i = 0; i < 500; i++) {
                         Map<String, Object> props = new HashMap<>();
                         props.put("time_create", new Date());
-                        props.put("phone_mobile", String.format("*3816400%04d", i));
-                        props.put("name", String.format("Miloš Micić - Micke - %d", i));
+                        props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", i));
+                        props.put("name", String.format(Locale.ENGLISH, "Miloš Micić - Micke - %d", i));
                         props.put("origin", "device");
                         props.put("id_origin", "266392");
                         props.put("type", "client");
@@ -3393,8 +3394,8 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
                     Map<String, Object> props = new HashMap<>();
                     props.put("time_create", new Date());
-                    props.put("phone_mobile", String.format("*3816400%04d", 1));
-                    props.put("name", String.format("Miloš Micić - Micke - %d", 1));
+                    props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", 1));
+                    props.put("name", String.format(Locale.ENGLISH, "Miloš Micić - Micke - %d", 1));
                     props.put("origin", "couchdb");
                     props.put("type", "client");
                     Document doc = database.createDocument();
@@ -3402,8 +3403,8 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
                     props = new HashMap<>();
                     props.put("time_create", new Date());
-                    props.put("phone_mobile", String.format("*3816400%04d", 1));
-                    props.put("name", String.format("Miloš Micić - Micke - %d", 1));
+                    props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", 1));
+                    props.put("name", String.format(Locale.ENGLISH, "Miloš Micić - Micke - %d", 1));
                     props.put("type", "client");
                     props.put("device_imei", "352584060971220");
                     doc = database.createDocument();
@@ -3411,8 +3412,8 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
                     props = new HashMap<>();
                     props.put("time_create", new Date());
-                    props.put("phone_mobile", String.format("*3816400%04d", 1));
-                    props.put("name", String.format("Miloš Micić - Micke - %d", 1));
+                    props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", 1));
+                    props.put("name", String.format(Locale.ENGLISH, "Miloš Micić - Micke - %d", 1));
                     props.put("type", "test_type");
                     props.put("device_imei", "352584060971220");
                     doc = database.createDocument();
@@ -3431,18 +3432,18 @@ public class ViewsTest extends LiteTestCaseWithDB {
             Query orderedQuery = view.createQuery();
             orderedQuery.setStartKey(Arrays.asList(deviceIMEI, null));
             orderedQuery.setEndKey(Arrays.asList(deviceIMEI, new HashMap<String, Object>()));
-            Log.v(TAG, String.format("orderedQuery.run()"));
+            Log.v(TAG, String.format(Locale.ENGLISH, "orderedQuery.run()"));
             QueryEnumerator results = orderedQuery.run();
             /* Iterate through the rows to get the document ids */
             int counter = 0;
             for (Iterator<QueryRow> it = results; it.hasNext(); ) {
                 QueryRow row = it.next();
-                Log.v(TAG, String.format("[%d] Document ID: %s added to view %s",
+                Log.v(TAG, String.format(Locale.ENGLISH, "[%d] Document ID: %s added to view %s",
                         counter, row.getDocumentId(), "client_by_name_device"));
                 counter++;
             }
             assertEquals(500, counter);
-            Log.v(TAG, String.format("Iterrator done"));
+            Log.v(TAG, String.format(Locale.ENGLISH, "Iterrator done"));
         }
     }
 
@@ -3486,7 +3487,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
                     for (int i = 0; i < names.length; i++) {
                         Map<String, Object> props = new HashMap<>();
                         props.put("time_create", new Date());
-                        props.put("phone_mobile", String.format("*3816400%04d", i));
+                        props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", i));
                         props.put("name", names[i]);
                         props.put("origin", "device");
                         props.put("id_origin", "266392");
@@ -3514,13 +3515,13 @@ public class ViewsTest extends LiteTestCaseWithDB {
             int counter = 0;
             for (Iterator<QueryRow> it = results; it.hasNext(); ) {
                 QueryRow row = it.next();
-                Log.e(TAG, String.format("[%d] Document ID: %s added to view %s",
+                Log.e(TAG, String.format(Locale.ENGLISH, "[%d] Document ID: %s added to view %s",
                         counter, row.getDocumentId(), "client_by_name"));
                 assertEquals(names[i], (String) row.getKey());
                 counter++;
             }
             assertEquals(1, counter);
-            Log.v(TAG, String.format("Iterrator done"));
+            Log.v(TAG, String.format(Locale.ENGLISH, "Iterrator done"));
         }
     }
 

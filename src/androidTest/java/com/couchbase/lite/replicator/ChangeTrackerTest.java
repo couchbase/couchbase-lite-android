@@ -22,6 +22,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -212,7 +213,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
 
         String docIdsUnencoded = "[\"doc1\",\"doc2\"]";
         String docIdsEncoded = URLEncoder.encode(docIdsUnencoded);
-        String expectedFeedPath = String.format(
+        String expectedFeedPath = String.format(Locale.ENGLISH,
                 "_changes?feed=longpoll&heartbeat=300000&since=0&limit=50&filter=_doc_ids&doc_ids=%s",
                 docIdsEncoded);
         final String changesFeedPath = changeTracker.getChangesFeedPath();

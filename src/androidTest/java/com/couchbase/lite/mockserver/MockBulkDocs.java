@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /*
@@ -66,11 +67,11 @@ public class MockBulkDocs implements SmartMockResponse {
     public MockResponse generateMockResponse(RecordedRequest request) {
 
         if (!request.getMethod().equals("POST")) {
-            throw new RuntimeException(String.format("Expected POST, got %s", request.getMethod()));
+            throw new RuntimeException(String.format(Locale.ENGLISH, "Expected POST, got %s", request.getMethod()));
         }
 
         if (!request.getPath().contains("_bulk_docs")) {
-            throw new RuntimeException(String.format("Expected _bulk_docs in path, got %s", request.getPath()));
+            throw new RuntimeException(String.format("Locale.ENGLISH, Expected _bulk_docs in path, got %s", request.getPath()));
         }
 
         try {
@@ -110,7 +111,7 @@ public class MockBulkDocs implements SmartMockResponse {
             }
         }
 
-        throw new RuntimeException(String.format("Can't find doc w/ id: %s in %s", doc4Id, bulkDocsJson));
+        throw new RuntimeException(String.format(Locale.ENGLISH, "Can't find doc w/ id: %s in %s", doc4Id, bulkDocsJson));
     }
 
     @Override

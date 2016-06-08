@@ -21,6 +21,7 @@ import com.couchbase.lite.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -173,7 +174,7 @@ public class BatcherTest extends LiteTestCase {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        String item = String.format("%s-item:%d", iStr, j);
+                        String item = String.format(Locale.ENGLISH, "%s-item:%d", iStr, j);
                         batcher.queueObject(item);
                     }
                 }
