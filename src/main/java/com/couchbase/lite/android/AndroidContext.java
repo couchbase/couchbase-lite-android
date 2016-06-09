@@ -21,6 +21,7 @@ import com.couchbase.lite.storage.SQLiteStorageEngineFactory;
 import com.couchbase.lite.support.Version;
 
 import java.io.File;
+import java.util.Locale;
 
 public class AndroidContext implements Context {
     private android.content.Context wrappedContext;
@@ -64,7 +65,7 @@ public class AndroidContext implements Context {
 
     @Override
     public String getUserAgent() {
-        return String.format("CouchbaseLite/%s (Android %s/%s %s/%s)",
+        return String.format(Locale.ENGLISH, "CouchbaseLite/%s (Android %s/%s %s/%s)",
                 Version.SYNC_PROTOCOL_VERSION,
                 Build.VERSION.RELEASE,
                 Build.CPU_ABI,

@@ -15,6 +15,7 @@ package com.couchbase.lite.mockserver;
 
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,13 +92,12 @@ public class MockDispatcher extends Dispatcher {
 
     @Override
     public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
-        System.out.println(String.format("Request: %s", request));
         for (String pathRegex : queueMap.keySet()) {
             if (regexMatches(pathRegex, request.getPath())) {
                 recordRequest(pathRegex, request);
                 BlockingQueue<SmartMockResponse> responseQueue = queueMap.get(pathRegex);
                 if (responseQueue == null) {
-                    String msg = String.format("No queue found for pathRegex: %s", pathRegex);
+                    String msg = String.format(Locale.ENGLISH, "No queue found for pathRegex: %s", pathRegex);
                     throw new RuntimeException(msg);
                 }
                 if (!responseQueue.isEmpty()) {
@@ -109,16 +109,13 @@ public class MockDispatcher extends Dispatcher {
                         }
                     }
                     if (smartMockResponse.delayMs() > 0) {
-                        System.out.println(String.format("Delaying response %s for %d ms (path: %s)", smartMockResponse, smartMockResponse.delayMs(), pathRegex));
                         long delay = smartMockResponse.delayMs();
                         while (delay > 0 && !shutdown) {
                             Thread.sleep(100);
                             delay -= 100;
                         }
-                        System.out.println(String.format("Finished delaying response %s for %d (path: %s)", smartMockResponse, smartMockResponse.delayMs(), pathRegex));
                     }
                     MockResponse mockResponse = smartMockResponse.generateMockResponse(request);
-                    System.out.println(String.format("Response: %s", mockResponse.getBody()));
                     addHeaders(mockResponse);
                     recordedReponseMap.put(request, mockResponse);
                     return mockResponse;

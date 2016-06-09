@@ -29,6 +29,7 @@ import com.couchbase.lite.support.MultipartReaderDelegate;
 import com.couchbase.lite.util.Utils;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 
 import okhttp3.mockwebserver.MockWebServer;
@@ -47,7 +48,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
     public void manualTestPushWithManyAttachment() throws Exception {
         // add document
         String docId = "doc1";
-        String docPathRegex = String.format("/db/%s.*", docId);
+        String docPathRegex = String.format(Locale.ENGLISH, "/db/%s.*", docId);
         String docAttachName = "attachment_%d.txt";
         String assetAttachName = "attach.txt";
         String contentType = "application/octet-stream";
@@ -118,7 +119,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
     public void testPushSmallDocWithAttachment() throws Exception {
         // add document
         String docId = "doc1";
-        String docPathRegex = String.format("/db/%s.*", docId);
+        String docPathRegex = String.format(Locale.ENGLISH, "/db/%s.*", docId);
         String docAttachName = "attachment.png";
         String contentType = "image/png";
         Document doc = createDocumentForPushReplication(docId, docAttachName, contentType);
@@ -204,7 +205,7 @@ public class PushReplicationTest extends LiteTestCaseWithDB {
         UnsavedRevision revision = document.createRevision();
         if (attachmentFileNameTemplate != null) {
             for (int i = 0; i < numAttachments; i++) {
-                String attachmentFileName = String.format(attachmentFileNameTemplate, i);
+                String attachmentFileName = String.format(Locale.ENGLISH, attachmentFileNameTemplate, i);
                 revision.setAttachment(
                         attachmentFileName,
                         attachmentContentType,

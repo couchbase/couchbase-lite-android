@@ -17,6 +17,7 @@ package com.couchbase.lite.mockserver;
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -96,7 +97,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
             MockResponse mockResponse = new MockResponse();
 
             String boundary = "77d6fa0c04b501832f5dcf93d515cb73f39fa74104b01bc5a5b24dd57f4a";
-            String contentType = String.format("multipart/mixed; boundary=\"%s\"", boundary);
+            String contentType = String.format(Locale.ENGLISH, "multipart/mixed; boundary=\"%s\"", boundary);
             mockResponse.setHeader("Content-Type", contentType);
 
             ByteArrayOutputStream o = new ByteArrayOutputStream();
@@ -168,7 +169,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
             append(o, "X-Doc-Id: ").append(o, mockDocument.getDocId()).append(o, "\r\n");
             append(o, "X-Rev-Id: ").append(o, mockDocument.getDocRev()).append(o, "\r\n");
             String innerBoundary = "aff16d5e5921568ad8fab41b9ec3c2dc86390da4f9dbbc2cec7bf5e2655f";
-            String innerContentType = String.format("multipart/related; boundary=\"%s\"", innerBoundary);
+            String innerContentType = String.format(Locale.ENGLISH, "multipart/related; boundary=\"%s\"", innerBoundary);
             append(o, "Content-Type: ").append(o, innerContentType);
             append(o, "\r\n\r\n");
 
@@ -187,7 +188,7 @@ public class MockDocumentBulkGet implements SmartMockResponse {
             // image part
             append(o, "Content-Type: image/png");
             append(o, "\r\n");
-            String contentDisposition = String.format("Content-Disposition: attachment; filename=\"%s\"", mockDocument.getAttachmentName());
+            String contentDisposition = String.format(Locale.ENGLISH, "Content-Disposition: attachment; filename=\"%s\"", mockDocument.getAttachmentName());
             append(o, contentDisposition);
             append(o, "\r\n\r\n");
 

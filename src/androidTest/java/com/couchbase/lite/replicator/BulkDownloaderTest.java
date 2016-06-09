@@ -27,6 +27,7 @@ import com.couchbase.lite.util.Utils;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -64,7 +65,7 @@ public class BulkDownloaderTest extends LiteTestCaseWithDB {
             ScheduledExecutorService workExecutorService = Executors
                     .newSingleThreadScheduledExecutor();
 
-            String urlString = String.format("%s/%s", server.url("/db").url(), "_local");
+            String urlString = String.format(Locale.ENGLISH, "%s/%s", server.url("/db").url(), "_local");
             URL url = new URL(urlString);
 
             // BulkDownloader expects to be given a list of RevisionInternal

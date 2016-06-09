@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
@@ -304,7 +305,7 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
     public void test13_GarbageCollectAttachments() throws CouchbaseLiteException {
         List<RevisionInternal> revs = new ArrayList<RevisionInternal>();
         for (int i = 0; i < 100; i++)
-            revs.add(this.putDocWithAttachment(String.format("doc-%d", i), String.format("Attachment #%d", i), false));
+            revs.add(this.putDocWithAttachment(String.format(Locale.ENGLISH, "doc-%d", i), String.format(Locale.ENGLISH, "Attachment #%d", i), false));
         for (int i = 0; i < 40; i++) {
             revs.set(i,
                     database.updateAttachment(

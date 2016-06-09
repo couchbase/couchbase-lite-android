@@ -21,6 +21,7 @@ import com.couchbase.lite.util.Log;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -67,7 +68,7 @@ public class Test16_CompactDB extends PerformanceTestCase {
                         unsaved.setProperties(properties);
                         if (attachment != null) {
                             for (int j = 0; j < getNumberOfAttacment(); j++) {
-                                String name = String.format("attach_%d", j);
+                                String name = String.format(Locale.ENGLISH, "attach_%d", j);
                                 unsaved.setAttachment(name, "text/plain",
                                         new ByteArrayInputStream(attachment));
                             }
@@ -86,7 +87,7 @@ public class Test16_CompactDB extends PerformanceTestCase {
                         if (attachment != null && deleteAttachment()) {
                             unsaved = document.createRevision();
                             for (int j = 0; j < getNumberOfAttacment(); j++) {
-                                String name = String.format("attach_%d", j);
+                                String name = String.format(Locale.ENGLISH, "attach_%d", j);
                                 unsaved.removeAttachment(name);
                             }
                             unsaved.save();

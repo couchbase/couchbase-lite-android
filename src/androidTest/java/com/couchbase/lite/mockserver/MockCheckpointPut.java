@@ -17,6 +17,7 @@ import com.couchbase.lite.Manager;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -105,11 +106,11 @@ public class MockCheckpointPut implements SmartMockResponse {
             if (matcher.find()) {
                 localDocId = matcher.group(1);
             } else {
-                throw new RuntimeException(String.format("Could not extract local doc id from: %s", path));
+                throw new RuntimeException(String.format(Locale.ENGLISH, "Could not extract local doc id from: %s", path));
             }
 
             // call setId
-            setId(String.format("_local/%s", localDocId));
+            setId(String.format(Locale.ENGLISH, "_local/%s", localDocId));
 
             // extract the _rev field from the request
             try {
@@ -132,7 +133,7 @@ public class MockCheckpointPut implements SmartMockResponse {
             MockHelper.set404NotFoundJson(mockResponse);
 
         } else {
-            throw new RuntimeException(String.format("Unexpected method: %s", request.getMethod()));
+            throw new RuntimeException(String.format(Locale.ENGLISH, "Unexpected method: %s", request.getMethod()));
         }
 
         return mockResponse;

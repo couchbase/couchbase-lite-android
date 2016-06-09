@@ -78,6 +78,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -767,8 +768,8 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
         String doc2Id = "doc2";
         String doc3Id = "doc3";
         String doc4Id = "doc4";
-        String doc2PathRegex = String.format("/db/%s.*", doc2Id);
-        String doc3PathRegex = String.format("/db/%s.*", doc3Id);
+        String doc2PathRegex = String.format(Locale.ENGLISH, "/db/%s.*", doc2Id);
+        String doc3PathRegex = String.format(Locale.ENGLISH, "/db/%s.*", doc3Id);
         String doc2AttachName = "attachment.png";
         String doc3AttachName = "attachment2.png";
         String contentType = "image/png";
@@ -1091,11 +1092,11 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
 
             int rev3PromotedGeneration = 3;
             String rev3PromotedDigest = "d46b";
-            String rev3Promoted = String.format("%d-%s", rev3PromotedGeneration, rev3PromotedDigest);
+            String rev3Promoted = String.format(Locale.ENGLISH, "%d-%s", rev3PromotedGeneration, rev3PromotedDigest);
 
             int rev3DeletedGeneration = 3;
             String rev3DeletedDigest = "e768";
-            String rev3Deleted = String.format("%d-%s", rev3DeletedGeneration, rev3DeletedDigest);
+            String rev3Deleted = String.format(Locale.ENGLISH, "%d-%s", rev3DeletedGeneration, rev3DeletedDigest);
 
             int seq = 4;
 
@@ -2655,7 +2656,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
                         @Override
                         public boolean run() {
                             for (int i = 1; i <= 10; i++) {
-                                Document doc = database.getDocument(String.format("doc-%d", i));
+                                Document doc = database.getDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                                 Map<String, Object> props = new HashMap<String, Object>();
                                 props.put("index", i);
                                 props.put("bar", false);
@@ -2686,7 +2687,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
                         @Override
                         public boolean run() {
                             for (int i = 11; i <= 20; i++) {
-                                Document doc = database.getDocument(String.format("doc-%d", i));
+                                Document doc = database.getDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                                 Map<String, Object> props = new HashMap<String, Object>();
                                 props.put("index", i);
                                 props.put("bar", false);
@@ -3388,7 +3389,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
                 // Create a conflict, won by the new revision:
                 Map<String, Object> props_conflict = new HashMap<String, Object>();
                 props_conflict.put("_id", docID);
-                String revStr = String.format("%d-%04d", j, i);
+                String revStr = String.format(Locale.ENGLISH, "%d-%04d", j, i);
                 props_conflict.put("_rev", revStr);
                 props_conflict.put(key, value);
                 // attachment
@@ -3405,7 +3406,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
                 List<String> revHistory = new ArrayList<String>();
                 revHistory.add(leaf_conflict.getRevID());
                 for (int k = j - 1; k > 2; k--) {
-                    revHistory.add(String.format("%d-0000", k));
+                    revHistory.add(String.format(Locale.ENGLISH, "%d-0000", k));
                 }
                 revHistory.add(rev2ID);
                 revHistory.add(rev1ID);
@@ -4509,7 +4510,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
         String doc1Id = "doc1";
         int doc1Rev2Generation = 2;
         String doc1Rev2Digest = "b000";
-        String doc1Rev2 = String.format("%d-%s", doc1Rev2Generation, doc1Rev2Digest);
+        String doc1Rev2 = String.format(Locale.ENGLISH, "%d-%s", doc1Rev2Generation, doc1Rev2Digest);
         int doc1Seq1 = 1;
         String doc1AttachName = "attachment.png";
         String contentType = "image/png";

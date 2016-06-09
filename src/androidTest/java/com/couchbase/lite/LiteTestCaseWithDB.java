@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -598,7 +599,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         String doc1Id;
         String doc2Id;// Create some documents:
         Map<String, Object> doc1Properties = new HashMap<String, Object>();
-        doc1Id = String.format("doc1-%s", docIdTimestamp);
+        doc1Id = String.format(Locale.ENGLISH, "doc1-%s", docIdTimestamp);
         doc1Properties.put("_id", doc1Id);
         doc1Properties.put("foo", 1);
         doc1Properties.put("bar", false);
@@ -619,7 +620,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         assertEquals(Status.CREATED, status.getCode());
 
         Map<String, Object> doc2Properties = new HashMap<String, Object>();
-        doc2Id = String.format("doc2-%s", docIdTimestamp);
+        doc2Id = String.format(Locale.ENGLISH, "doc2-%s", docIdTimestamp);
         doc2Properties.put("_id", doc2Id);
         doc2Properties.put("baz", 666);
         doc2Properties.put("fnord", true);
@@ -696,7 +697,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
         // wait until mock server gets a checkpoint PUT request with expected lastSequence
         boolean foundExpectedLastSeq = false;
-        String expectedLastSequenceStr = String.format("%s", expectedLastSequence);
+        String expectedLastSequenceStr = String.format(Locale.ENGLISH, "%s", expectedLastSequence);
 
         while (!foundExpectedLastSeq) {
 

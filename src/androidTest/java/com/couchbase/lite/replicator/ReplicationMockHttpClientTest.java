@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -240,7 +241,7 @@ public class ReplicationMockHttpClientTest extends LiteTestCaseWithDB {
         final SavedRevision savedRev = aUnsavedRev.save();
 
         //{db}/_revs_diff
-        final String json = String.format(
+        final String json = String.format(Locale.ENGLISH,
                 "{\"%s\":{\"missing\":[\"%s\"],\"possible_ancestors\":[\"%s\",\"%s\"]}}",
                 doc.getId(), savedRev.getId(), doc1Rev.getId(), doc2Rev.getId());
         interceptor.setResponder("_revs_diff", new CustomizableMockInterceptor.Responder() {
@@ -391,7 +392,7 @@ public class ReplicationMockHttpClientTest extends LiteTestCaseWithDB {
             public void changed(Replication.ChangeEvent event) {
                 final int changesCount = event.getSource().getChangesCount();
                 final int completedChangesCount = event.getSource().getCompletedChangesCount();
-                String msg = String.format("changes: %d completed changes: %d", changesCount, completedChangesCount);
+                String msg = String.format(Locale.ENGLISH, "changes: %d completed changes: %d", changesCount, completedChangesCount);
                 Log.d(TAG, msg);
                 if (changesCount == completedChangesCount && changesCount != 0) {
                     replicationCaughtUpSignal.countDown();

@@ -18,6 +18,7 @@ import com.couchbase.lite.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -59,11 +60,11 @@ public class MockRevsDiff implements SmartMockResponse {
     public MockResponse generateMockResponse(RecordedRequest request) {
 
         if (!request.getMethod().equals("POST")) {
-            throw new RuntimeException(String.format("Expected POST, got %s", request.getMethod()));
+            throw new RuntimeException(String.format(Locale.ENGLISH, "Expected POST, got %s", request.getMethod()));
         }
 
         if (!request.getPath().contains("_revs_diff")) {
-            throw new RuntimeException(String.format("Expected _revs_diff in path, got %s", request.getPath()));
+            throw new RuntimeException(String.format(Locale.ENGLISH, "Expected _revs_diff in path, got %s", request.getPath()));
         }
 
         try {
