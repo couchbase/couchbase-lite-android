@@ -456,12 +456,25 @@ public class LiteTestCaseWithDB extends LiteTestCase {
     }
 
     public static void createDocuments(final Database db, final int n) {
-        //TODO should be changed to use db.runInTransaction
-        for (int i = 0; i < n; i++) {
-            Map<String, Object> properties = new HashMap<String, Object>();
-            properties.put("testName", "testDatabase");
-            properties.put("sequence", i);
-            createDocumentWithProperties(db, properties);
+        db.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                createDocuments(db, n, false);
+                return true;
+            }
+        });
+    }
+
+    public static void createDocuments(final Database db, final int n, boolean transaction) {
+        if (transaction) {
+            createDocuments(db, n);
+        } else {
+            for (int i = 0; i < n; i++) {
+                Map<String, Object> properties = new HashMap<String, Object>();
+                properties.put("testName", "testDatabase");
+                properties.put("sequence", i);
+                createDocumentWithProperties(db, properties);
+            }
         }
     }
 

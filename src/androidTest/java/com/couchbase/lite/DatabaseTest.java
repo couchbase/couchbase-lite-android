@@ -29,6 +29,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +44,127 @@ import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.mockwebserver.MockWebServer;
 
 public class DatabaseTest extends LiteTestCaseWithDB {
+
+    /**
+     * in Database_Tests.m
+     * - (void) test26_DocumentExpiry
+     */
+    public void test26_DocumentExpiry() throws CouchbaseLiteException, InterruptedException {
+        Calendar cal = new GregorianCalendar();
+        cal.add(Calendar.SECOND, 30);// +30 sec
+        final Date future = cal.getTime();
+        Log.i(TAG, "Now is %s", new Date());
+        Map<String, Object> props = new HashMap<>();
+        props.put("foo", 17);
+        props.put("_id", "12345");
+        Document doc = createDocWithProperties(props);
+        assertNotNull(doc);
+        assertNull(doc.getExpirationDate());
+        doc.setExpirationDate(future);
+        Date exp = doc.getExpirationDate();
+        Log.i(TAG, "Doc expiration is %s", exp);
+        assertNotNull(exp);
+        long interval = exp.getTime() - future.getTime();
+        assertTrue(interval < 1);
+
+        Date next = new Date(database.getStore().nextDocumentExpiry());
+        Log.i(TAG, "Next expiration at %s", next);
+
+        doc.setExpirationDate(null);
+        assertNull(doc.getExpirationDate());
+
+        assertEquals(0, database.getStore().nextDocumentExpiry());
+
+        // Can a nonexistent document have an expiration date?
+        doc = database.getDocument("foo");
+        assertNull(doc.getExpirationDate());
+        doc.setExpirationDate(future);
+        exp = doc.getExpirationDate();
+        Log.i(TAG, "Nonexistent doc expiration is %s", exp);
+
+        assertEquals(1, database.getDocumentCount());
+
+        Log.i(TAG, "Creating documents");
+        createDocuments(database, 1000);
+
+        assertEquals(1001, database.getDocumentCount());
+
+        Log.i(TAG, "Marking docs for expiration");
+        final AtomicInteger total = new AtomicInteger();
+        final AtomicInteger marked = new AtomicInteger();
+        database.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                try {
+                    QueryEnumerator e = database.createAllDocumentsQuery().run();
+                    for (QueryRow row : e) {
+                        Document doc = row.getDocument();
+                        if (doc.getProperties().containsKey("sequence")) {
+                            int sequence = (int) doc.getProperties().get("sequence");
+                            if (sequence % 10 == 6) {
+                                Calendar time = new GregorianCalendar();
+                                time.add(Calendar.SECOND, 2); // 2sec from now
+                                doc.setExpirationDate(time.getTime());
+                                marked.incrementAndGet();
+                            } else if (sequence % 10 == 3) {
+                                doc.setExpirationDate(future); // 30 sec from now
+                            }
+                        }
+                        total.incrementAndGet();
+                    }
+                    return true;
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Failed Database.createAllDocumentsQuery()", e);
+                    return false;
+                }
+            }
+        });
+        assertEquals(1001, total.get());
+        assertEquals(100, marked.get());
+
+        next = new Date(database.getStore().nextDocumentExpiry());
+        Log.i(TAG, "nextDocumentExpiry() %d", database.getStore().nextDocumentExpiry());
+        Log.i(TAG, "Next expiration at %s (in %d sec)", next, (next.getTime() - System.currentTimeMillis()) / 1000);
+        assertTrue(next.getTime() - System.currentTimeMillis() <= 2 * 1000); // 2 sec
+        assertTrue(next.getTime() - System.currentTimeMillis() >= -10 * 1000); // -10 sec
+
+        final CountDownLatch latch = new CountDownLatch(100);
+        final AtomicInteger counter = new AtomicInteger(0);
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                List<DocumentChange> changes = event.getChanges();
+                for (DocumentChange change : changes) {
+                    if (change.getRevisionId() == null) {
+                        Log.e(TAG, "[%d] %s", counter.incrementAndGet(), change.getDocumentId());
+                        latch.countDown();
+                    }
+                }
+            }
+        });
+
+        Log.i(TAG, "Waiting for auto expiration");
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+        assertEquals(100, counter.get());
+
+        total.set(0);
+        QueryEnumerator e = database.createAllDocumentsQuery().run();
+        for (QueryRow row : e) {
+            Document d = row.getDocument();
+            if (d.getProperties() != null && d.getProperties().containsKey("sequence")) {
+                int sequence = (int) d.getProperties().get("sequence");
+                assertTrue(sequence % 10 != 6);
+            }
+            total.incrementAndGet();
+        }
+        assertEquals(901, total.get());
+
+        next = new Date(database.getStore().nextDocumentExpiry());
+        Log.i(TAG, "Next expiration at %s", next);
+        assertTrue(Math.abs(next.getTime() - future.getTime()) < 1);
+    }
+
     /**
      * in DatabaseInternal_Tests.m
      * -(void) test26_ReAddAfterPurge
@@ -228,6 +352,24 @@ public class DatabaseTest extends LiteTestCaseWithDB {
             @Override
             public void changed(Database.ChangeEvent event) {
                 atomicInteger.incrementAndGet();
+            }
+        });
+        createDocuments(database, numDocs, false);
+        assertEquals(numDocs, atomicInteger.get());
+    }
+
+    /**
+     * With transaction
+     */
+    public void testChangeListenerNotificationWithTransaction() throws Exception {
+        final int numDocs = 50;
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                List<DocumentChange> changes = event.getChanges();
+                if (changes != null)
+                    atomicInteger.addAndGet(changes.size());
             }
         });
         createDocuments(database, numDocs);
