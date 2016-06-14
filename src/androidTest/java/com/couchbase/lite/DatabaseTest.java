@@ -51,9 +51,9 @@ public class DatabaseTest extends LiteTestCaseWithDB {
      */
     public void test26_DocumentExpiry() throws CouchbaseLiteException, InterruptedException {
         Calendar cal = new GregorianCalendar();
-        cal.add(Calendar.SECOND, 30);// +30 sec
+        cal.add(Calendar.SECOND, 60);// +60 sec
         final Date future = cal.getTime();
-        Log.i(TAG, "Now is %s", new Date());
+        Log.v(TAG, "Now is %s", new Date());
         Map<String, Object> props = new HashMap<>();
         props.put("foo", 17);
         props.put("_id", "12345");
@@ -62,13 +62,13 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertNull(doc.getExpirationDate());
         doc.setExpirationDate(future);
         Date exp = doc.getExpirationDate();
-        Log.i(TAG, "Doc expiration is %s", exp);
+        Log.v(TAG, "Doc expiration is %s", exp);
         assertNotNull(exp);
         long interval = exp.getTime() - future.getTime();
-        assertTrue(interval < 1);
+        assertTrue(interval < 1 * 1000); // 1sec
 
         Date next = new Date(database.getStore().nextDocumentExpiry());
-        Log.i(TAG, "Next expiration at %s", next);
+        Log.v(TAG, "Next expiration at %s", next);
 
         doc.setExpirationDate(null);
         assertNull(doc.getExpirationDate());
@@ -80,19 +80,19 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertNull(doc.getExpirationDate());
         doc.setExpirationDate(future);
         exp = doc.getExpirationDate();
-        Log.i(TAG, "Nonexistent doc expiration is %s", exp);
+        Log.v(TAG, "Nonexistent doc expiration is %s", exp);
 
         assertEquals(1, database.getDocumentCount());
 
-        Log.i(TAG, "Creating documents");
-        createDocuments(database, 1000);
+        Log.v(TAG, "Creating documents");
+        createDocuments(database, 100);  // 100 docs  (Note 10K or 1K docs are too much for slow devices)
 
-        assertEquals(1001, database.getDocumentCount());
+        assertEquals(101, database.getDocumentCount());
 
-        Log.i(TAG, "Marking docs for expiration");
+        Log.v(TAG, "Marking docs for expiration");
         final AtomicInteger total = new AtomicInteger();
         final AtomicInteger marked = new AtomicInteger();
-        database.runInTransaction(new TransactionalTask() {
+        assertTrue(database.runInTransaction(new TransactionalTask() {
             @Override
             public boolean run() {
                 try {
@@ -118,37 +118,35 @@ public class DatabaseTest extends LiteTestCaseWithDB {
                     return false;
                 }
             }
-        });
-        assertEquals(1001, total.get());
-        assertEquals(100, marked.get());
+        }));
+        assertEquals(101, total.get());
+        assertEquals(10, marked.get());
 
         next = new Date(database.getStore().nextDocumentExpiry());
-        Log.i(TAG, "nextDocumentExpiry() %d", database.getStore().nextDocumentExpiry());
-        Log.i(TAG, "Next expiration at %s (in %d sec)", next, (next.getTime() - System.currentTimeMillis()) / 1000);
-        assertTrue(next.getTime() - System.currentTimeMillis() <= 2 * 1000); // 2 sec
-        assertTrue(next.getTime() - System.currentTimeMillis() >= -10 * 1000); // -10 sec
+        long diff =  (next.getTime() - System.currentTimeMillis()) / 1000;
+        Log.v(TAG, "Next expiration at %s (in %d sec)", next, diff);
+        assertTrue(diff <= 2); // 2 sec
+        assertTrue(diff >= -15); // -15 sec (-10sec could fail with slow machine)
 
-        final CountDownLatch latch = new CountDownLatch(100);
-        final AtomicInteger counter = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(10);
         database.addChangeListener(new Database.ChangeListener() {
             @Override
             public void changed(Database.ChangeEvent event) {
                 List<DocumentChange> changes = event.getChanges();
                 for (DocumentChange change : changes) {
                     if (change.getRevisionId() == null) {
-                        Log.e(TAG, "[%d] %s", counter.incrementAndGet(), change.getDocumentId());
                         latch.countDown();
                     }
                 }
             }
         });
 
-        Log.i(TAG, "Waiting for auto expiration");
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        Log.v(TAG, "Waiting for auto expiration");
+        assertTrue(latch.await(15, TimeUnit.SECONDS));
 
-        assertEquals(100, counter.get());
 
         total.set(0);
+        int counter = 0;
         QueryEnumerator e = database.createAllDocumentsQuery().run();
         for (QueryRow row : e) {
             Document d = row.getDocument();
@@ -157,12 +155,14 @@ public class DatabaseTest extends LiteTestCaseWithDB {
                 assertTrue(sequence % 10 != 6);
             }
             total.incrementAndGet();
+            counter++;
         }
-        assertEquals(901, total.get());
+        assertEquals(91, total.get());
+        assertEquals(91, counter);
 
         next = new Date(database.getStore().nextDocumentExpiry());
-        Log.i(TAG, "Next expiration at %s", next);
-        assertTrue(Math.abs(next.getTime() - future.getTime()) < 1);
+        Log.v(TAG, "Next expiration at %s", next);
+        assertTrue(Math.abs(next.getTime() - future.getTime()) < 1 * 1000); // 1 sec
     }
 
     /**
