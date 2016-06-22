@@ -112,11 +112,7 @@ public class RouterTest extends LiteTestCaseWithDB {
     }
 
     public void testDocWithAttachment() throws IOException {
-
-        String inlineTextString = "Inline text string created by cblite functional test";
-
         send("PUT", "/db", Status.CREATED, null);
-
         Map<String, Object> attachment = new HashMap<String, Object>();
         attachment.put("content_type", "text/plain");
         attachment.put("data", "SW5saW5lIHRleHQgc3RyaW5nIGNyZWF0ZWQgYnkgY2JsaXRlIGZ1bmN0aW9uYWwgdGVzdA==");
@@ -124,12 +120,14 @@ public class RouterTest extends LiteTestCaseWithDB {
         Map<String, Object> attachments = new HashMap<String, Object>();
         attachments.put("inline.txt", attachment);
 
+        String inlineTextString = "Inline text string created by cblite functional test";
         Map<String, Object> docWithAttachment = new HashMap<String, Object>();
         docWithAttachment.put("_id", "docWithAttachment");
         docWithAttachment.put("text", inlineTextString);
         docWithAttachment.put("_attachments", attachments);
 
-        Map<String, Object> result = (Map<String, Object>) sendBody("PUT", "/db/docWithAttachment", docWithAttachment, Status.CREATED, null);
+        Map<String, Object> result = (Map<String, Object>) sendBody("PUT", "/db/docWithAttachment",
+                docWithAttachment, Status.CREATED, null);
 
         Map expChanges = new HashMap<String, Map<String, Object>>();
         List changesResults = new ArrayList();
@@ -162,13 +160,10 @@ public class RouterTest extends LiteTestCaseWithDB {
         String contentType = conn.getHeaderField("Content-Type");
         assertNotNull(contentType);
         assertTrue(contentType.contains("text/plain"));
-        StringWriter writer = new StringWriter();
         InputStream is = conn.getInputStream();
-        IOUtils.copy(is, writer, "UTF-8");
+        String responseString = IOUtils.toString(is, "UTF-8");
         is.close();
-        String responseString = writer.toString();
         assertTrue(responseString.contains(inlineTextString));
-        writer.close();
 
         // With Accept: text/plain
         Map<String, String> headers = new HashMap<>();
@@ -177,13 +172,10 @@ public class RouterTest extends LiteTestCaseWithDB {
         contentType = conn.getHeaderField("Content-Type");
         assertNotNull(contentType);
         assertTrue(contentType.contains("text/plain"));
-        writer = new StringWriter();
         is = conn.getInputStream();
-        IOUtils.copy(is, writer, "UTF-8");
+        responseString = IOUtils.toString(is, "UTF-8");
         is.close();
-        responseString = writer.toString();
         assertTrue(responseString.contains(inlineTextString));
-        writer.close();
 
         // With Accept: application/json
         headers.put("Accept", "application/json");
@@ -194,6 +186,17 @@ public class RouterTest extends LiteTestCaseWithDB {
         is.close();
         assertEquals(406, body.get("status"));
         assertEquals("not_acceptable", body.get("error"));
+
+        // With Accept: image/webp,image/*,*/*;q=0.8
+        headers.put("Accept", "image/webp,image/*,*/*;q=0.8");
+        conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", headers, null);
+        contentType = conn.getHeaderField("Content-Type");
+        assertNotNull(contentType);
+        assertTrue(contentType.contains("text/plain"));
+        is = conn.getInputStream();
+        responseString = IOUtils.toString(is, "UTF-8");
+        is.close();
+        assertTrue(responseString.contains(inlineTextString));
 
         // with attachments=true query parameter
         result = (Map<String, Object>) send("GET", "/db/docWithAttachment?attachments=true", Status.OK, null);
