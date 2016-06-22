@@ -383,7 +383,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
                     conn.setRequestProperty(header, headers.get(header));
                 }
             }
-            Map<String, List<String>> allProperties = conn.getRequestProperties();
+
             if (bodyObj != null) {
                 conn.setDoInput(true);
                 ByteArrayInputStream bais = new ByteArrayInputStream(mapper.writeValueAsBytes(bodyObj));
