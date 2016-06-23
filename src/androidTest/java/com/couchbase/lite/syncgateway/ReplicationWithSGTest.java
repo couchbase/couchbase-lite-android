@@ -16,11 +16,10 @@ package com.couchbase.lite.syncgateway;
 import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
-import com.couchbase.lite.auth.FileTokenStore;
-import com.couchbase.lite.auth.ITokenStore;
 import com.couchbase.lite.auth.MemTokenStore;
 import com.couchbase.lite.auth.OpenIDConnectAuthorizer;
-import com.couchbase.lite.auth.TokenStoreFactory;
+import com.couchbase.lite.auth.SecureTokenStore;
+import com.couchbase.lite.auth.TokenStore;
 import com.couchbase.lite.replicator.RemoteFormRequest;
 import com.couchbase.lite.replicator.RemoteRequest;
 import com.couchbase.lite.replicator.RemoteRequestCompletion;
@@ -30,7 +29,6 @@ import com.couchbase.lite.support.CouchbaseLiteHttpClientFactory;
 import com.couchbase.lite.support.PersistentCookieJar;
 import com.couchbase.lite.util.Log;
 
-import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -85,23 +83,14 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
     // #pragma mark - OPENID CONNECT:
 
     public void test26_OpenIDConnectAuth() throws Exception {
-        _test26_OpenIDConnectAuth(TokenStoreFactory.build(getContext()));
+        _test26_OpenIDConnectAuth(new SecureTokenStore(getContext()));
     }
 
     public void test26_OpenIDConnectAuthMem() throws Exception {
         _test26_OpenIDConnectAuth(new MemTokenStore());
     }
 
-    public void test26_OpenIDConnectAuthFile() throws Exception {
-        File tokenFile = new File(getTestContext("test").getFilesDir(), "token.store");
-        assertNotNull(tokenFile);
-        ITokenStore tokenStore = new FileTokenStore(tokenFile);
-        assertNotNull(tokenStore);
-
-        _test26_OpenIDConnectAuth(tokenStore);
-    }
-
-    public void _test26_OpenIDConnectAuth(ITokenStore tokenStore) throws Exception {
+    public void _test26_OpenIDConnectAuth(TokenStore tokenStore) throws Exception {
         if (!syncgatewayTestsEnabled() || !isSQLiteDB())
             return;
 
@@ -110,7 +99,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
 
         OpenIDConnectAuthorizer.forgetIDTokensForServer(remoteDbURL, tokenStore);
 
-        Authenticator auth = AuthenticatorFactory.createOpenIDConnectAuithenticator(new OpenIDConnectAuthorizer.OIDCLoginCallback() {
+        Authenticator auth = AuthenticatorFactory.createOpenIDConnectAuthenticator(new OpenIDConnectAuthorizer.OIDCLoginCallback() {
             @Override
             public void callback(URL login, URL authBase, OpenIDConnectAuthorizer.OIDCLoginContinuation cont) {
                 assertValidOIDCLogin(login, authBase, remoteDbURL);
@@ -133,7 +122,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
         // Now try again; this should use the ID token from the keychain and/or a session cookie:
         Log.v(TAG, "**** Second replication...");
         final AtomicBoolean callbackInvoked = new AtomicBoolean(false);
-        auth = AuthenticatorFactory.createOpenIDConnectAuithenticator(new OpenIDConnectAuthorizer.OIDCLoginCallback() {
+        auth = AuthenticatorFactory.createOpenIDConnectAuthenticator(new OpenIDConnectAuthorizer.OIDCLoginCallback() {
             @Override
             public void callback(URL login, URL authBase, OpenIDConnectAuthorizer.OIDCLoginContinuation cont) {
                 assertValidOIDCLogin(login, authBase, remoteDbURL);
@@ -148,24 +137,14 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
     }
 
     public void test27_OpenIDConnectAuth_ExpiredIDToken() throws Exception {
-        _test27_OpenIDConnectAuth_ExpiredIDToken(TokenStoreFactory.build(getContext()));
+        _test27_OpenIDConnectAuth_ExpiredIDToken(new SecureTokenStore(getContext()));
     }
 
     public void test27_OpenIDConnectAuth_ExpiredIDTokenMem() throws Exception {
         _test27_OpenIDConnectAuth_ExpiredIDToken(new MemTokenStore());
     }
 
-    public void test27_OpenIDConnectAuth_ExpiredIDToken1() throws Exception {
-        File tokenFile = new File(getTestContext("test").getFilesDir(), "token.store");
-        assertNotNull(tokenFile);
-        ITokenStore tokenStore = new FileTokenStore(tokenFile);
-        assertNotNull(tokenStore);
-
-        _test27_OpenIDConnectAuth_ExpiredIDToken(tokenStore);
-    }
-
-    // test is failing: This could be caused by network related codes.
-    public void _test27_OpenIDConnectAuth_ExpiredIDToken(ITokenStore tokenStore) throws Exception {
+    public void _test27_OpenIDConnectAuth_ExpiredIDToken(TokenStore tokenStore) throws Exception {
         if (!syncgatewayTestsEnabled() || !isSQLiteDB())
             return;
 
@@ -175,7 +154,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
         OpenIDConnectAuthorizer.forgetIDTokensForServer(remoteDbURL, tokenStore);
 
         final AtomicBoolean callbackInvoked = new AtomicBoolean(false);
-        Authenticator auth = AuthenticatorFactory.createOpenIDConnectAuithenticator(
+        Authenticator auth = AuthenticatorFactory.createOpenIDConnectAuthenticator(
                 new OpenIDConnectAuthorizer.OIDCLoginCallback() {
                     @Override
                     public void callback(URL login, URL authBase,

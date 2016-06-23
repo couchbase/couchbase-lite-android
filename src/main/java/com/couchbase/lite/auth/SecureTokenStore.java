@@ -48,7 +48,7 @@ import javax.security.auth.x500.X500Principal;
 /**
  * Created by hideki on 6/22/16.
  */
-public class TokenStore implements ITokenStore {
+public class SecureTokenStore implements TokenStore {
 
     public static final String TAG = Log.TAG_SYNC;
 
@@ -67,9 +67,6 @@ public class TokenStore implements ITokenStore {
 
     private Context context = null;
 
-    private URL remoteURL;
-    private String label;
-
     ////////////////////////////////////////////////////////////
     // Member variables
     ////////////////////////////////////////////////////////////
@@ -78,7 +75,7 @@ public class TokenStore implements ITokenStore {
     // Constructors
     ////////////////////////////////////////////////////////////
 
-    public TokenStore(Context context) {
+    public SecureTokenStore(Context context) {
         this.context = context;
         initializePrivateKey(context);
     }
@@ -160,8 +157,11 @@ public class TokenStore implements ITokenStore {
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             CipherOutputStream cipherOutputStream = new CipherOutputStream(outputStream, cipher);
-            cipherOutputStream.write(bytes);
-            cipherOutputStream.close();
+            try {
+                cipherOutputStream.write(bytes);
+            } finally {
+                cipherOutputStream.close();
+            }
             byte[] encrypted = outputStream.toByteArray();
             return Base64.encodeToString(encrypted, Base64.DEFAULT);
         } catch (Exception ex) {
@@ -193,22 +193,23 @@ public class TokenStore implements ITokenStore {
             Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
 
+            byte[] bytes = null;
             ByteArrayInputStream inputStream = new ByteArrayInputStream(encrypted);
             CipherInputStream cipherInputStream = new CipherInputStream(inputStream, cipher);
-            ArrayList<Byte> values = new ArrayList<>();
-            int nextByte;
-            while ((nextByte = cipherInputStream.read()) != -1) {
-                values.add((byte) nextByte);
+            try {
+                ArrayList<Byte> values = new ArrayList<>();
+                int nextByte;
+                while ((nextByte = cipherInputStream.read()) != -1) {
+                    values.add((byte) nextByte);
+                }
+                bytes = new byte[values.size()];
+                for (int i = 0; i < bytes.length; i++) {
+                    bytes[i] = values.get(i).byteValue();
+                }
+            } finally {
+                cipherInputStream.close();
             }
-            byte[] bytes = new byte[values.size()];
-            for (int i = 0; i < bytes.length; i++) {
-                bytes[i] = values.get(i).byteValue();
-            }
-
-            cipherInputStream.close();
             return bytes;
-
-
         } catch (Exception ex) {
             Log.e(TAG, "Unable to open KeyStore", ex);
             return null;

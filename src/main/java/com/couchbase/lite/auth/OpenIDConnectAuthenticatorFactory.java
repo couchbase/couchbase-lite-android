@@ -14,15 +14,16 @@
 package com.couchbase.lite.auth;
 
 import android.content.Context;
-import android.os.Build;
 
 /**
- * Created by hideki on 6/22/16.
+ * Created by hideki on 6/23/16.
  */
-public class TokenStoreFactory {
-    private static final boolean hasKeyStore = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2; // API 18
-
-    public static TokenStore build(Context context) {
-        return hasKeyStore ? new SecureTokenStore(context) : new MemTokenStore();
+public class OpenIDConnectAuthenticatorFactory extends AuthenticatorFactory {
+    /**
+     * Creates an Authenticator that knows how to do OpenID authentication.
+     */
+    public static Authenticator createOpenIDConnectAuthenticator(
+            OpenIDConnectAuthorizer.OIDCLoginCallback callback, Context context) {
+        return new OpenIDConnectAuthorizer(callback, TokenStoreFactory.build(context));
     }
 }

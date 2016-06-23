@@ -15,7 +15,6 @@ package com.couchbase.lite.auth;
 
 import com.couchbase.lite.LiteTestCase;
 
-import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,28 +24,18 @@ import java.util.Map;
  */
 public class OpenIDConnectAuthorizerTest extends LiteTestCase {
     OpenIDConnectAuthorizer authorizer;
-    File tokenFile;
-    FileTokenStore tokenStore;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        tokenFile = new File(getTestContext("test").getFilesDir(), "token.store");
-        tokenStore = new FileTokenStore(tokenFile);
         authorizer = new com.couchbase.lite.auth.OpenIDConnectAuthorizer(
                 new OpenIDConnectAuthorizer.OIDCLoginCallback() {
                     @Override
                     public void callback(URL loginURL, URL authBaseURL,
                                          OpenIDConnectAuthorizer.OIDCLoginContinuation loginContinuation) {
                     }
-                }, tokenStore);
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        if (tokenFile.exists())
-            tokenFile.delete();
-        super.tearDown();
+                }, new MemTokenStore());
+        authorizer.setRemoteURL(new URL("http://10.0.0.1:9999/db"));
     }
 
     public void testTokens() throws Exception {

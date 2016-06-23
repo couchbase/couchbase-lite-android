@@ -11,13 +11,13 @@ import java.util.Map;
 /**
  * Created by hideki on 6/22/16.
  */
-public class TokenStoreTest extends LiteTestCaseWithDB {
-    TokenStore tokenStore = null;
+public class SecureTokenStoreTest extends LiteTestCaseWithDB {
+    private SecureTokenStore tokenStore = null;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        tokenStore = new TokenStore(getContext());
+        tokenStore = new SecureTokenStore(getContext());
     }
 
     @Override
