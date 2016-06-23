@@ -1,16 +1,16 @@
-/**
- * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
+//
+// Copyright (c) 2016 Couchbase, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+// except in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the
+// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+//
 package com.couchbase.lite.mockserver;
 
 import com.couchbase.lite.Manager;
@@ -34,6 +34,7 @@ import okio.Buffer;
  * Misc helper methods for MockWebserver-based Mock objects
  */
 public class MockHelper {
+    public static final String PATH_REGEX_DB = "/db/?";
     public static final String PATH_REGEX_CHECKPOINT = "/db/_local.*";
     public static final String PATH_REGEX_CHANGES = "/db/_changes.*";
     public static final String PATH_REGEX_CHANGES_NORMAL = "/db/_changes\\?feed=normal.*";
@@ -55,13 +56,12 @@ public class MockHelper {
     /**
      * Get a "preloaded" mock CouchDB suitable to be used as a pull replication target.
      * It's preloaded in the sense that it is ready serve up mock documents.
-     *
+     * <p/>
      * This can't be used to simulate a Sync Gateway, because it does not support _bulk_get
      *
-     * @param dispatcher the MockDispatcher
-     * @param numMockDocsToServe how many docs should be served to pull replicator?
+     * @param dispatcher                the MockDispatcher
+     * @param numMockDocsToServe        how many docs should be served to pull replicator?
      * @param numDocsPerChangesResponse how many docs to add to each _changes response?  MAXINT for all.
-     *
      */
     public static MockWebServer getPreloadedPullTargetMockCouchDB(MockDispatcher dispatcher,
                                                                   int numMockDocsToServe,

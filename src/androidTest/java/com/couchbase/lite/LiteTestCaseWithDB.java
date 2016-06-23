@@ -1,16 +1,16 @@
-/**
- * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
+//
+// Copyright (c) 2016 Couchbase, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+// except in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the
+// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.Body;
@@ -288,6 +288,19 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected URL getReplicationURL() throws MalformedURLException {
         return new URL(System.getProperty("replicationUrl"));
+    }
+
+    protected URL getSyncGatewayURL() throws MalformedURLException {
+        return new URL(System.getProperty("syncgatewayUrl"));
+    }
+
+    protected String getSyncGatewayHost() throws MalformedURLException {
+        return System.getProperty("syncgatewayHost");
+    }
+
+    protected URL getRemoteTestDBURL(String dbName) throws MalformedURLException {
+        URL url = getSyncGatewayURL();
+        return new URL(url.getProtocol(), url.getHost(), url.getPort(), dbName);
     }
 
     protected URL getAdminReplicationURL() throws MalformedURLException {

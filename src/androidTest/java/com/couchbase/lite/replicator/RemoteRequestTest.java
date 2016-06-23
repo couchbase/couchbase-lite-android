@@ -1,16 +1,16 @@
-/**
- * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
+//
+// Copyright (c) 2016 Couchbase, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+// except in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the
+// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+//
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.LiteTestCaseWithDB;
@@ -252,7 +252,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
 
             server.start();
 
-            URL url = new URL(String.format(Locale.ENGLISH,"%s/%s", server.url("/db").url(), "_local"));
+            URL url = new URL(String.format(Locale.ENGLISH, "%s/%s", server.url("/db").url(), "_local"));
 
             Map<String, Object> requestBody = new HashMap<String, Object>();
             requestBody.put("foo", "bar");
@@ -311,5 +311,57 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
         } finally {
             assertTrue(MockHelper.shutdown(server, dispatcher));
         }
+    }
+
+    /**
+     * ReplicatorInternal_Tests.m
+     * - (void) test22_ParseAuthChallenge
+     */
+    public void testParseAuthHeader() {
+        String authHeader =
+                "OIDC login=\"http://127.0.0.1:4984/openid_db/_oidc_testing/authorize?client_id=sync_gateway&redirect_uri=http%3A%2F%2F127.0.0.1%3A4984%2Fopenid_db%2F_oidc_callback&response_type=code&scope=openid+email&state=\"";
+        Map challenge = RemoteRequest.parseAuthHeader(authHeader);
+        assertNotNull(challenge);
+        assertEquals(3, challenge.size());
+        assertEquals(authHeader, challenge.get("WWW-Authenticate"));
+        assertEquals("OIDC", challenge.get("Scheme"));
+        assertTrue(challenge.containsKey("login"));
+        assertEquals("http://127.0.0.1:4984/openid_db/_oidc_testing/authorize?client_id=sync_gateway&redirect_uri=http%3A%2F%2F127.0.0.1%3A4984%2Fopenid_db%2F_oidc_callback&response_type=code&scope=openid+email&state=", challenge.get("login"));
+
+        authHeader = null;
+        challenge = RemoteRequest.parseAuthHeader(authHeader);
+        assertNull(challenge);
+
+        authHeader = "";
+        challenge = RemoteRequest.parseAuthHeader(authHeader);
+        assertNull(challenge);
+
+
+        authHeader = "Basic realm=Couchbase";
+        challenge = RemoteRequest.parseAuthHeader(authHeader);
+        assertNotNull(challenge);
+        Map expect = new HashMap();
+        expect.put("WWW-Authenticate", authHeader);
+        expect.put("Scheme", "Basic");
+        expect.put("realm", "Couchbase");
+        assertEquals(expect, challenge);
+
+        authHeader = "OIDC login=\"http://example.com/login?foo=bar\"";
+        challenge = RemoteRequest.parseAuthHeader(authHeader);
+        assertNotNull(challenge);
+        expect = new HashMap();
+        expect.put("WWW-Authenticate", authHeader);
+        expect.put("Scheme", "OIDC");
+        expect.put("login", "http://example.com/login?foo=bar");
+        assertEquals(expect, challenge);
+
+        authHeader = "OIDC login=\"http://example.com/login?foo=bar\",something=other";
+        challenge = RemoteRequest.parseAuthHeader(authHeader);
+        assertNotNull(challenge);
+        expect = new HashMap();
+        expect.put("WWW-Authenticate", authHeader);
+        expect.put("Scheme", "OIDC");
+        expect.put("login", "http://example.com/login?foo=bar");
+        assertEquals(expect, challenge);
     }
 }
