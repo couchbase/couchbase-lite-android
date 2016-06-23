@@ -1,16 +1,16 @@
-/**
- * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
+//
+// Copyright (c) 2016 Couchbase, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+// except in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the
+// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+//
 package com.couchbase.lite.replicator;
 
 import com.couchbase.lite.CouchbaseLiteException;
@@ -37,14 +37,15 @@ import com.couchbase.lite.Validator;
 import com.couchbase.lite.View;
 import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
-import com.couchbase.lite.auth.BasicAuthenticator;
 import com.couchbase.lite.auth.FacebookAuthorizer;
+import com.couchbase.lite.auth.PasswordAuthorizer;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockBulkDocs;
 import com.couchbase.lite.mockserver.MockChangesFeed;
 import com.couchbase.lite.mockserver.MockChangesFeedNoResponse;
 import com.couchbase.lite.mockserver.MockCheckpointGet;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
+import com.couchbase.lite.mockserver.MockCreateDB;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockDocumentAllDocs;
 import com.couchbase.lite.mockserver.MockDocumentBulkGet;
@@ -1879,12 +1880,11 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
      */
     public void testReplicatorErrorStatus() throws Exception {
 
-        // create mockwebserver and custom dispatcher
+        // create MockWebServer and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         try {
-
             // fake _session response
             MockSessionGet mockSessionGet = new MockSessionGet();
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_SESSION,
@@ -3773,7 +3773,6 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             MockWebServer server = MockHelper.getMockWebServer(dispatcher);
             dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
             try {
-
                 // set up request
                 {
                     // response for /db/_session
@@ -4022,6 +4021,10 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         try {
             server.start();
+            // create db response with 201
+            MockCreateDB mockCreateDB = new MockCreateDB();
+            mockCreateDB.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_DB, mockCreateDB);
 
             // checkpoint GET response w/ 404.  also receives checkpoint PUT's
             MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
@@ -4053,7 +4056,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             pusher.setDocIds(Arrays.asList(doc1.getId()));
 
             // custom authenticator
-            BasicAuthenticator authenticator = new BasicAuthenticator("foo", "bar");
+            PasswordAuthorizer authenticator = new PasswordAuthorizer("foo", "bar");
             pusher.setAuthenticator(authenticator);
 
             // custom request headers
@@ -4092,7 +4095,8 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             assertEquals(Arrays.asList(doc1.getId()), pusher.getDocIds());
             assertEquals(authenticator, pusher.getAuthenticator());
             assertEquals(requestHeaders, pusher.getHeaders());
-            assertTrue(pusher.shouldCreateTarget());
+            // NOTE: after db created, createTarget flag set false.
+            assertFalse(pusher.shouldCreateTarget());
         } finally {
             assertTrue(MockHelper.shutdown(server, dispatcher));
         }

@@ -1,29 +1,27 @@
-/**
- * Copyright (c) 2016 Couchbase, Inc. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
-package com.couchbase.lite;
+//
+// Copyright (c) 2016 Couchbase, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+// except in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the
+// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+//
+package com.couchbase.lite.auth;
 
-import com.couchbase.lite.auth.Authenticator;
-import com.couchbase.lite.auth.AuthenticatorFactory;
-import com.couchbase.lite.auth.BasicAuthenticator;
-import com.couchbase.lite.auth.PersonaAuthorizer;
-import com.couchbase.lite.auth.TokenAuthenticator;
+import com.couchbase.lite.Database;
+import com.couchbase.lite.LiteTestCase;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
 
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AuthTest extends LiteTestCase {
@@ -51,7 +49,7 @@ public class AuthTest extends LiteTestCase {
 
             PersonaAuthorizer auth = new PersonaAuthorizer(email);
             Assert.assertEquals(email, auth.getEmailAddress());
-            Assert.assertEquals(null, auth.assertionForSite(originURL));
+            Assert.assertEquals(null, auth.assertion());
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
@@ -61,13 +59,13 @@ public class AuthTest extends LiteTestCase {
     public void testAuthenticatorFactory() {
         Authenticator basicAuth = AuthenticatorFactory.createBasicAuthenticator("username", "password");
         Assert.assertNotNull(basicAuth);
-        Assert.assertTrue(basicAuth instanceof BasicAuthenticator);
+        Assert.assertTrue(basicAuth instanceof PasswordAuthorizer);
 
         Authenticator facebookAuth = AuthenticatorFactory.createFacebookAuthenticator("DUMMY_TOKEN");
         Assert.assertNotNull(facebookAuth);
         Assert.assertTrue(facebookAuth instanceof TokenAuthenticator);
 
-        Authenticator personalAuth = AuthenticatorFactory.createPersonaAuthenticator("DUMMY_ASSERTION", null);
+        Authenticator personalAuth = AuthenticatorFactory.createPersonaAuthenticator("DUMMY_ASSERTION");
         Assert.assertNotNull(personalAuth);
         Assert.assertTrue(personalAuth instanceof TokenAuthenticator);
     }
@@ -78,22 +76,20 @@ public class AuthTest extends LiteTestCase {
         params.put("access_token", "facebookaccesstoken");
         TokenAuthenticator tokenAuth = new TokenAuthenticator(loginPath, params);
 
-        Map<String, String> tokenAuthParams = tokenAuth.loginParametersForSite(null);
-        Assert.assertNotNull(tokenAuthParams);
-        Assert.assertEquals(tokenAuthParams.size(), params.size());
-        Assert.assertEquals(tokenAuthParams.get("access_token"), params.get("access_token"));
-        Assert.assertEquals(tokenAuth.loginPathForSite(null), "/_facebook");
-        Assert.assertTrue(tokenAuth.usesCookieBasedLogin());
-        Assert.assertNull(tokenAuth.authUserInfo());
+        List<Object> login = tokenAuth.loginRequest();
+        assertNotNull(login);
+        assertEquals(3, login.size());
+        assertEquals("POST", login.get(0));
+        assertEquals(loginPath, login.get(1));
+        assertNotNull(login.get(2));
+        assertTrue(login.get(2) instanceof Map);
+        assertEquals(params.get("access_token"), ((Map) login.get(2)).get("access_token"));
     }
 
     public void testBasicAuthenticator() {
         String username = "username";
         String password = "password";
-        BasicAuthenticator basicAuth = new BasicAuthenticator(username, password);
-
-        Assert.assertNull(basicAuth.loginParametersForSite(null));
-        Assert.assertTrue(basicAuth.usesCookieBasedLogin());
-        Assert.assertEquals(basicAuth.authUserInfo(), username + ":" + password);
+        PasswordAuthorizer basicAuth = new PasswordAuthorizer(username, password);
+        Assert.assertEquals(username + ":" + password, basicAuth.authUserInfo());
     }
 }
