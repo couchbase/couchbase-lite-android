@@ -8,6 +8,7 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 
 import com.couchbase.lite.util.Base64;
+import com.couchbase.lite.util.ConversionUtils;
 import com.couchbase.lite.util.Log;
 
 import java.io.ByteArrayInputStream;
@@ -121,7 +122,7 @@ public class AESSecureTokenStore implements TokenStore {
 
     @TargetApi(Build.VERSION_CODES.M)
     private String[] encrypt(Map<String, String> map) {
-        byte[] bytes = Utils.toByteArray(map);
+        byte[] bytes = ConversionUtils.toByteArray(map);
         if (bytes == null)
             return null;
 
@@ -189,7 +190,7 @@ public class AESSecureTokenStore implements TokenStore {
         }
 
         try {
-            return Utils.fromByteArray(decrypted);
+            return ConversionUtils.fromByteArray(decrypted);
         } catch (IOException e) {
             Log.e(TAG, "Unable to decrypt: value=<%s>", e, base64EncryptedStr);
             return null;

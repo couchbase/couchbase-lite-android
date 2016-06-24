@@ -12,8 +12,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.crypto.SecretKey;
-
 /**
  * Created by hideki on 6/23/16.
  */
@@ -26,31 +24,12 @@ public class RSASecureTokenStoreTest extends LiteTestCase {
     }
 
     public void testDummy() {
-        if(!supportedAndroidAPI())
+        if (!supportedAndroidAPI())
             return;
     }
 
-    public void testAESEncryptDecryptData(){
-        if(!supportedAndroidAPI())
-            return;
-
-        String input = "Hello World!";
-
-        SecretKey secretKey = RSASecureTokenStore.generateSecretKey();
-        assertNotNull(secretKey);
-
-        byte[][] encryptedData = RSASecureTokenStore.encryptDataByAES(secretKey, input.getBytes());
-        assertNotNull(encryptedData);
-        assertEquals(2, encryptedData.length);
-
-        byte[] decryptedData = RSASecureTokenStore.decryptDataByAES(secretKey, encryptedData[0], encryptedData[1]);
-        assertNotNull(decryptedData);
-        String output = new String(decryptedData);
-        assertEquals(input, output);
-    }
-
-    public void testRSAEncryptDecryptData()throws Exception{
-        if(!supportedAndroidAPI())
+    public void testRSAEncryptDecryptData() throws Exception {
+        if (!supportedAndroidAPI())
             return;
 
         String input = "Hello World!";
@@ -60,34 +39,17 @@ public class RSASecureTokenStoreTest extends LiteTestCase {
         KeyPair keyPair = kpg.genKeyPair();
         assertNotNull(keyPair);
 
-        byte[] encryptedData = RSASecureTokenStore.encryptDataByRSA((RSAPublicKey)keyPair.getPublic(), input.getBytes());
+        byte[] encryptedData = RSASecureTokenStore.encryptDataByRSA((RSAPublicKey) keyPair.getPublic(), input.getBytes());
         assertNotNull(encryptedData);
 
-        byte[] decryptedData = RSASecureTokenStore.decryptDataByRSA((RSAPrivateKey)keyPair.getPrivate(), encryptedData);
+        byte[] decryptedData = RSASecureTokenStore.decryptDataByRSA((RSAPrivateKey) keyPair.getPrivate(), encryptedData);
         assertNotNull(decryptedData);
         String output = new String(decryptedData);
         assertEquals(input, output);
     }
 
-    public void testEncryptDecrypt() {
-        if(!supportedAndroidAPI())
-            return;
-
-        Map<String, String> input = new HashMap<>();
-        input.put("key", "value");
-        input.put("hello", "world");
-
-        RSASecureTokenStore tokenStore = new RSASecureTokenStore(getContext());
-        byte[][] encryptedData=  tokenStore.encrypt(input);
-        assertNotNull(encryptedData);
-        assertEquals(3, encryptedData.length);
-
-        Map<String, String> output = tokenStore.decrypt(encryptedData[0], encryptedData[1], encryptedData[2]);
-        assertNotNull(output);
-        assertEquals(input, output);
-    }
     public void testSaveLoadTokens() throws Exception {
-        if(!supportedAndroidAPI())
+        if (!supportedAndroidAPI())
             return;
 
         RSASecureTokenStore tokenStore = new RSASecureTokenStore(getContext());
@@ -112,7 +74,7 @@ public class RSASecureTokenStoreTest extends LiteTestCase {
     }
 
     public void testDeleteTokens() throws Exception {
-        if(!supportedAndroidAPI())
+        if (!supportedAndroidAPI())
             return;
 
         RSASecureTokenStore tokenStore = new RSASecureTokenStore(getContext());
