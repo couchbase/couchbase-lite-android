@@ -34,12 +34,11 @@ public class OpenIDConnectAuthorizerTest extends LiteTestCase {
                     public void callback(URL loginURL, URL authBaseURL,
                                          OpenIDConnectAuthorizer.OIDCLoginContinuation loginContinuation) {
                     }
-                }, new MemTokenStore());
+                }, TokenStoreFactory.build(getContext()));
         authorizer.setRemoteURL(new URL("http://10.0.0.1:9999/db"));
     }
 
     public void testTokens() throws Exception {
-        assertFalse(authorizer.deleteTokens());
         assertFalse(authorizer.loadTokens());
         Map<String, String> tokens = new HashMap<>();
         tokens.put("id_token", "1234567890");

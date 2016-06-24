@@ -18,8 +18,8 @@ import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
 import com.couchbase.lite.auth.MemTokenStore;
 import com.couchbase.lite.auth.OpenIDConnectAuthorizer;
-import com.couchbase.lite.auth.SecureTokenStore;
 import com.couchbase.lite.auth.TokenStore;
+import com.couchbase.lite.auth.TokenStoreFactory;
 import com.couchbase.lite.replicator.RemoteFormRequest;
 import com.couchbase.lite.replicator.RemoteRequest;
 import com.couchbase.lite.replicator.RemoteRequestCompletion;
@@ -83,7 +83,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
     // #pragma mark - OPENID CONNECT:
 
     public void test26_OpenIDConnectAuth() throws Exception {
-        _test26_OpenIDConnectAuth(new SecureTokenStore(getContext()));
+        _test26_OpenIDConnectAuth(TokenStoreFactory.build(getContext()));
     }
 
     public void test26_OpenIDConnectAuthMem() throws Exception {
@@ -137,7 +137,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
     }
 
     public void test27_OpenIDConnectAuth_ExpiredIDToken() throws Exception {
-        _test27_OpenIDConnectAuth_ExpiredIDToken(new SecureTokenStore(getContext()));
+        _test27_OpenIDConnectAuth_ExpiredIDToken(TokenStoreFactory.build(getContext()));
     }
 
     public void test27_OpenIDConnectAuth_ExpiredIDTokenMem() throws Exception {
