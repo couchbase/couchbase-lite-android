@@ -19,14 +19,14 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.security.KeyPairGeneratorSpec;
 
+import com.couchbase.lite.support.security.SymmetricKey;
+import com.couchbase.lite.support.security.SymmetricKeyException;
 import com.couchbase.lite.util.Base64;
+import com.couchbase.lite.util.ConversionUtils;
 import com.couchbase.lite.util.Log;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.URL;
 import java.security.KeyPair;
@@ -34,7 +34,6 @@ import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.Map;
@@ -48,34 +47,32 @@ import javax.security.auth.x500.X500Principal;
 /**
  * Created by hideki on 6/22/16.
  */
-public class SecureTokenStore implements TokenStore {
-
-    public static final String TAG = Log.TAG_SYNC;
+public class RSASecureTokenStore implements TokenStore {
+    ////////////////////////////////////////////////////////////
+    // Constant variables
+    ////////////////////////////////////////////////////////////
+    private static final String TAG = Log.TAG_SYNC;
 
     // https://developer.android.com/training/articles/keystore.html#SupportedCiphers
-    private static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
+    private static final String CIPHER_ALGORITHM_RSA = "RSA/ECB/PKCS1Padding";
 
     // https://developer.android.com/reference/java/security/KeyPairGenerator.html
     private static final String KEYPAIRGEN_ALGORITHM = "RSA";
 
-    private static final String kOIDCKeychainServiceName = "OpenID Connect";
-
     private static final String serviceName = "CouchbaseLite";
-    private static final String alias = "CouchbaseLiteTokenStore";
+    private static final String alias = "CouchbaseLiteTokenStoreRSA";
 
     private static final boolean hasKeyStore = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2; // API 18
-
-    private Context context = null;
 
     ////////////////////////////////////////////////////////////
     // Member variables
     ////////////////////////////////////////////////////////////
+    private Context context = null;
 
     ////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////
-
-    public SecureTokenStore(Context context) {
+    public RSASecureTokenStore(Context context) {
         this.context = context;
         initializePrivateKey(context);
     }
@@ -89,14 +86,13 @@ public class SecureTokenStore implements TokenStore {
     public Map<String, String> loadTokens(URL remoteURL) throws Exception {
         if (!hasKeyStore)
             return null;
-
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
         String key = getKey(remoteURL);
-        String encryptedStr = prefs.getString(key, null);
-        if (encryptedStr == null)
-            return null;
-
-        return decrypt(encryptedStr);
+        if (!prefs.contains(key + "_key")) return null;
+        if (!prefs.contains(key + "_data")) return null;
+        byte[] secretKey = Base64.decode(prefs.getString(key + "_key", null), Base64.DEFAULT);
+        byte[] data = Base64.decode(prefs.getString(key + "_data", null), Base64.DEFAULT);
+        return decrypt(secretKey, data);
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -105,14 +101,15 @@ public class SecureTokenStore implements TokenStore {
         if (!hasKeyStore)
             return false;
 
-        String encryptedStr = encrypt(tokens);
-        if (encryptedStr == null)
+        byte[][] encrypted = encrypt(tokens);
+        if (encrypted == null || encrypted.length != 2)
             return false;
 
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         String key = getKey(remoteURL);
-        editor.putString(key, encryptedStr);
+        editor.putString(key + "_key", Base64.encodeToString(encrypted[0], Base64.DEFAULT));
+        editor.putString(key + "_data", Base64.encodeToString(encrypted[1], Base64.DEFAULT));
         return editor.commit();
     }
 
@@ -125,7 +122,8 @@ public class SecureTokenStore implements TokenStore {
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         String key = getKey(remoteURL);
-        editor.remove(key);
+        editor.remove(key + "_key");
+        editor.remove(key + "_data");
         return editor.commit();
     }
 
@@ -133,85 +131,134 @@ public class SecureTokenStore implements TokenStore {
     // protected/private methods
     ////////////////////////////////////////////////////////////
 
-    /*package*/  String getKey(URL remoteURL) {
+    String getKey(URL remoteURL) {
         String account = remoteURL.toExternalForm();
         String label = String.format(Locale.ENGLISH, "%s OpenID Connect tokens", remoteURL.getHost());
-        return String.format(Locale.ENGLISH, "%s%s", label, account);
+        return String.format(Locale.ENGLISH, "%s%s%s", alias, label, account);
     }
 
-    /*package*/ String encrypt(Map<String, String> map) {
-        byte[] bytes = toByteArray(map);
+    byte[][] encrypt(Map<String, String> map) {
+        // convert from Map to byte[]
+        byte[] bytes = ConversionUtils.toByteArray(map);
         if (bytes == null)
             return null;
-        return _encrypt(bytes);
+
+        try {
+            // initialize Symmetric Key
+            SymmetricKey symmetricKey = new SymmetricKey();
+
+            // encrypt symmetricKey
+            byte[] encryptedKey = encryptDataByRSA(getRSAPublicKeyFromKeyStore(), symmetricKey.getKey());
+            if (encryptedKey == null)
+                return null;
+
+            // return encrypted symmetric key, encrypted datav
+            byte[][] data = new byte[2][];
+            data[0] = encryptedKey;
+            data[1] = symmetricKey.encryptData(bytes);
+            return data;
+        } catch (SymmetricKeyException ex) {
+            Log.e(TAG, "Error in encryption", ex);
+            return null;
+        }
     }
 
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    /*package*/ String _encrypt(byte[] bytes) {
+    Map decrypt(byte[] encryptedKey, byte[] encryptedData) {
+        try {
+            // decrypt symmetric Key by RSA, and initialize symmetric key
+            SymmetricKey symmetricKey = new SymmetricKey(decryptDataByRSA(getRSAPrivateKeyFromKeyStore(), encryptedKey));
+            if (symmetricKey == null)
+                return null;
+
+            // decrypt data
+            byte[] bytes = symmetricKey.decryptData(encryptedData);
+            if (bytes == null)
+                return null;
+
+            return ConversionUtils.fromByteArray(bytes);
+        } catch (Exception ex) {
+            Log.e(TAG, "Error in decryption", ex);
+            return null;
+        }
+    }
+
+    // get RSA public key from KeyStore
+    static RSAPublicKey getRSAPublicKeyFromKeyStore() {
         try {
             KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
             keyStore.load(null);
             KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, null);
             RSAPublicKey publicKey = (RSAPublicKey) privateKeyEntry.getCertificate().getPublicKey();
-            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            CipherOutputStream cipherOutputStream = new CipherOutputStream(outputStream, cipher);
-            try {
-                cipherOutputStream.write(bytes);
-            } finally {
-                cipherOutputStream.close();
-            }
-            byte[] encrypted = outputStream.toByteArray();
-            return Base64.encodeToString(encrypted, Base64.DEFAULT);
+            return publicKey;
         } catch (Exception ex) {
-            Log.e(TAG, "Unable to open KeyStore", ex);
+            Log.e(TAG, "Unable to open KeyStore or to get RSA key", ex);
             return null;
         }
     }
 
-    Map decrypt(String strValue) {
+    // get RSA private key from KeyStore
+    static RSAPrivateKey getRSAPrivateKeyFromKeyStore() {
         try {
-            return fromByteArray(_decrypt(strValue));
-        } catch (IOException e) {
-            Log.e(TAG, "Unable to decrypt: value=<%s>", e, strValue);
-            return null;
-        }
-    }
-
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    /*package*/ byte[] _decrypt(String base64Str) {
-        try {
-            byte[] encrypted = Base64.decode(base64Str, Base64.DEFAULT);
-
             KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
             keyStore.load(null);
-
             KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, null);
             RSAPrivateKey privateKey = (RSAPrivateKey) privateKeyEntry.getPrivateKey();
+            return privateKey;
+        } catch (Exception ex) {
+            Log.e(TAG, "Unable to open KeyStore or to get RSA key", ex);
+            return null;
+        }
+    }
 
-            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
-
-            byte[] bytes = null;
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(encrypted);
-            CipherInputStream cipherInputStream = new CipherInputStream(inputStream, cipher);
+    // encrypt data by RSA
+    static byte[] encryptDataByRSA(RSAPublicKey publicKey, byte[] data) {
+        try {
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM_RSA);
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try {
-                ArrayList<Byte> values = new ArrayList<>();
-                int nextByte;
-                while ((nextByte = cipherInputStream.read()) != -1) {
-                    values.add((byte) nextByte);
+                CipherOutputStream cos = new CipherOutputStream(bos, cipher);
+                try {
+                    cos.write(data);
+                } finally {
+                    cos.close();
                 }
-                bytes = new byte[values.size()];
-                for (int i = 0; i < bytes.length; i++) {
-                    bytes[i] = values.get(i).byteValue();
-                }
+                return bos.toByteArray();
             } finally {
-                cipherInputStream.close();
+                bos.close();
             }
-            return bytes;
         } catch (Exception ex) {
             Log.e(TAG, "Unable to open KeyStore", ex);
+            return null;
+        }
+    }
+
+    // decrypt data by RSA
+    static byte[] decryptDataByRSA(RSAPrivateKey privateKey, byte[] encryptedData) {
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(2048);
+            try {
+                Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM_RSA);
+                cipher.init(Cipher.DECRYPT_MODE, privateKey);
+                ByteArrayInputStream bis = new ByteArrayInputStream(encryptedData);
+                try {
+                    CipherInputStream cis = new CipherInputStream(bis, cipher);
+                    try {
+                        byte[] read = new byte[512]; // Your buffer size.
+                        for (int i; (i = cis.read(read)) != -1; )
+                            bos.write(read, 0, i);
+                    } finally {
+                        cis.close();
+                    }
+                } finally {
+                    bis.close();
+                }
+                return bos.toByteArray();
+            } finally {
+                bos.close();
+            }
+        } catch (Exception ex) {
+            Log.e(TAG, "Unable to decrypt data", ex);
             return null;
         }
     }
@@ -251,46 +298,5 @@ public class SecureTokenStore implements TokenStore {
             Log.e(TAG, "Unable to create new key", ex);
             return;
         }
-    }
-
-    private byte[] toByteArray(Map obj) {
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            try {
-                ObjectOutputStream oos = new ObjectOutputStream(bos);
-                try {
-                    oos.writeObject(obj);
-                    return bos.toByteArray();
-                } finally {
-                    oos.close();
-                }
-            } finally {
-                bos.close();
-            }
-        } catch (IOException ioe) {
-            Log.e(TAG, "Error in toByteArray()", ioe);
-        }
-        return null;
-    }
-
-    private Map fromByteArray(byte[] bytes) throws IOException {
-        try {
-            ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-            try {
-                ObjectInputStream ois = new ObjectInputStream(bis);
-                try {
-                    return (Map) ois.readObject();
-                } finally {
-                    ois.close();
-                }
-            } finally {
-                bis.close();
-            }
-        } catch (IOException ioe) {
-            Log.e(TAG, "Error in fromByteArray()", ioe);
-        } catch (ClassNotFoundException cnfe) {
-            Log.e(TAG, "Error in fromByteArray()", cnfe);
-        }
-        return null;
     }
 }

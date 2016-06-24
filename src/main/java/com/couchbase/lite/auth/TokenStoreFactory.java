@@ -21,8 +21,10 @@ import android.os.Build;
  */
 public class TokenStoreFactory {
     private static final boolean hasKeyStore = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2; // API 18
+    private static final boolean hasKeyGenerator = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M; // API 23
 
     public static TokenStore build(Context context) {
-        return hasKeyStore ? new SecureTokenStore(context) : new MemTokenStore();
+        return hasKeyGenerator ? new AESSecureTokenStore(context) :
+                (hasKeyStore ? new RSASecureTokenStore(context) : new MemTokenStore());
     }
 }
