@@ -13,8 +13,11 @@
 //
 package com.couchbase.lite.auth;
 
-import android.content.Context;
+
 import android.os.Build;
+
+import com.couchbase.lite.Context;
+import com.couchbase.lite.android.AndroidContext;
 
 /**
  * Created by hideki on 6/22/16.
@@ -24,7 +27,12 @@ public class TokenStoreFactory {
     private static final boolean hasKeyGenerator = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M; // API 23
 
     public static TokenStore build(Context context) {
-        return hasKeyGenerator ? new AESSecureTokenStore(context) :
-                (hasKeyStore ? new RSASecureTokenStore(context) : new MemTokenStore());
+        android.content.Context androidContext = null;
+        if (context instanceof AndroidContext)
+            androidContext = ((AndroidContext) context).getWrappedContext();
+        if (androidContext == null)
+            return new MemTokenStore();
+        return hasKeyGenerator ? new AESSecureTokenStore(androidContext) :
+                (hasKeyStore ? new RSASecureTokenStore(androidContext) : new MemTokenStore());
     }
 }

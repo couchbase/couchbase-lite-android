@@ -83,7 +83,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
     // #pragma mark - OPENID CONNECT:
 
     public void test26_OpenIDConnectAuth() throws Exception {
-        _test26_OpenIDConnectAuth(TokenStoreFactory.build(getContext()));
+        _test26_OpenIDConnectAuth(TokenStoreFactory.build(getTestContext("db")));
     }
 
     public void test26_OpenIDConnectAuthMem() throws Exception {
@@ -137,7 +137,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
     }
 
     public void test27_OpenIDConnectAuth_ExpiredIDToken() throws Exception {
-        _test27_OpenIDConnectAuth_ExpiredIDToken(TokenStoreFactory.build(getContext()));
+        _test27_OpenIDConnectAuth_ExpiredIDToken(TokenStoreFactory.build(getTestContext("db")));
     }
 
     public void test27_OpenIDConnectAuth_ExpiredIDTokenMem() throws Exception {
