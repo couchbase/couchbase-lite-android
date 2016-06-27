@@ -16,7 +16,7 @@ public class TokenStoreTest extends LiteTestCaseWithDB {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        tokenStore = TokenStoreFactory.build(getContext());
+        tokenStore = TokenStoreFactory.build(getTestContext("db"));
     }
 
     @Override

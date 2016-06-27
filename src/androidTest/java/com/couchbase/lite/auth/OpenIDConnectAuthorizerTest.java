@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class OpenIDConnectAuthorizerTest extends LiteTestCase {
     OpenIDConnectAuthorizer authorizer;
-
+    
     @Override
     public void setUp() throws Exception {
         super.setUp();
@@ -34,7 +34,7 @@ public class OpenIDConnectAuthorizerTest extends LiteTestCase {
                     public void callback(URL loginURL, URL authBaseURL,
                                          OpenIDConnectAuthorizer.OIDCLoginContinuation loginContinuation) {
                     }
-                }, TokenStoreFactory.build(getContext()));
+                }, TokenStoreFactory.build(getTestContext("db")));
         authorizer.setRemoteURL(new URL("http://10.0.0.1:9999/db"));
     }
 

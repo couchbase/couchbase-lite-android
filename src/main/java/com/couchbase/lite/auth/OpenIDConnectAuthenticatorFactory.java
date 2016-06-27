@@ -13,7 +13,8 @@
 //
 package com.couchbase.lite.auth;
 
-import android.content.Context;
+
+import com.couchbase.lite.Context;
 
 /**
  * Created by hideki on 6/23/16.
