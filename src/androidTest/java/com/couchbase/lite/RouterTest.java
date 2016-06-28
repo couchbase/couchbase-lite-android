@@ -218,6 +218,52 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertFalse(att.containsKey("data"));
     }
 
+    public void testDocWithAttachmentNoContentType() throws IOException {
+        send("PUT", "/db", Status.CREATED, null);
+        Map<String, Object> attachment = new HashMap<String, Object>();
+        attachment.put("data", "SW5saW5lIHRleHQgc3RyaW5nIGNyZWF0ZWQgYnkgY2JsaXRlIGZ1bmN0aW9uYWwgdGVzdA==");
+
+        Map<String, Object> attachments = new HashMap<String, Object>();
+        attachments.put("inline.txt", attachment);
+
+        String inlineTextString = "Inline text string created by cblite functional test";
+        Map<String, Object> docWithAttachment = new HashMap<String, Object>();
+        docWithAttachment.put("_id", "docWithAttachment");
+        docWithAttachment.put("text", inlineTextString);
+        docWithAttachment.put("_attachments", attachments);
+
+        Map<String, Object> result = (Map<String, Object>) sendBody("PUT", "/db/docWithAttachment",
+                docWithAttachment, Status.CREATED, null);
+
+        // no Accept
+        URLConnection conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", null, null);
+        assertNull(conn.getHeaderField("Content-Type"));
+        InputStream is = conn.getInputStream();
+        String responseString = IOUtils.toString(is, "UTF-8");
+        is.close();
+        assertTrue(responseString.contains(inlineTextString));
+
+        // With Accept: text/plain
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Accept", "text/plain");
+        conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", headers, null);
+        assertNull(conn.getHeaderField("Content-Type"));
+        is = conn.getInputStream();
+        responseString = IOUtils.toString(is, "UTF-8");
+        is.close();
+        assertTrue(responseString.contains(inlineTextString));
+
+        // With Accept: */*
+        headers = new HashMap<>();
+        headers.put("Accept", "*/*");
+        conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", headers, null);
+        assertNull(conn.getHeaderField("Content-Type"));
+        is = conn.getInputStream();
+        responseString = IOUtils.toString(is, "UTF-8");
+        is.close();
+        assertTrue(responseString.contains(inlineTextString));
+    }
+
     private Map<String, Object> valueMapWithRev(String revId) {
         Map<String, Object> value = valueMapWithRevNoConflictArray(revId);
         value.put("_conflicts", new ArrayList<String>());
