@@ -35,21 +35,27 @@ public class PusherInternalTest extends LiteTestCaseWithDB {
         if (!isSQLiteDB())
             return;
 
+        // creates 25K docs
         createDocs(database, 250);
+        // make sure 25K docs are created
         assertEquals(250 * 100, database.getDocumentCount());
+        // start push replication
         Replication push = database.createPushReplication(getReplicationURL());
         assertNotNull(push);
         runReplication(push);
+        // make sure 25K docs are pushed
         assertEquals(250 * 100, push.getChangesCount());
-
     }
 
+    // creates xK * 100 docs with 10KB/doc
     private static void createDocs(final Database db, int xK) {
+        // prepare 10K data for doc
         final StringBuffer sb = new StringBuffer();
         for (int i = 0; i < 1000; i++) {
             sb.append("1234567890");
         }
 
+        // create xK * 100 docs
         for (int i = 0; i < xK; i++) {
             final int j = i;
             assertTrue(db.runInTransaction(new TransactionalTask() {
