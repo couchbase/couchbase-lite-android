@@ -453,19 +453,29 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected Object sendBody(String method, String path, Object bodyObj,
                               int expectedStatus, Object expectedResult) {
-        URLConnection conn = sendRequest(method, path, null, bodyObj);
+        return sendBody(method, path, bodyObj, null, expectedStatus, expectedResult);
+    }
+
+    protected Object sendBody(String method, String path, Object bodyObj,
+                              Map<String, String> headers,
+                              int expectedStatus, Object expectedResult) {
+        URLConnection conn = sendRequest(method, path, headers, bodyObj);
         conn.setRequestProperty("Content-Type", "application/json");
         Object result = parseJSONResponse(conn);
         Log.v(TAG, "%s %s --> %d", method, path, conn.getResponseCode());
         Assert.assertEquals(expectedStatus, conn.getResponseCode());
-        if (expectedResult != null) {
+        if (expectedResult != null)
             Assert.assertEquals(expectedResult, result);
-        }
         return result;
     }
 
     protected Object send(String method, String path, int expectedStatus, Object expectedResult) {
-        return sendBody(method, path, null, expectedStatus, expectedResult);
+        return send(method, path, null, expectedStatus, expectedResult);
+    }
+
+    protected Object send(String method, String path, Map<String, String> headers,
+                          int expectedStatus, Object expectedResult) {
+        return sendBody(method, path, null, headers, expectedStatus, expectedResult);
     }
 
     public static void createDocuments(final Database db, final int n) {

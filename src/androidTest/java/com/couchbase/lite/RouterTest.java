@@ -199,20 +199,45 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertTrue(responseString.contains(inlineTextString));
 
         // with attachments=true query parameter
-        result = (Map<String, Object>) send("GET", "/db/docWithAttachment?attachments=true", Status.OK, null);
+        result = (Map<String, Object>) send("GET", "/db/docWithAttachment?attachments=true",
+                Status.OK, null);
         assertNotNull(result);
         assertNotNull(result.get("_attachments"));
-        Map<String, Object> att = (Map<String, Object>) ((Map<String, Object>) result.get("_attachments")).get("inline.txt");
+        Map<String, Object> att = (Map<String, Object>) ((Map<String, Object>)
+                result.get("_attachments")).get("inline.txt");
         assertNotNull(att);
         assertNotNull(att.get("data"));
         assertTrue(((String) att.get("data")).length() > 0);
         assertFalse(att.containsKey("stub"));
 
-        // without attachments=true query parameter
-        result = (Map<String, Object>) send("GET", "/db/docWithAttachment", Status.OK, null);
+        // with attachments=true query parameter with an Accept value
+        headers.put("Accept", "application/json");
+        result = (Map<String, Object>) send("GET", "/db/docWithAttachment?attachments=true", headers,
+                Status.OK, null);
         assertNotNull(result);
         assertNotNull(result.get("_attachments"));
-        att = (Map<String, Object>) ((Map<String, Object>) result.get("_attachments")).get("inline.txt");
+        att = (Map<String, Object>) ((Map<String, Object>)
+                result.get("_attachments")).get("inline.txt");
+        assertNotNull(att);
+        assertNotNull(att.get("data"));
+        assertTrue(((String) att.get("data")).length() > 0);
+        assertFalse(att.containsKey("stub"));
+
+        // with attachments=true query parameter with an invalid Accept value
+        headers.put("Accept", "applicatio/json");
+        result = (Map<String, Object>) send("GET", "/db/docWithAttachment?attachments=true", headers,
+                Status.NOT_ACCEPTABLE, null);
+        assertNotNull(result);
+        assertEquals(406, result.get("status"));
+        assertEquals("not_acceptable", result.get("error"));
+
+        // without attachments=true query parameter
+        result = (Map<String, Object>) send("GET", "/db/docWithAttachment",
+                Status.OK, null);
+        assertNotNull(result);
+        assertNotNull(result.get("_attachments"));
+        att = (Map<String, Object>) ((Map<String, Object>)
+                result.get("_attachments")).get("inline.txt");
         assertNotNull(att);
         assertNotNull(att.get("stub"));
         assertFalse(att.containsKey("data"));
