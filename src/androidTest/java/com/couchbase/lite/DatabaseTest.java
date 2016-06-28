@@ -13,6 +13,8 @@
  */
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.Body;
+import com.couchbase.lite.internal.InterfaceAudience;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
@@ -1065,5 +1067,33 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertNotNull(a);
         assertEquals("text/plain", a.getContentType());
         assertEquals("hi there", new String(IOUtils.toByteArray(a.getContent()), "UTF-8"));
+    }
+
+    /**
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/1298
+     *
+     * Insert 10 4MB/Doc into database
+     */
+    public void manualTestPutLargeDataSet() throws CouchbaseLiteException {
+        // Test Scenario:
+        // - Add 10 4mb docs
+        // - Crash with OOM
+
+        Map<String, Object> body = new HashMap<>();
+        char[] chars = new char[4 * 1024 * 1024]; // 4 million chars
+        Arrays.fill(chars, 'a');
+        final String content = new String(chars);
+        body.put("content", content);
+        Body revBody = new Body(body);
+
+        for (int i = 0; i < 10; i++) {
+            // do_PUT_Document uses Database.putRevision()
+            String docID = String.format(Locale.ENGLISH, "DocID=%d", i);
+            RevisionInternal rev = new RevisionInternal(docID, null, false);
+            rev.setBody(revBody);
+            database.putRevision(rev, null, false);
+        }
+        assertEquals(10, database.getDocumentCount());
+        assertEquals(content, database.getDocument("DocID=1").getProperties().get("content"));
     }
 }
