@@ -308,6 +308,12 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         Document fetchedDoc = database.getDocument(doc.getId());
         List<SavedRevision> revisions = fetchedDoc.getRevisionHistory();
         assertEquals(2, revisions.size());
+
+        RevisionInternal curRev = database.getDocument(doc.getId(), null, true);
+        assertNotNull(curRev);
+        List<RevisionInternal> revs = database.getRevisionHistory(curRev);
+        assertNotNull(revs);
+        assertEquals(2, revs.size());
     }
 
     /**

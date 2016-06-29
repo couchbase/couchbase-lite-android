@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,7 +42,7 @@ public class RouterTest extends LiteTestCaseWithDB {
     public static final String TAG = "Router";
 
     // - (void) test_Server in Router_Tests.m
-    public void testServer() {
+    public void test_Server() {
         Map<String, Object> responseBody = new HashMap<String, Object>();
         responseBody.put("CBLite", "Welcome");
         responseBody.put("couchdb", "Welcome");
@@ -72,7 +73,7 @@ public class RouterTest extends LiteTestCaseWithDB {
     }
 
     // - (void) test_Databases in Router_Tests.m
-    public void testDatabase() {
+    public void test_Databases() {
         send("PUT", "/database", Status.CREATED, null);
         Map entries = new HashMap<String, Map<String, Object>>();
 
@@ -302,7 +303,7 @@ public class RouterTest extends LiteTestCaseWithDB {
     }
 
     // - (void) test_Docs in Router_Tests.m
-    public void testDocs() {
+    public void test_Docs() {
         send("PUT", "/db", Status.CREATED, null);
 
         // PUT:
@@ -447,7 +448,7 @@ public class RouterTest extends LiteTestCaseWithDB {
     }
 
     // - (void) test_LocalDocs in Router_Tests.m
-    public void testLocalDocs() {
+    public void test_LocalDocs() {
         send("PUT", "/db", Status.CREATED, null);
 
         // PUT a local doc:
@@ -472,7 +473,7 @@ public class RouterTest extends LiteTestCaseWithDB {
     }
 
     // - (void) test_AllDocs in Router_Tests.m
-    public void testAllDocs() {
+    public void test_AllDocs() {
         send("PUT", "/db", Status.CREATED, null);
 
         Map<String, Object> result;
@@ -550,7 +551,7 @@ public class RouterTest extends LiteTestCaseWithDB {
     }
 
     // - (void) test_Views in Router_Tests.m
-    public void testViews() throws CouchbaseLiteException {
+    public void test_Views() throws CouchbaseLiteException {
         send("PUT", "/db", Status.CREATED, null);
 
         // PUT:
@@ -745,73 +746,46 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertEquals(1, result.get("total_rows"));
     }
 
-    public void testRevsDiff() {
+    // - (void) test_LocalDocs in Router_Tests.m
+    public void test_RevsDiff() {
 
         send("PUT", "/db", Status.CREATED, null);
 
-        Map<String, Object> doc = new HashMap<String, Object>();
-        Map<String, Object> doc1r1 = (Map<String, Object>) sendBody("PUT", "/db/11111", doc, Status.CREATED, null);
+        Map<String, Object> doc1r1 = (Map<String, Object>) sendBody("PUT", "/db/11111", new HashMap<String, Object>(), Status.CREATED, null);
         String doc1r1ID = (String) doc1r1.get("rev");
-
-        Map<String, Object> doc2r1 = (Map<String, Object>) sendBody("PUT", "/db/22222", doc, Status.CREATED, null);
+        Map<String, Object> doc2r1 = (Map<String, Object>) sendBody("PUT", "/db/22222", new HashMap<String, Object>(), Status.CREATED, null);
         String doc2r1ID = (String) doc2r1.get("rev");
-
-        Map<String, Object> doc3r1 = (Map<String, Object>) sendBody("PUT", "/db/33333", doc, Status.CREATED, null);
+        Map<String, Object> doc3r1 = (Map<String, Object>) sendBody("PUT", "/db/33333", new HashMap<String, Object>(), Status.CREATED, null);
         String doc3r1ID = (String) doc3r1.get("rev");
 
-
-        Map<String, Object> doc1v2 = new HashMap<String, Object>();
-        doc1v2.put("_rev", doc1r1ID);
-        Map<String, Object> doc1r2 = (Map<String, Object>) sendBody("PUT", "/db/11111", doc1v2, Status.CREATED, null);
+        Map<String, Object> props1v2 = new HashMap<String, Object>();
+        props1v2.put("_rev", doc1r1ID);
+        Map<String, Object> doc1r2 = (Map<String, Object>) sendBody("PUT", "/db/11111", props1v2, Status.CREATED, null);
         String doc1r2ID = (String) doc1r2.get("rev");
 
-        Map<String, Object> doc2v2 = new HashMap<String, Object>();
-        doc2v2.put("_rev", doc2r1ID);
-        sendBody("PUT", "/db/22222", doc2v2, Status.CREATED, null);
+        Map<String, Object> props2v2 = new HashMap<String, Object>();
+        props2v2.put("_rev", doc2r1ID);
+        sendBody("PUT", "/db/22222", props2v2, Status.CREATED, null);
 
-        Map<String, Object> doc1v3 = new HashMap<String, Object>();
-        doc1v3.put("_rev", doc1r2ID);
-        Map<String, Object> doc1r3 = (Map<String, Object>) sendBody("PUT", "/db/11111", doc1v3, Status.CREATED, null);
-        String doc1r3ID = (String) doc1r1.get("rev");
-
-        //now build up the request
-        List<String> doc1Revs = new ArrayList<String>();
-        doc1Revs.add(doc1r2ID);
-        doc1Revs.add("3-1000");
-
-        List<String> doc2Revs = new ArrayList<String>();
-        doc2Revs.add(doc2r1ID);
-
-        List<String> doc3Revs = new ArrayList<String>();
-        doc3Revs.add("10-1000");
-
-        List<String> doc9Revs = new ArrayList<String>();
-        doc9Revs.add("6-1000");
+        Map<String, Object> props1v3 = new HashMap<String, Object>();
+        props1v3.put("_rev", doc1r2ID);
+        Map<String, Object> doc1r3 = (Map<String, Object>) sendBody("PUT", "/db/11111", props1v3, Status.CREATED, null);
+        String doc1r3ID = (String) doc1r3.get("rev");
 
         Map<String, Object> revsDiffRequest = new HashMap<String, Object>();
-        revsDiffRequest.put("11111", doc1Revs);
-        revsDiffRequest.put("22222", doc2Revs);
-        revsDiffRequest.put("33333", doc3Revs);
-        revsDiffRequest.put("99999", doc9Revs);
+        revsDiffRequest.put("11111", Arrays.asList(doc1r2ID, "3-f000"));
+        revsDiffRequest.put("22222", Arrays.asList(doc2r1ID));
+        revsDiffRequest.put("33333", Arrays.asList("10-badbad"));
+        revsDiffRequest.put("99999", Arrays.asList("6-666666"));
 
+        // TODO: NOTE: CBL iOS could return possible_ancestors for _revs_diff Check test_RevsDiff in Router_Tests.m
         //now build up the expected response
-        List<String> doc1missing = new ArrayList<String>();
-        doc1missing.add("3-1000");
-
-        List<String> doc3missing = new ArrayList<String>();
-        doc3missing.add("10-1000");
-
-        List<String> doc9missing = new ArrayList<String>();
-        doc9missing.add("6-1000");
-
         Map<String, Object> doc1missingMap = new HashMap<String, Object>();
-        doc1missingMap.put("missing", doc1missing);
-
+        doc1missingMap.put("missing", Arrays.asList("3-f000"));
         Map<String, Object> doc3missingMap = new HashMap<String, Object>();
-        doc3missingMap.put("missing", doc3missing);
-
+        doc3missingMap.put("missing", Arrays.asList("10-badbad"));
         Map<String, Object> doc9missingMap = new HashMap<String, Object>();
-        doc9missingMap.put("missing", doc9missing);
+        doc9missingMap.put("missing", Arrays.asList("6-666666"));
 
         Map<String, Object> revsDiffResponse = new HashMap<String, Object>();
         revsDiffResponse.put("11111", doc1missingMap);
@@ -819,6 +793,66 @@ public class RouterTest extends LiteTestCaseWithDB {
         revsDiffResponse.put("99999", doc9missingMap);
 
         sendBody("POST", "/db/_revs_diff", revsDiffRequest, Status.OK, revsDiffResponse);
+
+        // Compact the database -- this will null out the JSON of doc1r1 & doc1r2,
+        // and they won't be returned as possible ancestors anymore.
+        send("POST", "/db/_compact", Status.ACCEPTED, null);
+
+        revsDiffRequest = new HashMap<String, Object>();
+        revsDiffRequest.put("11111", Arrays.asList(doc1r2ID, "4-f000"));
+        revsDiffRequest.put("22222", Arrays.asList(doc2r1ID));
+        revsDiffRequest.put("33333", Arrays.asList("10-badbad"));
+        revsDiffRequest.put("99999", Arrays.asList("6-666666"));
+
+        doc1missingMap = new HashMap<String, Object>();
+        doc1missingMap.put("missing", Arrays.asList("4-f000"));
+        doc3missingMap = new HashMap<String, Object>();
+        doc3missingMap.put("missing", Arrays.asList("10-badbad"));
+        doc9missingMap = new HashMap<String, Object>();
+        doc9missingMap.put("missing", Arrays.asList("6-666666"));
+
+        revsDiffResponse = new HashMap<String, Object>();
+        revsDiffResponse.put("11111", doc1missingMap);
+        revsDiffResponse.put("33333", doc3missingMap);
+        revsDiffResponse.put("99999", doc9missingMap);
+
+        sendBody("POST", "/db/_revs_diff", revsDiffRequest, Status.OK, revsDiffResponse);
+
+        // get document without revs_info=true
+        Map<String, Object> docResponse = new HashMap<String, Object>();
+        docResponse.put("_id", "11111");
+        docResponse.put("_rev", doc1r3ID);
+        send("GET", "/db/11111", Status.OK, docResponse);
+
+        // Check the revision history using _revs_info:
+        Map<String, Object> doc1Rev3Res = new HashMap<String, Object>();
+        doc1Rev3Res.put("rev", doc1r3ID);
+        doc1Rev3Res.put("status", "available");
+        Map<String, Object> doc1Rev2Res = new HashMap<String, Object>();
+        doc1Rev2Res.put("rev", doc1r2ID);
+        doc1Rev2Res.put("status", "missing");
+        Map<String, Object> doc1Rev1Res = new HashMap<String, Object>();
+        doc1Rev1Res.put("rev", doc1r1ID);
+        doc1Rev1Res.put("status", "missing");
+
+        docResponse = new HashMap<String, Object>();
+        docResponse.put("_id", "11111");
+        docResponse.put("_rev", doc1r3ID);
+        docResponse.put("_revs_info", Arrays.asList(doc1Rev3Res, doc1Rev2Res, doc1Rev1Res));
+
+        send("GET", "/db/11111?revs_info=true", Status.OK, docResponse);
+
+        // Check the revision history using _revs:
+        Map<String, Object> revsResp = new HashMap<>();
+        revsResp.put("start", 3);
+        revsResp.put("ids", Arrays.asList(
+                doc1r3ID.substring(2), doc1r2ID.substring(2), doc1r1ID.substring(2)));
+        docResponse = new HashMap<String, Object>();
+        docResponse.put("_id", "11111");
+        docResponse.put("_rev", doc1r3ID);
+        docResponse.put("_revisions", revsResp);
+        send("GET", "/db/11111?revs=true", Status.OK, docResponse);
+
     }
 
     public void testFacebookToken() throws Exception {
