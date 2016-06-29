@@ -1461,4 +1461,76 @@ public class RouterTest extends LiteTestCaseWithDB {
             server.shutdown();
         }
     }
+
+    // Querying a design document view returns deleted documents too REST API
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/1264
+    // https://forums.couchbase.com/t/querying-a-design-document-view-returns-deleted-documents-too-rest-api/8643
+    public void testViewWithDeletedDoc() throws CouchbaseLiteException {
+        send("PUT", "/db", Status.CREATED, null);
+
+        // PUT:
+        Map<String, Object> result;
+        Map<String, Object> doc1 = new HashMap<String, Object>();
+        doc1.put("message", "hello");
+        result = (Map<String, Object>) sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
+        String revID = (String) result.get("rev");
+        Map<String, Object> doc3 = new HashMap<String, Object>();
+        doc3.put("message", "bonjour");
+        result = (Map<String, Object>) sendBody("PUT", "/db/doc3", doc3, Status.CREATED, null);
+        String revID3 = (String) result.get("rev");
+        Map<String, Object> doc2 = new HashMap<String, Object>();
+        doc2.put("message", "guten tag");
+        result = (Map<String, Object>) sendBody("PUT", "/db/doc2", doc2, Status.CREATED, null);
+        String revID2 = (String) result.get("rev");
+
+        Database db = manager.getDatabase("db");
+        View view = db.getView("design/view");
+        view.setMapReduce(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("message"), null);
+            }
+        }, null, "1");
+
+        // Build up our expected result
+        Map<String, Object> row1 = new HashMap<String, Object>();
+        row1.put("id", "doc1");
+        row1.put("key", "hello");
+        row1.put("doc", null);
+        row1.put("value", null);
+        Map<String, Object> row2 = new HashMap<String, Object>();
+        row2.put("id", "doc2");
+        row2.put("key", "guten tag");
+        row2.put("doc", null);
+        row2.put("value", null);
+        Map<String, Object> row3 = new HashMap<String, Object>();
+        row3.put("id", "doc3");
+        row3.put("key", "bonjour");
+        row3.put("doc", null);
+        row3.put("value", null);
+
+        Map<String, Object> expectedResult = new HashMap<String, Object>();
+        expectedResult.put("offset", 0);
+        expectedResult.put("total_rows", 3);
+        expectedResult.put("rows", Arrays.asList(row3, row2, row1));
+
+        // Query the view and check the result:
+        send("GET", "/db/_design/design/_view/view", Status.OK, expectedResult);
+
+        // DELETE:
+        result = (Map<String, Object>) send("DELETE", String.format(Locale.ENGLISH, "/db/doc1?rev=%s", revID), Status.OK, null);
+        revID = (String) result.get("rev");
+        assertTrue(revID.startsWith("2-"));
+        assertEquals("doc1", (String) result.get("id"));
+        assertTrue((Boolean)result.get("ok"));
+
+        // Query the view and check the result:
+        // doc1 should not be in the results
+        expectedResult = new HashMap<String, Object>();
+        expectedResult.put("offset", 0);
+        expectedResult.put("total_rows", 2);
+        expectedResult.put("rows", Arrays.asList(row3, row2));
+
+        send("GET", "/db/_design/design/_view/view", Status.OK, expectedResult);
+    }
 }
