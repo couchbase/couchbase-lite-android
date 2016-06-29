@@ -269,6 +269,8 @@ public class ManagerTest extends LiteTestCaseWithDB {
             List<Attachment> attachments = doc.getCurrentRevision().getAttachments();
             assertEquals(1, attachments.size());
             Attachment attachment = attachments.get(0);
+            assertNotNull(attachment.getContentType());
+            assertTrue(attachment.getContentType().contains("text/plain"));
             assertEquals("file_" + String.valueOf(i) + ".txt", attachment.getName());
             BufferedReader br = new BufferedReader(new InputStreamReader(attachment.getContent()));
             String str = br.readLine();
@@ -289,6 +291,10 @@ public class ManagerTest extends LiteTestCaseWithDB {
             assertFalse(attachment0.getName().equals(attachment1.getName()));
             assertTrue("attach1".equals(attachment0.getName()) || "attach2".equals(attachment0.getName()));
             assertTrue("attach1".equals(attachment1.getName()) || "attach2".equals(attachment1.getName()));
+            assertNotNull(attachment0.getContentType());
+            assertTrue(attachment0.getContentType().contains("text/plain"));
+            assertNotNull(attachment1.getContentType());
+            assertTrue(attachment1.getContentType().contains("text/plain"));
             BufferedReader br0 = new BufferedReader(new InputStreamReader(attachment0.getContent()));
             String str0 = br0.readLine();
             assertTrue(str0.length() > 0);
@@ -307,6 +313,8 @@ public class ManagerTest extends LiteTestCaseWithDB {
         assertEquals(1, attachments.size());
         Attachment attachment = attachments.get(0);
         assertEquals("image", attachment.getName());
+        assertNotNull(attachment.getContentType());
+        assertTrue(attachment.getContentType().contains("image/png"));
         InputStream is = attachment.getContent();
         assertNotNull(is);
         is.close();
