@@ -38,7 +38,6 @@ import com.couchbase.lite.View;
 import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
 import com.couchbase.lite.auth.FacebookAuthorizer;
-import com.couchbase.lite.auth.PasswordAuthorizer;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockBulkDocs;
 import com.couchbase.lite.mockserver.MockChangesFeed;
@@ -4056,7 +4055,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             pusher.setDocIds(Arrays.asList(doc1.getId()));
 
             // custom authenticator
-            PasswordAuthorizer authenticator = new PasswordAuthorizer("foo", "bar");
+            Authenticator authenticator = AuthenticatorFactory.createBasicAuthenticator("foo", "bar");
             pusher.setAuthenticator(authenticator);
 
             // custom request headers
