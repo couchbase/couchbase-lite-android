@@ -91,5 +91,9 @@ public class AuthTest extends LiteTestCase {
         String password = "password";
         PasswordAuthorizer basicAuth = new PasswordAuthorizer(username, password);
         Assert.assertEquals(username + ":" + password, basicAuth.authUserInfo());
+
+        // test deprecated class
+        basicAuth = new BasicAuthenticator(username, password);
+        assertEquals(username + ":" + password, basicAuth.authUserInfo());
     }
 }
