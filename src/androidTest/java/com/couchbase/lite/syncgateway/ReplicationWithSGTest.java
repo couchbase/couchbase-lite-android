@@ -18,6 +18,8 @@ import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
 import com.couchbase.lite.auth.MemTokenStore;
 import com.couchbase.lite.auth.OpenIDConnectAuthorizer;
+import com.couchbase.lite.auth.OIDCLoginCallback;
+import com.couchbase.lite.auth.OIDCLoginContinuation;
 import com.couchbase.lite.auth.TokenStore;
 import com.couchbase.lite.auth.TokenStoreFactory;
 import com.couchbase.lite.replicator.RemoteFormRequest;
@@ -99,17 +101,18 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
 
         OpenIDConnectAuthorizer.forgetIDTokensForServer(remoteDbURL, tokenStore);
 
-        Authenticator auth = AuthenticatorFactory.createOpenIDConnectAuthenticator(new OpenIDConnectAuthorizer.OIDCLoginCallback() {
-            @Override
-            public void callback(URL login, URL authBase, OpenIDConnectAuthorizer.OIDCLoginContinuation cont) {
-                assertValidOIDCLogin(login, authBase, remoteDbURL);
-                // Fake a form submission to the OIDC test provider, to get an auth URL redirect:
-                URL authURL = loginToOIDCTestProvider(remoteDbURL);
-                assertNotNull(authURL);
-                Log.e(TAG, "**** Callback handing control back to authenticator...");
-                cont.callback(authURL, null);
-            }
-        }, tokenStore);
+        Authenticator auth = AuthenticatorFactory.createOpenIDConnectAuthenticator(
+            new OIDCLoginCallback() {
+                @Override
+                public void callback(URL login, URL authBase, OIDCLoginContinuation cont) {
+                    assertValidOIDCLogin(login, authBase, remoteDbURL);
+                    // Fake a form submission to the OIDC test provider, to get an auth URL redirect:
+                    URL authURL = loginToOIDCTestProvider(remoteDbURL);
+                    assertNotNull(authURL);
+                    Log.e(TAG, "**** Callback handing control back to authenticator...");
+                    cont.callback(authURL, null);
+                }
+            }, tokenStore);
 
         Throwable authError = pullWithOIDCAuth(auth);
         assertNull(authError);
@@ -122,15 +125,16 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
         // Now try again; this should use the ID token from the keychain and/or a session cookie:
         Log.v(TAG, "**** Second replication...");
         final AtomicBoolean callbackInvoked = new AtomicBoolean(false);
-        auth = AuthenticatorFactory.createOpenIDConnectAuthenticator(new OpenIDConnectAuthorizer.OIDCLoginCallback() {
-            @Override
-            public void callback(URL login, URL authBase, OpenIDConnectAuthorizer.OIDCLoginContinuation cont) {
-                assertValidOIDCLogin(login, authBase, remoteDbURL);
-                assertFalse(callbackInvoked.get());
-                callbackInvoked.set(true);
-                cont.callback(null, null); // cancel
-            }
-        }, tokenStore);
+        auth = AuthenticatorFactory.createOpenIDConnectAuthenticator(
+            new OIDCLoginCallback() {
+                @Override
+                public void callback(URL login, URL authBase, OIDCLoginContinuation cont) {
+                    assertValidOIDCLogin(login, authBase, remoteDbURL);
+                    assertFalse(callbackInvoked.get());
+                    callbackInvoked.set(true);
+                    cont.callback(null, null); // cancel
+                }
+            }, tokenStore);
         authError = pullWithOIDCAuth(auth);
         assertNull(authError);
         assertFalse(callbackInvoked.get());
@@ -155,10 +159,10 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
 
         final AtomicBoolean callbackInvoked = new AtomicBoolean(false);
         Authenticator auth = AuthenticatorFactory.createOpenIDConnectAuthenticator(
-                new OpenIDConnectAuthorizer.OIDCLoginCallback() {
+                new OIDCLoginCallback() {
                     @Override
                     public void callback(URL login, URL authBase,
-                                         OpenIDConnectAuthorizer.OIDCLoginContinuation cont) {
+                                         OIDCLoginContinuation cont) {
                         assertValidOIDCLogin(login, authBase, remoteDbURL);
                         assertFalse(callbackInvoked.get());
                         callbackInvoked.set(true);
@@ -193,19 +197,22 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
             factory.setFollowRedirects(false);
 
             URL formURL = new URL(remoteDbURL.toExternalForm() +
-                    "/_oidc_testing/authenticate?client_id=CLIENTID&redirect_uri=http%3A%2F%2F" + getSyncGatewayHost() + "%3A4984%2Fopenid_db%2F_oidc_callback&response_type=code&scope=openid+email&state=");
+                    "/_oidc_testing/authenticate?client_id=CLIENTID&redirect_uri=http%3A%2F%2F" +
+                    getSyncGatewayHost() +
+                    "%3A4984%2Fopenid_db%2F_oidc_callback&response_type=code&scope=openid+email&state=");
             Map<String, String> formData = new HashMap<>();
             formData.put("username", "pupshaw");
             formData.put("authenticated", "true");
             final Map<String, Object> results = new HashMap<>();
-            RemoteRequest rq = new RemoteFormRequest(factory, "POST", formURL, false, formData, null, new RemoteRequestCompletion() {
-                @Override
-                public void onCompletion(Response httpResponse, Object result, Throwable error) {
-                    results.put("response", httpResponse);
-                    results.put("result", result);
-                    results.put("error", error);
-                }
-            });
+            RemoteRequest rq = new RemoteFormRequest(factory, "POST", formURL, false, formData, null,
+                new RemoteRequestCompletion() {
+                    @Override
+                    public void onCompletion(Response httpResponse, Object result, Throwable error) {
+                        results.put("response", httpResponse);
+                        results.put("result", result);
+                        results.put("error", error);
+                    }
+                });
             rq.setAuthenticator(null);
             Thread t = new Thread(rq);
             t.start();
