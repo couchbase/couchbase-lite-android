@@ -88,5 +88,15 @@
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
         </file>
+        <file>
+            <source>${ZIP_HOME}/okhttp-${okhttp.version}.jar</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
+        <file>
+            <source>${ZIP_HOME}/okio-${okio.version}.jar</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
     </files>
 </assembly>

@@ -16,6 +16,9 @@
         <rhino.version>1.7R3</rhino.version>
         <servlet.version>2-3</servlet.version>
         <stateless4j.version>2.4.0</stateless4j.version>
+        <okhttp.version>3.3.1</okhttp.version>
+        <okio.version>1.8.0</okio.version>
+
 
         <LICENSE_DIR>${basedir}/build/license/couchbase-lite</LICENSE_DIR>
         <LICENSE_FILE>LICENSE_${EDITION}.txt</LICENSE_FILE>
@@ -122,14 +125,24 @@
             <scope>compile</scope>
         </dependency>
 
-
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+            <version>${okio.version}</version>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
