@@ -24,7 +24,7 @@ public class OpenIDConnectAuthenticatorFactory extends AuthenticatorFactory {
      * Creates an Authenticator that knows how to do OpenID authentication.
      */
     public static Authenticator createOpenIDConnectAuthenticator(
-            OpenIDConnectAuthorizer.OIDCLoginCallback callback, Context context) {
+            OIDCLoginCallback callback, Context context) {
         return new OpenIDConnectAuthorizer(callback, TokenStoreFactory.build(context));
     }
 }

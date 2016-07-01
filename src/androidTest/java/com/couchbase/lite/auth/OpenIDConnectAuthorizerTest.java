@@ -23,16 +23,16 @@ import java.util.Map;
  * Created by hideki on 6/15/16.
  */
 public class OpenIDConnectAuthorizerTest extends LiteTestCase {
-    OpenIDConnectAuthorizer authorizer;
+    private OpenIDConnectAuthorizer authorizer;
     
     @Override
     public void setUp() throws Exception {
         super.setUp();
         authorizer = new com.couchbase.lite.auth.OpenIDConnectAuthorizer(
-                new OpenIDConnectAuthorizer.OIDCLoginCallback() {
+                new OIDCLoginCallback() {
                     @Override
                     public void callback(URL loginURL, URL authBaseURL,
-                                         OpenIDConnectAuthorizer.OIDCLoginContinuation loginContinuation) {
+                                         OIDCLoginContinuation loginContinuation) {
                     }
                 }, TokenStoreFactory.build(getTestContext("db")));
         authorizer.setRemoteURL(new URL("http://10.0.0.1:9999/db"));
