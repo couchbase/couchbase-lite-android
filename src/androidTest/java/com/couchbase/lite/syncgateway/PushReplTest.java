@@ -14,12 +14,15 @@
 package com.couchbase.lite.syncgateway;
 
 import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.Manager;
+import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.util.Log;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -49,7 +52,7 @@ public class PushReplTest extends LiteTestCaseWithDB {
      * Note: For test, needs to restart sync gateway. Default sync gateway does not allow
      * to access admin port from non-local to delete db.
      */
-    public void testPushRepl() throws Exception{
+    public void testPushRepl() throws Exception {
         if (!syncgatewayTestsEnabled()) {
             return;
         }
@@ -92,19 +95,61 @@ public class PushReplTest extends LiteTestCaseWithDB {
             }
         });
         thread.start();
+        pushData(getReplicationURL());
+        // wait till thread finishes to create all docs.
+        latch.await();
 
+        // verify total document number on remote
+        assertEquals(TOTAL_DOCS, ((Number) getAllDocs().get("total_rows")).intValue());
+        String docID = "doc-" + String.format(Locale.ENGLISH, "%03d", 100);
+        Document doc = database.getDocument(docID);
+        //Add Attachment 1
+        StringBuffer sb = new StringBuffer();
+        int size = 50 * 1024;
+        for (int i = 0; i < size; i++) {
+            sb.append("a");
+        }
+
+        ByteArrayInputStream body = new ByteArrayInputStream(sb.toString().getBytes());
+        UnsavedRevision newRev = doc.createRevision();
+        newRev.setAttachment("attachment1", "text/plain; charset=utf-8", body);
+        newRev.save();
+
+        // start push replicator
+        pushData(getReplicationURL());
+
+        Map<String, Object> attachments =  (Map<String, Object>) getDocByID(docID).get("_attachments");
+        assertTrue(attachments.containsKey("attachment1"));
+
+        //Add Attachment 2
+        StringBuffer sb2 = new StringBuffer();
+        int size2 = 50 * 1024;
+        for (int i = 0; i < size2; i++) {
+            sb.append("b");
+        }
+        ByteArrayInputStream body2 = new ByteArrayInputStream(sb.toString().getBytes());
+        UnsavedRevision newRev2 = doc.createRevision();
+        newRev2.setAttachment("attachment2", "text/plain; charset=utf-8", body2);
+        newRev2.save();
+
+        pushData(getReplicationURL());
+
+        // verify total document number on remote
+        Map<String, Object> attachmentsV2 =  (Map<String, Object>) getDocByID(docID).get("_attachments");
+        assertTrue(attachmentsV2.containsKey("attachment2"));
+    }
+
+    void pushData(URL remote) throws Exception {
         // start push replicator
         final CountDownLatch idle = new CountDownLatch(1);
         final CountDownLatch stop = new CountDownLatch(1);
         ReplicationIdleObserver idleObserver = new ReplicationIdleObserver(idle);
         ReplicationFinishedObserver stopObserver = new ReplicationFinishedObserver(stop);
-        Replication push = database.createPushReplication(getReplicationURL());
+        Replication push = database.createPushReplication(remote);
         push.setContinuous(true);
         push.addChangeListener(idleObserver);
         push.addChangeListener(stopObserver);
         push.start();
-        // wait till thread finishes to create all docs.
-        latch.await();
         // wait till push become idle state
         idle.await();
         // stop push
@@ -114,9 +159,6 @@ public class PushReplTest extends LiteTestCaseWithDB {
 
         // give sync gateway to process all.
         Thread.sleep(2*1000);
-
-        // verify total document number on remote
-        assertEquals(TOTAL_DOCS, ((Number) getAllDocs().get("total_rows")).intValue());
     }
 
     // GET /{db}/_all_docs
@@ -124,6 +166,25 @@ public class PushReplTest extends LiteTestCaseWithDB {
         HttpURLConnection connection = null;
         try {
             URL url = new URL(System.getProperty("replicationUrl") + "/_all_docs");
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            InputStream in = connection.getInputStream();
+            try {
+                return Manager.getObjectMapper().readValue(in, Map.class);
+            } finally {
+                if (in != null)
+                    in.close();
+            }
+        } finally {
+            if (connection != null)
+                connection.disconnect();
+        }
+    }
+
+    Map<String, Object> getDocByID(String docId) throws IOException {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(System.getProperty("replicationUrl") + "/" + docId);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             InputStream in = connection.getInputStream();
