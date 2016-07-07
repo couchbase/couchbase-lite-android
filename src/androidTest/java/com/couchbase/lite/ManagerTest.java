@@ -26,6 +26,7 @@ import com.couchbase.lite.util.Utils;
 import com.couchbase.lite.util.ZipUtils;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -446,6 +447,31 @@ public class ManagerTest extends LiteTestCaseWithDB {
 
     // #pragma mark - REPLACE DATABASE:
 
+    // Tool to generate test db.
+    public void testGenerateTestDB() throws Exception {
+        Database db;
+        if(isSQLiteDB())
+            db = manager.getDatabase("android-sqlite");
+        else
+            db = manager.getDatabase("android-forestdb");
+
+        for (int i = 1; i <= 2; i++) {
+            Document doc = db.getDocument(String.format(Locale.ENGLISH, "doc%d", i));
+            Map props = new HashMap();
+            props.put("key", String.valueOf(i));
+            doc.putProperties(props);
+            UnsavedRevision rev = doc.createRevision();
+            InputStream stream = new ByteArrayInputStream(String.format(Locale.ENGLISH, "attach%d", i).getBytes());
+            rev.setAttachment(String.format(Locale.ENGLISH, "attach%d", i), "plain/text", stream);
+            rev.save();
+            stream.close();
+        }
+
+        Map map = new HashMap();
+        map.put("key", "local1");
+        db.putLocalDocument("local1", map);
+    }
+
     public void test23_ReplaceOldVersionDatabase() throws Exception {
 
         List<String[]> dbInfoList = new ArrayList<>();
@@ -456,12 +482,14 @@ public class ManagerTest extends LiteTestCaseWithDB {
         // Android 1.2.0 (ForestDB)
         String[] android120forest = {"1", "Android 1.2.0 ForestDB", "android120forest.cblite2", "replacedb/android120forest.cblite2.zip"};
         dbInfoList.add(android120sqlite);
+
         // iOS 1.2.0 (SQLite)
         String[] ios120sqlite = {"2", "iOS 1.2.0 SQLite", "ios120/iosdb.cblite2", "replacedb/ios120.zip"};
         dbInfoList.add(ios120sqlite);
         // iOS 1.2.0 (ForestDB)
         String[] ios120forest = {"2", "iOS 1.2.0 ForestDB", "ios120-forestdb/iosdb.cblite2", "replacedb/ios120-forestdb.zip"};
         dbInfoList.add(ios120forest);
+
         // .NET 1.2.0 (SQLite)
         String[] net120sqlite = {"3", ".NET 1.2.0 SQLite", "netdb.cblite2", "replacedb/net120-sqlite.zip"};
         dbInfoList.add(net120sqlite);
@@ -469,19 +497,27 @@ public class ManagerTest extends LiteTestCaseWithDB {
         String[] net120forest = {"3", ".NET 1.2.0 ForestDB", "netdb.cblite2", "replacedb/net120-forestdb.zip"};
         dbInfoList.add(net120forest);
 
+        // Android 1.3.0 (SQLite)
+        String[] android130sqlite = {"1", "Android 1.3.0 SQLite", "android-sqlite.cblite2", "replacedb/android130-sqlite.cblite2.zip"};
+        dbInfoList.add(android130sqlite);
+        // Android 1.3.0 (ForestDB)
+        String[] android130forest = {"1", "Android 1.3.0 ForestDB", "android-forestdb.cblite2", "replacedb/android130-forestdb.cblite2.zip"};
+        dbInfoList.add(android130forest);
+
+
         // iOS 1.3.0 (SQLite)
-        String[] ios130sqlite = {"4", "iOS 1.3.0 SQLite", "ios130/iosdb.cblite2", "replacedb/ios130.zip"};
+        String[] ios130sqlite = {"2", "iOS 1.3.0 SQLite", "ios130/iosdb.cblite2", "replacedb/ios130.zip"};
         dbInfoList.add(ios130sqlite);
         // iOS 1.3.0 (ForestDB)
-        String[] ios130forest = {"4", "iOS 1.3.0 ForestDB", "ios130-forestdb/iosdb.cblite2", "replacedb/ios130-forestdb.zip"};
+        String[] ios130forest = {"2", "iOS 1.3.0 ForestDB", "ios130-forestdb/iosdb.cblite2", "replacedb/ios130-forestdb.zip"};
         dbInfoList.add(ios130forest);
 
         // .NET 1.3.0 (SQLite)
-        String[] net130sqlite = {"5", ".NET 1.3.0 SQLite", "netdb.cblite2", "replacedb/net130-sqlite.zip"};
-        dbInfoList.add(net120sqlite);
+        //String[] net130sqlite = {"3", ".NET 1.3.0 SQLite", "netdb.cblite2", "replacedb/net130-sqlite.zip"};
+        //dbInfoList.add(net130sqlite);
         // .NET 1.3.0 (ForestDB)
-        String[] net130forest = {"5", ".NET 1.3.0 ForestDB", "netdb.cblite2", "replacedb/net130-forestdb.zip"};
-        dbInfoList.add(net120forest);
+        //String[] net130forest = {"3", ".NET 1.3.0 ForestDB", "netdb.cblite2", "replacedb/net130-forestdb.zip"};
+        //dbInfoList.add(net130forest);
 
 
         for (final String[] dbInfo : dbInfoList) {
