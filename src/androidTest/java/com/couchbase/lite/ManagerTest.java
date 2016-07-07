@@ -449,6 +449,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
     public void test23_ReplaceOldVersionDatabase() throws Exception {
 
         List<String[]> dbInfoList = new ArrayList<>();
+
         // Android 1.2.0 (SQLite)
         String[] android120sqlite = {"1", "Android 1.2.0 SQLite", "android120sqlite.cblite2", "replacedb/android120sqlite.cblite2.zip"};
         dbInfoList.add(android120sqlite);
@@ -467,6 +468,14 @@ public class ManagerTest extends LiteTestCaseWithDB {
         // .NET 1.2.0 (ForestDB)
         String[] net120forest = {"3", ".NET 1.2.0 ForestDB", "netdb.cblite2", "replacedb/net120-forestdb.zip"};
         dbInfoList.add(net120forest);
+
+        // iOS 1.3.0 (SQLite)
+        String[] ios130sqlite = {"4", "iOS 1.3.0 SQLite", "ios130/iosdb.cblite2", "replacedb/ios130.zip"};
+        dbInfoList.add(ios130sqlite);
+        // iOS 1.3.0 (ForestDB)
+        String[] ios130forest = {"4", "iOS 1.3.0 ForestDB", "ios130-forestdb/iosdb.cblite2", "replacedb/ios130-forestdb.zip"};
+        dbInfoList.add(ios130forest);
+
 
         for (final String[] dbInfo : dbInfoList) {
             Log.i(TAG, "DB Type: " + dbInfo[1]);
@@ -553,10 +562,15 @@ public class ManagerTest extends LiteTestCaseWithDB {
     }
 
     public void testUpgradeDatabase() throws Exception {
+        _testUpgradeDatabase("ios120");
+        _testUpgradeDatabase("ios130");
+    }
+
+    private void _testUpgradeDatabase(String dbname) throws Exception {
         // Install a canned database:
-        File srcDir = new File(manager.getContext().getFilesDir(), "ios120/iosdb.cblite2");
+        File srcDir = new File(manager.getContext().getFilesDir(), dbname+ "/iosdb.cblite2");
         FileDirUtils.deleteRecursive(srcDir);
-        ZipUtils.unzip(getAsset("replacedb/ios120.zip"), manager.getContext().getFilesDir());
+        ZipUtils.unzip(getAsset("replacedb/"+dbname+".zip"), manager.getContext().getFilesDir());
         manager.replaceDatabase("replacedb", srcDir.getAbsolutePath());
 
         // Open installed db with storageType set to this test's storage type:
