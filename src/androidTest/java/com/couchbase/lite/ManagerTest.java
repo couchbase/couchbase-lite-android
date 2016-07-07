@@ -476,6 +476,13 @@ public class ManagerTest extends LiteTestCaseWithDB {
         String[] ios130forest = {"4", "iOS 1.3.0 ForestDB", "ios130-forestdb/iosdb.cblite2", "replacedb/ios130-forestdb.zip"};
         dbInfoList.add(ios130forest);
 
+        // .NET 1.3.0 (SQLite)
+        String[] net130sqlite = {"5", ".NET 1.3.0 SQLite", "netdb.cblite2", "replacedb/net130-sqlite.zip"};
+        dbInfoList.add(net120sqlite);
+        // .NET 1.3.0 (ForestDB)
+        String[] net130forest = {"5", ".NET 1.3.0 ForestDB", "netdb.cblite2", "replacedb/net130-forestdb.zip"};
+        dbInfoList.add(net120forest);
+
 
         for (final String[] dbInfo : dbInfoList) {
             Log.i(TAG, "DB Type: " + dbInfo[1]);
