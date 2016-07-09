@@ -42,6 +42,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     }
 
     @Override
+    public void resetCookieStore() {
+
+    }
+
+    @Override
     public CookieJar getCookieStore() {
         return null;
     }
