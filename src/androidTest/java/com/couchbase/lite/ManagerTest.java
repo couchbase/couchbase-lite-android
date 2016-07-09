@@ -26,6 +26,7 @@ import com.couchbase.lite.util.Utils;
 import com.couchbase.lite.util.ZipUtils;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -446,27 +447,77 @@ public class ManagerTest extends LiteTestCaseWithDB {
 
     // #pragma mark - REPLACE DATABASE:
 
+    // Tool to generate test db.
+    public void testGenerateTestDB() throws Exception {
+        Database db;
+        if(isSQLiteDB())
+            db = manager.getDatabase("android-sqlite");
+        else
+            db = manager.getDatabase("android-forestdb");
+
+        for (int i = 1; i <= 2; i++) {
+            Document doc = db.getDocument(String.format(Locale.ENGLISH, "doc%d", i));
+            Map props = new HashMap();
+            props.put("key", String.valueOf(i));
+            doc.putProperties(props);
+            UnsavedRevision rev = doc.createRevision();
+            InputStream stream = new ByteArrayInputStream(String.format(Locale.ENGLISH, "attach%d", i).getBytes());
+            rev.setAttachment(String.format(Locale.ENGLISH, "attach%d", i), "plain/text", stream);
+            rev.save();
+            stream.close();
+        }
+
+        Map map = new HashMap();
+        map.put("key", "local1");
+        db.putLocalDocument("local1", map);
+    }
+
     public void test23_ReplaceOldVersionDatabase() throws Exception {
 
         List<String[]> dbInfoList = new ArrayList<>();
+
         // Android 1.2.0 (SQLite)
         String[] android120sqlite = {"1", "Android 1.2.0 SQLite", "android120sqlite.cblite2", "replacedb/android120sqlite.cblite2.zip"};
         dbInfoList.add(android120sqlite);
         // Android 1.2.0 (ForestDB)
         String[] android120forest = {"1", "Android 1.2.0 ForestDB", "android120forest.cblite2", "replacedb/android120forest.cblite2.zip"};
         dbInfoList.add(android120sqlite);
+
         // iOS 1.2.0 (SQLite)
         String[] ios120sqlite = {"2", "iOS 1.2.0 SQLite", "ios120/iosdb.cblite2", "replacedb/ios120.zip"};
         dbInfoList.add(ios120sqlite);
         // iOS 1.2.0 (ForestDB)
         String[] ios120forest = {"2", "iOS 1.2.0 ForestDB", "ios120-forestdb/iosdb.cblite2", "replacedb/ios120-forestdb.zip"};
         dbInfoList.add(ios120forest);
+
         // .NET 1.2.0 (SQLite)
         String[] net120sqlite = {"3", ".NET 1.2.0 SQLite", "netdb.cblite2", "replacedb/net120-sqlite.zip"};
         dbInfoList.add(net120sqlite);
         // .NET 1.2.0 (ForestDB)
         String[] net120forest = {"3", ".NET 1.2.0 ForestDB", "netdb.cblite2", "replacedb/net120-forestdb.zip"};
         dbInfoList.add(net120forest);
+
+        // Android 1.3.0 (SQLite)
+        String[] android130sqlite = {"1", "Android 1.3.0 SQLite", "android-sqlite.cblite2", "replacedb/android130-sqlite.cblite2.zip"};
+        dbInfoList.add(android130sqlite);
+        // Android 1.3.0 (ForestDB)
+        String[] android130forest = {"1", "Android 1.3.0 ForestDB", "android-forestdb.cblite2", "replacedb/android130-forestdb.cblite2.zip"};
+        dbInfoList.add(android130forest);
+
+
+        // iOS 1.3.0 (SQLite)
+        String[] ios130sqlite = {"2", "iOS 1.3.0 SQLite", "ios130/iosdb.cblite2", "replacedb/ios130.zip"};
+        dbInfoList.add(ios130sqlite);
+        // iOS 1.3.0 (ForestDB)
+        String[] ios130forest = {"2", "iOS 1.3.0 ForestDB", "ios130-forestdb/iosdb.cblite2", "replacedb/ios130-forestdb.zip"};
+        dbInfoList.add(ios130forest);
+
+        // .NET 1.3.0 (SQLite)
+        String[] net130sqlite = {"3", ".NET 1.3.0 SQLite", "netdb.cblite2", "replacedb/net130-sqlite.zip"};
+        dbInfoList.add(net130sqlite);
+        // .NET 1.3.0 (ForestDB)
+        String[] net130forest = {"3", ".NET 1.3.0 ForestDB", "netdb.cblite2", "replacedb/net130-forestdb.zip"};
+        dbInfoList.add(net130forest);
 
         for (final String[] dbInfo : dbInfoList) {
             Log.i(TAG, "DB Type: " + dbInfo[1]);
@@ -553,10 +604,15 @@ public class ManagerTest extends LiteTestCaseWithDB {
     }
 
     public void testUpgradeDatabase() throws Exception {
+        _testUpgradeDatabase("ios120");
+        _testUpgradeDatabase("ios130");
+    }
+
+    private void _testUpgradeDatabase(String dbname) throws Exception {
         // Install a canned database:
-        File srcDir = new File(manager.getContext().getFilesDir(), "ios120/iosdb.cblite2");
+        File srcDir = new File(manager.getContext().getFilesDir(), dbname+ "/iosdb.cblite2");
         FileDirUtils.deleteRecursive(srcDir);
-        ZipUtils.unzip(getAsset("replacedb/ios120.zip"), manager.getContext().getFilesDir());
+        ZipUtils.unzip(getAsset("replacedb/"+dbname+".zip"), manager.getContext().getFilesDir());
         manager.replaceDatabase("replacedb", srcDir.getAbsolutePath());
 
         // Open installed db with storageType set to this test's storage type:
