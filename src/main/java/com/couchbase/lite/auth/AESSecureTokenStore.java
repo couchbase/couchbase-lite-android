@@ -64,12 +64,12 @@ public class AESSecureTokenStore implements TokenStore {
 
     @TargetApi(Build.VERSION_CODES.M)
     @Override
-    public Map<String, String> loadTokens(URL remoteURL) throws Exception {
+    public Map<String, String> loadTokens(URL remoteURL, String localUUID) throws Exception {
         if (!hasKeyStore || !hasKeyGenerator)
             return null;
 
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
-        String key = getKey(remoteURL);
+        String key = getKey(remoteURL, localUUID);
         String base64EncryptedStr = prefs.getString(key, null);
         if (base64EncryptedStr == null)
             return null;
@@ -81,7 +81,7 @@ public class AESSecureTokenStore implements TokenStore {
 
     @TargetApi(Build.VERSION_CODES.M)
     @Override
-    public boolean saveTokens(URL remoteURL, Map<String, String> tokens) {
+    public boolean saveTokens(URL remoteURL, String localUUID, Map<String, String> tokens) {
         if (!hasKeyStore || !hasKeyGenerator)
             return false;
 
@@ -91,7 +91,7 @@ public class AESSecureTokenStore implements TokenStore {
 
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        String key = getKey(remoteURL);
+        String key = getKey(remoteURL, localUUID);
         editor.putString(key, encryptedData[0]);
         editor.putString(key + "_iv", encryptedData[1]);
         return editor.commit();
@@ -99,13 +99,13 @@ public class AESSecureTokenStore implements TokenStore {
 
     @TargetApi(Build.VERSION_CODES.M)
     @Override
-    public boolean deleteTokens(URL remoteURL) {
+    public boolean deleteTokens(URL remoteURL, String localUUID) {
         if (!hasKeyStore || !hasKeyGenerator)
             return false;
 
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        String key = getKey(remoteURL);
+        String key = getKey(remoteURL, localUUID);
         editor.remove(key);
         return editor.commit();
     }
@@ -114,10 +114,13 @@ public class AESSecureTokenStore implements TokenStore {
     // protected/private methods
     ////////////////////////////////////////////////////////////
 
-    private String getKey(URL remoteURL) {
-        String account = remoteURL.toExternalForm();
+    private String getKey(URL remoteURL, String localUUID) {
+        String service = remoteURL.toExternalForm();
         String label = String.format(Locale.ENGLISH, "%s OpenID Connect tokens", remoteURL.getHost());
-        return String.format(Locale.ENGLISH, "%s%s%s", alias, label, account);
+        if (localUUID == null)
+            return String.format(Locale.ENGLISH, "%s%s%s", alias, label, service);
+        else
+            return String.format(Locale.ENGLISH, "%s%s%s%s", alias, label, service, localUUID);
     }
 
     @TargetApi(Build.VERSION_CODES.M)

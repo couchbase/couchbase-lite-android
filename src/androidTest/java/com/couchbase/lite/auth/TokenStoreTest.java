@@ -40,8 +40,8 @@ public class TokenStoreTest extends LiteTestCaseWithDB {
         input.put("data8", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
         input.put("data9", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
         input.put("data0", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
-        assertTrue(tokenStore.saveTokens(remoteURL, input));
-        Map output = tokenStore.loadTokens(remoteURL);
+        assertTrue(tokenStore.saveTokens(remoteURL, null, input));
+        Map output = tokenStore.loadTokens(remoteURL, null);
         assertNotNull(output);
         assertEquals(input, output);
     }
@@ -52,14 +52,14 @@ public class TokenStoreTest extends LiteTestCaseWithDB {
         Map<String, String> input = new HashMap<>();
         input.put("key", "value");
         input.put("hello", "world");
-        assertTrue(tokenStore.saveTokens(remoteURL, input));
+        assertTrue(tokenStore.saveTokens(remoteURL, null, input));
 
-        Map output = tokenStore.loadTokens(remoteURL);
+        Map output = tokenStore.loadTokens(remoteURL, null);
         assertNotNull(output);
         assertEquals(input, output);
 
-        assertTrue(tokenStore.deleteTokens(remoteURL));
+        assertTrue(tokenStore.deleteTokens(remoteURL, null));
 
-        assertNull(tokenStore.loadTokens(remoteURL));
+        assertNull(tokenStore.loadTokens(remoteURL, null));
     }
 }

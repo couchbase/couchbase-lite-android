@@ -83,11 +83,11 @@ public class RSASecureTokenStore implements TokenStore {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
-    public Map<String, String> loadTokens(URL remoteURL) throws Exception {
+    public Map<String, String> loadTokens(URL remoteURL, String localUUID) throws Exception {
         if (!hasKeyStore)
             return null;
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
-        String key = getKey(remoteURL);
+        String key = getKey(remoteURL, localUUID);
         if (!prefs.contains(key + "_key")) return null;
         if (!prefs.contains(key + "_data")) return null;
         byte[] secretKey = Base64.decode(prefs.getString(key + "_key", null), Base64.DEFAULT);
@@ -97,7 +97,7 @@ public class RSASecureTokenStore implements TokenStore {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
-    public boolean saveTokens(URL remoteURL, Map<String, String> tokens) {
+    public boolean saveTokens(URL remoteURL, String localUUID, Map<String, String> tokens) {
         if (!hasKeyStore)
             return false;
 
@@ -107,7 +107,7 @@ public class RSASecureTokenStore implements TokenStore {
 
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        String key = getKey(remoteURL);
+        String key = getKey(remoteURL, localUUID);
         editor.putString(key + "_key", Base64.encodeToString(encrypted[0], Base64.DEFAULT));
         editor.putString(key + "_data", Base64.encodeToString(encrypted[1], Base64.DEFAULT));
         return editor.commit();
@@ -115,13 +115,13 @@ public class RSASecureTokenStore implements TokenStore {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
-    public boolean deleteTokens(URL remoteURL) {
+    public boolean deleteTokens(URL remoteURL, String localUUID) {
         if (!hasKeyStore)
             return false;
 
         SharedPreferences prefs = context.getSharedPreferences(serviceName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        String key = getKey(remoteURL);
+        String key = getKey(remoteURL, localUUID);
         editor.remove(key + "_key");
         editor.remove(key + "_data");
         return editor.commit();
@@ -131,10 +131,13 @@ public class RSASecureTokenStore implements TokenStore {
     // protected/private methods
     ////////////////////////////////////////////////////////////
 
-    String getKey(URL remoteURL) {
-        String account = remoteURL.toExternalForm();
+    String getKey(URL remoteURL, String localUUID) {
+        String service = remoteURL.toExternalForm();
         String label = String.format(Locale.ENGLISH, "%s OpenID Connect tokens", remoteURL.getHost());
-        return String.format(Locale.ENGLISH, "%s%s%s", alias, label, account);
+        if (localUUID == null)
+            return String.format(Locale.ENGLISH, "%s%s%s", alias, label, service);
+        else
+            return String.format(Locale.ENGLISH, "%s%s%s%s", alias, label, service, localUUID);
     }
 
     byte[][] encrypt(Map<String, String> map) {
