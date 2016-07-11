@@ -16,6 +16,7 @@ package com.couchbase.lite.syncgateway;
 import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
+import com.couchbase.lite.auth.Authorizer;
 import com.couchbase.lite.auth.MemTokenStore;
 import com.couchbase.lite.auth.OpenIDConnectAuthorizer;
 import com.couchbase.lite.auth.OIDCLoginCallback;
@@ -114,13 +115,8 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
                 }
             }, tokenStore);
 
-        Throwable authError = pullWithOIDCAuth(auth);
+        Throwable authError = pullWithOIDCAuth(auth, "pupshaw");
         assertNull(authError);
-
-        // The username I gave is "pupshaw", but SG namespaces it by prefixing it with the provider's
-        // registered name, which is "testing" (as given in the SG config file.)
-        assertNotNull(auth.getUsername());
-        assertTrue(auth.getUsername().endsWith("_pupshaw"));
 
         // Now try again; this should use the ID token from the keychain and/or a session cookie:
         Log.v(TAG, "**** Second replication...");
@@ -135,7 +131,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
                     cont.callback(null, null); // cancel
                 }
             }, tokenStore);
-        authError = pullWithOIDCAuth(auth);
+        authError = pullWithOIDCAuth(auth, "pupshaw");
         assertNull(authError);
         assertFalse(callbackInvoked.get());
     }
@@ -175,7 +171,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
         ((OpenIDConnectAuthorizer) auth).setIDToken("BOGUS_ID");
         ((OpenIDConnectAuthorizer) auth).setRefreshToken("BOGUS_REFRESH");
 
-        Throwable authError = pullWithOIDCAuth(auth);
+        Throwable authError = pullWithOIDCAuth(auth, null);
         assertTrue(callbackInvoked.get());
         assertTrue(authError instanceof RemoteRequestResponseException);
         RemoteRequestResponseException rrre = (RemoteRequestResponseException) authError;
@@ -247,13 +243,18 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
         assertEquals(remoteDbURL.getPath() + "/_oidc_callback", authBase.getPath());
     }
 
-    private Throwable pullWithOIDCAuth(Authenticator auth) throws Exception {
+    private Throwable pullWithOIDCAuth(Authenticator auth, String username)
+            throws Exception {
         URL remoteDbURL = getRemoteTestDBURL("openid_db");
         if (remoteDbURL == null)
             return null;
         Replication repl = database.createPullReplication(remoteDbURL);
         repl.setAuthenticator(auth);
         runReplication(repl);
+        if(username != null && repl.getLastError() == null)
+            // SG namespaces the username by prefixing it with the hash of
+            // the identity provider's registered name (given in the SG config file.)
+            assertTrue(repl.getUsername().endsWith(username));
         return repl.getLastError();
     }
 }
