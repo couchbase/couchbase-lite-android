@@ -158,6 +158,10 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         return Boolean.parseBoolean(System.getProperty("syncgatewayTestsEnabled"));
     }
 
+    protected static boolean multithreadsTestsEnabled() {
+        return Boolean.parseBoolean(System.getProperty("multithreadsTestsEnabled"));
+    }
+
     protected static int getSQLiteLibrary() {
         return Integer.parseInt(System.getProperty("sqliteLibrary"));
     }
