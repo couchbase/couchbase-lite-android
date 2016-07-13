@@ -43,34 +43,44 @@ public class Test16_CompactDB extends PerformanceTestCase {
             return;
 
         // Populate documents into the database:
-        char[] chars = new char[getSizeOfDocument()];
+        final int docSize = getSizeOfDocument();
+        char[] chars = new char[docSize];
         Arrays.fill(chars, 'a');
         final String content = new String(chars);
 
-        int attSize = getSizeOfAttachment();
+        final int attSize = getSizeOfAttachment();
         if (attSize > 0) {
-            chars = new char[getSizeOfDocument()];
+            chars = new char[attSize];
             Arrays.fill(chars, 'b');
         }
-        final byte[] attachment = attSize > 0 ? new String(chars).getBytes() : null;
+        final byte[] attachmentBytes = attSize > 0 ? new String(chars).getBytes() : null;
 
         boolean success = database.runInTransaction(new TransactionalTask() {
             public boolean run() {
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
                     try {
-                        Map<String, Object> properties = new HashMap<String, Object>();
-                        properties.put("content", content);
-
                         Document document = database.createDocument();
-
-                        // doc with attachments
                         UnsavedRevision unsaved = document.createRevision();
-                        unsaved.setProperties(properties);
-                        if (attachment != null) {
+
+                        if (docSize > 0) {
+                            Map<String, Object> properties = new HashMap<String, Object>();
+                            properties.put("content", content);
+                            unsaved.setProperties(properties);
+                        }
+
+                        boolean hasAttachments = false;
+                        int numAtts = getNumberOfAttacment();
+                        if (attSize > 0 && numAtts > 0) {
+                            hasAttachments = true;
                             for (int j = 0; j < getNumberOfAttacment(); j++) {
+                                String prefix = i + "-" + j;
+                                byte[] prefixBytes = prefix.getBytes();
+                                byte[] bytes = new byte[attachmentBytes.length + prefixBytes.length];
+                                System.arraycopy(prefixBytes, 0, bytes, 0, prefixBytes.length);
+                                System.arraycopy(attachmentBytes, 0, bytes, prefixBytes.length, attachmentBytes.length);
+
                                 String name = String.format(Locale.ENGLISH, "attach_%d", j);
-                                unsaved.setAttachment(name, "text/plain",
-                                        new ByteArrayInputStream(attachment));
+                                unsaved.setAttachment(name, "text/plain", new ByteArrayInputStream(bytes));
                             }
                         }
                         assertNotNull(unsaved.save());
@@ -84,7 +94,7 @@ public class Test16_CompactDB extends PerformanceTestCase {
                         }
 
                         // deleting attachments
-                        if (attachment != null && deleteAttachment()) {
+                        if (deleteAttachment() && hasAttachments) {
                             unsaved = document.createRevision();
                             for (int j = 0; j < getNumberOfAttacment(); j++) {
                                 String name = String.format(Locale.ENGLISH, "attach_%d", j);

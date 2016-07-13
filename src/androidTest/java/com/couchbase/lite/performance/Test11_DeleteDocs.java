@@ -23,6 +23,8 @@ import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.util.Log;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,20 +47,21 @@ public class Test11_DeleteDocs extends PerformanceTestCase {
 
         docs = new Document[getNumberOfDocuments()];
 
-        // Create docs that will be updated:
+        char[] chars = new char[getSizeOfDocument()];
+        Arrays.fill(chars, 'a');
+        final String content = new String(chars);
+
         boolean success = database.runInTransaction(new TransactionalTask() {
             public boolean run() {
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
-                    //create a document
                     Map<String, Object> props = new HashMap<String, Object>();
-                    props.put("toogle", Boolean.TRUE);
-
+                    props.put("content", content);
                     Document doc = database.createDocument();
                     try {
                         doc.putProperties(props);
                         docs[i] = doc;
                     } catch (CouchbaseLiteException e) {
-                        Log.e(TAG, "Document creation failed", e);
+                        Log.e(TAG, "Document create failed", e);
                         return false;
                     }
                 }
@@ -73,21 +76,14 @@ public class Test11_DeleteDocs extends PerformanceTestCase {
             return;
 
         long start = System.currentTimeMillis();
-        boolean success = database.runInTransaction(new TransactionalTask() {
-            public boolean run() {
-                for (Document doc : docs) {
-                    try {
-                        doc.delete();
-                    } catch (Exception e) {
-                        Log.e(TAG, "Document delete failed", e);
-                        return false;
-                    }
-                }
-                return true;
+        for (Document doc : docs) {
+            try {
+                doc.delete();
+            } catch (Exception e) {
+                Log.e(TAG, "Document delete failed", e);
+                break;
             }
-        });
-        assertTrue(success);
-
+        }
         long end = System.currentTimeMillis();
         logPerformanceStats((end - start), getNumberOfDocuments() + "," + getSizeOfDocument());
     }

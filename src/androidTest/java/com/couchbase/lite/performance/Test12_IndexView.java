@@ -71,7 +71,6 @@ public class Test12_IndexView extends PerformanceTestCase {
                     Map<String,Object> props = new HashMap<String,Object>();
                     props.put("name", name);
                     props.put("apt", i);
-                    props.put("phone", 408100000 + i);
                     props.put("vacant", vacant);
 
                     Document doc = database.createDocument();
@@ -93,8 +92,8 @@ public class Test12_IndexView extends PerformanceTestCase {
         if (!performanceTestsEnabled())
             return;
 
-        long start = System.currentTimeMillis();
         View view = database.getView("vacant");
+        long start = System.currentTimeMillis();
         view.updateIndex();
         long end = System.currentTimeMillis();
         logPerformanceStats((end - start), getNumberOfDocuments() + "");

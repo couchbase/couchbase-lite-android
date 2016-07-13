@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Test3_ReadDocs extends PerformanceTestCase {
+public class Test03_ReadDocs extends PerformanceTestCase {
     public static final String TAG = "ReadDocsPerformance";
     private List<String> docIds;
 
@@ -56,7 +56,7 @@ public class Test3_ReadDocs extends PerformanceTestCase {
                     props.put("content", content);
                     Document doc = database.createDocument();
                     try {
-                        assertNotNull(doc.putProperties(props));
+                        doc.putProperties(props);
                         docIds.add(doc.getId());
                     } catch (CouchbaseLiteException e) {
                         Log.e(TAG, "Document create failed", e);

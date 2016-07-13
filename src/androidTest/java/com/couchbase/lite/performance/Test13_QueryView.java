@@ -76,7 +76,6 @@ public class Test13_QueryView extends PerformanceTestCase {
                     Map<String,Object> props = new HashMap<String,Object>();
                     props.put("name", name);
                     props.put("apt", i);
-                    props.put("phone", 408100000 + i);
                     props.put("vacant", vacant);
 
                     Document doc = database.createDocument();
@@ -98,8 +97,10 @@ public class Test13_QueryView extends PerformanceTestCase {
         if (!performanceTestsEnabled())
             return;
 
+        View view = database.getView("vacant");
+
         long start = System.currentTimeMillis();
-        Query query = database.getView("vacant").createQuery();
+        Query query = view.createQuery();
         query.setDescending(false);
         query.setMapOnly(true);
         QueryEnumerator rowEnum = query.run();

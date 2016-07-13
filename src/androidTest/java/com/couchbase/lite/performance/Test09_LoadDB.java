@@ -22,13 +22,17 @@ import com.couchbase.lite.Document;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.util.Log;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test8_DocRevisions extends PerformanceTestCase {
-    public static final String TAG = "DocRevisionsPerformance";
+public class Test09_LoadDB extends PerformanceTestCase {
+    public static final String TAG = "LoadDBPerformance";
 
-    private Document[] docs;
+    @Override
+    protected String getTestTag() {
+        return TAG;
+    }
 
     @Override
     protected void setUp() throws Exception {
@@ -37,22 +41,21 @@ public class Test8_DocRevisions extends PerformanceTestCase {
         if (!performanceTestsEnabled())
             return;
 
-        docs = new Document[getNumberOfDocuments()];
+        // Populate documents into the database:
+        char[] chars = new char[getSizeOfDocument()];
+        Arrays.fill(chars, 'a');
+        final String content = new String(chars);
 
-        // Create docs that will be updated:
         boolean success = database.runInTransaction(new TransactionalTask() {
             public boolean run() {
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
-                    //create a document
-                    Map<String, Object> props = new HashMap<String, Object>();
-                    props.put("toogle", Boolean.TRUE);
-
-                    Document doc = database.createDocument();
                     try {
+                        Map<String, Object> props = new HashMap<String, Object>();
+                        props.put("content", content);
+                        Document doc = database.createDocument();
                         doc.putProperties(props);
-                        docs[i] = doc;
                     } catch (CouchbaseLiteException e) {
-                        Log.e(TAG, "Document creation failed", e);
+                        Log.e(TAG, "Error when creating a document", e);
                         return false;
                     }
                 }
@@ -62,28 +65,30 @@ public class Test8_DocRevisions extends PerformanceTestCase {
         assertTrue(success);
     }
 
-    public void testDocRevisionsPerformance() throws Exception {
+    public void testLoadDBPerformance() throws Exception {
         if (!performanceTestsEnabled())
             return;
 
         long start = System.currentTimeMillis();
-        for (Document doc : docs) {
-            for (int i = 0; i < getNumberOfUpdates(); i++) {
-                Map<String, Object> contents = new HashMap(doc.getProperties());
-                Boolean wasChecked = (Boolean) contents.get("toogle");
-                contents.put("toogle", !wasChecked);
-                doc.putProperties(contents);
-            }
+        for (int i = 0; i < getNumberOfRounds(); i++) {
+            assertTrue(database.close());
+            database = manager.getDatabase(DEFAULT_TEST_DB);
+            assertNotNull(database);
         }
         long end = System.currentTimeMillis();
-        logPerformanceStats((end - start), getNumberOfDocuments() + ", " + getNumberOfUpdates());
+        logPerformanceStats((end - start), getNumberOfDocuments() + ", " +
+                getSizeOfDocument() + ", " + getNumberOfRounds());
+    }
+
+    private int getSizeOfDocument() {
+        return Integer.parseInt(System.getProperty("test9.sizeOfDocument"));
     }
 
     private int getNumberOfDocuments() {
-        return Integer.parseInt(System.getProperty("test8.numberOfDocuments"));
+        return Integer.parseInt(System.getProperty("test9.numberOfDocuments"));
     }
 
-    private int getNumberOfUpdates() {
-        return Integer.parseInt(System.getProperty("test8.numberOfUpdates"));
+    private int getNumberOfRounds() {
+        return Integer.parseInt(System.getProperty("test9.numberOfRounds"));
     }
 }

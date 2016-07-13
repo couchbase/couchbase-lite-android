@@ -74,7 +74,6 @@ public class Test14_ReduceView extends PerformanceTestCase {
                     Map<String,Object> props = new HashMap<String,Object>();
                     props.put("name", name);
                     props.put("apt", i);
-                    props.put("phone", 408100000 + i);
                     props.put("vacant", vacant);
 
                     Document doc = database.createDocument();
@@ -97,12 +96,13 @@ public class Test14_ReduceView extends PerformanceTestCase {
         if (!performanceTestsEnabled())
             return;
 
+        View view = database.getView("vacant");
+
         long start = System.currentTimeMillis();
-        Query query = database.getView("vacant").createQuery();
+        Query query = view.createQuery();
         query.setMapOnly(false);
         QueryEnumerator rowEnum = query.run();
         QueryRow row = rowEnum.getRow(0);
-        assertNotNull(row);
         assertNotNull(row.getValue());
         long end = System.currentTimeMillis();
         logPerformanceStats((end - start), getNumberOfDocuments() + "");

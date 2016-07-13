@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test5_ReadAttachments extends PerformanceTestCase {
+public class Test05_ReadAttachments extends PerformanceTestCase {
     public static final String TAG = "ReadAttachmentsPerformance";
     private Document[] docs;
 
@@ -49,7 +49,7 @@ public class Test5_ReadAttachments extends PerformanceTestCase {
         char[] chars = new char[getSizeOfAttachment()];
         Arrays.fill(chars, 'a');
         final String content = new String(chars);
-        final byte[] bytes = content.toString().getBytes();
+        final byte[] contentBytes = content.toString().getBytes();
 
         docs = new Document[getNumberOfDocuments()];
 
@@ -57,6 +57,12 @@ public class Test5_ReadAttachments extends PerformanceTestCase {
             public boolean run() {
                 try {
                     for (int i = 0; i < getNumberOfDocuments(); i++) {
+                        String prefix = i + "";
+                        byte[] prefixBytes = prefix.getBytes();
+                        byte[] bytes = new byte[contentBytes.length + prefixBytes.length];
+                        System.arraycopy(prefixBytes, 0, bytes, 0, prefixBytes.length);
+                        System.arraycopy(contentBytes, 0, bytes, prefixBytes.length, contentBytes.length);
+
                         Map<String, Object> properties = new HashMap<String, Object>();
                         properties.put("foo", "bar");
 
@@ -95,8 +101,7 @@ public class Test5_ReadAttachments extends PerformanceTestCase {
                 buffer.write(data, 0, nRead);
             buffer.flush();
             byte[] bytes = buffer.toByteArray();
-            assertEquals(getSizeOfAttachment(), bytes.length);
-            logPerformanceStats(bytes.length, "Size");
+            assert (bytes.length > 0);
         }
         long end = System.currentTimeMillis();
         logPerformanceStats((end - start), getNumberOfDocuments() + ", " + getSizeOfAttachment());

@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test2_CreateDocsUnoptimizedWay extends PerformanceTestCase {
+public class Test02_CreateDocsNoTransaction extends PerformanceTestCase {
     public static final String TAG = "CreateDocsUnoptimizedWayPerformance";
 
     @Override

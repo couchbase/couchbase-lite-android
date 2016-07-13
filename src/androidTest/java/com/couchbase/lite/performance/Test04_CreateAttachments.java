@@ -26,7 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
-public class Test4_CreateAttachments extends PerformanceTestCase {
+public class Test04_CreateAttachments extends PerformanceTestCase {
     public static final String TAG = "CreateAttachmentsPerformance";
 
     @Override
@@ -41,13 +41,19 @@ public class Test4_CreateAttachments extends PerformanceTestCase {
         char[] chars = new char[getSizeOfAttachment()];
         Arrays.fill(chars, 'a');
         final String content = new String(chars);
-        final byte[] bytes = content.toString().getBytes();
+        final byte[] contentBytes = content.toString().getBytes();
 
         long start = System.currentTimeMillis();
         boolean success = database.runInTransaction(new TransactionalTask() {
             public boolean run() {
                 try {
                     for (int i = 0; i < getNumberOfDocuments(); i++) {
+                        String prefix = i + "";
+                        byte[] prefixBytes = prefix.getBytes();
+                        byte[] bytes = new byte[contentBytes.length + prefixBytes.length];
+                        System.arraycopy(prefixBytes, 0, bytes, 0, prefixBytes.length);
+                        System.arraycopy(contentBytes, 0, bytes, prefixBytes.length, contentBytes.length);
+
                         Document doc = database.createDocument();
                         UnsavedRevision unsaved = doc.createRevision();
                         unsaved.setProperties(new HashMap<String, Object>());

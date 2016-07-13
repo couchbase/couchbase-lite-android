@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Test6_PushReplication extends PerformanceTestCase {
+public class Test06_PushReplication extends PerformanceTestCase {
     public static final String TAG = "PushReplicationPerformance";
 
     @Override
@@ -49,12 +49,12 @@ public class Test6_PushReplication extends PerformanceTestCase {
         Arrays.fill(chars, 'a');
         final String content = new String(chars);
 
-        int attSize = getSizeOfAttachment();
+        final int attSize = getSizeOfAttachment();
         if (attSize > 0) {
-            chars = new char[getSizeOfDocument()];
+            chars = new char[attSize];
             Arrays.fill(chars, 'b');
         }
-        final byte[] attachment = attSize > 0 ? new String(chars).getBytes() : null;
+        final byte[] attachmentBytes = attSize > 0 ? new String(chars).getBytes() : null;
 
         boolean success = database.runInTransaction(new TransactionalTask() {
             @Override
@@ -66,10 +66,17 @@ public class Test6_PushReplication extends PerformanceTestCase {
                         Document document = database.createDocument();
                         UnsavedRevision unsaved = document.createRevision();
                         unsaved.setProperties(properties);
-                        if (attachment != null)
-                            unsaved.setAttachment("attach", "text/plain",
-                                    new ByteArrayInputStream(attachment));
-                        assertNotNull(unsaved.save());
+
+                        if (attSize > 0) {
+                            String prefix = i + "";
+                            byte[] prefixBytes = prefix.getBytes();
+                            byte[] bytes = new byte[attachmentBytes.length + prefixBytes.length];
+                            System.arraycopy(prefixBytes, 0, bytes, 0, prefixBytes.length);
+                            System.arraycopy(attachmentBytes, 0, bytes, prefixBytes.length, attachmentBytes.length);
+                            unsaved.setAttachment("attach", "text/plain", new ByteArrayInputStream(bytes));
+                        }
+
+                        unsaved.save();
                     } catch (Exception e) {
                         Log.e(TAG, "Error when creating documents", e);
                         return false;
