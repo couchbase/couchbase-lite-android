@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -47,6 +48,64 @@ public class PushReplTest extends LiteTestCaseWithDB {
 
         super.setUp();
     }
+
+    public void testPushSingleDocument() throws Exception {
+        if (!syncgatewayTestsEnabled()) {
+            return;
+        }
+
+        // Single document without attachment
+        _testPushSingleDocument(false, -1); // None
+        // Single document with small attachment
+        _testPushSingleDocument(true, 10); // 10 B
+        // Single document with large attachment
+        _testPushSingleDocument(true, 1024 * 10); // 10KB
+        // Single document with larger attachment
+        _testPushSingleDocument(true, 1024 * 100); // 100KB
+    }
+
+    public void _testPushSingleDocument(boolean attachment, int attachmentSize) throws Exception{
+        if (!syncgatewayTestsEnabled()) {
+            return;
+        }
+
+        // create document
+        Document doc = database.createDocument();
+        Map<String, Object> props = new HashMap<>();
+        props.put("key", "Hello World!");
+        doc.putProperties(props);
+        String docID = doc.getId();
+
+
+        // add attachment
+        if(attachment) {
+            char[] chars = new char[attachmentSize];
+            Arrays.fill(chars, 'a');
+            final String content = new String(chars);
+            ByteArrayInputStream body = new ByteArrayInputStream(content.getBytes("UTF-8"));
+            try {
+                UnsavedRevision newRev = doc.createRevision();
+                newRev.setAttachment("attachment1", "text/plain; charset=utf-8", body);
+                newRev.save();
+            } finally {
+                body.close();
+            }
+        }
+
+
+        // start push replicator
+        pushData(getReplicationURL());
+
+        Map<String, Object> data =  getDocByID(docID);
+        assertEquals("Hello World!", data.get("key"));
+
+        // check attachment
+        if(attachment){
+            Map<String, Object> attachments =  (Map<String, Object>) getDocByID(docID).get("_attachments");
+            assertTrue(attachments.containsKey("attachment1"));
+        }
+    }
+
 
     /**
      * Note: For test, needs to restart sync gateway. Default sync gateway does not allow
@@ -88,7 +147,6 @@ public class PushReplTest extends LiteTestCaseWithDB {
                     } catch (CouchbaseLiteException e) {
                         Log.e(TAG, "Failed to create new doc", e);
                         fail(e.getMessage());
-
                     }
                 }
                 latch.countDown();
