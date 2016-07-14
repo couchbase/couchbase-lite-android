@@ -191,7 +191,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
                 changeTracker.getChangesFeedPath());
 
         changeTracker.setUsePOST(true);
-        assertEquals("_changes?feed=longpoll&heartbeat=30000&since=0&limit=50",
+        assertEquals("_changes?feed=longpoll&heartbeat=30000&since=0&limit=50&filter=filter",
                 changeTracker.getChangesFeedPath());
         Map<String, Object> body = changeTracker.changesFeedPOSTBodyMap();
         assertTrue(body.containsKey("filter"));
@@ -220,7 +220,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         assertEquals(expectedFeedPath, changesFeedPath);
 
         changeTracker.setUsePOST(true);
-        assertEquals("_changes?feed=longpoll&heartbeat=30000&since=0&limit=50",
+        assertEquals("_changes?feed=longpoll&heartbeat=30000&since=0&limit=50&filter=_doc_ids",
                 changeTracker.getChangesFeedPath());
         Map<String, Object> postBodyMap = changeTracker.changesFeedPOSTBodyMap();
         assertEquals("_doc_ids", postBodyMap.get("filter"));
