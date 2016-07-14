@@ -494,8 +494,8 @@ public class ManagerTest extends LiteTestCaseWithDB {
         String[] net120sqlite = {"3", ".NET 1.2.0 SQLite", "netdb.cblite2", "replacedb/net120-sqlite.zip"};
         dbInfoList.add(net120sqlite);
         // .NET 1.2.0 (ForestDB)
-//        String[] net120forest = {"3", ".NET 1.2.0 ForestDB", "netdb.cblite2", "replacedb/net120-forestdb.zip"};
-//        dbInfoList.add(net120forest);
+        String[] net120forest = {"3", ".NET 1.2.0 ForestDB", "netdb.cblite2", "replacedb/net120-forestdb.zip"};
+        dbInfoList.add(net120forest);
 
         // Android 1.3.0 (SQLite)
         String[] android130sqlite = {"1", "Android 1.3.0 SQLite", "android-sqlite.cblite2", "replacedb/android130-sqlite.cblite2.zip"};
@@ -516,8 +516,8 @@ public class ManagerTest extends LiteTestCaseWithDB {
         String[] net130sqlite = {"3", ".NET 1.3.0 SQLite", "netdb.cblite2", "replacedb/net130-sqlite.zip"};
         dbInfoList.add(net130sqlite);
         // .NET 1.3.0 (ForestDB)
-//        String[] net130forest = {"3", ".NET 1.3.0 ForestDB", "netdb.cblite2", "replacedb/net130-forestdb.zip"};
-//        dbInfoList.add(net130forest);
+        String[] net130forest = {"3", ".NET 1.3.0 ForestDB", "netdb.cblite2", "replacedb/net130-forestdb.zip"};
+        dbInfoList.add(net130forest);
 
         for (final String[] dbInfo : dbInfoList) {
             Log.i(TAG, "DB Type: " + dbInfo[1]);
