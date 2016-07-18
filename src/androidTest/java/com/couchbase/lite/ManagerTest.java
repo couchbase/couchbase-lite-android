@@ -603,8 +603,11 @@ public class ManagerTest extends LiteTestCaseWithDB {
             callback.onComplete(replaceDb, e);
     }
 
-    public void testUpgradeDatabase() throws Exception {
+    public void testUpgradeDatabaseFrom120() throws Exception {
         _testUpgradeDatabase("ios120");
+    }
+
+    public void testUpgradeDatabaseFrom130() throws Exception {
         _testUpgradeDatabase("ios130");
     }
 
