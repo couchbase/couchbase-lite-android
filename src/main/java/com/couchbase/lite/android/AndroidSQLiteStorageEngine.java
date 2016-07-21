@@ -15,6 +15,7 @@
  */
 package com.couchbase.lite.android;
 
+import android.os.Build;
 import android.os.Looper;
 
 import com.couchbase.lite.internal.database.DatabasePlatformSupport;
@@ -45,5 +46,15 @@ public class AndroidSQLiteStorageEngine extends SQLiteStorageEngineBase {
     @Override
     protected String getICUDatabasePath() {
         return ICUUtils.getICUDatabasePath(context);
+    }
+
+    @Override
+    protected int getWALConnectionPoolSize() {
+        // Crash when running with SQLCipher
+        // https://github.com/couchbase/couchbase-lite-java-core/issues/1352
+        // We observed SQLCipher crashes with multiple connections on Android API 19 (x86).
+        // Android 5.x (LOLLIPOP/API21) or higher uses multiple connections.
+        // Android 4.x (API 20) or lower uses single connection mode.
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ? 1 : 4;
     }
 }
