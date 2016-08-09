@@ -137,15 +137,14 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         ChangeTracker changeTracker = new ChangeTracker(getReplicationURL(),
                 ChangeTracker.ChangeTrackerMode.LongPoll, true, 0L, null);
         changeTracker.setUsePOST(false);
-        assertEquals("_changes?feed=longpoll&heartbeat=30000&style=all_docs&since=0&limit=50",
+        assertEquals("_changes?feed=longpoll&heartbeat=30000&style=all_docs&since=0",
                 changeTracker.getChangesFeedPath());
 
         changeTracker.setUsePOST(true);
-        assertEquals("_changes?feed=longpoll&heartbeat=30000&style=all_docs&since=0&limit=50",
+        assertEquals("_changes?feed=longpoll&heartbeat=30000&style=all_docs&since=0",
                 changeTracker.getChangesFeedPath());
         Map<String, Object> postBodyMap = changeTracker.changesFeedPOSTBodyMap();
         assertEquals("longpoll", postBodyMap.get("feed"));
-        assertEquals(50, (int) postBodyMap.get("limit"));
         assertEquals(30000L, (long) postBodyMap.get("heartbeat"));
         assertEquals("all_docs", postBodyMap.get("style"));
         assertEquals(0L, (long) postBodyMap.get("since"));
@@ -156,16 +155,15 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
                 ChangeTracker.ChangeTrackerMode.LongPoll, true, "1234:56", null);
         changeTracker.setUsePOST(false);
         assertEquals(
-                "_changes?feed=longpoll&heartbeat=30000&style=all_docs&since=1234%3A56&limit=50",
+                "_changes?feed=longpoll&heartbeat=30000&style=all_docs&since=1234%3A56",
                 changeTracker.getChangesFeedPath());
 
         changeTracker.setUsePOST(true);
         assertEquals(
-                "_changes?feed=longpoll&heartbeat=30000&style=all_docs&since=1234%3A56&limit=50",
+                "_changes?feed=longpoll&heartbeat=30000&style=all_docs&since=1234%3A56",
                 changeTracker.getChangesFeedPath());
         Map<String, Object> postBodyMap = changeTracker.changesFeedPOSTBodyMap();
         assertEquals("longpoll", postBodyMap.get("feed"));
-        assertEquals(50, (int) postBodyMap.get("limit"));
         assertEquals(30000L, (long) postBodyMap.get("heartbeat"));
         assertEquals("all_docs", postBodyMap.get("style"));
         assertEquals("1234:56", postBodyMap.get("since"));
@@ -187,11 +185,11 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
 
         changeTracker.setUsePOST(false);
         assertEquals(
-                "_changes?feed=longpoll&heartbeat=30000&since=0&limit=50&filter=filter&param=value",
+                "_changes?feed=longpoll&heartbeat=30000&since=0&filter=filter&param=value",
                 changeTracker.getChangesFeedPath());
 
         changeTracker.setUsePOST(true);
-        assertEquals("_changes?feed=longpoll&heartbeat=30000&since=0&limit=50&filter=filter",
+        assertEquals("_changes?feed=longpoll&heartbeat=30000&since=0&filter=filter",
                 changeTracker.getChangesFeedPath());
         Map<String, Object> body = changeTracker.changesFeedPOSTBodyMap();
         assertTrue(body.containsKey("filter"));
@@ -214,13 +212,13 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
         String docIdsUnencoded = "[\"doc1\",\"doc2\"]";
         String docIdsEncoded = URLEncoder.encode(docIdsUnencoded);
         String expectedFeedPath = String.format(Locale.ENGLISH,
-                "_changes?feed=longpoll&heartbeat=30000&since=0&limit=50&filter=_doc_ids&doc_ids=%s",
+                "_changes?feed=longpoll&heartbeat=30000&since=0&filter=_doc_ids&doc_ids=%s",
                 docIdsEncoded);
         final String changesFeedPath = changeTracker.getChangesFeedPath();
         assertEquals(expectedFeedPath, changesFeedPath);
 
         changeTracker.setUsePOST(true);
-        assertEquals("_changes?feed=longpoll&heartbeat=30000&since=0&limit=50&filter=_doc_ids",
+        assertEquals("_changes?feed=longpoll&heartbeat=30000&since=0&filter=_doc_ids",
                 changeTracker.getChangesFeedPath());
         Map<String, Object> postBodyMap = changeTracker.changesFeedPOSTBodyMap();
         assertEquals("_doc_ids", postBodyMap.get("filter"));
