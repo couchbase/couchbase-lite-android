@@ -98,6 +98,37 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
         Assert.assertTrue(changed);
     }
+    
+    //https://github.com/couchbase/couchbase-lite-android/issues/952
+    public void testViewCreationAndRecall() {
+        try {
+            String expectedVersion = "1.0";
+            String viewName = "test/view";
+            Database db1 = startDatabase();
+            putDocs(db1);
+            View view1 = db1.getView(viewName);
+            view1.setMap(new Mapper() {
+                @Override
+                public void map(Map<String, Object> document, Emitter emitter) {
+                    if (document.get("key") != null) {
+                        emitter.emit(document.get("key"), null);
+                    }
+                }
+            }, expectedVersion);
+            view1.updateIndex();
+            db1.close();
+
+            Database db2 = manager.getExistingDatabase(DEFAULT_TEST_DB);
+            putDocs(db2);
+            View view2 = db1.getView(viewName);
+            Assert.assertNotNull(view2);
+            assertEquals(expectedVersion,view2.getMapVersion());
+            assertEquals(Status.NOT_MODIFIED,view1.updateIndex());
+            db2.close();
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+    }
 
     //https://github.com/couchbase/couchbase-lite-java-core/issues/219
     public void testDeleteView() {
