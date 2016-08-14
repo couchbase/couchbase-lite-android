@@ -439,18 +439,12 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected Object parseJSONResponse(URLConnection conn) {
         Object result = null;
-        Body responseBody = conn.getResponseBody();
-        if (responseBody != null) {
-            byte[] json = responseBody.getJson();
-            String jsonString = null;
-            if (json != null) {
-                jsonString = new String(json);
-                try {
-                    result = mapper.readValue(jsonString, Object.class);
-                } catch (Exception e) {
-                    fail();
-                }
-            }
+        try {
+            byte[] bytes = IOUtils.toByteArray(conn.getResponseInputStream());
+            result = Manager.getObjectMapper().readValue(bytes, Object.class);
+        } catch (IOException e) {
+            Log.e(TAG, "Cannot get data from connection", e);
+            fail();
         }
         return result;
     }
