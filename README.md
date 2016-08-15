@@ -208,6 +208,7 @@ If you want to run something (aside from the tests), you should get one of the s
 
 ## Getting Help
 
+* [Couchbase Mobile Forum](https://forums.couchbase.com/c/mobile)
 * [Couchbase Mobile Google Group](http://groups.google.com/group/mobile-couchbase/)
 * [File a github issue](https://github.com/couchbase/couchbase-lite-android/issues) -- please follow the [bug reporting guidelines](https://github.com/couchbase/mobile/wiki/Reporting-Bugs)
 
