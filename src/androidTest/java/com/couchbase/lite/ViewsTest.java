@@ -120,10 +120,10 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
             Database db2 = manager.getExistingDatabase(DEFAULT_TEST_DB);
             putDocs(db2);
-            View view2 = db1.getView(viewName);
+            View view2 = db2.getView(viewName);
             Assert.assertNotNull(view2);
             assertEquals(expectedVersion,view2.getMapVersion());
-            assertEquals(Status.NOT_MODIFIED,view1.updateIndex());
+            assertEquals(Status.NOT_MODIFIED,view2.updateIndex());
             db2.close();
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
