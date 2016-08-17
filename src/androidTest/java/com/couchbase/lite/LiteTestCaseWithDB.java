@@ -365,8 +365,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     }
 
-    public Map<String, Object> getPushReplicationParsedJson(URL url) throws IOException {
-
+    public Map<String, Object> getPushReplicationProperties(URL url) throws IOException {
         Map<String, Object> targetProperties = new HashMap<String, Object>();
         targetProperties.put("url", url.toExternalForm());
 
@@ -376,8 +375,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         return properties;
     }
 
-    public Map<String, Object> getPullReplicationParsedJson(URL url) throws IOException {
-
+    public Map<String, Object> getPullReplicationProperties(URL url) throws IOException {
         Map<String, Object> sourceProperties = new HashMap<String, Object>();
         sourceProperties.put("url", url.toExternalForm());
 
