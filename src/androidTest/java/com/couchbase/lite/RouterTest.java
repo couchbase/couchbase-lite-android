@@ -635,31 +635,54 @@ public class RouterTest extends LiteTestCaseWithDB {
     public void testPostBulkDocs() {
         send("PUT", "/db", Status.CREATED, null);
 
-        Map<String, Object> bulk_doc1 = new HashMap<String, Object>();
-        bulk_doc1.put("_id", "bulk_message1");
-        bulk_doc1.put("baz", "hello");
+        // with _id:
+        Map<String, Object> doc1 = new HashMap<String, Object>();
+        doc1.put("_id", "bulk_message1");
+        doc1.put("baz", "hello");
 
-        Map<String, Object> bulk_doc2 = new HashMap<String, Object>();
-        bulk_doc2.put("_id", "bulk_message2");
-        bulk_doc2.put("baz", "hi");
+        Map<String, Object> doc2 = new HashMap<String, Object>();
+        doc2.put("_id", "bulk_message2");
+        doc2.put("baz", "hi");
 
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-        list.add(bulk_doc1);
-        list.add(bulk_doc2);
+        list.add(doc1);
+        list.add(doc2);
 
         Map<String, Object> bodyObj = new HashMap<String, Object>();
         bodyObj.put("docs", list);
 
-        List<Map<String, Object>> bulk_result =
-                (ArrayList<Map<String, Object>>) sendBody("POST", "/db/_bulk_docs", bodyObj, Status.CREATED, null);
+        List<Map<String, Object>> result = (ArrayList<Map<String, Object>>)
+                sendBody("POST", "/db/_bulk_docs", bodyObj, Status.CREATED, null);
 
-        assertEquals(2, bulk_result.size());
-        assertEquals(bulk_result.get(0).get("id"), bulk_doc1.get("_id"));
-        assertNotNull(bulk_result.get(0).get("rev"));
-        assertEquals(bulk_result.get(1).get("id"), bulk_doc2.get("_id"));
-        assertNotNull(bulk_result.get(1).get("rev"));
+        assertEquals(2, result.size());
+        assertEquals(result.get(0).get("id"), doc1.get("_id"));
+        assertNotNull(result.get(0).get("rev"));
+        assertEquals(result.get(1).get("id"), doc2.get("_id"));
+        assertNotNull(result.get(1).get("rev"));
+
+        // without _id:
+        doc1 = new HashMap<String, Object>();
+        doc1.put("baz", "hello");
+
+        doc2 = new HashMap<String, Object>();
+        doc2.put("baz", "hi");
+
+        list = new ArrayList<Map<String, Object>>();
+        list.add(doc1);
+        list.add(doc2);
+
+        bodyObj = new HashMap<String, Object>();
+        bodyObj.put("docs", list);
+
+        result = (ArrayList<Map<String, Object>>)
+                sendBody("POST", "/db/_bulk_docs", bodyObj, Status.CREATED, null);
+
+        assertEquals(2, result.size());
+        assertNotNull(result.get(0).get("id"));
+        assertNotNull(result.get(0).get("rev"));
+        assertNotNull(result.get(1).get("id"));
+        assertNotNull(result.get(1).get("rev"));
     }
-
 
     public void failingTestPostBulkDocsWithConflict() {
         send("PUT", "/db", Status.CREATED, null);
