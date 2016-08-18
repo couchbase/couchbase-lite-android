@@ -1556,4 +1556,61 @@ public class RouterTest extends LiteTestCaseWithDB {
 
         send("GET", "/db/_design/design/_view/view", Status.OK, expectedResult);
     }
+
+    public void testLongpollChangesTimeout() {
+        send("PUT", "/db", Status.CREATED, null);
+
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("results", new ArrayList<Object>());
+        result.put("last_seq", 0);
+        send("GET", "/db/_changes?feed=longpoll&timeout=2000&since=0", Status.OK, result);
+
+        new HashMap<String, Object>();
+        result.put("results", new ArrayList<Object>());
+        result.put("last_seq", 5);
+        send("GET", "/db/_changes?feed=longpoll&timeout=2000&since=5", Status.OK, result);
+    }
+
+    public void testContinuousChangesTimeout() throws Exception {
+        send("PUT", "/db", Status.CREATED, null);
+
+        URLConnection conn = null;
+
+        String [] expected = new String[] { "{\"last_seq\":0}" };
+        conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=0", null, null);
+        String[] changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
+        assertTrue(Arrays.equals(changes, expected));
+
+        expected = new String[] { "{\"last_seq\":5}" };
+        conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=5", null, null);
+        changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
+        assertTrue(Arrays.equals(changes, expected));
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
+        Map<String, Object> doc1 = (Map<String, Object>)
+                sendBody("PUT", "/db/doc1", properties, Status.CREATED, null);
+        Map<String, Object> doc2 = (Map<String, Object>)
+                sendBody("PUT", "/db/doc2", properties, Status.CREATED, null);
+
+        expected = new String[] {
+                "{\"seq\":1,\"id\":\"doc1\",\"changes\":[{\"rev\":\"" + doc1.get("rev") + "\"}]}",
+                "{\"seq\":2,\"id\":\"doc2\",\"changes\":[{\"rev\":\"" + doc2.get("rev") + "\"}]}",
+                "{\"last_seq\":2}" };
+        conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=0", null, null);
+        changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
+        assertTrue(Arrays.equals(changes, expected));
+
+        expected = new String[] {
+                "{\"seq\":2,\"id\":\"doc2\",\"changes\":[{\"rev\":\"" + doc2.get("rev") + "\"}]}",
+                "{\"last_seq\":2}" };
+        conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=1", null, null);
+        changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
+        assertTrue(Arrays.equals(changes, expected));
+
+        expected = new String[] { "{\"last_seq\":5}" };
+        conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=5", null, null);
+        changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
+        assertTrue(Arrays.equals(changes, expected));
+    }
 }
