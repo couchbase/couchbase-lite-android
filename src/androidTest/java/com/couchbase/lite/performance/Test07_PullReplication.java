@@ -116,8 +116,12 @@ public class Test07_PullReplication extends PerformanceTestCase {
 
     @Override
     protected void tearDown() throws Exception {
-        pushDB.close();
-        pullDB.close();
+        if (performanceTestsEnabled()) {
+            if (pushDB != null)
+                pushDB.close();
+            if (pullDB != null)
+                pullDB.close();
+        }
         super.tearDown();
     }
 
