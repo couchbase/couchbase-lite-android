@@ -1640,7 +1640,7 @@ public class RouterTest extends LiteTestCaseWithDB {
     public void testContinuousChangesTimeout() throws Exception {
         send("PUT", "/db", Status.CREATED, null);
 
-        URLConnection conn = null;
+        URLConnection conn;
 
         String [] expected = new String[] { "{\"last_seq\":0}" };
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=0", null, null);
@@ -1650,7 +1650,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         expected = new String[] { "{\"last_seq\":5}" };
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=5", null, null);
         changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
-        assertTrue(Arrays.equals(changes, expected));
+        assertTrue(compareContinuousFeed(expected, changes));
 
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "bar");
@@ -1665,7 +1665,7 @@ public class RouterTest extends LiteTestCaseWithDB {
                 "{\"last_seq\":2}" };
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=0", null, null);
         changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
-        assertTrue(Arrays.equals(changes, expected));
+        assertTrue(compareContinuousFeed(expected, changes));
 
         expected = new String[] {
                 "{\"seq\":2,\"id\":\"doc2\",\"changes\":[{\"rev\":\"" + doc2.get("rev") + "\"}]}",
@@ -1677,6 +1677,22 @@ public class RouterTest extends LiteTestCaseWithDB {
         expected = new String[] { "{\"last_seq\":5}" };
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=5", null, null);
         changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
-        assertTrue(Arrays.equals(changes, expected));
+        assertTrue(compareContinuousFeed(expected, changes));
+    }
+
+    private boolean compareContinuousFeed(String[] expectedFeed, String[] feed) throws IOException {
+        if (expectedFeed == null || feed == null)
+            return false;
+        if (expectedFeed.length != feed.length)
+            return false;
+        for (int i = 0; i < expectedFeed.length; i++) {
+            Map<String, Object> expected = (HashMap<String, Object>)
+                    Manager.getObjectMapper().readValue(expectedFeed[i], Map.class);
+            Map<String, Object> item = (HashMap<String, Object>)
+                    Manager.getObjectMapper().readValue(feed[i], Map.class);
+            if (!expected.equals(item))
+                return false;
+        }
+        return true;
     }
 }
