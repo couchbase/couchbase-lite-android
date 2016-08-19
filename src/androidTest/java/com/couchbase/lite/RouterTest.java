@@ -28,9 +28,11 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -904,25 +906,56 @@ public class RouterTest extends LiteTestCaseWithDB {
     }
 
     public void testPushReplicate() throws Exception {
-
         // create mock sync gateway that will serve as a pull target and return random docs
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
         try {
-
             // fake checkpoint response 404
             MockCheckpointGet mockCheckpointGet = new MockCheckpointGet();
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointGet);
 
             server.start();
 
-            Map<String, Object> replicateJsonMap = getPushReplicationParsedJson(server.url("/db").url());
+            Set<String> sessionIds = new HashSet<String>();
 
-            Log.v(TAG, "map: " + replicateJsonMap);
-            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-            Log.v(TAG, "result: " + result);
-            assertNotNull(result.get("session_id"));
+            Map<String, Object> replicator1 = getPushReplicationProperties(server.url("/db").url());
+            Map<String, Object> result1 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator1, Status.OK, null);
+            String sessionId1 = (String)result1.get("session_id");
+            assertNotNull(sessionId1);
+            sessionIds.add(sessionId1);
+
+            Map<String, Object> replicator2 = getPushReplicationProperties(server.url("/db").url());
+            replicator2.put("continuous", true);
+            Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator2, Status.OK, null);
+            String sessionId2 = (String)result2.get("session_id");
+            assertNotNull(sessionId2);
+            sessionIds.add(sessionId2);
+
+            Map<String, Object> replicator3 = getPushReplicationProperties(server.url("/db").url());
+            replicator3.put("continuous", true);
+            replicator3.put("doc_ids", Arrays.asList(((String[]) new String[]{"doc1", "doc2"})));
+            Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator3, Status.OK, null);
+            String sessionId3 = (String)result3.get("session_id");
+            assertNotNull(sessionId3);
+            sessionIds.add(sessionId3);
+
+            Map<String, Object> replicator4 = getPushReplicationProperties(server.url("/db").url());
+            replicator4.put("continuous", true);
+            replicator4.put("filter", "myfilter");
+            Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator4, Status.OK, null);
+            String sessionId4 = (String)result4.get("session_id");
+            assertNotNull(sessionId4);
+            sessionIds.add(sessionId4);
+
+            assertEquals(4, sessionIds.size());
+
+            replicator2.put("cancel", true);
+            replicator3.put("cancel", true);
+            replicator4.put("cancel", true);
+            sendBody("POST", "/_replicate", replicator2, Status.OK, null);
+            sendBody("POST", "/_replicate", replicator3, Status.OK, null);
+            sendBody("POST", "/_replicate", replicator4, Status.OK, null);
 
             boolean success = waitForReplicationToFinish();
             assertTrue(success);
@@ -951,22 +984,55 @@ public class RouterTest extends LiteTestCaseWithDB {
     }
 
     public void testPullReplicate() throws Exception {
-
         // create mock sync gateway that will serve as a pull target and return random docs
         int numMockDocsToServe = 0;
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getPreloadedPullTargetMockCouchDB(dispatcher, numMockDocsToServe, 1);
         dispatcher.setServerType(MockDispatcher.ServerType.COUCHDB);
         server.setDispatcher(dispatcher);
+
         try {
             server.start();
 
-            // kick off replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
-            Log.v(TAG, "map: " + replicateJsonMap);
-            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
-            Log.v(TAG, "result: " + result);
-            assertNotNull(result.get("session_id"));
+            Set<String> sessionIds = new HashSet<String>();
+
+            Map<String, Object> replicator1 = getPullReplicationProperties(server.url("/db").url());
+            Map<String, Object> result1 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator1, Status.OK, null);
+            String sessionId1 = (String)result1.get("session_id");
+            assertNotNull(sessionId1);
+            sessionIds.add(sessionId1);
+
+            Map<String, Object> replicator2 = getPullReplicationProperties(server.url("/db").url());
+            replicator2.put("continuous", true);
+            Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator2, Status.OK, null);
+            String sessionId2 = (String)result2.get("session_id");
+            assertNotNull(sessionId1);
+            sessionIds.add(sessionId2);
+
+            Map<String, Object> replicator3 = getPullReplicationProperties(server.url("/db").url());
+            replicator3.put("continuous", true);
+            replicator3.put("doc_ids", Arrays.asList(((String[]) new String[]{"doc1", "doc2"})));
+            Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator3, Status.OK, null);
+            String sessionId3 = (String)result3.get("session_id");
+            assertNotNull(sessionId3);
+            sessionIds.add(sessionId3);
+
+            Map<String, Object> replicator4 = getPullReplicationProperties(server.url("/db").url());
+            replicator4.put("continuous", true);
+            replicator4.put("filter", "myfilter");
+            Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator4, Status.OK, null);
+            String sessionId4 = (String)result4.get("session_id");
+            assertNotNull(sessionId4);
+            sessionIds.add(sessionId4);
+
+            assertEquals(4, sessionIds.size());
+
+            replicator2.put("cancel", true);
+            replicator3.put("cancel", true);
+            replicator4.put("cancel", true);
+            sendBody("POST", "/_replicate", replicator2, Status.OK, null);
+            sendBody("POST", "/_replicate", replicator3, Status.OK, null);
+            sendBody("POST", "/_replicate", replicator4, Status.OK, null);
 
             // wait for replication to finish
             boolean success = waitForReplicationToFinish();
@@ -1134,7 +1200,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             server.start();
 
             // kick off 1st replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
+            Map<String, Object> replicateJsonMap = getPullReplicationProperties(server.url("/db").url());
             Log.i(TAG, "map: " + replicateJsonMap);
 
             Log.i(TAG, "Call 1st /_replicate");
@@ -1192,7 +1258,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             server.start();
 
             // kick off 1st replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
+            Map<String, Object> replicateJsonMap = getPullReplicationProperties(server.url("/db").url());
             replicateJsonMap.put("continuous", true);
             Log.i(TAG, "map: " + replicateJsonMap);
 
@@ -1279,7 +1345,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             server.start();
 
             // kick off replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
+            Map<String, Object> replicateJsonMap = getPullReplicationProperties(server.url("/db").url());
             Log.i(TAG, "map: " + replicateJsonMap);
 
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
@@ -1459,7 +1525,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         try {
             server.start();
             // kick off replication via REST api
-            Map<String, Object> replicateJsonMap = getPullReplicationParsedJson(server.url("/db").url());
+            Map<String, Object> replicateJsonMap = getPullReplicationProperties(server.url("/db").url());
             List<String> docIDs = new ArrayList();
             docIDs.add("doc0");
             replicateJsonMap.put("doc_ids", docIDs);
