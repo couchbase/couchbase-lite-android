@@ -204,7 +204,7 @@ public class PerformanceTestCase extends LiteTestCase {
 
         @Override
         public void changed(Replication.ChangeEvent event) {
-            if (event.getTransition().getDestination() == ReplicationState.STOPPED) {
+            if (event.getTransition() != null && event.getTransition().getDestination() == ReplicationState.STOPPED) {
                 doneSignal.countDown();
                 assertEquals(event.getChangeCount(), event.getCompletedChangeCount());
             }

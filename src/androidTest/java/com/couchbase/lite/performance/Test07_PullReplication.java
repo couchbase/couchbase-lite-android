@@ -17,6 +17,9 @@
 
 package com.couchbase.lite.performance;
 
+import android.provider.ContactsContract;
+
+import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.UnsavedRevision;
@@ -27,29 +30,39 @@ import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class Test07_PullReplication extends PerformanceTestCase {
     public static final String TAG = "PullReplicationPerformance";
+
+    private static final String PUSH_DB_NAME= "push-db";
+    private static final String PULL_DB_NAME= "pull-db";
 
     @Override
     protected String getTestTag() {
         return TAG;
     }
 
+    private Database pushDB;
+    private Database pullDB;
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
 
-        if (!performanceTestsEnabled()) {
+        if (!performanceTestsEnabled())
             return;
-        }
+
+        pushDB = ensureEmptyDatabase(PUSH_DB_NAME);
+        pullDB = ensureEmptyDatabase(PULL_DB_NAME);
 
         // Prepare and populate documents into the database:
         char[] chars = new char[getSizeOfDocument()];
         Arrays.fill(chars, 'a');
         final String content = new String(chars);
 
+        final int attNum = getNumberOfAttachments();
         final int attSize = getSizeOfAttachment();
         if (attSize > 0) {
             chars = new char[attSize];
@@ -57,24 +70,27 @@ public class Test07_PullReplication extends PerformanceTestCase {
         }
         final byte[] attachmentBytes = attSize > 0 ? new String(chars).getBytes() : null;
 
-        boolean success = database.runInTransaction(new TransactionalTask() {
+        boolean success = pushDB.runInTransaction(new TransactionalTask() {
             @Override
             public boolean run() {
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
                     try {
                         Map<String, Object> properties = new HashMap<String, Object>();
                         properties.put("content", content);
-                        Document document = database.createDocument();
+                        Document document = pushDB.createDocument();
                         UnsavedRevision unsaved = document.createRevision();
                         unsaved.setProperties(properties);
 
-                        if (attSize > 0) {
-                            String prefix = i + "";
-                            byte[] prefixBytes = prefix.getBytes();
-                            byte[] bytes = new byte[attachmentBytes.length + prefixBytes.length];
-                            System.arraycopy(prefixBytes, 0, bytes, 0, prefixBytes.length);
-                            System.arraycopy(attachmentBytes, 0, bytes, prefixBytes.length, attachmentBytes.length);
-                            unsaved.setAttachment("attach", "text/plain", new ByteArrayInputStream(bytes));
+                        if (attSize > 0 && attNum > 0) {
+                            for (int j = 0; j < attNum; j++) {
+                                String prefix = String.format(Locale.ENGLISH, "%04d-%04d:", i, j);
+                                byte[] prefixBytes = prefix.getBytes();
+                                byte[] bytes = new byte[attachmentBytes.length + prefixBytes.length];
+                                System.arraycopy(prefixBytes, 0, bytes, 0, prefixBytes.length);
+                                System.arraycopy(attachmentBytes, 0, bytes, prefixBytes.length, attachmentBytes.length);
+                                String attName = String.format(Locale.ENGLISH, "attach-%04d", j);
+                                unsaved.setAttachment(attName, "text/plain", new ByteArrayInputStream(bytes));
+                            }
                         }
 
                         unsaved.save();
@@ -90,12 +106,19 @@ public class Test07_PullReplication extends PerformanceTestCase {
 
         // Run push replication
         URL remote = getReplicationUrl();
-        Replication repl = database.createPushReplication(remote);
-        repl.setContinuous(false);
-        runReplication(repl);
+        Replication pullRepl = pushDB.createPushReplication(remote);
+        pullRepl.setContinuous(false);
+        runReplication(pullRepl);
 
         // Pause a little to let SyncGateway calm down:
         Thread.sleep(5000);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        pushDB.close();
+        pullDB.close();
+        super.tearDown();
     }
 
     public void testPullReplicationPerformance() throws Exception {
@@ -104,12 +127,14 @@ public class Test07_PullReplication extends PerformanceTestCase {
 
         URL remote = getReplicationUrl();
         long start = System.currentTimeMillis();
-        Replication repl = (Replication) database.createPullReplication(remote);
+        Replication repl = (Replication) pullDB.createPullReplication(remote);
         repl.setContinuous(false);
         runReplication(repl);
         long end = System.currentTimeMillis();
-        logPerformanceStats((end-start), getNumberOfDocuments() + ", " +
-                getSizeOfDocument() + ", " + getSizeOfAttachment());
+        logPerformanceStats((end - start), getNumberOfDocuments() + ", " +
+                getSizeOfDocument() + ", " +
+                getNumberOfAttachments() + ", " +
+                getSizeOfAttachment());
     }
 
     private int getSizeOfDocument() {
@@ -122,5 +147,9 @@ public class Test07_PullReplication extends PerformanceTestCase {
 
     private int getNumberOfDocuments() {
         return Integer.parseInt(System.getProperty("test7.numberOfDocuments"));
+    }
+
+    private int getNumberOfAttachments() {
+        return Integer.parseInt(System.getProperty("test7.numberOfAttachments"));
     }
 }
