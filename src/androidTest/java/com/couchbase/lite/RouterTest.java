@@ -1672,7 +1672,7 @@ public class RouterTest extends LiteTestCaseWithDB {
                 "{\"last_seq\":2}" };
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=1", null, null);
         changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
-        assertTrue(Arrays.equals(changes, expected));
+        assertTrue(compareContinuousFeed(expected, changes));
 
         expected = new String[] { "{\"last_seq\":5}" };
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=5", null, null);
