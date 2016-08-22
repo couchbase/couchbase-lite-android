@@ -36,16 +36,10 @@ import java.util.Map;
 public class Test07_PullReplication extends PerformanceTestCase {
     public static final String TAG = "PullReplicationPerformance";
 
-    private static final String PUSH_DB_NAME= "push-db";
-    private static final String PULL_DB_NAME= "pull-db";
-
     @Override
     protected String getTestTag() {
         return TAG;
     }
-
-    private Database pushDB;
-    private Database pullDB;
 
     @Override
     protected void setUp() throws Exception {
@@ -53,9 +47,6 @@ public class Test07_PullReplication extends PerformanceTestCase {
 
         if (!performanceTestsEnabled())
             return;
-
-        pushDB = ensureEmptyDatabase(PUSH_DB_NAME);
-        pullDB = ensureEmptyDatabase(PULL_DB_NAME);
 
         // Prepare and populate documents into the database:
         char[] chars = new char[getSizeOfDocument()];
@@ -70,14 +61,14 @@ public class Test07_PullReplication extends PerformanceTestCase {
         }
         final byte[] attachmentBytes = attSize > 0 ? new String(chars).getBytes() : null;
 
-        boolean success = pushDB.runInTransaction(new TransactionalTask() {
+        boolean success = database.runInTransaction(new TransactionalTask() {
             @Override
             public boolean run() {
                 for (int i = 0; i < getNumberOfDocuments(); i++) {
                     try {
                         Map<String, Object> properties = new HashMap<String, Object>();
                         properties.put("content", content);
-                        Document document = pushDB.createDocument();
+                        Document document = database.createDocument();
                         UnsavedRevision unsaved = document.createRevision();
                         unsaved.setProperties(properties);
 
@@ -106,23 +97,15 @@ public class Test07_PullReplication extends PerformanceTestCase {
 
         // Run push replication
         URL remote = getReplicationUrl();
-        Replication pullRepl = pushDB.createPushReplication(remote);
-        pullRepl.setContinuous(false);
-        runReplication(pullRepl);
+        Replication repl = database.createPushReplication(remote);
+        repl.setContinuous(false);
+        runReplication(repl);
 
         // Pause a little to let SyncGateway calm down:
         Thread.sleep(5000);
-    }
 
-    @Override
-    protected void tearDown() throws Exception {
-        if (performanceTestsEnabled()) {
-            if (pushDB != null)
-                pushDB.close();
-            if (pullDB != null)
-                pullDB.close();
-        }
-        super.tearDown();
+        // reopen the database with empty.
+        startDatabase();
     }
 
     public void testPullReplicationPerformance() throws Exception {
@@ -131,7 +114,7 @@ public class Test07_PullReplication extends PerformanceTestCase {
 
         URL remote = getReplicationUrl();
         long start = System.currentTimeMillis();
-        Replication repl = (Replication) pullDB.createPullReplication(remote);
+        Replication repl = database.createPullReplication(remote);
         repl.setContinuous(false);
         runReplication(repl);
         long end = System.currentTimeMillis();
