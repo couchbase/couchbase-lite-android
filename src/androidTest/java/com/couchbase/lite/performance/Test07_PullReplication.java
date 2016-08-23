@@ -17,9 +17,6 @@
 
 package com.couchbase.lite.performance;
 
-import android.provider.ContactsContract;
-
-import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.UnsavedRevision;
