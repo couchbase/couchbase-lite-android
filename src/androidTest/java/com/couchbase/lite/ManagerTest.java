@@ -474,7 +474,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
 
     public void test23_ReplaceOldVersionDatabase() throws Exception {
 
-        List<String[]> dbInfoList = new ArrayList<>();
+        List<String[]> dbInfoList = new ArrayList<String[]>();
 
         // Android 1.2.0 (SQLite)
         String[] android120sqlite = {"1", "Android 1.2.0 SQLite", "android120sqlite.cblite2", "replacedb/android120sqlite.cblite2.zip"};

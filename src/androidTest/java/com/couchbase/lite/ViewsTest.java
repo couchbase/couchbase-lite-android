@@ -3417,7 +3417,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
             public boolean run() {
                 try {
                     for (int i = 0; i < 500; i++) {
-                        Map<String, Object> props = new HashMap<>();
+                        Map<String, Object> props = new HashMap<String, Object>();
                         props.put("time_create", new Date());
                         props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", i));
                         props.put("name", String.format(Locale.ENGLISH, "Miloš Micić - Micke - %d", i));
@@ -3429,7 +3429,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
                         doc.putProperties(props);
                     }
 
-                    Map<String, Object> props = new HashMap<>();
+                    Map<String, Object> props = new HashMap<String, Object>();
                     props.put("time_create", new Date());
                     props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", 1));
                     props.put("name", String.format(Locale.ENGLISH, "Miloš Micić - Micke - %d", 1));
@@ -3438,7 +3438,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
                     Document doc = database.createDocument();
                     doc.putProperties(props);
 
-                    props = new HashMap<>();
+                    props = new HashMap<String, Object>();
                     props.put("time_create", new Date());
                     props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", 1));
                     props.put("name", String.format(Locale.ENGLISH, "Miloš Micić - Micke - %d", 1));
@@ -3447,7 +3447,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
                     doc = database.createDocument();
                     doc.putProperties(props);
 
-                    props = new HashMap<>();
+                    props = new HashMap<String, Object>();
                     props.put("time_create", new Date());
                     props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", 1));
                     props.put("name", String.format(Locale.ENGLISH, "Miloš Micić - Micke - %d", 1));
@@ -3522,7 +3522,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
             public boolean run() {
                 try {
                     for (int i = 0; i < names.length; i++) {
-                        Map<String, Object> props = new HashMap<>();
+                        Map<String, Object> props = new HashMap<String, Object>();
                         props.put("time_create", new Date());
                         props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", i));
                         props.put("name", names[i]);
@@ -3579,13 +3579,13 @@ public class ViewsTest extends LiteTestCaseWithDB {
         }, "1");
 
         Document document1 = database.createDocument();
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("type", "bookmark");
         properties.put("name", "test");
         document1.putProperties(properties);
 
         Document document2 = database.createDocument();
-        properties = new HashMap<>();
+        properties = new HashMap<String, Object>();
         properties.put("type", "tag");
         properties.put("name", "sample");
         document2.putProperties(properties);
@@ -3635,7 +3635,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
             public boolean run() {
                 try {
                     for (int i = 0; i < keys.length; i++) {
-                        Map<String, Object> props = new HashMap<>();
+                        Map<String, Object> props = new HashMap<String, Object>();
                         props.put("key", keys[i]);
                         Document doc = database.createDocument();
                         doc.putProperties(props);

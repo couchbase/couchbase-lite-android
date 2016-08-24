@@ -40,7 +40,7 @@ public class OpenIDConnectAuthorizerTest extends LiteTestCase {
 
     public void testTokens() throws Exception {
         assertFalse(authorizer.loadTokens());
-        Map<String, String> tokens = new HashMap<>();
+        Map<String, String> tokens = new HashMap<String, String>();
         tokens.put("id_token", "1234567890");
         tokens.put("refresh_token", "abcdefghij");
         tokens.put("name", "cbl");

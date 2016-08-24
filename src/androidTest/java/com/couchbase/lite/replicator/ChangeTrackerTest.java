@@ -145,9 +145,9 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
                 changeTracker.getChangesFeedPath());
         Map<String, Object> postBodyMap = changeTracker.changesFeedPOSTBodyMap();
         assertEquals("longpoll", postBodyMap.get("feed"));
-        assertEquals(30000L, (long) postBodyMap.get("heartbeat"));
+        assertEquals(30000L, ((Long) postBodyMap.get("heartbeat")).longValue());
         assertEquals("all_docs", postBodyMap.get("style"));
-        assertEquals(0L, (long) postBodyMap.get("since"));
+        assertEquals(0L, ((Long) postBodyMap.get("since")).longValue());
     }
 
     public void testChangeTrackerWithCompoundLastSequence() throws Throwable {
@@ -164,7 +164,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
                 changeTracker.getChangesFeedPath());
         Map<String, Object> postBodyMap = changeTracker.changesFeedPOSTBodyMap();
         assertEquals("longpoll", postBodyMap.get("feed"));
-        assertEquals(30000L, (long) postBodyMap.get("heartbeat"));
+        assertEquals(30000L, ((Long) postBodyMap.get("heartbeat")).longValue());
         assertEquals("all_docs", postBodyMap.get("style"));
         assertEquals("1234:56", postBodyMap.get("since"));
     }

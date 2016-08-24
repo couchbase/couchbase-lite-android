@@ -27,7 +27,7 @@ public class TokenStoreTest extends LiteTestCaseWithDB {
 
     public void testSaveLoadTokens() throws Exception {
         URL remoteURL = new URL("http://10.0.0.1:1111/db");
-        Map<String, String> input = new HashMap<>();
+        Map<String, String> input = new HashMap<String, String>();
         input.put("key", "value");
         input.put("hello", "world");
         input.put("data1", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
@@ -49,7 +49,7 @@ public class TokenStoreTest extends LiteTestCaseWithDB {
     public void testDeleteTokens() throws Exception {
         URL remoteURL = new URL("http://10.0.0.1:1111/db");
 
-        Map<String, String> input = new HashMap<>();
+        Map<String, String> input = new HashMap<String, String>();
         input.put("key", "value");
         input.put("hello", "world");
         assertTrue(tokenStore.saveTokens(remoteURL, null, input));

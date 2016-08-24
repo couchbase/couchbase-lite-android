@@ -169,7 +169,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertTrue(responseString.contains(inlineTextString));
 
         // With Accept: text/plain
-        Map<String, String> headers = new HashMap<>();
+        Map<String, String> headers = new HashMap<String, String>();
         headers.put("Accept", "text/plain");
         conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", headers, null);
         contentType = conn.getHeaderField("Content-Type");
@@ -272,7 +272,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertTrue(responseString.contains(inlineTextString));
 
         // With Accept: text/plain
-        Map<String, String> headers = new HashMap<>();
+        Map<String, String> headers = new HashMap<String, String>();
         headers.put("Accept", "text/plain");
         conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", headers, null);
         assertNull(conn.getHeaderField("Content-Type"));
@@ -282,7 +282,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertTrue(responseString.contains(inlineTextString));
 
         // With Accept: */*
-        headers = new HashMap<>();
+        headers = new HashMap<String, String>();
         headers.put("Accept", "*/*");
         conn = sendRequest("GET", "/db/docWithAttachment/inline.txt", headers, null);
         assertNull(conn.getHeaderField("Content-Type"));
@@ -414,7 +414,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         expectedChanges.put("results", results);
         send("GET", "/db/_changes?since=4", Status.OK, expectedChanges);
 
-        Map<String, Object> body = new HashMap<>();
+        Map<String, Object> body = new HashMap<String, Object>();
         body.put("since", 4);
         sendBody("POST", "/db/_changes", body, Status.OK, expectedChanges);
 
@@ -471,7 +471,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         expectedChanges.put("results", new ArrayList<Object>());
         send("GET", "/db/_changes", Status.OK, expectedChanges);
 
-        sendBody("POST", "/db/_changes", new HashMap<>(), Status.OK, expectedChanges);
+        sendBody("POST", "/db/_changes", new HashMap<String, Object>(), Status.OK, expectedChanges);
     }
 
     // - (void) test_AllDocs in Router_Tests.m
@@ -868,7 +868,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         send("GET", "/db/11111?revs_info=true", Status.OK, docResponse);
 
         // Check the revision history using _revs:
-        Map<String, Object> revsResp = new HashMap<>();
+        Map<String, Object> revsResp = new HashMap<String, Object>();
         revsResp.put("start", 3);
         revsResp.put("ids", Arrays.asList(
                 doc1r3ID.substring(2), doc1r2ID.substring(2), doc1r1ID.substring(2)));

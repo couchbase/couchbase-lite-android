@@ -175,7 +175,7 @@ public class AESSecureTokenStore implements TokenStore {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(encrypted);
             CipherInputStream cipherInputStream = new CipherInputStream(inputStream, cipher);
             try {
-                ArrayList<Byte> values = new ArrayList<>();
+                ArrayList<Byte> values = new ArrayList<Byte>();
                 int nextByte;
                 while ((nextByte = cipherInputStream.read()) != -1) {
                     values.add((byte) nextByte);

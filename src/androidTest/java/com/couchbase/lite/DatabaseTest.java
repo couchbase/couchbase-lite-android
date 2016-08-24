@@ -56,7 +56,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         cal.add(Calendar.SECOND, 60);// +60 sec
         final Date future = cal.getTime();
         Log.v(TAG, "Now is %s", new Date());
-        Map<String, Object> props = new HashMap<>();
+        Map<String, Object> props = new HashMap<String, Object>();
         props.put("foo", 17);
         props.put("_id", "12345");
         Document doc = createDocWithProperties(props);
@@ -102,7 +102,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
                     for (QueryRow row : e) {
                         Document doc = row.getDocument();
                         if (doc.getProperties().containsKey("sequence")) {
-                            int sequence = (int) doc.getProperties().get("sequence");
+                            int sequence = (Integer) doc.getProperties().get("sequence");
                             if (sequence % 10 == 6) {
                                 Calendar time = new GregorianCalendar();
                                 time.add(Calendar.SECOND, 2); // 2sec from now
@@ -153,7 +153,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         for (QueryRow row : e) {
             Document d = row.getDocument();
             if (d.getProperties() != null && d.getProperties().containsKey("sequence")) {
-                int sequence = (int) d.getProperties().get("sequence");
+                int sequence = (Integer) d.getProperties().get("sequence");
                 assertTrue(sequence % 10 != 6);
             }
             total.incrementAndGet();
@@ -175,7 +175,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         String docId = "test26-ReAddAfterPurge";
 
         RevisionInternal rev = new RevisionInternal(docId, "1-1111", false);
-        Map<String, Object> props = new HashMap<>();
+        Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", rev.getDocID());
         props.put("_rev", rev.getRevID());
         props.put("testName", "test26_ReAddAfterPurge");
@@ -199,7 +199,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertNull(database.getExistingDocument(docId));
 
         RevisionInternal revAfterPurge = new RevisionInternal(docId, "1-1111", false);
-        Map<String, Object> props2 = new HashMap<>();
+        Map<String, Object> props2 = new HashMap<String, Object>();
         props2.put("_id", revAfterPurge.getDocID());
         props2.put("_rev", revAfterPurge.getRevID());
         props2.put("testName", "test26_ReAddAfterPurge");
@@ -632,15 +632,15 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertEquals(0, rev4.getAttachmentNames().size());
 
         // Add an attachment with revpos=0 (see #1200)
-        Map<String, Object> props = new HashMap<>(rev3.getProperties());
-        Map<String, Object> atts = new HashMap<>((Map<String, Object>) props.get("_attachments"));
+        Map<String, Object> props = new HashMap<String, Object>(rev3.getProperties());
+        Map<String, Object> atts = new HashMap<String, Object>((Map<String, Object>) props.get("_attachments"));
         props.put("_attachments", atts);
-        Map<String, Object> att = new HashMap<>();
+        Map<String, Object> att = new HashMap<String, Object>();
         att.put("content_type", "text/plain");
         att.put("revpos", 0);
         att.put("following", true);
         atts.put("zero.txt", att);
-        Map<String, Object> attachment = new HashMap<>();
+        Map<String, Object> attachment = new HashMap<String, Object>();
         attachment.put("zero.txt", "zero".getBytes());
         List<String> history = Arrays.asList("3-0000", rev3.getId(), rev.getId());
         assertTrue(doc.putExistingRevision(props, attachment, history, null));
@@ -834,7 +834,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         });
 
         // update document
-        dict = new HashMap<>(doc.getProperties());
+        dict = new HashMap<String, Object>(doc.getProperties());
         dict.put("X", "Z");
         doc.putProperties(dict);
 
@@ -994,7 +994,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
      * - (void) test071_PutExistingRevision in Unit-Tests/Database_Tests.m
      */
     public void test071_PutExistingRevision() throws CouchbaseLiteException {
-        Map<String, Object> props = new HashMap<>();
+        Map<String, Object> props = new HashMap<String, Object>();
         props.put("foo", 1);
         Document doc = createDocWithProperties(props);
 
@@ -1004,7 +1004,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         assertTrue(doc.putExistingRevision(props, null, history, null));
 
-        Map<String, Object> expected = new HashMap<>();
+        Map<String, Object> expected = new HashMap<String, Object>();
         expected.put("_id", doc.getId());
         expected.put("_rev", "3-cafebabe");
         expected.put("foo", 2);
@@ -1043,18 +1043,18 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         byte[] content = "hi there".getBytes("UTF-8");
 
-        Map<String, Object> foo = new HashMap<>();
+        Map<String, Object> foo = new HashMap<String, Object>();
         foo.put("content_type", "text/plain");
-        Map<String, Object> bar = new HashMap<>();
+        Map<String, Object> bar = new HashMap<String, Object>();
         bar.put("content_type", "text/plain");
         bar.put("stub", true);
-        Map<String, Map<String, Object>> atts = new HashMap<>();
+        Map<String, Map<String, Object>> atts = new HashMap<String, Map<String, Object>>();
         atts.put("foo.txt", foo);
         atts.put("bar.txt", bar);
-        Map<String, Object> props = new HashMap<>();
+        Map<String, Object> props = new HashMap<String, Object>();
         props.put("_attachments", atts);
 
-        Map<String, Object> attachments = new HashMap<>();
+        Map<String, Object> attachments = new HashMap<String, Object>();
         attachments.put("foo.txt", content);
         attachments.put("bar.txt", content);
 
@@ -1085,7 +1085,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         // - Add 10 4mb docs
         // - Crash with OOM
 
-        Map<String, Object> body = new HashMap<>();
+        Map<String, Object> body = new HashMap<String, Object>();
         char[] chars = new char[4 * 1024 * 1024]; // 4 million chars
         Arrays.fill(chars, 'a');
         final String content = new String(chars);

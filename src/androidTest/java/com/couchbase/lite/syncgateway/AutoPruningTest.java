@@ -80,7 +80,7 @@ public class AutoPruningTest  extends LiteTestCaseWithDB {
 
         // create doc with 30 revisions in push db
         Document doc = pushDB.createDocument();
-        Map<String, Object> props = new HashMap<>();
+        Map<String, Object> props = new HashMap<String, Object>();
         props.put("index", 0);
         doc.putProperties(props);
         String docID = doc.getId();
@@ -106,7 +106,7 @@ public class AutoPruningTest  extends LiteTestCaseWithDB {
         assertNotNull(revs);
         assertEquals(5, revs.size());
         assertNotNull(historyDict);
-        assertEquals(100, (int)historyDict.get("start"));
+        assertEquals(100, ((Integer) historyDict.get("start")).intValue());
         assertEquals(5, ((List<String>)historyDict.get("ids")).size());
 
 

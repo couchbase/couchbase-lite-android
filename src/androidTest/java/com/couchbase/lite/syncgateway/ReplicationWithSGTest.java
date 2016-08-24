@@ -196,10 +196,10 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
                     "/_oidc_testing/authenticate?client_id=CLIENTID&redirect_uri=http%3A%2F%2F" +
                     getSyncGatewayHost() +
                     "%3A4984%2Fopenid_db%2F_oidc_callback&response_type=code&scope=openid+email&state=");
-            Map<String, String> formData = new HashMap<>();
+            Map<String, String> formData = new HashMap<String, String>();
             formData.put("username", "pupshaw");
             formData.put("authenticated", "true");
-            final Map<String, Object> results = new HashMap<>();
+            final Map<String, Object> results = new HashMap<String, Object>();
             RemoteRequest rq = new RemoteFormRequest(factory, "POST", formURL, false, formData, null,
                 new RemoteRequestCompletion() {
                     @Override

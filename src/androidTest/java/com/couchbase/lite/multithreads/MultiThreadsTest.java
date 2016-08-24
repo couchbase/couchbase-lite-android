@@ -69,7 +69,7 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
                 for (int i = 0; i < 500; i++) {
                     String docID = String.format(Locale.ENGLISH, "docID-%08d", count.incrementAndGet());
                     Document doc = database.getDocument(docID);
-                    Map<String, Object> props = new HashMap<>();
+                    Map<String, Object> props = new HashMap<String, Object>();
                     props.put("key", count.get());
                     try {
                         doc.putProperties(props);
@@ -142,7 +142,7 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
                 for (int i = 0; i < 100; i++) {
                     String docID = String.format(Locale.ENGLISH, "docID-%08d", i);
                     Document doc = database.getDocument(docID);
-                    Map<String, Object> props = new HashMap<>();
+                    Map<String, Object> props = new HashMap<String, Object>();
                     props.put("key", i);
                     try {
                         doc.putProperties(props);
@@ -189,7 +189,7 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
                     Log.e(TAG, "updateThread docID=%s", docID);
                     for (int j = 0; j < 20; j++) {
                         Document doc = database.getDocument(docID);
-                        Map<String, Object> props = new HashMap<>();
+                        Map<String, Object> props = new HashMap<String, Object>();
                         props.putAll(doc.getProperties());
                         props.put("index", j);
                         try {

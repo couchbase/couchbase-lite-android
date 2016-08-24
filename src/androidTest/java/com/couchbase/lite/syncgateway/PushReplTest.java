@@ -71,7 +71,7 @@ public class PushReplTest extends LiteTestCaseWithDB {
 
         // create document
         Document doc = database.createDocument();
-        Map<String, Object> props = new HashMap<>();
+        Map<String, Object> props = new HashMap<String, Object>();
         props.put("key", "Hello World!");
         doc.putProperties(props);
         String docID = doc.getId();
@@ -122,7 +122,7 @@ public class PushReplTest extends LiteTestCaseWithDB {
         // initial 100 docs
         for (int i = 0; i < INIT_DOCS; i++) {
             Document doc = database.getDocument("doc-" + String.format(Locale.ENGLISH, "%03d", i));
-            Map<String, Object> props = new HashMap<>();
+            Map<String, Object> props = new HashMap<String, Object>();
             props.put("key", i);
             try {
                 doc.putProperties(props);
@@ -140,7 +140,7 @@ public class PushReplTest extends LiteTestCaseWithDB {
             public void run() {
                 for (int i = INIT_DOCS; i < TOTAL_DOCS; i++) {
                     Document doc = database.getDocument("doc-" + String.format(Locale.ENGLISH, "%03d", i));
-                    Map<String, Object> props = new HashMap<>();
+                    Map<String, Object> props = new HashMap<String, Object>();
                     props.put("key", i);
                     try {
                         doc.putProperties(props);
