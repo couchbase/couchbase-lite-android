@@ -687,4 +687,142 @@ public class ManagerTest extends LiteTestCaseWithDB {
         String userAgent = Manager.getUserAgent();
         assertTrue(userAgent.indexOf(Manager.PRODUCT_NAME + "/" + Version.SYNC_PROTOCOL_VERSION) != -1);
     }
+
+    /**
+     * Test Database upgrade from Schema v1 to v2, Normal scenario
+     */
+    public void testUpgradeDatabaseFrom110() throws Exception {
+        _testUpgradeDatabaseV1("ios110", "iosdb", new ValidateDatabaseCallback() {
+            @Override
+            public void validate(Database db) throws CouchbaseLiteException, IOException {
+                validateDatabaseContentFromIOS(db);
+            }
+        });
+        _testUpgradeDatabaseV1("android110", "androiddb", new ValidateDatabaseCallback() {
+            @Override
+            public void validate(Database db) throws CouchbaseLiteException, IOException {
+                validateDatabaseContentFromAndroid(db);
+            }
+        });
+    }
+
+    private void _testUpgradeDatabaseV1(String zipFile, String dbname, ValidateDatabaseCallback callback) throws Exception {
+        // close manager
+        if (manager != null) {
+            manager.close();
+            manager = null;
+        }
+
+        // clean folder & generate new context
+        Context ctx = getTestContext(zipFile, true);
+        assertNotNull(ctx);
+
+        // Install a canned database:
+        File srcDir = new File(getContext().getFilesDir(), zipFile);
+        FileDirUtils.deleteRecursive(srcDir);
+        ZipUtils.unzip(getAsset("replacedb/" + zipFile + ".zip"), getContext().getFilesDir());
+
+        // Open new manager -> In Manager constructor, database upgrading is executed
+        Manager mgr = new Manager(ctx, new ManagerOptions());
+        if (useForestDB)
+            mgr.setStorageType(Manager.FORESTDB_STORAGE);
+
+        // Open database
+        Database db = mgr.getExistingDatabase(dbname);
+        assertNotNull(db);
+        assertTrue(db.exists());
+        // validate upgrade db
+        callback.validate(db);
+
+        // close db & mgr
+        db.close();
+        mgr.close();
+
+        // check if old db is deleted
+        File cbliteFile = new File(ctx.getFilesDir(), dbname+".cblite");
+        File attachDir = new File(ctx.getFilesDir(), dbname+" attachments");
+        assertFalse(cbliteFile.exists());
+        assertFalse(attachDir.exists());
+
+        // check if temporary db is deleted
+        File tmpDbDir = new File(ctx.getFilesDir(), dbname+".tmp.cblite2");
+        assertFalse(tmpDbDir.exists());
+    }
+
+    /**
+     * Test Database upgrade from Schema v1 to v2, With Fake temporary database upgrade file
+     */
+    public void testUpgradeDatabaseFrom110WithFakeTempDb() throws Exception {
+        _testUpgradeDatabaseV1WithFakeTempDb("ios110", "iosdb", new ValidateDatabaseCallback() {
+            @Override
+            public void validate(Database db) throws CouchbaseLiteException, IOException {
+                validateDatabaseContentFromIOS(db);
+            }
+        });
+        _testUpgradeDatabaseV1WithFakeTempDb("android110", "androiddb", new ValidateDatabaseCallback() {
+            @Override
+            public void validate(Database db) throws CouchbaseLiteException, IOException {
+                validateDatabaseContentFromAndroid(db);
+            }
+        });
+    }
+
+    private void _testUpgradeDatabaseV1WithFakeTempDb(String zipFile, String dbname, ValidateDatabaseCallback callback) throws Exception {
+        // close manager
+        if (manager != null) {
+            manager.close();
+            manager = null;
+        }
+
+        // clean folder & generate new context
+        Context ctx = getTestContext(zipFile, true);
+        assertNotNull(ctx);
+
+        File srcDir = new File(getContext().getFilesDir(), zipFile);
+        FileDirUtils.deleteRecursive(srcDir);
+
+        // create temporary database which is fake upgrage temporary file
+        Manager mgr = new Manager(ctx, new ManagerOptions());
+        DatabaseOptions opt = new DatabaseOptions();
+        opt.setCreate(true);
+        Database tmpDB = mgr.openDatabase(dbname + ".tmp", opt);
+        assertNotNull(tmpDB);
+        Document tmpDoc = tmpDB.createDocument();
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("tmp", "Temporary");
+        tmpDoc.putProperties(props);
+
+        // make sure temporary db exists
+        File tmpDbDir = new File(ctx.getFilesDir(), dbname+".tmp.cblite2");
+        assertTrue(tmpDbDir.isDirectory());
+        assertTrue(tmpDbDir.exists());
+
+        // Install a canned database:
+        ZipUtils.unzip(getAsset("replacedb/" + zipFile + ".zip"), getContext().getFilesDir());
+
+        // Re-Open new manager -> In Manager constructor, database upgrading is executed
+        mgr = new Manager(ctx, new ManagerOptions());
+        if (useForestDB)
+            mgr.setStorageType(Manager.FORESTDB_STORAGE);
+
+        // Open database
+        Database db = mgr.getExistingDatabase(dbname);
+        assertNotNull(db);
+        assertTrue(db.exists());
+        // validate upgrade db
+        callback.validate(db);
+
+        // close db & mgr
+        db.close();
+        mgr.close();
+
+        // check if old db is deleted
+        File cbliteFile = new File(ctx.getFilesDir(), dbname+".cblite");
+        File attachDir = new File(ctx.getFilesDir(), dbname+" attachments");
+        assertFalse(cbliteFile.exists());
+        assertFalse(attachDir.exists());
+
+        // check if temporary db is deleted
+        assertFalse(tmpDbDir.exists());
+    }
 }
