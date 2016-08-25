@@ -13,8 +13,6 @@
  */
 package com.couchbase.lite;
 
-import android.provider.ContactsContract;
-
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
 import com.couchbase.lite.mockserver.MockDispatcher;
@@ -694,10 +692,21 @@ public class ManagerTest extends LiteTestCaseWithDB {
      * Test Database upgrade from Schema v1 to v2, Normal scenario
      */
     public void testUpgradeDatabaseFrom110() throws Exception {
-        _testUpgradeDatabaseV1("ios110", "iosdb");
+        _testUpgradeDatabaseV1("ios110", "iosdb", new ValidateDatabaseCallback() {
+            @Override
+            public void validate(Database db) throws CouchbaseLiteException, IOException {
+                validateDatabaseContentFromIOS(db);
+            }
+        });
+        _testUpgradeDatabaseV1("android110", "androiddb", new ValidateDatabaseCallback() {
+            @Override
+            public void validate(Database db) throws CouchbaseLiteException, IOException {
+                validateDatabaseContentFromAndroid(db);
+            }
+        });
     }
 
-    private void _testUpgradeDatabaseV1(String zipFile, String dbname) throws Exception {
+    private void _testUpgradeDatabaseV1(String zipFile, String dbname, ValidateDatabaseCallback callback) throws Exception {
         // close manager
         if (manager != null) {
             manager.close();
@@ -723,21 +732,42 @@ public class ManagerTest extends LiteTestCaseWithDB {
         assertNotNull(db);
         assertTrue(db.exists());
         // validate upgrade db
-        validateDatabaseContentFromIOS(db);
+        callback.validate(db);
 
         // close db & mgr
         db.close();
         mgr.close();
+
+        // check if old db is deleted
+        File cbliteFile = new File(ctx.getFilesDir(), dbname+".cblite");
+        File attachDir = new File(ctx.getFilesDir(), dbname+" attachments");
+        assertFalse(cbliteFile.exists());
+        assertFalse(attachDir.exists());
+
+        // check if temporary db is deleted
+        File tmpDbDir = new File(ctx.getFilesDir(), dbname+".tmp.cblite2");
+        assertFalse(tmpDbDir.exists());
     }
 
     /**
      * Test Database upgrade from Schema v1 to v2, With Fake temporary database upgrade file
      */
     public void testUpgradeDatabaseFrom110WithFakeTempDb() throws Exception {
-        _testUpgradeDatabaseV1WithFakeTempDb("ios110", "iosdb");
+        _testUpgradeDatabaseV1WithFakeTempDb("ios110", "iosdb", new ValidateDatabaseCallback() {
+            @Override
+            public void validate(Database db) throws CouchbaseLiteException, IOException {
+                validateDatabaseContentFromIOS(db);
+            }
+        });
+        _testUpgradeDatabaseV1WithFakeTempDb("android110", "androiddb", new ValidateDatabaseCallback() {
+            @Override
+            public void validate(Database db) throws CouchbaseLiteException, IOException {
+                validateDatabaseContentFromAndroid(db);
+            }
+        });
     }
 
-    private void _testUpgradeDatabaseV1WithFakeTempDb(String zipFile, String dbname) throws Exception {
+    private void _testUpgradeDatabaseV1WithFakeTempDb(String zipFile, String dbname, ValidateDatabaseCallback callback) throws Exception {
         // close manager
         if (manager != null) {
             manager.close();
@@ -762,6 +792,11 @@ public class ManagerTest extends LiteTestCaseWithDB {
         props.put("tmp", "Temporary");
         tmpDoc.putProperties(props);
 
+        // make sure temporary db exists
+        File tmpDbDir = new File(ctx.getFilesDir(), dbname+".tmp.cblite2");
+        assertTrue(tmpDbDir.isDirectory());
+        assertTrue(tmpDbDir.exists());
+
         // Install a canned database:
         ZipUtils.unzip(getAsset("replacedb/" + zipFile + ".zip"), getContext().getFilesDir());
 
@@ -775,10 +810,19 @@ public class ManagerTest extends LiteTestCaseWithDB {
         assertNotNull(db);
         assertTrue(db.exists());
         // validate upgrade db
-        validateDatabaseContentFromIOS(db);
+        callback.validate(db);
 
         // close db & mgr
         db.close();
         mgr.close();
+
+        // check if old db is deleted
+        File cbliteFile = new File(ctx.getFilesDir(), dbname+".cblite");
+        File attachDir = new File(ctx.getFilesDir(), dbname+" attachments");
+        assertFalse(cbliteFile.exists());
+        assertFalse(attachDir.exists());
+
+        // check if temporary db is deleted
+        assertFalse(tmpDbDir.exists());
     }
 }
