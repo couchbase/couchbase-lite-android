@@ -717,10 +717,12 @@ public class ManagerTest extends LiteTestCaseWithDB {
         Context ctx = getTestContext(zipFile, true);
         assertNotNull(ctx);
 
+        File rootDir = getTestContext("").getFilesDir();
+
         // Install a canned database:
-        File srcDir = new File(getContext().getFilesDir(), zipFile);
+        File srcDir = new File(rootDir, zipFile);
         FileDirUtils.deleteRecursive(srcDir);
-        ZipUtils.unzip(getAsset("replacedb/" + zipFile + ".zip"), getContext().getFilesDir());
+        ZipUtils.unzip(getAsset("replacedb/" + zipFile + ".zip"), rootDir);
 
         // Open new manager -> In Manager constructor, database upgrading is executed
         Manager mgr = new Manager(ctx, new ManagerOptions());
@@ -778,7 +780,9 @@ public class ManagerTest extends LiteTestCaseWithDB {
         Context ctx = getTestContext(zipFile, true);
         assertNotNull(ctx);
 
-        File srcDir = new File(getContext().getFilesDir(), zipFile);
+        File rootDir = getTestContext("").getFilesDir();
+
+        File srcDir = new File(rootDir, zipFile);
         FileDirUtils.deleteRecursive(srcDir);
 
         // create temporary database which is fake upgrage temporary file
@@ -798,7 +802,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
         assertTrue(tmpDbDir.exists());
 
         // Install a canned database:
-        ZipUtils.unzip(getAsset("replacedb/" + zipFile + ".zip"), getContext().getFilesDir());
+        ZipUtils.unzip(getAsset("replacedb/" + zipFile + ".zip"), rootDir);
 
         // Re-Open new manager -> In Manager constructor, database upgrading is executed
         mgr = new Manager(ctx, new ManagerOptions());
