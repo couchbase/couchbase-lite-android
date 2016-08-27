@@ -770,13 +770,13 @@ public class ManagerTest extends LiteTestCaseWithDB {
     }
 
     private void _testUpgradeDatabaseV1WithFakeTempDb(String zipFile, String dbname, ValidateDatabaseCallback callback) throws Exception {
-        // close manager
+        // Close manager
         if (manager != null) {
             manager.close();
             manager = null;
         }
 
-        // clean folder & generate new context
+        // Clean folder & generate new context
         Context ctx = getTestContext(zipFile, true);
         assertNotNull(ctx);
 
@@ -785,10 +785,11 @@ public class ManagerTest extends LiteTestCaseWithDB {
         File srcDir = new File(rootDir, zipFile);
         FileDirUtils.deleteRecursive(srcDir);
 
-        // create temporary database which is fake upgrage temporary file
+        // Create temporary database to fake pending upgrade temporary file
         Manager mgr = new Manager(ctx, new ManagerOptions());
         DatabaseOptions opt = new DatabaseOptions();
         opt.setCreate(true);
+
         Database tmpDB = mgr.openDatabase(dbname + ".tmp", opt);
         assertNotNull(tmpDB);
         Document tmpDoc = tmpDB.createDocument();
@@ -796,7 +797,10 @@ public class ManagerTest extends LiteTestCaseWithDB {
         props.put("tmp", "Temporary");
         tmpDoc.putProperties(props);
 
-        // make sure temporary db exists
+        // Close the temporary database
+        tmpDB.close();
+
+        // Make sure temporary db exists
         File tmpDbDir = new File(ctx.getFilesDir(), dbname+".tmp.cblite2");
         assertTrue(tmpDbDir.isDirectory());
         assertTrue(tmpDbDir.exists());
@@ -813,6 +817,7 @@ public class ManagerTest extends LiteTestCaseWithDB {
         Database db = mgr.getExistingDatabase(dbname);
         assertNotNull(db);
         assertTrue(db.exists());
+
         // validate upgrade db
         callback.validate(db);
 
