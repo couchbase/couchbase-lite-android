@@ -20,22 +20,17 @@ import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Query;
+import com.couchbase.lite.QueryEnumerator;
 import com.couchbase.lite.QueryRow;
-import com.couchbase.lite.Revision;
 import com.couchbase.lite.View;
 import com.couchbase.lite.internal.RevisionInternal;
-import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.util.Log;
 
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -164,7 +159,7 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
         Thread readThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                for(int j = 0; j < 20; j++) {
+                for (int j = 0; j < 20; j++) {
                     for (int i = 0; i < 100; i++) {
                         String docID = String.format(Locale.ENGLISH, "docID-%08d", i);
                         Document doc = database.getDocument(docID);
@@ -220,5 +215,173 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
         } catch (InterruptedException e) {
             Log.e(TAG, "Error in updateThread. ", e);
         }
+    }
+
+    /**
+     * ported from .NET - TestParallelViewQueries()
+     * https://github.com/couchbase/couchbase-lite-net/blob/master/src/Couchbase.Lite.Tests.Shared/ViewsTest.cs#L399
+     */
+    public void testParallelViewQueries() throws CouchbaseLiteException {
+        int[] data = new int[]{42, 184, 256, Integer.MAX_VALUE, 412};
+        /*
+        int[] data = new int[]{42, 184, 256, Integer.MAX_VALUE, 412
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+        */
+
+        View vu = database.getView("prefix/vu");
+        vu.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Map<String, Object> key = new HashMap<String, Object>();
+                key.put("sequence", document.get("sequence"));
+                emitter.emit(key, null);
+            }
+        }, "1.0");
+
+        View vu2 = database.getView("prefix/vu2");
+        vu2.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Map<String, Object> key = new HashMap<String, Object>();
+                key.put("sequence", "FAKE");
+                emitter.emit(key, null);
+            }
+        }, "1.0");
+
+        createDocuments(database, 500);
+
+        int expectCount = 1;
+        parallelQuery(data, expectCount);
+
+        createDocuments(database, 500);
+
+        expectCount = 2;
+        parallelQuery(data, expectCount);
+
+        vu.delete();
+
+        vu = database.getView("prefix/vu");
+        vu.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Map<String, Object> key = new HashMap<String, Object>();
+                key.put("sequence", document.get("sequence"));
+                emitter.emit(key, null);
+            }
+        }, "1.0");
+
+        expectCount = 2;
+        parallelQuery(data, expectCount);
+
+        vu2.delete();
+
+        vu2 = database.getView("prefix/vu2");
+        vu2.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Map<String, Object> key = new HashMap<String, Object>();
+                key.put("sequence", "FAKE");
+                emitter.emit(key, null);
+            }
+        }, "1.0");
+
+        expectCount = 2;
+        parallelQuery(data, expectCount);
+    }
+
+    private void parallelQuery(int[] numbers, final int expectCount) {
+        Thread[] threads = new Thread[numbers.length];
+        for (int i = 0; i < numbers.length; i++) {
+            final int num = numbers[i];
+            threads[i] = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (num == Integer.MAX_VALUE)
+                            queryAction2(expectCount);
+                        else
+                            queryAction(num, expectCount);
+                    } catch (CouchbaseLiteException e) {
+                        e.printStackTrace();
+                        fail(e.getMessage());
+                    }
+                }
+            });
+        }
+        for (int i = 0; i < numbers.length; i++) {
+            threads[i].start();
+        }
+        for (int i = 0; i < numbers.length; i++) {
+            try {
+                threads[i].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void queryAction(int x, int expectCount) throws CouchbaseLiteException {
+        Database db = manager.getDatabase(database.getName());
+        View gotVu = db.getView("prefix/vu");
+        Query query = gotVu.createQuery();
+        List<Object> keys = new ArrayList<Object>();
+        Map<String, Object> key = new HashMap<String, Object>();
+        key.put("sequence", x);
+        keys.add(key);
+        query.setKeys(keys);
+        QueryEnumerator rows = query.run();
+        assertEquals(expectCount * 500, gotVu.getLastSequenceIndexed());
+        assertEquals(expectCount, rows.getCount());
+    }
+
+    private void queryAction2(int expectCount) throws CouchbaseLiteException {
+        Database db = manager.getDatabase(database.getName());
+        View gotVu = db.getView("prefix/vu2");
+        Query query = gotVu.createQuery();
+        List<Object> keys = new ArrayList<Object>();
+        Map<String, Object> key = new HashMap<String, Object>();
+        key.put("sequence", "FAKE");
+        keys.add(key);
+        query.setKeys(keys);
+        QueryEnumerator rows = query.run();
+        assertEquals(expectCount * 500, gotVu.getLastSequenceIndexed());
+        assertEquals(expectCount * 500, rows.getCount());
     }
 }
