@@ -218,54 +218,28 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
     }
 
     /**
+     * parallel view/query without prefix
+     */
+    public void testParallelViewQueries() throws CouchbaseLiteException {
+        _testParallelViewQueries("");
+    }
+
+    /**
+     * parallel view/query with prefix
+     */
+    public void testParallelViewQueriesWithPrefix() throws CouchbaseLiteException {
+        _testParallelViewQueries("prefix/");
+    }
+
+    /**
      * ported from .NET - TestParallelViewQueries()
      * https://github.com/couchbase/couchbase-lite-net/blob/master/src/Couchbase.Lite.Tests.Shared/ViewsTest.cs#L399
      */
-    public void testParallelViewQueries() throws CouchbaseLiteException {
+    private void _testParallelViewQueries(String prefix) throws CouchbaseLiteException {
         int[] data = new int[]{42, 184, 256, Integer.MAX_VALUE, 412};
-        /*
-        int[] data = new int[]{42, 184, 256, Integer.MAX_VALUE, 412
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
-                , Integer.MAX_VALUE, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                , Integer.MAX_VALUE, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
-        */
-
-        View vu = database.getView("prefix/vu");
+        
+        final String viewName = prefix + "vu";
+        View vu = database.getView(viewName);
         vu.setMap(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -275,8 +249,10 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
             }
         }, "1.0");
 
-        View vu2 = database.getView("prefix/vu2");
-        vu2.setMap(new Mapper() {
+
+        final String viewNameFake = prefix + "vuFake";
+        View vuFake = database.getView(viewNameFake);
+        vuFake.setMap(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 Map<String, Object> key = new HashMap<String, Object>();
@@ -287,17 +263,18 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
 
         createDocuments(database, 500);
 
+
         int expectCount = 1;
-        parallelQuery(data, expectCount);
+        parallelQuery(data, expectCount, viewName, viewNameFake);
 
         createDocuments(database, 500);
 
         expectCount = 2;
-        parallelQuery(data, expectCount);
+        parallelQuery(data, expectCount, viewName, viewNameFake);
 
         vu.delete();
 
-        vu = database.getView("prefix/vu");
+        vu = database.getView(viewName);
         vu.setMap(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -307,13 +284,14 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
             }
         }, "1.0");
 
+
         expectCount = 2;
-        parallelQuery(data, expectCount);
+        parallelQuery(data, expectCount, viewName, viewNameFake);
 
-        vu2.delete();
+        vuFake.delete();
 
-        vu2 = database.getView("prefix/vu2");
-        vu2.setMap(new Mapper() {
+        vuFake = database.getView(viewNameFake);
+        vuFake.setMap(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 Map<String, Object> key = new HashMap<String, Object>();
@@ -323,10 +301,10 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
         }, "1.0");
 
         expectCount = 2;
-        parallelQuery(data, expectCount);
+        parallelQuery(data, expectCount, viewName, viewNameFake);
     }
 
-    private void parallelQuery(int[] numbers, final int expectCount) {
+    private void parallelQuery(int[] numbers, final int expectCount, final String viewName1, final String viewName2) {
         Thread[] threads = new Thread[numbers.length];
         for (int i = 0; i < numbers.length; i++) {
             final int num = numbers[i];
@@ -335,9 +313,9 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
                 public void run() {
                     try {
                         if (num == Integer.MAX_VALUE)
-                            queryAction2(expectCount);
+                            queryAction2(expectCount, viewName2);
                         else
-                            queryAction(num, expectCount);
+                            queryAction(num, expectCount, viewName1);
                     } catch (CouchbaseLiteException e) {
                         e.printStackTrace();
                         fail(e.getMessage());
@@ -357,9 +335,9 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
         }
     }
 
-    private void queryAction(int x, int expectCount) throws CouchbaseLiteException {
+    private void queryAction(int x, int expectCount, String viewName) throws CouchbaseLiteException {
         Database db = manager.getDatabase(database.getName());
-        View gotVu = db.getView("prefix/vu");
+        View gotVu = db.getView(viewName);
         Query query = gotVu.createQuery();
         List<Object> keys = new ArrayList<Object>();
         Map<String, Object> key = new HashMap<String, Object>();
@@ -371,9 +349,9 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
         assertEquals(expectCount, rows.getCount());
     }
 
-    private void queryAction2(int expectCount) throws CouchbaseLiteException {
+    private void queryAction2(int expectCount, String viewName) throws CouchbaseLiteException {
         Database db = manager.getDatabase(database.getName());
-        View gotVu = db.getView("prefix/vu2");
+        View gotVu = db.getView(viewName);
         Query query = gotVu.createQuery();
         List<Object> keys = new ArrayList<Object>();
         Map<String, Object> key = new HashMap<String, Object>();
