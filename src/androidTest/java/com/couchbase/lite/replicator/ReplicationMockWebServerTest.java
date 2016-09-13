@@ -4666,4 +4666,86 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
         }
         return queries;
     }
+
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/1421
+    public void testRestart() throws Exception {
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        try {
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+            // mock documents to be pulled
+            MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+            // one time 401 (Unauthorized) error: Response 401 for first /_changes API
+            MockResponse response401 = new MockResponse();
+            response401.setResponseCode(401);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, response401);
+
+            // _changes response without error: Response OK for second /_changes API.
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // Empty _all_docs response to pass unit tests
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_ALL_DOCS, new MockDocumentAllDocs());
+
+            // doc1 response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+            // _bulk_get response
+            MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+            mockBulkGet.addDocument(mockDoc1);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+            // respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // start mock server
+            server.start();
+
+            // run replicator 1st round
+            Replication repl = database.createPullReplication(server.url("/db").url());
+            runReplication(repl);
+            Log.d(TAG, "pullReplication finished with fail");
+
+            // last error should not be null
+            assertNotNull(repl.getLastError());
+            Log.e(TAG, "lastError", repl.getLastError());
+            assertEquals(0, repl.getChangesCount());
+
+            Document doc1 = database.getDocument(mockDoc1.getDocId());
+            assertNotNull(doc1);
+            assertNull(doc1.getCurrentRevisionId());
+
+            // restart replicator 2nd round
+            runReplication(repl);
+
+            // last error should be null (cleared)
+            assertNull(repl.getLastError());
+
+            assertEquals(1, repl.getChangesCount());
+
+            // assert that we now have both docs in local db
+            assertNotNull(database);
+            doc1 = database.getDocument(mockDoc1.getDocId());
+            assertNotNull(doc1);
+            assertNotNull(doc1.getCurrentRevisionId());
+            assertTrue(doc1.getCurrentRevisionId().equals(mockDoc1.getDocRev()));
+            assertNotNull(doc1.getProperties());
+            assertEquals(mockDoc1.getJsonMap(), doc1.getUserProperties());
+        } finally {
+            assertTrue(MockHelper.shutdown(server, dispatcher));
+        }
+    }
 }
