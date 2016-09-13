@@ -72,12 +72,12 @@ In the application level `build.gradle` file, add following in `dependencies` se
 compile 'com.couchbase.lite:couchbase-lite-android:{latest-version}'
 ```
 
-In case of using couchbase lite 1.2.1
+In case of using couchbase lite 1.3.1
 ```
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:21.0.3'
-    compile 'com.couchbase.lite:couchbase-lite-android:1.2.1'
+    compile 'com.couchbase.lite:couchbase-lite-android:1.3.1'
 }
 ```
 
