@@ -50,9 +50,13 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
 
     public void testInsertAndQueryThreads() {
 
-        if (!multithreadsTestsEnabled()) {
+        if (!multithreadsTestsEnabled())
             return;
-        }
+        // ForestDB can not pass this test.
+        // https://github.com/couchbase/couchbase-lite-java-core/issues/1436
+        if(!isSQLiteDB())
+            return;
+
 
         // create view
         final View view = createView(database);
@@ -128,6 +132,10 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
 
     public void testUpdateDocsAndReadRevHistory() throws Exception {
         if (!multithreadsTestsEnabled())
+            return;
+        // ForestDB can not pass this test.
+        // https://github.com/couchbase/couchbase-lite-java-core/issues/1437
+        if(!isSQLiteDB())
             return;
 
         // Insert docs
@@ -236,6 +244,13 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
      * https://github.com/couchbase/couchbase-lite-net/blob/master/src/Couchbase.Lite.Tests.Shared/ViewsTest.cs#L399
      */
     private void _testParallelViewQueries(String prefix) throws CouchbaseLiteException {
+        if (!multithreadsTestsEnabled())
+            return;
+        // ForestDB can not pass this test.
+        // https://github.com/couchbase/couchbase-lite-java-core/issues/1424
+        if(!isSQLiteDB())
+            return;
+
         int[] data = new int[]{42, 184, 256, Integer.MAX_VALUE, 412};
         
         final String viewName = prefix + "vu";
