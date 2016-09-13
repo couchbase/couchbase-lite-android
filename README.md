@@ -203,7 +203,6 @@ If you want to run something (aside from the tests), you should get one of the s
 
 ## Limitations
 
-- ~~Docs are limited to 2MB - see [issue 357](https://github.com/couchbase/couchbase-lite-android/issues/357)~~
 - Attachments are limited to 20MB if using Sync Gateway
 
 ## Getting Help
