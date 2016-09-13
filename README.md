@@ -40,9 +40,9 @@ Using Gradle is the easiest way to automate Couchbase Lite builds in your projec
 
 ##### Optional: Maven repo URL: `http://files.couchbase.com/maven2/`
 
-NOTE: From 1.1.0 releae, Couchbase Lite Android is also hosted on JCenter which is default maven repository for Android Studio.
+NOTE: From 1.1.0 releae, Couchbase Lite Android is also hosted on **JCenter** which is default maven repository for Android Studio.
 
-In the project level `build.gradle` file, specify maven repo URL.
+Optional: In the project level `build.gradle` file, specify maven repo URL.
 ```
 repositories {
     jcenter()
