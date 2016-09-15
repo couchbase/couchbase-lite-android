@@ -3674,14 +3674,13 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Query query = database.createAllDocumentsQuery();
         query.setPrefetch(true);
         query.setSkip(2);
-        query.setLimit(3);
         QueryEnumerator result = query.run();
-        CountDown countDown = new CountDown(3); // limit is 3
+        CountDown countDown = new CountDown(4);
         Log.i(TAG, "start");
         while (result.hasNext()) {
             String docID = result.next().getDocumentId();
             Log.i(TAG, "docID=" + docID);
-            assertTrue(docID.compareTo("258") >= 0 && docID.compareTo("456") <= 0); // 258, 369, and 456
+            assertTrue(docID.compareTo("258") >= 0); // 258, 369, 456, and 789
             countDown.countDown();
         }
         Log.i(TAG, "stop");
