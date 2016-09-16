@@ -21,6 +21,7 @@ import com.couchbase.lite.View.TDViewCollation;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.store.Store;
 import com.couchbase.lite.store.StoreDelegate;
+import com.couchbase.lite.util.CountDown;
 import com.couchbase.lite.util.Log;
 
 import junit.framework.Assert;
@@ -3658,5 +3659,31 @@ public class ViewsTest extends LiteTestCaseWithDB {
             i++;
         }
         assertEquals(expected.length, i);
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/967
+    public void testSetSkip() throws CouchbaseLiteException {
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("data", "ok");
+        database.getDocument("123").putProperties(props);
+        database.getDocument("147").putProperties(props);
+        database.getDocument("258").putProperties(props);
+        database.getDocument("369").putProperties(props);
+        database.getDocument("456").putProperties(props);
+        database.getDocument("789").putProperties(props);
+        Query query = database.createAllDocumentsQuery();
+        query.setPrefetch(true);
+        query.setSkip(2);
+        QueryEnumerator result = query.run();
+        CountDown countDown = new CountDown(4);
+        Log.i(TAG, "start");
+        while (result.hasNext()) {
+            String docID = result.next().getDocumentId();
+            Log.i(TAG, "docID=" + docID);
+            assertTrue(docID.compareTo("258") >= 0); // 258, 369, 456, and 789
+            countDown.countDown();
+        }
+        Log.i(TAG, "stop");
+        assertEquals(0, countDown.getCount());
     }
 }
