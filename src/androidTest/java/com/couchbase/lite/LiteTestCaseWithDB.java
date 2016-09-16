@@ -199,7 +199,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
             // NOTE: retry and sleep is only for Windows. Other platforms never fail.
             int counter = 0;
             while (!FileDirUtils.cleanDirectory(context.getFilesDir()) && counter < 10) {
-                // NOTE: forestdb releses resources in Object.destroy()
+                // NOTE: forestdb releses resources in Object.finalize()
                 System.gc();
                 try {
                     Thread.sleep(1000);
@@ -259,7 +259,9 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected void stopDatabase() {
         if (database != null) {
-            database.close();
+            if(!database.close()){
+                Log.e(TAG, "Error in database.close()");
+            }
         }
     }
 

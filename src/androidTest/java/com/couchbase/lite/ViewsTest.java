@@ -3686,4 +3686,55 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.i(TAG, "stop");
         assertEquals(0, countDown.getCount());
     }
+
+    public void testSetLimit() throws CouchbaseLiteException {
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("data", "ok");
+        database.getDocument("123").putProperties(props);
+        database.getDocument("147").putProperties(props);
+        database.getDocument("258").putProperties(props);
+        database.getDocument("369").putProperties(props);
+        database.getDocument("456").putProperties(props);
+        database.getDocument("789").putProperties(props);
+        Query query = database.createAllDocumentsQuery();
+        query.setPrefetch(true);
+        query.setLimit(3);
+        QueryEnumerator result = query.run();
+        CountDown countDown = new CountDown(3); // limit is 3
+        Log.i(TAG, "start");
+        while (result.hasNext()) {
+            String docID = result.next().getDocumentId();
+            Log.i(TAG, "docID=" + docID);
+            assertTrue(docID.compareTo("258") <= 0);
+            countDown.countDown();
+        }
+        Log.i(TAG, "stop");
+        assertEquals(0, countDown.getCount());
+    }
+
+    public void testSetSkipAndLimit() throws CouchbaseLiteException {
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("data", "ok");
+        database.getDocument("123").putProperties(props);
+        database.getDocument("147").putProperties(props);
+        database.getDocument("258").putProperties(props);
+        database.getDocument("369").putProperties(props);
+        database.getDocument("456").putProperties(props);
+        database.getDocument("789").putProperties(props);
+        Query query = database.createAllDocumentsQuery();
+        query.setPrefetch(true);
+        query.setSkip(2);
+        query.setLimit(3);
+        QueryEnumerator result = query.run();
+        CountDown countDown = new CountDown(3); // limit is 3
+        Log.i(TAG, "start");
+        while (result.hasNext()) {
+            String docID = result.next().getDocumentId();
+            Log.i(TAG, "docID=" + docID);
+            assertTrue(docID.compareTo("258") >= 0 && docID.compareTo("456") <= 0);
+            countDown.countDown();
+        }
+        Log.i(TAG, "stop");
+        assertEquals(0, countDown.getCount());
+    }
 }
