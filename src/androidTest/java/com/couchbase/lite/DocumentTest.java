@@ -716,25 +716,35 @@ public class DocumentTest extends LiteTestCaseWithDB {
         database.addChangeListener(new Database.ChangeListener() {
             @Override
             public void changed(Database.ChangeEvent event) {
+                Log.e(TAG, "changed() event=%s", event);
                 counter.countDown();
-                Log.e(TAG, "changed() event=%s",event);
                 try {
                     List<DocumentChange> changes = event.getChanges();
-                    Log.e(TAG, "changed() changes.size()=%d",changes.size());
+                    Log.e(TAG, "changed() changes.size()=%d", changes.size());
+                    int conflictsInDocumentChange = 0;
                     for (DocumentChange documentChange : changes) {
-                        Log.e(TAG, "changed() documentChange.isConflict()=%b",documentChange.isConflict());
+                        Log.e(TAG, "changed() documentChange.isConflict()=%b", documentChange.isConflict());
                         if (documentChange.isConflict()) {
+                            conflictsInDocumentChange++;
                             Document document = database.getDocument(documentChange.getDocumentId());
-                            for (SavedRevision conflictingRevision : document.getConflictingRevisions()) {
-                                UnsavedRevision newRevision = conflictingRevision.createRevision();
-                                if (!conflictingRevision.equals(document.getCurrentRevision())) {
-                                    newRevision.setIsDeletion(true);
+                            List<SavedRevision> conflictRevisions = document.getConflictingRevisions();
+                            if (conflictRevisions.size() > 1) {
+                                for (SavedRevision conflictingRevision : conflictRevisions) {
+                                    UnsavedRevision newRevision = conflictingRevision.createRevision();
+                                    if (!conflictingRevision.equals(document.getCurrentRevision())) {
+                                        newRevision.setIsDeletion(true);
+                                    }
+                                    SavedRevision srev = newRevision.save(true);
+                                    Log.e(TAG, "SavedRevision=%s", srev);
                                 }
-                                SavedRevision srev = newRevision.save(true);
-                                Log.e(TAG, "SavedRevision=%s", srev);
                             }
                         }
                     }
+                    Log.e(TAG, "conflictsInDocumentChange=%d",conflictsInDocumentChange);
+                    if(counter.getCount() == 1)
+                        assertEquals(1, conflictsInDocumentChange);
+                    else if(counter.getCount() == 0)
+                        assertEquals(2, conflictsInDocumentChange);
                 } catch (Exception e) {
                     Log.e(TAG, "Error in resolving conflict", e);
                 }
