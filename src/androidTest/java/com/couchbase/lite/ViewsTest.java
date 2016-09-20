@@ -1047,7 +1047,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         // do a query which will kick off an async index
         putNDocs(database, 1);
         query.setIndexUpdateMode(Query.IndexUpdateMode.AFTER);
-        query.run().getCount();
+        assertEquals(5, query.run().getCount());
 
         // wait until indexing is (hopefully) done
         try {
@@ -3736,5 +3736,102 @@ public class ViewsTest extends LiteTestCaseWithDB {
         }
         Log.i(TAG, "stop");
         assertEquals(0, countDown.getCount());
+    }
+
+    /**
+     * From https://github.com/couchbase/couchbase-lite-android/issues/969#issuecomment-244562943
+     * Adapted from testParallelViewQueries
+     * Tests for https://github.com/couchbase/couchbase-lite-android/issues/969
+     */
+    public void testMultipleLiveQueries() {
+        final int batch_size = 500;
+        final int n_batches = 5;
+
+        LiveQuery lvu = null;
+        LiveQuery lvu2 = null;
+        try {
+            // First LiveQuery
+            View vu = database.getView("prefix/vu");
+            vu.setMap(new Mapper() {
+                @Override
+                public void map(Map<String, Object> document, Emitter emitter) {
+                    Map<String, Object> key = new HashMap<String, Object>();
+                    key.put("sequence", document.get("sequence"));
+                    emitter.emit(key, null);
+                }
+            }, "1.0");
+
+            Query qvu = vu.createQuery();
+            lvu = qvu.toLiveQuery();
+
+            List<Object> keys = new ArrayList<Object>();
+            Map<String, Object> key = new HashMap<String, Object>();
+            key.put("sequence", batch_size - 1);
+            keys.add(key);
+            lvu.setKeys(keys);
+
+            final CountDownLatch latch = new CountDownLatch(1);
+            lvu.addChangeListener(new LiveQuery.ChangeListener() {
+                @Override
+                public void changed(LiveQuery.ChangeEvent event) {
+                    assertNull(event.getError());
+                    QueryEnumerator rows = event.getRows();
+                    assertNotNull(rows);
+                    Log.w(TAG, String.format(Locale.ENGLISH, "Change Event - Count: %d - SN: %d",
+                            rows.getCount(), rows.getSequenceNumber()));
+                    while (rows.hasNext()) {
+                        QueryRow row = rows.next();
+                        String str = row.getDocument().getProperties().toString();
+                        Log.w(TAG, String.format(Locale.ENGLISH, "Doc: %s", str));
+                    }
+                    //indexed up to the last sequence number without errors
+                    if (event.getRows().getSequenceNumber() >= batch_size * n_batches) {
+                        Log.w(TAG, String.format(Locale.ENGLISH, "releasing latch"));
+                        latch.countDown();
+                    } else {
+                        Log.w(TAG, String.format(Locale.ENGLISH, "Not releasing latch"));
+                    }
+                }
+            });
+            lvu.start();
+
+            // Second LiveQuery
+            View vu2 = database.getView("prefix/vu2");
+            vu2.setMap(new Mapper() {
+                @Override
+                public void map(Map<String, Object> document, Emitter emitter) {
+                    Map<String, Object> key = new HashMap<String, Object>();
+                    key.put("sequence", "FAKE");
+                    emitter.emit(key, null);
+                }
+            }, "1.0");
+
+            lvu2 = vu2.createQuery().toLiveQuery();
+            lvu2.addChangeListener(new LiveQuery.ChangeListener() {
+                @Override
+                public void changed(LiveQuery.ChangeEvent event) {
+                }
+            });
+            lvu2.start();
+
+            // Create 500 documents 5 times -> total 2500 documents
+            for (int i = 0; i < n_batches; i++) {
+                Log.w(TAG, "Adding documents");
+                createDocuments(database, batch_size);
+            }
+
+            Log.w(TAG, "Waiting for livequery to receive the last update");
+            try {
+                assertTrue(latch.await(60, TimeUnit.SECONDS));
+            } catch (InterruptedException e) {
+                Log.e(TAG, "Error in CountDownLatch", e);
+            }
+
+
+        } finally {
+            // Stop LiveQueries
+            if (lvu2 != null) lvu2.stop();
+            if (lvu != null) lvu.stop();
+        }
     }
 }
