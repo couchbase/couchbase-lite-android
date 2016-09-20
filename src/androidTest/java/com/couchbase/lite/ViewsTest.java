@@ -3744,6 +3744,14 @@ public class ViewsTest extends LiteTestCaseWithDB {
      * Tests for https://github.com/couchbase/couchbase-lite-android/issues/969
      */
     public void testMultipleLiveQueries() {
+        _testMultipleLiveQueries("");
+    }
+
+    public void testMultipleLiveQueriesWithPrefix() {
+        _testMultipleLiveQueries("prefix/");
+    }
+
+    public void _testMultipleLiveQueries(String prefix) {
         final int batch_size = 500;
         final int n_batches = 5;
 
@@ -3751,7 +3759,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         LiveQuery lvu2 = null;
         try {
             // First LiveQuery
-            View vu = database.getView("prefix/vu");
+            View vu = database.getView(prefix + "vu");
             vu.setMap(new Mapper() {
                 @Override
                 public void map(Map<String, Object> document, Emitter emitter) {
@@ -3796,7 +3804,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
             lvu.start();
 
             // Second LiveQuery
-            View vu2 = database.getView("prefix/vu2");
+            View vu2 = database.getView(prefix + "vu2");
             vu2.setMap(new Mapper() {
                 @Override
                 public void map(Map<String, Object> document, Emitter emitter) {
