@@ -126,8 +126,6 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
     }
 
     /**
-     * IMPORTANT: DON'T run this test with Genymotion emulator with Android 4.x or older. It caseus
-     * unknown crash.
      * https://github.com/couchbase/couchbase-lite-java-core/issues/1437
      */
     public void testUpdateDocsAndReadRevHistory() throws Exception {
