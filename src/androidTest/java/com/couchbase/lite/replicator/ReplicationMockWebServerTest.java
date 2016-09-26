@@ -2649,8 +2649,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
 
             // Push replication:
             Replication repl = database.createPushReplication(server.url("/db").url());
-            assertNotNull(repl.getPendingDocumentIDs());
-            assertEquals(0, repl.getPendingDocumentIDs().size());
+            assertNull(repl.getPendingDocumentIDs());
 
             assertTrue(database.runInTransaction(
                     new TransactionalTask() {
@@ -2678,8 +2677,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
 
             runReplication(repl);
 
-            assertNotNull(repl.getPendingDocumentIDs());
-            assertEquals(0, repl.getPendingDocumentIDs().size());
+            assertNull(repl.getPendingDocumentIDs());
             assertFalse(repl.isDocumentPending(database.getDocument("doc-1")));
 
             // Add another set of documents:
@@ -2704,7 +2702,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             ));
 
             // Make sure newly-added documents are considered pending: (#1396)
-            assertTrue(repl.isDocumentPending(database.getDocument("doc-1")));
+            assertTrue(repl.isDocumentPending(database.getDocument("doc-11")));
             assertEquals(10, repl.getPendingDocumentIDs().size());
 
             // Create a new replicator:
