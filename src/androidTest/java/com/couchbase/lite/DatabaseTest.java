@@ -14,7 +14,6 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.Body;
-import com.couchbase.lite.internal.InterfaceAudience;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockHelper;
@@ -165,6 +164,47 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         next = new Date(database.getStore().nextDocumentExpiry());
         Log.v(TAG, "Next expiration at %s", next);
         assertTrue(Math.abs(next.getTime() - future.getTime()) < 1 * 1000); // 1 sec
+    }
+
+    /**
+     * in Database_Tests.m
+     * - (void) test27_AbortedCommit
+     */
+    public void test27_AbortedCommit() throws CouchbaseLiteException {
+        // For https://github.com/couchbase/couchbase-lite-ios/issues/1437
+        // Test ported from https://github.com/couchbase/couchbase-lite-net/issues/732
+        database.runInTransaction(new TransactionalTask() {
+            @Override
+            public boolean run() {
+                // Create a "rogue" document, then abort the transaction so it doesn't get saved:
+                Document doc = database.getDocument("rogue");
+                Map<String, Object> props = new HashMap<String, Object>();
+                props.put("exists", false);
+                try {
+                    doc.putProperties(props);
+                } catch (CouchbaseLiteException e) {
+                    fail(e.getMessage());
+                }
+                return false; // Cancel the transaction!
+            }
+        });
+
+        // Create a doc for real:
+        Document doc = database.getDocument("proper");
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("exists", true);
+        SavedRevision rev = doc.putProperties(props);
+        assertNotNull(rev);
+
+        // Verify the rogue doc doesn't exist:
+        assertNull(database.getExistingDocument("rogue"));
+
+        // Try to create it:
+        Document doc2 = database.getDocument("rogue");
+        Map<String, Object> props2 = new HashMap<String, Object>();
+        props2.put("exists", 3);
+        SavedRevision rev2 = doc2.putProperties(props2);
+        assertNotNull(rev2);
     }
 
     /**
