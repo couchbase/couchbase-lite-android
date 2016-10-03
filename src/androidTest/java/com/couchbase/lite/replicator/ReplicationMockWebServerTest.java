@@ -2620,6 +2620,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/696
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/1396
      * in Unit-Tests/Replication_Tests.m
      * - (void)test18_PendingDocumentIDs
      */
@@ -2646,9 +2647,9 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             MockBulkDocs mockBulkDocs = new MockBulkDocs();
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
+            // Push replication:
             Replication repl = database.createPushReplication(server.url("/db").url());
-            assertNotNull(repl.getPendingDocumentIDs());
-            assertEquals(0, repl.getPendingDocumentIDs().size());
+            assertNull(repl.getPendingDocumentIDs());
 
             assertTrue(database.runInTransaction(
                     new TransactionalTask() {
@@ -2676,11 +2677,10 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
 
             runReplication(repl);
 
-            assertNotNull(repl.getPendingDocumentIDs());
-            assertEquals(0, repl.getPendingDocumentIDs().size());
+            assertNull(repl.getPendingDocumentIDs());
             assertFalse(repl.isDocumentPending(database.getDocument("doc-1")));
 
-
+            // Add another set of documents:
             assertTrue(database.runInTransaction(
                     new TransactionalTask() {
                         @Override
@@ -2701,6 +2701,11 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
                     }
             ));
 
+            // Make sure newly-added documents are considered pending: (#1396)
+            assertTrue(repl.isDocumentPending(database.getDocument("doc-11")));
+            assertEquals(10, repl.getPendingDocumentIDs().size());
+
+            // Create a new replicator:
             repl = database.createPushReplication(server.url("/db").url());
             assertNotNull(repl.getPendingDocumentIDs());
             assertEquals(10, repl.getPendingDocumentIDs().size());
