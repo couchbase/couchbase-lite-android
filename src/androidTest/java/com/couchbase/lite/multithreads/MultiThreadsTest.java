@@ -14,6 +14,7 @@
 package com.couchbase.lite.multithreads;
 
 import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.CouchbaseLiteRuntimeException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Emitter;
@@ -31,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -366,5 +369,68 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
         QueryEnumerator rows = query.run();
         assertEquals(expectCount * 500, gotVu.getLastSequenceIndexed());
         assertEquals(expectCount * 500, rows.getCount());
+    }
+
+    public void testCloseDBDuringInsertions() throws CouchbaseLiteException {
+        if (!multithreadsTestsEnabled())
+            return;
+
+        final Database db = manager.getDatabase("multi-thread-close-db");
+
+        final CountDownLatch latch = new CountDownLatch(50);
+
+        Thread insertThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 100; i++) {
+                    store(i);
+                    latch.countDown();
+                }
+            }
+        });
+
+        Thread closeThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    assertTrue(latch.await(30, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    fail(e.toString());
+                }
+                db.close();
+            }
+        });
+
+        closeThread.start();
+        insertThread.start();
+
+        try {
+            closeThread.join();
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Error in closeThread. ", e);
+        }
+        try {
+            insertThread.join();
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Error in insertThread. ", e);
+        }
+
+        db.delete();
+    }
+
+    private void store(int i) {
+        try {
+            Database db = manager.getDatabase("multi-thread-close-db");
+            String id = String.format(Locale.ENGLISH, "ID_%05d", i);
+            Document doc = db.getDocument(id);
+            Map<String, Object> props = new HashMap<String, Object>();
+            props.put("value", i);
+            doc.putProperties(props);
+        } catch (CouchbaseLiteRuntimeException re) {
+            Log.e(TAG, "Error in store(): %s", re.getMessage());
+        } catch (CouchbaseLiteException e) {
+            Log.e(TAG, "Error in store()", e);
+            fail("Error in store()");
+        }
     }
 }

@@ -18,6 +18,7 @@ import com.couchbase.lite.LiteTestCaseWithDB;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.UnsavedRevision;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,7 +39,9 @@ public class SQLiteStoreTest extends LiteTestCaseWithDB {
         if(!isSQLiteDB())
             return;
 
-        SQLiteStore store = (SQLiteStore) database.getStore();
+        Method m = database.getClass().getDeclaredMethod("getStore");
+        m.setAccessible(true);
+        SQLiteStore store = (SQLiteStore)m.invoke(database);
 
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testCreateRevisions");
