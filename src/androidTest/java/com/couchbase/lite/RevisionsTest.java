@@ -381,7 +381,7 @@ public class RevisionsTest extends LiteTestCaseWithDB {
     }
 
     // https://github.com/couchbase/couchbase-lite-java-core/issues/878:
-    public void failingTestGenerateRevisionID() throws Exception {
+    public void testGenerateRevisionID() throws Exception {
         Map <String, Object> properties = new HashMap<String, Object>();
         properties.put("_id", UUID.randomUUID());
         properties.put("foo", "bar");
