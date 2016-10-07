@@ -14,6 +14,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.RevisionInternal;
+import com.couchbase.lite.util.CountDown;
 import com.couchbase.lite.util.Log;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -633,7 +634,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
         return unsavedRevision.save(allowConflict);
     }
 
-    public void testResolveConflict() throws CouchbaseLiteException, Exception {
+    public void testResolveConflict() throws Exception {
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("testName", "testResolveConflict");
         properties.put("key", "1");
@@ -650,6 +651,9 @@ public class DocumentTest extends LiteTestCaseWithDB {
         Map<String, Object> props2 = new HashMap<String, Object>();
         props2.put("key", "2b");
         SavedRevision rev2b = createRevisionWithProps(rev1, props2, true);
+        Map<String, Object> props3 = new HashMap<String, Object>();
+        props3.put("key", "2c");
+        SavedRevision rev2c = createRevisionWithProps(rev1, props3, true);
 
         final List<SavedRevision> conflicts = doc.getConflictingRevisions();
         if (conflicts.size() > 1) {
@@ -687,5 +691,72 @@ public class DocumentTest extends LiteTestCaseWithDB {
         }
         assertEquals(1, doc.getConflictingRevisions().size());
         assertEquals("3", doc.getProperties().get("key"));
+    }
+
+    public void testResolveConflictInChangeListener() throws Exception {
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("foo", "bar");
+
+        Document doc = database.createDocument();
+        UnsavedRevision rev1 = doc.createRevision();
+        rev1.setProperties(properties);
+        SavedRevision rev1Saved = rev1.save();
+
+        UnsavedRevision rev2a = rev1Saved.createRevision();
+        properties.put("what", "rev2a");
+        rev2a.setUserProperties(properties);
+        SavedRevision rev2aSaved = rev2a.save(true);
+
+        UnsavedRevision rev2b = rev1Saved.createRevision();
+        properties.put("what", "rev2b");
+        rev2b.setUserProperties(properties);
+        rev2b.save(true);
+
+        final CountDown counter = new CountDown(2);
+        database.addChangeListener(new Database.ChangeListener() {
+            @Override
+            public void changed(Database.ChangeEvent event) {
+                Log.e(TAG, "changed() event=%s", event);
+                counter.countDown();
+                try {
+                    List<DocumentChange> changes = event.getChanges();
+                    Log.e(TAG, "changed() changes.size()=%d", changes.size());
+                    int conflictsInDocumentChange = 0;
+                    for (DocumentChange documentChange : changes) {
+                        Log.e(TAG, "changed() documentChange.isConflict()=%b", documentChange.isConflict());
+                        if (documentChange.isConflict()) {
+                            conflictsInDocumentChange++;
+                            Document document = database.getDocument(documentChange.getDocumentId());
+                            List<SavedRevision> conflictRevisions = document.getConflictingRevisions();
+                            if (conflictRevisions.size() > 1) {
+                                for (SavedRevision conflictingRevision : conflictRevisions) {
+                                    UnsavedRevision newRevision = conflictingRevision.createRevision();
+                                    if (!conflictingRevision.equals(document.getCurrentRevision())) {
+                                        newRevision.setIsDeletion(true);
+                                    }
+                                    SavedRevision srev = newRevision.save(true);
+                                    Log.e(TAG, "SavedRevision=%s", srev);
+                                }
+                            }
+                        }
+                    }
+                    Log.e(TAG, "conflictsInDocumentChange=%d",conflictsInDocumentChange);
+                    if(counter.getCount() == 1)
+                        assertEquals(1, conflictsInDocumentChange);
+                    else if(counter.getCount() == 0)
+                        assertEquals(2, conflictsInDocumentChange);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error in resolving conflict", e);
+                }
+            }
+        });
+
+        UnsavedRevision rev2c = rev1Saved.createRevision();
+        properties.put("what", "rev2c");
+        rev2c.setUserProperties(properties);
+        rev2c.save(true);
+
+        // Without fix, ChangeListener.changed() method called more than twice.
+        assertEquals(0, counter.getCount());
     }
 }
