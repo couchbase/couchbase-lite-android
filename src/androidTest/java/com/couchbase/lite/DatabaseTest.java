@@ -46,6 +46,13 @@ import okhttp3.mockwebserver.MockWebServer;
 
 public class DatabaseTest extends LiteTestCaseWithDB {
 
+    private RevisionInternal putDoc(Map<String, Object> props) throws CouchbaseLiteException {
+        RevisionInternal rev = new RevisionInternal(props);
+        RevisionInternal result = database.putRevision(rev, (String) props.get("_rev"), false);
+        assertNotNull(result.getRevID());
+        return result;
+    }
+
     /**
      * in Database_Tests.m
      * - (void) test26_DocumentExpiry
@@ -205,6 +212,84 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         props2.put("exists", 3);
         SavedRevision rev2 = doc2.putProperties(props2);
         assertNotNull(rev2);
+    }
+
+    /**
+     * in DatabaseInternal_Tests.m
+     * -(void) test18_FindMissingRevisions
+     */
+    public void test18_FindMissingRevisions() throws CouchbaseLiteException {
+        RevisionList revs = new RevisionList();
+        assertEquals(0, database.getStore().findMissingRevisions(revs));
+
+        Map<String, Object> prop1 = new HashMap<String, Object>();
+        prop1.put("_id", "11111");
+        prop1.put("key", "one");
+        RevisionInternal doc1r1 = putDoc(prop1);
+
+        Map<String, Object> prop2 = new HashMap<String, Object>();
+        prop2.put("_id", "22222");
+        prop2.put("key", "two");
+        RevisionInternal doc2r1 = putDoc(prop2);
+
+        Map<String, Object> prop3 = new HashMap<String, Object>();
+        prop3.put("_id", "33333");
+        prop3.put("key", "three");
+        RevisionInternal doc3r1 = putDoc(prop3);
+
+        Map<String, Object> prop4 = new HashMap<String, Object>();
+        prop4.put("_id", "44444");
+        prop4.put("key", "four");
+        RevisionInternal doc4r1 = putDoc(prop4);
+
+        Map<String, Object> prop5 = new HashMap<String, Object>();
+        prop5.put("_id", "55555");
+        prop5.put("key", "five");
+        RevisionInternal doc5r1 = putDoc(prop5);
+
+        Map<String, Object> prop1r2 = new HashMap<String, Object>();
+        prop1r2.put("_id", "11111");
+        prop1r2.put("_rev", doc1r1.getRevID());
+        prop1r2.put("key", "one+");
+        RevisionInternal doc1r2 = putDoc(prop1r2);
+
+        Map<String, Object> prop2r2 = new HashMap<String, Object>();
+        prop2r2.put("_id", "22222");
+        prop2r2.put("_rev", doc2r1.getRevID());
+        prop2r2.put("key", "two+");
+        RevisionInternal doc2r2 = putDoc(prop2r2);
+
+        Map<String, Object> prop1r3 = new HashMap<String, Object>();
+        prop1r3.put("_id", "11111");
+        prop1r3.put("_rev", doc1r2.getRevID());
+        prop1r3.put("_deleted", true);
+        RevisionInternal doc1r3 = putDoc(prop1r3);
+
+        // Now call -findMissingRevisions:
+        RevisionInternal revToFind1 = new RevisionInternal("11111", "3-6060", false);
+        RevisionInternal revToFind2 = new RevisionInternal("22222", doc2r2.getRevID(), false);
+        RevisionInternal revToFind3 = new RevisionInternal("99999", "9-4141", false);
+        revs = new RevisionList();
+        revs.add(revToFind1);
+        revs.add(revToFind2);
+        revs.add(revToFind3);
+        assertEquals(1, database.getStore().findMissingRevisions(revs));
+        assertEquals(2, revs.size());
+        assertTrue(revs.contains(revToFind1));
+        assertFalse(revs.contains(revToFind2));
+        assertTrue(revs.contains(revToFind3));
+
+        // Check the possible ancestors:
+        AtomicBoolean haveBodies = new AtomicBoolean();
+        List<String> revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind1, 0, haveBodies);
+        assertEquals(2, revIDs.size());
+        assertTrue(revIDs.contains(doc1r2.getRevID()));
+        assertTrue(revIDs.contains(doc1r1.getRevID()));
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind1, 1, haveBodies);
+        assertEquals(1, revIDs.size());
+        assertTrue(revIDs.contains(doc1r2.getRevID()));
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind3, 0, haveBodies);
+        assertNull(revIDs);
     }
 
     /**

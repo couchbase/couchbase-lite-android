@@ -13,7 +13,12 @@
 //
 package com.couchbase.lite.syncgateway;
 
+import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.Database;
+import com.couchbase.lite.Document;
 import com.couchbase.lite.LiteTestCaseWithDB;
+import com.couchbase.lite.TransactionalTask;
+import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
 import com.couchbase.lite.auth.Authorizer;
@@ -32,10 +37,14 @@ import com.couchbase.lite.support.CouchbaseLiteHttpClientFactory;
 import com.couchbase.lite.support.PersistentCookieJar;
 import com.couchbase.lite.util.Log;
 
+import junit.framework.Assert;
+
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.Response;
 
@@ -53,10 +62,10 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
 
     @Override
     protected void setUp() throws Exception {
-        super.setUp();
-
         if (!syncgatewayTestsEnabled())
             return;
+
+        super.setUp();
     }
 
     public void test19_Auth_Failure() throws Exception {
@@ -81,6 +90,84 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
 
         // TODO:
         // OAuthAuthenticator is not implemented.
+    }
+
+    // Creates a doc with a very deep revision history and pushes the entire history to the server.
+    // Then pulls it into another database.
+    public void test25_DeepRevTree() throws Exception {
+        if (!syncgatewayTestsEnabled())
+            return;
+
+        final int kNumRevisions = 2000;
+
+        URL remoteDbURL = getRemoteTestDBURL("db");
+        assertNotNull(remoteDbURL);
+
+        Replication push = database.createPushReplication(remoteDbURL);
+
+        final Document doc = database.getDocument("deep");
+        final AtomicInteger numRevisions = new AtomicInteger(0);
+        for (; numRevisions.get() < kNumRevisions; ) {
+            database.runInTransaction(new TransactionalTask() {
+                @Override
+                public boolean run() {
+                    // Have to push the doc periodically, to make sure the server gets the whole
+                    // history, since CBL will only remember the latest 20 revisions.
+                    int batchSize = Math.min(database.getMaxRevTreeDepth() - 1, kNumRevisions - numRevisions.get());
+                    Log.i(TAG, String.format(Locale.ENGLISH, "Adding revisions %d -- %d ...", numRevisions.get() + 1, numRevisions.get() + batchSize));
+                    try {
+                        for (int i = 0; i < batchSize; ++i) {
+                            doc.update(new Document.DocumentUpdater() {
+                                @Override
+                                public boolean update(UnsavedRevision newRevision) {
+                                    Map<String, Object> properties = newRevision.getUserProperties();
+                                    properties.put("counter", numRevisions.addAndGet(1));
+                                    newRevision.setUserProperties(properties);
+                                    return true;
+                                }
+                            });
+                        }
+                    } catch (CouchbaseLiteException e) {
+                        Log.e(TAG, "Error in Document.update()", e);
+                        Assert.fail("Error in Document.update()");
+                    }
+                    return true;
+                }
+            });
+            Log.i(TAG, "Pushing ...");
+            runReplication(push);
+        }
+
+        Log.i(TAG, "\n\n$$$$$$$$$$ PULLING TO DB2 $$$$$$$$$$");
+
+        // Now create a second database and pull the remote db into it:
+        Database db2 = manager.getDatabase("prepopdb");
+        assertNotNull(db2);
+        Replication pull = db2.createPullReplication(remoteDbURL);
+        runReplication(pull);
+
+        Document doc2 = db2.getDocument("deep");
+        assertEquals(db2.getMaxRevTreeDepth(), doc2.getRevisionHistory().size());
+        assertEquals(1, doc2.getConflictingRevisions().size());
+
+        Log.i(TAG, "\n\n$$$$$$$$$$ PUSHING 1 DOC FROM DB $$$$$$$$$$");
+
+        // Now add a revision to the doc, push, and pull into db2:
+        doc.update(new Document.DocumentUpdater() {
+            @Override
+            public boolean update(UnsavedRevision newRevision) {
+                Map<String, Object> properties = newRevision.getUserProperties();
+                properties.put("counter", numRevisions.addAndGet(1));
+                newRevision.setUserProperties(properties);
+                return true;
+            }
+        });
+        runReplication(push);
+
+        Log.i(TAG, "\n\n$$$$$$$$$$ PULLING 1 DOC INTO DB2 $$$$$$$$$$");
+        runReplication(pull);
+        assertEquals(db2.getMaxRevTreeDepth(), doc2.getRevisionHistory().size());
+        assertEquals(1, doc2.getConflictingRevisions().size());
     }
 
     // #pragma mark - OPENID CONNECT:
