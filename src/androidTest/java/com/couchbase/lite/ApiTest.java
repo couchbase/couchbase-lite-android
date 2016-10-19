@@ -1215,7 +1215,7 @@ public class ApiTest extends LiteTestCaseWithDB {
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/220
      */
-    public void failingTestMultiDocumentUpdateInTransaction() throws Exception {
+    public void testMultiDocumentUpdateInTransaction() throws Exception {
 
         final int numberOfDocuments = 10;
         final int numberOfUpdates = 10;

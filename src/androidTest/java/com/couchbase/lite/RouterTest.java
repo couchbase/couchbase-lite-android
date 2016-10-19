@@ -686,7 +686,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertNotNull(result.get(1).get("rev"));
     }
 
-    public void failingTestPostBulkDocsWithConflict() {
+    public void testPostBulkDocsWithConflict() {
         send("PUT", "/db", Status.CREATED, null);
 
         Map<String, Object> bulk_doc1 = new HashMap<String, Object>();

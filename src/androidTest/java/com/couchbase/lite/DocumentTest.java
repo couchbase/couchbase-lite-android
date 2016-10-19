@@ -167,8 +167,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
         assertTrue(docFetched.getCurrentRevision().isGone());
     }
 
-    public void failingTestGetDocumentWithLargeJSON() {
-
+    public void testGetDocumentWithLargeJSON() {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", "laaargeJSON");
         char[] chars = new char[2500000];//~5MB
@@ -200,7 +199,6 @@ public class DocumentTest extends LiteTestCaseWithDB {
                 "}";
         Map map = (Map) Manager.getObjectMapper().readValue(jsonString, Object.class);
         Document doc = createDocumentWithProperties(database, map);
-
         boolean firstLevelImmutable = false;
         Map<String, Object> props = doc.getProperties();
         try {
