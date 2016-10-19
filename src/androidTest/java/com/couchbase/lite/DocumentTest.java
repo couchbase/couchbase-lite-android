@@ -167,8 +167,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
         assertTrue(docFetched.getCurrentRevision().isGone());
     }
 
-    public void failingTestGetDocumentWithLargeJSON() {
-
+    public void testGetDocumentWithLargeJSON() {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", "laaargeJSON");
         char[] chars = new char[2500000];//~5MB
@@ -200,7 +199,6 @@ public class DocumentTest extends LiteTestCaseWithDB {
                 "}";
         Map map = (Map) Manager.getObjectMapper().readValue(jsonString, Object.class);
         Document doc = createDocumentWithProperties(database, map);
-
         boolean firstLevelImmutable = false;
         Map<String, Object> props = doc.getProperties();
         try {
@@ -229,16 +227,19 @@ public class DocumentTest extends LiteTestCaseWithDB {
         assertTrue(thirdLevelImmutable);
     }
 
+    /**
+     * NOTE: ** Might Not Be Fixed **
+     *       Immutability of nested dictionaries might cause performance issue.
+     *       It is not sure if it worth to fix this.
+     */
     public void failingTestProvidedMapChangesAreSafe() throws Exception {
         Map<String, Object> originalProps = new HashMap<String, Object>();
         Document doc = createDocumentWithProperties(database, originalProps);
-
         Map<String, Object> nestedProps = new HashMap<String, Object>();
         nestedProps.put("version", "original");
         UnsavedRevision rev = doc.createRevision();
         rev.getProperties().put("nested", nestedProps);
         rev.save();
-
         nestedProps.put("version", "changed");
         assertEquals("original", ((Map) doc.getProperty("nested")).get("version"));
     }

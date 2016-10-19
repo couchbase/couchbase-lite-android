@@ -1054,7 +1054,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
      * <p/>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/77
      */
-    public void failingTestRemoteConflictResolution() throws Exception {
+    public void testRemoteConflictResolution() throws Exception {
 
         // Create a document with two conflicting edits.
         Document doc = database.createDocument();
@@ -3924,7 +3924,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
      * <p/>
      * Makes the replicator stop, even if it is continuous, when it receives a permanent-type error
      */
-    public void failingTestStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception {
+    public void testStopReplicatorWhenRetryingReplicationWithPermanentError() throws Exception {
         final int TEMP_RETRY_DELAY_MS = RemoteRequestRetry.RETRY_DELAY_MS;
         final int TEMP_RETRY_DELAY_SECONDS = ReplicationInternal.RETRY_DELAY_SECONDS;
         RemoteRequestRetry.RETRY_DELAY_MS = 5;       // speed up test execution (inner loop retry delay)
