@@ -227,16 +227,19 @@ public class DocumentTest extends LiteTestCaseWithDB {
         assertTrue(thirdLevelImmutable);
     }
 
+    /**
+     * NOTE: ** Might Not Be Fixed **
+     *       Immutability of nested dictionaries might cause performance issue.
+     *       It is not sure if it worth to fix this.
+     */
     public void failingTestProvidedMapChangesAreSafe() throws Exception {
         Map<String, Object> originalProps = new HashMap<String, Object>();
         Document doc = createDocumentWithProperties(database, originalProps);
-
         Map<String, Object> nestedProps = new HashMap<String, Object>();
         nestedProps.put("version", "original");
         UnsavedRevision rev = doc.createRevision();
         rev.getProperties().put("nested", nestedProps);
         rev.save();
-
         nestedProps.put("version", "changed");
         assertEquals("original", ((Map) doc.getProperty("nested")).get("version"));
     }
