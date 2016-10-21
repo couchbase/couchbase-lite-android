@@ -183,9 +183,9 @@ public class DocumentTest extends LiteTestCaseWithDB {
     }
 
     /**
-     * NOTE: ** Might Not Be Fixed **
-     *       Immutability of nested dictionaries might cause performance issue.
-     *       It is not sure if it worth to fix this.
+     * Note: If nested dictionary or array is immutable, user needs to deep copy which is not convenient.
+     *       For Java, returning Map object is user friendly.
+     *       We will not fix this issue.
      */
     public void failingTestDocumentPropertiesAreImmutable() throws Exception {
         String jsonString = "{\n" +
