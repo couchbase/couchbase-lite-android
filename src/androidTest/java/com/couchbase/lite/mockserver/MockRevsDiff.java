@@ -54,7 +54,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 public class MockRevsDiff implements SmartMockResponse {
 
-    private boolean isSticky;
+    private boolean sticky;
 
     @Override
     public MockResponse generateMockResponse(RecordedRequest request) {
@@ -94,7 +94,7 @@ public class MockRevsDiff implements SmartMockResponse {
 
     @Override
     public boolean isSticky() {
-        return this.isSticky;
+        return this.sticky;
     }
 
     @Override
@@ -102,7 +102,7 @@ public class MockRevsDiff implements SmartMockResponse {
         return 0;
     }
 
-    public void setSticky(boolean isSticky) {
-        this.isSticky = isSticky;
+    public void setSticky(boolean sticky) {
+        this.sticky = sticky;
     }
 }

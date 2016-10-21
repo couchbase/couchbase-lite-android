@@ -47,11 +47,16 @@ public class MockPreloadedPullTarget {
     }
 
     protected void addMockDocuments(List<MockDocumentGet.MockDocument> mockDocs) {
-        // doc responses
+        // for each doc responses
         for (MockDocumentGet.MockDocument mockDoc : mockDocs) {
             MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc);
             dispatcher.enqueueResponse(mockDoc.getDocPathRegex(), mockDocumentGet.generateMockResponse());
         }
+
+        // for _all_docs
+        MockDocumentAllDocs allDocs = new MockDocumentAllDocs(mockDocs);
+        allDocs.setSticky(true);
+        dispatcher.enqueueResponse(MockHelper.PATH_REGEX_ALL_DOCS, allDocs);
     }
 
     protected void addChangesResponse(List<MockDocumentGet.MockDocument> mockDocs) {

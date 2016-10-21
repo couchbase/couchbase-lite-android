@@ -244,7 +244,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
     }
 
 
-    public void failingTestMockContinuousPullCouchDb() throws Exception {
+    public void testMockContinuousPullCouchDb() throws Exception {
         boolean shutdownMockWebserver = true;
         mockContinuousPull(shutdownMockWebserver, MockDispatcher.ServerType.COUCHDB);
     }
@@ -1364,7 +1364,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
      *
      * @throws Exception
      */
-    public void failingTestMockPullerRestart() throws Exception {
+    public void testMockPullerRestart() throws Exception {
 
         final int numMockRemoteDocs = 20;  // must be multiple of 10!
         final AtomicInteger numDocsPulledLocally = new AtomicInteger(0);
@@ -4015,7 +4015,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
      *
      * https://github.com/couchbase/couchbase-lite-java-core/issues/356
      */
-    public void failingTestReplicationRestartPreservesValues() throws Exception {
+    public void testReplicationRestartPreservesValues() throws Exception {
 
         // make sure we are starting empty
         assertEquals(0, database.getLastSequenceNumber());
@@ -4043,10 +4043,12 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
 
             // _revs_diff response -- everything missing
             MockRevsDiff mockRevsDiff = new MockRevsDiff();
+            mockRevsDiff.setSticky(true);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_REVS_DIFF, mockRevsDiff);
 
             // _bulk_docs response -- everything stored
             MockBulkDocs mockBulkDocs = new MockBulkDocs();
+            mockBulkDocs.setSticky(true);
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_DOCS, mockBulkDocs);
 
             // create continuos replication

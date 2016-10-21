@@ -14,6 +14,13 @@
 package com.couchbase.lite.mockserver;
 
 
+import com.couchbase.lite.Manager;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 
@@ -21,10 +28,85 @@ import okhttp3.mockwebserver.RecordedRequest;
  * Created by hideki on 2/11/16.
  */
 public class MockDocumentAllDocs implements SmartMockResponse {
+
+    /* http://docs.couchdb.org/en/2.0.0/api/database/bulk-api.html
+
+{
+  "offset": 0,
+  "rows": [
+    {
+      "id": "16e458537602f5ef2a710089dffd9453",
+      "key": "16e458537602f5ef2a710089dffd9453",
+      "value": {
+        "rev": "1-967a00dff5e02add41819138abb3284d"
+      }
+    },
+    {
+      "id": "a4c51cdfa2069f3e905c431114001aff",
+      "key": "a4c51cdfa2069f3e905c431114001aff",
+      "value": {
+        "rev": "1-967a00dff5e02add41819138abb3284d"
+      }
+    },
+    {
+      "id": "a4c51cdfa2069f3e905c4311140034aa",
+      "key": "a4c51cdfa2069f3e905c4311140034aa",
+      "value": {
+        "rev": "5-6182c9c954200ab5e3c6bd5e76a1549f"
+      }
+    },
+    {
+      "id": "a4c51cdfa2069f3e905c431114003597",
+      "key": "a4c51cdfa2069f3e905c431114003597",
+      "value": {
+        "rev": "2-7051cbe5c8faecd085a3fa619e6e6337"
+      }
+    },
+    {
+      "id": "f4ca7773ddea715afebc4b4b15d4f0b3",
+      "key": "f4ca7773ddea715afebc4b4b15d4f0b3",
+      "value": {
+        "rev": "2-7051cbe5c8faecd085a3fa619e6e6337"
+      }
+    }
+  ],
+  "total_rows": 5
+}
+     */
+
+    boolean sticky = false;
+
+    List<MockDocumentGet.MockDocument> mockDocs = new ArrayList<MockDocumentGet.MockDocument>();
+
+    public MockDocumentAllDocs(List<MockDocumentGet.MockDocument> mockDocs) {
+        this.mockDocs.addAll(mockDocs);
+    }
+
+    public MockDocumentAllDocs() {
+    }
+
     public MockResponse generateMockResponse(RecordedRequest request) {
+        Map<String, Object> respDict = new HashMap<String, Object>();
+        respDict.put("offset", 0);
+        respDict.put("total_rows", mockDocs.size());
+        List<Object> rows = new ArrayList<Object>();
+        for(MockDocumentGet.MockDocument mockDoc: mockDocs){
+            Map<String, Object> doc = new HashMap<String, Object>();
+            doc.put("id", mockDoc.getDocId());
+            doc.put("key", mockDoc.getDocId());
+            Map<String, Object> value = new HashMap<String, Object>();
+            value.put("rev", mockDoc.getDocRev());
+            doc.put("value", value);
+            if(false){
+                doc.put("doc", mockDoc.getJsonMap());
+            }
+            rows.add(doc);
+        }
+        respDict.put("rows", rows);
+
         try {
             MockResponse mockResponse = new MockResponse();
-            mockResponse.setBody("{\"offset\" : 0, \"rows\" : [],\"total_rows\" : 0}");
+            mockResponse.setBody(Manager.getObjectMapper().writeValueAsString(respDict));
             mockResponse.setStatus("HTTP/1.1 200 OK");
             return mockResponse;
         } catch (Exception e) {
@@ -35,7 +117,11 @@ public class MockDocumentAllDocs implements SmartMockResponse {
 
     @Override
     public boolean isSticky() {
-        return false;
+        return sticky;
+    }
+
+    public void setSticky(boolean sticky){
+        this.sticky = sticky;
     }
 
     @Override
