@@ -182,6 +182,11 @@ public class DocumentTest extends LiteTestCaseWithDB {
         assertEquals(fetchedProps.get("foo"), new String(chars));
     }
 
+    /**
+     * NOTE: ** Might Not Be Fixed **
+     *       Immutability of nested dictionaries might cause performance issue.
+     *       It is not sure if it worth to fix this.
+     */
     public void failingTestDocumentPropertiesAreImmutable() throws Exception {
         String jsonString = "{\n" +
                 "    \"name\":\"praying mantis\",\n" +
@@ -227,12 +232,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
         assertTrue(thirdLevelImmutable);
     }
 
-    /**
-     * NOTE: ** Might Not Be Fixed **
-     *       Immutability of nested dictionaries might cause performance issue.
-     *       It is not sure if it worth to fix this.
-     */
-    public void failingTestProvidedMapChangesAreSafe() throws Exception {
+    public void testProvidedMapChangesAreSafe() throws Exception {
         Map<String, Object> originalProps = new HashMap<String, Object>();
         Document doc = createDocumentWithProperties(database, originalProps);
         Map<String, Object> nestedProps = new HashMap<String, Object>();
