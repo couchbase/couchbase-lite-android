@@ -102,7 +102,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
      * Put replication online
      * Make sure doc is pulled
      */
-    public void failingTestGoOnlinePuller() throws Exception {
+    public void testGoOnlinePuller() throws Exception {
         Log.d(Log.TAG, "testGoOnlinePuller");
         // create mock server
         MockWebServer server = new MockWebServer();
@@ -153,6 +153,14 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             dispatcher.takeRequestBlocking(MockHelper.PATH_REGEX_CHANGES);
 
             putReplicationOffline(pullReplication);
+
+            // NOTE: give 1 sec to settle. I believe bug in this test, mock server, or replicator
+            //       code. But currently hard to find out.
+            //       https://github.com/couchbase/couchbase-lite-java-core/issues/1494
+            try {
+                Thread.sleep(1000); // 1 sec
+            } catch (Exception e) {
+            }
 
             // clear out existing queued mock responses to make room for new ones
             dispatcher.clearQueuedResponse(MockHelper.PATH_REGEX_CHANGES);
