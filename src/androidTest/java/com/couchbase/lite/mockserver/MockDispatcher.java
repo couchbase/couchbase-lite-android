@@ -90,6 +90,12 @@ public class MockDispatcher extends Dispatcher {
 
     Object lockResponseQueue = new Object();
 
+    private boolean isResponseQueueEmpty(BlockingQueue queue) {
+        synchronized (lockResponseQueue) {
+            return queue.isEmpty();
+        }
+    }
+
     @Override
     public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
         for (String pathRegex : queueMap.keySet()) {
@@ -100,7 +106,7 @@ public class MockDispatcher extends Dispatcher {
                     String msg = String.format(Locale.ENGLISH, "No queue found for pathRegex: %s", pathRegex);
                     throw new RuntimeException(msg);
                 }
-                if (!responseQueue.isEmpty()) {
+                if (!isResponseQueueEmpty(responseQueue)) {
                     SmartMockResponse smartMockResponse = null;
                     synchronized (lockResponseQueue) {
                         smartMockResponse = responseQueue.take(); // as checked isEmpty() before, chance of blocking is low....
