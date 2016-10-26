@@ -16,6 +16,7 @@ package com.couchbase.lite.util;
 
 import com.couchbase.lite.LiteTestCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,13 +41,13 @@ public class DeepCloneTest extends LiteTestCase {
         map1.put("list", list);
         Map<String, Object> deepMap1 = DeepClone.deepClone(map1);
         ObjectMapper mapper = new ObjectMapper();
-        String str1 = mapper.writeValueAsString(map1);
-        String str2 = mapper.writeValueAsString(deepMap1);
+        String str1 = mapper.writer(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsString(map1);
+        String str2 = mapper.writer(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsString(deepMap1);
         assertEquals(str1, str2);
         assertTrue(str1.equals(str2));
         ((Map) deepMap1.get("map")).put("extra", "hey!");
-        str1 = mapper.writeValueAsString(map1);
-        str2 = mapper.writeValueAsString(deepMap1);
+        str1 = mapper.writer(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsString(map1);
+        str2 = mapper.writer(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsString(deepMap1);
         assertFalse(str1.equals(str2));
     }
 }
