@@ -27,13 +27,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class DocumentTest extends LiteTestCaseWithDB {
 
     public void testNewDocumentHasCurrentRevision() throws CouchbaseLiteException {
-
         Document document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "foo");
@@ -75,11 +75,9 @@ public class DocumentTest extends LiteTestCaseWithDB {
             QueryRow row = it.next();
             Assert.assertFalse(row.getDocument().getId().equals(docId));
         }
-
     }
 
     public void testDeleteDocument() throws CouchbaseLiteException {
-
         Document document = database.createDocument();
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "foo");
@@ -100,7 +98,6 @@ public class DocumentTest extends LiteTestCaseWithDB {
             QueryRow row = it.next();
             Assert.assertFalse(row.getDocument().getId().equals(docId));
         }
-
     }
 
     /**
@@ -170,7 +167,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
     public void testGetDocumentWithLargeJSON() {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", "laaargeJSON");
-        char[] chars = new char[2500000];//~5MB
+        char[] chars = new char[3 * 1024 * 10243]; // 3MB
         Arrays.fill(chars, 'a');
         props.put("foo", new String(chars));
 
@@ -695,7 +692,7 @@ public class DocumentTest extends LiteTestCaseWithDB {
     }
 
     public void testResolveConflictInChangeListener() throws Exception {
-        Map<String, Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new TreeMap<String, Object>();
         properties.put("foo", "bar");
 
         Document doc = database.createDocument();

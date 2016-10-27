@@ -669,7 +669,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
     }
 
     public void testAndroid2MLimit() throws Exception {
-        char[] chars = new char[3 * 1024 * 1024];
+        char[] chars = new char[3 * 1024 * 1024]; // 3mb
         Arrays.fill(chars, 'a');
         final String content = new String(chars);
 
