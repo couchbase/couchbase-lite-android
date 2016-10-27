@@ -167,16 +167,17 @@ public class DocumentTest extends LiteTestCaseWithDB {
     public void testGetDocumentWithLargeJSON() {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", "laaargeJSON");
-        char[] chars = new char[3 * 1024 * 10243]; // 3MB
+        char[] chars = new char[3 * 1024 * 1024]; // 3MB
         Arrays.fill(chars, 'a');
-        props.put("foo", new String(chars));
+        String str = new String(chars);
+        props.put("foo", str);
 
         Document doc = createDocumentWithProperties(database, props);
         assertNotNull(doc);
 
         Document docFetched = database.getDocument(doc.getId());
         Map<String, Object> fetchedProps = docFetched.getCurrentRevision().getProperties();
-        assertEquals(fetchedProps.get("foo"), new String(chars));
+        assertEquals(fetchedProps.get("foo"), str);
     }
 
     /**
