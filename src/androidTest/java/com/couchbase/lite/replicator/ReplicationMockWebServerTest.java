@@ -273,7 +273,6 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
     private Map<String, Object> mockSinglePull(boolean shutdownMockWebserver,
                                                MockDispatcher.ServerType serverType,
                                                boolean addAttachments) throws Exception {
-
         // create mockwebserver and custom dispatcher
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
@@ -4530,7 +4529,6 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
      * - Verify that it still has attachments
      */
     public void testAttachmentsDeletedOnPull() throws Exception {
-
         String doc1Id = "doc1";
         int doc1Rev2Generation = 2;
         String doc1Rev2Digest = "b000";

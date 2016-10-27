@@ -577,49 +577,35 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
                     jsonStream.close();
                     UnsavedRevision rev = null;
 
-                    for (int i = 0; i < 20; i++) {
+                    for (int i = 0; i < 5; i++) {
                         InputStream attachmentStream1 = getAsset("attachment.png");
                         Log.e(Database.TAG, "TEST ITERATION " + i);
                         doc = database.getDocument(id);//not required
                         rev = doc.createRevision();
-                        rev.setAttachment("attachment " + i * 5, "image/png", attachmentStream1);
+                        rev.setAttachment("attachment " + i * 3, "image/png", attachmentStream1);
                         rev.save();
                         attachmentStream1.close();
 
                         InputStream attachmentStream2 = getAsset("attachment.png");
                         doc = database.getDocument(id);//not required
                         rev = doc.createRevision();
-                        rev.setAttachment("attachment " + i * 5 + 1, "image/png", attachmentStream2);
+                        rev.setAttachment("attachment " + i * 3 + 1, "image/png", attachmentStream2);
                         rev.save();
                         attachmentStream2.close();
 
                         InputStream attachmentStream3 = getAsset("attachment.png");
                         doc = database.getDocument(id);//not required
                         rev = doc.createRevision();
-                        rev.setAttachment("attachment " + i * 5 + 2, "image/png", attachmentStream3);
+                        rev.setAttachment("attachment " + i * 3 + 2, "image/png", attachmentStream3);
                         rev.save();
                         attachmentStream3.close();
-
-                        InputStream attachmentStream4 = getAsset("attachment.png");
-                        doc = database.getDocument(id);//not required
-                        rev = doc.createRevision();
-                        rev.setAttachment("attachment " + i * 5 + 3, "image/png", attachmentStream4);
-                        rev.save();
-                        attachmentStream4.close();
-
-                        InputStream attachmentStream5 = getAsset("attachment.png");
-                        doc = database.getDocument(id);//not required
-                        rev = doc.createRevision();
-                        rev.setAttachment("attachment " + i * 5 + 4, "image/png", attachmentStream5);
-                        rev.save();
-                        attachmentStream5.close();
 
                         Map<String, Object> curProperties;
                         doc = database.getDocument(id);//not required
                         curProperties = doc.getProperties();
                         docProperties = new HashMap<String, Object>();
                         docProperties.putAll(curProperties);
-                        docProperties.put("Iteration", (i + 1) * 5);
+                        docProperties.put("Iteration", (i + 1) * 3);
                         doc.putProperties(docProperties);
                     }
 
@@ -629,7 +615,7 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
                     assertEquals(22, curProperties.size());
                     Map<String, Object> attachments = (Map<String, Object>) doc.getCurrentRevision().getProperty("_attachments");
                     assertNotNull(attachments);
-                    assertEquals(100, attachments.size());
+                    assertEquals(15, attachments.size());
                 } catch (Exception e) {
                     Log.e(Database.TAG, "Error deserializing properties from JSON", e);
                     return false;

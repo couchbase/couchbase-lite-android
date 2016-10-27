@@ -28,7 +28,9 @@ import java.util.SortedMap;
 public class RevisionUtilsTest extends LiteTestCase {
     public static final String TAG = "RevisionUtilsTest";
 
-    public void testAsCanonicalJSON() {
+    // RevisionUtils.asCanonicalJSON() does not gurantee key order now.
+    // This is covered by DeepClone now. This is performance purpose.
+    public void failingTestAsCanonicalJSON() {
         Map<String, Object> src = new HashMap<String, Object>();
         src.put("foo", "bar");
         src.put("what", "rev2a");
