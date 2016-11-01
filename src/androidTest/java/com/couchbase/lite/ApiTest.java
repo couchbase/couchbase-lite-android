@@ -1315,4 +1315,57 @@ public class ApiTest extends LiteTestCaseWithDB {
             assertEquals(MAX_REV_TREE_DEPTH, row.getDocument().getRevisionHistory().size());
         }
     }
+
+    public void testWinningRevByDeleteDocument() throws Exception {
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("testName", "testWinningRevByDeleteDocument");
+        props.put("tag", 1);
+
+        // 1st revision
+        Document doc = database.createDocument();
+        UnsavedRevision newRev = doc.createRevision();
+        newRev.setUserProperties(props);
+        SavedRevision rev1 = newRev.save();
+
+        assertNotNull(rev1);
+        assertTrue(rev1.getId().startsWith("1-"));
+        assertEquals(1, rev1.getSequence());
+
+        // 2nd revision
+        props.put("tag", 2);
+        newRev = rev1.createRevision();
+        newRev.setUserProperties(props);
+        SavedRevision rev2 = newRev.save();
+
+        assertNotNull(rev2);
+        assertTrue(rev2.getId().startsWith("2-"));
+        assertEquals(2, rev2.getSequence());
+
+        // 3rd revision
+        props.put("tag", 3);
+        newRev = rev2.createRevision();
+        newRev.setUserProperties(props);
+        SavedRevision rev3 = newRev.save();
+
+        assertNotNull(rev3);
+        assertTrue(rev3.getId().startsWith("3-"));
+        assertEquals(3, rev3.getSequence());
+
+        // 4th revision with deleted
+        SavedRevision rev4 = doc.update(new Document.DocumentUpdater() {
+            @Override
+            public boolean update(UnsavedRevision newRevision) {
+                newRevision.setIsDeletion(true);
+                return true;
+            }
+        });
+
+        assertNotNull(rev4);
+        assertTrue(rev4.getId().startsWith("4-"));
+        assertEquals(4, rev4.getSequence());
+        assertTrue(rev4.isDeletion());
+
+        assertTrue(doc.isDeleted());
+        assertNull(doc.getCurrentRevision());
+    }
 }
