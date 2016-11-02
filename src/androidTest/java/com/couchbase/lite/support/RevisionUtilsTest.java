@@ -30,7 +30,7 @@ public class RevisionUtilsTest extends LiteTestCase {
 
     // RevisionUtils.asCanonicalJSON() does not gurantee key order now.
     // This is covered by DeepClone now. This is performance purpose.
-    public void failingTestAsCanonicalJSON() {
+    public void testAsCanonicalJSON() {
         Map<String, Object> src = new HashMap<String, Object>();
         src.put("foo", "bar");
         src.put("what", "rev2a");
