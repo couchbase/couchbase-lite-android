@@ -4083,9 +4083,6 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             requestHeaders.put("foo", "bar");
             pusher.setHeaders(requestHeaders);
 
-            // create target
-            pusher.setCreateTarget(true);
-
             // start the continuous replication
             CountDownLatch replicationIdleSignal = new CountDownLatch(1);
             ReplicationIdleObserver replicationIdleObserver = new ReplicationIdleObserver(replicationIdleSignal);
