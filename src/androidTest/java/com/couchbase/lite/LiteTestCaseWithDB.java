@@ -158,6 +158,10 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         return Boolean.parseBoolean(System.getProperty("syncgatewayTestsEnabled"));
     }
 
+    protected static boolean couchdbTestsEnabled() {
+        return Boolean.parseBoolean(System.getProperty("couchdbTestsEnabled"));
+    }
+
     protected static boolean multithreadsTestsEnabled() {
         return Boolean.parseBoolean(System.getProperty("multithreadsTestsEnabled"));
     }
@@ -298,6 +302,10 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected URL getSyncGatewayURL() throws MalformedURLException {
         return new URL(System.getProperty("syncgatewayUrl"));
+    }
+
+    protected URL getCouchDBURL() throws MalformedURLException {
+        return new URL(System.getProperty("couchdbUrl"));
     }
 
     protected String getSyncGatewayHost() throws MalformedURLException {
