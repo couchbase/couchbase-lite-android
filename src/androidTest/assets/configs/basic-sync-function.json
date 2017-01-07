@@ -1,0 +1,28 @@
+{
+  "log": ["*"],
+  "databases": {
+    "db": {
+      "server": "walrus:",
+      "users": { "GUEST": { "disabled": false, "admin_channels": ["*"] } },
+      "sync": 
+  	`
+      function(doc, oldDoc) {
+        if (doc.type == "reject_me") {
+	      throw({forbidden : "Rejected document"})
+        } else if (doc.type == "bar") {
+	  // add "bar" docs to the "important" channel
+            channel("important");
+	} else if (doc.type == "secret") {
+          if (!doc.owner) {
+            throw({forbidden : "Secret documents must have an owner field"})
+          }
+	} else {
+	    // all other documents just go into all channels listed in the doc["channels"] field
+	    channel(doc.channels)
+	}
+      }
+    `
+    }
+  }
+}
+
