@@ -2246,6 +2246,58 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
         }
     }
 
+    //
+    // Channel info is discarded by restarting the replicator
+    // https://github.com/couchbase/couchbase-lite-android/issues/887
+    //
+    public void testRestartWithChannels() throws Exception {
+        // create mockwebserver and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
+
+            // checkpoint PUT or GET response (sticky)
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // _changes response
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // start mock server
+            server.start();
+
+            // run pull replication
+            Replication pullReplication = database.createPullReplication(server.url("/db").url());
+            pullReplication.setChannels(Arrays.asList("foo", "bar"));
+
+            // 0: initial, 1: restarted
+            for(int i = 0; i < 2; i++) {
+                // run one shot pull replication
+                runReplication(pullReplication);
+
+                // make assertions about outgoing requests from replicator -> mock
+                RecordedRequest getChangesFeedRequest = dispatcher.takeRequest(MockHelper.PATH_REGEX_CHANGES);
+                assertTrue(getChangesFeedRequest.getMethod().equals("POST"));
+                String body = getChangesFeedRequest.getUtf8Body();
+                Map<String, Object> jsonMap = Manager.getObjectMapper().readValue(body, Map.class);
+                assertTrue(jsonMap.containsKey("filter"));
+                String filter = (String) jsonMap.get("filter");
+                assertEquals("sync_gateway/bychannel", filter);
+                assertTrue(jsonMap.containsKey("channels"));
+                String channels = (String) jsonMap.get("channels");
+                assertTrue(channels.contains("foo"));
+                assertTrue(channels.contains("bar"));
+            }
+
+
+        } finally {
+            assertTrue(MockHelper.shutdown(server, dispatcher));
+        }
+    }
+
     /**
      * - Start continuous pull
      * - Mockwebserver responds that there are no changes
