@@ -234,85 +234,93 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
      */
     public void testRetryQueueDeadlock() throws Exception {
         // lower retry to speed up test
-        com.couchbase.lite.replicator.RemoteRequestRetry.RETRY_DELAY_MS = 5;
-
-        PersistentCookieJar cookieStore = database.getPersistentCookieStore();
-        CouchbaseLiteHttpClientFactory factory = new CouchbaseLiteHttpClientFactory(cookieStore);
-
-        // create mockwebserver and custom dispatcher
-        MockDispatcher dispatcher = new MockDispatcher();
-        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
-        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        int ORG_RETRY_DELAY_MS = com.couchbase.lite.replicator.RemoteRequestRetry.RETRY_DELAY_MS;
         try {
+            com.couchbase.lite.replicator.RemoteRequestRetry.RETRY_DELAY_MS = 5;
 
-            // respond with 503 error for all requests
-            MockResponse response = new MockResponse().setResponseCode(503);
-            WrappedSmartMockResponse wrapped = new WrappedSmartMockResponse(response);
-            wrapped.setDelayMs(5);
-            wrapped.setSticky(true);
-            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, wrapped);
+            PersistentCookieJar cookieStore = database.getPersistentCookieStore();
+            CouchbaseLiteHttpClientFactory factory = new CouchbaseLiteHttpClientFactory(cookieStore);
 
-            server.start();
+            // create mockwebserver and custom dispatcher
+            MockDispatcher dispatcher = new MockDispatcher();
+            MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+            try {
+                int numRequests = 10;
 
-            URL url = new URL(String.format(Locale.ENGLISH, "%s/%s", server.url("/db").url(), "_local"));
+                // NOTE: single MockResponse with multiple threading cause threading issue.
+                //       instead of using setSticky(true), create multiple MockResponse instance for request.
 
-            Map<String, Object> requestBody = new HashMap<String, Object>();
-            requestBody.put("foo", "bar");
+                // respond with 503 error for all requests
+                for (int i = 0; i < numRequests * 5; i++) {
+                    MockResponse response = new MockResponse().setResponseCode(503);
+                    WrappedSmartMockResponse wrapped = new WrappedSmartMockResponse(response);
+                    wrapped.setDelayMs(5);
+                    dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, wrapped);
+                }
 
-            Map<String, Object> requestHeaders = new HashMap<String, Object>();
+                server.start();
 
-            int numRequests = 10;
+                URL url = new URL(String.format(Locale.ENGLISH, "%s/%s", server.url("/db").url(), "_local"));
 
-            final CountDownLatch received503Error = new CountDownLatch(numRequests);
+                Map<String, Object> requestBody = new HashMap<String, Object>();
+                requestBody.put("foo", "bar");
 
-            RemoteRequestCompletion completionBlock = new RemoteRequestCompletion() {
-                @Override
-                public void onCompletion(Response httpResponse, Object result, Throwable e) {
-                    if (e instanceof RemoteRequestResponseException) {
-                        RemoteRequestResponseException htre = (RemoteRequestResponseException) e;
-                        if (htre.getCode() == 503) {
-                            received503Error.countDown();
+                Map<String, Object> requestHeaders = new HashMap<String, Object>();
+
+                final CountDownLatch received503Error = new CountDownLatch(numRequests);
+
+                RemoteRequestCompletion completionBlock = new RemoteRequestCompletion() {
+                    @Override
+                    public void onCompletion(Response httpResponse, Object result, Throwable e) {
+                        if (e instanceof RemoteRequestResponseException) {
+                            RemoteRequestResponseException htre = (RemoteRequestResponseException) e;
+                            if (htre.getCode() == 503) {
+                                received503Error.countDown();
+                            }
                         }
                     }
+                };
+
+                ScheduledExecutorService requestExecutorService =
+                        Executors.newScheduledThreadPool(5);
+                ScheduledExecutorService workExecutorService =
+                        Executors.newSingleThreadScheduledExecutor();
+
+                List<Future> requestFutures = new ArrayList<Future>();
+                for (int i = 0; i < numRequests; i++) {
+                    RemoteRequestRetry request = new RemoteRequestRetry(
+                            RemoteRequestRetry.RemoteRequestType.REMOTE_REQUEST,
+                            requestExecutorService,
+                            workExecutorService,
+                            factory,
+                            "GET",
+                            url,
+                            true,
+                            true,
+                            requestBody,
+                            null,
+                            database,
+                            requestHeaders,
+                            completionBlock);
+                    Future future = request.submit();
+                    requestFutures.add(future);
                 }
-            };
 
-            ScheduledExecutorService requestExecutorService =
-                    Executors.newScheduledThreadPool(5);
-            ScheduledExecutorService workExecutorService =
-                    Executors.newSingleThreadScheduledExecutor();
+                for (Future future : requestFutures)
+                    future.get();
 
-            List<Future> requestFutures = new ArrayList<Future>();
-            for (int i = 0; i < numRequests; i++) {
-                RemoteRequestRetry request = new RemoteRequestRetry(
-                        RemoteRequestRetry.RemoteRequestType.REMOTE_REQUEST,
-                        requestExecutorService,
-                        workExecutorService,
-                        factory,
-                        "GET",
-                        url,
-                        true,
-                        true,
-                        requestBody,
-                        null,
-                        database,
-                        requestHeaders,
-                        completionBlock);
-                Future future = request.submit();
-                requestFutures.add(future);
+                boolean success = received503Error.await(120, TimeUnit.SECONDS);
+                assertTrue(success);
+
+                // Note: ExecutorService should be called shutdown()
+                Utils.shutdownAndAwaitTermination(requestExecutorService);
+                Utils.shutdownAndAwaitTermination(workExecutorService);
+            } finally {
+                assertTrue(MockHelper.shutdown(server, dispatcher));
             }
-
-            for (Future future : requestFutures)
-                future.get();
-
-            boolean success = received503Error.await(120, TimeUnit.SECONDS);
-            assertTrue(success);
-
-            // Note: ExecutorService should be called shutdown()
-            Utils.shutdownAndAwaitTermination(requestExecutorService);
-            Utils.shutdownAndAwaitTermination(workExecutorService);
         } finally {
-            assertTrue(MockHelper.shutdown(server, dispatcher));
+            com.couchbase.lite.replicator.RemoteRequestRetry.RETRY_DELAY_MS = ORG_RETRY_DELAY_MS;
         }
     }
 
