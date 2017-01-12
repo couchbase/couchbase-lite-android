@@ -669,9 +669,17 @@ public class DatabaseTest extends LiteTestCaseWithDB {
     }
 
     public void testAndroid2MLimit() throws Exception {
-        char[] chars = new char[3 * 1024 * 1024]; // 3mb
-        Arrays.fill(chars, 'a');
-        final String content = new String(chars);
+        final String content;
+        {
+            // NOTE: Java internally uses Unicode, following characters consumes 2.1M * 2Bytes -> 4.2MB in memory.
+            char[] chars = new char[2 * 1024 * 1024 + 10 * 1024]; // 2.1K characters
+            Arrays.fill(chars, 'a');
+            // NOTE: public String(char value[]) copies characters.
+            // http://hg.openjdk.java.net/jdk7u/jdk7u6/jdk/file/8c2c5d63a17e/src/share/classes/java/lang/String.java#l168
+            content = new String(chars);
+            // make GC free data
+            chars = null;
+        }
 
         // Add a 2M+ document into the database:
         Map<String, Object> props = new HashMap<String, Object>();
