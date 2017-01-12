@@ -13,9 +13,24 @@
  */
 package com.couchbase.lite;
 
+import com.couchbase.lite.auth.Authenticator;
+import com.couchbase.lite.auth.AuthenticatorFactory;
+import com.couchbase.lite.mockserver.MockBulkDocs;
+import com.couchbase.lite.mockserver.MockChangesFeed;
 import com.couchbase.lite.mockserver.MockCheckpointGet;
+import com.couchbase.lite.mockserver.MockCheckpointPut;
+import com.couchbase.lite.mockserver.MockCreateDB;
 import com.couchbase.lite.mockserver.MockDispatcher;
+import com.couchbase.lite.mockserver.MockDocumentAllDocs;
+import com.couchbase.lite.mockserver.MockDocumentBulkGet;
+import com.couchbase.lite.mockserver.MockDocumentGet;
+import com.couchbase.lite.mockserver.MockFacebookAuthPost;
 import com.couchbase.lite.mockserver.MockHelper;
+import com.couchbase.lite.mockserver.MockRevsDiff;
+import com.couchbase.lite.mockserver.MockSessionGet;
+import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
+import com.couchbase.lite.replicator.RemoteRequestResponseException;
+import com.couchbase.lite.replicator.RemoteRequestRetry;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
@@ -25,6 +40,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
@@ -921,6 +938,8 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             Map<String, Object> replicator1 = getPushReplicationProperties(server.url("/db").url());
             Map<String, Object> result1 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator1, Status.OK, null);
+            assertTrue(result1.containsKey("ok"));
+            assertTrue(((Boolean)result1.get("ok")).booleanValue());
             String sessionId1 = (String)result1.get("session_id");
             assertNotNull(sessionId1);
             sessionIds.add(sessionId1);
@@ -928,6 +947,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             Map<String, Object> replicator2 = getPushReplicationProperties(server.url("/db").url());
             replicator2.put("continuous", true);
             Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator2, Status.OK, null);
+            assertTrue(result2.containsKey("ok"));
+            assertTrue(((Boolean)result2.get("ok")).booleanValue());
             String sessionId2 = (String)result2.get("session_id");
             assertNotNull(sessionId2);
             sessionIds.add(sessionId2);
@@ -936,6 +957,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator3.put("continuous", true);
             replicator3.put("doc_ids", Arrays.asList(((String[]) new String[]{"doc1", "doc2"})));
             Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator3, Status.OK, null);
+            assertTrue(result3.containsKey("ok"));
+            assertTrue(((Boolean)result3.get("ok")).booleanValue());
             String sessionId3 = (String)result3.get("session_id");
             assertNotNull(sessionId3);
             sessionIds.add(sessionId3);
@@ -944,6 +967,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator4.put("continuous", true);
             replicator4.put("filter", "myfilter");
             Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator4, Status.OK, null);
+            assertTrue(result4.containsKey("ok"));
+            assertTrue(((Boolean)result4.get("ok")).booleanValue());
             String sessionId4 = (String)result4.get("session_id");
             assertNotNull(sessionId4);
             sessionIds.add(sessionId4);
@@ -998,6 +1023,8 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             Map<String, Object> replicator1 = getPullReplicationProperties(server.url("/db").url());
             Map<String, Object> result1 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator1, Status.OK, null);
+            assertTrue(result1.containsKey("ok"));
+            assertTrue(((Boolean)result1.get("ok")).booleanValue());
             String sessionId1 = (String)result1.get("session_id");
             assertNotNull(sessionId1);
             sessionIds.add(sessionId1);
@@ -1005,6 +1032,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             Map<String, Object> replicator2 = getPullReplicationProperties(server.url("/db").url());
             replicator2.put("continuous", true);
             Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator2, Status.OK, null);
+            assertTrue(result2.containsKey("ok"));
+            assertTrue(((Boolean)result2.get("ok")).booleanValue());
             String sessionId2 = (String)result2.get("session_id");
             assertNotNull(sessionId1);
             sessionIds.add(sessionId2);
@@ -1013,6 +1042,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator3.put("continuous", true);
             replicator3.put("doc_ids", Arrays.asList(((String[]) new String[]{"doc1", "doc2"})));
             Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator3, Status.OK, null);
+            assertTrue(result3.containsKey("ok"));
+            assertTrue(((Boolean)result3.get("ok")).booleanValue());
             String sessionId3 = (String)result3.get("session_id");
             assertNotNull(sessionId3);
             sessionIds.add(sessionId3);
@@ -1021,6 +1052,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator4.put("continuous", true);
             replicator4.put("filter", "myfilter");
             Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator4, Status.OK, null);
+            assertTrue(result4.containsKey("ok"));
+            assertTrue(((Boolean)result4.get("ok")).booleanValue());
             String sessionId4 = (String)result4.get("session_id");
             assertNotNull(sessionId4);
             sessionIds.add(sessionId4);
@@ -1205,6 +1238,8 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             Log.i(TAG, "Call 1st /_replicate");
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result.containsKey("ok"));
+            assertTrue(((Boolean)result.get("ok")).booleanValue());
             Log.i(TAG, "result: " + result);
             assertNotNull(result.get("session_id"));
             String sessionId1 = (String) result.get("session_id");
@@ -1212,9 +1247,15 @@ public class RouterTest extends LiteTestCaseWithDB {
             // NOTE: one short replication should be blocked. sendBody() waits till response is ready.
             //      https://github.com/couchbase/couchbase-lite-android/issues/204
 
+            // 0 changes
+            MockChangesFeed mockChangesFeedEmpty = new MockChangesFeed();
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
+
             // kick off 2nd replication via REST api
             Log.i(TAG, "Call 2nd /_replicate");
             Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result2.containsKey("ok"));
+            assertTrue(((Boolean)result2.get("ok")).booleanValue());
             Log.i(TAG, "result2: " + result2);
             assertNotNull(result2.get("session_id"));
             String sessionId2 = (String) result2.get("session_id");
@@ -1223,9 +1264,14 @@ public class RouterTest extends LiteTestCaseWithDB {
             boolean success = waitForReplicationToFinish();
             assertTrue(success);
 
+            // 0 changes
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeedEmpty.generateMockResponse());
+
             // kick off 3rd replication via REST api
             Log.i(TAG, "Call 3rd /_replicate");
             Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result3.containsKey("ok"));
+            assertTrue(((Boolean)result3.get("ok")).booleanValue());
             Log.i(TAG, "result3: " + result3);
             assertNotNull(result3.get("session_id"));
             String sessionId3 = (String) result3.get("session_id");
@@ -1264,6 +1310,8 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             Log.i(TAG, "Call 1st /_replicate");
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result.containsKey("ok"));
+            assertTrue(((Boolean)result.get("ok")).booleanValue());
             Log.i(TAG, "result: " + result);
             assertNotNull(result.get("session_id"));
             String sessionId1 = (String) result.get("session_id");
@@ -1273,6 +1321,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             // kick off 2nd replication via REST api => Should be
             Log.i(TAG, "Call 2nd /_replicate");
             Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result2.containsKey("ok"));
+            assertTrue(((Boolean)result2.get("ok")).booleanValue());
             Log.i(TAG, "result2: " + result2);
             assertNotNull(result2.get("session_id"));
             String sessionId2 = (String) result2.get("session_id");
@@ -1295,6 +1345,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             // kick off 3rd replication via REST api => Should be
             Log.i(TAG, "Call 3rd /_replicate");
             Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result3.containsKey("ok"));
+            assertTrue(((Boolean)result3.get("ok")).booleanValue());
             Log.i(TAG, "result3: " + result3);
             assertNotNull(result3.get("session_id"));
             String sessionId3 = (String) result3.get("session_id");
@@ -1319,6 +1371,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicateJsonMap.put("cancel", true);
             Log.i(TAG, "map: " + replicateJsonMap);
             Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result4.containsKey("ok"));
+            assertTrue(((Boolean)result4.get("ok")).booleanValue());
             Log.i(TAG, "result4: " + result4);
 
             // wait for replication to finish
@@ -1349,6 +1403,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "map: " + replicateJsonMap);
 
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result.containsKey("ok"));
+            assertTrue(((Boolean)result.get("ok")).booleanValue());
             Log.i(TAG, "result: " + result);
             assertNotNull(result.get("session_id"));
 
@@ -1531,6 +1587,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicateJsonMap.put("doc_ids", docIDs);
             Log.i(TAG, "map: " + replicateJsonMap);
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
+            assertTrue(result.containsKey("ok"));
+            assertTrue(((Boolean)result.get("ok")).booleanValue());
             Log.i(TAG, "result: " + result);
             assertNotNull(result.get("session_id"));
 
@@ -1695,4 +1753,66 @@ public class RouterTest extends LiteTestCaseWithDB {
         }
         return true;
     }
+
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/1540
+    public void testReplicateWithError() throws Exception {
+
+        // create MockWebServer and custom dispatcher
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+        try {
+            {
+                // mock documents to be pulled
+                MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+                mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+
+                // checkpoint GET response w/ 404
+                MockResponse fakeCheckpointResponse = new MockResponse();
+                MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+                // _changes response
+                MockChangesFeed mockChangesFeed = new MockChangesFeed();
+                mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+                // Empty _all_docs response to pass unit tests
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_ALL_DOCS, new MockDocumentAllDocs());
+
+                // doc1 response -> bad request
+                MockResponse mockResponse = new MockResponse().setResponseCode(400);
+                dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockResponse);
+
+                // _bulk_get response
+                MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+                mockBulkGet.addDocument(mockDoc1);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+                // respond to all PUT Checkpoint requests
+                MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+                mockCheckpointPut.setSticky(true);
+                mockCheckpointPut.setDelayMs(500);
+                dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+            }
+
+            // start mock server
+            server.start();
+
+            Map<String, Object> replicateJsonMap = getPullReplicationProperties(server.url("/db").url());
+            Log.i(TAG, "replicateJsonMap: " + replicateJsonMap);
+            Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, 400, null);
+            Log.i(TAG, "result: " + result);
+            assertFalse(result.containsKey("ok"));
+            assertFalse(result.containsKey("session_id"));
+            assertTrue(result.containsKey("error"));
+            assertEquals("Client Error", (String) result.get("error"));
+
+            assertEquals(0, database.getDocumentCount());
+
+        } finally {
+            assertTrue(MockHelper.shutdown(server, dispatcher));
+        }
+    }
+
 }

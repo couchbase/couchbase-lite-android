@@ -1902,7 +1902,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             // fake _facebook response
             MockFacebookAuthPost mockFacebookAuthPost = new MockFacebookAuthPost();
             dispatcher.enqueueResponse(MockHelper.PATH_REGEX_FACEBOOK_AUTH,
-                    mockFacebookAuthPost.generateMockResponse());
+                    mockFacebookAuthPost.generateMockResponseForError());
 
             // start mock server
             server.start();

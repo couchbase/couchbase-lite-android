@@ -18,7 +18,7 @@ import okhttp3.mockwebserver.MockResponse;
 
 public class MockFacebookAuthPost {
 
-    public MockResponse generateMockResponse() {
+    public MockResponse generateMockResponseForError() {
         MockResponse mockResponse = new MockResponse();
         String jsonBody = "{\n" +
                 "   \"error\":\"Unauthorized\",\n" +
