@@ -167,17 +167,25 @@ public class DocumentTest extends LiteTestCaseWithDB {
     public void testGetDocumentWithLargeJSON() {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put("_id", "laaargeJSON");
-        char[] chars = new char[(int)(2.1 * 1024 * 1024)]; // 2.1MB
-        Arrays.fill(chars, 'a');
-        String str = new String(chars);
-        props.put("foo", str);
+        final String content;
+        {
+            // NOTE: Java internally uses Unicode, following characters consumes 2.1M * 2Bytes -> 4.2MB in memory.
+            char[] chars = new char[2 * 1024 * 1024 + 10 * 1024]; // 2.1K characters
+            Arrays.fill(chars, 'a');
+            // NOTE: public String(char value[]) copies characters.
+            // http://hg.openjdk.java.net/jdk7u/jdk7u6/jdk/file/8c2c5d63a17e/src/share/classes/java/lang/String.java#l168
+            content = new String(chars);
+            // make GC free data
+            chars = null;
+        }
+        props.put("foo", content);
 
         Document doc = createDocumentWithProperties(database, props);
         assertNotNull(doc);
 
         Document docFetched = database.getDocument(doc.getId());
         Map<String, Object> fetchedProps = docFetched.getCurrentRevision().getProperties();
-        assertEquals(fetchedProps.get("foo"), str);
+        assertEquals(fetchedProps.get("foo"), content);
     }
 
     /**
