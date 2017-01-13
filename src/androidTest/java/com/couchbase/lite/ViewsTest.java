@@ -3410,12 +3410,14 @@ public class ViewsTest extends LiteTestCaseWithDB {
             }, "1");
         }
 
+        final int num_docs = 200;
+
         // Insert Documents
         database.runInTransaction(new TransactionalTask() {
             @Override
             public boolean run() {
                 try {
-                    for (int i = 0; i < 500; i++) {
+                    for (int i = 0; i < num_docs; i++) {
                         Map<String, Object> props = new HashMap<String, Object>();
                         props.put("time_create", new Date());
                         props.put("phone_mobile", String.format(Locale.ENGLISH, "*3816400%04d", i));
@@ -3478,7 +3480,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
                         counter, row.getDocumentId(), "client_by_name_device"));
                 counter++;
             }
-            assertEquals(500, counter);
+            assertEquals(num_docs, counter);
             Log.v(TAG, String.format(Locale.ENGLISH, "Iterrator done"));
         }
     }
@@ -3751,8 +3753,8 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
     public void _testMultipleLiveQueries(String prefix) {
-        final int batch_size = 500;
-        final int n_batches = 5;
+        final int batch_size = 50;
+        final int n_batches = 4;
 
         LiveQuery lvu = null;
         LiveQuery lvu2 = null;
@@ -3821,10 +3823,10 @@ public class ViewsTest extends LiteTestCaseWithDB {
             });
             lvu2.start();
 
-            // Create 500 documents 5 times -> total 2500 documents
-            for (int i = 0; i < n_batches; i++) {
+            // Create 100 documents 4 times -> total 400 documents
+            for (int i = 0; i < n_batches; i++) { // 4 times
                 Log.w(TAG, "Adding documents");
-                createDocuments(database, batch_size);
+                createDocuments(database, batch_size); // 100
             }
 
             Log.w(TAG, "Waiting for livequery to receive the last update");
@@ -3833,8 +3835,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
             } catch (InterruptedException e) {
                 Log.e(TAG, "Error in CountDownLatch", e);
             }
-
-
         } finally {
             // Stop LiveQueries
             if (lvu2 != null) lvu2.stop();
