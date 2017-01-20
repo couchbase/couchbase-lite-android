@@ -13,7 +13,7 @@ Couchbase Lite databases are able to sync with each other via [Sync Gateway](htt
 Other ways to setup replication:
 
 * No replication -- just local data store.
-* Peer-to-peer repolication between Couchbase Lite instances.
+* Peer-to-peer replication between Couchbase Lite instances.
 * Replication to multiple Sync Gateway instances rather than a single Sync Gateway.
 * Etc ..
 
