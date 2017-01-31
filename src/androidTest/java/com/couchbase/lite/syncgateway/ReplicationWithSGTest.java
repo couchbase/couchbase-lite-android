@@ -290,9 +290,10 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
             RemoteRequest rq = new RemoteFormRequest(factory, "POST", formURL, false, formData, null,
                 new RemoteRequestCompletion() {
                     @Override
-                    public void onCompletion(Response httpResponse, Object result, Throwable error) {
+                    public void onCompletion(Response httpResponse, Object contentBody, long contentSize, Throwable error) {
                         results.put("response", httpResponse);
-                        results.put("result", result);
+                        results.put("result", contentBody);
+                        results.put("contentSize", contentSize);
                         results.put("error", error);
                     }
                 });
