@@ -84,7 +84,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
 
             RemoteRequestCompletion completionBlock = new RemoteRequestCompletion() {
                 @Override
-                public void onCompletion(Response httpResponse, Object result, Throwable e) {
+                public void onCompletion(Response httpResponse, Object contentBody, long contentSize, Throwable e) {
                     if (e instanceof RemoteRequestResponseException) {
                         RemoteRequestResponseException htre = (RemoteRequestResponseException) e;
                         if (htre.getCode() == 404) {
@@ -172,7 +172,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
 
             RemoteRequestCompletion completionBlock = new RemoteRequestCompletion() {
                 @Override
-                public void onCompletion(Response httpResponse, Object result, Throwable e) {
+                public void onCompletion(Response httpResponse, Object contentBody, long contentSize, Throwable e) {
                     if (e instanceof RemoteRequestResponseException) {
                         RemoteRequestResponseException htre = (RemoteRequestResponseException) e;
                         if (htre.getCode() == 503) {
@@ -272,7 +272,7 @@ public class RemoteRequestTest extends LiteTestCaseWithDB {
 
                 RemoteRequestCompletion completionBlock = new RemoteRequestCompletion() {
                     @Override
-                    public void onCompletion(Response httpResponse, Object result, Throwable e) {
+                    public void onCompletion(Response httpResponse, Object contentBody, long contentSize, Throwable e) {
                         if (e instanceof RemoteRequestResponseException) {
                             RemoteRequestResponseException htre = (RemoteRequestResponseException) e;
                             if (htre.getCode() == 503) {
