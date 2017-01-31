@@ -87,9 +87,9 @@ public class BulkDownloaderTest extends LiteTestCaseWithDB {
                     database,
                     null,
                     new RemoteBulkDownloaderRequest.BulkDownloaderDocument() {
-                        public void onDocument(Map<String, Object> props) {
+                        public void onDocument(Map<String, Object> props, long size) {
                             // do nothing
-                            Log.d(TAG, "onDocument called with %s", props);
+                            Log.d(TAG, "onDocument called with %s, %d", props, size);
                         }
                     },
                     new RemoteRequestCompletion() {
