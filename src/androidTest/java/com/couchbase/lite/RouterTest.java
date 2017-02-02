@@ -13,24 +13,14 @@
  */
 package com.couchbase.lite;
 
-import com.couchbase.lite.auth.Authenticator;
-import com.couchbase.lite.auth.AuthenticatorFactory;
-import com.couchbase.lite.mockserver.MockBulkDocs;
 import com.couchbase.lite.mockserver.MockChangesFeed;
 import com.couchbase.lite.mockserver.MockCheckpointGet;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
-import com.couchbase.lite.mockserver.MockCreateDB;
 import com.couchbase.lite.mockserver.MockDispatcher;
 import com.couchbase.lite.mockserver.MockDocumentAllDocs;
 import com.couchbase.lite.mockserver.MockDocumentBulkGet;
 import com.couchbase.lite.mockserver.MockDocumentGet;
-import com.couchbase.lite.mockserver.MockFacebookAuthPost;
 import com.couchbase.lite.mockserver.MockHelper;
-import com.couchbase.lite.mockserver.MockRevsDiff;
-import com.couchbase.lite.mockserver.MockSessionGet;
-import com.couchbase.lite.mockserver.WrappedSmartMockResponse;
-import com.couchbase.lite.replicator.RemoteRequestResponseException;
-import com.couchbase.lite.replicator.RemoteRequestRetry;
 import com.couchbase.lite.replicator.Replication;
 import com.couchbase.lite.router.URLConnection;
 import com.couchbase.lite.util.Log;
@@ -40,7 +30,6 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1815,4 +1804,65 @@ public class RouterTest extends LiteTestCaseWithDB {
         }
     }
 
+    /**
+     * Router_tests.m
+     * - (void) test_deleteDoc
+     *
+     * See: https://github.com/couchbase/couchbase-lite-java-core/issues/1573
+     */
+    public void failing_test_deleteDoc(){
+        // Create db:
+        send("PUT", "/db", Status.CREATED, null);
+
+        // Create doc:
+        Map<String, Object> doc1 = new HashMap<String, Object>();
+        doc1.put("foo", "bar");
+        Map<String, Object> result = (Map<String, Object>) sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
+        String revID = (String) result.get("rev");
+        assertTrue(revID.startsWith("1-"));
+
+        // Delete doc:
+        String path = String.format(Locale.ENGLISH, "/db/doc1?rev=%s", revID);
+        result = (Map<String, Object>) sendBody("DELETE", path, null, Status.OK, null);
+        revID = (String) result.get("rev");
+        assertTrue(revID.startsWith("2-"));
+
+        // Get the deletes doc:
+        Map<String, Object> responseBody = new HashMap<String, Object>();
+        responseBody.put("error", "not_found");
+        responseBody.put("reason", "deleted");
+        responseBody.put("status", 404);
+        send("GET", "/db/doc1", Status.DELETED, responseBody);
+    }
+    /**
+     * Router_tests.m
+     * - (void) test_purgeDoc
+     *
+     * See: https://github.com/couchbase/couchbase-lite-java-core/issues/1573
+     */
+    public void failing_test_purgeDoc(){
+        // Create db:
+        send("PUT", "/db", Status.CREATED, null);
+
+        // Create doc:
+        Map<String, Object> doc1 = new HashMap<String, Object>();
+        doc1.put("foo", "bar");
+        Map<String, Object> result = (Map<String, Object>) sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
+        String revID = (String) result.get("rev");
+        assertTrue(revID.startsWith("1-"));
+
+        // Purge doc:
+        Map<String, Object> reqBody = new HashMap<String, Object>();
+        reqBody.put("doc1", Arrays.asList(revID));
+        Map<String, Object> expectedResp = new HashMap<String, Object>();
+        expectedResp.put("purged", reqBody);
+        sendBody("POST", "/db/_purge", reqBody , Status.OK, expectedResp);
+
+        // Get the purged doc:
+        Map<String, Object> responseBody = new HashMap<String, Object>();
+        responseBody.put("error", "not_found");
+        responseBody.put("reason", "missing");
+        responseBody.put("status", 404);
+        send("GET", "/db/doc1", Status.NOT_FOUND, responseBody);
+    }
 }
