@@ -533,6 +533,13 @@ public class ManagerTest extends LiteTestCaseWithDB {
         String[] android140forest = {"1", "Android 1.4.0 ForestDB", "android140-forestdb.cblite2", "replacedb/android140-forestdb.cblite2.zip"};
         dbInfoList.add(android140forest);
 
+        // .NET 1.4.0 (SQLite)
+        String[] net140sqlite = {"3", ".NET 1.4.0 SQLite", "netdb.cblite2", "replacedb/net140-sqlite.zip"};
+        dbInfoList.add(net140sqlite);
+        // .NET 1.4.0 (ForestDB)
+        String[] net140forest = {"3", ".NET 1.4.0 ForestDB", "netdb.cblite2", "replacedb/net140-forestdb.zip"};
+        dbInfoList.add(net140forest);
+
         for (final String[] dbInfo : dbInfoList) {
             Log.i(TAG, "DB Type: " + dbInfo[1]);
             File srcDir = new File(manager.getContext().getFilesDir(), dbInfo[2]);
