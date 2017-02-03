@@ -519,6 +519,20 @@ public class ManagerTest extends LiteTestCaseWithDB {
         String[] net130forest = {"3", ".NET 1.3.0 ForestDB", "netdb.cblite2", "replacedb/net130-forestdb.zip"};
         dbInfoList.add(net130forest);
 
+        // iOS 1.4.0 (SQLite)
+        String[] ios140sqlite = {"2", "iOS 1.4.0 SQLite", "ios140/iosdb.cblite2", "replacedb/ios140.zip"};
+        dbInfoList.add(ios140sqlite);
+        // iOS 1.4.0 (ForestDB)
+        String[] ios140forest = {"2", "iOS 1.4.0 ForestDB", "ios140-forestdb/iosdb.cblite2", "replacedb/ios140-forestdb.zip"};
+        dbInfoList.add(ios140forest);
+
+        // Android 1.4.0 (SQLite)
+        String[] android140sqlite = {"1", "Android 1.4.0 SQLite", "android140-sqlite.cblite2", "replacedb/android140-sqlite.cblite2.zip"};
+        dbInfoList.add(android140sqlite);
+        // Android 1.4.0 (ForestDB)
+        String[] android140forest = {"1", "Android 1.4.0 ForestDB", "android140-forestdb.cblite2", "replacedb/android140-forestdb.cblite2.zip"};
+        dbInfoList.add(android140forest);
+
         for (final String[] dbInfo : dbInfoList) {
             Log.i(TAG, "DB Type: " + dbInfo[1]);
             File srcDir = new File(manager.getContext().getFilesDir(), dbInfo[2]);
@@ -539,12 +553,12 @@ public class ManagerTest extends LiteTestCaseWithDB {
                         Map<String, Object> props = doc.getProperties();
                         if (dbInfo[0].equals("1"))//android
                             assertEquals(i + 1, Integer.parseInt((String) props.get("key")));
-                        else if (dbInfo[0].equals("2")) // ios
+                        else if (dbInfo[0].equals("2")) // iOS
                             assertEquals("bar", (String) props.get("foo"));
                         assertEquals(1, doc.getCurrentRevision().getAttachments().size());
                         Attachment att = doc.getCurrentRevision().getAttachment("attach" + String.valueOf(i + 1));
                         assertNotNull(att);
-                        if (!dbInfo[0].equals("3")) {//!NET
+                        if (!dbInfo[0].equals("3")) {// .NET
                             BufferedReader br = new BufferedReader(new InputStreamReader(att.getContent()));
                             String str = br.readLine();
                             assertEquals("attach" + String.valueOf(i + 1), str);
@@ -555,10 +569,9 @@ public class ManagerTest extends LiteTestCaseWithDB {
                     // Check Local Doc
                     Map<String, Object> local = db.getExistingLocalDocument("local1");
                     assertNotNull(local);
-                    //assertEquals(3, local.size());
                     if (dbInfo[0].equals("1"))//android
                         assertEquals("local1", local.get("key"));
-                    else if (dbInfo[0].equals("2")) // ios
+                    else if (dbInfo[0].equals("2")) // iOS
                         assertEquals("bar", local.get("foo"));
                     assertEquals("1-local", local.get("_rev"));
                     assertEquals("_local/local1", local.get("_id"));
@@ -609,6 +622,10 @@ public class ManagerTest extends LiteTestCaseWithDB {
 
     public void testUpgradeDatabaseFrom130() throws Exception {
         _testUpgradeDatabase("ios130");
+    }
+
+    public void testUpgradeDatabaseFrom140() throws Exception {
+        _testUpgradeDatabase("ios140");
     }
 
     private void _testUpgradeDatabase(String dbname) throws Exception {
@@ -833,5 +850,39 @@ public class ManagerTest extends LiteTestCaseWithDB {
 
         // check if temporary db is deleted
         assertFalse(tmpDbDir.exists());
+    }
+
+    public void _testPrepareDB() throws CouchbaseLiteException {
+        Database db;
+        DatabaseOptions opt = new DatabaseOptions();
+        opt.setCreate(true);
+        if (!isUseForestDB()) {
+            db = manager.openDatabase("android-sqlite", opt);
+        } else {
+            opt.setStorageType(Manager.FORESTDB_STORAGE);
+            db = manager.openDatabase("android-forestdb", opt);
+        }
+        try {
+            // local doc
+            Map<String, Object> localProps = new HashMap<String, Object>();
+            localProps.put("key", "local1");
+            db.putLocalDocument("local1", localProps);
+
+            // documents
+            for (int i = 1; i <= 2; i++) {
+                Document doc = db.getDocument("doc" + i);
+                Map<String, Object> prop = new HashMap<String, Object>();
+                prop.put("key", String.valueOf(i));
+                doc.putProperties(prop);
+
+                UnsavedRevision rev = doc.createRevision();
+                byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes();
+                InputStream in = new ByteArrayInputStream(attach);
+                rev.setAttachment("attach" + i, "text/plain", in);
+                rev.save();
+            }
+        } finally {
+            db.close();
+        }
     }
 }
