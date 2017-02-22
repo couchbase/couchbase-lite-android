@@ -19,10 +19,12 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiteTestCaseWithDB;
+import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
 import com.couchbase.lite.QueryRow;
+import com.couchbase.lite.Reducer;
 import com.couchbase.lite.View;
 import com.couchbase.lite.internal.RevisionInternal;
 import com.couchbase.lite.util.Log;
@@ -219,6 +221,75 @@ public class MultiThreadsTest extends LiteTestCaseWithDB {
             updateThread.join();
         } catch (InterruptedException e) {
             Log.e(TAG, "Error in updateThread. ", e);
+        }
+    }
+
+    /**
+     * ported from .NET - TestMultipleQueriesOnSameView()
+     * https://github.com/couchbase/couchbase-lite-net/blob/master/src/Couchbase.Lite.Tests.Shared/ViewsTest.cs#L2136
+     */
+    public void testMultipleQueriesOnSameView() throws CouchbaseLiteException {
+        if (!multithreadsTestsEnabled())
+            return;
+
+        View view = database.getView("view1");
+        view.setMapReduce(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("jim"), document.get("_id"));
+            }
+        }, new Reducer() {
+            @Override
+            public Object reduce(List<Object> keys, List<Object> values, boolean rereduce) {
+                return keys.size();
+            }
+        }, "1.0");
+
+        LiveQuery query1 = view.createQuery().toLiveQuery();
+        LiveQuery query2 = view.createQuery().toLiveQuery();
+        try {
+            query1.start();
+            query2.start();
+
+            long timestamp = System.currentTimeMillis();
+            for (int i = 0; i < 50; i++) {
+                String docID = String.format(Locale.ENGLISH, "doc%d-%d", i, timestamp);
+                Document doc = database.getDocument(docID);
+                Map<String, Object> props = new HashMap<String, Object>();
+                props.put("jim", "borden");
+                doc.putProperties(props);
+            }
+
+            sleep(5 * 1000);
+            assertEquals(50, view.getTotalRows());
+            assertEquals(50, view.getLastSequenceIndexed());
+
+            query1.stop();
+            for (int i = 50; i < 60; i++) {
+                String docID = String.format(Locale.ENGLISH, "doc%d-%d", i, timestamp);
+                Document doc = database.getDocument(docID);
+                Map<String, Object> props = new HashMap<String, Object>();
+                props.put("jim", "borden");
+                doc.putProperties(props);
+                if (i == 55) {
+                    query1.start();
+                }
+            }
+
+            sleep(5 * 1000);
+            assertEquals(60, view.getTotalRows());
+            assertEquals(60, view.getLastSequenceIndexed());
+        } finally {
+            query1.stop();
+            query2.stop();
+        }
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Error in Thread.sleep() - %d ms", e, millis);
         }
     }
 
