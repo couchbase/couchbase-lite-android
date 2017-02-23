@@ -201,7 +201,7 @@ If you want to run something (aside from the tests), you should get one of the s
 
 ## System Requirements
 
-- Android 2.3 Gingerbread (API level 9) and above.
+- Android 4.1.x Jelly Bean (API level 16) and above.
 
 ## Limitations
 
