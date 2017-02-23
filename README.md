@@ -184,7 +184,12 @@ If you want to run something (aside from the tests), you should get one of the s
 
 * [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)  
     * Simplest example
-* [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android)
+* [Todo (Training App)]https://github.com/couchbaselabs/mobile-training-todo) - in `android` folder
+    * auth
+    * Replication with channels
+    * Image attachments
+    * Ability for users to share data
+* [TodoLite](https://github.com/couchbaselabs/ToDoLite-Android) - Depricated
     * Facebook auth
     * Replication with channels
     * Image attachments
