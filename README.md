@@ -116,12 +116,9 @@ These are known working versions.  Other versions might be compatible (eg, later
 
 Couchbase Lite Version  | Android Studio Version
 ------------- | -------------
-1.0.0  | Android Studio 0.5.7
-1.0.1  | Android Studio 0.5.7
-1.0.2  | Android Studio 0.8.2
-1.0.3.x | Android Studio 0.8.2 - 0.8.9
-1.0.4  | Android Studio 1.0
-Master | Android Studio 1.0
+1.3.1  | Android Studio 2.2.3
+1.4.0  | Android Studio 2.2.3
+Master | Android Studio 2.2.3
 
 ### Prerequisites
 
