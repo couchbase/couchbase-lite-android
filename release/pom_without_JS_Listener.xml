@@ -132,12 +132,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.couchbase.cblite</groupId>
-            <artifactId>webserver</artifactId>
-            <version>${servlet.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>com.google.android</groupId>
             <artifactId>android</artifactId>
             <version>2.2.1</version>
@@ -293,7 +287,6 @@
                                         <include name="**/stateless4j-${stateless4j.version}.jar"/>
 
                                         <include name="**/servlet-${servlet.version}.jar"/>
-                                        <include name="**/webserver-${servlet.version}.jar"/>
 
                                         <include name="**/okhttp-${okhttp.version}.jar"/>
                                         <include name="**/okio-${okio.version}.jar"/>
