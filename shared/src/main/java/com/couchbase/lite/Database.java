@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import java.io.File;
+
 public final class Database {
     private String name;
     private String path;
@@ -32,12 +34,14 @@ public final class Database {
 
     }
 
-    public void delete(String name, String directory) throws CouchbaseLiteException {
-
+    // TODO: dir -> String or File
+    public static boolean delete(String name, File directory) throws CouchbaseLiteException {
+        return false;
     }
 
-    public void exists(String name, String directory) throws CouchbaseLiteException {
-
+    // TODO: dir -> String or File
+    public static boolean documentExists(String name, File directory) throws CouchbaseLiteException {
+        return false;
     }
 
     public Document getDocument() {
@@ -52,7 +56,7 @@ public final class Database {
     // func getDocument<T:DocumentModel>(type: T.Type) -> T
     // func getDocument<T:DocumentModel>(id: String?, type: T.Type) -> T
 
-    public boolean exists(String docID) {
+    public boolean documentExists(String docID) {
         return false;
     }
 

@@ -1,7 +1,9 @@
 package com.couchbase.lite;
 
+import java.io.File;
+
 public final class DatabaseOptions {
-    private String directory;
+    private File directory; // TODO: File or String
     private Object encryptionKey;
     private boolean readOnly;
 
@@ -12,11 +14,11 @@ public final class DatabaseOptions {
         return new DatabaseOptions();
     }
 
-    public String getDirectory() {
+    public File getDirectory() {
         return directory;
     }
 
-    public void setDirectory(String directory) {
+    public void setDirectory(File directory) {
         this.directory = directory;
     }
 

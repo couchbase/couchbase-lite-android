@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-interface Document {
+interface Document extends Properties {
     Database getDatabase();
 
     ConflictResolver getConflictResolver();
