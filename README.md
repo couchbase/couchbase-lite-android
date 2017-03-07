@@ -40,7 +40,7 @@ Using Gradle is the easiest way to automate Couchbase Lite builds in your projec
 
 ##### Optional: Maven repo URL: `http://files.couchbase.com/maven2/`
 
-NOTE: From 1.1.0 releae, Couchbase Lite Android is also hosted on **JCenter** which is default maven repository for Android Studio.
+NOTE: From 1.1.0 releae, Couchbase Lite Android is also hosted on **JCenter** which is default maven repository for Android Studio and **MavenCentral**.
 
 Optional: In the project level `build.gradle` file, specify maven repo URL.
 ```
@@ -84,7 +84,7 @@ dependencies {
 ```
 
 
-Where ${latest_version} should be replaced by something that looks like `1.1.1`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.0.3-239` because they aren't official releases).
+Where ${latest_version} should be replaced by something that looks like `1.4.0`.  To find the latest version, check our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) directly and look for the latest version, ignoring anything that has a dash after it.  (Eg, ignore items like `1.4-46` because they aren't official releases).
 
 ### Using master branch version (bleeding edge)
 
@@ -94,7 +94,7 @@ Maven repo URL: `http://files.couchbase.com/maven2/`
 compile 'com.couchbase.lite:couchbase-lite-android:1.4-46'
 ```
 
-While `0.0.0-517` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "517" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `0.0.0-` and is later than `0.0.0-517`
+While `1.4-46` was the latest build at the time of writing, it's probably out of date by the time you are reading this. To get the latest build number (eg, the "46" part of the version above), see our [Maven Repo](http://files.couchbase.com/maven2/com/couchbase/lite/couchbase-lite-android/) and look for the highest numbered version that starts with `1.4-` and is later than `1.4-46`
 
 Here is a [complete gradle file](https://github.com/couchbaselabs/GrocerySync-Android/blob/master/GrocerySync-Android/build.gradle) that uses this maven artifact.
 
@@ -137,13 +137,6 @@ $ git clone git://github.com/couchbase/couchbase-lite-android.git
 $ cd couchbase-lite-android
 $ git submodule update --init --recursive
 ```
-
-### Enable settings.gradle file
-
-* `cp settings.gradle.example settings.gradle`
-
-*Note: settings.gradle cannot be checked in directly due to Android Studio issue #[65915](https://code.google.com/p/android/issues/detail?id=65915)*
-
 ### Importing Project into Android Studio
 
 You should be able to import the project directly into Android Studio:
@@ -186,7 +179,7 @@ If you want to run something (aside from the tests), you should get one of the s
 
 * [GrocerySync](https://github.com/couchbaselabs/GrocerySync-Android)  
     * Simplest example
-* [Todo (Training App)]https://github.com/couchbaselabs/mobile-training-todo) - in `android` folder
+* [Todo (Training App)](https://github.com/couchbaselabs/mobile-training-todo) - in `android` folder
     * auth
     * Replication with channels
     * Image attachments
