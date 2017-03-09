@@ -43,6 +43,12 @@ android {
                     "${rootDir}/../libs/couchbase-lite-core/Java/src" // lite-core java codes
             ]
         }
+        androidTest {
+            java.srcDirs = [
+                    "src/androidTest/java",                                        // android specific codes
+                    "${rootDir}/../libs/couchbase-lite-core/Java/androidTest/java" // lite-core java codes
+            ]
+        }
     }
 }
 
