@@ -1,0 +1,62 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 25
+        versionCode 1
+        versionName version
+        //archivesBaseName = "couchbase-lite-android"
+        project.archivesBaseName = "couchbase-lite-android-${versionName}"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters 'x86'/*, 'armeabi-v7a', 'arm64-v8a'*/
+        }
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
+                cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
+                // explicitly build libs
+                targets 'LiteCoreJNI'
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "${rootDir}/../libs/couchbase-lite-core/CMakeLists.txt"
+        }
+    }
+    sourceSets {
+        main {
+            java.srcDirs = [
+                    "src/main/java",                                  // android specific codes
+                    "${rootDir}/../shared/src/main/java",             // shared java codes
+                    "${rootDir}/../libs/couchbase-lite-core/Java/src" // lite-core java codes
+            ]
+        }
+        androidTest {
+            java.srcDirs = [
+                    "src/androidTest/java",                                        // android specific codes
+                    "${rootDir}/../libs/couchbase-lite-core/Java/androidTest/java" // lite-core java codes
+            ]
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:25.2.0'
+    testCompile 'junit:junit:4.12'
+}
