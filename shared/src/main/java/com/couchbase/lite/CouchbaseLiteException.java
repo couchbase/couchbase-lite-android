@@ -25,6 +25,12 @@ public final class CouchbaseLiteException extends RuntimeException {
         this.code = 0;
     }
 
+    public CouchbaseLiteException(int domain, int code, Throwable cause) {
+        super(cause);
+        this.domain = domain;
+        this.code = code;
+    }
+
     public CouchbaseLiteException(int domain, int code, String message, Throwable cause) {
         super(message, cause);
         this.domain = domain;
@@ -43,5 +49,16 @@ public final class CouchbaseLiteException extends RuntimeException {
 
     public int getCode() {
         return code;
+    }
+
+    @Override
+    public String toString() {
+        if (domain > 0 && code > 0)
+            return "CouchbaseLiteException{" +
+                    "domain=" + getDomainString() +
+                    ", code=" + code +
+                    '}';
+        else
+            return super.toString();
     }
 }

@@ -5,18 +5,22 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.LiteCoreException;
 
 import java.io.File;
+import java.util.Locale;
+
+import static android.R.attr.path;
 
 public final class Database {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
+    private static final String TAG = Log.DATABASE;
     private static final String DB_EXTENSION = "cblite2";
+
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private String name;
-    private String path;
     private DatabaseOptions options;
     // TODO: class name is conflicting between API level and LiteCore
     private com.couchbase.litecore.Database db;
@@ -26,11 +30,13 @@ public final class Database {
     //---------------------------------------------
 
     public Database(String name) throws CouchbaseLiteException {
-        this.name = name;
+        this(name, DatabaseOptions.getDefaultOptions());
     }
 
     public Database(String name, DatabaseOptions options) throws CouchbaseLiteException {
         this.name = name;
+        this.options = options != null ? options : DatabaseOptions.getDefaultOptions();
+        open();
     }
 
     public String getName() {
@@ -38,11 +44,24 @@ public final class Database {
     }
 
     public String getPath() {
-        return path;
+        return db != null ? db.getPath() : null;
     }
 
     public void close() throws CouchbaseLiteException {
+        if(db == null) return;
 
+        Log.i(TAG, "Closing %s at path %s", this, path);
+
+        // TODO:
+
+        try {
+            db.close();
+            db = null;
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+
+        // success
     }
 
     public void changeEncryptionKey(Object key) throws CouchbaseLiteException {
@@ -50,16 +69,23 @@ public final class Database {
     }
 
     public void delete() throws CouchbaseLiteException {
+        // TODO: need to review Database.delete() and free()
+    }
+
+    // TODO: dir -> String or File
+    public static void delete(String name, File dir) throws CouchbaseLiteException {
+
+        File path = getDatabasePath(dir, name);
+        try {
+            com.couchbase.litecore.Database.deleteAtPath(path.getPath());
+        }catch (LiteCoreException e){
+            throw LiteCoreBridge.convertException(e);
+        }
 
     }
 
     // TODO: dir -> String or File
-    public static boolean delete(String name, File directory) throws CouchbaseLiteException {
-        return false;
-    }
-
-    // TODO: dir -> String or File
-    public static boolean documentExists(String name, File directory) throws CouchbaseLiteException {
+    public static boolean documentExists(String name, File dir) throws CouchbaseLiteException {
         return false;
     }
 
@@ -99,12 +125,11 @@ public final class Database {
     // Private (in class only)
     //---------------------------------------------
 
-    private boolean open() {
-        if (db != null) return true;
+    private void open() throws CouchbaseLiteException {
+        if (db != null) return;
 
         File dir = options.getDirectory() != null ? options.getDirectory() : getDefaultDirectory();
-        if (setupDirectory(dir))
-            return false;
+        setupDirectory(dir);
 
         File dbFile = getDatabasePath(dir, name);
 
@@ -119,35 +144,49 @@ public final class Database {
         int encryptionAlgorithm = com.couchbase.litecore.Database.NoEncryption;
         byte[] encryptionKey = null;
 
-        Log.i(Log.DATABASE, "Opening %s at path %s", this, dbFile.getPath());
+        Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
             // TODO: com.couchbase.litecore.Database is same class name with this classname.
             //       Need to change the name.
-            com.couchbase.litecore.Database db = new com.couchbase.litecore.Database(
+            db = new com.couchbase.litecore.Database(
                     dbFile.getPath(),
                     databaseFlags,
                     encryptionAlgorithm,
                     encryptionKey);
-        } catch (LiteCoreException ex) {
-            throw LiteCoreBridge.convertException(ex);
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
         }
 
         // TODO: Other settings
 
-        return true;
+        // success
     }
 
     private File getDefaultDirectory() {
+        // TODO:
         return null;
     }
 
-    private boolean setupDirectory(File dir) {
-        return true;
+    private void setupDirectory(File dir) throws CouchbaseLiteException {
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        if (!dir.isDirectory()) {
+            throw new CouchbaseLiteException(String.format(Locale.ENGLISH, "Unable to create directory for: %s", dir));
+        }
     }
 
     private static File getDatabasePath(File dir, String name){
-        name = name.replaceAll("/",":"); // TODO: This does not work with Windows platform.
+        name = name.replaceAll("/", ":"); // TODO: This does not work with Windows platform.
+        name = String.format(Locale.ENGLISH, "%s.%s", name, DB_EXTENSION);
         return new File(dir, name);
     }
 }
+
+
+
+
+
+
+
