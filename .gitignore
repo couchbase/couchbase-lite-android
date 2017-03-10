@@ -33,6 +33,7 @@ proguard/
 captures/
 
 # Intellij
+android/.idea
 *.iml
 .idea/workspace.xml
 .idea/tasks.xml
