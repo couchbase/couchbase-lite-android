@@ -70,11 +70,17 @@ public final class Database {
 
     public void delete() throws CouchbaseLiteException {
         // TODO: need to review Database.delete() and free()
+        try {
+            db.delete();
+        } catch (LiteCoreException e) {
+            e.printStackTrace();
+        }
+        db.free();
+        db = null;
     }
 
     // TODO: dir -> String or File
     public static void delete(String name, File dir) throws CouchbaseLiteException {
-
         File path = getDatabasePath(dir, name);
         try {
             com.couchbase.litecore.Database.deleteAtPath(path.getPath());

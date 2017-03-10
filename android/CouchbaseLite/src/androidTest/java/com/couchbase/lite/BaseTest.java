@@ -54,7 +54,7 @@ public class BaseTest {
 
         DatabaseOptions options = DatabaseOptions.getDefaultOptions();
         options.setDirectory(dir);
-        Database db = new Database(kDatabaseName, options);
+        db = new Database(kDatabaseName, options);
         assertNotNull(db);
     }
 
