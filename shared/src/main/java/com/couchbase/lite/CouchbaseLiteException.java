@@ -13,6 +13,12 @@ public final class CouchbaseLiteException extends RuntimeException {
         this.code = 0;
     }
 
+    public CouchbaseLiteException(int domain, int code) {
+        super();
+        this.domain = domain;
+        this.code = code;
+    }
+
     public CouchbaseLiteException(int domain, int code, String message) {
         super(message);
         this.domain = domain;

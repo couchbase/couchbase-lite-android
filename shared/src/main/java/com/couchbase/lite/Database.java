@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.LiteCoreException;
@@ -8,6 +9,8 @@ import java.io.File;
 import java.util.Locale;
 
 import static android.R.attr.path;
+import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorNotFound;
 
 public final class Database {
     //---------------------------------------------
@@ -61,7 +64,7 @@ public final class Database {
             throw LiteCoreBridge.convertException(e);
         }
 
-        // success
+        // Success:
     }
 
     public void changeEncryptionKey(Object key) throws CouchbaseLiteException {
@@ -96,11 +99,11 @@ public final class Database {
     }
 
     public Document getDocument() {
-        return null;
+        return getDocument(generateDocID());
     }
 
     public Document getDocument(String docID) {
-        return null;
+        return getDocument(docID, false);
     }
 
     // TODO: Model will be implemented later
@@ -108,7 +111,17 @@ public final class Database {
     // func getDocument<T:DocumentModel>(id: String?, type: T.Type) -> T
 
     public boolean documentExists(String docID) {
-        return false;
+        try {
+            getDocument(docID, true);
+            return true;
+        } catch (CouchbaseLiteException e) {
+            if (e.getDomain() == LiteCoreDomain && e.getCode() == kC4ErrorNotFound)
+                return false;
+
+            // unexpected error...
+            Log.w(TAG, "Unexpected Error with calling documentExists(docID => %s) method.", e, docID);
+            return false;
+        }
     }
 
     public void inBatch(Runnable action) throws CouchbaseLiteException {
@@ -122,14 +135,32 @@ public final class Database {
     // func addChangeListener(docListener: DocumentChangeListener)
     // func removeChangeListener(docListener: DocumentChangeListener)
 
+    @Override
+    public String toString() {
+        return String.format(Locale.ENGLISH, "%s[%s]", super.toString(), name);
+    }
+
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
+    //////// DATABASES:
+
+    //////// DOCUMENTS:
+    com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException {
+        try {
+            return db.getDocument(docID, mustExist);
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
+
+    //////// DATABASES:
 
     private void open() throws CouchbaseLiteException {
         if (db != null) return;
@@ -187,6 +218,29 @@ public final class Database {
         name = name.replaceAll("/", ":"); // TODO: This does not work with Windows platform.
         name = String.format(Locale.ENGLISH, "%s.%s", name, DB_EXTENSION);
         return new File(dir, name);
+    }
+
+    private static String generateDocID() {
+        return Misc.CreateUUID();
+    }
+
+    //////// DOCUMENTS:
+
+    private Document getDocument(String docID, boolean mustExist) throws CouchbaseLiteException {
+
+        // TODO: Need to implement Document Cache.
+
+        Document doc = null;
+        if (doc == null) {
+            // TODO: I don't think calling Database method from DocumentImpl consturctor is straightforward.
+            doc = new DocumentImpl(this, docID, mustExist);
+        } else {
+            if (mustExist && !doc.exists()) {
+                // Don't return a pre-instantiated CBLDocument if it doesn't exist
+                throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorNotFound);
+            }
+        }
+        return doc;
     }
 }
 
