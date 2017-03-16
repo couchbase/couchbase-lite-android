@@ -85,22 +85,22 @@ final class DocumentImpl extends PropertiesImpl implements Document {
 
     @Override
     public void purge() throws CouchbaseLiteException {
-
+        // TODO:
     }
 
     @Override
     public void revert() {
-
+        // TODO:
     }
 
     @Override
     public void addChangeListener(DocumentChangeListener listener) {
-
+        // TODO: DB00x
     }
 
     @Override
     public void removeChangeListener(DocumentChangeListener listener) {
-
+        // TODO: DB00x
     }
 
     //---------------------------------------------
@@ -127,7 +127,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
     @Override
     void markChanges() {
         super.markChanges();
-        // TODO: send notification
+        // TODO DB00x: send notification
     }
 
 
@@ -176,7 +176,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
         try {
             // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
             newDoc = save(deletion);
-            // TODO: Conflict handling
+            // TODO: DB004 Conflict handling
             commit = true;
         } finally {
             // End a db transaction.
@@ -189,7 +189,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
         if (deletion)
             resetChanges();
 
-        // TODO: postChangedNotificationExternal
+        // TODO DB00x: postChangedNotificationExternal
 
         // NOTE: need to release newDoc? or replace with c4doc and releaes c4doc?
     }
@@ -233,7 +233,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
             while(keys.hasNext()){
                 String key = keys.next();
                 Object value = getProperties().get(key);
-                // TODO: Blob
+                // TODO DB004: Blob
                 encoder.writeKey(key);
                 encoder.writeValue(value);
 
@@ -252,7 +252,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
     }
 
     private void resetChanges(){
-        //TODO
+        //TODO:
         setHasChanges(false);
     }
 

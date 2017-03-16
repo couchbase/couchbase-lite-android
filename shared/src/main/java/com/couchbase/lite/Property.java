@@ -9,7 +9,9 @@ public interface Property {
 
     boolean exists();
 
+    // TODO: DB004
     void addChangeListener(PropertyChangeListener listener);
 
+    // TODO: DB004
     void removeChangeListener(PropertyChangeListener listener);
 }

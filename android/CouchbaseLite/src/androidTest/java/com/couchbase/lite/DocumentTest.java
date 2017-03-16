@@ -230,41 +230,51 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testConflict() {
+        // TODO: DB004
     }
 
     @Test
     public void testConflictResolverGivesUp() {
+        // TODO: DB004
     }
 
     @Test
     public void testDeletionConflict() {
+        // TODO: DB004
     }
 
     @Test
     public void testConflictMineIsDeeper() {
+        // TODO: DB004
     }
 
     @Test
     public void testConflictTheirsIsDeeper() {
+        // TODO: DB004
     }
 
     @Test
     public void testBlob() {
+        // TODO: DB004
     }
 
     @Test
     public void testEmptyBlob() {
+        // TODO: DB004
     }
 
     @Test
     public void testBlobWithStream() {
+        // TODO: DB004
     }
 
     @Test
     public void testMultipleBlobRead() {
+        // TODO: DB004
     }
 
     @Test
     public void testReadExistingBlob() {
+        // TODO: DB004
     }
 }

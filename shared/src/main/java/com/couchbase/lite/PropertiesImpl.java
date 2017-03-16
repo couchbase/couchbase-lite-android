@@ -10,7 +10,7 @@ import java.util.Map;
 
 class PropertiesImpl implements Properties {
 
-    // TODO: sharedKeys
+    // TODO: DB004 sharedKeys
     private FLDict root;
     private Map<String, Object> properties;
     // TODO: changesKeys;
@@ -82,13 +82,13 @@ class PropertiesImpl implements Properties {
 
     @Override
     public Blob getBlob(String key) {
-        // TODO
+        // TODO: DB004
         return null;
     }
 
     @Override
     public Date getDate(String key) {
-        // TODO
+        // TODO: DB004
         return null;
     }
 
@@ -103,16 +103,19 @@ class PropertiesImpl implements Properties {
 
     @Override
     public SubDocument getSubDocument(String key) {
+        // TODO: DB004
         return null;
     }
 
     @Override
     public Document getDocument(String key) {
+        // TODO: DB004
         return null;
     }
 
     @Override
     public List<Document> getDocuments(String key) {
+        // TODO: DB004
         return null;
     }
 

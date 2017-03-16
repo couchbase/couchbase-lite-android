@@ -20,20 +20,21 @@ interface Properties extends Iterable {
     int getInt(String key);
     double getDouble(String key);
     boolean getBoolean(String key);
+    // TODO: DB004
     Blob getBlob(String key);
     Date getDate(String key);
     List<Object> getArray(String key); // NOTE: Should it be List<Object> getList(String key)??
     SubDocument getSubDocument(String key);
-    // TODO: SubdocumentModel
+    // TODO: DB004 SubdocumentModel
 
     // Relationships:
     Document getDocument(String key);
     List<Document> getDocuments(String key);
-    // TODO: DocumentModel
+    // TODO: DB00x DocumentModel
 
     // Get a complex property object:
     Property getProperty(String key);
-    // TODO: PropertyModel
+    // TODO: DB00x PropertyModel
 
     // Remove:
     Properties remove(String key);
