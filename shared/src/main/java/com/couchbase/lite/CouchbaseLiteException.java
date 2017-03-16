@@ -12,6 +12,11 @@ public final class CouchbaseLiteException extends RuntimeException {
         this.domain = 0;
         this.code = 0;
     }
+    public CouchbaseLiteException(Throwable cause){
+        super(cause);
+        this.domain = 0;
+        this.code = 0;
+    }
 
     public CouchbaseLiteException(int domain, int code) {
         super();

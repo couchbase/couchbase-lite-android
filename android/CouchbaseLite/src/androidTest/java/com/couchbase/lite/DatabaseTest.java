@@ -16,7 +16,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DatabaseTest extends BaseTest {
-    private static final String TAG = "DatabaseTest";
+    private static final String TAG = DatabaseTest.class.getName();
 
     @Before
     public void setUp() {
@@ -41,7 +41,13 @@ public class DatabaseTest extends BaseTest {
         assertTrue(db.getPath().endsWith(".cblite2"));
         assertEquals("db", db.getName());
 
+        String path = db.getPath();
+        Log.e(TAG, "dir=%s", dir);
+        Log.e(TAG, "path=%s", path);
+        assertTrue(new File(path).exists());
+
         db.close();
+        assertTrue(new File(path).exists());
         assertNull(db.getPath());
         Database.delete("db", dir);
     }
@@ -73,10 +79,8 @@ public class DatabaseTest extends BaseTest {
         assertEquals(db, doc1.getDatabase());
         assertFalse(doc1.exists());
         assertFalse(doc1.isDeleted());
-        // TODO: Cache is not implemented yet. So, following line will fail.
-        // assertEquals(doc1, db.getDocument("doc1"));
-        // TODO: Properties is not implemented yet. So, following line will fail.
-        // assertNull(doc1.getProperties());
+        assertEquals(doc1, db.getDocument("doc1"));
+        assertNull(doc1.getProperties());
     }
 
     @Test
@@ -86,8 +90,7 @@ public class DatabaseTest extends BaseTest {
         Document doc1 = db.getDocument("doc1");
         doc1.save();
         assertTrue(db.documentExists("doc1"));
-        // TODO: Properties is not implemented yet. So, following line will fail.
-        // assertNull(doc1.getProperties());
+        assertNull(doc1.getProperties());
     }
 
     @Test

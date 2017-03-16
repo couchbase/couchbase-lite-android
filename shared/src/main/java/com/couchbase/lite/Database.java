@@ -3,10 +3,13 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.support.WeakValueHashMap;
 import com.couchbase.litecore.LiteCoreException;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import static android.R.attr.path;
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
@@ -26,15 +29,15 @@ public final class Database {
     private String name;
     private DatabaseOptions options;
     // TODO: class name is conflicting between API level and LiteCore
-    private com.couchbase.litecore.Database db;
+    private com.couchbase.litecore.Database c4db;
+    // Unmodified Document Cache from DB
+    private WeakValueHashMap<String, Document> documents;
+    // Modified (Unsaved) Document Cache before save.
+    private Set<Document> unsavedDocuments;
 
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
-
-    public Database(String name) throws CouchbaseLiteException {
-        this(name, DatabaseOptions.getDefaultOptions());
-    }
 
     public Database(String name, DatabaseOptions options) throws CouchbaseLiteException {
         this.name = name;
@@ -42,27 +45,39 @@ public final class Database {
         open();
     }
 
+    public Database(String name) throws CouchbaseLiteException {
+        this(name, DatabaseOptions.getDefaultOptions());
+    }
+
     public String getName() {
         return name;
     }
 
     public String getPath() {
-        return db != null ? db.getPath() : null;
+        return c4db != null ? c4db.getPath() : null;
     }
 
     public void close() throws CouchbaseLiteException {
-        if(db == null) return;
+        if(c4db == null) return;
 
         Log.i(TAG, "Closing %s at path %s", this, path);
 
-        // TODO:
+        if(unsavedDocuments.size() > 0)
+            Log.w(TAG, "Closing database with %d unsaved docs", unsavedDocuments.size());
+
+        documents.clear();
+        documents = null;
+        unsavedDocuments.clear();
+        unsavedDocuments = null;
 
         try {
-            db.close();
-            db = null;
+            c4db.close();
+            c4db = null;
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
+
+        // TODO:
 
         // Success:
     }
@@ -74,18 +89,19 @@ public final class Database {
     public void delete() throws CouchbaseLiteException {
         // TODO: need to review Database.delete() and free()
         try {
-            db.delete();
+            c4db.delete();
         } catch (LiteCoreException e) {
             e.printStackTrace();
         }
-        db.free();
-        db = null;
+        c4db.free();
+        c4db = null;
     }
 
     // TODO: dir -> String or File
     public static void delete(String name, File dir) throws CouchbaseLiteException {
         File path = getDatabasePath(dir, name);
         try {
+            Log.e(TAG, "delete(): path=%s",path.toString());
             com.couchbase.litecore.Database.deleteAtPath(path.getPath());
         }catch (LiteCoreException e){
             throw LiteCoreBridge.convertException(e);
@@ -125,7 +141,25 @@ public final class Database {
     }
 
     public void inBatch(Runnable action) throws CouchbaseLiteException {
-
+        try {
+            boolean commit = false;
+            c4db.beginTransaction();
+            try {
+                try {
+                    action.run();
+                    commit = true;
+                } catch (RuntimeException e) {
+                    if (e instanceof CouchbaseLiteException)
+                        throw e;
+                    throw new CouchbaseLiteException(e);
+                }
+            } finally {
+                c4db.endTransaction(commit);
+            }
+            // TODO: [self postDatabaseChanged];
+        }catch(LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
     }
 
     // TODO:
@@ -146,14 +180,39 @@ public final class Database {
     //---------------------------------------------
 
     //////// DATABASES:
+    com.couchbase.litecore.Database internal(){
+        return c4db;
+    }
+    void beginTransaction() throws CouchbaseLiteException {
+        try {
+            c4db.beginTransaction();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+    void endTransaction(boolean commit) throws CouchbaseLiteException {
+        try {
+            c4db.endTransaction(commit);
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
 
     //////// DOCUMENTS:
     com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException {
         try {
-            return db.getDocument(docID, mustExist);
+            return c4db.getDocument(docID, mustExist);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
+    }
+
+    void unsavedDocument(Document doc, boolean unsaved) {
+        if (unsaved)
+            unsavedDocuments.add(doc);
+        else
+            unsavedDocuments.remove(doc);
     }
 
     //---------------------------------------------
@@ -163,7 +222,7 @@ public final class Database {
     //////// DATABASES:
 
     private void open() throws CouchbaseLiteException {
-        if (db != null) return;
+        if (c4db != null) return;
 
         File dir = options.getDirectory() != null ? options.getDirectory() : getDefaultDirectory();
         setupDirectory(dir);
@@ -186,7 +245,7 @@ public final class Database {
         try {
             // TODO: com.couchbase.litecore.Database is same class name with this classname.
             //       Need to change the name.
-            db = new com.couchbase.litecore.Database(
+            c4db = new com.couchbase.litecore.Database(
                     dbFile.getPath(),
                     databaseFlags,
                     encryptionAlgorithm,
@@ -196,6 +255,9 @@ public final class Database {
         }
 
         // TODO: Other settings
+
+        documents = new WeakValueHashMap<>();
+        unsavedDocuments = new HashSet<>();
 
         // success
     }
@@ -227,13 +289,11 @@ public final class Database {
     //////// DOCUMENTS:
 
     private Document getDocument(String docID, boolean mustExist) throws CouchbaseLiteException {
-
-        // TODO: Need to implement Document Cache.
-
-        Document doc = null;
+        Document doc = documents.get(docID);
         if (doc == null) {
             // TODO: I don't think calling Database method from DocumentImpl consturctor is straightforward.
             doc = new DocumentImpl(this, docID, mustExist);
+            documents.put(docID, doc);
         } else {
             if (mustExist && !doc.exists()) {
                 // Don't return a pre-instantiated CBLDocument if it doesn't exist
