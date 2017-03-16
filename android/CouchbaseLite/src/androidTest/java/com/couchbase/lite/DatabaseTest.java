@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-import android.util.Log;
+import com.couchbase.lite.internal.support.Log;
 
 import org.junit.After;
 import org.junit.Before;
@@ -16,6 +16,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DatabaseTest extends BaseTest {
+    private static final String TAG = DatabaseTest.class.getName();
 
     @Before
     public void setUp() {
@@ -35,13 +36,20 @@ public class DatabaseTest extends BaseTest {
         options.setDirectory(dir);
         Database db = new Database("db", options);
         assertNotNull(db);
+        Log.e(TAG, "db.getPath()=%s", db.getPath());
         assertNotNull(db.getPath());
         assertTrue(db.getPath().endsWith(".cblite2"));
         assertEquals("db", db.getName());
 
+        String path = db.getPath();
+        Log.e(TAG, "dir=%s", dir);
+        Log.e(TAG, "path=%s", path);
+        assertTrue(new File(path).exists());
+
         db.close();
+        assertTrue(new File(path).exists());
         assertNull(db.getPath());
-        assertTrue(Database.delete("db", dir));
+        Database.delete("db", dir);
     }
 
     @Test
