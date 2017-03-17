@@ -23,7 +23,7 @@ public class DocumentTest extends BaseTest {
     public void setUp() {
         super.setUp();
         Log.e(TAG, "setUp");
-        // TODO: Resolver
+        // TODO: DB004 - Resolver
     }
 
     @After
@@ -113,7 +113,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(null, doc1.get(null));
     }
 
-//    @Test
+//    @BaseTest
 //    public void testPropertyAccessors() {
 //        Document doc = db.getDocument("doc1");
 //

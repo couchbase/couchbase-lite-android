@@ -17,7 +17,8 @@ android {
         }
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
+                //TODO: c++_static
+                arguments '-DANDROID_STL=gnustl_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
                 cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 // explicitly build libs
                 targets 'LiteCoreJNI'
@@ -47,6 +48,11 @@ android {
             java.srcDirs = [
                     "src/androidTest/java",                                        // android specific codes
                     "${rootDir}/../libs/couchbase-lite-core/Java/androidTest/java" // lite-core java codes
+            ]
+            assets.srcDirs = [
+                    "src/main/assets",
+                    "src/androidTest/assets",
+                    "${rootDir}/../libs/couchbase-lite-core/C/tests/data" // lite-core test assets
             ]
         }
     }
