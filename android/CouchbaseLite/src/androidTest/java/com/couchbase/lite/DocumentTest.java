@@ -1,13 +1,15 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.litecore.Constants;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -15,6 +17,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class DocumentTest extends BaseTest {
     private static final String TAG = DocumentTest.class.getName();
@@ -22,13 +25,11 @@ public class DocumentTest extends BaseTest {
     @Before
     public void setUp() {
         super.setUp();
-        Log.e(TAG, "setUp");
-        // TODO: DB004 - Resolver
+        // TODO: DB005 - ConflictResolver
     }
 
     @After
     public void tearDown() {
-        Log.e(TAG, "tearDown");
         super.tearDown();
     }
 
@@ -49,7 +50,7 @@ public class DocumentTest extends BaseTest {
         assertNull(doc.getDate("prop"));
         assertNull(doc.getString("prop"));
 
-        doc.save(); // check if CouchbaseLiteException is thrown
+        doc.save();
         assertTrue(doc.exists());
         assertFalse(doc.isDeleted());
         assertNull(doc.getProperties());
@@ -72,22 +73,39 @@ public class DocumentTest extends BaseTest {
         assertNull(doc.getDate("prop"));
         assertNull(doc.getString("prop"));
 
-        doc.save(); // check if CouchbaseLiteException is thrown
+        doc.save();
         assertTrue(doc.exists());
         assertFalse(doc.isDeleted());
         assertNull(doc.getProperties());
         assertEquals(doc, db.getDocument("doc1"));
     }
+
     @Test
-    public void testPropertyPrimitiveAccessors() {
+    public void testPropertyAccessors() {
         Document doc = db.getDocument("doc1");
 
         // Primitives:
         doc.set("bool", true);
         doc.set("double", 1.1);
         doc.set("integer", 2);
+
+        // Objects:
         doc.set("string", "str");
+        doc.set("boolObj", Boolean.TRUE);
+        doc.set("number", Integer.valueOf(1));
+        Map<String, String> dict = new HashMap<>();
+        dict.put("foo", "bar");
+        doc.set("dict", dict);
+        List<String> list = Arrays.asList("1", "2");
+        doc.set("array", list);
+
+        // null
         doc.set(null, null);
+        doc.set("nullarray", Arrays.asList(null, null));
+
+        // Date:
+        Date date = new Date();
+        doc.set("date", date);
 
         // save doc
         doc.save();
@@ -96,8 +114,20 @@ public class DocumentTest extends BaseTest {
         assertEquals(true, doc.getBoolean("bool"));
         assertEquals(1.1, doc.getDouble("double"), 0.0);
         assertEquals(2, doc.getInt("integer"));
-        assertEquals("str", doc.getString("string"));
+
+        // Objects:
+        assertEquals("str", doc.get("string"));
+        assertEquals(Boolean.TRUE, doc.get("boolObj"));
+        assertEquals(Integer.valueOf(1), doc.get("number"));
+        assertEquals(dict, doc.get("dict"));
+        assertEquals(list, doc.get("array"));
+
+        // null
         assertEquals(null, doc.get(null));
+        assertEquals(Arrays.asList(null, null), doc.get("nullarray"));
+
+        // Date: once serialized, truncate less than a second
+        assertTrue(Math.abs(date.getTime() - doc.getDate("date").getTime()) < 1000);
 
         ////// Reopen the database and get the document again:
         reopenDB();
@@ -109,83 +139,22 @@ public class DocumentTest extends BaseTest {
         assertEquals(true, doc1.getBoolean("bool"));
         assertEquals(1.1, doc1.getDouble("double"), 0.0);
         assertEquals(2, doc1.getInt("integer"));
-        assertEquals("str", doc1.getString("string"));
-        assertEquals(null, doc1.get(null));
-    }
 
-//    @BaseTest
-//    public void testPropertyAccessors() {
-//        Document doc = db.getDocument("doc1");
-//
-//        // Primitives:
-//        doc.set("bool", true);
-//        doc.set("double", 1.1);
-//        doc.set("integer", 2);
-//
-//        // Objects:
-//        doc.set("string", "str");
-//        doc.set("boolObj", Boolean.TRUE);
-//        doc.set("number", Integer.valueOf(1));
-//        Map<String, String> dict = new HashMap<>();
-//        dict.put("foo","bar");
-//        doc.set("dict", dict);
-//        List<String> list = Arrays.asList("1", "2");
-//        doc.set("array", list);
-//
-//        // null
-//        doc.set(null, null);
-//        doc.set("nullarray", Arrays.asList(null, null));
-//
-//        // Date:
-//        // TODO:
-//
-//        // save doc
-//        doc.save();
-//
-//        // Primitives:
-//        assertEquals(true, doc.getBoolean("bool"));
-//        assertEquals(1.1, doc.getDouble("double"), 0.0);
-//        assertEquals(2, doc.getInt("integer"));
-//
-//        // Objects:
-//        assertEquals("str", doc.get("string"));
-//        assertEquals(Boolean.TRUE, doc.get("boolObj"));
-//        assertEquals(Integer.valueOf(1), doc.get("number"));
-//        assertEquals(dict, doc.get("dict"));
-//        assertEquals(list, doc.get("array"));
-//
-//        // null
-//        assertEquals(null, doc.get(null));
-//        assertEquals(Arrays.asList(null, null), doc.get("nullarray"));
-//
-//        // Date:
-//        // TODO:
-//
-//        ////// Reopen the database and get the document again:
-//        reopenDB();
-//
-//        Document doc1 = db.getDocument("doc1");
-//        assertNotNull(doc1);
-//
-//        // Primitives:
-//        assertEquals(true, doc1.getBoolean("bool"));
-//        assertEquals(1.1, doc1.getDouble("double"), 0.0);
-//        assertEquals(2, doc1.getInt("integer"));
-//
-//        // Objects:
-//        assertEquals("str", doc1.get("string"));
-//        assertEquals(Boolean.TRUE, doc1.get("boolObj"));
-//        assertEquals(Integer.valueOf(1), doc1.get("number"));
-//        assertEquals(dict, doc1.get("dict"));
-//        assertEquals(list, doc1.get("array"));
-//
-//        // null
-//        assertEquals(null, doc1.get(null));
-//        assertEquals(Arrays.asList(null, null), doc1.get("nullarray"));
-//
-//        // Date:
-//        // TODO:
-//    }
+        // Objects:
+        assertEquals("str", doc1.getString("string"));
+        assertEquals("str", doc1.get("string"));
+        assertEquals(Boolean.TRUE, doc1.get("boolObj"));
+        assertEquals(Integer.valueOf(1), doc1.get("number"));
+        assertEquals(dict, doc1.get("dict"));
+        assertEquals(list, doc1.get("array"));
+
+        // null
+        assertEquals(null, doc1.get(null));
+        assertEquals(Arrays.asList(null, null), doc1.get("nullarray"));
+
+        // Date: once serialized, truncate less than a second
+        assertTrue(Math.abs(date.getTime() - doc.getDate("date").getTime()) < 1000);
+    }
 
     @Test
     public void testProperties() {
@@ -205,76 +174,203 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testRemoveKeys() {
+    public void testRemoveProperties() {
+        Document doc = db.getDocument("doc1");
+        Map<String, Object> props = new HashMap<>();
+        props.put("type", "profile");
+        props.put("name", "Jason");
+        props.put("weight", 130.5);
+        Map<String, Object> addresss = new HashMap<>();
+        addresss.put("street", "1 milky way.");
+        addresss.put("city", "galaxy city");
+        addresss.put("zip", 12345);
+        props.put("address", addresss);
+        doc.setProperties(props);
+
+        assertEquals(130.5, doc.getDouble("weight"), 0.0);
+        assertEquals("galaxy city", ((Map<String, Object>) doc.get("address")).get("city"));
+
+        doc.set("name", null);
+        doc.set("weight", null);
+
+        Map<String, Object> addressCopy = new HashMap<>((Map<String, Object>) doc.get("address"));
+        addressCopy.put("city", null);
+        doc.set("address", addressCopy);
+
+        assertNull(doc.get("name"));
+        assertNull(doc.get("weight"));
+        assertEquals(0.0, doc.getDouble("weight"), 0.0);
+        assertNull(((Map<String, Object>) doc.get("address")).get("city"));
     }
 
     @Test
     public void testContainsKey() {
+        Document doc = db.getDocument("doc1");
+        Map<String, Object> props = new HashMap<>();
+        props.put("type", "profile");
+        props.put("name", "Jason");
+        Map<String, Object> addresss = new HashMap<>();
+        addresss.put("street", "1 milky way.");
+        props.put("address", addresss);
+        doc.setProperties(props);
+
+        assertTrue(doc.contains("type"));
+        assertTrue(doc.contains("name"));
+        assertTrue(doc.contains("address"));
+        assertFalse(doc.contains("weight"));
     }
 
     @Test
     public void testDelete() {
+        Document doc = db.getDocument("doc1");
+        doc.set("type", "profile");
+        doc.set("name", "Scott");
+        assertFalse(doc.exists());
+        assertFalse(doc.isDeleted());
+
+        // Delete before save:
+        try {
+            doc.delete();
+            fail("CouchbaseLiteException expected");
+        } catch (CouchbaseLiteException e) {
+            // should be com here...
+            assertEquals(Constants.C4ErrorDomain.LiteCoreDomain, e.getDomain());
+        }
+        assertEquals("profile", doc.get("type"));
+        assertEquals("Scott", doc.get("name"));
+
+        // Save:
+        doc.save();
+        assertTrue(doc.exists());
+        assertFalse(doc.isDeleted());
+
+        // Delete:
+        doc.delete();
+        assertTrue(doc.exists());
+        assertTrue(doc.isDeleted());
+        assertNull(doc.getProperties());
     }
 
     @Test
     public void testPurge() {
+        Document doc = db.getDocument("doc1");
+        doc.set("type", "profile");
+        doc.set("name", "Scott");
+        assertFalse(doc.exists());
+        assertFalse(doc.isDeleted());
+
+        // Delete before save:
+        try {
+            doc.purge();
+            fail("CouchbaseLiteException expected");
+        } catch (CouchbaseLiteException e) {
+            // should be com here...
+        }
+        assertEquals("profile", doc.get("type"));
+        assertEquals("Scott", doc.get("name"));
+
+        // Save:
+        doc.save();
+        assertTrue(doc.exists());
+        assertFalse(doc.isDeleted());
+
+        // Purge:
+        doc.purge();
+        assertFalse(doc.exists());
+        assertFalse(doc.isDeleted());
     }
 
     @Test
     public void testRevert() {
+        Document doc = db.getDocument("doc1");
+        doc.set("type", "profile");
+        doc.set("name", "Scott");
+
+        // Revert before save:
+        doc.revert();
+        assertNull(doc.get("type"));
+        assertNull(doc.get("name"));
+
+        // Save:
+        doc.set("type", "profile");
+        doc.set("name", "Scott");
+        doc.save();
+        assertEquals("profile", doc.get("type"));
+        assertEquals("Scott", doc.get("name"));
+
+        // Make some changes:
+        doc.set("type", "user");
+        doc.set("name", "Scottie");
+
+        // Revert:
+        doc.revert();
+        assertEquals("profile", doc.get("type"));
+        assertEquals("Scott", doc.get("name"));
     }
 
     @Test
     public void testReopenDB() {
+        Document doc = db.getDocument("doc1");
+        doc.set("string", "str");
+        Map<String, Object> expect = new HashMap<>();
+        expect.put("string", "str");
+        assertEquals(expect, doc.getProperties());
+        doc.save();
+
+        reopenDB();
+
+        doc = db.getDocument("doc1");
+        assertEquals(expect, doc.getProperties());
+        assertEquals("str", doc.get("string"));
     }
 
     @Test
     public void testConflict() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testConflictResolverGivesUp() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testDeletionConflict() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testConflictMineIsDeeper() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testConflictTheirsIsDeeper() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testBlob() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testEmptyBlob() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testBlobWithStream() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testMultipleBlobRead() {
-        // TODO: DB004
+        // TODO: DB005
     }
 
     @Test
     public void testReadExistingBlob() {
-        // TODO: DB004
+        // TODO: DB005
     }
 }

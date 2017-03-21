@@ -73,24 +73,45 @@ final class DocumentImpl extends PropertiesImpl implements Document {
 
     @Override
     public void save() throws CouchbaseLiteException {
-        // TODO: Need to implement ConflictResolver
+        // TODO: DB005 - Need to implement ConflictResolver
         save(null, false);
     }
 
     @Override
     public void delete() throws CouchbaseLiteException {
-        // TODO: Need to implement ConflictResolver
+        // TODO: DB005 - Need to implement ConflictResolver
         save(null, true);
     }
 
     @Override
     public void purge() throws CouchbaseLiteException {
-        // TODO:
+        if (!exists())
+            throw new CouchbaseLiteException("the document does not exist.");
+
+        boolean commit = false;
+        db.beginTransaction();
+        try {
+            // revID: null, all revisions are purged.
+            if (c4doc.purgeRevision(null) >= 0) {
+                c4doc.save(0);
+                commit = true;
+            }
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        } finally {
+            db.endTransaction(commit);
+        }
+
+        // reload
+        load(false);
+
+        // reset
+        resetChanges();
     }
 
     @Override
     public void revert() {
-        // TODO:
+        resetChanges();
     }
 
     @Override
@@ -118,7 +139,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
 
     @Override
     void setHasChanges(boolean hasChanges) {
-        if(this.hasChanges != hasChanges) {
+        if (this.hasChanges != hasChanges) {
             super.setHasChanges(hasChanges);
             getDatabase().unsavedDocument(this, hasChanges);
         }
@@ -143,7 +164,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
     }
 
     private void setC4Doc(com.couchbase.litecore.Document doc) throws CouchbaseLiteException {
-        if(c4doc != null)
+        if (c4doc != null)
             c4doc.free();
         c4doc = doc;
         setRoot(null);
@@ -157,7 +178,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
                     throw LiteCoreBridge.convertException(e);
             }
             if (body != null && body.length > 0) {
-                FLDict root = FLValue.fromData(body).asDict();
+                FLDict root = FLValue.fromData(body).asFLDict();
                 setRoot(root);
             }
         }
@@ -176,7 +197,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
         try {
             // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
             newDoc = save(deletion);
-            // TODO: DB004 Conflict handling
+            // TODO: DB005 Conflict handling
             commit = true;
         } finally {
             // End a db transaction.
@@ -195,7 +216,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
     }
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
-    private com.couchbase.litecore.Document save(boolean deletion){
+    private com.couchbase.litecore.Document save(boolean deletion) {
 
         Map<String, Object> propertiesToSave = deletion ? null : getProperties();
         try {
@@ -230,16 +251,16 @@ final class DocumentImpl extends PropertiesImpl implements Document {
         try {
             encoder.beginDict(getProperties().size());
             Iterator<String> keys = getProperties().keySet().iterator();
-            while(keys.hasNext()){
+            while (keys.hasNext()) {
                 String key = keys.next();
                 Object value = getProperties().get(key);
-                // TODO DB004: Blob
+                // TODO DB005: Blob
                 encoder.writeKey(key);
                 encoder.writeValue(value);
 
             }
             encoder.endDict();
-            byte[] body = new byte[0];
+            byte[] body;
             try {
                 body = encoder.finish();
             } catch (LiteCoreException e) {
@@ -251,8 +272,8 @@ final class DocumentImpl extends PropertiesImpl implements Document {
         }
     }
 
-    private void resetChanges(){
-        //TODO:
+    private void resetChanges() {
+        this.properties = null; // not calling setProperties(null)
         setHasChanges(false);
     }
 

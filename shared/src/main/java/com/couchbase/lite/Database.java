@@ -58,11 +58,11 @@ public final class Database {
     }
 
     public void close() throws CouchbaseLiteException {
-        if(c4db == null) return;
+        if (c4db == null) return;
 
         Log.i(TAG, "Closing %s at path %s", this, path);
 
-        if(unsavedDocuments.size() > 0)
+        if (unsavedDocuments.size() > 0)
             Log.w(TAG, "Closing database with %d unsaved docs", unsavedDocuments.size());
 
         documents.clear();
@@ -101,9 +101,9 @@ public final class Database {
     public static void delete(String name, File dir) throws CouchbaseLiteException {
         File path = getDatabasePath(dir, name);
         try {
-            Log.e(TAG, "delete(): path=%s",path.toString());
+            Log.e(TAG, "delete(): path=%s", path.toString());
             com.couchbase.litecore.Database.deleteAtPath(path.getPath());
-        }catch (LiteCoreException e){
+        } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
 
@@ -157,7 +157,7 @@ public final class Database {
                 c4db.endTransaction(commit);
             }
             // TODO: [self postDatabaseChanged];
-        }catch(LiteCoreException e) {
+        } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
     }
@@ -180,9 +180,10 @@ public final class Database {
     //---------------------------------------------
 
     //////// DATABASES:
-    com.couchbase.litecore.Database internal(){
+    com.couchbase.litecore.Database internal() {
         return c4db;
     }
+
     void beginTransaction() throws CouchbaseLiteException {
         try {
             c4db.beginTransaction();
@@ -276,7 +277,7 @@ public final class Database {
         }
     }
 
-    private static File getDatabasePath(File dir, String name){
+    private static File getDatabasePath(File dir, String name) {
         name = name.replaceAll("/", ":"); // TODO: This does not work with Windows platform.
         name = String.format(Locale.ENGLISH, "%s.%s", name, DB_EXTENSION);
         return new File(dir, name);

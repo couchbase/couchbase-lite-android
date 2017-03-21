@@ -28,7 +28,7 @@ interface Document extends Properties {
 
     void removeChangeListener(DocumentChangeListener listener);
 
-    //TODO:
+    //TODO: DB00x -
     // func addChangeListener(propertyListener:PropertyChangeListener)
     // func removeChangeListener(propertyListener: DocumentChangeListener)
 }
