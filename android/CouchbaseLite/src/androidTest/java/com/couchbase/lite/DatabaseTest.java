@@ -37,17 +37,17 @@ public class DatabaseTest extends BaseTest {
         Database db = new Database("db", options);
         assertNotNull(db);
         Log.e(TAG, "db.getPath()=%s", db.getPath());
-        assertNotNull(db.getPath());
-        assertTrue(db.getPath().endsWith(".cblite2"));
-        assertEquals("db", db.getName());
-
-        String path = db.getPath();
+        File path = db.getPath();
         Log.e(TAG, "dir=%s", dir);
         Log.e(TAG, "path=%s", path);
-        assertTrue(new File(path).exists());
+        assertNotNull(path);
+        assertTrue(path.isDirectory());
+        assertTrue(path.exists());
+        assertTrue(db.getPath().getName().endsWith(".cblite2"));
+        assertEquals("db", db.getName());
 
         db.close();
-        assertTrue(new File(path).exists());
+        assertTrue(path.exists());
         assertNull(db.getPath());
         Database.delete("db", dir);
     }
@@ -56,10 +56,10 @@ public class DatabaseTest extends BaseTest {
     public void testDelete() throws Exception {
         assertNotNull(db.getPath());
 
-        String path = db.getPath();
+        File path = db.getPath();
         db.delete();
         assertNull(db.getPath());
-        assertFalse(new File(path).exists());
+        assertFalse(path.exists());
     }
 
     @Test

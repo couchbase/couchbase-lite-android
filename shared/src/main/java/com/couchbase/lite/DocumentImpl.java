@@ -43,12 +43,13 @@ final class DocumentImpl extends PropertiesImpl implements Document {
 
     @Override
     public ConflictResolver getConflictResolver() {
+        // TODO: DB005
         return null;
     }
 
     @Override
     public void setConflictResolver(ConflictResolver conflictResolver) {
-
+        // TODO: DB005
     }
 
     @Override
@@ -116,21 +117,12 @@ final class DocumentImpl extends PropertiesImpl implements Document {
 
     @Override
     public void addChangeListener(DocumentChangeListener listener) {
-        // TODO: DB00x
+        // TODO: DB005
     }
 
     @Override
     public void removeChangeListener(DocumentChangeListener listener) {
-        // TODO: DB00x
-    }
-
-    //---------------------------------------------
-    // Implementation of Iterable
-    //---------------------------------------------
-
-    @Override
-    public Iterator iterator() {
-        return null;
+        // TODO: DB005
     }
 
     //---------------------------------------------
@@ -148,7 +140,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
     @Override
     void markChanges() {
         super.markChanges();
-        // TODO DB00x: send notification
+        // TODO DB005: send notification
     }
 
 
@@ -171,9 +163,9 @@ final class DocumentImpl extends PropertiesImpl implements Document {
         if (c4doc != null) {
             byte[] body = null;
             try {
+                // In case of (LiteCoreDomain, kC4ErrorDeleted) -> body = null if we directly bind to C4 APIs.
                 body = c4doc.getSelectedBody();
             } catch (LiteCoreException e) {
-                // TODO: <-- I don't have confidence about following logic
                 if (e.domain != Constants.C4ErrorDomain.LiteCoreDomain || e.code != Constants.LiteCoreError.kC4ErrorDeleted)
                     throw LiteCoreBridge.convertException(e);
             }
@@ -210,9 +202,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
         if (deletion)
             resetChanges();
 
-        // TODO DB00x: postChangedNotificationExternal
-
-        // NOTE: need to release newDoc? or replace with c4doc and releaes c4doc?
+        // TODO DB005: postChangedNotificationExternal
     }
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
@@ -225,7 +215,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
             String docType = null;
             if (deletion)
                 flags = Constants.C4RevisionFlags.kRevDeleted;
-            // TODO: Blob
+            // TODO: DB005 - Blob
             if (propertiesToSave != null && propertiesToSave.size() > 0) {
                 // Encode properties to Fleece data:
                 body = encode();
@@ -239,7 +229,7 @@ final class DocumentImpl extends PropertiesImpl implements Document {
             String[] history = revIDs.toArray(new String[revIDs.size()]);
 
             // Save to database:
-            com.couchbase.litecore.Document newDoc = db.internal().put(c4doc.getDocID(), body, null, false, false, history, flags, true, 0);
+            com.couchbase.litecore.Document newDoc = db.internal().put(c4doc.getDocID(), body, docType, false, false, history, flags, true, 0);
             return newDoc;
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
@@ -275,5 +265,4 @@ final class DocumentImpl extends PropertiesImpl implements Document {
         this.properties = null; // not calling setProperties(null)
         setHasChanges(false);
     }
-
 }

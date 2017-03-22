@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -78,6 +79,55 @@ public class DocumentTest extends BaseTest {
         assertFalse(doc.isDeleted());
         assertNull(doc.getProperties());
         assertEquals(doc, db.getDocument("doc1"));
+    }
+
+    @Test
+    public void testIterator() {
+        Document doc = db.getDocument("doc1");
+
+        // Primitives:
+        doc.set("bool", true);
+        doc.set("double", 1.1);
+        doc.set("integer", 2);
+
+        // iterator
+        Iterator<String> itr = doc.iterator();
+        assertNotNull(itr);
+        int i = 0;
+        while (itr.hasNext()) {
+            String key = itr.next();
+            i++;
+        }
+        assertEquals(3, i);
+
+        ////// Save Document
+        doc.save();
+
+        // iterator
+        itr = doc.iterator();
+        assertNotNull(itr);
+        i = 0;
+        while (itr.hasNext()) {
+            String key = itr.next();
+            i++;
+        }
+        assertEquals(3, i);
+
+        ////// Reopen the database and get the document again:
+        reopenDB();
+
+        Document doc1 = db.getDocument("doc1");
+        assertNotNull(doc1);
+
+        // iterator
+        Iterator<String> itr1 = doc1.iterator();
+        assertNotNull(itr1);
+        i = 0;
+        while (itr1.hasNext()) {
+            String key = itr1.next();
+            i++;
+        }
+        assertEquals(3, i);
     }
 
     @Test

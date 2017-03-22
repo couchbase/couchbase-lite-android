@@ -11,11 +11,11 @@ import java.util.Map;
 
 class PropertiesImpl implements Properties {
 
-    // TODO: DB005 sharedKeys
+    // TODO: DB005 - sharedKeys
     FLDict root;
     Map<String, Object> properties;
-    // TODO: changesKeys;
-    /*package*/ boolean hasChanges;
+    // TODO: DB005 - changesKeys;
+    boolean hasChanges;
 
     @Override
     public Map<String, Object> getProperties() {
@@ -26,17 +26,28 @@ class PropertiesImpl implements Properties {
 
     @Override
     public void setProperties(Map<String, Object> properties) {
-        if (properties != null) this.properties = new HashMap<>(properties);
-        else this.properties = new HashMap<>();
+        if (properties != null)
+            this.properties = new HashMap<>(properties);
+        else
+            this.properties = new HashMap<>();
 
-        // TODO: DB004
+        // TODO: DB005 - Special case handling for Blob
 
         markChanges();
     }
 
     @Override
     public Properties set(String key, Object value) {
-        setObject(key, value);
+        // Date
+        if (value instanceof Date)
+            value = DateUtils.toJson((Date) value);
+
+        if (hasChanges || (value == null ? getObject(key) != null : !value.equals(getObject(key)))) {
+            mutateProperties();
+            properties.put(key, value);
+            markChanges();
+        }
+
         return this;
     }
 
@@ -131,12 +142,16 @@ class PropertiesImpl implements Properties {
 
     @Override
     public Property getProperty(String key) {
+        // TODO: DB005
         return null;
     }
 
     @Override
     public Properties remove(String key) {
-        return null;
+        mutateProperties();
+        properties.remove(key);
+        markChanges();
+        return this;
     }
 
     @Override
@@ -144,17 +159,28 @@ class PropertiesImpl implements Properties {
         if (properties != null)
             return properties.containsKey(key);
         else
-            return root == null ? false : root.asDict().containsKey(key); // TODO: Need to update once shared key is implmented.
+            // TODO: DB005 - Need to update once shared key is implemented.
+            return root == null ? false : root.asDict().containsKey(key);
     }
 
+    //---------------------------------------------
+    // Implementation of Iterable
+    //---------------------------------------------
+
+    /**
+     * Implementing for Iterable.
+     * Currently iterator() returns keys. Not Key,Value pair.
+     *
+     * @return Iterator<String>
+     */
     @Override
-    public Iterator iterator() {
-        return null;
+    public Iterator<String> iterator() {
+        if (properties != null) {
+            return properties.keySet().iterator();
+        } else {
+            return root == null ? null : root.iterator();
+        }
     }
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
 
     //---------------------------------------------
     // Package level access
@@ -177,18 +203,6 @@ class PropertiesImpl implements Properties {
     // Private (in class only)
     //---------------------------------------------
 
-    private void setObject(String key, Object value) {
-        // Date
-        if (value instanceof Date)
-            value = DateUtils.toJson((Date) value);
-
-        if (hasChanges || (value == null ? getObject(key) != null : !value.equals(getObject(key)))) {
-            mutateProperties();
-            properties.put(key, value);
-            markChanges();
-        }
-    }
-
     private Object getObject(String key) {
         if (properties != null)
             return properties.get(key);
@@ -198,7 +212,7 @@ class PropertiesImpl implements Properties {
 
     private void mutateProperties() {
         if (properties == null) {
-            //TODO: fleeceRootToDictionary
+            properties = root == null ? null : root.asDict();
             if (properties == null)
                 properties = new HashMap<>();
         }
@@ -210,5 +224,4 @@ class PropertiesImpl implements Properties {
         else
             return root == null ? null : root.asDict();
     }
-
 }
