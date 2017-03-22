@@ -257,7 +257,6 @@ final class DocumentImpl extends PropertiesImpl implements Document {
                 // TODO DB005: Blob
                 encoder.writeKey(key);
                 encoder.writeValue(value);
-
             }
             encoder.endDict();
             byte[] body;

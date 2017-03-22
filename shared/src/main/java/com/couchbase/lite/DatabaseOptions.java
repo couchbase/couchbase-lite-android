@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import java.io.File;
 
 public final class DatabaseOptions {
-    private File directory; // TODO: File or String
+    private File directory;
     private Object encryptionKey;
     private boolean readOnly;
 

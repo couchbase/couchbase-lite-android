@@ -97,19 +97,17 @@ public final class Database {
         c4db = null;
     }
 
-    // TODO: dir -> String or File
     public static void delete(String name, File dir) throws CouchbaseLiteException {
         File path = getDatabasePath(dir, name);
         try {
             Log.e(TAG, "delete(): path=%s", path.toString());
-            com.couchbase.litecore.Database.deleteAtPath(path.getPath());
+            // TODO: Review flags value
+            com.couchbase.litecore.Database.deleteAtPath(path.getPath(), 0);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
-
     }
 
-    // TODO: dir -> String or File
     public static boolean documentExists(String name, File dir) throws CouchbaseLiteException {
         return false;
     }
