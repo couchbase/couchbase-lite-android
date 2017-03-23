@@ -66,3 +66,35 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.2.0'
     testCompile 'junit:junit:4.12'
 }
+
+// Generate source.jar
+task sourcesJar(type: Jar) {
+    baseName = project.name
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+// Generate javadoc
+task javadoc(type: Javadoc){
+    source android.sourceSets.main.java.srcDirs
+    options {
+        title = "Couchbase Lite ${project.version}"
+        memberLevel = JavadocMemberLevel.PROTECTED
+        docEncoding = 'UTF-8'
+        encoding = 'UTF-8'
+        charSet = 'UTF-8'
+        locale = 'en_US'
+
+        links "https://docs.oracle.com/javase/7/docs/api/"
+        linksOffline "https://developer.android.com/reference/", "${project.android.sdkDirectory}/docs/reference"
+    }
+    exclude '**/internal/**'
+    exclude '**/litecore/**'
+}
+
+// Generate javadoc.jar
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    baseName = project.name
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}

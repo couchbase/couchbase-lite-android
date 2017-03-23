@@ -1,7 +1,7 @@
 package com.couchbase.lite;
 
 // TODO DB00x
-interface DocumentChangeEvent {
+public interface DocumentChangeEvent {
     Document getSource();
 
     void setSource(Document source);

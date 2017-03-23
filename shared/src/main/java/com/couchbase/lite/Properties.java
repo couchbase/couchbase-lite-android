@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-interface Properties extends Iterable<String> {
+public interface Properties extends Iterable<String> {
     // Document properties:
 
     Map<String, Object> getProperties();

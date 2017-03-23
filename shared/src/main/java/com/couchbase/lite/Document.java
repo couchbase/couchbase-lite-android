@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-interface Document extends Properties {
+public interface Document extends Properties {
 
     Database getDatabase();
 
