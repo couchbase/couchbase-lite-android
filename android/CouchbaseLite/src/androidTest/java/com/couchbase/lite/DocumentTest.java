@@ -224,6 +224,85 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
+    public void testPropertiesDifferentType() {
+        Document doc = db.getDocument("doc1");
+        doc.set("string", "demo");
+        doc.set("int", 1);
+
+        assertEquals("demo", doc.getString("string"));
+        assertEquals(false, doc.getBoolean("string"));
+        assertEquals(0.0F, doc.getFloat("string"), 0.0F);
+        assertEquals(0.0, doc.getDouble("string"), 0.0);
+        assertEquals(0, doc.getInt("string"));
+        assertEquals(null, doc.getArray("string"));
+        assertEquals(null, doc.getDate("string"));
+
+        assertEquals(null, doc.getString("int"));
+        assertEquals(false, doc.getBoolean("int"));
+        assertEquals(1.0F, doc.getFloat("int"), 0.0F);
+        assertEquals(1.0, doc.getDouble("int"), 0.0);
+        assertEquals(1, doc.getInt("int"));
+        assertEquals(null, doc.getArray("int"));
+        assertEquals(null, doc.getDate("int"));
+
+        // after save
+        doc.save();
+
+        assertEquals("demo", doc.getString("string"));
+        assertEquals(false, doc.getBoolean("string"));
+        assertEquals(0.0F, doc.getFloat("string"), 0.0F);
+        assertEquals(0.0, doc.getDouble("string"), 0.0);
+        assertEquals(null, doc.getArray("string"));
+        assertEquals(null, doc.getDate("string"));
+
+        assertEquals(null, doc.getString("int"));
+        assertEquals(false, doc.getBoolean("int"));
+        assertEquals(1.0F, doc.getFloat("int"), 0.0F);
+        assertEquals(1.0, doc.getDouble("int"), 0.0);
+        assertEquals(1, doc.getInt("int"));
+        assertEquals(null, doc.getArray("int"));
+        assertEquals(null, doc.getDate("int"));
+
+        // re-obtain
+        doc = db.getDocument("doc1");
+
+        assertEquals("demo", doc.getString("string"));
+        assertEquals(false, doc.getBoolean("string"));
+        assertEquals(0.0F, doc.getFloat("string"), 0.0F);
+        assertEquals(0.0, doc.getDouble("string"), 0.0);
+        assertEquals(null, doc.getArray("string"));
+        assertEquals(null, doc.getDate("string"));
+
+        assertEquals(null, doc.getString("int"));
+        assertEquals(false, doc.getBoolean("int"));
+        assertEquals(1.0F, doc.getFloat("int"), 0.0F);
+        assertEquals(1.0, doc.getDouble("int"), 0.0);
+        assertEquals(1, doc.getInt("int"));
+        assertEquals(null, doc.getArray("int"));
+        assertEquals(null, doc.getDate("int"));
+
+        // after reopen
+        reopenDB();
+
+        doc = db.getDocument("doc1");
+
+        assertEquals("demo", doc.getString("string"));
+        assertEquals(false, doc.getBoolean("string"));
+        assertEquals(0.0F, doc.getFloat("string"), 0.0F);
+        assertEquals(0.0, doc.getDouble("string"), 0.0);
+        assertEquals(null, doc.getArray("string"));
+        assertEquals(null, doc.getDate("string"));
+
+        assertEquals(null, doc.getString("int"));
+        assertEquals(false, doc.getBoolean("int"));
+        assertEquals(1.0F, doc.getFloat("int"), 0.0F);
+        assertEquals(1.0, doc.getDouble("int"), 0.0);
+        assertEquals(1, doc.getInt("int"));
+        assertEquals(null, doc.getArray("int"));
+        assertEquals(null, doc.getDate("int"));
+    }
+
+    @Test
     public void testRemoveProperties() {
         Document doc = db.getDocument("doc1");
         Map<String, Object> props = new HashMap<>();
