@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLArray;
-import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLBoolean;
-import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLNumber;
-import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLString;
 
 class PropertiesImpl implements Properties {
 
@@ -68,7 +65,7 @@ class PropertiesImpl implements Properties {
             return cast(properties.get(key), String.class);
         else {
             FLValue flvalue = getValueFromRoot(key);
-            return flvalue == null || flvalue.getType() != kFLString ? null : flvalue.asString();
+            return flvalue == null ? null : flvalue.asString();
         }
     }
 
@@ -79,7 +76,7 @@ class PropertiesImpl implements Properties {
             return obj == null ? 0 : obj.intValue();
         } else {
             FLValue flvalue = getValueFromRoot(key);
-            return flvalue == null || flvalue.getType() != kFLNumber ? 0 : flvalue.asInt();
+            return flvalue == null ? 0 : flvalue.asInt();
         }
     }
 
@@ -90,7 +87,7 @@ class PropertiesImpl implements Properties {
             return obj == null ? 0.0F : obj.floatValue();
         } else {
             FLValue flvalue = getValueFromRoot(key);
-            return flvalue == null || flvalue.getType() != kFLNumber ? 0.0F : flvalue.asFloat();
+            return flvalue == null ? 0.0F : flvalue.asFloat();
         }
     }
 
@@ -101,18 +98,21 @@ class PropertiesImpl implements Properties {
             return obj == null ? 0.0 : obj.doubleValue();
         } else {
             FLValue flvalue = getValueFromRoot(key);
-            return flvalue == null || flvalue.getType() != kFLNumber ? 0.0 : flvalue.asDouble();
+            return flvalue == null ? 0.0 : flvalue.asDouble();
         }
     }
 
     @Override
     public boolean getBoolean(String key) {
         if (properties != null) {
-            Boolean obj = cast(properties.get(key), Boolean.class);
-            return obj == null ? false : obj.booleanValue();
+            Object val = properties.get(key);
+            if (val == null) return false;
+            Boolean obj = cast(val, Boolean.class);
+            // NOTE: to be consistent with other platform, return true if failed to cast.
+            return obj == null ? true : obj.booleanValue();
         } else {
             FLValue flvalue = getValueFromRoot(key);
-            return flvalue == null || flvalue.getType() != kFLBoolean ? false : flvalue.asBool();
+            return flvalue == null ? false : flvalue.asBool();
         }
     }
 
@@ -128,8 +128,7 @@ class PropertiesImpl implements Properties {
             return DateUtils.fromJson(cast(properties.get(key), String.class));
         else {
             FLValue flvalue = getValueFromRoot(key);
-            return flvalue == null || flvalue.getType() != kFLString
-                    ? null : DateUtils.fromJson(flvalue.asString());
+            return flvalue == null ? null : DateUtils.fromJson(flvalue.asString());
         }
     }
 
@@ -139,6 +138,7 @@ class PropertiesImpl implements Properties {
             return cast(properties.get(key), List.class);
         } else {
             FLValue flvalue = getValueFromRoot(key);
+            // NOTE: need to check type, otherwise return empty array instead of null
             return flvalue == null || flvalue.getType() != kFLArray ? null : flvalue.asArray();
         }
     }

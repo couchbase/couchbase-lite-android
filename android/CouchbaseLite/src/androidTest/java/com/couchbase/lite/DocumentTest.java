@@ -230,7 +230,7 @@ public class DocumentTest extends BaseTest {
         doc.set("int", 1);
 
         assertEquals("demo", doc.getString("string"));
-        assertEquals(false, doc.getBoolean("string"));
+        assertEquals(true, doc.getBoolean("string"));
         assertEquals(0.0F, doc.getFloat("string"), 0.0F);
         assertEquals(0.0, doc.getDouble("string"), 0.0);
         assertEquals(0, doc.getInt("string"));
@@ -238,7 +238,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(null, doc.getDate("string"));
 
         assertEquals(null, doc.getString("int"));
-        assertEquals(false, doc.getBoolean("int"));
+        assertEquals(true, doc.getBoolean("int"));
         assertEquals(1.0F, doc.getFloat("int"), 0.0F);
         assertEquals(1.0, doc.getDouble("int"), 0.0);
         assertEquals(1, doc.getInt("int"));
@@ -249,14 +249,14 @@ public class DocumentTest extends BaseTest {
         doc.save();
 
         assertEquals("demo", doc.getString("string"));
-        assertEquals(false, doc.getBoolean("string"));
+        assertEquals(true, doc.getBoolean("string"));
         assertEquals(0.0F, doc.getFloat("string"), 0.0F);
         assertEquals(0.0, doc.getDouble("string"), 0.0);
         assertEquals(null, doc.getArray("string"));
         assertEquals(null, doc.getDate("string"));
 
         assertEquals(null, doc.getString("int"));
-        assertEquals(false, doc.getBoolean("int"));
+        assertEquals(true, doc.getBoolean("int"));
         assertEquals(1.0F, doc.getFloat("int"), 0.0F);
         assertEquals(1.0, doc.getDouble("int"), 0.0);
         assertEquals(1, doc.getInt("int"));
@@ -267,14 +267,14 @@ public class DocumentTest extends BaseTest {
         doc = db.getDocument("doc1");
 
         assertEquals("demo", doc.getString("string"));
-        assertEquals(false, doc.getBoolean("string"));
+        assertEquals(true, doc.getBoolean("string"));
         assertEquals(0.0F, doc.getFloat("string"), 0.0F);
         assertEquals(0.0, doc.getDouble("string"), 0.0);
         assertEquals(null, doc.getArray("string"));
         assertEquals(null, doc.getDate("string"));
 
         assertEquals(null, doc.getString("int"));
-        assertEquals(false, doc.getBoolean("int"));
+        assertEquals(true, doc.getBoolean("int"));
         assertEquals(1.0F, doc.getFloat("int"), 0.0F);
         assertEquals(1.0, doc.getDouble("int"), 0.0);
         assertEquals(1, doc.getInt("int"));
@@ -287,14 +287,14 @@ public class DocumentTest extends BaseTest {
         doc = db.getDocument("doc1");
 
         assertEquals("demo", doc.getString("string"));
-        assertEquals(false, doc.getBoolean("string"));
+        assertEquals(true, doc.getBoolean("string"));
         assertEquals(0.0F, doc.getFloat("string"), 0.0F);
         assertEquals(0.0, doc.getDouble("string"), 0.0);
         assertEquals(null, doc.getArray("string"));
         assertEquals(null, doc.getDate("string"));
 
         assertEquals(null, doc.getString("int"));
-        assertEquals(false, doc.getBoolean("int"));
+        assertEquals(true, doc.getBoolean("int"));
         assertEquals(1.0F, doc.getFloat("int"), 0.0F);
         assertEquals(1.0, doc.getDouble("int"), 0.0);
         assertEquals(1, doc.getInt("int"));
