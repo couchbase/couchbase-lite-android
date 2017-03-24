@@ -1,4 +1,7 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: "com.jfrog.artifactory"
+apply plugin: 'maven-publish'
 
 android {
     compileSdkVersion 25
@@ -65,4 +68,150 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:25.2.0'
     testCompile 'junit:junit:4.12'
+}
+
+// ----------------------------------------------------------------
+// Deployment
+// ----------------------------------------------------------------
+
+// Generate source.jar
+task sourcesJar(type: Jar) {
+    baseName = project.name
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+// Generate javadoc
+task javadoc(type: Javadoc) {
+    source android.sourceSets.main.java.srcDirs
+    options {
+        title = "Couchbase Lite ${project.version}"
+        memberLevel = JavadocMemberLevel.PROTECTED
+        docEncoding = 'UTF-8'
+        encoding = 'UTF-8'
+        charSet = 'UTF-8'
+        locale = 'en_US'
+
+        links "https://docs.oracle.com/javase/7/docs/api/"
+        linksOffline "https://developer.android.com/reference/", "${project.android.sdkDirectory}/docs/reference"
+    }
+    exclude '**/internal/**'
+    exclude '**/litecore/**'
+}
+
+// Generate javadoc.jar
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    baseName = project.name
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+def siteUrl = 'http://developer.couchbase.com/mobile/'
+def gitUrl = 'https://github.com:couchbase/couchbase-lite-android.git'
+
+// JFrog Bintray - JCenter deployment
+bintray {
+    user = bintrayUser
+    key =  bintrayKey
+
+
+    publications = ['maven']
+
+    pkg {
+        repo = 'couchbase'
+        name = 'couchbase-lite-android'
+        desc = 'Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend.'
+        userOrg = 'couchbase'
+        licenses = ['Couchbase Community Edition License Agreement']
+        labels = ['couchbase lite', 'android', 'sync', 'mobile']
+        vcsUrl = gitUrl
+        websiteUrl = siteUrl
+        issueTrackerUrl = 'https://github.com/couchbase/couchbase-lite-android/issues'
+        publicDownloadNumbers = false
+        version {
+            name = version
+        }
+    }
+}
+
+// Create the pom configuration:
+def pomConfig = {
+    licenses {
+        license {
+            name "Couchbase Community Edition License Agreement"
+            url "http://www.couchbase.com/agreement/community"
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            name "Couchbase Mobile"
+            email "mobile@couchbase.com"
+            organization 'Couchbase'
+            organizationUrl 'http://www.couchbase.com'
+        }
+    }
+    issueManagement {
+        system 'github'
+        url 'https://github.com/couchbase/couchbase-lite-android/issues'
+    }
+    scm {
+        connection gitUrl
+        developerConnection gitUrl
+        url siteUrl
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+
+            groupId 'com.couchbase.lite'
+            artifactId 'couchbase-lite-android'
+            version version
+
+            artifact bundleRelease
+            artifact sourcesJar
+            artifact javadocJar
+
+            pom.withXml {
+                def root = asNode()
+                root.children().last() + pomConfig
+            }
+        }
+    }
+
+}
+
+/* ------- For TEST -------
+publishing {
+    repositories {
+        maven {
+            // change to point to your repo, e.g. http://my.org/repo
+            url "$buildDir/repo"
+        }
+    }
+}
+*/
+
+// https://www.jfrog.com/confluence/display/RTF/Gradle+Artifactory+Plugin
+artifactory {
+    contextUrl = 'https://oss.jfrog.org/artifactory'
+    publish {
+        repository {
+            repoKey = 'oss-snapshot-local'
+            username = bintrayUser
+            password = bintrayKey
+        }
+        defaults {
+            publications('maven')
+            publishPom = true
+            publishIvy = false
+        }
+    }
 }

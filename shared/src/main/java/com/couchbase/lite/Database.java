@@ -19,9 +19,13 @@ public final class Database {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private static final String TAG = Log.DATABASE;
+    private static final String LOG_TAG = Log.DATABASE;
     private static final String DB_EXTENSION = "cblite2";
 
+    // TODO: DB00x - kC4DB_SharedKeys
+    private static final int DEFAULT_DATABASE_FLAGS = com.couchbase.litecore.Database.Create
+            | com.couchbase.litecore.Database.Bundle
+            | com.couchbase.litecore.Database.AutoCompact;
 
     //---------------------------------------------
     // member variables
@@ -53,17 +57,17 @@ public final class Database {
         return name;
     }
 
-    public String getPath() {
-        return c4db != null ? c4db.getPath() : null;
+    public File getPath() {
+        return c4db != null ? new File(c4db.getPath()) : null;
     }
 
     public void close() throws CouchbaseLiteException {
-        if(c4db == null) return;
+        if (c4db == null) return;
 
-        Log.i(TAG, "Closing %s at path %s", this, path);
+        Log.i(LOG_TAG, "Closing %s at path %s", this, path);
 
-        if(unsavedDocuments.size() > 0)
-            Log.w(TAG, "Closing database with %d unsaved docs", unsavedDocuments.size());
+        if (unsavedDocuments.size() > 0)
+            Log.w(LOG_TAG, "Closing database with %d unsaved docs", unsavedDocuments.size());
 
         documents.clear();
         documents = null;
@@ -72,46 +76,45 @@ public final class Database {
 
         try {
             c4db.close();
-            c4db = null;
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
 
-        // TODO:
+        // TODO: DB005 - free observer
 
-        // Success:
-    }
-
-    public void changeEncryptionKey(Object key) throws CouchbaseLiteException {
-
-    }
-
-    public void delete() throws CouchbaseLiteException {
-        // TODO: need to review Database.delete() and free()
-        try {
-            c4db.delete();
-        } catch (LiteCoreException e) {
-            e.printStackTrace();
-        }
         c4db.free();
         c4db = null;
     }
 
-    // TODO: dir -> String or File
+    public void changeEncryptionKey(Object key) throws CouchbaseLiteException {
+        // TODO: DB00x
+    }
+
+    public void delete() throws CouchbaseLiteException {
+        try {
+            c4db.delete();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+        c4db.free();
+        c4db = null;
+        // TODO: DB005 - free observer
+    }
+
     public static void delete(String name, File dir) throws CouchbaseLiteException {
         File path = getDatabasePath(dir, name);
         try {
-            Log.e(TAG, "delete(): path=%s",path.toString());
-            com.couchbase.litecore.Database.deleteAtPath(path.getPath());
-        }catch (LiteCoreException e){
+            Log.e(LOG_TAG, "delete(): path=%s", path.toString());
+            com.couchbase.litecore.Database.deleteAtPath(path.getPath(), DEFAULT_DATABASE_FLAGS);
+        } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
-
     }
 
-    // TODO: dir -> String or File
-    public static boolean documentExists(String name, File dir) throws CouchbaseLiteException {
-        return false;
+    public static boolean databaseExists(String name, File dir) {
+        if (name == null || dir == null)
+            throw new IllegalArgumentException("name and/or dir arguments are null.");
+        return getDatabasePath(dir, name).exists();
     }
 
     public Document getDocument() {
@@ -122,7 +125,7 @@ public final class Database {
         return getDocument(docID, false);
     }
 
-    // TODO: Model will be implemented later
+    // TODO: DB00x Model will be implemented later
     // func getDocument<T:DocumentModel>(type: T.Type) -> T
     // func getDocument<T:DocumentModel>(id: String?, type: T.Type) -> T
 
@@ -135,7 +138,7 @@ public final class Database {
                 return false;
 
             // unexpected error...
-            Log.w(TAG, "Unexpected Error with calling documentExists(docID => %s) method.", e, docID);
+            Log.w(LOG_TAG, "Unexpected Error with calling documentExists(docID => %s) method.", e, docID);
             return false;
         }
     }
@@ -157,15 +160,15 @@ public final class Database {
                 c4db.endTransaction(commit);
             }
             // TODO: [self postDatabaseChanged];
-        }catch(LiteCoreException e) {
+        } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
     }
 
-    // TODO:
+    // TODO: DB005
     // var conflictResolver: ConflictResolver? { get set }
 
-    // TODO: Notification will be implemented in DB4
+    // TODO: DB005 - Notification will be implemented
     // func addChangeListener(docListener: DocumentChangeListener)
     // func removeChangeListener(docListener: DocumentChangeListener)
 
@@ -174,15 +177,15 @@ public final class Database {
         return String.format(Locale.ENGLISH, "%s[%s]", super.toString(), name);
     }
 
-
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
     //////// DATABASES:
-    com.couchbase.litecore.Database internal(){
+    com.couchbase.litecore.Database internal() {
         return c4db;
     }
+
     void beginTransaction() throws CouchbaseLiteException {
         try {
             c4db.beginTransaction();
@@ -229,18 +232,14 @@ public final class Database {
 
         File dbFile = getDatabasePath(dir, name);
 
-        // databaseFlags
-        int databaseFlags;
-        if (options.isReadOnly())
-            databaseFlags = com.couchbase.litecore.Database.ReadOnly;
-        else
-            databaseFlags = com.couchbase.litecore.Database.Create;
+        // TODO: DB00x - Maybe change to C4DatabaseConfig??
+        int databaseFlags = getDatabaseFlags();
 
-        // TODO: encryptionAlgorithm, encryptionKey
+        // TODO: DB00x encryptionAlgorithm, encryptionKey
         int encryptionAlgorithm = com.couchbase.litecore.Database.NoEncryption;
         byte[] encryptionKey = null;
 
-        Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
+        Log.i(LOG_TAG, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
             // TODO: com.couchbase.litecore.Database is same class name with this classname.
@@ -254,17 +253,22 @@ public final class Database {
             throw LiteCoreBridge.convertException(e);
         }
 
-        // TODO: Other settings
+        // TODO: DB00x SharedKey
+        // TODO: DB005 Observation
 
         documents = new WeakValueHashMap<>();
         unsavedDocuments = new HashSet<>();
+    }
 
-        // success
+    private int getDatabaseFlags(){
+        int databaseFlags = DEFAULT_DATABASE_FLAGS;
+        if (options.isReadOnly())
+            databaseFlags |= com.couchbase.litecore.Database.ReadOnly;
+        return databaseFlags;
     }
 
     private File getDefaultDirectory() {
-        // TODO:
-        return null;
+        throw new UnsupportedOperationException("getDefaultDirectory() is not supported.");
     }
 
     private void setupDirectory(File dir) throws CouchbaseLiteException {
@@ -272,12 +276,14 @@ public final class Database {
             dir.mkdirs();
         }
         if (!dir.isDirectory()) {
-            throw new CouchbaseLiteException(String.format(Locale.ENGLISH, "Unable to create directory for: %s", dir));
+            throw new CouchbaseLiteException(String.format(Locale.ENGLISH,
+                    "Unable to create directory for: %s", dir));
         }
     }
 
-    private static File getDatabasePath(File dir, String name){
-        name = name.replaceAll("/", ":"); // TODO: This does not work with Windows platform.
+    private static File getDatabasePath(File dir, String name) {
+        // TODO: DB00x - CBL Java - Windows - This does not work with Windows platform.
+        name = name.replaceAll("/", ":");
         name = String.format(Locale.ENGLISH, "%s.%s", name, DB_EXTENSION);
         return new File(dir, name);
     }
