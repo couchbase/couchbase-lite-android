@@ -20,6 +20,7 @@ public class DateUtils {
     }
 
     public static Date fromJson(String json) {
+        if (json == null) return null;
         try {
             return sdf.parse(json);
         } catch (ParseException e) {

@@ -64,108 +64,55 @@ class PropertiesImpl implements Properties {
 
     @Override
     public String getString(String key) {
-        if (properties != null) {
-            Object obj = properties.get(key);
-            if (obj != null && obj instanceof String)
-                return (String) obj;
-            else
-                return null;
-        } else {
-            if (root == null)
-                return null;
-            else {
-                FLValue flvalue = root.get(key);
-                if (flvalue.getType() == kFLString)
-                    return flvalue.asString();
-                else
-                    return null;
-            }
+        if (properties != null)
+            return cast(properties.get(key), String.class);
+        else {
+            FLValue flvalue = getValueFromRoot(key);
+            return flvalue == null || flvalue.getType() != kFLString ? null : flvalue.asString();
         }
     }
 
     @Override
     public int getInt(String key) {
         if (properties != null) {
-            Object obj = properties.get(key);
-            if (obj != null && obj instanceof Number)
-                return ((Number) obj).intValue();
-            else
-                return 0;
+            Number obj = cast(properties.get(key), Number.class);
+            return obj == null ? 0 : obj.intValue();
         } else {
-            if (root == null)
-                return 0;
-            else {
-                FLValue flvalue = root.get(key);
-                if (flvalue.getType() == kFLNumber)
-                    return flvalue.asInt();
-                else
-                    return 0;
-            }
+            FLValue flvalue = getValueFromRoot(key);
+            return flvalue == null || flvalue.getType() != kFLNumber ? 0 : flvalue.asInt();
         }
     }
 
     @Override
     public float getFloat(String key) {
         if (properties != null) {
-            Object obj = properties.get(key);
-            if (obj != null && obj instanceof Number)
-                return ((Number) obj).floatValue();
-            else
-                return 0.0F;
-        } else{
-            if (root == null)
-                return 0.0F;
-            else {
-                FLValue flvalue = root.get(key);
-                if (flvalue.getType() == kFLNumber)
-                    return flvalue.asFloat();
-                else
-                    return 0.0F;
-            }
+            Number obj = cast(properties.get(key), Number.class);
+            return obj == null ? 0.0F : obj.floatValue();
+        } else {
+            FLValue flvalue = getValueFromRoot(key);
+            return flvalue == null || flvalue.getType() != kFLNumber ? 0.0F : flvalue.asFloat();
         }
     }
 
     @Override
     public double getDouble(String key) {
         if (properties != null) {
-            Object obj = properties.get(key);
-            if (obj != null && obj instanceof Number)
-                return ((Number) obj).doubleValue();
-            else
-                return 0.0;
+            Number obj = cast(properties.get(key), Number.class);
+            return obj == null ? 0.0 : obj.doubleValue();
         } else {
-            if (root == null)
-                return 0.0;
-            else {
-                FLValue flvalue = root.get(key);
-                if (flvalue.getType() == kFLNumber)
-                    return flvalue.asDouble();
-                else
-                    return 0.0;
-            }
+            FLValue flvalue = getValueFromRoot(key);
+            return flvalue == null || flvalue.getType() != kFLNumber ? 0.0 : flvalue.asDouble();
         }
     }
 
     @Override
     public boolean getBoolean(String key) {
         if (properties != null) {
-            Object obj = properties.get(key);
-            if (obj != null && obj instanceof Boolean)
-                return ((Boolean) obj).booleanValue();
-            else if (obj != null && obj instanceof String)
-                return Boolean.valueOf((String) obj);
-            else
-                return false;
+            Boolean obj = cast(properties.get(key), Boolean.class);
+            return obj == null ? false : obj.booleanValue();
         } else {
-            if (root == null)
-                return false;
-            else {
-                FLValue flvalue = root.get(key);
-                if (flvalue.getType() == kFLBoolean)
-                    return flvalue.asBool();
-                else
-                    return false;
-            }
+            FLValue flvalue = getValueFromRoot(key);
+            return flvalue == null || flvalue.getType() != kFLBoolean ? false : flvalue.asBool();
         }
     }
 
@@ -177,43 +124,22 @@ class PropertiesImpl implements Properties {
 
     @Override
     public Date getDate(String key) {
-        if (properties != null) {
-            Object obj = properties.get(key);
-            if (obj != null && obj instanceof String)
-                return DateUtils.fromJson((String) obj);
-            else
-                return null;
-        } else {
-            if (root == null)
-                return null;
-            else {
-                FLValue flvalue = root.get(key);
-                if (flvalue.getType() == kFLString)
-                    return DateUtils.fromJson(flvalue.asString());
-                else
-                    return null;
-            }
+        if (properties != null)
+            return DateUtils.fromJson(cast(properties.get(key), String.class));
+        else {
+            FLValue flvalue = getValueFromRoot(key);
+            return flvalue == null || flvalue.getType() != kFLString
+                    ? null : DateUtils.fromJson(flvalue.asString());
         }
     }
 
     @Override
     public List<Object> getArray(String key) {
         if (properties != null) {
-            Object obj = properties.get(key);
-            if (obj != null && obj instanceof List<?>)
-                return (List<Object>) obj;
-            else
-                return null;
+            return cast(properties.get(key), List.class);
         } else {
-            if (root == null)
-                return null;
-            else {
-                FLValue flvalue = root.get(key);
-                if (flvalue.getType() == kFLArray)
-                    return flvalue.asArray();
-                else
-                    return null;
-            }
+            FLValue flvalue = getValueFromRoot(key);
+            return flvalue == null || flvalue.getType() != kFLArray ? null : flvalue.asArray();
         }
     }
 
@@ -318,5 +244,15 @@ class PropertiesImpl implements Properties {
             return properties;
         else
             return root == null ? null : root.asDict();
+    }
+
+    private static <T> T cast(Object obj, Class<T> clazz) {
+        if (obj != null && !clazz.isInstance(obj))
+            return null;
+        return (T) obj;
+    }
+
+    private FLValue getValueFromRoot(String key) {
+        return root == null ? null : root.get(key);
     }
 }
