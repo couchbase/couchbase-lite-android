@@ -124,12 +124,7 @@ class PropertiesImpl implements Properties {
 
     @Override
     public Date getDate(String key) {
-        if (properties != null)
-            return DateUtils.fromJson(cast(properties.get(key), String.class));
-        else {
-            FLValue flvalue = getValueFromRoot(key);
-            return flvalue == null ? null : DateUtils.fromJson(flvalue.asString());
-        }
+        return DateUtils.fromJson(getString(key));
     }
 
     @Override
