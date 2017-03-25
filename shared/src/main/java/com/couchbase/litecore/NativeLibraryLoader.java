@@ -1,6 +1,6 @@
 package com.couchbase.litecore;
 
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.Log;
 
 public class NativeLibraryLoader {
     private static final String TAG = Log.DATABASE;

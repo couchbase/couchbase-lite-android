@@ -1,5 +1,7 @@
 package com.couchbase.lite.internal.support;
 
+import com.couchbase.lite.Log;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;

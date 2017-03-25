@@ -2,7 +2,6 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.support.WeakValueHashMap;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.NativeLibraryLoader;

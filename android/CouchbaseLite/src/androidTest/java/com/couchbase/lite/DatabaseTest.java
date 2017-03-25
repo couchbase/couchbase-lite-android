@@ -1,7 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.Log;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
