@@ -71,7 +71,7 @@ dependencies {
 }
 
 // ----------------------------------------------------------------
-// Deployment
+// javadoc.jar and source.jar
 // ----------------------------------------------------------------
 
 // Generate source.jar
@@ -106,6 +106,10 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
+// ----------------------------------------------------------------
+// Deployment
+// ----------------------------------------------------------------
+
 artifacts {
     archives javadocJar
     archives sourcesJar
@@ -117,8 +121,7 @@ def gitUrl = 'https://github.com:couchbase/couchbase-lite-android.git'
 // JFrog Bintray - JCenter deployment
 bintray {
     user = bintrayUser
-    key =  bintrayKey
-
+    key = bintrayKey
 
     publications = ['maven']
 
@@ -170,8 +173,7 @@ def pomConfig = {
 publishing {
     publications {
         maven(MavenPublication) {
-
-            groupId 'com.couchbase.lite'
+            groupId    group
             artifactId 'couchbase-lite-android'
             version version
 
@@ -188,17 +190,6 @@ publishing {
 
 }
 
-/* ------- For TEST -------
-publishing {
-    repositories {
-        maven {
-            // change to point to your repo, e.g. http://my.org/repo
-            url "$buildDir/repo"
-        }
-    }
-}
-*/
-
 // https://www.jfrog.com/confluence/display/RTF/Gradle+Artifactory+Plugin
 artifactory {
     contextUrl = 'https://oss.jfrog.org/artifactory'
@@ -207,6 +198,7 @@ artifactory {
             repoKey = 'oss-snapshot-local'
             username = bintrayUser
             password = bintrayKey
+            maven = true
         }
         defaults {
             publications('maven')
