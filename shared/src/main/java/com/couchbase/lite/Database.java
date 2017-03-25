@@ -2,9 +2,9 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.support.WeakValueHashMap;
 import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.litecore.NativeLibraryLoader;
 
 import java.io.File;
 import java.util.HashSet;
@@ -16,6 +16,14 @@ import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorNotFound;
 
 public final class Database {
+
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
+    }
+
     //---------------------------------------------
     // static variables
     //---------------------------------------------

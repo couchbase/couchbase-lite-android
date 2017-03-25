@@ -1,4 +1,7 @@
-package com.couchbase.lite.internal.support;
+package com.couchbase.lite;
+
+import com.couchbase.lite.internal.support.Logger;
+import com.couchbase.lite.internal.support.LoggerFactory;
 
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
