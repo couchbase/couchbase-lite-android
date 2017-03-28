@@ -1,6 +1,5 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.jfrog.bintray'
-apply plugin: "com.jfrog.artifactory"
 apply plugin: 'maven-publish'
 
 android {
@@ -142,6 +141,11 @@ bintray {
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+// Maven Publishing
+// https://docs.gradle.org/current/userguide/publishing_maven.html
+// -------------------------------------------------------------------------------------------------
+
 // Create the pom configuration:
 def pomConfig = {
     licenses {
@@ -172,8 +176,8 @@ def pomConfig = {
 
 publishing {
     publications {
-        maven(MavenPublication) {
-            groupId    group
+        mavenJava(MavenPublication) {
+            groupId group
             artifactId 'couchbase-lite-android'
             version version
 
@@ -187,23 +191,15 @@ publishing {
             }
         }
     }
-
 }
 
-// https://www.jfrog.com/confluence/display/RTF/Gradle+Artifactory+Plugin
-artifactory {
-    contextUrl = 'https://oss.jfrog.org/artifactory'
-    publish {
-        repository {
-            repoKey = 'oss-snapshot-local'
-            username = bintrayUser
-            password = bintrayKey
-            maven = true
-        }
-        defaults {
-            publications('maven')
-            publishPom = true
-            publishIvy = false
+publishing {
+    repositories {
+        maven {
+
+            url internalMavenRepoURL
         }
     }
 }
+
+
