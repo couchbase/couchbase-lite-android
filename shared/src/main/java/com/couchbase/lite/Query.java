@@ -69,9 +69,10 @@ public class Query {
      * Runs the query. The returning a result set that enumerates result rows one at a time.
      * You can run the query any number of times, and you can even have multiple ResultSet active at
      * once.
-     * <br/>
+     * <p>
      * The results come from a snapshot of the database taken at the moment the run() method
      * is called, so they will not reflect any changes made to the database afterwards.
+     * </p>
      * @return the ResultSet for the query result.
      * @throws CouchbaseLiteException if there is an error when running the query.
      */

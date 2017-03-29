@@ -173,7 +173,7 @@ class Properties {
      * Implementing for Iterable.
      * Currently iterator() returns keys. Not Key,Value pair.
      *
-     * @return Iterator<String>
+     * @return the iterator of type {@code String}.
      */
     public Iterator<String> iterator() {
         if (properties != null) {
