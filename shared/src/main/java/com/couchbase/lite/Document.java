@@ -1,34 +1,251 @@
 package com.couchbase.lite;
 
-public interface Document extends Properties {
+import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.litecore.Constants;
+import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.litecore.fleece.FLDict;
+import com.couchbase.litecore.fleece.FLEncoder;
+import com.couchbase.litecore.fleece.FLValue;
 
-    Database getDatabase();
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-    ConflictResolver getConflictResolver();
+final class Document extends Properties {
 
-    void setConflictResolver(ConflictResolver conflictResolver);
+    private Database db;
+    private String id;
+    private com.couchbase.litecore.Document c4doc;
 
-    String getID();
+    Document(Database db, String docID, boolean mustExist) throws CouchbaseLiteException {
+        this.db = db;
+        this.id = docID;
 
-    long getSequence();
+        // TODO: Reconsider if loading litecore.Document in constructor is good.
+        //       Should we pass litecoreDocument to Document constructor?
+        //       Current impl: DB.getDoc() -> Doc constructor -> db.read().....
+        load(mustExist);
+    }
 
-    boolean isDeleted();
+    //---------------------------------------------
+    // public API methods
+    //---------------------------------------------
 
-    boolean exists();
+    public Database getDatabase() {
+        return db;
+    }
 
-    void save() throws CouchbaseLiteException;
+    public ConflictResolver getConflictResolver() {
+        // TODO: DB005
+        return null;
+    }
 
-    void delete() throws CouchbaseLiteException;
+    public void setConflictResolver(ConflictResolver conflictResolver) {
+        // TODO: DB005
+    }
 
-    void purge() throws CouchbaseLiteException;
+    public String getID() {
+        return id;
+    }
 
-    void revert();
+    public long getSequence() {
+        return c4doc.getSequence();
+    }
 
-    void addChangeListener(DocumentChangeListener listener);
+    public boolean isDeleted() {
+        return c4doc.deleted();
+    }
 
-    void removeChangeListener(DocumentChangeListener listener);
+    public boolean exists() {
+        return c4doc.exists();
+    }
 
-    //TODO: DB00x -
-    // func addChangeListener(propertyListener:PropertyChangeListener)
-    // func removeChangeListener(propertyListener: DocumentChangeListener)
+    public void save() throws CouchbaseLiteException {
+        // TODO: DB005 - Need to implement ConflictResolver
+        save(null, false);
+    }
+
+    public void delete() throws CouchbaseLiteException {
+        // TODO: DB005 - Need to implement ConflictResolver
+        save(null, true);
+    }
+
+    public void purge() throws CouchbaseLiteException {
+        if (!exists())
+            throw new CouchbaseLiteException("the document does not exist.");
+
+        boolean commit = false;
+        db.beginTransaction();
+        try {
+            // revID: null, all revisions are purged.
+            if (c4doc.purgeRevision(null) >= 0) {
+                c4doc.save(0);
+                commit = true;
+            }
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        } finally {
+            db.endTransaction(commit);
+        }
+
+        // reload
+        load(false);
+
+        // reset
+        resetChanges();
+    }
+
+    public void revert() {
+        resetChanges();
+    }
+
+    public void addChangeListener(DocumentChangeListener listener) {
+        // TODO: DB005
+    }
+
+    public void removeChangeListener(DocumentChangeListener listener) {
+        // TODO: DB005
+    }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+
+    @Override
+    void setHasChanges(boolean hasChanges) {
+        if (this.hasChanges != hasChanges) {
+            super.setHasChanges(hasChanges);
+            getDatabase().unsavedDocument(this, hasChanges);
+        }
+    }
+
+    @Override
+    void markChanges() {
+        super.markChanges();
+        // TODO DB005: send notification
+    }
+
+
+    //---------------------------------------------
+    // Private (in class only)
+    //---------------------------------------------
+
+    private void load(boolean mustExist) throws CouchbaseLiteException {
+        com.couchbase.litecore.Document doc = db.read(id, mustExist);
+        // NOTE: c4doc should not be null.
+        setC4Doc(doc);
+        setHasChanges(false);
+    }
+
+    private void setC4Doc(com.couchbase.litecore.Document doc) throws CouchbaseLiteException {
+        if (c4doc != null)
+            c4doc.free();
+        c4doc = doc;
+        setRoot(null);
+        if (c4doc != null) {
+            byte[] body = null;
+            try {
+                // In case of (LiteCoreDomain, kC4ErrorDeleted) -> body = null if we directly bind to C4 APIs.
+                body = c4doc.getSelectedBody();
+            } catch (LiteCoreException e) {
+                if (e.domain != Constants.C4ErrorDomain.LiteCoreDomain || e.code != Constants.LiteCoreError.kC4ErrorDeleted)
+                    throw LiteCoreBridge.convertException(e);
+            }
+            if (body != null && body.length > 0) {
+                FLDict root = FLValue.fromData(body).asFLDict();
+                setRoot(root);
+            }
+        }
+    }
+
+    private void save(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
+        // No-op case of unchanged document:
+        if (!hasChanges && !deletion && exists())
+            return;
+
+        com.couchbase.litecore.Document newDoc;
+
+        // Begin a db transaction:
+        boolean commit = false;
+        db.beginTransaction();
+        try {
+            // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
+            newDoc = save(deletion);
+            // TODO: DB005 Conflict handling
+            commit = true;
+        } finally {
+            // End a db transaction.
+            db.endTransaction(commit);
+        }
+
+        // Update my state and post a notification:
+        setC4Doc(newDoc);
+        setHasChanges(false);
+        if (deletion)
+            resetChanges();
+
+        // TODO DB005: postChangedNotificationExternal
+    }
+
+    // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
+    private com.couchbase.litecore.Document save(boolean deletion) {
+
+        Map<String, Object> propertiesToSave = deletion ? null : getProperties();
+        try {
+            int flags = 0;
+            byte[] body = null;
+            String docType = null;
+            if (deletion)
+                flags = Constants.C4RevisionFlags.kRevDeleted;
+            // TODO: DB005 - Blob
+            if (propertiesToSave != null && propertiesToSave.size() > 0) {
+                // Encode properties to Fleece data:
+                body = encode();
+                if (body == null)
+                    return null;
+                docType = getString("type");
+            }
+            List<String> revIDs = new ArrayList<>();
+            if (c4doc.getRevID() != null)
+                revIDs.add(c4doc.getRevID());
+            String[] history = revIDs.toArray(new String[revIDs.size()]);
+
+            // Save to database:
+            com.couchbase.litecore.Document newDoc = db.internal().put(c4doc.getDocID(), body, docType, false, false, history, flags, true, 0);
+            return newDoc;
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+    private byte[] encode() throws CouchbaseLiteException {
+        FLEncoder encoder = new FLEncoder();
+        try {
+            encoder.beginDict(getProperties().size());
+            Iterator<String> keys = getProperties().keySet().iterator();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                Object value = getProperties().get(key);
+                // TODO DB005: Blob
+                encoder.writeKey(key);
+                encoder.writeValue(value);
+            }
+            encoder.endDict();
+            byte[] body;
+            try {
+                body = encoder.finish();
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
+            return body;
+        } finally {
+            encoder.free();
+        }
+    }
+
+    private void resetChanges() {
+        this.properties = null; // not calling setProperties(null)
+        setHasChanges(false);
+    }
 }
