@@ -159,7 +159,7 @@ public class Query {
         try {
             return JsonUtils.toJson(asJSON()).toString();
         } catch (JSONException e) {
-            Log.w(LOG_TAG, "");
+            Log.w(LOG_TAG, "Error when encoding the query as a json string", e);
         }
         return null;
     }

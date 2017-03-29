@@ -322,9 +322,9 @@ public abstract class Expression {
 
     /**
      * Create a between expression that evaluates whether or not the current expression is
-     * between the given expressions.
-     * @param expression1 the lower bound expression.
-     * @param expression2 the upper bound expression.
+     * between the given expressions inclusively.
+     * @param expression1 the inclusive lower bound expression.
+     * @param expression2 the inclusive upper bound expression.
      * @return a between expression.
      */
     public Expression between(Object expression1, Object expression2) {
