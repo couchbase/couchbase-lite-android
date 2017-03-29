@@ -305,8 +305,8 @@ public final class Database {
     private Document getDocument(String docID, boolean mustExist) throws CouchbaseLiteException {
         Document doc = documents.get(docID);
         if (doc == null) {
-            // TODO: I don't think calling Database method from DocumentImpl consturctor is straightforward.
-            doc = new DocumentImpl(this, docID, mustExist);
+            // TODO: I don't think calling Database method from Document consturctor is straightforward.
+            doc = new Document(this, docID, mustExist);
             documents.put(docID, doc);
         } else {
             if (mustExist && !doc.exists()) {
