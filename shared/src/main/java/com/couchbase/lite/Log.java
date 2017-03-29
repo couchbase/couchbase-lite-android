@@ -18,6 +18,7 @@ public class Log {
      * Logging tags
      */
     public static final String DATABASE = "Database";
+    public static final String QUERY = "Query";
 
     /**
      * Logging levels -- values match up with android.util.Log

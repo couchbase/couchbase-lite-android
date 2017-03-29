@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-final class Document extends Properties {
+public final class Document extends Properties {
 
     private Database db;
     private String id;
