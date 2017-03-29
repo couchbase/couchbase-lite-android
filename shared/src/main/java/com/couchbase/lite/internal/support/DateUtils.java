@@ -5,6 +5,7 @@ import com.couchbase.lite.Log;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
 public class DateUtils {
@@ -13,7 +14,7 @@ public class DateUtils {
     private static SimpleDateFormat sdf;
 
     static {
-        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 

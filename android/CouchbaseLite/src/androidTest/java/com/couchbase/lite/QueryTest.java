@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -35,7 +36,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 1; i <= num; i++) {
-                    Document doc = db.getDocument("doc"+i);
+                    Document doc = db.getDocument("doc" + i);
                     doc.set("number1", i);
                     doc.set("number2", num - i);
                     doc.save();
@@ -50,7 +51,7 @@ public class QueryTest extends BaseTest {
             throws Exception {
         for (Object[] c : cases) {
             Expression w = (Expression) c[0];
-            String[] docIDs = (String []) c[1];
+            String[] docIDs = (String[]) c[1];
             final List<String> docIDList = new ArrayList<String>(Arrays.asList(docIDs));
             Query q = Query.select().from(DataSource.database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
@@ -66,7 +67,7 @@ public class QueryTest extends BaseTest {
         }
     }
 
-    private String[] $docids(int...numbers) {
+    private String[] $docids(int... numbers) {
         String[] docIDs = new String[numbers.length];
         for (int i = 0; i < numbers.length; i++) {
             docIDs[i] = "doc" + numbers[i];
@@ -81,7 +82,7 @@ public class QueryTest extends BaseTest {
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(long n, QueryRow row) throws Exception {
-                String expectedID = String.format("doc-%03d", n);
+                String expectedID = String.format(Locale.ENGLISH, "doc-%03d", n);
                 assertEquals(expectedID, row.getDocumentID());
                 assertEquals(n, row.getSequence());
                 Document doc = row.getDocument();
@@ -178,7 +179,7 @@ public class QueryTest extends BaseTest {
                 @Override
                 public void check(long n, QueryRow row) throws Exception {
                     if (n < docIDs.length) {
-                        String docID = docIDs[(int)n-1];
+                        String docID = docIDs[(int) n - 1];
                         assertEquals(docID, row.getDocumentID());
                     }
                 }
@@ -253,7 +254,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                Map<String, Object> name = (Map<String, Object>)doc.get("name");
+                Map<String, Object> name = (Map<String, Object>) doc.get("name");
                 if (name != null) {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
@@ -282,7 +283,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                Map<String, Object> name = (Map<String, Object>)doc.get("name");
+                Map<String, Object> name = (Map<String, Object>) doc.get("name");
                 if (name != null) {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
@@ -299,7 +300,7 @@ public class QueryTest extends BaseTest {
     public void testWhereMatch() throws Exception {
         loadJSONResource("sentences.json");
 
-        Expression [] exps = new Expression[] { Expression.property("sentence") };
+        Expression[] exps = new Expression[]{Expression.property("sentence")};
         db.createIndex(Arrays.asList(exps), IndexType.FullText, null);
 
         Expression w = Expression.property("sentence").match("'Dummie woman'");
@@ -351,8 +352,8 @@ public class QueryTest extends BaseTest {
                     return ascending ? o1.compareTo(o2) : o2.compareTo(o1);
                 }
             });
-            String [] array1 = firstNames.toArray(new String[firstNames.size()]);
-            String [] array2 = firstNames.toArray(new String[sorted.size()]);
+            String[] array1 = firstNames.toArray(new String[firstNames.size()]);
+            String[] array2 = firstNames.toArray(new String[sorted.size()]);
             assertTrue(Arrays.equals(array1, array2));
         }
     }
