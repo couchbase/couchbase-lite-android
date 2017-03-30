@@ -17,6 +17,10 @@ package com.couchbase.lite;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.LiteCoreException;
 
+/**
+ * A result set representing the query result. The result set is an iterator of
+ * the {@code QueryRow} objects.
+ */
 public class ResultSet {
     private static final String LOG_TAG = Log.QUERY;
 
@@ -30,6 +34,11 @@ public class ResultSet {
         Log.v(LOG_TAG, "Beginning query enumeration (%p)", c4enum);
     }
 
+    /**
+     * Move the cursor forward one row from its current row position.
+     * @return the QueryRow after moving the cursor forward. Returns {@code null} value
+     * if there are no more rows.
+     */
     public QueryRow next() {
         try {
             if (c4enum.next()) {
