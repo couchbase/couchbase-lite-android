@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.DateUtils;
@@ -12,7 +25,11 @@ import java.util.Map;
 
 import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLArray;
 
-class Properties {
+/**
+ * Properties defines a JSON-compatible object, much like a Map (Dictionary) but with
+ * type-safe accessors. It is implemented by classes {@code Document} and {@code SubDocument}.
+ */
+public class Properties {
 
     // TODO: DB005 - sharedKeys
     FLDict root;
@@ -24,12 +41,22 @@ class Properties {
     // public API methods
     //---------------------------------------------
 
+    /**
+     * Returns all of the properties contained in this object.
+     *
+     * @return the all of the properties
+     */
     public Map<String, Object> getProperties() {
         if (properties == null)
             properties = getSavedProperties();
         return properties;
     }
 
+    /**
+     * Set the properties in this object.
+     *
+     * @param properties th properties
+     */
     public void setProperties(Map<String, Object> properties) {
         if (properties != null)
             this.properties = new HashMap<>(properties);
@@ -41,6 +68,20 @@ class Properties {
         markChanges();
     }
 
+    /**
+     * Sets a property value by key.
+     * Allowed value types are null, Boolean, Integer, Long, Float, Double, String, List, Map, Date,
+     * SubDocument, and Blob. List (Array) and Map (Dictionary) must contain only the above types.
+     * Setting a null value will remove the property.
+     * <p>
+     * Note:
+     * A Date object will be converted to an ISO-8601 format string.
+     * When setting a SubDocument, the SubDocument will be set by reference. However,
+     * if the SubDocument has already been set to another key either on the same or different
+     * Document, the value of the SubDocument will be copied instead.
+     *
+     * @return this object
+     */
     public Properties set(String key, Object value) {
         // Date
         if (value instanceof Date)
@@ -55,10 +96,24 @@ class Properties {
         return this;
     }
 
+    /**
+     * Gets an property's value as an object. Returns types null, Integer, Long, Float, Double,
+     * String, List, Map, and Blob, based on the underlying data type; or null if the property
+     * doesn't exist.
+     *
+     * @param key The key to access the value for.
+     * @return null if there is no such key.
+     */
     public Object get(String key) {
         return getObject(key);
     }
 
+    /**
+     * Gets a property's value as a string.
+     * returns null if the property doesn't exist, or its value is not a string.
+     *
+     * @param key The key to access the value for.
+     */
     public String getString(String key) {
         if (properties != null)
             return cast(properties.get(key), String.class);
@@ -68,6 +123,14 @@ class Properties {
         }
     }
 
+    /**
+     * Gets a property's value as an integer.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the property doesn't exist or does not have a numeric value.
+     *
+     * @param key The key to access the value for.
+     * @return 0 if there is no such key or if it is not a Number.
+     */
     public int getInt(String key) {
         if (properties != null) {
             Number obj = cast(properties.get(key), Number.class);
@@ -78,6 +141,14 @@ class Properties {
         }
     }
 
+    /**
+     * Gets a property's value as a float.
+     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
+     *
+     * @param key The key to access the value for.
+     * @return 0 if there is no such key or if it is not a Number.
+     */
     public float getFloat(String key) {
         if (properties != null) {
             Number obj = cast(properties.get(key), Number.class);
@@ -88,6 +159,14 @@ class Properties {
         }
     }
 
+    /**
+     * Gets a property's value as a double.
+     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
+     *
+     * @param key The key to access the value for.
+     * @return 0 if there is no such key or if it is not a Number.
+     */
     public double getDouble(String key) {
         if (properties != null) {
             Number obj = cast(properties.get(key), Number.class);
@@ -98,6 +177,12 @@ class Properties {
         }
     }
 
+    /**
+     * Gets a property's value as a boolean.
+     * Returns true if the value exists, and is either `true` or a nonzero number.
+     *
+     * @param key The key to access the value for.
+     */
     public boolean getBoolean(String key) {
         if (properties != null) {
             Object val = properties.get(key);
@@ -111,15 +196,37 @@ class Properties {
         }
     }
 
+    /**
+     * Gets a property's value as a blob object.
+     * Returns null if the property doesn't exist, or its value is not a blob.
+     *
+     * @param key The key to access the value for.
+     */
     public Blob getBlob(String key) {
         // TODO: DB005
-        return null;
+        throw new UnsupportedOperationException("Work in Progress!");
     }
 
+    /**
+     * Gets a property's value as an Date.
+     * JSON does not directly support dates, so the actual property value must be a string, which is
+     * then parsed according to the ISO-8601 date format (the default used in JSON.)
+     * Returns null if the value doesn't exist, is not a string, or is not parse-able as a date.
+     * NOTE: This is not a generic date parser! It only recognizes the ISO-8601 format, with or
+     * without milliseconds.
+     *
+     * @param key The key to access the value for.
+     */
     public Date getDate(String key) {
         return DateUtils.fromJson(getString(key));
     }
 
+    /**
+     * Get a property's value as an array object.
+     * Returns null if the property doesn't exist, or its value is not an array.
+     *
+     * @param key The key to access the value for.
+     */
     public List<Object> getArray(String key) {
         if (properties != null) {
             return cast(properties.get(key), List.class);
@@ -130,26 +237,40 @@ class Properties {
         }
     }
 
+    /**
+     * Get a property's value as a Subdocument, which is a mapping object of a Dictionary
+     * value to provide property type accessors.
+     * Returns null if the property doesn't exists, or its value is not a Dictionary.
+     *
+     * @param key The key to access the value for.
+     */
     public SubDocument getSubDocument(String key) {
         // TODO: DB005
-        return null;
+        throw new UnsupportedOperationException("Work in Progress!");
     }
 
+    /**
+     * @param key The key to access the value for.
+     */
     public Document getDocument(String key) {
         // TODO: DB005
-        return null;
+        throw new UnsupportedOperationException("Work in Progress!");
     }
 
+    /**
+     * @param key The key to access the value for.
+     */
     public List<Document> getDocuments(String key) {
         // TODO: DB005
-        return null;
+        throw new UnsupportedOperationException("Work in Progress!");
     }
 
-    public Property getProperty(String key) {
-        // TODO: DB005
-        return null;
-    }
-
+    /**
+     * Removes a key from this object's data if it exists.
+     *
+     * @param key The key to remove.
+     * @return this object
+     */
     public Properties remove(String key) {
         mutateProperties();
         properties.remove(key);
@@ -157,6 +278,14 @@ class Properties {
         return this;
     }
 
+    /**
+     * Tests whether a property exists or not.
+     * This can be less expensive than calling property(key):, because it does not have to allocate
+     * an object for the property value.
+     *
+     * @param key The key to access the value for.
+     * @return true if exists, false otherwise
+     */
     public boolean contains(String key) {
         if (properties != null)
             return properties.containsKey(key);

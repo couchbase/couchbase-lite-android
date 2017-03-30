@@ -198,7 +198,10 @@ publishing {
 publishing {
     repositories {
         maven {
-
+            credentials {
+                username mavenRepoUsername
+                password mavenRepoPassword
+            }
             url internalMavenRepoURL
         }
     }

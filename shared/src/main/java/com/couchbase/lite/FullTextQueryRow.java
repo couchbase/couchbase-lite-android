@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -45,6 +45,7 @@ public class FullTextQueryRow extends QueryRow {
 
     /**
      * Get the text emitted when the view was indexed which contains the match(es).
+     *
      * @return the text containing the match(es).
      */
     public String getFullTextMatched() {
@@ -63,6 +64,7 @@ public class FullTextQueryRow extends QueryRow {
     /**
      * Get the number of query words that were found in the full-text. If a query word appears more
      * than once, only the first instance is counted.
+     *
      * @return the number of query words found.
      */
     public long getMatchCount() {
@@ -73,6 +75,7 @@ public class FullTextQueryRow extends QueryRow {
      * Get the index of the search term matched by a particular match. Search terms are the
      * individual words in the full-text search expression, skipping duplicates and noise/stop-words.
      * They're numbered from zero.
+     *
      * @param matchNumber the zero based index number of the matched word found in the full-text.
      * @return the index of the search term.
      */
@@ -84,6 +87,7 @@ public class FullTextQueryRow extends QueryRow {
 
     /**
      * Get the character range in the full-text of a particular match.
+     *
      * @param matchNumber the zero based index number of the matched word found in the full-text.
      * @return the character range in the fullText of the given match index.
      */

@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -24,6 +24,7 @@ import java.util.List;
 public abstract class Expression {
     /**
      * Create a property expression representing the value of the given property.
+     *
      * @param property the name of the property in the form of a key path.
      * @return a property expression.
      */
@@ -33,6 +34,7 @@ public abstract class Expression {
 
     /**
      * Create a negated expression to represent the negated result of the given expression.
+     *
      * @param expression the expression to be negated.
      * @return a negated expression.
      */
@@ -42,6 +44,7 @@ public abstract class Expression {
 
     /**
      * Create a negated expression to represent the negated result of the given expression.
+     *
      * @param expression the expression to be negated.
      * @return a negated expression.
      */
@@ -51,6 +54,7 @@ public abstract class Expression {
 
     /**
      * Create a concat expression to concatenate the current expression with the given expression.
+     *
      * @param expression the expression to concatenate with.
      * @return a concat expression.
      */
@@ -60,6 +64,7 @@ public abstract class Expression {
 
     /**
      * Create a multiply expression to multiply the current expression by the given expression.
+     *
      * @param expression the expression to multiply by.
      * @return a multiply expression.
      */
@@ -69,6 +74,7 @@ public abstract class Expression {
 
     /**
      * Create a divide expression to divide the current expression by the given expression.
+     *
      * @param expression the expression to divide by.
      * @return a divide expression.
      */
@@ -78,6 +84,7 @@ public abstract class Expression {
 
     /**
      * Create a modulo expression to modulo the current expression by the given expression.
+     *
      * @param expression the expression to modulo by.
      * @return a modulo expression.
      */
@@ -87,6 +94,7 @@ public abstract class Expression {
 
     /**
      * Create an add expression to add the given expression to the current expression
+     *
      * @param expression an expression to add to the current expression.
      * @return an add expression.
      */
@@ -96,6 +104,7 @@ public abstract class Expression {
 
     /**
      * Create a subtract expression to subtract the given expression from the current expression.
+     *
      * @param expression an expression to subtract from the current expression.
      * @return a substract expression.
      */
@@ -106,6 +115,7 @@ public abstract class Expression {
     /**
      * Create a less than expression that evaluates whether or not the current expression
      * is less than the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a less than expression.
      */
@@ -116,6 +126,7 @@ public abstract class Expression {
     /**
      * Create a NOT less than expression that evaluates whether or not the current expression
      * is not less than the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a NOT less than expression.
      */
@@ -126,6 +137,7 @@ public abstract class Expression {
     /**
      * Create a less than or equal to expression that evaluates whether or not the current
      * expression is less than or equal to the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a less than or equal to expression.
      */
@@ -136,6 +148,7 @@ public abstract class Expression {
     /**
      * Create a NOT less than or equal to expression that evaluates whether or not the current
      * expression is not less than or equal to the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a NOT less than or equal to expression.
      */
@@ -146,6 +159,7 @@ public abstract class Expression {
     /**
      * Create a greater than expression that evaluates whether or not the current expression
      * is greater than the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a greater than expression.
      */
@@ -156,6 +170,7 @@ public abstract class Expression {
     /**
      * Create a NOT greater than expression that evaluates whether or not the current expression
      * is not greater than the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a NOT greater than expression.
      */
@@ -166,6 +181,7 @@ public abstract class Expression {
     /**
      * Create a greater than or equal to expression that evaluates whether or not the current
      * expression is greater than or equal to the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a greater than or equal to expression.
      */
@@ -176,6 +192,7 @@ public abstract class Expression {
     /**
      * Create a NOT greater than or equal to expression that evaluates whether or not the current
      * expression is not greater than or equal to the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a NOT greater than or equal to expression.
      */
@@ -186,6 +203,7 @@ public abstract class Expression {
     /**
      * Create an equal to expression that evaluates whether or not the current expression
      * is equal to the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return an equal to expression.
      */
@@ -196,6 +214,7 @@ public abstract class Expression {
     /**
      * Create a NOT equal to expression that evaluates whether or not the current expression
      * is not equal to the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a NOT equal to exprssion.
      */
@@ -206,6 +225,7 @@ public abstract class Expression {
     /**
      * Create a logical AND expression that performs logical AND operation with
      * the current expression.
+     *
      * @param expression the expression to AND with the current expression.
      * @return a logical AND expression.
      */
@@ -216,6 +236,7 @@ public abstract class Expression {
     /**
      * Create a logical OR expression that performs logical OR operation with
      * the current expression.
+     *
      * @param expression the expression to OR with the current expression.
      * @return a logical OR exprssion.
      */
@@ -226,6 +247,7 @@ public abstract class Expression {
     /**
      * Create a Like expression that evaluates whether or not the current expression is LIKE
      * the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a Like expression.
      */
@@ -236,6 +258,7 @@ public abstract class Expression {
     /**
      * Create a NOT Like expression that evaluates whether or not the current expression is NOT LIKE
      * the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a NOT Like expression.
      */
@@ -246,6 +269,7 @@ public abstract class Expression {
     /**
      * Create a regex match expression that evaluates whether or not the current expression
      * regex matches the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a regex match expression.
      */
@@ -256,6 +280,7 @@ public abstract class Expression {
     /**
      * Create a NOT regex match expression that evaluates whether or not the current expression
      * not regex matches the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a NOT regex match expression.
      */
@@ -266,6 +291,7 @@ public abstract class Expression {
     /**
      * Create a full text match expression that evaluates whether or not the current expression
      * full text matches the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a full text match expression.
      */
@@ -276,6 +302,7 @@ public abstract class Expression {
     /**
      * Create a full text NOT match expression that evaluates whether or not the current expression
      * doesn't full text match the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return a full text NOT match expression.
      */
@@ -285,6 +312,7 @@ public abstract class Expression {
 
     /**
      * Create an IS NULL expression that evaluates whether or not the current expression is null.
+     *
      * @return an IS NULL expression.
      */
     public Expression isNull() {
@@ -294,6 +322,7 @@ public abstract class Expression {
     /**
      * Create an IS NOT NULL expression that evaluates whether or not the current expression is
      * not null.
+     *
      * @return an IS NOT NULL expression.
      */
     public Expression notNull() {
@@ -303,6 +332,7 @@ public abstract class Expression {
     /**
      * Create an IS expression that evaluates whether or not the current expression is equal to
      * the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return an IS expression.
      */
@@ -313,6 +343,7 @@ public abstract class Expression {
     /**
      * Create an IS NOT expression that evaluates whether or not the current expression is not
      * equal to the given expression.
+     *
      * @param expression the expression to compare with the current expression.
      * @return an IS NOT expression.
      */
@@ -323,6 +354,7 @@ public abstract class Expression {
     /**
      * Create a between expression that evaluates whether or not the current expression is
      * between the given expressions inclusively.
+     *
      * @param expression1 the inclusive lower bound expression.
      * @param expression2 the inclusive upper bound expression.
      * @return a between expression.
@@ -335,6 +367,7 @@ public abstract class Expression {
     /**
      * Create a NOT between expression that evaluates whether or not the current expression is
      * not between the given expressions.
+     *
      * @param expression1 the lower bound expression.
      * @param expression2 the upper bound expression.
      * @return a NOT between expression.
@@ -346,6 +379,7 @@ public abstract class Expression {
     /**
      * Create an IN expression that evaluates whether or not the current expression is in the
      * given expressions.
+     *
      * @param expressions the expression array to evaluate with.
      * @return an IN expression.
      */
@@ -357,6 +391,7 @@ public abstract class Expression {
     /**
      * Create a NOT IN expression that evaluates whether or not the current expression is not
      * in the given expressions.
+     *
      * @param expressions the expression array to evaluate with.
      * @return a NOT IN expression.
      */
@@ -369,7 +404,7 @@ public abstract class Expression {
     static class AggregateExpression extends Expression {
         private List<Object> subexpressions;
 
-        AggregateExpression(List<Object>subexpressions) {
+        AggregateExpression(List<Object> subexpressions) {
             this.subexpressions = subexpressions;
         }
 

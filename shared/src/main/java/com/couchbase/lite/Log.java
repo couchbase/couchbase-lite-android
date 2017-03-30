@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Logger;
@@ -6,6 +19,9 @@ import com.couchbase.lite.internal.support.LoggerFactory;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Couchbase Lite Logging API.
+ */
 public class Log {
     private static Logger logger = LoggerFactory.createLogger();
 
@@ -15,22 +31,41 @@ public class Log {
     private static ConcurrentHashMap<String, Integer> enabledTags;
 
     /**
-     * Logging tags
+     * Logging Tag for Database related operations
      */
     public static final String DATABASE = "Database";
+
+    /**
+     * Logging Tag for Query related operatoins
+     */
     public static final String QUERY = "Query";
 
     /**
-     * Logging levels -- values match up with android.util.Log
+     * Priority constant for the println method; use Log.v.
      */
     public static final int VERBOSE = 2;
+    /**
+     * Priority constant for the println method; use Log.i.
+     */
     public static final int INFO = 4;
+    /**
+     * Priority constant for the println method; use Log.w.
+     */
     public static final int WARN = 5;
+    /**
+     * Priority constant for the println method; use Log.e.
+     */
     public static final int ERROR = 6;
 
     static {
         enabledTags = new ConcurrentHashMap<String, Integer>();
         enabledTags.put(Log.DATABASE, WARN);
+    }
+
+    /**
+     * private constructor: not allow to instanticate.
+     */
+    private Log() {
     }
 
     /**

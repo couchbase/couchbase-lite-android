@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
@@ -12,6 +25,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A Couchbase Lite document. A document has key/value properties like a Dictionary;
+ * their API is defined by the superclass Properties.
+ * To learn how to work with properties, see {@code Properties} documentation.
+ */
 public final class Document extends Properties {
 
     private Database db;
@@ -32,45 +50,113 @@ public final class Document extends Properties {
     // public API methods
     //---------------------------------------------
 
+    /**
+     * Return the document's owning database.
+     *
+     * @return the document's owning database.
+     */
     public Database getDatabase() {
         return db;
     }
 
+    /**
+     * Returns the ConflictResolver added to this Document with {@code setConflictResolver()}.
+     *
+     * @return the ConflictResolver
+     */
     public ConflictResolver getConflictResolver() {
         // TODO: DB005
-        return null;
+        throw new UnsupportedOperationException("Work in Progress!");
+        //return null;
     }
 
+    /**
+     * Set the conflict resolver, if any, specific to this document.
+     * If nil, the database's conflict resolver will be used.
+     *
+     * @param conflictResolver the conflict resolver
+     */
     public void setConflictResolver(ConflictResolver conflictResolver) {
         // TODO: DB005
+        throw new UnsupportedOperationException("Work in Progress!");
     }
 
+    /**
+     * return the document's ID.
+     *
+     * @return the document's ID
+     */
     public String getID() {
         return id;
     }
 
+    /**
+     * Return the sequence number of the document in the database.
+     * This indicates how recently the document has been changed: every time any document is updated,
+     * the database assigns it the next sequential sequence number. Thus, if a document's `sequence`
+     * property changes that means it's been changed (on-disk); and if one document's `sequence`
+     * is greater than another's, that means it was changed more recently.
+     *
+     * @return the sequence number of the document in the database.
+     */
     public long getSequence() {
         return c4doc.getSequence();
     }
 
+    /**
+     * Return whether the document is deleted
+     *
+     * @return true if deleted, false otherwise
+     */
     public boolean isDeleted() {
         return c4doc.deleted();
     }
 
+    /**
+     * Return whether the document exists in the database.
+     *
+     * @return true if exists, false otherwise.
+     */
     public boolean exists() {
         return c4doc.exists();
     }
 
+    /**
+     * Saves property changes back to the database.
+     * If the document in the database has been updated since it was read by this CBLDocument, a
+     * conflict occurs, which will be resolved by invoking the conflict handler. This can happen if
+     * multiple application threads are writing to the database, or a pull replication is copying
+     * changes from a server.
+     *
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
     public void save() throws CouchbaseLiteException {
         // TODO: DB005 - Need to implement ConflictResolver
         save(null, false);
     }
 
+    /**
+     * Deletes this document. All properties are removed, and subsequent calls to
+     * {@code getDocument(String)} will return nil.
+     * Deletion adds a special "tombstone" revision to the database, as bookkeeping so that the
+     * change can be replicated to other databases. Thus, it does not free up all of the disk space
+     * occupied by the document.
+     * To delete a document entirely (but without the ability to replicate this), use {@code purge()}.
+     *
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
     public void delete() throws CouchbaseLiteException {
         // TODO: DB005 - Need to implement ConflictResolver
         save(null, true);
     }
 
+    /**
+     * Purges this document from the database.
+     * This is more drastic than deletion: it removes all traces of the document.
+     * The purge will NOT be replicated to other databases.
+     *
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
     public void purge() throws CouchbaseLiteException {
         if (!exists())
             throw new CouchbaseLiteException("the document does not exist.");
@@ -96,16 +182,31 @@ public final class Document extends Properties {
         resetChanges();
     }
 
+    /**
+     * Reverts unsaved changes made to the document's properties.
+     */
     public void revert() {
         resetChanges();
     }
 
+    /**
+     * Adds a DocumentChangeListener to the Document.
+     *
+     * @param listener the DocumentChangeListener to add
+     */
     public void addChangeListener(DocumentChangeListener listener) {
         // TODO: DB005
+        throw new UnsupportedOperationException("Work in Progress!");
     }
 
+    /**
+     * Removes a DocumentChangeListener from the Document.
+     *
+     * @param listener the DocumentChangeListener to remove
+     */
     public void removeChangeListener(DocumentChangeListener listener) {
         // TODO: DB005
+        throw new UnsupportedOperationException("Work in Progress!");
     }
 
     //---------------------------------------------
