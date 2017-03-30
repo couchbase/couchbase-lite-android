@@ -11,7 +11,6 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName version
-        //archivesBaseName = "couchbase-lite-android"
         project.archivesBaseName = "couchbase-lite-android-${versionName}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         ndk {
@@ -20,7 +19,7 @@ android {
         externalNativeBuild {
             cmake {
                 //TODO: c++_static
-                arguments '-DANDROID_STL=gnustl_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
+                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
                 cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 // explicitly build libs
                 targets 'LiteCoreJNI'
