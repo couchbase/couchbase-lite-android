@@ -18,8 +18,7 @@ android {
         }
         externalNativeBuild {
             cmake {
-                //TODO: c++_static
-                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
+                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-16', '-DJNI=TRUE'
                 cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 // explicitly build libs
                 targets 'LiteCoreJNI'
