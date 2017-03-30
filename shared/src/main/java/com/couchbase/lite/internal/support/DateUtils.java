@@ -40,7 +40,7 @@ public class DateUtils {
         try {
             return sdf.parse(json);
         } catch (ParseException e) {
-            Log.e(TAG, "Failed to parse JSON string: %s", e, json);
+            Log.w(TAG, "Failed to parse JSON string: `%s`", json);
             return null;
         }
     }
