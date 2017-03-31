@@ -14,10 +14,9 @@ buildscript {
 
 allprojects {
     repositories {
-        //mavenLocal()
         jcenter()
         maven {
-            url "http://172.23.121.218:8080/maven2/jenkinsjava/"
+            url "http://172.23.121.218:8080/maven2/dev/"
         }
     }
 }
