@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         Log.v(TAG, "onCreate()");
 
-        DatabaseOptions options = DatabaseOptions.getDefaultOptions();
+        DatabaseOptions options = new DatabaseOptions();
         options.setDirectory(getFilesDir());
         db = new Database("helloworld", options);
 
