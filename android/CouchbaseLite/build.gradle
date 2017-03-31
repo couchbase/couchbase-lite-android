@@ -73,6 +73,20 @@ dependencies {
 }
 
 // ----------------------------------------------------------------
+// local.properties
+// ----------------------------------------------------------------
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+// -- bintray
+def bintrayUser = properties.getProperty('bintray.user')
+def bintrayKey = properties.getProperty('bintray.key')
+// -- maven repo
+def mavenRepoUrl = properties.getProperty('maven.repo.url')
+def mavenRepoUser = properties.getProperty('maven.repo.user')
+def mavenRepoPass = properties.getProperty('maven.repo.pass')
+
+// ----------------------------------------------------------------
 // javadoc.jar and source.jar
 // ----------------------------------------------------------------
 
@@ -200,10 +214,10 @@ publishing {
     repositories {
         maven {
             credentials {
-                username mavenRepoUsername
-                password mavenRepoPassword
+                username mavenRepoUser
+                password mavenRepoPass
             }
-            url internalMavenRepoURL
+            url mavenRepoUrl
         }
     }
 }
