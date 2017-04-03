@@ -16,7 +16,7 @@ allprojects {
     repositories {
         jcenter()
         maven {
-            url "http://172.23.121.218:8080/maven2/dev/"
+            url "http://mobile.maven.couchbase.com/maven2/dev/"
         }
     }
 }
