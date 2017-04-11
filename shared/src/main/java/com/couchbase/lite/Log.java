@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Couchbase Lite Logging API.
  */
 public class Log {
+
     private static Logger logger = LoggerFactory.createLogger();
 
     /**
@@ -36,9 +37,14 @@ public class Log {
     public static final String DATABASE = "Database";
 
     /**
-     * Logging Tag for Query related operatoins
+     * Logging Tag for Query related operations
      */
     public static final String QUERY = "Query";
+
+    /**
+     * Logging Tag for Blob related operations
+     */
+    public static final String BLOB = "Blob";
 
     /**
      * Priority constant for the println method; use Log.v.

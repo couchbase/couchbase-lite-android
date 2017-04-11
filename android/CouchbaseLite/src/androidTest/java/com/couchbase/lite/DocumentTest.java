@@ -19,6 +19,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +39,7 @@ import static org.junit.Assert.fail;
 public class DocumentTest extends BaseTest {
     private static final String TAG = DocumentTest.class.getName();
 
+
     @Before
     public void setUp() {
         super.setUp();
@@ -44,6 +48,7 @@ public class DocumentTest extends BaseTest {
 
     @After
     public void tearDown() {
+        doc.revert();
         super.tearDown();
     }
 
@@ -413,27 +418,303 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testBlob() {
-        // TODO: DB005
+    public void testBlob() throws CouchbaseLiteException, IOException {
+        byte[] content = "12345".getBytes();
+
+        // store blob
+        {
+
+            Blob data = new Blob("text/plain", content);
+            assertNotNull(data);
+            doc.set("name", "Jim");
+            doc.set("data", data);
+            doc.save();
+
+            assertEquals("Jim", doc.get("name"));
+            assertTrue(doc.get("data") instanceof Blob);
+            data = (Blob) doc.get("data");
+            assertEquals(5, data.length());
+            assertTrue(Arrays.equals(content, data.getContent()));
+
+            closeDB();
+        }
+
+        // obtain blob
+        {
+            openDB();
+            Document doc1 = db.getDocument("doc1");
+            assertEquals("Jim", doc1.get("name"));
+            assertTrue(doc1.get("data") instanceof Blob);
+            Blob data = (Blob) doc1.get("data");
+            assertEquals(5, data.length());
+            assertTrue(Arrays.equals(content, data.getContent()));
+            InputStream is = data.getContentStream();
+            try {
+                assertNotNull(is);
+                byte[] buffer = new byte[10];
+                int bytesRead = is.read(buffer);
+                assertEquals(5, bytesRead);
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    fail();
+                }
+            }
+        }
     }
 
     @Test
-    public void testEmptyBlob() {
-        // TODO: DB005
+    public void testEmptyBlob() throws IOException {
+        Document doc = db.getDocument("doc1");
+        byte[] content = "".getBytes();
+        Blob data = new Blob("text/plain", content);
+        assertNotNull(data);
+        doc.set("data", data);
+        doc.save();
+
+        Database copyOfDB = db.copy();
+        try {
+            Document doc1 = copyOfDB.getDocument("doc1");
+            assertTrue(doc1.get("data") instanceof Blob);
+            data = (Blob) doc1.get("data");
+            assertEquals(0, data.length());
+            assertTrue(Arrays.equals(content, data.getContent()));
+            InputStream is = data.getContentStream();
+            try {
+                assertNotNull(is);
+                byte[] buffer = new byte[10];
+                int bytesRead = is.read(buffer);
+                assertEquals(0, bytesRead);
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    fail();
+                }
+            }
+        } finally {
+            copyOfDB.close();
+        }
     }
 
     @Test
-    public void testBlobWithStream() {
-        // TODO: DB005
+    public void testBlobWithStream() throws IOException {
+        byte[] content = "".getBytes();
+        InputStream stream = new ByteArrayInputStream(content);
+        try {
+            Blob data = new Blob("text/plain", stream);
+            assertNotNull(data);
+            doc.set("data", data);
+            doc.save();
+        } finally {
+            stream.close();
+        }
+
+        Database copy = db.copy();
+        try {
+            Document doc1 = db.getDocument("doc1");
+            assertTrue(doc1.get("data") instanceof Blob);
+            Blob data = (Blob) doc1.get("data");
+            assertEquals(0, data.length());
+            assertTrue(Arrays.equals(content, data.getContent()));
+            InputStream is = data.getContentStream();
+            try {
+                assertNotNull(is);
+                byte[] buffer = new byte[10];
+                int bytesRead = is.read(buffer);
+                assertEquals(0, bytesRead);
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    fail();
+                }
+            }
+        } finally {
+            copy.close();
+        }
     }
 
     @Test
-    public void testMultipleBlobRead() {
-        // TODO: DB005
+    public void testMultipleBlobRead() throws IOException {
+        byte[] content = "12345".getBytes();
+
+        Blob data = new Blob("text/plain", content);
+        assertNotNull(data);
+        doc.set("data", data);
+
+        data = (Blob) doc.get("data");
+        for (int i = 0; i < 5; i++) {
+            assertTrue(Arrays.equals(content, data.getContent()));
+            InputStream is = data.getContentStream();
+            try {
+                assertNotNull(is);
+                byte[] buffer = new byte[10];
+                int bytesRead = is.read(buffer);
+                assertEquals(5, bytesRead);
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    fail();
+                }
+            }
+        }
+
+        doc.save();
+
+        Database copy = db.copy();
+        try {
+            Document doc1 = db.getDocument("doc1");
+            assertTrue(doc1.get("data") instanceof Blob);
+            data = (Blob) doc1.get("data");
+            for (int i = 0; i < 5; i++) {
+                assertTrue(Arrays.equals(content, data.getContent()));
+                InputStream is = data.getContentStream();
+                try {
+                    assertNotNull(is);
+                    byte[] buffer = new byte[10];
+                    int bytesRead = is.read(buffer);
+                    assertEquals(5, bytesRead);
+                } finally {
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                        fail();
+                    }
+                }
+            }
+        } finally {
+            copy.close();
+        }
     }
 
     @Test
     public void testReadExistingBlob() {
-        // TODO: DB005
+        byte[] content = "12345".getBytes();
+
+        Blob data = new Blob("text/plain", content);
+        assertNotNull(data);
+        doc.set("data", data);
+        doc.set("name", "Jim");
+        doc.save();
+
+        assertTrue(doc.get("data") instanceof Blob);
+
+        reopenDB();
+
+        assertTrue(doc.get("data") instanceof Blob);
+        data = (Blob) doc.get("data");
+        assertTrue(Arrays.equals(content, data.getContent()));
+
+        reopenDB();
+
+        doc.set("foo", "bar");
+        doc.save();
+
+        assertTrue(doc.get("data") instanceof Blob);
+        data = (Blob) doc.get("data");
+        assertTrue(Arrays.equals(content, data.getContent()));
+    }
+
+    @Test
+    public void testBlobInNestedMap() {
+        byte[] content = "12345".getBytes();
+
+        Blob data = new Blob("text/plain", content);
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", data);
+        doc.set("map", map);
+
+        assertTrue(map.get("data") instanceof Blob);
+        data = (Blob) map.get("data");
+        assertTrue(Arrays.equals(content, data.getContent()));
+
+        doc.save();
+
+        map = (Map<String, Object>) doc.get("map");
+        assertNotNull(map);
+        assertTrue(map.get("data") instanceof Blob);
+        data = (Blob) map.get("data");
+        assertTrue(Arrays.equals(content, data.getContent()));
+
+        reopenDB();
+
+        doc = db.getDocument("doc1");
+        map = (Map<String, Object>) doc.get("map");
+        assertNotNull(map);
+        assertTrue(map.get("data") instanceof Blob);
+        data = (Blob) map.get("data");
+        assertTrue(Arrays.equals(content, data.getContent()));
+    }
+
+//    @Test
+//    public void testUpdateNestedMap() {
+//        // original
+//        {
+//            doc.set("name", "Scott");
+//            Map<String, Object> original = new HashMap<>();
+//            original.put("city", "REDWOOD CITY");
+//            doc.set("address", original);
+//            doc.save();
+//        }
+//
+//        // update one
+//        Document doc1;
+//        Map<String, Object> address1;
+//        Database copyOfDB1 = db.copy();
+//        try {
+//            doc1 = copyOfDB1.getDocument("doc1");
+//            address1 = (Map<String, Object>) doc1.get("address");
+//            address1.put("city", "MOUNTAIN VIEW");
+//            doc1.set("address", address1);
+//
+//            address1 = (Map<String, Object>) doc1.get("address");
+//            address1.put("city", "SAN JOSE");
+//            doc1.save();
+//        } finally {
+//            copyOfDB1.close();
+//        }
+//        Map<String, Object> reget = (Map<String, Object>) doc1.get("address");
+//        Log.e(TAG, "reget -> " + reget);
+//
+//
+//        // update two
+//        Database copyOfDB2 = db.copy();
+//        try {
+//            Document doc2 = copyOfDB2.getDocument("doc1");
+//            Map<String, Object> address2 = (Map<String, Object>) doc2.get("address");
+//            address2.put("city", "REDWOOD CITY");
+//            address2.put("zip", "94065");
+//            //doc2.set("address", address2);
+//            doc2.save();
+//        } finally {
+//            copyOfDB2.close();
+//        }
+//
+//        reget = (Map<String, Object>) doc1.get("address");
+//        Log.e(TAG, "address1 -> " + address1);
+//        Log.e(TAG, "reget -> " + reget);
+//    }
+
+    @Test
+    public void testCrashWithBlob() throws CouchbaseLiteException, IOException {
+        DatabaseOptions options = new DatabaseOptions();
+        options.setDirectory(dir);
+        Database db1 = new Database("abc", options);
+        Document doc1 = db1.getDocument("doc1");
+
+        byte[] content = "12345".getBytes();
+        Blob data = new Blob("text/plain", content);
+        doc1.set("data", data);
+        doc1.save();
+        db1.close();
+    }
+
+    @Test
+    public void testSetProperties() throws Exception {
+        loadJSONResource("names_100.json");
+        assertEquals(100, db.internal().getDocumentCount());
     }
 }

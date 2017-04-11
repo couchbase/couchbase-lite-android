@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.couchbase.litecore.Constants.C4RevisionFlags.kRevHasAttachments;
+
 /**
  * A Couchbase Lite document. A document has key/value properties like a Dictionary;
  * their API is defined by the superclass Properties.
@@ -227,6 +229,13 @@ public final class Document extends Properties {
         // TODO DB005: send notification
     }
 
+    @Override
+    Blob blobWithProperties(Map<String, Object> dict) {
+        return new Blob(db, dict);
+    }
+
+
+
 
     //---------------------------------------------
     // Private (in class only)
@@ -258,6 +267,7 @@ public final class Document extends Properties {
                 setRoot(root);
             }
         }
+        useNewRoot();
     }
 
     private void save(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
@@ -299,7 +309,8 @@ public final class Document extends Properties {
             String docType = null;
             if (deletion)
                 flags = Constants.C4RevisionFlags.kRevDeleted;
-            // TODO: DB005 - Blob
+            if (propertiesToSave != null && dictContainsBlob(propertiesToSave))
+                flags |= kRevHasAttachments;
             if (propertiesToSave != null && propertiesToSave.size() > 0) {
                 // Encode properties to Fleece data:
                 body = encode();
@@ -320,6 +331,64 @@ public final class Document extends Properties {
         }
     }
 
+
+
+
+
+    private void resetChanges() {
+        this.properties = null; // not calling setProperties(null)
+        setHasChanges(false);
+    }
+
+    private void store(Blob blob) {
+        blob.installInDatabase(db);
+    }
+
+    private Blob blob(Map<String, Object> properties) {
+        return new Blob(db, properties);
+    }
+
+    private static boolean dictContainsBlob(Map<String, Object> dict) {
+        if (dict == null)
+            return false;
+
+        Object obj = dict.get("_cbltype");
+        if (obj != null && obj instanceof String && ((String) obj).equals("blob"))
+            return true;
+        boolean containsBlob = false;
+        for (Map.Entry<String, Object> entry : dict.entrySet()) {
+            containsBlob = objectContainsBlob(entry.getValue());
+            if (containsBlob)
+                break;
+        }
+        return containsBlob;
+    }
+
+    private static boolean arrayContainsBlob(List<Object> array) {
+        if (array == null)
+            return false;
+
+        for (Object obj : array) {
+            if (objectContainsBlob(obj))
+                return true;
+        }
+        return false;
+    }
+
+    private static boolean objectContainsBlob(Object obj) {
+        if (obj == null)
+            return false;
+        else if (obj instanceof Blob)
+            return true;
+        else if (obj instanceof Map)
+            return dictContainsBlob((Map<String, Object>) obj);
+        else if (obj instanceof List)
+            return arrayContainsBlob((List<Object>) obj);
+        else
+            return false;
+    }
+
+    // TODO: Instead of byte[], should we use FLSliceResult? Less memory transfer through JNI.
     private byte[] encode() throws CouchbaseLiteException {
         FLEncoder encoder = new FLEncoder();
         try {
@@ -328,9 +397,11 @@ public final class Document extends Properties {
             while (keys.hasNext()) {
                 String key = keys.next();
                 Object value = getProperties().get(key);
-                // TODO DB005: Blob
+                if (value instanceof Blob)
+                    store((Blob) value);
                 encoder.writeKey(key);
-                encoder.writeValue(value);
+                //encoder.writeValue(value);
+                writeValue(encoder, value);
             }
             encoder.endDict();
             byte[] body;
@@ -345,8 +416,48 @@ public final class Document extends Properties {
         }
     }
 
-    private void resetChanges() {
-        this.properties = null; // not calling setProperties(null)
-        setHasChanges(false);
+    public boolean writeValue(FLEncoder encoder, Object value) {
+        if (value == null)
+            return encoder.writeNull();
+        else if (value instanceof Boolean)
+            return encoder.writeBool((Boolean) value);
+        else if (value instanceof Number) {
+            if (value instanceof Integer || value instanceof Long)
+                return encoder.writeInt(((Number) value).longValue());
+            else if (value instanceof Double)
+                return encoder.writeDouble(((Double) value).doubleValue());
+            else
+                return encoder.writeFloat(((Float) value).floatValue());
+        } else if (value instanceof String)
+            return encoder.writeString((String) value);
+        else if (value instanceof byte[])
+            return encoder.writeData((byte[]) value);
+        else if (value instanceof List)
+            return encoder.write((List) value);
+        else if (value instanceof Map)
+            return write(encoder, (Map) value);
+        else if (value instanceof Blob)
+            return writeValueForObject(encoder, value);
+        return false;
+    }
+
+    public boolean write(FLEncoder encoder, Map map) {
+        encoder.beginDict(map.size());
+        Iterator keys = map.keySet().iterator();
+        while (keys.hasNext()) {
+            String key = (String) keys.next();
+            Object value = map.get(key);
+            if (value instanceof Blob)
+                store((Blob) value);
+            encoder.writeKey(key);
+            writeValueForObject(encoder, value);
+        }
+        return encoder.endDict();
+    }
+
+    boolean writeValueForObject(FLEncoder encoder, Object value) {
+        if (value instanceof Blob)
+            value = ((Blob) value).jsonRepresentation();
+        return writeValue(encoder, value);
     }
 }

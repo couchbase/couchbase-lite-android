@@ -16,7 +16,7 @@ package com.couchbase.lite;
 import java.util.Map;
 
 /**
- * TODO: DB005
+ * TODO: DB00x
  */
 public interface ConflictResolver {
     Map<String, Object> resolve(Map<String, Object> mine, Map<String, Object> theirs, Map<String, Object> base);

@@ -343,6 +343,11 @@ public final class Database {
     // Package level access
     //---------------------------------------------
 
+    // Instead of clone()
+    /* package */ Database copy(){
+        return new Database(this.name, this.options);
+    }
+
     //////// DATABASES:
     com.couchbase.litecore.Database internal() {
         return c4db;
