@@ -1972,8 +1972,11 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             assertTrue(!replicator.isPull());
             assertFalse(replicator.isContinuous());
             assertFalse(replicator.isRunning());
-            assertTrue(replicator.getHeaders().containsKey("Cookie"));
-            assertEquals(replicator.getHeaders().get("Cookie"), coolieVal);
+
+            // https://github.com/couchbase/couchbase-lite-java-core/pull/1618
+            // Cookie value is removed from headers. Instead, the Cookie is stored in the CookieJar.
+            //assertTrue(replicator.getHeaders().containsKey("Cookie"));
+            //assertEquals(replicator.getHeaders().get("Cookie"), coolieVal);
 
             // add replication observer
             CountDownLatch replicationDoneSignal = new CountDownLatch(1);
