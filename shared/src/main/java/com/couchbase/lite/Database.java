@@ -67,6 +67,7 @@ public final class Database {
     private WeakValueHashMap<String, Document> documents;
     // Modified (Unsaved) Document Cache before save.
     private Set<Document> unsavedDocuments;
+    private ConflictResolver conflictResolver;
 
     //---------------------------------------------
     // API - public methods
@@ -139,7 +140,7 @@ public final class Database {
             throw LiteCoreBridge.convertException(e);
         }
 
-        // TODO: DB005 - free observer
+        // TODO: DB00x - free observer
 
         c4db.free();
         c4db = null;
@@ -172,7 +173,7 @@ public final class Database {
         }
         c4db.free();
         c4db = null;
-        // TODO: DB005 - free observer
+        // TODO: DB00x - free observer
     }
 
     /**
@@ -282,10 +283,26 @@ public final class Database {
         }
     }
 
-    // TODO: DB005
-    // var conflictResolver: ConflictResolver? { get set }
+    /**
+     * Return the conflict resolver for this database
+     *
+     * @return the conflict resolver for this database
+     */
+    public ConflictResolver getConflictResolver() {
+        return conflictResolver;
+    }
 
-    // TODO: DB005 - Notification will be implemented
+    /**
+     * Set the conflict resolver for this database. If null, a default algorithm will be used, where
+     * the revision with more history wins.
+     *
+     * @param conflictResolver the conflict resolver for this database
+     */
+    public void setConflictResolver(ConflictResolver conflictResolver) {
+        this.conflictResolver = conflictResolver;
+    }
+
+    // TODO: DB00x - Notification will be implemented
     // func addChangeListener(docListener: DocumentChangeListener)
     // func removeChangeListener(docListener: DocumentChangeListener)
 
@@ -344,7 +361,7 @@ public final class Database {
     //---------------------------------------------
 
     // Instead of clone()
-    /* package */ Database copy(){
+    /* package */ Database copy() {
         return new Database(this.name, this.options);
     }
 
@@ -421,7 +438,7 @@ public final class Database {
         }
 
         // TODO: DB00x SharedKey
-        // TODO: DB005 Observation
+        // TODO: DB00x Observation
 
         documents = new WeakValueHashMap<>();
         unsavedDocuments = new HashSet<>();

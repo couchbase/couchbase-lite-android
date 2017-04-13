@@ -40,7 +40,7 @@ public class BaseTest {
     protected Context context;
     protected File dir;
     protected Database db = null;
-    protected Document doc = null;
+
 
     @Before
     public void setUp() {
@@ -69,9 +69,6 @@ public class BaseTest {
         options.setDirectory(dir);
         db = new Database(kDatabaseName, options);
         assertNotNull(db);
-
-        doc = db.getDocument("doc1");
-        assertNotNull(doc);
     }
 
     protected void closeDB() {

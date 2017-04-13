@@ -33,10 +33,10 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
  */
 public abstract class Properties {
 
-    // TODO: DB005 - sharedKeys
+    // TODO: DB00x - sharedKeys
     FLDict root;
     Map<String, Object> properties;
-    // TODO: DB005 - changesKeys;
+    // TODO: DB00x - changesKeys;
     boolean hasChanges;
 
     //---------------------------------------------
@@ -67,7 +67,7 @@ public abstract class Properties {
         if (properties != null) {
             for (Map.Entry<String, Object> entry : properties.entrySet()) {
                 if (entry.getValue() instanceof Map) {
-                    Object converted = convert((Map<String,Object>)entry.getValue());
+                    Object converted = convert((Map<String, Object>) entry.getValue());
                     if (converted != null)
                         props.put(entry.getKey(), converted);
                 }
@@ -144,7 +144,7 @@ public abstract class Properties {
      */
     public int getInt(String key) {
         Object val;
-        if (properties != null && (val = properties.get(key))!=null) {
+        if (properties != null && (val = properties.get(key)) != null) {
             Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0 : obj.intValue();
         } else {
@@ -163,7 +163,7 @@ public abstract class Properties {
      */
     public float getFloat(String key) {
         Object val;
-        if (properties != null && (val = properties.get(key))!=null) {
+        if (properties != null && (val = properties.get(key)) != null) {
             Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0.0F : obj.floatValue();
         } else {
@@ -182,7 +182,7 @@ public abstract class Properties {
      */
     public double getDouble(String key) {
         Object val;
-        if (properties != null && (val = properties.get(key))!=null) {
+        if (properties != null && (val = properties.get(key)) != null) {
             Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0.0 : obj.doubleValue();
         } else {
@@ -199,7 +199,7 @@ public abstract class Properties {
      */
     public boolean getBoolean(String key) {
         Object val;
-        if (properties != null && (val = properties.get(key))!=null) {
+        if (properties != null && (val = properties.get(key)) != null) {
             Boolean obj = ClassUtils.cast(val, Boolean.class);
             // NOTE: to be consistent with other platform, return true if failed to cast.
             return obj == null ? true : obj.booleanValue();
@@ -247,7 +247,7 @@ public abstract class Properties {
      */
     public List<Object> getArray(String key) {
         Object val;
-        if (properties != null && (val = properties.get(key))!=null) {
+        if (properties != null && (val = properties.get(key)) != null) {
             return ClassUtils.cast(val, List.class);
         } else {
             FLValue flvalue = getValueFromRoot(key);
@@ -264,7 +264,7 @@ public abstract class Properties {
      * @param key The key to access the value for.
      */
     public SubDocument getSubDocument(String key) {
-        // TODO: DB005
+        // TODO: DB00x
         throw new UnsupportedOperationException("Work in Progress!");
     }
 
@@ -272,7 +272,7 @@ public abstract class Properties {
      * @param key The key to access the value for.
      */
     public Document getDocument(String key) {
-        // TODO: DB005
+        // TODO: DB00x
         throw new UnsupportedOperationException("Work in Progress!");
     }
 
@@ -280,7 +280,7 @@ public abstract class Properties {
      * @param key The key to access the value for.
      */
     public List<Document> getDocuments(String key) {
-        // TODO: DB005
+        // TODO: DB00x
         throw new UnsupportedOperationException("Work in Progress!");
     }
 
@@ -309,7 +309,7 @@ public abstract class Properties {
         if (properties != null)
             return properties.containsKey(key);
         else
-            // TODO: DB005 - Need to update once shared key is implemented.
+            // TODO: DB00x - Need to update once shared key is implemented.
             return root == null ? false : root.asDict().containsKey(key);
     }
 
@@ -318,8 +318,7 @@ public abstract class Properties {
      * Reverts unsaved changes made to the properties.
      */
     public void revert() {
-        // TODO: DB005 - part of changeskeys
-
+        // TODO: DB00x - part of changeskeys
         hasChanges = false;
     }
 
@@ -358,15 +357,23 @@ public abstract class Properties {
         this.root = root;
     }
 
-    abstract Blob blobWithProperties(Map<String, Object>dict);
+    abstract Blob blobWithProperties(Map<String, Object> dict);
 
     void useNewRoot() {
         if (properties == null)
             return;
-        Map<String,Object> nuProps = new HashMap<>();
+        Map<String, Object> nuProps = new HashMap<>();
         //TODO: SubDocument
         properties = nuProps;
     }
+
+    /* package */ Map<String, Object> getSavedProperties() {
+        if (properties != null && !hasChanges)
+            return properties;
+        else
+            return root == null ? null : root.asDict();
+    }
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
@@ -385,13 +392,6 @@ public abstract class Properties {
             if (properties == null)
                 properties = new HashMap<>();
         }
-    }
-
-    private Map<String, Object> getSavedProperties() {
-        if (properties != null && !hasChanges)
-            return properties;
-        else
-            return root == null ? null : root.asDict();
     }
 
     private FLValue getValueFromRoot(String key) {
@@ -418,19 +418,19 @@ public abstract class Properties {
 
     private boolean isBlobMap(Object obj) {
         if (obj != null && obj instanceof Map) {
-            Map<String, Object> map = (Map<String, Object>)obj;
+            Map<String, Object> map = (Map<String, Object>) obj;
             Object value = map.get("_cbltype");
-            if(value != null && value instanceof String && "blob".equals(value))
+            if (value != null && value instanceof String && "blob".equals(value))
                 return true;
         }
         return false;
     }
 
-    private Object fleeceValueToObject(FLValue value){
-        switch(value.getType()){
+    private Object fleeceValueToObject(FLValue value) {
+        switch (value.getType()) {
             case kFLDict:
                 // TODO: for SubDocument
-                Map<String,Object> res = value.asDict();
+                Map<String, Object> res = value.asDict();
                 return convert(res);
             case kFLArray:
                 // TODO:

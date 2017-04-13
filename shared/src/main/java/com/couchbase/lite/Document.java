@@ -21,11 +21,14 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.Constants.C4RevisionFlags.kRevHasAttachments;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
 
 /**
  * A Couchbase Lite document. A document has key/value properties like a Dictionary;
@@ -36,6 +39,7 @@ public final class Document extends Properties {
 
     private Database db;
     private String id;
+    private ConflictResolver conflictResolver;
     private com.couchbase.litecore.Document c4doc;
 
     Document(Database db, String docID, boolean mustExist) throws CouchbaseLiteException {
@@ -67,9 +71,7 @@ public final class Document extends Properties {
      * @return the ConflictResolver
      */
     public ConflictResolver getConflictResolver() {
-        // TODO: DB005
-        throw new UnsupportedOperationException("Work in Progress!");
-        //return null;
+        return conflictResolver;
     }
 
     /**
@@ -79,8 +81,7 @@ public final class Document extends Properties {
      * @param conflictResolver the conflict resolver
      */
     public void setConflictResolver(ConflictResolver conflictResolver) {
-        // TODO: DB005
-        throw new UnsupportedOperationException("Work in Progress!");
+        this.conflictResolver = conflictResolver;
     }
 
     /**
@@ -133,8 +134,7 @@ public final class Document extends Properties {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void save() throws CouchbaseLiteException {
-        // TODO: DB005 - Need to implement ConflictResolver
-        save(null, false);
+        save(effectiveConflictResolver(), false);
     }
 
     /**
@@ -148,8 +148,7 @@ public final class Document extends Properties {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void delete() throws CouchbaseLiteException {
-        // TODO: DB005 - Need to implement ConflictResolver
-        save(null, true);
+        save(effectiveConflictResolver(), true);
     }
 
     /**
@@ -197,7 +196,7 @@ public final class Document extends Properties {
      * @param listener the DocumentChangeListener to add
      */
     public void addChangeListener(DocumentChangeListener listener) {
-        // TODO: DB005
+        // TODO: DB00x
         throw new UnsupportedOperationException("Work in Progress!");
     }
 
@@ -207,7 +206,7 @@ public final class Document extends Properties {
      * @param listener the DocumentChangeListener to remove
      */
     public void removeChangeListener(DocumentChangeListener listener) {
-        // TODO: DB005
+        // TODO: DB00x
         throw new UnsupportedOperationException("Work in Progress!");
     }
 
@@ -226,15 +225,13 @@ public final class Document extends Properties {
     @Override
     void markChanges() {
         super.markChanges();
-        // TODO DB005: send notification
+        // TODO DB00x: send notification
     }
 
     @Override
     Blob blobWithProperties(Map<String, Object> dict) {
         return new Blob(db, dict);
     }
-
-
 
 
     //---------------------------------------------
@@ -259,7 +256,7 @@ public final class Document extends Properties {
                 // In case of (LiteCoreDomain, kC4ErrorDeleted) -> body = null if we directly bind to C4 APIs.
                 body = c4doc.getSelectedBody();
             } catch (LiteCoreException e) {
-                if (e.domain != Constants.C4ErrorDomain.LiteCoreDomain || e.code != Constants.LiteCoreError.kC4ErrorDeleted)
+                if (e.domain != LiteCoreDomain || e.code != Constants.LiteCoreError.kC4ErrorDeleted)
                     throw LiteCoreBridge.convertException(e);
             }
             if (body != null && body.length > 0) {
@@ -275,15 +272,35 @@ public final class Document extends Properties {
         if (!hasChanges && !deletion && exists())
             return;
 
-        com.couchbase.litecore.Document newDoc;
+        com.couchbase.litecore.Document newDoc = null;
 
         // Begin a db transaction:
         boolean commit = false;
         db.beginTransaction();
         try {
             // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
-            newDoc = save(deletion);
-            // TODO: DB005 Conflict handling
+            try {
+                newDoc = save(deletion);
+            } catch (LiteCoreException e) {
+                if (e.domain != LiteCoreDomain || e.code != kC4ErrorConflict)
+                    throw LiteCoreBridge.convertException(e);
+            }
+            if (newDoc == null) {
+                // There's been a conflict; first merge with the new saved revision:
+                merge(resolver, deletion);
+
+                // The merge might have turned the save into a no-op:
+                if (!hasChanges)
+                    return;
+
+                // Now save the merged properties:
+                try {
+                    newDoc = save(deletion);
+                } catch (LiteCoreException e) {
+                    throw LiteCoreBridge.convertException(e);
+                }
+            }
+
             commit = true;
         } finally {
             // End a db transaction.
@@ -296,44 +313,88 @@ public final class Document extends Properties {
         if (deletion)
             resetChanges();
 
-        // TODO DB005: postChangedNotificationExternal
+        // TODO DB00x: postChangedNotificationExternal
     }
 
-    // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
-    private com.couchbase.litecore.Document save(boolean deletion) {
+    private void merge(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
+        com.couchbase.litecore.Document currentDoc = db.read(id, true);
 
-        Map<String, Object> propertiesToSave = deletion ? null : getProperties();
+        Map<String, Object> current = null;
         try {
-            int flags = 0;
-            byte[] body = null;
-            String docType = null;
-            if (deletion)
-                flags = Constants.C4RevisionFlags.kRevDeleted;
-            if (propertiesToSave != null && dictContainsBlob(propertiesToSave))
-                flags |= kRevHasAttachments;
-            if (propertiesToSave != null && propertiesToSave.size() > 0) {
-                // Encode properties to Fleece data:
-                body = encode();
-                if (body == null)
-                    return null;
-                docType = getString("type");
+            // TODO: better to return C4String instead of byte[]
+            //       This part of code is not efficient.
+            byte[] currentData = currentDoc.getSelectedBody();
+            if (currentData.length > 0) {
+                FLValue currentRoot = FLValue.fromData(currentData);
+                current = currentRoot.asFLDict().asDict();
+                // TODO: Need currentRoot.free()?
             }
-            List<String> revIDs = new ArrayList<>();
-            if (c4doc.getRevID() != null)
-                revIDs.add(c4doc.getRevID());
-            String[] history = revIDs.toArray(new String[revIDs.size()]);
-
-            // Save to database:
-            com.couchbase.litecore.Document newDoc = db.internal().put(c4doc.getDocID(), body, docType, false, false, history, flags, true, 0);
-            return newDoc;
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
+
+        Map<String, Object> resolved = null;
+        if (deletion) {
+            // Deletion always losses a conflit
+            resolved = current;
+        } else if (resolver != null) {
+            // Call the custom conflict resolver
+            resolved = resolver.resolve(
+                    getProperties() != null ? getProperties() : new HashMap<String, Object>(),
+                    current != null ? current : new HashMap<String, Object>(),
+                    getSavedProperties());
+            if (resolved == null) {
+                // Resolver gave up:
+                currentDoc.free();
+                throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
+            }
+        } else {
+            // Default resolution algorithm is "most active wins", i.e. higher generation number.
+            // TODO: Once conflict resolvers can access the document generation, move this logic
+            //       into a default ConflictResolver.
+            long myGeneraton = generation() + 1;
+            long theirGeneration = generationFromRevID(currentDoc.getRevID());
+            if (myGeneraton >= theirGeneration)
+                resolved = getProperties();
+            else
+                resolved = current;
+        }
+
+        // Now update my state to the current C4Document and the merged/resolved properties:
+        setC4Doc(currentDoc);
+        this.setProperties(resolved);
+        // NOTE: AbstractMap.equals() calls all values in the map. Nested data's equality check is
+        // depends on its implementation.
+        if (resolved.equals(current))
+            this.setHasChanges(false); // Document is now identical to current revision
     }
 
+    // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
+    private com.couchbase.litecore.Document save(boolean deletion) throws LiteCoreException {
+        Map<String, Object> propertiesToSave = deletion ? null : getProperties();
+        int flags = 0;
+        byte[] body = null;
+        String docType = null;
+        if (deletion)
+            flags = Constants.C4RevisionFlags.kRevDeleted;
+        if (propertiesToSave != null && dictContainsBlob(propertiesToSave))
+            flags |= kRevHasAttachments;
+        if (propertiesToSave != null && propertiesToSave.size() > 0) {
+            // Encode properties to Fleece data:
+            body = encode();
+            if (body == null)
+                return null;
+            docType = getString("type");
+        }
+        List<String> revIDs = new ArrayList<>();
+        if (c4doc.getRevID() != null)
+            revIDs.add(c4doc.getRevID());
+        String[] history = revIDs.toArray(new String[revIDs.size()]);
 
-
-
+        // Save to database:
+        com.couchbase.litecore.Document newDoc = db.internal().put(c4doc.getDocID(), body, docType, false, false, history, flags, true, 0);
+        return newDoc;
+    }
 
     private void resetChanges() {
         this.properties = null; // not calling setProperties(null)
@@ -416,7 +477,7 @@ public final class Document extends Properties {
         }
     }
 
-    public boolean writeValue(FLEncoder encoder, Object value) {
+    private boolean writeValue(FLEncoder encoder, Object value) {
         if (value == null)
             return encoder.writeNull();
         else if (value instanceof Boolean)
@@ -441,7 +502,7 @@ public final class Document extends Properties {
         return false;
     }
 
-    public boolean write(FLEncoder encoder, Map map) {
+    private boolean write(FLEncoder encoder, Map map) {
         encoder.beginDict(map.size());
         Iterator keys = map.keySet().iterator();
         while (keys.hasNext()) {
@@ -455,9 +516,35 @@ public final class Document extends Properties {
         return encoder.endDict();
     }
 
-    boolean writeValueForObject(FLEncoder encoder, Object value) {
+    private boolean writeValueForObject(FLEncoder encoder, Object value) {
         if (value instanceof Blob)
             value = ((Blob) value).jsonRepresentation();
         return writeValue(encoder, value);
+    }
+
+    private ConflictResolver effectiveConflictResolver() {
+        return conflictResolver != null ? conflictResolver : db.getConflictResolver();
+    }
+
+    private long generation() {
+        return generationFromRevID(c4doc.getRevID());
+    }
+
+    /**
+     * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
+     */
+    private static long generationFromRevID(String revID) {
+        long generation = 0;
+        long length = Math.min(revID == null ? 0 : revID.length(), 9);
+        for (int i = 0; i < length; ++i) {
+            char c = revID.charAt(i);
+            if (Character.isDigit(c))
+                generation = 10 * generation + Character.getNumericValue(c);
+            else if (c == '-')
+                return generation;
+            else
+                break;
+        }
+        return 0;
     }
 }
