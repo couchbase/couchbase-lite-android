@@ -19,15 +19,31 @@ import java.io.File;
  * Options for opening a database. All properties default to false or null.
  */
 public final class DatabaseOptions {
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
     private File directory = null;
     private Object encryptionKey = null;
     private boolean readOnly = false;
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
 
     /**
      * Constructs a new DatabaseOptions with default values.
      */
     public DatabaseOptions() {
     }
+
+    public DatabaseOptions(File directory, Object encryptionKey, boolean readOnly) {
+        this.directory = directory;
+        this.encryptionKey = encryptionKey;
+        this.readOnly = readOnly;
+    }
+//---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
 
     /**
      * Returns the path to the directory to store the database in.
@@ -82,5 +98,13 @@ public final class DatabaseOptions {
      */
     public void setReadOnly(boolean readOnly) {
         this.readOnly = readOnly;
+    }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+
+    /* package */ DatabaseOptions copy() {
+        return new DatabaseOptions(this.directory, this.encryptionKey, this.readOnly);
     }
 }

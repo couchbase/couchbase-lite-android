@@ -13,6 +13,7 @@
  */
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.ClassUtils;
 import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLDict;
 import com.couchbase.litecore.fleece.FLValue;
@@ -24,12 +25,13 @@ import java.util.List;
 import java.util.Map;
 
 import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLArray;
+import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
 
 /**
  * Properties defines a JSON-compatible object, much like a Map (Dictionary) but with
  * type-safe accessors. It is implemented by classes {@code Document} and {@code SubDocument}.
  */
-public class Properties {
+public abstract class Properties {
 
     // TODO: DB005 - sharedKeys
     FLDict root;
@@ -58,13 +60,21 @@ public class Properties {
      * @param properties th properties
      */
     public void setProperties(Map<String, Object> properties) {
-        if (properties != null)
-            this.properties = new HashMap<>(properties);
-        else
-            this.properties = new HashMap<>();
+        Map<String, Object> props = (properties != null) ?
+                new HashMap<>(properties) :
+                new HashMap<String, Object>();
 
-        // TODO: DB005 - Special case handling for Blob
+        if (properties != null) {
+            for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                if (entry.getValue() instanceof Map) {
+                    Object converted = convert((Map<String,Object>)entry.getValue());
+                    if (converted != null)
+                        props.put(entry.getKey(), converted);
+                }
+            }
+        }
 
+        this.properties = props;
         markChanges();
     }
 
@@ -115,8 +125,9 @@ public class Properties {
      * @param key The key to access the value for.
      */
     public String getString(String key) {
-        if (properties != null)
-            return cast(properties.get(key), String.class);
+        Object val;
+        if (properties != null && (val = properties.get(key)) != null)
+            return ClassUtils.cast(val, String.class);
         else {
             FLValue flvalue = getValueFromRoot(key);
             return flvalue == null ? null : flvalue.asString();
@@ -132,8 +143,9 @@ public class Properties {
      * @return 0 if there is no such key or if it is not a Number.
      */
     public int getInt(String key) {
-        if (properties != null) {
-            Number obj = cast(properties.get(key), Number.class);
+        Object val;
+        if (properties != null && (val = properties.get(key))!=null) {
+            Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0 : obj.intValue();
         } else {
             FLValue flvalue = getValueFromRoot(key);
@@ -150,8 +162,9 @@ public class Properties {
      * @return 0 if there is no such key or if it is not a Number.
      */
     public float getFloat(String key) {
-        if (properties != null) {
-            Number obj = cast(properties.get(key), Number.class);
+        Object val;
+        if (properties != null && (val = properties.get(key))!=null) {
+            Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0.0F : obj.floatValue();
         } else {
             FLValue flvalue = getValueFromRoot(key);
@@ -168,8 +181,9 @@ public class Properties {
      * @return 0 if there is no such key or if it is not a Number.
      */
     public double getDouble(String key) {
-        if (properties != null) {
-            Number obj = cast(properties.get(key), Number.class);
+        Object val;
+        if (properties != null && (val = properties.get(key))!=null) {
+            Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0.0 : obj.doubleValue();
         } else {
             FLValue flvalue = getValueFromRoot(key);
@@ -184,10 +198,9 @@ public class Properties {
      * @param key The key to access the value for.
      */
     public boolean getBoolean(String key) {
-        if (properties != null) {
-            Object val = properties.get(key);
-            if (val == null) return false;
-            Boolean obj = cast(val, Boolean.class);
+        Object val;
+        if (properties != null && (val = properties.get(key))!=null) {
+            Boolean obj = ClassUtils.cast(val, Boolean.class);
             // NOTE: to be consistent with other platform, return true if failed to cast.
             return obj == null ? true : obj.booleanValue();
         } else {
@@ -203,8 +216,13 @@ public class Properties {
      * @param key The key to access the value for.
      */
     public Blob getBlob(String key) {
-        // TODO: DB005
-        throw new UnsupportedOperationException("Work in Progress!");
+        Object val;
+        if (properties != null && (val = properties.get(key)) != null)
+            return ClassUtils.cast(val, Blob.class);
+        else {
+            FLValue flvalue = getValueFromRoot(key);
+            return flvalue == null ? null : (Blob) fleeceValueToObject(flvalue);
+        }
     }
 
     /**
@@ -228,8 +246,9 @@ public class Properties {
      * @param key The key to access the value for.
      */
     public List<Object> getArray(String key) {
-        if (properties != null) {
-            return cast(properties.get(key), List.class);
+        Object val;
+        if (properties != null && (val = properties.get(key))!=null) {
+            return ClassUtils.cast(val, List.class);
         } else {
             FLValue flvalue = getValueFromRoot(key);
             // NOTE: need to check type, otherwise return empty array instead of null
@@ -294,6 +313,16 @@ public class Properties {
             return root == null ? false : root.asDict().containsKey(key);
     }
 
+
+    /**
+     * Reverts unsaved changes made to the properties.
+     */
+    public void revert() {
+        // TODO: DB005 - part of changeskeys
+
+        hasChanges = false;
+    }
+
     //---------------------------------------------
     // Implementation of Iterable
     //---------------------------------------------
@@ -305,7 +334,7 @@ public class Properties {
      * @return the iterator of type {@code String}.
      */
     public Iterator<String> iterator() {
-        if (properties != null) {
+        if (properties != null && hasChanges) {
             return properties.keySet().iterator();
         } else {
             return root == null ? null : root.iterator();
@@ -329,15 +358,25 @@ public class Properties {
         this.root = root;
     }
 
+    abstract Blob blobWithProperties(Map<String, Object>dict);
+
+    void useNewRoot() {
+        if (properties == null)
+            return;
+        Map<String,Object> nuProps = new HashMap<>();
+        //TODO: SubDocument
+        properties = nuProps;
+    }
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
     private Object getObject(String key) {
-        if (properties != null)
-            return properties.get(key);
+        Object obj = null;
+        if (properties != null && (obj = properties.get(key)) != null)
+            return obj;
         else
-            return root == null ? null : root.get(key).asObject();
+            return root == null ? null : fleeceValueToObject(root.get(key));
     }
 
     private void mutateProperties() {
@@ -355,13 +394,50 @@ public class Properties {
             return root == null ? null : root.asDict();
     }
 
-    private static <T> T cast(Object obj, Class<T> clazz) {
-        if (obj != null && !clazz.isInstance(obj))
-            return null;
-        return (T) obj;
-    }
-
     private FLValue getValueFromRoot(String key) {
         return root == null ? null : root.get(key);
     }
+
+    private Object convert(Map<String, Object> dict) {
+        if (isBlobMap(dict))
+            return blobWithProperties(dict);
+
+//        Object type = dict.get("_cbltype");
+//        if(type!=null && type instanceof String && type.equals("blob")){
+//            return blobWithProperties(dict);
+//        }
+
+        for (Map.Entry<String, Object> entry : dict.entrySet()) {
+            if (isBlobMap(entry.getValue()))
+                dict.put(entry.getKey(), blobWithProperties((Map<String, Object>) entry.getValue()));
+        }
+
+        // no conversion
+        return dict;
+    }
+
+    private boolean isBlobMap(Object obj) {
+        if (obj != null && obj instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>)obj;
+            Object value = map.get("_cbltype");
+            if(value != null && value instanceof String && "blob".equals(value))
+                return true;
+        }
+        return false;
+    }
+
+    private Object fleeceValueToObject(FLValue value){
+        switch(value.getType()){
+            case kFLDict:
+                // TODO: for SubDocument
+                Map<String,Object> res = value.asDict();
+                return convert(res);
+            case kFLArray:
+                // TODO:
+            default:
+                return value.asObject();
+        }
+    }
+
+
 }
