@@ -99,7 +99,9 @@ task sourcesJar(type: Jar) {
 
 // Generate javadoc
 task javadoc(type: Javadoc) {
+    failOnError false
     source android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
     options {
         title = "Couchbase Lite ${project.version}"
         memberLevel = JavadocMemberLevel.PROTECTED
@@ -107,12 +109,18 @@ task javadoc(type: Javadoc) {
         encoding = 'UTF-8'
         charSet = 'UTF-8'
         locale = 'en_US'
-
         links "https://docs.oracle.com/javase/7/docs/api/"
         linksOffline "https://developer.android.com/reference/", "${project.android.sdkDirectory}/docs/reference"
     }
-    exclude '**/internal/**'
-    exclude '**/litecore/**'
+
+    include 'com/couchbase/lite/*'
+    //exclude '**/internal/**'
+    //exclude '**/litecore/**'
+
+    /* Turn off javadoc 8 overly pedantic lint checking */
+    if (JavaVersion.current().isJava8Compatible()) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
 }
 
 // Generate javadoc.jar
