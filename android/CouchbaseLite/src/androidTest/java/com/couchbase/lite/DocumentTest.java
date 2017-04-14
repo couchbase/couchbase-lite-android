@@ -13,7 +13,7 @@
  */
 package com.couchbase.lite;
 
-import com.couchbase.litecore.Constants;
+import com.couchbase.litecore.fleece.FLEncoder;
 
 import org.junit.After;
 import org.junit.Before;
@@ -25,10 +25,14 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -38,18 +42,79 @@ import static org.junit.Assert.fail;
 
 public class DocumentTest extends BaseTest {
     private static final String TAG = DocumentTest.class.getName();
+    protected Document doc = null;
 
+    static class TheirsWins implements ConflictResolver {
+        @Override
+        public Map<String, Object> resolve(Map<String, Object> mine,
+                                           Map<String, Object> theirs,
+                                           Map<String, Object> base) {
+            return theirs;
+        }
+    }
+
+    static class MergeThenTheirsWins implements ConflictResolver {
+        @Override
+        public Map<String, Object> resolve(Map<String, Object> mine,
+                                           Map<String, Object> theirs,
+                                           Map<String, Object> base) {
+            Map<String, Object> resolved = new HashMap<>(base);
+            Set<String> changed = new HashSet<>();
+
+            for (Map.Entry<String, Object> entry : theirs.entrySet()) {
+                resolved.put(entry.getKey(), entry.getValue());
+                changed.add(entry.getKey());
+            }
+
+            for (Map.Entry<String, Object> entry : mine.entrySet()) {
+                if (!changed.contains(entry.getKey())) {
+                    resolved.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            return resolved;
+        }
+    }
+
+    static class GiveUp implements ConflictResolver {
+        @Override
+        public Map<String, Object> resolve(Map<String, Object> mine,
+                                           Map<String, Object> theirs,
+                                           Map<String, Object> base) {
+            return null;
+        }
+    }
+
+    static class DoNotResolve implements ConflictResolver {
+        @Override
+        public Map<String, Object> resolve(Map<String, Object> mine,
+                                           Map<String, Object> theirs,
+                                           Map<String, Object> base) {
+            fail("Resolver should not have been called!");
+            return null;
+        }
+    }
 
     @Before
     public void setUp() {
         super.setUp();
-        // TODO: DB005 - ConflictResolver
+        db.setConflictResolver(new DoNotResolve());
+        doc = db.getDocument("doc1");
+        assertNotNull(doc);
     }
 
     @After
     public void tearDown() {
         doc.revert();
         super.tearDown();
+    }
+
+    @Override
+    protected void reopenDB() {
+        super.reopenDB();
+        db.setConflictResolver(new DoNotResolve());
+        doc = db.getDocument("doc1");
+        assertNotNull(doc);
     }
 
     @Test
@@ -302,7 +367,7 @@ public class DocumentTest extends BaseTest {
             fail("CouchbaseLiteException expected");
         } catch (CouchbaseLiteException e) {
             // should be com here...
-            assertEquals(Constants.C4ErrorDomain.LiteCoreDomain, e.getDomain());
+            assertEquals(LiteCoreDomain, e.getDomain());
         }
         assertEquals("profile", doc.get("type"));
         assertEquals("Scott", doc.get("name"));
@@ -394,27 +459,77 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testConflict() {
-        // TODO: DB005
+        db.setConflictResolver(new TheirsWins());
+        doc = setupConflict();
+        doc.save();
+        assertEquals("Scotty", doc.get("name"));
+
+        // Get a new document with its own conflict resolver
+        doc = db.getDocument("doc2");
+        db.setConflictResolver(new MergeThenTheirsWins());
+        doc.set("type", "profile");
+        doc.set("name", "Scott");
+        doc.save();
+
+        // Force a conflict again
+        Map<String, Object> properties = new HashMap<>(doc.getProperties());
+        properties.put("type", "bio");
+        properties.put("gender", "male");
+        save(properties, doc.getID());
+
+        // Save and make sure that the correct conflict resolver won
+        doc.set("type", "biography");
+        doc.set("age", "31");
+        doc.save();
+        assertEquals("31", doc.get("age"));
+        assertEquals("bio", doc.get("type"));
+        assertEquals("male", doc.get("gender"));
+        assertEquals("Scott", doc.get("name"));
     }
 
     @Test
     public void testConflictResolverGivesUp() {
-        // TODO: DB005
+        db.setConflictResolver(new GiveUp());
+        doc = setupConflict();
+        try {
+            doc.save();
+            fail();
+        }catch(CouchbaseLiteException e){
+            assertEquals(LiteCoreDomain,e.getDomain());
+            assertEquals(kC4ErrorConflict, e.getCode());
+            assertTrue(doc.hasChanges);
+        }
     }
 
     @Test
     public void testDeletionConflict() {
-        // TODO: DB005
+        db.setConflictResolver(new DoNotResolve());
+        doc = setupConflict();
+        doc.delete();
+        assertTrue(doc.exists());
+        assertFalse(doc.isDeleted());
+        assertEquals("Scotty", doc.get("name"));
     }
 
     @Test
     public void testConflictMineIsDeeper() {
-        // TODO: DB005
+        db.setConflictResolver(null);
+        doc = setupConflict();
+        doc.save();
+        assertEquals("Scott Pilgrim", doc.get("name"));
     }
 
     @Test
     public void testConflictTheirsIsDeeper() {
-        // TODO: DB005
+        db.setConflictResolver(null);
+        doc = setupConflict();
+
+        // Add another revision to the conflict, so it'll have a higher generation:
+        Map<String, Object> properties = new HashMap<>(doc.getProperties());
+        properties.put("name", "Scott of the Sahara");
+        save(properties, doc.getID());
+        doc.save();
+        assertEquals("Scott of the Sahara", doc.get("name"));
     }
 
     @Test
@@ -649,55 +764,6 @@ public class DocumentTest extends BaseTest {
         assertTrue(Arrays.equals(content, data.getContent()));
     }
 
-//    @Test
-//    public void testUpdateNestedMap() {
-//        // original
-//        {
-//            doc.set("name", "Scott");
-//            Map<String, Object> original = new HashMap<>();
-//            original.put("city", "REDWOOD CITY");
-//            doc.set("address", original);
-//            doc.save();
-//        }
-//
-//        // update one
-//        Document doc1;
-//        Map<String, Object> address1;
-//        Database copyOfDB1 = db.copy();
-//        try {
-//            doc1 = copyOfDB1.getDocument("doc1");
-//            address1 = (Map<String, Object>) doc1.get("address");
-//            address1.put("city", "MOUNTAIN VIEW");
-//            doc1.set("address", address1);
-//
-//            address1 = (Map<String, Object>) doc1.get("address");
-//            address1.put("city", "SAN JOSE");
-//            doc1.save();
-//        } finally {
-//            copyOfDB1.close();
-//        }
-//        Map<String, Object> reget = (Map<String, Object>) doc1.get("address");
-//        Log.e(TAG, "reget -> " + reget);
-//
-//
-//        // update two
-//        Database copyOfDB2 = db.copy();
-//        try {
-//            Document doc2 = copyOfDB2.getDocument("doc1");
-//            Map<String, Object> address2 = (Map<String, Object>) doc2.get("address");
-//            address2.put("city", "REDWOOD CITY");
-//            address2.put("zip", "94065");
-//            //doc2.set("address", address2);
-//            doc2.save();
-//        } finally {
-//            copyOfDB2.close();
-//        }
-//
-//        reget = (Map<String, Object>) doc1.get("address");
-//        Log.e(TAG, "address1 -> " + address1);
-//        Log.e(TAG, "reget -> " + reget);
-//    }
-
     @Test
     public void testCrashWithBlob() throws CouchbaseLiteException, IOException {
         DatabaseOptions options = new DatabaseOptions();
@@ -716,5 +782,43 @@ public class DocumentTest extends BaseTest {
     public void testSetProperties() throws Exception {
         loadJSONResource("names_100.json");
         assertEquals(100, db.internal().getDocumentCount());
+    }
+
+    //---------------------------------------------
+    // Private (in class only)
+    //---------------------------------------------
+    private Document setupConflict(){
+        // Setup a default database conflict resolver
+        doc.set("type", "profile");
+        doc.set("name", "Scott");
+        doc.save();
+
+        // Force a conflict
+        Map<String, Object> properties = new HashMap<>(doc.getProperties());
+        properties.put("name", "Scotty");
+        save(properties, doc.getID());
+
+        // Change document in memory, so save will trigger a conflict
+        doc.set("name", "Scott Pilgrim");
+        return doc;
+    }
+
+    private void save(final Map<String, Object> props, final String docID){
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    com.couchbase.litecore.Document trickey = db.internal().getDocument(docID, true);
+                    FLEncoder enc = db.internal().createFleeceEncoder();
+                    enc.writeValue(props);
+                    byte[] bytes = enc.finish();
+                    com.couchbase.litecore.Document newDoc = db.internal().put(docID,bytes,null, false, false, (String[])Arrays.asList(trickey.getRevID()).toArray(), 0, true, 0);
+                    assertNotNull(newDoc);
+                }catch (Exception e){
+                    Log.e(TAG, "Error in Runnable.run()",e);
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 }
