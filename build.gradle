@@ -78,6 +78,11 @@ dependencies {
 
     androidTestCompile 'commons-io:commons-io:2.0.1'
     androidTestCompile 'com.squareup.okhttp3:mockwebserver:3.3.1'
+
+    // For JavaScript query test
+    androidTestCompile ('com.couchbase.lite:couchbase-lite-java-javascript:1.4.+'){
+        exclude group: 'com.couchbase.lite', module: 'couchbase-lite-java-core'
+    }
 }
 
 task generateJavadocs(type: Javadoc) {

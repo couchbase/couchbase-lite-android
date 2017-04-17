@@ -13,6 +13,8 @@
  */
 package com.couchbase.lite;
 
+import com.couchbase.lite.javascript.JavaScriptReplicationFilterCompiler;
+import com.couchbase.lite.javascript.JavaScriptViewCompiler;
 import com.couchbase.lite.mockserver.MockChangesFeed;
 import com.couchbase.lite.mockserver.MockCheckpointGet;
 import com.couchbase.lite.mockserver.MockCheckpointPut;
@@ -1864,5 +1866,65 @@ public class RouterTest extends LiteTestCaseWithDB {
         responseBody.put("reason", "missing");
         responseBody.put("status", 404);
         send("GET", "/db/doc1", Status.NOT_FOUND, responseBody);
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1139
+    public void testViewUpdate() throws CouchbaseLiteException {
+
+        View.setCompiler(new JavaScriptViewCompiler());
+        Database.setFilterCompiler(new JavaScriptReplicationFilterCompiler());
+
+        Map<String, Object> resp;
+
+        // create `db` Database
+        DatabaseOptions ops = new DatabaseOptions();
+        ops.setCreate(true);
+        Database db = manager.openDatabase("db", ops);
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("type", "person");
+        properties.put("name", "mick");
+        createDocWithProperties(properties, db);
+
+        properties = new HashMap<String, Object>();
+        properties.put("type", "person");
+        properties.put("name", "keef");
+        createDocWithProperties(properties, db);
+
+        properties.put("type", "aardvark");
+        properties.put("name", "cerebus");
+        createDocWithProperties(properties, db);
+
+        Map<String, Object> viewsBody1 = new HashMap<String, Object>();
+        Map<String, Object> viewBody1 = new HashMap<String, Object>();
+        Map<String, Object> mapBody1 = new HashMap<String, Object>();
+        mapBody1.put("map", "function(doc) { if (doc.type == 'person') { emit(doc.name, null) } }");
+        viewBody1.put("view", mapBody1);
+        viewsBody1.put("views", viewBody1);
+        resp = (Map<String, Object>)sendBody("PUT", "/db/_design/design", viewsBody1, Status.CREATED, null);
+        String revID1 = (String)resp.get("rev");
+
+        resp = (Map<String, Object>)send("GET", "/db/_design/design/_view/view", Status.OK, null);
+        assertEquals(2, resp.get("total_rows"));
+
+        View view = db.getView("design/view");
+        String mapReduceVersion1 = view.getMapVersion();
+
+        Map<String, Object> viewsBody2 = new HashMap<String, Object>();
+        Map<String, Object> viewBody2 = new HashMap<String, Object>();
+        Map<String, Object> mapBody2 = new HashMap<String, Object>();
+        mapBody2.put("map", "function(doc) { if (doc.type == 'aardvark') { emit(doc.name, null) } }");
+        viewBody2.put("view", mapBody2);
+        viewsBody2.put("views", viewBody2);
+        String urlStr = String.format(Locale.ENGLISH, "/db/_design/design?rev=%s", revID1);
+        resp = (Map<String, Object>)sendBody("PUT", urlStr, viewsBody2, Status.CREATED, null);
+        String revID2 = (String)resp.get("rev");
+
+        resp = (Map<String, Object>)send("GET", "/db/_design/design/_view/view", Status.OK, null);
+        assertEquals(1, resp.get("total_rows"));
+
+        view = db.getView("design/view");
+        String mapReduceVersion2 = view.getMapVersion();
+        assertFalse(mapReduceVersion1.equals(mapReduceVersion2));
     }
 }
