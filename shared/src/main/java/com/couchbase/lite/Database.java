@@ -314,21 +314,27 @@ public final class Database {
 
     // Database changes:
     public void addChangeListener(DatabaseChangeListener listener) {
-        if (listener != null)
-            addDatabaseChangeListener(listener);
+        if (listener == null)
+            throw new IllegalArgumentException();
+        addDatabaseChangeListener(listener);
     }
 
     public void removeChangeListener(DatabaseChangeListener listener) {
-        if (listener != null)
-            removeDatabaseChangeListener(listener);
+        if (listener == null)
+            throw new IllegalArgumentException();
+        removeDatabaseChangeListener(listener);
     }
 
     // Document changes:
     public void addChangeListener(String docID, DocumentChangeListener listener) {
+        if (docID == null || listener == null)
+            throw new IllegalArgumentException();
         addDocumentChangeListener(docID, listener);
     }
 
     public void removeChangeListener(String docID, DocumentChangeListener listener) {
+        if (docID == null || listener == null)
+            throw new IllegalArgumentException();
         removeDocumentChangeListener(docID, listener);
     }
 
