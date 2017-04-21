@@ -13,10 +13,18 @@
  */
 package com.couchbase.lite;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.lite.internal.support.WeakValueHashMap;
+import com.couchbase.litecore.C4DatabaseChange;
+import com.couchbase.litecore.C4DatabaseObserver;
+import com.couchbase.litecore.C4DatabaseObserverListener;
+import com.couchbase.litecore.C4DocumentObserver;
+import com.couchbase.litecore.C4DocumentObserverListener;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.NativeLibraryLoader;
 
@@ -24,14 +32,17 @@ import org.json.JSONException;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
-import static android.R.attr.path;
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorNotFound;
+import static java.util.Collections.synchronizedSet;
 
 /**
  * A Couchbase Lite database.
@@ -48,8 +59,9 @@ public final class Database {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private static final String LOG_TAG = Log.DATABASE;
+    private static final String TAG = Log.DATABASE;
     private static final String DB_EXTENSION = "cblite2";
+    private static final int MAX_CHANGES = 100;
 
     // TODO: DB00x - kC4DB_SharedKeys
     private static final int DEFAULT_DATABASE_FLAGS = com.couchbase.litecore.Database.Create
@@ -63,11 +75,18 @@ public final class Database {
     private DatabaseOptions options;
     // TODO: class name is conflicting between API level and LiteCore
     private com.couchbase.litecore.Database c4db;
+
     // Unmodified Document Cache from DB
     private WeakValueHashMap<String, Document> documents;
     // Modified (Unsaved) Document Cache before save.
     private Set<Document> unsavedDocuments;
     private ConflictResolver conflictResolver;
+
+
+    private Set<DatabaseChangeListener> dbChangeListeners;
+    private C4DatabaseObserver c4DBObserver;
+    private Map<String, Set<DocumentChangeListener>> docChangeListeners;
+    private Map<String, C4DocumentObserver> c4DocObservers;
 
     //---------------------------------------------
     // API - public methods
@@ -124,26 +143,19 @@ public final class Database {
     public void close() throws CouchbaseLiteException {
         if (c4db == null) return;
 
-        Log.i(LOG_TAG, "Closing %s at path %s", this, path);
+        Log.i(TAG, "Closing %s at path %s", this, c4db.getPath());
 
         if (unsavedDocuments.size() > 0)
-            Log.w(LOG_TAG, "Closing database with %d unsaved docs", unsavedDocuments.size());
+            Log.w(TAG, "Closing database with %d unsaved docs", unsavedDocuments.size());
 
         documents.clear();
         documents = null;
         unsavedDocuments.clear();
         unsavedDocuments = null;
 
-        try {
-            c4db.close();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
-        }
-
-        // TODO: DB00x - free observer
-
-        c4db.free();
-        c4db = null;
+        closeC4DB();
+        freeC4Observers();
+        freeC4DB();
     }
 
     /**
@@ -166,14 +178,9 @@ public final class Database {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void delete() throws CouchbaseLiteException {
-        try {
-            c4db.delete();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
-        }
-        c4db.free();
-        c4db = null;
-        // TODO: DB00x - free observer
+        deleteC4DB();
+        freeC4Observers();
+        freeC4DB();
     }
 
     /**
@@ -186,7 +193,7 @@ public final class Database {
     public static void delete(String name, File dir) throws CouchbaseLiteException {
         File path = getDatabasePath(dir, name);
         try {
-            Log.e(LOG_TAG, "delete(): path=%s", path.toString());
+            Log.e(TAG, "delete(): path=%s", path.toString());
             com.couchbase.litecore.Database.deleteAtPath(path.getPath(), DEFAULT_DATABASE_FLAGS);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
@@ -248,7 +255,7 @@ public final class Database {
                 return false;
 
             // unexpected error...
-            Log.w(LOG_TAG, "Unexpected Error with calling documentExists(docID => %s) method.", e, docID);
+            Log.w(TAG, "Unexpected Error with calling documentExists(docID => %s) method.", e, docID);
             return false;
         }
     }
@@ -264,6 +271,7 @@ public final class Database {
     public void inBatch(Runnable action) throws CouchbaseLiteException {
         try {
             boolean commit = false;
+            Log.e(TAG, "inBatch() beginTransaction()");
             c4db.beginTransaction();
             try {
                 try {
@@ -276,8 +284,10 @@ public final class Database {
                 }
             } finally {
                 c4db.endTransaction(commit);
+                Log.e(TAG, "inBatch() endTransaction()");
             }
-            // TODO: [self postDatabaseChanged];
+
+            postDatabaseChanged();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -302,9 +312,25 @@ public final class Database {
         this.conflictResolver = conflictResolver;
     }
 
-    // TODO: DB00x - Notification will be implemented
-    // func addChangeListener(docListener: DocumentChangeListener)
-    // func removeChangeListener(docListener: DocumentChangeListener)
+    // Database changes:
+    public void addChangeListener(DatabaseChangeListener listener) {
+        if (listener != null)
+            addDatabaseChangeListener(listener);
+    }
+
+    public void removeChangeListener(DatabaseChangeListener listener) {
+        if (listener != null)
+            removeDatabaseChangeListener(listener);
+    }
+
+    // Document changes:
+    public void addChangeListener(String docID, DocumentChangeListener listener) {
+        addDocumentChangeListener(docID, listener);
+    }
+
+    public void removeChangeListener(String docID, DocumentChangeListener listener) {
+        removeDocumentChangeListener(docID, listener);
+    }
 
     /**
      * Creates a value index (type IndexType.Value) on the given expressions. This will
@@ -354,6 +380,17 @@ public final class Database {
     @Override
     public String toString() {
         return String.format(Locale.ENGLISH, "%s[%s]", super.toString(), name);
+    }
+
+    //---------------------------------------------
+    // Protected level access
+    //---------------------------------------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        freeC4Observers();
+        freeC4DB();
+        super.finalize();
     }
 
     //---------------------------------------------
@@ -423,7 +460,7 @@ public final class Database {
         int encryptionAlgorithm = com.couchbase.litecore.Database.NoEncryption;
         byte[] encryptionKey = null;
 
-        Log.i(LOG_TAG, "Opening %s at path %s", this, dbFile.getPath());
+        Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
             // TODO: com.couchbase.litecore.Database is same class name with this classname.
@@ -438,8 +475,22 @@ public final class Database {
         }
 
         // TODO: DB00x SharedKey
-        // TODO: DB00x Observation
 
+        c4DBObserver = new C4DatabaseObserver(c4db, new C4DatabaseObserverListener() {
+            @Override
+            public void callback(C4DatabaseObserver observer, Object context) {
+                new Handler(Looper.getMainLooper())
+                        .post(new Runnable() {
+                            @Override
+                            public void run() {
+                                postDatabaseChanged();
+                            }
+                        });
+            }
+        }, this);
+        dbChangeListeners = synchronizedSet(new HashSet<DatabaseChangeListener>());
+        docChangeListeners = Collections.synchronizedMap(new HashMap<String, Set<DocumentChangeListener>>());
+        c4DocObservers = Collections.synchronizedMap(new HashMap<String, C4DocumentObserver>());
         documents = new WeakValueHashMap<>();
         unsavedDocuments = new HashSet<>();
     }
@@ -491,6 +542,189 @@ public final class Database {
             }
         }
         return doc;
+    }
+
+
+    // --- C4Database
+    private void closeC4DB() throws CouchbaseLiteException {
+        try {
+            c4db.close();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+    private void deleteC4DB() throws CouchbaseLiteException {
+        try {
+            c4db.delete();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+    private void freeC4DB() {
+        if (c4db != null) {
+            c4db.free();
+            c4db = null;
+        }
+    }
+
+    // --- Notification: - C4DatabaseObserver/C4DocumentObserver
+
+    // Database changes:
+    private void addDatabaseChangeListener(DatabaseChangeListener listener) {
+        if (dbChangeListeners.isEmpty())
+            registerC4DBObserver();
+        dbChangeListeners.add(listener);
+    }
+
+    private void removeDatabaseChangeListener(DatabaseChangeListener listener) {
+        dbChangeListeners.remove(listener);
+        if (dbChangeListeners.isEmpty())
+            freeC4DBObserver();
+    }
+
+    // Document changes:
+    private void addDocumentChangeListener(String docID, DocumentChangeListener listener) {
+        if (docChangeListeners.containsKey(docID)) {
+            docChangeListeners.get(docID).add(listener);
+        } else {
+            Set<DocumentChangeListener> listeners = Collections.synchronizedSet(new HashSet<DocumentChangeListener>());
+            listeners.add(listener);
+            docChangeListeners.put(docID, listeners);
+            registerC4DocObserver(docID);
+        }
+    }
+
+    private void removeDocumentChangeListener(String docID, DocumentChangeListener listener) {
+        if (docChangeListeners.containsKey(docID)) {
+            Set<DocumentChangeListener> listeners = docChangeListeners.get(docID);
+            if (listeners.remove(listener)) {
+                if (listeners.isEmpty()) {
+                    docChangeListeners.remove(docID);
+                    removeC4DocObserver(docID);
+                }
+            }
+        }
+    }
+
+    private void registerC4DBObserver() {
+        c4DBObserver = new C4DatabaseObserver(c4db, new C4DatabaseObserverListener() {
+            @Override
+            public void callback(C4DatabaseObserver observer, Object context) {
+                new Handler(Looper.getMainLooper())
+                        .post(new Runnable() {
+                            @Override
+                            public void run() {
+                                postDatabaseChanged();
+                            }
+                        });
+            }
+        }, this);
+    }
+
+    private void freeC4DBObserver() {
+        if (c4DBObserver != null) {
+            c4DBObserver.free();
+            c4DBObserver = null;
+        }
+    }
+
+    private void registerC4DocObserver(String docID) {
+        // prevent multiple observer for same docID.
+        if (c4DocObservers.containsKey(docID))
+            return;
+
+        C4DocumentObserver docObserver = new C4DocumentObserver(c4db, docID, new C4DocumentObserverListener() {
+            @Override
+            public void callback(C4DocumentObserver observer, final String docID, final long sequence, Object context) {
+                new Handler(Looper.getMainLooper())
+                        .post(new Runnable() {
+                            @Override
+                            public void run() {
+                                postDocumentChanged(docID, sequence);
+                            }
+                        });
+            }
+        }, this);
+
+        c4DocObservers.put(docID, docObserver);
+    }
+
+    private void removeC4DocObserver(String docID) {
+        C4DocumentObserver docObs = c4DocObservers.get(docID);
+        if (docObs != null) {
+            docObs.free();
+        }
+        c4DocObservers.remove(docID);
+    }
+
+    private void freeC4DocObservers() {
+        for (C4DocumentObserver value : c4DocObservers.values()) {
+            if (value != null)
+                value.free();
+        }
+        c4DocObservers.clear();
+        c4DocObservers = null;
+        docChangeListeners.clear();
+        docChangeListeners = null;
+    }
+
+    private void freeC4Observers() {
+        freeC4DBObserver();
+        freeC4DocObservers();
+    }
+
+    private void postDatabaseChanged() {
+        if (c4DBObserver == null || c4db == null || c4db.isInTransaction())
+            return;
+
+        int nChanges = 0;
+        List<String> docIDs = new ArrayList<>();
+        long lastSequence = 0L;
+        boolean external = false;
+        do {
+            // Read changes in batches of kMaxChanges:
+            C4DatabaseChange[] c4DBChanges = c4DBObserver.getChanges(MAX_CHANGES);
+            nChanges = c4DBChanges.length;
+            boolean newExternal = nChanges > 0 ? c4DBChanges[0].isExternal() : false;
+            if (c4DBChanges == null || c4DBChanges.length == 0 || external != newExternal || docIDs.size() > 1000) {
+                if (docIDs.size() > 0) {
+                    // Only notify if there are actually changes to send
+                    DatabaseChange change = new DatabaseChange(docIDs, lastSequence, external);
+                    // not allow to add/remove middle of iteration
+                    synchronized (dbChangeListeners) {
+                        for (DatabaseChangeListener listener : dbChangeListeners) {
+                            listener.changed(change);
+                        }
+                    }
+                    docIDs.clear();
+                }
+            }
+
+            external = newExternal;
+            for (int i = 0; i < nChanges; i++) {
+                docIDs.add(c4DBChanges[i].getDocID());
+            }
+            if (nChanges > 0)
+                lastSequence = c4DBChanges[nChanges - 1].getSequence();
+        } while (nChanges > 0);
+    }
+
+    private void postDocumentChanged(String docID, long sequence) {
+        if (!c4DocObservers.containsKey(docID) || c4db == null || c4db.isInTransaction())
+            return;
+
+        Set<DocumentChangeListener> listeners = docChangeListeners.get(docID);
+        if (listeners == null)
+            return;
+
+        DocumentChange change = new DocumentChange(docID, sequence);
+        synchronized (listeners) {
+            for (DocumentChangeListener listener : listeners) {
+                listener.changed(change);
+            }
+        }
     }
 }
 
