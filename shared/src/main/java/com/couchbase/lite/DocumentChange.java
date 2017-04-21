@@ -13,19 +13,29 @@
  */
 package com.couchbase.lite;
 
-/**
- * TODO: DB00x
- */
-public interface DocumentChangeEvent {
-    Document getSource();
 
-    void setSource(Document source);
+public class DocumentChange {
+    private final String docID;
+    private final long sequence;
 
-    Document getValue();
+    public DocumentChange(String docID, long sequence) {
+        this.docID = docID;
+        this.sequence = sequence;
+    }
 
-    void setValue(Document value);
+    public String getDocID() {
+        return docID;
+    }
 
-    Document getOldValue();
+    public long getSequence() {
+        return sequence;
+    }
 
-    void setOldValue(Document oldValue);
+    @Override
+    public String toString() {
+        return "DocumentChange{" +
+                "docID='" + docID + '\'' +
+                ", sequence=" + sequence +
+                '}';
+    }
 }
