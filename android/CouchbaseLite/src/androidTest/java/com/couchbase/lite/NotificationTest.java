@@ -42,7 +42,7 @@ public class NotificationTest extends BaseTest {
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                for(int i = 0; i < 10; i++){
+                for (int i = 0; i < 10; i++) {
                     Document doc = db.getDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                     doc.set("type", "demo");
                     doc.save();
@@ -73,7 +73,7 @@ public class NotificationTest extends BaseTest {
         docB.save();
         docA.set("theanswer", 18);
         docA.save();
-        assertTrue(latch1.await(5, TimeUnit.SECONDS));
+        assertTrue(latch1.await(10, TimeUnit.SECONDS));
         db.removeChangeListener("A", listener1);
 
         final CountDownLatch latch2 = new CountDownLatch(1);

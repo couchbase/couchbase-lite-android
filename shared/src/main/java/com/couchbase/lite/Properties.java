@@ -16,6 +16,7 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.support.ClassUtils;
 import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLDict;
+import com.couchbase.litecore.fleece.FLDictIterator;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.util.Date;
@@ -32,12 +33,18 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
  * type-safe accessors. It is implemented by classes {@code Document} and {@code SubDocument}.
  */
 public abstract class Properties {
-
-    // TODO: DB00x - sharedKeys
+    SharedKeys sharedKeys;
     FLDict root;
     Map<String, Object> properties;
     // TODO: DB00x - changesKeys;
     boolean hasChanges;
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    Properties(SharedKeys sharedKeys) {
+        this.sharedKeys = sharedKeys;
+    }
 
     //---------------------------------------------
     // public API methods
@@ -93,6 +100,8 @@ public abstract class Properties {
      * @return this object
      */
     public Properties set(String key, Object value) {
+        if (key == null) throw new IllegalArgumentException("null key is not allowed");
+
         // Date
         if (value instanceof Date)
             value = DateUtils.toJson((Date) value);
@@ -129,7 +138,7 @@ public abstract class Properties {
         if (properties != null && (val = properties.get(key)) != null)
             return ClassUtils.cast(val, String.class);
         else {
-            FLValue flvalue = getValueFromRoot(key);
+            FLValue flvalue = fleeceValue(key);
             return flvalue == null ? null : flvalue.asString();
         }
     }
@@ -148,7 +157,7 @@ public abstract class Properties {
             Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0 : obj.intValue();
         } else {
-            FLValue flvalue = getValueFromRoot(key);
+            FLValue flvalue = fleeceValue(key);
             return flvalue == null ? 0 : flvalue.asInt();
         }
     }
@@ -167,7 +176,7 @@ public abstract class Properties {
             Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0.0F : obj.floatValue();
         } else {
-            FLValue flvalue = getValueFromRoot(key);
+            FLValue flvalue = fleeceValue(key);
             return flvalue == null ? 0.0F : flvalue.asFloat();
         }
     }
@@ -186,7 +195,7 @@ public abstract class Properties {
             Number obj = ClassUtils.cast(val, Number.class);
             return obj == null ? 0.0 : obj.doubleValue();
         } else {
-            FLValue flvalue = getValueFromRoot(key);
+            FLValue flvalue = fleeceValue(key);
             return flvalue == null ? 0.0 : flvalue.asDouble();
         }
     }
@@ -204,7 +213,7 @@ public abstract class Properties {
             // NOTE: to be consistent with other platform, return true if failed to cast.
             return obj == null ? true : obj.booleanValue();
         } else {
-            FLValue flvalue = getValueFromRoot(key);
+            FLValue flvalue = fleeceValue(key);
             return flvalue == null ? false : flvalue.asBool();
         }
     }
@@ -220,7 +229,7 @@ public abstract class Properties {
         if (properties != null && (val = properties.get(key)) != null)
             return ClassUtils.cast(val, Blob.class);
         else {
-            FLValue flvalue = getValueFromRoot(key);
+            FLValue flvalue = fleeceValue(key);
             return flvalue == null ? null : (Blob) fleeceValueToObject(flvalue);
         }
     }
@@ -250,7 +259,7 @@ public abstract class Properties {
         if (properties != null && (val = properties.get(key)) != null) {
             return ClassUtils.cast(val, List.class);
         } else {
-            FLValue flvalue = getValueFromRoot(key);
+            FLValue flvalue = fleeceValue(key);
             // NOTE: need to check type, otherwise return empty array instead of null
             return flvalue == null || flvalue.getType() != kFLArray ? null : flvalue.asArray();
         }
@@ -309,8 +318,7 @@ public abstract class Properties {
         if (properties != null)
             return properties.containsKey(key);
         else
-            // TODO: DB00x - Need to update once shared key is implemented.
-            return root == null ? false : root.asDict().containsKey(key);
+            return fleeceValue(key) == null;
     }
 
 
@@ -336,7 +344,7 @@ public abstract class Properties {
         if (properties != null && hasChanges) {
             return properties.keySet().iterator();
         } else {
-            return root == null ? null : root.iterator();
+            return root == null ? null : root.iterator(sharedKeys);
         }
     }
 
@@ -355,6 +363,7 @@ public abstract class Properties {
 
     void setRoot(FLDict root) {
         this.root = root;
+        sharedKeys.useDocumentRoot(this.root);
     }
 
     abstract Blob blobWithProperties(Map<String, Object> dict);
@@ -367,11 +376,11 @@ public abstract class Properties {
         properties = nuProps;
     }
 
-    /* package */ Map<String, Object> getSavedProperties() {
+    Map<String, Object> getSavedProperties() {
         if (properties != null && !hasChanges)
             return properties;
         else
-            return root == null ? null : root.asDict();
+            return root == null ? null : fleeceRootToDictionary(root);
     }
 
     //---------------------------------------------
@@ -383,29 +392,20 @@ public abstract class Properties {
         if (properties != null && (obj = properties.get(key)) != null)
             return obj;
         else
-            return root == null ? null : fleeceValueToObject(root.get(key));
+            return root == null ? null : fleeceValueToObject(fleeceValue(key));
     }
 
     private void mutateProperties() {
         if (properties == null) {
-            properties = root == null ? null : root.asDict();
+            properties = root == null ? null : fleeceRootToDictionary(root);
             if (properties == null)
                 properties = new HashMap<>();
         }
     }
 
-    private FLValue getValueFromRoot(String key) {
-        return root == null ? null : root.get(key);
-    }
-
     private Object convert(Map<String, Object> dict) {
         if (isBlobMap(dict))
             return blobWithProperties(dict);
-
-//        Object type = dict.get("_cbltype");
-//        if(type!=null && type instanceof String && type.equals("blob")){
-//            return blobWithProperties(dict);
-//        }
 
         for (Map.Entry<String, Object> entry : dict.entrySet()) {
             if (isBlobMap(entry.getValue()))
@@ -426,18 +426,40 @@ public abstract class Properties {
         return false;
     }
 
+    private FLValue fleeceValue(String key) {
+        return root == null ? null : SharedKeys.getValue(root, key, sharedKeys);
+    }
+
+    // - (id) fleeceValueToObject: (FLValue)value forKey: (NSString*)key
     private Object fleeceValueToObject(FLValue value) {
+        if (value == null) return null;
         switch (value.getType()) {
             case kFLDict:
+                //Map<String, Object> dict = value.asDict();
                 // TODO: for SubDocument
-                Map<String, Object> res = value.asDict();
+                Map<String, Object> res = (Map<String, Object>) SharedKeys.valueToObject(value, sharedKeys);
                 return convert(res);
             case kFLArray:
                 // TODO:
             default:
-                return value.asObject();
+                return SharedKeys.valueToObject(value, sharedKeys);
         }
     }
 
+    // - (NSDictionary*) fleeceRootToDictionary: (FLDict)root
+    private Map<String, Object> fleeceRootToDictionary(FLDict root) {
+        if (root == null) return null;
 
+        Map<String, Object> dict = new HashMap<>();
+        FLDictIterator itr = new FLDictIterator();
+        itr.begin(root);
+        String key;
+        while ((key = SharedKeys.getKey(itr, sharedKeys)) != null) {
+            dict.put(key, fleeceValueToObject(itr.getValue()));
+            itr.next();
+        }
+        itr.free();
+
+        return dict;
+    }
 }

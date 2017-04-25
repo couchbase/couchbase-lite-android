@@ -214,6 +214,17 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
+    public void testSetNullKey() {
+        Document doc = db.getDocument("doc1");
+        try {
+            doc.set(null, null);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // OK!
+        }
+    }
+
+    @Test
     public void testPropertyAccessors() {
         Document doc = db.getDocument("doc1");
 
@@ -232,8 +243,8 @@ public class DocumentTest extends BaseTest {
         List<String> list = Arrays.asList("1", "2");
         doc.set("array", list);
 
-        // null
-        doc.set(null, null);
+        // null(s):
+        doc.set("null", null);
         doc.set("nullarray", Arrays.asList(null, null));
 
         // Date:
@@ -494,8 +505,8 @@ public class DocumentTest extends BaseTest {
         try {
             doc.save();
             fail();
-        }catch(CouchbaseLiteException e){
-            assertEquals(LiteCoreDomain,e.getDomain());
+        } catch (CouchbaseLiteException e) {
+            assertEquals(LiteCoreDomain, e.getDomain());
             assertEquals(kC4ErrorConflict, e.getCode());
             assertTrue(doc.hasChanges);
         }
@@ -787,7 +798,7 @@ public class DocumentTest extends BaseTest {
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
-    private Document setupConflict(){
+    private Document setupConflict() {
         // Setup a default database conflict resolver
         doc.set("type", "profile");
         doc.set("name", "Scott");
@@ -803,7 +814,7 @@ public class DocumentTest extends BaseTest {
         return doc;
     }
 
-    private void save(final Map<String, Object> props, final String docID){
+    private void save(final Map<String, Object> props, final String docID) {
         db.inBatch(new Runnable() {
             @Override
             public void run() {
@@ -812,10 +823,10 @@ public class DocumentTest extends BaseTest {
                     FLEncoder enc = db.internal().createFleeceEncoder();
                     enc.writeValue(props);
                     byte[] bytes = enc.finish();
-                    com.couchbase.litecore.Document newDoc = db.internal().put(docID,bytes,null, false, false, (String[])Arrays.asList(trickey.getRevID()).toArray(), 0, true, 0);
+                    com.couchbase.litecore.Document newDoc = db.internal().put(docID, bytes, false, false, (String[]) Arrays.asList(trickey.getRevID()).toArray(), 0, true, 0);
                     assertNotNull(newDoc);
-                }catch (Exception e){
-                    Log.e(TAG, "Error in Runnable.run()",e);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error in Runnable.run()", e);
                     throw new RuntimeException(e);
                 }
             }
