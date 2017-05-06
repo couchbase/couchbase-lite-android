@@ -727,7 +727,9 @@ public final class Database {
     }
 
     private void postDocumentChanged(String docID, long sequence) {
-        if (!c4DocObservers.containsKey(docID) || c4db == null || c4db.isInTransaction())
+        // TODO: Temporary commented out the inTransaction check.
+        // https://github.com/couchbase/couchbase-lite-android/issues/1154
+        if (!c4DocObservers.containsKey(docID) || c4db == null /*|| c4db.isInTransaction()*/)
             return;
 
         Set<DocumentChangeListener> listeners = docChangeListeners.get(docID);
