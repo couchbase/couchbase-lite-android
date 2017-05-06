@@ -18,6 +18,7 @@ import android.support.test.InstrumentationRegistry;
 import android.util.Log;
 
 import com.couchbase.lite.internal.support.JsonUtils;
+import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
 
 import org.json.JSONObject;
@@ -26,29 +27,38 @@ import org.junit.Before;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Locale;
 import java.util.Map;
 
+import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 public class BaseTest {
+    public static final String TAG = BaseTest.class.getSimpleName();
+
     protected final static String kDatabaseName = "testdb";
 
+    protected Config config;
     protected Context context;
     protected File dir;
     protected Database db = null;
 
     @Before
-    public void setUp() {
+    public void setUp(){
         Log.e("BaseTest", "setUp");
         context = InstrumentationRegistry.getContext();
+        try {
+            config = new Config(context.getAssets().open(TEST_PROPERTIES_FILE));
+        } catch (IOException e) {
+            fail("Failed to load test.properties");
+        }
         dir = new File(context.getFilesDir(), "CouchbaseLite");
-
         FileUtils.cleanDirectory(dir);
-
         openDB();
     }
 
