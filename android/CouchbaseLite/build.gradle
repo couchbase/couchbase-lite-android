@@ -59,6 +59,10 @@ android {
             ]
         }
     }
+
+    lintOptions {
+        disable 'InvalidPackage'
+    }
 }
 
 def SUPPORT_LIBRARY_VERSION = "25.3.1"
