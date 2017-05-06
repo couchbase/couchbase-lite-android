@@ -41,7 +41,6 @@ public class BaseTest {
     protected File dir;
     protected Database db = null;
 
-
     @Before
     public void setUp() {
         Log.e("BaseTest", "setUp");

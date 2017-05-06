@@ -63,10 +63,11 @@ public final class Database {
     private static final String DB_EXTENSION = "cblite2";
     private static final int MAX_CHANGES = 100;
 
-    // TODO: DB00x - kC4DB_SharedKeys
-    private static final int DEFAULT_DATABASE_FLAGS = com.couchbase.litecore.Database.Create
+    private static final int DEFAULT_DATABASE_FLAGS
+            = com.couchbase.litecore.Database.Create
+            | com.couchbase.litecore.Database.AutoCompact
             | com.couchbase.litecore.Database.Bundle
-            | com.couchbase.litecore.Database.AutoCompact;
+            | com.couchbase.litecore.Database.SharedKeys;
 
     //---------------------------------------------
     // member variables
@@ -82,11 +83,12 @@ public final class Database {
     private Set<Document> unsavedDocuments;
     private ConflictResolver conflictResolver;
 
-
     private Set<DatabaseChangeListener> dbChangeListeners;
     private C4DatabaseObserver c4DBObserver;
     private Map<String, Set<DocumentChangeListener>> docChangeListeners;
     private Map<String, C4DocumentObserver> c4DocObservers;
+
+    private SharedKeys sharedKeys;
 
     //---------------------------------------------
     // API - public methods
@@ -429,6 +431,10 @@ public final class Database {
         }
     }
 
+    SharedKeys getSharedKeys() {
+        return sharedKeys;
+    }
+
     //////// DOCUMENTS:
     com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException {
         try {
@@ -480,8 +486,7 @@ public final class Database {
             throw LiteCoreBridge.convertException(e);
         }
 
-        // TODO: DB00x SharedKey
-
+        sharedKeys = new SharedKeys(c4db);
         c4DBObserver = new C4DatabaseObserver(c4db, new C4DatabaseObserverListener() {
             @Override
             public void callback(C4DatabaseObserver observer, Object context) {
@@ -666,14 +671,18 @@ public final class Database {
     }
 
     private void freeC4DocObservers() {
-        for (C4DocumentObserver value : c4DocObservers.values()) {
-            if (value != null)
-                value.free();
+        if (c4DocObservers != null) {
+            for (C4DocumentObserver value : c4DocObservers.values()) {
+                if (value != null)
+                    value.free();
+            }
+            c4DocObservers.clear();
+            c4DocObservers = null;
         }
-        c4DocObservers.clear();
-        c4DocObservers = null;
-        docChangeListeners.clear();
-        docChangeListeners = null;
+        if (docChangeListeners != null) {
+            docChangeListeners.clear();
+            docChangeListeners = null;
+        }
     }
 
     private void freeC4Observers() {

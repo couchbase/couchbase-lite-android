@@ -43,6 +43,7 @@ public final class Document extends Properties {
     private com.couchbase.litecore.Document c4doc;
 
     Document(Database db, String docID, boolean mustExist) throws CouchbaseLiteException {
+        super(db.getSharedKeys());
         this.db = db;
         this.id = docID;
 
@@ -190,26 +191,6 @@ public final class Document extends Properties {
         resetChanges();
     }
 
-    /**
-     * Adds a DocumentChangeListener to the Document.
-     *
-     * @param listener the DocumentChangeListener to add
-     */
-    public void addChangeListener(DocumentChangeListener listener) {
-        // TODO: DB00x
-        throw new UnsupportedOperationException("Work in Progress!");
-    }
-
-    /**
-     * Removes a DocumentChangeListener from the Document.
-     *
-     * @param listener the DocumentChangeListener to remove
-     */
-    public void removeChangeListener(DocumentChangeListener listener) {
-        // TODO: DB00x
-        throw new UnsupportedOperationException("Work in Progress!");
-    }
-
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
@@ -232,7 +213,6 @@ public final class Document extends Properties {
     Blob blobWithProperties(Map<String, Object> dict) {
         return new Blob(db, dict);
     }
-
 
     //---------------------------------------------
     // Private (in class only)
@@ -326,7 +306,9 @@ public final class Document extends Properties {
             byte[] currentData = currentDoc.getSelectedBody();
             if (currentData.length > 0) {
                 FLValue currentRoot = FLValue.fromData(currentData);
-                current = currentRoot.asFLDict().asDict();
+                SharedKeys currentKeys = new SharedKeys(this.sharedKeys, currentRoot.asFLDict());
+                current = (Map<String, Object>) SharedKeys.valueToObject(currentRoot, currentKeys);
+                Log.e(Log.DATABASE, "merge() current -> " + current);
                 // TODO: Need currentRoot.free()?
             }
         } catch (LiteCoreException e) {
@@ -374,17 +356,17 @@ public final class Document extends Properties {
         Map<String, Object> propertiesToSave = deletion ? null : getProperties();
         int flags = 0;
         byte[] body = null;
-        String docType = null;
         if (deletion)
             flags = Constants.C4RevisionFlags.kRevDeleted;
         if (propertiesToSave != null && dictContainsBlob(propertiesToSave))
             flags |= kRevHasAttachments;
         if (propertiesToSave != null && propertiesToSave.size() > 0) {
             // Encode properties to Fleece data:
-            body = encode();
+            FLEncoder encoder = db.internal().createFleeceEncoder();
+            body = encode(encoder);
+            encoder.free();
             if (body == null)
                 return null;
-            docType = getString("type");
         }
         List<String> revIDs = new ArrayList<>();
         if (c4doc.getRevID() != null)
@@ -392,7 +374,7 @@ public final class Document extends Properties {
         String[] history = revIDs.toArray(new String[revIDs.size()]);
 
         // Save to database:
-        com.couchbase.litecore.Document newDoc = db.internal().put(c4doc.getDocID(), body, docType, false, false, history, flags, true, 0);
+        com.couchbase.litecore.Document newDoc = db.internal().put(c4doc.getDocID(), body, false, false, history, flags, true, 0);
         return newDoc;
     }
 
@@ -450,18 +432,16 @@ public final class Document extends Properties {
     }
 
     // TODO: Instead of byte[], should we use FLSliceResult? Less memory transfer through JNI.
-    private byte[] encode() throws CouchbaseLiteException {
-        FLEncoder encoder = new FLEncoder();
+    private byte[] encode(FLEncoder encoder) throws CouchbaseLiteException {
         try {
             encoder.beginDict(getProperties().size());
             Iterator<String> keys = getProperties().keySet().iterator();
             while (keys.hasNext()) {
                 String key = keys.next();
+                encoder.writeKey(key);
                 Object value = getProperties().get(key);
                 if (value instanceof Blob)
                     store((Blob) value);
-                encoder.writeKey(key);
-                //encoder.writeValue(value);
                 writeValue(encoder, value);
             }
             encoder.endDict();
