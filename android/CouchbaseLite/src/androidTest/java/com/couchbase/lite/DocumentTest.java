@@ -13,34 +13,8 @@
  */
 package com.couchbase.lite;
 
-import com.couchbase.litecore.fleece.FLEncoder;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 public class DocumentTest extends BaseTest {
+    /*
     private static final String TAG = DocumentTest.class.getName();
     protected Document doc = null;
 
@@ -781,7 +755,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCrashWithBlob() throws CouchbaseLiteException, IOException {
-        DatabaseOptions options = new DatabaseOptions();
+        DatabaseConfiguration options = new DatabaseConfiguration();
         options.setDirectory(dir);
         Database db1 = new Database("abc", options);
         Document doc1 = db1.getDocument("doc1");
@@ -836,4 +810,5 @@ public class DocumentTest extends BaseTest {
             }
         });
     }
+    */
 }

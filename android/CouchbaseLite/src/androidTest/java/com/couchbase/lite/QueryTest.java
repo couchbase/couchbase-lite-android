@@ -13,21 +13,8 @@
  */
 package com.couchbase.lite;
 
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 public class QueryTest extends BaseTest {
+    /*
     private interface QueryResult {
         void check(long n, QueryRow row) throws Exception;
     }
@@ -64,8 +51,8 @@ public class QueryTest extends BaseTest {
             throws Exception {
         for (Object[] c : cases) {
             Expression w = (Expression) c[0];
-            String[] docIDs = (String[]) c[1];
-            final List<String> docIDList = new ArrayList<String>(Arrays.asList(docIDs));
+            String[] documentIDs = (String[]) c[1];
+            final List<String> docIDList = new ArrayList<String>(Arrays.asList(documentIDs));
             Query q = Query.select().from(DataSource.database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
                 @Override
@@ -76,16 +63,16 @@ public class QueryTest extends BaseTest {
                 }
             });
             assertEquals(0, docIDList.size());
-            assertEquals(docIDs.length, rows);
+            assertEquals(documentIDs.length, rows);
         }
     }
 
     private String[] $docids(int... numbers) {
-        String[] docIDs = new String[numbers.length];
+        String[] documentIDs = new String[numbers.length];
         for (int i = 0; i < numbers.length; i++) {
-            docIDs[i] = "doc" + numbers[i];
+            documentIDs[i] = "doc" + numbers[i];
         }
-        return docIDs;
+        return documentIDs;
     }
 
     @Test
@@ -186,18 +173,18 @@ public class QueryTest extends BaseTest {
 
         for (Object[] c : cases) {
             Expression exp = (Expression) c[0];
-            final String[] docIDs = (String[]) c[1];
+            final String[] documentIDs = (String[]) c[1];
             Query q = Query.select().from(DataSource.database(db)).where(exp);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(long n, QueryRow row) throws Exception {
-                    if (n < docIDs.length) {
-                        String docID = docIDs[(int) n - 1];
+                    if (n < documentIDs.length) {
+                        String docID = documentIDs[(int) n - 1];
                         assertEquals(docID, row.getDocumentID());
                     }
                 }
             });
-            assertEquals(docIDs.length, numRows);
+            assertEquals(documentIDs.length, numRows);
         }
     }
 
@@ -390,4 +377,5 @@ public class QueryTest extends BaseTest {
         });
         assertEquals(1, numRows);
     }
+    */
 }

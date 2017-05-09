@@ -15,27 +15,13 @@ package com.couchbase.lite;
 
 
 public class DocumentChange {
-    private final String docID;
-    private final long sequence;
+    private final String documentID;
 
-    public DocumentChange(String docID, long sequence) {
-        this.docID = docID;
-        this.sequence = sequence;
+    /* package */ DocumentChange(String documentID) {
+        this.documentID = documentID;
     }
 
-    public String getDocID() {
-        return docID;
-    }
-
-    public long getSequence() {
-        return sequence;
-    }
-
-    @Override
-    public String toString() {
-        return "DocumentChange{" +
-                "docID='" + docID + '\'' +
-                ", sequence=" + sequence +
-                '}';
+    public String getDocumentID() {
+        return documentID;
     }
 }

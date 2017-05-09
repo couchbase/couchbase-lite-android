@@ -13,8 +13,6 @@
  */
 package com.couchbase.lite;
 
-import java.util.Map;
-
 /**
  * Interface for an application-defined object that can resolve a conflict between two revisions of
  * a document. Called when saving a Document, when there is a newer revision already in the database;
@@ -32,7 +30,8 @@ public interface ConflictResolver {
      * @return the resolved set of properties for the document to store, or null to give up if
      * automatic resolution isn't possible.
      */
-    Map<String, Object> resolve(Map<String, Object> localProperties,
-                                Map<String, Object> conflictingProperties,
-                                Map<String, Object> baseProperties);
+//    Map<String, Object> resolve(Map<String, Object> localProperties,
+//                                Map<String, Object> conflictingProperties,
+//                                Map<String, Object> baseProperties);
+    ReadOnlyDocument resolve(Conflict conflict);
 }

@@ -148,33 +148,6 @@ public final class Blob {
     //---------------------------------------------
 
     /**
-     * Return the type of content this Blob represents; by convention this is a MIME type.
-     *
-     * @return the type of content
-     */
-    public String getContentType() {
-        return contentType;
-    }
-
-    /**
-     * The binary length of this Blob
-     *
-     * @return The binary length of this Blob
-     */
-    public long length() {
-        return length;
-    }
-
-    /**
-     * The cryptograhic digest of this Blob's contents, which uniquely identifies it.
-     *
-     * @return The cryptograhic digest of this Blob's contents
-     */
-    public String digest() {
-        return digest;
-    }
-
-    /**
      * Gets the contents of a Blob as a block of memory. Not recommended for very large blobs, as it
      * may be slow and use up lots of RAM.
      *
@@ -259,6 +232,33 @@ public final class Blob {
             byte[] content = getContent();
             return content == null ? null : new ByteArrayInputStream(content);
         }
+    }
+
+    /**
+     * Return the type of content this Blob represents; by convention this is a MIME type.
+     *
+     * @return the type of content
+     */
+    public String getContentType() {
+        return contentType;
+    }
+
+    /**
+     * The binary length of this Blob
+     *
+     * @return The binary length of this Blob
+     */
+    public long length() {
+        return length;
+    }
+
+    /**
+     * The cryptograhic digest of this Blob's contents, which uniquely identifies it.
+     *
+     * @return The cryptograhic digest of this Blob's contents
+     */
+    public String digest() {
+        return digest;
     }
 
     /**

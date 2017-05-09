@@ -18,16 +18,34 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class DatabaseTest extends BaseTest {
     private static final String TAG = DatabaseTest.class.getName();
+
+    // helper method to open database
+    private Database openDatabase(String dbName){
+        DatabaseConfiguration options = new DatabaseConfiguration();
+        options.setDirectory(dir);
+        Database db = new Database(dbName, options);
+        assertEquals(dbName, db.getName());
+        assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
+        assertEquals(0, db.documentCount());
+        return db;
+    }
+
+    // helper method to delete database
+    void deleteDatabase(Database db) {
+        File path = db.getPath();
+        assertTrue(path.exists());
+        db.delete();
+        assertFalse(path.exists());
+    }
 
     @Before
     public void setUp() {
@@ -41,84 +59,176 @@ public class DatabaseTest extends BaseTest {
         super.tearDown();
     }
 
+    //---------------------------------------------
+    //  Create Database
+    //---------------------------------------------
+
     @Test
     public void testCreate() {
-        DatabaseOptions options = new DatabaseOptions();
-        options.setDirectory(dir);
-        Database db = new Database("db", options);
+        // create db with default options
+
+        Database db = openDatabase("db");
         assertNotNull(db);
-        Log.e(TAG, "db.getPath()=%s", db.getPath());
-        File path = db.getPath();
-        Log.e(TAG, "dir=%s", dir);
-        Log.e(TAG, "path=%s", path);
-        assertNotNull(path);
-        assertTrue(path.isDirectory());
-        assertTrue(path.exists());
-        assertTrue(db.getPath().getName().endsWith(".cblite2"));
-        assertEquals("db", db.getName());
+        assertEquals(0, db.documentCount());
 
-        db.close();
-        assertTrue(path.exists());
-        assertNull(db.getPath());
-        Database.delete("db", dir);
+        // delete database
+        deleteDatabase(db);
     }
 
     @Test
-    public void testDelete() throws Exception {
-        assertNotNull(db.getPath());
-
-        File path = db.getPath();
-        db.delete();
-        assertNull(db.getPath());
-        assertFalse(path.exists());
-    }
-
-    @Test
-    public void testCreateDocument() throws Exception {
-        Document doc = db.getDocument();
-        assertNotNull(doc);
-        assertNotNull(doc.getID());
-        assertTrue(doc.getID().length() > 0);
-        assertEquals(db, doc.getDatabase());
-        assertFalse(doc.exists());
-        assertFalse(doc.isDeleted());
-        assertNull(doc.getProperties());
-
-        Document doc1 = db.getDocument("doc1");
-        assertNotNull(doc1);
-        assertEquals("doc1", doc1.getID());
-        assertEquals(db, doc1.getDatabase());
-        assertFalse(doc1.exists());
-        assertFalse(doc1.isDeleted());
-        assertEquals(doc1, db.getDocument("doc1"));
-        assertNull(doc1.getProperties());
-    }
-
-    @Test
-    public void testDocumentExists() throws Exception {
-        assertFalse(db.documentExists("doc1"));
-
-        Document doc1 = db.getDocument("doc1");
-        doc1.save();
-        assertTrue(db.documentExists("doc1"));
-        assertNull(doc1.getProperties());
-    }
-
-    @Test
-    public void testInBatchSuccess() throws Exception {
-        db.inBatch(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 10; i++) {
-                    String docID = String.format(Locale.ENGLISH, "doc%d", i);
-                    Document doc = db.getDocument(docID);
-                    doc.save();
-                }
-            }
-        });
-        for (int i = 0; i < 10; i++) {
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            assertTrue(db.documentExists(docID));
+    public void testCreateWithDefaultOption() {
+        try {
+            Database db = new Database("db", new DatabaseConfiguration());
+            fail();
+        } catch (UnsupportedOperationException e) {
+            // NOTE: CBL Android's Database constructor does not work without specified directory.
         }
     }
+
+    @Test
+    public void testCreateWithSpecialCharacterDBNames() {
+        Database db = openDatabase("`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'");
+        assertNotNull(db);
+        assertEquals(0, db.documentCount());
+
+        // delete database
+        deleteDatabase(db);
+    }
+
+    @Test
+    public void testCreateWithEmptyDBNames() {
+        try {
+            Database db = openDatabase("");
+            fail();
+        } catch (IllegalArgumentException e) {
+            // NOTE: CBL Android's Database constructor does not work without specified directory.
+        }
+    }
+
+    @Test
+    public void testCreateWithCustomDirectory() {
+        File dir = new File(context.getFilesDir(), "CouchbaseLite");
+        try {
+            Database.delete("db", dir);
+        } catch (Exception ex) {
+        }
+
+        assertFalse(Database.exists("db", dir));
+
+        // create db with custom directory
+        DatabaseConfiguration config = new DatabaseConfiguration();
+        config.setDirectory(dir);
+        Database db = new Database("db", config);
+        assertNotNull(db);
+        assertEquals("db", db.getName());
+        assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
+        assertTrue(db.getPath().getAbsolutePath().indexOf(dir.getPath()) != -1);
+        assertTrue(Database.exists("db", dir));
+        assertEquals(0, db.documentCount());
+
+        // delete database
+        deleteDatabase(db);
+    }
+
+    @Test
+    public void testCreateWithCustomConflictResolver() {
+        // TODO: DatabaseConfiguration.conflictResolver is not implemented yet.
+    }
+
+    //---------------------------------------------
+    //  Get Document
+    //---------------------------------------------
+
+    //---------------------------------------------
+    //  Save Document
+    //---------------------------------------------
+
+    //---------------------------------------------
+    //  Delete Document
+    //---------------------------------------------
+
+    //---------------------------------------------
+    //  Purge Document
+    //---------------------------------------------
+
+    //---------------------------------------------
+    //  Close Database
+    //---------------------------------------------
+
+    //---------------------------------------------
+    //  Delete Database
+    //---------------------------------------------
+
+    //---------------------------------------------
+    //  Delete Database (static)
+    //---------------------------------------------
+
+    //---------------------------------------------
+    //  Database Existing
+    //---------------------------------------------
+
+
+
+
+
+//    @Test
+//    public void testDelete() throws Exception {
+//        assertNotNull(db.getPath());
+//
+//        File path = db.getPath();
+//        db.delete();
+//        assertNull(db.getPath());
+//        assertFalse(path.exists());
+//    }
+
+
+
+//    @Test
+//    public void testCreateDocument() throws Exception {
+//        Document doc = db.getDocument();
+//        assertNotNull(doc);
+//        assertNotNull(doc.getID());
+////        assertTrue(doc.getID().length() > 0);
+//        assertEquals(db, doc.getDatabase());
+//        assertFalse(doc.exists());
+//        assertFalse(doc.isDeleted());
+//        assertNull(doc.getProperties());
+//
+//        Document doc1 = db.getDocument("doc1");
+//        assertNotNull(doc1);
+//        assertEquals("doc1", doc1.getID());
+//        assertEquals(db, doc1.getDatabase());
+//        assertFalse(doc1.exists());
+//        assertFalse(doc1.isDeleted());
+//        assertEquals(doc1, db.getDocument("doc1"));
+//        assertNull(doc1.getProperties());
+//    }
+
+//    @Test
+//    public void testDocumentExists() throws Exception {
+//        assertFalse(db.documentExists("doc1"));
+//
+//        Document doc1 = db.getDocument("doc1");
+//        doc1.save();
+//        assertTrue(db.documentExists("doc1"));
+//        assertNull(doc1.getProperties());
+//    }
+//
+//    @Test
+//    public void testInBatchSuccess() throws Exception {
+//        db.inBatch(new Runnable() {
+//            @Override
+//            public void run() {
+//                for (int i = 0; i < 10; i++) {
+//                    String docID = String.format(Locale.ENGLISH, "doc%d", i);
+//                    Document doc = db.getDocument(docID);
+//                    doc.save();
+//                }
+//            }
+//        });
+//        for (int i = 0; i < 10; i++) {
+//            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+//            assertTrue(db.documentExists(docID));
+//        }
+//    }
 }

@@ -13,13 +13,8 @@
  */
 package com.couchbase.lite;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-
 public class PropertiesTest extends BaseTest {
+    /*
     @Before
     public void setUp() {
         super.setUp();
@@ -158,4 +153,5 @@ public class PropertiesTest extends BaseTest {
         assertEquals(null, doc.getArray("int"));
         assertEquals(null, doc.getDate("int"));
     }
+    */
 }

@@ -1,30 +1,24 @@
 package com.couchbase.lite;
 
-
 import java.util.Collections;
 import java.util.List;
 
 public class DatabaseChange {
-    final List<String> docIDs;
-    final long lastSequence;
-    final boolean external;
+    final private List<String> documentIDs;
+    final private Database database;
 
-    public DatabaseChange(List<String> docIDs, long lastSequence, boolean external) {
+    /* package */ DatabaseChange(Database database, List<String> documentIDs/*, long lastSequence, boolean external*/) {
+        this.database = database;
         // make List unmodifiable
-        this.docIDs = Collections.unmodifiableList(docIDs);
-        this.lastSequence = lastSequence;
-        this.external = external;
+        this.documentIDs = Collections.unmodifiableList(documentIDs);
     }
 
-    public List<String> getDocIDs() {
-        return docIDs;
+    public Database getDatabase() {
+        return database;
     }
 
-    public long getLastSequence() {
-        return lastSequence;
+    public List<String> getDocumentIDs() {
+        return documentIDs;
     }
 
-    public boolean isExternal() {
-        return external;
-    }
 }
