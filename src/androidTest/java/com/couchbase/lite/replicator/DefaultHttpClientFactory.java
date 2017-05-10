@@ -22,9 +22,6 @@ import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.OkHttpClient;
 
-/**
- * Created by hideki on 5/17/16.
- */
 public class DefaultHttpClientFactory implements HttpClientFactory {
 
     @Override
@@ -55,5 +52,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     @Override
     public CookieJar getCookieStore() {
         return null;
+    }
+
+    @Override
+    public void evictAllConnectionsInPool() {
+
     }
 }
