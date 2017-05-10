@@ -78,7 +78,7 @@ In case of using couchbase lite
 ```
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:21.0.3'
+    compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.couchbase.lite:couchbase-lite-android:1.4.0'
 }
 ```
