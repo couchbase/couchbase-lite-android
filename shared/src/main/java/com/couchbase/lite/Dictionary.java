@@ -114,20 +114,22 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
          */
 
         // Note: RemovedValue can not be check
-        if(map.size() == 0)
+        if(map==null||map.size() == 0)
             return super.count() == 0;
 
         // something in fleece, but not in map
         for(String key:allKeys()){
-            if(!map.containsKey(key))
+            if(map!=null&&!map.containsKey(key))
                 return false;
         }
 
         // TODO
-        for (Object value : map.values()) {
+        if(map!=null) {
+            for (Object value : map.values()) {
 //            if(!kCBLRemovedValue.equals(value)){
-            return false;
+                return false;
 //            }
+            }
         }
 
         return true;

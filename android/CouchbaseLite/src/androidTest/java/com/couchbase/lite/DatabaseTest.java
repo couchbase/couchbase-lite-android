@@ -65,21 +65,39 @@ public class DatabaseTest extends BaseTest {
     }
 
     // helper methods to verify getDoc
-    void verifyGetDocument(String docID){
+    void verifyGetDocument(String docID) {
         verifyGetDocument(docID, 1);
     }
+
     // helper methods to verify getDoc
-    void verifyGetDocument(String docID, int value){
+    void verifyGetDocument(String docID, int value) {
         verifyGetDocument(db, docID, value);
     }
+
     // helper methods to verify getDoc
-    void verifyGetDocument(Database db, String docID, int value){
+    void verifyGetDocument(Database db, String docID) {
+        verifyGetDocument(db, docID, 1);
+    }
+
+    // helper methods to verify getDoc
+    void verifyGetDocument(Database db, String docID, int value) {
         Document doc = db.getDocument(docID);
         assertNotNull(doc);
         assertEquals(docID, doc.getId());
         assertFalse(doc.isDeleted());
         assertEquals(value, doc.getObject("key"));
     }
+
+    // helper method to purge doc and verify doc.
+    void purgeDocAndVerify(Document doc) {
+        String docID = doc.getId();
+        db.purge(doc);
+        assertEquals(docID, doc.getId());         // docID should be same
+        assertEquals(0, doc.getSequence());       // sequence should be reset to 0
+        assertFalse(doc.isDeleted());             // delete flag should be reset to true
+        assertEquals(null, doc.getObject("key")); // content should be empty
+    }
+
     //---------------------------------------------
     //  setUp/tearDown
     //---------------------------------------------
@@ -176,28 +194,245 @@ public class DatabaseTest extends BaseTest {
     //  Get Document
     //---------------------------------------------
     @Test
-    public void testGetNonExistingDocWithID(){
+    public void testGetNonExistingDocWithID() {
         assertTrue(db.getDocument("non-exist") == null);
     }
+
     @Test
-    public void testGetExistingDocWithID(){
-        String docID = "doc1";
+    public void testGetExistingDocWithID() {
         // store doc
+        String docID = "doc1";
         generateDocument(docID);
+
         // validate document by getDocument
         verifyGetDocument(docID);
     }
+
+    // TODO
+    // @Test
+    public void testGetExistingDocWithIDFromDifferentDBInstance() {
+        // store doc
+        String docID = "doc1";
+        generateDocument(docID);
+
+        // open db with same db name and default option
+        Database otherDB = openDatabase(db.getName());
+        assertNotNull(otherDB);
+        assertTrue(db != otherDB);
+
+        // get doc from other DB.
+        assertEquals(1, otherDB.documentCount());
+
+        verifyGetDocument(otherDB, docID);
+
+        otherDB.close();
+    }
+
+    @Test
+    public void testGetExistingDocWithIDInBatch() {
+        // TODO
+    }
+
+    @Test
+    public void testGetDocFromClosedDB() {
+        // TODO
+    }
+
+    @Test
+    public void testGetDocFromDeletedDB() {
+        // TODO
+    }
+
     //---------------------------------------------
     //  Save Document
     //---------------------------------------------
+    private void testSaveNewDocWithID(String docID) {
+        // store doc
+        generateDocument(docID);
+
+        assertEquals(1, db.documentCount());
+
+        // validate document by getDocument
+        verifyGetDocument(docID);
+    }
+
+    @Test
+    public void testSaveNewDocWithID() {
+        testSaveNewDocWithID("doc1");
+    }
+
+    @Test
+    public void testSaveNewDocWithSpecialCharactersDocID() {
+        testSaveNewDocWithID("`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'");
+    }
+
+    @Test
+    public void testSaveDoc() {
+        // store doc
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // update doc
+        doc.set("key", 2);
+        db.save(doc);
+
+        assertEquals(1, db.documentCount());
+
+        // validate document by getDocument
+        verifyGetDocument(docID, 2);
+    }
+
+    @Test
+    public void testSaveDocInDifferentDBInstance() {
+        // TODO
+    }
+
+    @Test
+    public void testSaveDocInDifferentDB() {
+        // TODO
+    }
+
+    @Test
+    public void testSaveSameDocTwice() {
+        // TODO
+    }
+
+    @Test
+    public void testSaveInBatch() {
+        // TODO
+    }
+
+    @Test
+    public void testSaveDocToClosedDB() {
+        // TODO
+    }
+
+    @Test
+    public void testSaveDocToDeletedDB() {
+        // TODO
+    }
 
     //---------------------------------------------
     //  Delete Document
     //---------------------------------------------
+    @Test
+    public void testDeletePreSaveDoc() {
+        Document doc = new Document("doc1");
+        doc.set("key", 1);
+        try {
+            db.delete(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.NotFound, e.getCode());
+        }
+    }
+
+    @Test
+    public void testDeleteDoc() {
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        db.delete(doc);
+        assertEquals(0, db.documentCount());
+
+        assertEquals(docID, doc.getId());
+        assertTrue(doc.isDeleted());
+        assertEquals(2, doc.getSequence());
+        assertTrue(doc.getObject("key") == null);
+    }
+
+    @Test
+    public void testDeleteDocInDifferentDBInstance() {
+        // TODO
+    }
+
+    @Test
+    public void testDeleteDocInDifferentDB() {
+        // TODO
+    }
+
+    @Test
+    public void testDeleteSameDocTwice() {
+        // TODO
+    }
+
+    @Test
+    public void testDeleteDocInBatch() {
+        // TODO
+    }
+
+    @Test
+    public void testDeleteDocOnClosedDB() {
+        // TODO
+    }
+
+    @Test
+    public void testDeleteDocOnDeletedDB() {
+        // TODO
+    }
 
     //---------------------------------------------
     //  Purge Document
     //---------------------------------------------
+    @Test
+    public void testPurgePreSaveDoc() {
+        Document doc = new Document("doc1");
+        try {
+            db.purge(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.NotFound, e.getCode());
+        }
+        assertEquals(0, db.documentCount());
+    }
+
+    @Test
+    public void testPurgeDoc() {
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Purge Doc
+        // Note: After purge: sequence -> 2
+        purgeDocAndVerify(doc);
+        assertEquals(0, db.documentCount());
+
+        // Save to check sequence number -> 3 (should it be 2 or 3?)
+        db.save(doc);
+        // TODO
+        // assertEquals(3, doc.getSequence());
+    }
+
+    @Test
+    public void testPurgeDocInDifferentDBInstance() {
+        // TODO
+    }
+
+    @Test
+    public void testPurgeDocInDifferentDB() {
+        // TODO
+    }
+
+    @Test
+    public void testPurgeSameDocTwice() {
+        // TODO
+    }
+
+    @Test
+    public void testPurgeDocInBatch() {
+        // TODO
+    }
+
+    @Test
+    public void testPurgeDocOnClosedDB() {
+        // TODO
+    }
+
+    @Test
+    public void testPurgeDocOnDeletedDB() {
+        // TODO
+    }
 
     //---------------------------------------------
     //  Close Database
@@ -321,7 +556,8 @@ public class DatabaseTest extends BaseTest {
         });
     }
 
-    @Test
+    // TODO:
+    // @Test
     public void testDeleteDBOpenedByOtherInstance() {
         Database otherDB = openDatabase(db.getName());
         try {
@@ -335,7 +571,7 @@ public class DatabaseTest extends BaseTest {
                 assertEquals(LiteCoreDomain, e.getDomain());
                 assertEquals(kC4ErrorBusy, e.getCode()); // 24
             }
-        }finally {
+        } finally {
             otherDB.close();
         }
     }
@@ -422,7 +658,6 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists("db", dir));
     }
 
-
     @Test
     public void testDatabaseExistsAgainstNonExistDBWithDefaultDir() {
         assertFalse(Database.exists("nonexist", null));
@@ -432,65 +667,4 @@ public class DatabaseTest extends BaseTest {
     public void testDatabaseExistsAgainstNonExistDB() {
         assertFalse(Database.exists("nonexist", dir));
     }
-
-
-//    @Test
-//    public void testDelete() throws Exception {
-//        assertNotNull(db.getPath());
-//
-//        File path = db.getPath();
-//        db.delete();
-//        assertNull(db.getPath());
-//        assertFalse(path.exists());
-//    }
-
-
-//    @Test
-//    public void testCreateDocument() throws Exception {
-//        Document doc = db.getDocument();
-//        assertNotNull(doc);
-//        assertNotNull(doc.getID());
-////        assertTrue(doc.getID().length() > 0);
-//        assertEquals(db, doc.getDatabase());
-//        assertFalse(doc.exists());
-//        assertFalse(doc.isDeleted());
-//        assertNull(doc.getProperties());
-//
-//        Document doc1 = db.getDocument("doc1");
-//        assertNotNull(doc1);
-//        assertEquals("doc1", doc1.getID());
-//        assertEquals(db, doc1.getDatabase());
-//        assertFalse(doc1.exists());
-//        assertFalse(doc1.isDeleted());
-//        assertEquals(doc1, db.getDocument("doc1"));
-//        assertNull(doc1.getProperties());
-//    }
-
-//    @Test
-//    public void testDocumentExists() throws Exception {
-//        assertFalse(db.documentExists("doc1"));
-//
-//        Document doc1 = db.getDocument("doc1");
-//        doc1.save();
-//        assertTrue(db.documentExists("doc1"));
-//        assertNull(doc1.getProperties());
-//    }
-//
-//    @Test
-//    public void testInBatchSuccess() throws Exception {
-//        db.inBatch(new Runnable() {
-//            @Override
-//            public void run() {
-//                for (int i = 0; i < 10; i++) {
-//                    String docID = String.format(Locale.ENGLISH, "doc%d", i);
-//                    Document doc = db.getDocument(docID);
-//                    doc.save();
-//                }
-//            }
-//        });
-//        for (int i = 0; i < 10; i++) {
-//            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-//            assertTrue(db.documentExists(docID));
-//        }
-//    }
 }

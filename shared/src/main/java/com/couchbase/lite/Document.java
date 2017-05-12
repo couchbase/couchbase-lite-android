@@ -151,51 +151,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 //        save(effectiveConflictResolver(), false);
 //    }
 
-    /**
-     * Deletes this document. All properties are removed, and subsequent calls to
-     * {@code getDocument(String)} will return nil.
-     * Deletion adds a special "tombstone" revision to the database, as bookkeeping so that the
-     * change can be replicated to other databases. Thus, it does not free up all of the disk space
-     * occupied by the document.
-     * To delete a document entirely (but without the ability to replicate this), use {@code purge()}.
-     *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-//    public void delete() throws CouchbaseLiteException {
-//        save(effectiveConflictResolver(), true);
-//    }
-
-    /**
-     * Purges this document from the database.
-     * This is more drastic than deletion: it removes all traces of the document.
-     * The purge will NOT be replicated to other databases.
-     *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-//    public void purge() throws CouchbaseLiteException {
-//        if (!exists())
-//            throw new CouchbaseLiteException("the document does not exist.");
-//
-//        boolean commit = false;
-//        database.beginTransaction();
-//        try {
-//            // revID: null, all revisions are purged.
-//            if (c4doc.purgeRevision(null) >= 0) {
-//                c4doc.save(0);
-//                commit = true;
-//            }
-//        } catch (LiteCoreException e) {
-//            throw LiteCoreBridge.convertException(e);
-//        } finally {
-//            database.endTransaction(commit);
-//        }
-//
-//        // reload
-//        load(false);
-//
-//        // reset
-//        resetChanges();
-//    }
 
     /**
      * Reverts unsaved changes made to the document's properties.
@@ -207,17 +162,62 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-    public Database getDatabase() {
+    /*package*/  Database getDatabase() {
         return database;
     }
 
-    public void setDatabase(Database database) {
+    /*package*/ void setDatabase(Database database) {
         this.database = database;
     }
 
-    void save() throws CouchbaseLiteException {
+    /*package*/ void save() throws CouchbaseLiteException {
         save(effectiveConflictResolver(), false);
     }
+
+
+    /**
+     * Deletes this document. All properties are removed, and subsequent calls to
+     * {@code getDocument(String)} will return nil.
+     * Deletion adds a special "tombstone" revision to the database, as bookkeeping so that the
+     * change can be replicated to other databases. Thus, it does not free up all of the disk space
+     * occupied by the document.
+     * To delete a document entirely (but without the ability to replicate this), use {@code purge()}.
+     *
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
+    /*package*/  void delete() throws CouchbaseLiteException {
+        save(effectiveConflictResolver(), true);
+    }
+
+    /**
+     * Purges this document from the database.
+     * This is more drastic than deletion: it removes all traces of the document.
+     * The purge will NOT be replicated to other databases.
+     *
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
+    /*package*/  void purge() throws CouchbaseLiteException {
+        if (!exists())
+            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+
+        boolean commit = false;
+        database.beginTransaction();
+        try {
+            // revID: null, all revisions are purged.
+            if (getC4doc().purgeRevision(null) >= 0) {
+                getC4doc().save(0);
+                commit = true;
+            }
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        } finally {
+            database.endTransaction(commit);
+        }
+
+        // reset
+        setC4Doc(null);
+    }
+
 
 //    void setHasChanges(boolean hasChanges) {
 //        if (this.hasChanges != hasChanges) {
@@ -244,7 +244,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // // (Re)loads the document from the db, updating _c4doc and other state.
     private void loadDoc(boolean mustExist) throws CouchbaseLiteException {
         com.couchbase.litecore.Document doc = readC4Doc(mustExist);
-        if(doc == null)
+        if (doc == null)
             return;
         // NOTE: c4doc should not be null.
         setC4Doc(doc);
@@ -252,7 +252,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
-    private com.couchbase.litecore.Document readC4Doc(boolean mustExist)throws CouchbaseLiteException{
+    private com.couchbase.litecore.Document readC4Doc(boolean mustExist) throws CouchbaseLiteException {
         try {
             return database.internal().getDocument(getId(), mustExist);
         } catch (LiteCoreException e) {
@@ -261,18 +261,19 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
 
-
-
     // Sets c4doc and updates my root dict
     private void setC4Doc(com.couchbase.litecore.Document c4doc) throws CouchbaseLiteException {
         super.setC4doc(c4doc);
         if (c4doc != null) {
             FLDict root = null;
-            byte[] body;
+            byte[] body = null;
             try {
-                body = c4doc.getSelectedBody();
+                if(!c4doc.deleted())
+                    body = c4doc.getSelectedBody();
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                // in case body is empty, deleted is thrown.
+                if(e.code!=Constants.LiteCoreError.kC4ErrorDeleted)
+                    throw LiteCoreBridge.convertException(e);
             }
             if (body != null && body.length > 0)
                 root = FLValue.fromData(body).asFLDict();
@@ -403,7 +404,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         //String docID = this.id;
         byte[] body = null;
         List<String> revIDs = new ArrayList<>();
-        if (getC4doc()!=null&&getC4doc().getRevID() != null)
+        if (getC4doc() != null && getC4doc().getRevID() != null)
             revIDs.add(getC4doc().getRevID());
         String[] history = revIDs.toArray(new String[revIDs.size()]);
         int flags = 0;
@@ -416,7 +417,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             FLEncoder encoder = database.internal().createFleeceEncoder();
             try {
                 body = encode(encoder);
-            }finally {
+            } finally {
                 encoder.free();
             }
 

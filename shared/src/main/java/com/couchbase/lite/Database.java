@@ -167,13 +167,13 @@ public final class Database {
     }
 
     public void delete(Document document) {
-        // TODO: Implement.
-        throw new UnsupportedOperationException("Work in Progress!");
+        prepareDocument(document);
+        document.delete();
     }
 
     public void purge(Document document) {
-        // TODO: Implement.
-        throw new UnsupportedOperationException("Work in Progress!");
+        prepareDocument(document);
+        document.purge();
     }
 
 

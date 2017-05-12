@@ -98,12 +98,12 @@ public class SharedKeys implements FLValue.ISharedKeys {
 
     // static inline id FLValue_GetNSObject(FLValue __nullable value, cbl::SharedKeys *sk)
     static FLValue getValue(FLDict dict, String key, SharedKeys sk) {
-        return sk != null ? sk.getValue(dict, key) : null;
+        return sk != null && dict != null ? sk.getValue(dict, key) : null;
     }
 
     // static inline NSString* FLDictIterator_GetKey(FLDictIterator *iter, cbl::SharedKeys *sk)
     public static String getKey(FLDictIterator itr, SharedKeys sk) {
-        return sk != null ? sk.getDictIterKey(itr) : null;
+        return sk != null && itr != null ? sk.getDictIterKey(itr) : null;
     }
 }
 

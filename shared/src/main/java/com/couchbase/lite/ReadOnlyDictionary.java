@@ -35,7 +35,7 @@ import java.util.Map;
 
     @Override
     public long count() {
-        return flDict.count();
+        return flDict!=null?flDict.count():0;
     }
 
     @Override
@@ -119,6 +119,8 @@ import java.util.Map;
 
     protected void setData(CBLFLDict data) {
         this.data = data;
+        this.flDict = null;
+        this.sharedKeys = null;
         if (data != null) {
             this.flDict = data.getFlDict();
             if (data.getDatabase() != null)
