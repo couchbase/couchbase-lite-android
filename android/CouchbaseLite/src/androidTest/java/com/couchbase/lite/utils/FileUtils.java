@@ -39,6 +39,7 @@ public class FileUtils {
             if (!deleteRecursive(file))
                 return false;
         }
+        dir.delete();
         return true;
     }
 }

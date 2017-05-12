@@ -431,20 +431,5 @@ public abstract class Properties {
 //        }
 //    }
 //
-//    // - (NSDictionary*) fleeceRootToDictionary: (FLDict)root
-//    private Map<String, Object> fleeceRootToDictionary(FLDict root) {
-//        if (root == null) return null;
-//
-//        Map<String, Object> dict = new HashMap<>();
-//        FLDictIterator itr = new FLDictIterator();
-//        itr.begin(root);
-//        String key;
-//        while ((key = SharedKeys.getKey(itr, sharedKeys)) != null) {
-//            dict.put(key, fleeceValueToObject(itr.getValue()));
-//            itr.next();
-//        }
-//        itr.free();
-//
-//        return dict;
-//    }
+
 }

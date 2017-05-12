@@ -36,6 +36,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static com.couchbase.lite.Status.CBLErrorDomain;
+import static com.couchbase.lite.Status.Forbidden;
 import static java.util.Collections.synchronizedSet;
 
 /**
@@ -160,8 +162,8 @@ public final class Database {
 
     // Save document:
     public void save(Document document) {
-        // TODO: Implement.
-        throw new UnsupportedOperationException("Work in Progress!");
+        prepareDocument(document);
+        document.save();
     }
 
     public void delete(Document document) {
@@ -260,14 +262,6 @@ public final class Database {
 
         Log.i(TAG, "Closing %s at path %s", this, c4db.getPath());
 
-//        if (unsavedDocuments.size() > 0)
-//            Log.w(TAG, "Closing database with %d unsaved docs", unsavedDocuments.size());
-
-//        documents.clear();
-//        documents = null;
-//        unsavedDocuments.clear();
-//        unsavedDocuments = null;
-
         // close db
         closeC4DB();
 
@@ -282,7 +276,14 @@ public final class Database {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void delete() throws CouchbaseLiteException {
+        // TODO: Unable to delete the closed database
+        if (c4db == null)
+            return;
+
+        // delete db
         deleteC4DB();
+
+        // release instances
         freeC4Observers();
         freeC4DB();
     }
@@ -344,9 +345,9 @@ public final class Database {
      *
      * @return the Document object
      */
-    public Document getDocument() {
-        return getDocument(generateDocID());
-    }
+//    public Document getDocument() {
+//        return getDocument(generateDocID());
+//    }
 
 
 //    /**
@@ -463,6 +464,10 @@ public final class Database {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    public ConflictResolver getConflictResolver() {
+        return conflictResolver;
+    }
 
     long documentCount(){
         return c4db.getDocumentCount();
@@ -597,22 +602,8 @@ public final class Database {
 
     //////// DOCUMENTS:
 
-    private Document getDocument(String docID, boolean mustExist) throws CouchbaseLiteException {
-//        Document doc = documents.get(docID);
-//        if (doc == null) {
-//            // TODO: I don't think calling Database method from Document consturctor is straightforward.
-//            doc = new Document(this, docID, mustExist);
-//            documents.put(docID, doc);
-//        } else {
-//            if (mustExist && !doc.exists()) {
-//                // Don't return a pre-instantiated CBLDocument if it doesn't exist
-//                throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorNotFound);
-//            }
-//        }
-//        return doc;
-
-        //TODO:
-        return null;
+    private Document getDocument(String documentID, boolean mustExist) throws CouchbaseLiteException {
+        return new Document(this, documentID, mustExist);
     }
 
 
@@ -802,6 +793,14 @@ public final class Database {
                 listener.changed(change);
             }
         }
+    }
+
+
+    void prepareDocument(Document document) throws CouchbaseLiteException{
+        if(document.getDatabase() == null)
+            document.setDatabase(this);
+        else if(document.getDatabase() != this)
+            throw new CouchbaseLiteException(CBLErrorDomain, Forbidden);
     }
 }
 

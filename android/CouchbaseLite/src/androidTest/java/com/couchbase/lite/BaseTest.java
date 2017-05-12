@@ -63,6 +63,9 @@ public class BaseTest {
             db.close();
             db = null;
         }
+        if(Database.exists(kDatabaseName, dir))
+            Database.delete(kDatabaseName, dir);
+        FileUtils.cleanDirectory(dir);
     }
 
     protected void openDB() {

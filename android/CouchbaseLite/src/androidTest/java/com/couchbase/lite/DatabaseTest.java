@@ -19,6 +19,9 @@ import org.junit.Test;
 
 import java.io.File;
 
+import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBusy;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorTransactionNotClosed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -28,8 +31,12 @@ import static org.junit.Assert.fail;
 public class DatabaseTest extends BaseTest {
     private static final String TAG = DatabaseTest.class.getName();
 
+    //---------------------------------------------
+    //  Helper methods
+    //---------------------------------------------
+
     // helper method to open database
-    private Database openDatabase(String dbName){
+    private Database openDatabase(String dbName) {
         DatabaseConfiguration options = new DatabaseConfiguration();
         options.setDirectory(dir);
         Database db = new Database(dbName, options);
@@ -46,6 +53,36 @@ public class DatabaseTest extends BaseTest {
         db.delete();
         assertFalse(path.exists());
     }
+
+    // helper method to save document
+    Document generateDocument(String docID) {
+        Document doc = new Document(docID);
+        doc.set("key", 1);
+        db.save(doc);
+        assertEquals(1, db.documentCount());
+        assertEquals(1, doc.getSequence());
+        return doc;
+    }
+
+    // helper methods to verify getDoc
+    void verifyGetDocument(String docID){
+        verifyGetDocument(docID, 1);
+    }
+    // helper methods to verify getDoc
+    void verifyGetDocument(String docID, int value){
+        verifyGetDocument(db, docID, value);
+    }
+    // helper methods to verify getDoc
+    void verifyGetDocument(Database db, String docID, int value){
+        Document doc = db.getDocument(docID);
+        assertNotNull(doc);
+        assertEquals(docID, doc.getId());
+        assertFalse(doc.isDeleted());
+        assertEquals(value, doc.getObject("key"));
+    }
+    //---------------------------------------------
+    //  setUp/tearDown
+    //---------------------------------------------
 
     @Before
     public void setUp() {
@@ -138,7 +175,18 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     //  Get Document
     //---------------------------------------------
-
+    @Test
+    public void testGetNonExistingDocWithID(){
+        assertTrue(db.getDocument("non-exist") == null);
+    }
+    @Test
+    public void testGetExistingDocWithID(){
+        String docID = "doc1";
+        // store doc
+        generateDocument(docID);
+        // validate document by getDocument
+        verifyGetDocument(docID);
+    }
     //---------------------------------------------
     //  Save Document
     //---------------------------------------------
@@ -154,21 +202,236 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     //  Close Database
     //---------------------------------------------
+    @Test
+    public void testClose() {
+        db.close();
+    }
+
+    @Test
+    public void testCloseTwice() {
+        db.close();
+        db.close();
+    }
+
+    @Test
+    public void testCloseThenAccessDoc() {
+        //TODO
+    }
+
+    @Test
+    public void testCloseThenAccessBlob() {
+        //TODO
+    }
+
+    @Test
+    public void testCloseThenGetDatabaseName() {
+        db.close();
+        assertEquals("testdb", db.getName());
+    }
+
+    @Test
+    public void testCloseThenGetDatabasePath() {
+        db.close();
+        assertTrue(db.getPath() == null);
+    }
+
+    @Test
+    public void testCloseThenCallInBatch() {
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                // delete db
+                try {
+                    db.close();
+                    fail();
+                } catch (CouchbaseLiteException e) {
+                    assertEquals(LiteCoreDomain, e.getDomain());
+                    // 26 -> kC4ErrorTransactionNotClosed: Function cannot be called while in a transaction
+                    assertEquals(kC4ErrorTransactionNotClosed, e.getCode()); // 26
+                }
+            }
+        });
+    }
+
+    @Test
+    public void testCloseThenDeleteDatabase() {
+        db.close();
+        deleteDatabase(db);
+    }
 
     //---------------------------------------------
     //  Delete Database
     //---------------------------------------------
+    @Test
+    public void testDelete() {
+        deleteDatabase(db);
+    }
+
+    @Test
+    public void testDeleteTwice() {
+        // delete db twice
+        File path = db.getPath();
+        assertTrue(path.exists());
+        db.delete();
+        db.delete();
+        assertFalse(path.exists());
+    }
+
+    @Test
+    public void testDeleteThenAccessDoc() {
+        //TODO
+    }
+
+    @Test
+    public void testDeleteThenAccessBlob() {
+        //TODO
+    }
+
+    @Test
+    public void testDeleteThenGetDatabaseName() {
+        // delete db
+        deleteDatabase(db);
+
+        assertEquals("testdb", db.getName());
+    }
+
+    @Test
+    public void testDeleteThenGetDatabasePath() {
+        // delete db
+        deleteDatabase(db);
+
+        assertTrue(db.getPath() == null);
+    }
+
+    @Test
+    public void testDeleteThenCallInBatch() {
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                // delete db
+                try {
+                    db.delete();
+                    fail();
+                } catch (CouchbaseLiteException e) {
+                    assertEquals(LiteCoreDomain, e.getDomain());
+                    // 26 -> kC4ErrorTransactionNotClosed: Function cannot be called while in a transaction
+                    assertEquals(kC4ErrorTransactionNotClosed, e.getCode()); // 26
+                }
+            }
+        });
+    }
+
+    @Test
+    public void testDeleteDBOpenedByOtherInstance() {
+        Database otherDB = openDatabase(db.getName());
+        try {
+            assertTrue(db != otherDB);
+
+            // delete db
+            try {
+                db.delete();
+                fail();
+            } catch (CouchbaseLiteException e) {
+                assertEquals(LiteCoreDomain, e.getDomain());
+                assertEquals(kC4ErrorBusy, e.getCode()); // 24
+            }
+        }finally {
+            otherDB.close();
+        }
+    }
 
     //---------------------------------------------
     //  Delete Database (static)
     //---------------------------------------------
 
+    @Test
+    public void testDeleteWithDefaultDirDB() {
+        //TODO
+    }
+
+    @Test
+    public void testDeleteOpeningDBWithDefaultDir() {
+        //TODO
+    }
+
+    @Test
+    public void testDeleteByStaticMethod() {
+        // create db with custom directory
+        Database db = openDatabase("db");
+        File path = db.getPath();
+
+        // close db before delete
+        db.close();
+
+        Database.delete("db", dir);
+        assertFalse(path.exists());
+    }
+
+    @Test
+    public void testDeleteOpeningDBByStaticMethod() {
+        // create db with custom directory
+        Database db = openDatabase("db");
+
+        try {
+            Database.delete("db", dir);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(LiteCoreDomain, e.getDomain());
+            assertEquals(kC4ErrorBusy, e.getCode()); // 24
+        }
+    }
+
+    @Test
+    public void testDeleteNonExistingDBWithDefaultDir() {
+        // Expectation: No operation
+        Database.delete("notexistdb", null);
+    }
+
+    @Test
+    public void testDeleteNonExistingDB() {
+        // Expectation: No operation
+        Database.delete("notexistdb", dir);
+    }
+
     //---------------------------------------------
     //  Database Existing
     //---------------------------------------------
 
+    @Test
+    public void testDatabaseExistsWithDefaultDir() {
+        //TODO
+    }
+
+    @Test
+    public void testDatabaseExistsWithDir() {
+        assertFalse(Database.exists("db", dir));
+
+        // create db with custom directory
+        Database db = openDatabase("db");
+        File path = db.getPath();
+
+        assertTrue(Database.exists("db", dir));
+
+        db.close();
+
+        assertTrue(Database.exists("db", dir));
+
+        Database.delete("db", dir);
+        assertFalse(path.exists());
+
+        assertFalse(Database.exists("db", dir));
+    }
 
 
+    @Test
+    public void testDatabaseExistsAgainstNonExistDBWithDefaultDir() {
+        assertFalse(Database.exists("nonexist", null));
+    }
+
+    @Test
+    public void testDatabaseExistsAgainstNonExistDB() {
+        assertFalse(Database.exists("nonexist", dir));
+    }
 
 
 //    @Test
@@ -180,7 +443,6 @@ public class DatabaseTest extends BaseTest {
 //        assertNull(db.getPath());
 //        assertFalse(path.exists());
 //    }
-
 
 
 //    @Test
