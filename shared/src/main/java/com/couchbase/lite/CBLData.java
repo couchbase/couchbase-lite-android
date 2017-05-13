@@ -27,35 +27,36 @@ public class CBLData {
             ((Array) value).addChangeListener(listener);
             return value;
         } else if (value instanceof ReadOnlyDictionary) {
-            ReadOnlyDictionary readOnly = (ReadOnlyDictionary)value;
+            ReadOnlyDictionary readOnly = (ReadOnlyDictionary) value;
             Dictionary dict = new Dictionary(readOnly.getData());
             dict.addChangeListener(listener);
             return dict;
         } else if (value instanceof ReadOnlyArray) {
-            ReadOnlyArray readOnly = (ReadOnlyArray)value;
+            ReadOnlyArray readOnly = (ReadOnlyArray) value;
             Array array = new Array(readOnly.getData());
             array.addChangeListener(listener);
             return array;
         } else if (value instanceof Map) {
-            Dictionary dict = new Dictionary((Map)value);
+            Dictionary dict = new Dictionary((Map) value);
             dict.addChangeListener(listener);
             return dict;
         } else if (value instanceof List) {
-            Array array = new Array((List)value);
+            Array array = new Array((List) value);
             array.addChangeListener(listener);
             return array;
         } else if (value instanceof Date) {
-            return DateUtils.toJson((Date)value);
+            return DateUtils.toJson((Date) value);
         }
         return value;
     }
 
-    /*package*/static boolean toBoolean(Object object){
-        if(object==null)
+    /*package*/
+    static boolean toBoolean(Object object) {
+        if (object == null)
             return false;
-        else{
-            if(object instanceof Number)
-                return ((Number)object).doubleValue() != 0.0;
+        else {
+            if (object instanceof Number)
+                return ((Number) object).doubleValue() != 0.0;
             else
                 return true;
         }
@@ -64,7 +65,8 @@ public class CBLData {
     // + (id) fleeceValueToObject: (FLValue)value
     //                      c4doc: (CBLC4Document*)c4doc
     //                  database: (CBLDatabase*)database
-    /*package*/ static Object fleeceValueToObject(FLValue value, CBLC4Doc c4doc, Database database) {
+    /*package*/
+    static Object fleeceValueToObject(FLValue value, CBLC4Doc c4doc, Database database) {
         if (value == null) return null;
         switch (value.getType()) {
             case kFLArray: {

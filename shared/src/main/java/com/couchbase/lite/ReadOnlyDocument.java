@@ -27,6 +27,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
+
     /**
      * return the document's ID.
      *

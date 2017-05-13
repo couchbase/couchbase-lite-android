@@ -43,7 +43,7 @@ import static com.couchbase.litecore.Constants.C4DatabaseFlags.kC4DB_Create;
  * JSON form only contains the Blob's metadata (type, length and digest of the data) in small
  * object. The data itself is stored externally to the document, keyed by the digest.)
  */
-public final class Blob implements FleeceEncodable{
+public final class Blob implements FleeceEncodable {
     //---------------------------------------------
     // static constant variables
     //---------------------------------------------

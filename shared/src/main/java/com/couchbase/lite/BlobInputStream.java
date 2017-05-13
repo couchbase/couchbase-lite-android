@@ -16,10 +16,10 @@ import java.io.InputStream;
     boolean closed = true;
     C4BlobReadStream readStream = null;
 
-    /* package */ BlobInputStream(C4BlobStore store, C4BlobKey key) throws CouchbaseLiteException{
+    /* package */ BlobInputStream(C4BlobStore store, C4BlobKey key) throws CouchbaseLiteException {
         if (key == null)
             throw new IllegalArgumentException("key is null.");
-        if(store == null){
+        if (store == null) {
             key.free();
             throw new IllegalArgumentException("store is null.");
         }
@@ -39,7 +39,7 @@ import java.io.InputStream;
     public int read() throws IOException {
         try {
             byte[] bytes = readStream.read(1);
-            if(bytes.length == 1)
+            if (bytes.length == 1)
                 return bytes[0];
             else
                 // EOF
@@ -54,7 +54,7 @@ import java.io.InputStream;
         try {
             byte[] bytes = readStream.read(b.length);
             System.arraycopy(bytes, 0, b, 0, bytes.length);
-            if(bytes.length >= 0)
+            if (bytes.length >= 0)
                 return bytes.length;
             else
                 return -1;
@@ -68,7 +68,7 @@ import java.io.InputStream;
         try {
             byte[] bytes = readStream.read(len);
             System.arraycopy(bytes, 0, b, off, bytes.length);
-            if(bytes.length >= 0)
+            if (bytes.length >= 0)
                 return bytes.length;
             else
                 return -1;

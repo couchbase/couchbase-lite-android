@@ -11,7 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 
 
-/* package */ class ReadOnlyArray implements ReadOnlyArrayInterface ,FleeceEncodable, Iterable<Object>{
+/* package */ class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, Iterable<Object> {
 
     //---------------------------------------------
     // member variables
@@ -101,7 +101,7 @@ import java.util.List;
     @Override
     public List<Object> toList() {
         //TODO
-        return null;
+        throw new RuntimeException("Work In Progress");
     }
 
     //---------------------------------------------

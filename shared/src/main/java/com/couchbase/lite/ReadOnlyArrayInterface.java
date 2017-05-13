@@ -31,5 +31,4 @@ import java.util.List;
     ReadOnlyDictionaryInterface getDictionary(int index);
 
     List<Object> toList();
-
 }

@@ -2,7 +2,7 @@ package com.couchbase.lite;
 
 
 /*package*/ class CBLC4Doc {
-   private com.couchbase.litecore.Document rawDoc;
+    private com.couchbase.litecore.Document rawDoc;
 
     /*package*/ CBLC4Doc(com.couchbase.litecore.Document rawDoc) {
         this.rawDoc = rawDoc;
@@ -17,27 +17,20 @@ package com.couchbase.lite;
     /*package*/ com.couchbase.litecore.Document getRawDoc() {
         return rawDoc;
     }
-    int getFlags(){
+
+    /*package*/ int getFlags() {
         return rawDoc.getFlags();
     }
-    long getSequence(){
+
+    /*package*/ long getSequence() {
         return rawDoc.getSequence();
     }
-    String getRevID(){
+
+    /*package*/ String getRevID() {
         return rawDoc.getRevID();
     }
-//    boolean deleted(){
-//        return rawDoc.deleted();
-//    }
-//    boolean exists(){
-//        return rawDoc.exists();
-//    }
 
-//    void getSelectedRev(){
-//        return rawDoc.se
-//    }
-
-    void free(){
+    /*package*/ void free() {
         if (rawDoc != null) {
             rawDoc.free();
             rawDoc = null;

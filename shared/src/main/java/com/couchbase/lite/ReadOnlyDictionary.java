@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/* package */ class ReadOnlyDictionary implements ReadOnlyDictionaryInterface,FleeceEncodable {
+/* package */ class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEncodable {
 
     //-------------------------------------------------------------------------
     // member variables
@@ -113,7 +113,7 @@ import java.util.Map;
     public Map<String, Object> toMap() {
         if (flDict != null)
             // TODO: Need to review!
-            return fleeceRootToDictionary(flDict);
+            return flDictToMap(flDict);
         else
             return new HashMap<>();
     }
@@ -165,7 +165,7 @@ import java.util.Map;
 
     // FleeceEncodable implementation
     @Override
-    public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException{
+    public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
         encoder.writeValue(flDict);
     }
 
@@ -182,12 +182,12 @@ import java.util.Map;
     private Object fleeceValueToObject(String key) {
         FLValue value = fleeceValue(key);
         if (value != null)
-            return CBLData.fleeceValueToObject(value,data.getC4doc(), data.getDatabase());
+            return CBLData.fleeceValueToObject(value, data.getC4doc(), data.getDatabase());
         else
             return null;
     }
 
-    private Map<String, Object> fleeceRootToDictionary(FLDict flDict) {
+    private Map<String, Object> flDictToMap(FLDict flDict) {
         if (flDict == null) return null;
 
         Map<String, Object> dict = new HashMap<>();

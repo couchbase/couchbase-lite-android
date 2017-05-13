@@ -19,19 +19,5 @@ package com.couchbase.lite;
  * and also when the replicator pulls a remote revision that conflicts with a locally-saved revision.
  */
 public interface ConflictResolver {
-    /**
-     * Resolves conflicting edits of a document against their common base.
-     *
-     * @param localProperties       The revision that is being saved, or the revision in the local
-     *                              database for which there is a server side conflict.
-     * @param conflictingProperties The conflicting revision that is already stored in the database,
-     *                              or on the server.
-     * @param baseProperties        The common parent revision of these two revisions, if available.
-     * @return the resolved set of properties for the document to store, or null to give up if
-     * automatic resolution isn't possible.
-     */
-//    Map<String, Object> resolve(Map<String, Object> localProperties,
-//                                Map<String, Object> conflictingProperties,
-//                                Map<String, Object> baseProperties);
     ReadOnlyDocument resolve(Conflict conflict);
 }

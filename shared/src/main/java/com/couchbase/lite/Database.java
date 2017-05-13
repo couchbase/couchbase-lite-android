@@ -101,7 +101,7 @@ public final class Database {
      * Construct a  Database with a given name and database config.
      * If the database does not yet exist, it will be created, unless the `readOnly` option is used.
      *
-     * @param name    The name of the database. May NOT contain capital letters!
+     * @param name   The name of the database. May NOT contain capital letters!
      * @param config The database config, or null for the default config.
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
      */
@@ -141,7 +141,7 @@ public final class Database {
     }
 
 
-    public DatabaseConfiguration getConfig(){
+    public DatabaseConfiguration getConfig() {
         return config; // TODO: Returned the copied config object
     }
 
@@ -215,7 +215,7 @@ public final class Database {
 
     // Compaction:
 
-    public void compact(){
+    public void compact() {
         // TODO: Implement.
         throw new UnsupportedOperationException("Work in Progress!");
     }
@@ -307,8 +307,8 @@ public final class Database {
     /**
      * Deletes a database of the given name in the given directory.
      *
-     * @param name the database's name
-     * @param directory  the path where the database is located.
+     * @param name      the database's name
+     * @param directory the path where the database is located.
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public static void delete(String name, File directory) throws CouchbaseLiteException {
@@ -324,8 +324,8 @@ public final class Database {
     /**
      * Checks whether a database of the given name exists in the given directory or not.
      *
-     * @param name the database's name
-     * @param directory  the path where the database is located.
+     * @param name      the database's name
+     * @param directory the path where the database is located.
      * @return true if exists, false otherwise.
      */
     public static boolean exists(String name, File directory) {
@@ -333,10 +333,6 @@ public final class Database {
             throw new IllegalArgumentException("name and/or dir arguments are null.");
         return getDatabasePath(directory, name).exists();
     }
-
-
-
-
 
 
     /**
@@ -444,7 +440,6 @@ public final class Database {
     //---------------------------------------------
     // Override public method
     //---------------------------------------------
-
     @Override
     public String toString() {
         return String.format(Locale.ENGLISH, "%s[%s]", super.toString(), name);
@@ -469,10 +464,9 @@ public final class Database {
         return conflictResolver;
     }
 
-    long documentCount(){
+    long documentCount() {
         return c4db.getDocumentCount();
     }
-
 
 
     // Instead of clone()
@@ -796,10 +790,10 @@ public final class Database {
     }
 
 
-    void prepareDocument(Document document) throws CouchbaseLiteException{
-        if(document.getDatabase() == null)
+    void prepareDocument(Document document) throws CouchbaseLiteException {
+        if (document.getDatabase() == null)
             document.setDatabase(this);
-        else if(document.getDatabase() != this)
+        else if (document.getDatabase() != this)
             throw new CouchbaseLiteException(CBLErrorDomain, Forbidden);
     }
 }

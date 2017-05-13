@@ -43,7 +43,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
         detachChildChangeListeners();
 
         List<Object> result = new ArrayList<>();
-        for(Object value: list){
+        for (Object value : list) {
             result.add(CBLData.convert(value, this));
         }
         this.list = result;
@@ -92,7 +92,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
 
     @Override
     public long count() {
-        return  list != null ? list.size() : 0;
+        return list != null ? list.size() : 0;
     }
 
     @Override
@@ -147,9 +147,19 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
 
     @Override
     public List<Object> toList() {
-        //TODO
-        return null;
+        List<Object> array = new ArrayList<>();
+        if (list != null) {
+            for (Object value : list) {
+                if (value instanceof ReadOnlyDictionary)
+                    value = ((ReadOnlyDictionary) value).toMap();
+                else if (value instanceof ReadOnlyArray)
+                    value = ((ReadOnlyArray) value).toList();
+                array.add(value);
+            }
+        }
+        return array;
     }
+
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
@@ -177,10 +187,10 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     @Override
     public void fleeceEncode(FLEncoder encoder, Database database) {
         encoder.beginArray(count());
-        for(int i = 0; i < count(); i++){
+        for (int i = 0; i < count(); i++) {
             Object value = getObject(i);
-            if(value instanceof FleeceEncodable)
-                ((FleeceEncodable)value).fleeceEncode(encoder, database);
+            if (value instanceof FleeceEncodable)
+                ((FleeceEncodable) value).fleeceEncode(encoder, database);
             else
                 encoder.writeValue(value);
         }
@@ -216,6 +226,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
             ((Array) object).removeChangeListener(this);
         }
     }
+
     private void detachChildChangeListeners() {
         if (list == null) return;
 
