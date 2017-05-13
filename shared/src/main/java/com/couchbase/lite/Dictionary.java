@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLEncoder;
 
 import java.util.ArrayList;
@@ -8,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Dictionary extends ReadOnlyDictionary implements DictionaryInterface, ObjectChangeListener,FleeceEncodable {
+public class Dictionary extends ReadOnlyDictionary implements DictionaryInterface, ObjectChangeListener, FleeceEncodable {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -37,7 +38,22 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     //---------------------------------------------
     @Override
     public Dictionary set(Map<String, Object> dictionary) {
-        //TODO:
+        // Detach all objects that we are listening to for changes:
+        detachChildChangeListeners();
+
+        Map<String, Object> result = new HashMap<>();
+        if (dictionary != null) {
+            for (Map.Entry<String, Object> entry : dictionary.entrySet()) {
+                result.put(entry.getKey(), CBLData.convert(entry.getValue(), this));
+            }
+        }
+
+        // Marked the key as removed by setting the value to kRemovedValue:
+        // TODO
+
+        map = result;
+
+        setChanged();
         return this;
     }
 
@@ -45,7 +61,6 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     public Dictionary set(String key, Object value) {
         Object oldValue = getObject(key);
         if (!value.equals(oldValue)) {
-            // TODO:
             value = CBLData.convert(value, null);
             detachChangeListenerForObject(oldValue);
             set(key, value, true);
@@ -91,16 +106,16 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
     @Override
     public long count() {
-        long count = map.size();
-        if(count == 0)
+        long count = map != null ? map.size() : 0;
+        if (count == 0)
             return super.count();
 
-        for(String key : super.allKeys()){
-            if(!map.containsKey(key))
+        for (String key : super.allKeys()) {
+            if (!map.containsKey(key))
                 count++;
         }
 
-        for(Object value:map.values()){
+        for (Object value : map.values()) {
             //TODO: kCBLRemovedValue
         }
 
@@ -109,47 +124,70 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
     @Override
     public String getString(String key) {
-        return super.getString(key);
+        return (String) getObject(key);
     }
 
     @Override
     public Number getNumber(String key) {
-        return super.getNumber(key);
+        return (Number) getObject(key);
     }
 
     @Override
     public int getInt(String key) {
-        return super.getInt(key);
+        Object value = map == null ? null : map.get(key);
+        if (value == null)
+            return super.getInt(key);
+        else
+            return ((Number) value).intValue();
     }
 
     @Override
     public long getLong(String key) {
-        return super.getLong(key);
+        Object value = map == null ? null : map.get(key);
+        if (value == null)
+            return super.getLong(key);
+        else
+            return ((Number) value).longValue();
     }
 
     @Override
     public float getFloat(String key) {
-        return super.getFloat(key);
+        Object value = map == null ? null : map.get(key);
+        if (value == null)
+            return super.getFloat(key);
+        else
+            return ((Number) value).floatValue();
     }
 
     @Override
     public double getDouble(String key) {
-        return super.getDouble(key);
+        Object value = map == null ? null : map.get(key);
+        if (value == null)
+            return super.getDouble(key);
+        else
+            return ((Number) value).doubleValue();
     }
 
     @Override
     public boolean getBoolean(String key) {
-        return super.getBoolean(key);
+        Object value = map == null ? null : map.get(key);
+        if (value == null)
+            return super.getBoolean(key);
+        else {
+            // TODO: kCBLRemovedValue
+            return CBLData.toBoolean(value);
+
+        }
     }
 
     @Override
     public Blob getBlob(String key) {
-        return super.getBlob(key);
+        return (Blob) getObject(key);
     }
 
     @Override
     public Date getDate(String key) {
-        return super.getDate(key);
+        return DateUtils.fromJson(getString(key));
     }
 
     @Override
@@ -167,7 +205,12 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
         for (String key : result.keySet()) {
             Object value = result.get(key);
-            //TODO
+            //TODO: kCBLRemovedValue
+            if (value instanceof ReadOnlyDictionary)
+                result.put(key, ((ReadOnlyDictionary) value).toMap());
+            else if (value instanceof ReadOnlyArray)
+                result.put(key, ((ReadOnlyArray) value).toList());
+
         }
 
         return result;
@@ -175,7 +218,12 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
     @Override
     public boolean contains(String key) {
-        return super.contains(key);
+        Object value = map.get(key);
+        if (value == null)
+            return super.contains(key);
+            //TODO
+        else
+            return true;
     }
 
 
@@ -184,7 +232,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     //---------------------------------------------
 
     /* package */ List<String> allKeys() {
-        List<String> result = map!=null?new ArrayList<String>(map.keySet()):new ArrayList<String>();
+        List<String> result = map != null ? new ArrayList<String>(map.keySet()) : new ArrayList<String>();
         for (String key : super.allKeys()) {
             if (!result.contains(key))
                 result.add(key);
@@ -248,62 +296,14 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
             Object value = getObject(key);
             //if(value != kCBLRemovedValue){
             encoder.writeKey(key);
-            if(value instanceof FleeceEncodable)
-                ((FleeceEncodable)value).fleeceEncode(encoder, database);
+            if (value instanceof FleeceEncodable)
+                ((FleeceEncodable) value).fleeceEncode(encoder, database);
             else
                 encoder.writeValue(value);
             //}
         }
         encoder.endDict();
     }
-
-    /*
-    boolean write(FLEncoder encoder, Map map) {
-        encoder.beginDict(map.size());
-        Iterator keys = map.keySet().iterator();
-        while (keys.hasNext()) {
-            String key = (String) keys.next();
-            Object value = map.get(key);
-//            if (value instanceof Blob)
-//                store((Blob) value);
-            encoder.writeKey(key);
-            writeValueForObject(encoder, value);
-        }
-        return encoder.endDict();
-    }
-    private boolean writeValue(FLEncoder encoder, Object value) {
-        if (value == null)
-            return encoder.writeNull();
-        else if (value instanceof Boolean)
-            return encoder.writeBool((Boolean) value);
-        else if (value instanceof Number) {
-            if (value instanceof Integer || value instanceof Long)
-                return encoder.writeInt(((Number) value).longValue());
-            else if (value instanceof Double)
-                return encoder.writeDouble(((Double) value).doubleValue());
-            else
-                return encoder.writeFloat(((Float) value).floatValue());
-        } else if (value instanceof String)
-            return encoder.writeString((String) value);
-        else if (value instanceof byte[])
-            return encoder.writeData((byte[]) value);
-        else if (value instanceof List)
-            return encoder.write((List) value);
-        else if (value instanceof Map)
-            return write(encoder, (Map) value);
-//        else if (value instanceof Blob)
-//            return writeValueForObject(encoder, value);
-        return false;
-    }
-
-
-
-    boolean writeValueForObject(FLEncoder encoder, Object value) {
-        if (value instanceof Blob)
-            value = ((Blob) value).jsonRepresentation();
-        return writeValue(encoder, value);
-    }
-    */
 
     /*package*/ void addChangeListener(ObjectChangeListener listener) {
         //TODO
@@ -343,6 +343,14 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
             ((Dictionary) object).removeChangeListener(this);
         } else if (object instanceof Array) {
             ((Array) object).removeChangeListener(this);
+        }
+    }
+
+    private void detachChildChangeListeners() {
+        if (map == null) return;
+
+        for (String key : map.keySet()) {
+            detachChangeListenerForObject(map.get(key));
         }
     }
 }

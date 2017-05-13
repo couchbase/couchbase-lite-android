@@ -1,8 +1,14 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.document.RemovedValue;
+import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLArray;
 import com.couchbase.litecore.fleece.FLDict;
 import com.couchbase.litecore.fleece.FLValue;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLArray;
 import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
@@ -10,9 +16,37 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
 
 // CBLData.mm
 public class CBLData {
-
-    /*package*/static Object convert(Object value, ObjectChangeListener listener){
-        //TODO
+    /* package */
+    static Object convert(Object value, ObjectChangeListener listener) {
+        if (value == null) {
+            return RemovedValue.INSTANCE;// Represent removed key
+        } else if (value instanceof Dictionary) {
+            ((Dictionary) value).addChangeListener(listener);
+            return value;
+        } else if (value instanceof Array) {
+            ((Array) value).addChangeListener(listener);
+            return value;
+        } else if (value instanceof ReadOnlyDictionary) {
+            ReadOnlyDictionary readOnly = (ReadOnlyDictionary)value;
+            Dictionary dict = new Dictionary(readOnly.getData());
+            dict.addChangeListener(listener);
+            return dict;
+        } else if (value instanceof ReadOnlyArray) {
+            ReadOnlyArray readOnly = (ReadOnlyArray)value;
+            Array array = new Array(readOnly.getData());
+            array.addChangeListener(listener);
+            return array;
+        } else if (value instanceof Map) {
+            Dictionary dict = new Dictionary((Map)value);
+            dict.addChangeListener(listener);
+            return dict;
+        } else if (value instanceof List) {
+            Array array = new Array((List)value);
+            array.addChangeListener(listener);
+            return array;
+        } else if (value instanceof Date) {
+            return DateUtils.toJson((Date)value);
+        }
         return value;
     }
 

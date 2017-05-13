@@ -60,28 +60,33 @@ import java.util.Map;
 
     @Override
     public int getInt(String key) {
-        return fleeceValue(key).asInt();
+        FLValue value = fleeceValue(key);
+        return value != null ? value.asInt() : 0;
     }
 
     @Override
     public long getLong(String key) {
         // TODO asLong()?
-        return fleeceValue(key).asInt();
+        FLValue value = fleeceValue(key);
+        return value != null ? value.asInt() : 0;
     }
 
     @Override
     public float getFloat(String key) {
-        return fleeceValue(key).asFloat();
+        FLValue value = fleeceValue(key);
+        return value != null ? value.asFloat() : 0.0f;
     }
 
     @Override
     public double getDouble(String key) {
-        return fleeceValue(key).asDouble();
+        FLValue value = fleeceValue(key);
+        return value != null ? value.asDouble() : 0.0;
     }
 
     @Override
     public boolean getBoolean(String key) {
-        return fleeceValue(key).asBool();
+        FLValue value = fleeceValue(key);
+        return value != null ? value.asBool() : false;
     }
 
     @Override

@@ -30,6 +30,8 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
 
     /* package */ Array(CBLFLArray data) {
         super(data);
+        list = new ArrayList<>();
+        loadBackingFleeceData();
     }
 
     //---------------------------------------------
@@ -37,7 +39,14 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     //---------------------------------------------
     @Override
     public Array set(List<Object> list) {
-        //TODO:
+        // Detach all objects that we are listening to for changes:
+        detachChildChangeListeners();
+
+        List<Object> result = new ArrayList<>();
+        for(Object value: list){
+            result.add(CBLData.convert(value, this));
+        }
+        this.list = result;
         return this;
     }
 
@@ -45,10 +54,9 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     public Array set(int index, Object value) {
         Object oldValue = getObject(index);
         if (!value.equals(oldValue)) {
-            //TODO:
             value = CBLData.convert(value, this);
             detachChangeListenerForObject(oldValue);
-            set(index, value);
+            set(index, value, true);
         }
         return this;
     }
@@ -84,7 +92,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
 
     @Override
     public long count() {
-        return list.size();
+        return  list != null ? list.size() : 0;
     }
 
     @Override
@@ -206,6 +214,21 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
             ((Dictionary) object).removeChangeListener(this);
         } else if (object instanceof Array) {
             ((Array) object).removeChangeListener(this);
+        }
+    }
+    private void detachChildChangeListeners() {
+        if (list == null) return;
+
+        for (Object object : list) {
+            detachChangeListenerForObject(object);
+        }
+    }
+
+    private void loadBackingFleeceData() {
+        int count = (int) super.count();
+        for (int i = 0; i < count; i++) {
+            Object value = super.getObject(i);
+            list.add(CBLData.convert(value, this));
         }
     }
 }

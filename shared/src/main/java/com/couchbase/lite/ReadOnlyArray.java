@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+
 import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLArray;
 import com.couchbase.litecore.fleece.FLEncoder;
