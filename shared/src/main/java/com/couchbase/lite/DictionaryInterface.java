@@ -9,9 +9,7 @@ import java.util.Map;
 
     DictionaryInterface set(Map<String, Object> dictionary);
 
-    @Override
-    Array getArray(String key);
+    ArrayInterface getArray(String key);
 
-    @Override
-    Dictionary getDictionary(String key);
+    DictionaryInterface getDictionary(String key);
 }

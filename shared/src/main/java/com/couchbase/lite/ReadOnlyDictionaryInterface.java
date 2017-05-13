@@ -26,9 +26,9 @@ import java.util.Map;
 
     Date getDate(String key);
 
-    ReadOnlyArray getArray(String key);
+    ReadOnlyArrayInterface getArray(String key);
 
-    ReadOnlyDictionary getDictionary(String key);
+    ReadOnlyDictionaryInterface getDictionary(String key);
 
     Map<String, Object> toMap();
 

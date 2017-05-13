@@ -13,7 +13,7 @@ import java.util.List;
 
     ArrayInterface remove(int value);
 
-    Array getArray(int index);
+    ArrayInterface getArray(int index);
 
-    Dictionary getDictionary(int index);
+    DictionaryInterface getDictionary(int index);
 }

@@ -1,32 +1,30 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.litecore.fleece.FLArray;
+import com.couchbase.litecore.fleece.FLEncoder;
+import com.couchbase.litecore.fleece.FLValue;
+
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
-/* package */ class ReadOnlyArray implements ReadOnlyArrayInterface {
+
+/* package */ class ReadOnlyArray implements ReadOnlyArrayInterface ,FleeceEncodable, Iterable<Object>{
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private final ReadOnlyArrayInterface data;
+    private CBLFLArray data;
+    private FLArray flArray;
+    private SharedKeys sharedKeys;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    /* package */ ReadOnlyArray() {
-        this((ReadOnlyArrayInterface) null);
-    }
-
-//    protected ReadOnlyArray(List<Object> list) {
-//        // TODO
-//        //this(new ListData(list));
-//        this((ReadOnlyArrayInterface) null);
-//    }
-
-    /* package */ ReadOnlyArray(ReadOnlyArrayInterface data) {
-        //this.data = (data != null ? data : ReadOnlyArrayInterface.EMPTY);
-        this.data = data;
+    /* package */ ReadOnlyArray(CBLFLArray data) {
+        setData(data);
     }
 
     //---------------------------------------------
@@ -34,72 +32,83 @@ import java.util.List;
     //---------------------------------------------
 
     @Override
-    public int count() {
-        return 0;
+    public long count() {
+        return flArray != null ? flArray.count() : 0;
     }
 
     @Override
     public Object getObject(int index) {
-        return null;
+        return fleeceValueToObject(index);
     }
 
     @Override
     public String getString(int index) {
-        return null;
+        return (String) fleeceValueToObject(index);
     }
 
     @Override
     public Number getNumber(int index) {
-        return null;
+        return (Number) fleeceValueToObject(index);
     }
 
     @Override
     public int getInt(int index) {
-        return 0;
+        return fleeceValue(index).asInt();
     }
 
     @Override
     public long getLong(int index) {
-        return 0;
+        // asLong
+        return fleeceValue(index).asInt();
     }
 
     @Override
     public float getFloat(int index) {
-        return 0;
+        return fleeceValue(index).asFloat();
     }
 
     @Override
     public double getDouble(int index) {
-        return 0;
+        return fleeceValue(index).asDouble();
     }
 
     @Override
     public boolean getBoolean(int index) {
-        return false;
+        return fleeceValue(index).asBool();
     }
 
     @Override
     public Blob getBlob(int index) {
-        return null;
+        return (Blob) fleeceValueToObject(index);
     }
 
     @Override
     public Date getDate(int index) {
-        return null;
+        return DateUtils.fromJson(getString(index));
     }
 
     @Override
     public ReadOnlyArray getArray(int index) {
-        return null;
+        return (ReadOnlyArray) fleeceValueToObject(index);
     }
 
     @Override
     public ReadOnlyDictionary getDictionary(int index) {
-        return null;
+        return (ReadOnlyDictionary) fleeceValueToObject(index);
     }
 
     @Override
     public List<Object> toList() {
+        //TODO
+        return null;
+    }
+
+    //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
+
+    @Override
+    public Iterator<Object> iterator() {
         return null;
     }
 
@@ -107,14 +116,50 @@ import java.util.List;
     // protected level access
     //---------------------------------------------
 
+    protected CBLFLArray getData() {
+        return data;
+    }
+
+    protected void setData(CBLFLArray data) {
+        this.data = data;
+        this.flArray = null;
+        this.sharedKeys = null;
+        if (data != null) {
+            this.flArray = data.getFLArray();
+            if (data.getDatabase() != null)
+                this.sharedKeys = data.getDatabase().getSharedKeys();
+        }
+    }
+
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-    /* package */ ReadOnlyArrayInterface getData() {
-        return data;
+
+    // FleeceEncodable implementation
+    @Override
+    public void fleeceEncode(FLEncoder encoder, Database database) {
+        encoder.writeValue(flArray);
     }
 
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
+
+    // #pragma mark - FLEECE ENCODABLE
+
+    // #pragma mark - FLEECE
+
+    private FLValue fleeceValue(int index) {
+        return flArray.get(index);
+    }
+
+    private Object fleeceValueToObject(int index) {
+        FLValue value = fleeceValue(index);
+        if (value != null)
+            return CBLData.fleeceValueToObject(value, data.getC4doc(), data.getDatabase());
+        else
+            return null;
+    }
+
+
 }

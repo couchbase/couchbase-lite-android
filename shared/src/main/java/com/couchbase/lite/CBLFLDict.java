@@ -2,26 +2,26 @@ package com.couchbase.lite;
 
 import com.couchbase.litecore.fleece.FLDict;
 
-public class CBLFLDict {
+/*package*/ class CBLFLDict {
     private FLDict flDict;
-    private com.couchbase.litecore.Document c4doc;
+    private CBLC4Doc c4doc;
     private Database database;
 
-    public CBLFLDict(FLDict dict, com.couchbase.litecore.Document c4doc, Database database) {
+    /*package*/ CBLFLDict(FLDict dict, CBLC4Doc c4doc, Database database) {
         this.flDict = dict;
         this.c4doc = c4doc;
         this.database = database;
     }
 
-    public FLDict getFlDict() {
+    /*package*/ FLDict getFlDict() {
         return flDict;
     }
 
-    public com.couchbase.litecore.Document getC4doc() {
+    /*package*/ CBLC4Doc getC4doc() {
         return c4doc;
     }
 
-    public Database getDatabase() {
+    /*package*/ Database getDatabase() {
         return database;
     }
 }

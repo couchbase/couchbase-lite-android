@@ -21,6 +21,7 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // member variables
     //---------------------------------------------
     private Database database;
-    private Dictionary dict;
+    private Dictionary dictionary;
 
     //---------------------------------------------
     // Constructors
@@ -50,7 +51,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 
     public Document(String id) {
         super(id != null ? id : CreateUUID(), null, null);
-        this.dict = new Dictionary();
+        this.dictionary = new Dictionary();
     }
 
     public Document(Map<String, Object> dictionary) {
@@ -73,91 +74,111 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // public API methods
     //---------------------------------------------
 
-
     //---------------------------------------------
     // DictionaryInterface implementation
     //---------------------------------------------
 
     @Override
     public Document set(String key, Object value) {
-        dict.set(key, value);
+        dictionary.set(key, value);
         return this;
     }
 
     @Override
     public Document remove(String key) {
-        dict.remove(key);
+        dictionary.remove(key);
         return this;
     }
 
     @Override
     public Document set(Map<String, Object> dictionary) {
-        dict.set(dictionary);
+        this.dictionary.set(dictionary);
         return this;
     }
 
     @Override
     public Array getArray(String key) {
-        //TODO
-        return null;
+        return dictionary.getArray(key);
     }
 
     @Override
     public Dictionary getDictionary(String key) {
-        //TODO
-        return null;
+        return dictionary.getDictionary(key);
     }
 
+    //---------------------------------------------
+    // API - overridden from ReadOnlyDocument
+    //---------------------------------------------
 
-    /**
-     * Return the document's owning database.
-     *
-     * @return the document's owning database.
-     */
-//    public Database getDatabase() {
-//        return database;
-//    }
+    @Override
+    public long count() {
+        return dictionary.count();
+    }
 
-    /**
-     * Returns the ConflictResolver added to this Document with {@code setConflictResolver()}.
-     *
-     * @return the ConflictResolver
-     */
-//    public ConflictResolver getConflictResolver() {
-//        return conflictResolver;
-//    }
+    @Override
+    public Object getObject(String key) {
+        return dictionary.getObject(key);
+    }
 
-    /**
-     * Set the conflict resolver, if any, specific to this document.
-     * If nil, the database's conflict resolver will be used.
-     *
-     * @param conflictResolver the conflict resolver
-     */
-//    public void setConflictResolver(ConflictResolver conflictResolver) {
-//        this.conflictResolver = conflictResolver;
-//    }
+    @Override
+    public String getString(String key) {
+        return dictionary.getString(key);
+    }
 
+    @Override
+    public Number getNumber(String key) {
+        return dictionary.getNumber(key);
+    }
 
-    /**
-     * Saves property changes back to the database.
-     * If the document in the database has been updated since it was read by this CBLDocument, a
-     * conflict occurs, which will be resolved by invoking the conflict handler. This can happen if
-     * multiple application threads are writing to the database, or a pull replication is copying
-     * changes from a server.
-     *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-//    public void save() throws CouchbaseLiteException {
-//        save(effectiveConflictResolver(), false);
-//    }
+    @Override
+    public int getInt(String key) {
+        return dictionary.getInt(key);
+    }
 
+    @Override
+    public long getLong(String key) {
+        return dictionary.getLong(key);
+    }
 
-    /**
-     * Reverts unsaved changes made to the document's properties.
-     */
-//    public void revert() {
-//        resetChanges();
-//    }
+    @Override
+    public float getFloat(String key) {
+        return dictionary.getFloat(key);
+    }
+
+    @Override
+    public double getDouble(String key) {
+        return dictionary.getDouble(key);
+    }
+
+    @Override
+    public boolean getBoolean(String key) {
+        return dictionary.getBoolean(key);
+    }
+
+    @Override
+    public Blob getBlob(String key) {
+        return dictionary.getBlob(key);
+    }
+
+    @Override
+    public Date getDate(String key) {
+        return dictionary.getDate(key);
+    }
+
+    @Override
+    public Map<String, Object> toMap() {
+        return dictionary.toMap();
+    }
+
+    @Override
+    public boolean contains(String key) {
+        return dictionary.contains(key);
+    }
+
+    @Override
+    /* package */List<String> allKeys() {
+        return dictionary.allKeys();
+    }
 
     //---------------------------------------------
     // Package level access
@@ -174,28 +195,10 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         save(effectiveConflictResolver(), false);
     }
 
-
-    /**
-     * Deletes this document. All properties are removed, and subsequent calls to
-     * {@code getDocument(String)} will return nil.
-     * Deletion adds a special "tombstone" revision to the database, as bookkeeping so that the
-     * change can be replicated to other databases. Thus, it does not free up all of the disk space
-     * occupied by the document.
-     * To delete a document entirely (but without the ability to replicate this), use {@code purge()}.
-     *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
     /*package*/  void delete() throws CouchbaseLiteException {
         save(effectiveConflictResolver(), true);
     }
 
-    /**
-     * Purges this document from the database.
-     * This is more drastic than deletion: it removes all traces of the document.
-     * The purge will NOT be replicated to other databases.
-     *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
     /*package*/  void purge() throws CouchbaseLiteException {
         if (!exists())
             throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
@@ -204,8 +207,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         database.beginTransaction();
         try {
             // revID: null, all revisions are purged.
-            if (getC4doc().purgeRevision(null) >= 0) {
-                getC4doc().save(0);
+            if (getC4doc().getRawDoc().purgeRevision(null) >= 0) {
+                getC4doc().getRawDoc().save(0);
                 commit = true;
             }
         } catch (LiteCoreException e) {
@@ -218,36 +221,17 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         setC4Doc(null);
     }
 
-
-//    void setHasChanges(boolean hasChanges) {
-//        if (this.hasChanges != hasChanges) {
-//            super.setHasChanges(hasChanges);
-//            getDatabase().unsavedDocument(this, hasChanges);
-//        }
-//    }
-//
-//
-//    void markChanges() {
-//        super.markChanges();
-//        // TODO DB00x: send notification
-//    }
-//
-//
-//    Blob blobWithProperties(Map<String, Object> dict) {
-//        return new Blob(database, dict);
-//    }
-
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
     // // (Re)loads the document from the db, updating _c4doc and other state.
     private void loadDoc(boolean mustExist) throws CouchbaseLiteException {
-        com.couchbase.litecore.Document doc = readC4Doc(mustExist);
-        if (doc == null)
+        com.couchbase.litecore.Document rawDoc = readC4Doc(mustExist);
+        if (rawDoc == null)
             return;
         // NOTE: c4doc should not be null.
-        setC4Doc(doc);
+        setC4Doc(new CBLC4Doc(rawDoc));
 
     }
 
@@ -261,18 +245,18 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
 
-    // Sets c4doc and updates my root dict
-    private void setC4Doc(com.couchbase.litecore.Document c4doc) throws CouchbaseLiteException {
+    // Sets c4doc and updates my root dictionary
+    private void setC4Doc(CBLC4Doc c4doc) throws CouchbaseLiteException {
         super.setC4doc(c4doc);
         if (c4doc != null) {
             FLDict root = null;
             byte[] body = null;
             try {
-                if(!c4doc.deleted())
-                    body = c4doc.getSelectedBody();
+                if (!c4doc.getRawDoc().deleted())
+                    body = c4doc.getRawDoc().getSelectedBody();
             } catch (LiteCoreException e) {
                 // in case body is empty, deleted is thrown.
-                if(e.code!=Constants.LiteCoreError.kC4ErrorDeleted)
+                if (e.code != Constants.LiteCoreError.kC4ErrorDeleted)
                     throw LiteCoreBridge.convertException(e);
             }
             if (body != null && body.length > 0)
@@ -281,7 +265,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         } else
             setData(null);
 
-        this.dict = new Dictionary(getData());
+        this.dictionary = new Dictionary(getData());
     }
 
     private void save(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
@@ -338,10 +322,9 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         }
 
         // Update my state and post a notification:
-        setC4Doc(newDoc);
+        setC4Doc(new CBLC4Doc(newDoc));
     }
 
-//
 //    private void merge(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
 //        com.couchbase.litecore.Document currentDoc = database.read(id, true);
 //
@@ -396,7 +379,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 //        if (resolved.equals(current))
 //            this.setHasChanges(false); // Document is now identical to current revision
 //    }
-//
+
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
     private com.couchbase.litecore.Document save(boolean deletion) throws LiteCoreException {
@@ -429,145 +412,86 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return database.internal().put(getId(), body, false, false, history, flags, true, 0);
     }
 
-
-//
 //    private void resetChanges() {
 //        this.properties = null; // not calling setProperties(null)
 //        setHasChanges(false);
 //    }
-//
+
 //    private void store(Blob blob) {
 //        blob.installInDatabase(database);
 //    }
-//
+
 //    private Blob blob(Map<String, Object> properties) {
 //        return new Blob(database, properties);
 //    }
-//
-//    private static boolean dictContainsBlob(Map<String, Object> dict) {
-//        if (dict == null)
-//            return false;
-//
-//        Object obj = dict.get("_cbltype");
-//        if (obj != null && obj instanceof String && ((String) obj).equals("blob"))
-//            return true;
-//        boolean containsBlob = false;
-//        for (Map.Entry<String, Object> entry : dict.entrySet()) {
-//            containsBlob = objectContainsBlob(entry.getValue());
-//            if (containsBlob)
-//                break;
-//        }
-//        return containsBlob;
-//    }
-//
-//    private static boolean arrayContainsBlob(List<Object> array) {
-//        if (array == null)
-//            return false;
-//
-//        for (Object obj : array) {
-//            if (objectContainsBlob(obj))
-//                return true;
-//        }
-//        return false;
-//    }
-//
-//    private static boolean objectContainsBlob(Object obj) {
-//        if (obj == null)
-//            return false;
-//        else if (obj instanceof Blob)
-//            return true;
-//        else if (obj instanceof Map)
-//            return dictContainsBlob((Map<String, Object>) obj);
-//        else if (obj instanceof List)
-//            return arrayContainsBlob((List<Object>) obj);
-//        else
-//            return false;
-//    }
-//
 
     // #pragma mark - FLEECE ENCODING
 
-    // TODO: Instead of byte[], should we use FLSliceResult? Less memory transfer through JNI.
     private byte[] encode(FLEncoder encoder) throws CouchbaseLiteException {
-
-        dict.fleeceEncode(encoder);
-
+        dictionary.fleeceEncode(encoder, database);
         try {
             return encoder.finish();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
-
-        /*
-        try {
-            encoder.beginDict(getProperties().size());
-            Iterator<String> keys = getProperties().keySet().iterator();
-            while (keys.hasNext()) {
-                String key = keys.next();
-                encoder.writeKey(key);
-                Object value = getProperties().get(key);
-                if (value instanceof Blob)
-                    store((Blob) value);
-                writeValue(encoder, value);
-            }
-            encoder.endDict();
-            byte[] body;
-            try {
-                body = encoder.finish();
-            } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
-            }
-            return body;
-        } finally {
-            encoder.free();
-        }
-        */
     }
-
-
-//
-
-//
-//    private ConflictResolver effectiveConflictResolver() {
-//        return conflictResolver != null ? conflictResolver : database.getConflictResolver();
-//    }
-//
-//    private long generation() {
-//        return generationFromRevID(c4doc.getRevID());
-//    }
-//
-//    /**
-//     * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
-//     */
-//    private static long generationFromRevID(String revID) {
-//        long generation = 0;
-//        long length = Math.min(revID == null ? 0 : revID.length(), 9);
-//        for (int i = 0; i < length; ++i) {
-//            char c = revID.charAt(i);
-//            if (Character.isDigit(c))
-//                generation = 10 * generation + Character.getNumericValue(c);
-//            else if (c == '-')
-//                return generation;
-//            else
-//                break;
-//        }
-//        return 0;
-//    }
 
     private ConflictResolver effectiveConflictResolver() {
         return database != null ? database.getConflictResolver() : null;
     }
 
     private boolean isChanged() {
-        return dict.isChanged();
+        return dictionary.isChanged();
     }
 
     private boolean isEmpty() {
-        return dict.isEmpty();
+        return dictionary.isEmpty();
+    }
+
+
+    // The next four functions search recursively for a property "_cbltype":"blob".
+
+    private static boolean objectContainsBlob(Object obj) {
+        if (obj == null)
+            return false;
+        else if (obj instanceof Blob)
+            return true;
+        else if (obj instanceof Dictionary)
+            return dictionaryContainsBlob((Dictionary) obj);
+        else if (obj instanceof Array)
+            return arrayContainsBlob((Array) obj);
+        else
+            return false;
+    }
+
+    private static boolean arrayContainsBlob(Array array) {
+        if (array == null) return false;
+        for (int i = 0; i < array.count(); i++) {
+            if (objectContainsBlob(array.getObject(i)))
+                return true;
+        }
+        return false;
+    }
+
+    private static boolean dictionaryContainsBlob(Dictionary dict) {
+        if (dict == null)
+            return false;
+        boolean containsBlob = false;
+        for (String key : dict.allKeys()) {
+            if (containsBlob = objectContainsBlob(dict.getObject(key)))
+                break;
+        }
+        return containsBlob;
     }
 
     private static boolean containsBlob(Document doc) {
-        // TODO:
-        return false;
+        if (doc == null)
+            return false;
+        boolean containsBlob = false;
+        for (String key : doc.allKeys()) {
+            if (containsBlob = objectContainsBlob(doc.getObject(key)))
+                break;
+        }
+        return containsBlob;
     }
 }

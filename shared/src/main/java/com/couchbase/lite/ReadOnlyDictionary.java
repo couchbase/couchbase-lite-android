@@ -4,6 +4,7 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLDict;
 import com.couchbase.litecore.fleece.FLDictIterator;
+import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.util.ArrayList;
@@ -12,30 +13,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/* package */ class ReadOnlyDictionary implements ReadOnlyDictionaryInterface {
+/* package */ class ReadOnlyDictionary implements ReadOnlyDictionaryInterface,FleeceEncodable {
 
-    //---------------------------------------------
+    //-------------------------------------------------------------------------
     // member variables
-    //---------------------------------------------
+    //-------------------------------------------------------------------------
     private CBLFLDict data;
-    private FLDict flDict; // NOTE: We might need to implment like CBLFLDict
+    private FLDict flDict;
     private SharedKeys sharedKeys;
 
-    //---------------------------------------------
+    //-------------------------------------------------------------------------
     // Constructors
-    //---------------------------------------------
+    //-------------------------------------------------------------------------
 
     /* package */ ReadOnlyDictionary(CBLFLDict data) {
         setData(data);
     }
 
-    //---------------------------------------------
+    //-------------------------------------------------------------------------
     // API - public methods
-    //---------------------------------------------
+    //-------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
+    // Implementation of ReadOnlyDictionaryInterface
+    //-------------------------------------------------------------------------
 
     @Override
     public long count() {
-        return flDict!=null?flDict.count():0;
+        return flDict != null ? flDict.count() : 0;
     }
 
     @Override
@@ -45,12 +50,12 @@ import java.util.Map;
 
     @Override
     public String getString(String key) {
-        return (String)fleeceValueToObject(key);
+        return (String) fleeceValueToObject(key);
     }
 
     @Override
     public Number getNumber(String key) {
-        return (Number)fleeceValueToObject(key);
+        return (Number) fleeceValueToObject(key);
     }
 
     @Override
@@ -101,11 +106,16 @@ import java.util.Map;
 
     @Override
     public Map<String, Object> toMap() {
-        return fleeceRootToDictionary(flDict);
+        if (flDict != null)
+            // TODO: Need to review!
+            return fleeceRootToDictionary(flDict);
+        else
+            return new HashMap<>();
     }
 
     @Override
     public boolean contains(String key) {
+        // TODO: Need to review!
         return fleeceValue(key) != null;
     }
 
@@ -139,7 +149,7 @@ import java.util.Map;
             FLDictIterator itr = new FLDictIterator();
             itr.begin(flDict);
             String key;
-            while((key = itr.getKey().asString())!=null){
+            while ((key = itr.getKey().asString()) != null) {
                 keys.add(key);
                 itr.next();
             }
@@ -148,26 +158,28 @@ import java.util.Map;
         return keys;
     }
 
+    // FleeceEncodable implementation
+    @Override
+    public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException{
+        encoder.writeValue(flDict);
+    }
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
-
-
-
     // #pragma mark - FLEECE
 
-    private FLValue fleeceValue(String key){
+    private FLValue fleeceValue(String key) {
         return SharedKeys.getValue(flDict, key, sharedKeys);
     }
 
     private Object fleeceValueToObject(String key) {
         FLValue value = fleeceValue(key);
-        if(value != null)
-                return Data.fleeceValueToObject(value, sharedKeys);
-            else
-                return null;
-
+        if (value != null)
+            return CBLData.fleeceValueToObject(value,data.getC4doc(), data.getDatabase());
+        else
+            return null;
     }
 
     private Map<String, Object> fleeceRootToDictionary(FLDict flDict) {
@@ -178,8 +190,7 @@ import java.util.Map;
         itr.begin(flDict);
         String key;
         while ((key = SharedKeys.getKey(itr, sharedKeys)) != null) {
-            //dict.put(key, fleeceValueToObject(itr.getValue()));
-            dict.put(key, Data.fleeceValueToObject(itr.getValue(), sharedKeys));
+            dict.put(key, CBLData.fleeceValueToObject(itr.getValue(), data.getC4doc(), data.getDatabase()));
             itr.next();
         }
         itr.free();

@@ -19,6 +19,7 @@ import com.couchbase.litecore.C4BlobKey;
 import com.couchbase.litecore.C4BlobStore;
 import com.couchbase.litecore.C4BlobWriteStream;
 import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLSliceResult;
 
 import java.io.ByteArrayInputStream;
@@ -42,7 +43,7 @@ import static com.couchbase.litecore.Constants.C4DatabaseFlags.kC4DB_Create;
  * JSON form only contains the Blob's metadata (type, length and digest of the data) in small
  * object. The data itself is stored externally to the document, keyed by the digest.)
  */
-public final class Blob {
+public final class Blob implements FleeceEncodable{
     //---------------------------------------------
     // static constant variables
     //---------------------------------------------
@@ -155,7 +156,7 @@ public final class Blob {
      */
     public byte[] getContent() {
         if (content != null) {
-            // Data is in memory:
+            // CBLData is in memory:
             return content;
         } else if (db != null) {
             // Read blob from the BlobStore:
@@ -361,6 +362,12 @@ public final class Blob {
             if (key != null)
                 key.free();
         }
+    }
+
+    // FleeceEncodable implementation
+    @Override
+    public void fleeceEncode(FLEncoder encoder, Database database) {
+        //TODO!
     }
 
     //---------------------------------------------

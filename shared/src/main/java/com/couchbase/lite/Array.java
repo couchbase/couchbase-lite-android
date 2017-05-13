@@ -1,11 +1,19 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.litecore.fleece.FLEncoder;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
-public class Array extends ReadOnlyArray implements ArrayInterface {
+public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChangeListener, FleeceEncodable {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    private List<Object> list = null;
+    private boolean changed = false;
 
     //---------------------------------------------
     // Constructors
@@ -16,48 +24,132 @@ public class Array extends ReadOnlyArray implements ArrayInterface {
     }
 
     public Array(List<Object> array) {
-        //TODO
         super(null);
+        set(array);
+    }
+
+    /* package */ Array(CBLFLArray data) {
+        super(data);
     }
 
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
     @Override
-    public ArrayInterface set(List<Object> list) {
+    public Array set(List<Object> list) {
+        //TODO:
         return this;
     }
 
     @Override
-    public ArrayInterface set(int index, Object value) {
+    public Array set(int index, Object value) {
+        Object oldValue = getObject(index);
+        if (!value.equals(oldValue)) {
+            //TODO:
+            value = CBLData.convert(value, this);
+            detachChangeListenerForObject(oldValue);
+            set(index, value);
+        }
         return this;
     }
 
     @Override
-    public ArrayInterface add(Object value) {
+    public Array add(Object value) {
         return this;
     }
 
     @Override
-    public ArrayInterface insert(int index, Object value) {
+    public Array insert(int index, Object value) {
         return this;
     }
 
     @Override
-    public ArrayInterface remove(int value) {
+    public Array remove(int value) {
         return this;
     }
 
     @Override
     public Array getArray(int index) {
-        return null;
+        return (Array) getObject(index);
     }
 
     @Override
     public Dictionary getDictionary(int index) {
-        return null;
+        return (Dictionary) getObject(index);
     }
 
+    //---------------------------------------------
+    // API - overridden from ReadOnlyArray
+    //---------------------------------------------
+
+    @Override
+    public long count() {
+        return list.size();
+    }
+
+    @Override
+    public Object getObject(int index) {
+        return list.get(index);
+    }
+
+    @Override
+    public String getString(int index) {
+        return (String) getObject(index);
+    }
+
+    @Override
+    public Number getNumber(int index) {
+        return (Number) getObject(index);
+    }
+
+    @Override
+    public int getInt(int index) {
+        return getNumber(index).intValue();
+    }
+
+    @Override
+    public long getLong(int index) {
+        return getNumber(index).longValue();
+    }
+
+    @Override
+    public float getFloat(int index) {
+        return getNumber(index).floatValue();
+    }
+
+    @Override
+    public double getDouble(int index) {
+        return getNumber(index).doubleValue();
+    }
+
+    @Override
+    public boolean getBoolean(int index) {
+        return CBLData.toBoolean(getObject(index));
+    }
+
+    @Override
+    public Blob getBlob(int index) {
+        return (Blob) getObject(index);
+    }
+
+    @Override
+    public Date getDate(int index) {
+        return DateUtils.fromJson(getString(index));
+    }
+
+    @Override
+    public List<Object> toList() {
+        //TODO
+        return null;
+    }
+    //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
+
+    @Override
+    public Iterator<Object> iterator() {
+        return null;
+    }
     //---------------------------------------------
     // protected level access
     //---------------------------------------------
@@ -65,8 +157,55 @@ public class Array extends ReadOnlyArray implements ArrayInterface {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+    /*package*/ void addChangeListener(ObjectChangeListener listener) {
+        //TODO
+    }
+
+    /*package*/ void removeChangeListener(ObjectChangeListener listener) {
+        //TODO
+    }
+
+    // FleeceEncodable implementation
+    @Override
+    public void fleeceEncode(FLEncoder encoder, Database database) {
+        encoder.beginArray(count());
+        for(int i = 0; i < count(); i++){
+            Object value = getObject(i);
+            if(value instanceof FleeceEncodable)
+                ((FleeceEncodable)value).fleeceEncode(encoder, database);
+            else
+                encoder.writeValue(value);
+        }
+        encoder.endArray();
+    }
 
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
+    private void set(int index, Object value, boolean isChange) {
+        if (list == null)
+            list = new ArrayList<>();
+        list.set(index, value);
+        if (isChange)
+            setChanged();
+    }
+
+    private void setChanged() {
+        if (!changed) {
+            changed = true;
+            notifyChangeListeners();
+        }
+    }
+
+    private void notifyChangeListeners() {
+        // TODO:
+    }
+
+    private void detachChangeListenerForObject(Object object) {
+        if (object instanceof Dictionary) {
+            ((Dictionary) object).removeChangeListener(this);
+        } else if (object instanceof Array) {
+            ((Array) object).removeChangeListener(this);
+        }
+    }
 }

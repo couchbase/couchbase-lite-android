@@ -9,14 +9,14 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     // member variables
     //---------------------------------------------
     private String id;
-    private com.couchbase.litecore.Document c4doc;
+    private CBLC4Doc c4doc;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     /* package */ ReadOnlyDocument(String id,
-                                   com.couchbase.litecore.Document c4doc,
+                                   CBLC4Doc c4doc,
                                    CBLFLDict data) {
         super(data);
         this.id = id;
@@ -56,7 +56,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
      * @return true if deleted, false otherwise
      */
     public boolean isDeleted() {
-        return c4doc != null ? c4doc.deleted() : false;
+        return c4doc != null ? c4doc.getRawDoc().deleted() : false;
     }
 
     @Override
@@ -68,8 +68,6 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     // protected level access
     //---------------------------------------------
 
-
-
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
@@ -80,22 +78,40 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
      * @return true if exists, false otherwise.
      */
     /* package */ boolean exists() {
-        return c4doc != null ? c4doc.exists() : false;
+        return c4doc != null ? c4doc.getRawDoc().exists() : false;
     }
 
     /* package */ long generation() {
-        // TODO:
-        return 0;
+        return generationFromRevID(c4doc.getRevID());
     }
 
-    /*package*/ com.couchbase.litecore.Document getC4doc() {
+    /*package*/ CBLC4Doc getC4doc() {
         return c4doc;
     }
 
-    /*package*/  void setC4doc(com.couchbase.litecore.Document c4doc) {
+    /*package*/  void setC4doc(CBLC4Doc c4doc) {
         this.c4doc = c4doc;
     }
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
+
+    /**
+     * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
+     */
+    private static long generationFromRevID(String revID) {
+        long generation = 0;
+        long length = Math.min(revID == null ? 0 : revID.length(), 9);
+        for (int i = 0; i < length; ++i) {
+            char c = revID.charAt(i);
+            if (Character.isDigit(c))
+                generation = 10 * generation + Character.getNumericValue(c);
+            else if (c == '-')
+                return generation;
+            else
+                break;
+        }
+        return 0;
+    }
 }
