@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class ArrayTest extends BaseTest{
@@ -174,6 +175,63 @@ public class ArrayTest extends BaseTest{
 
                 // blob
                 Blob blob = (Blob)a.getObject(11);
+                assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
+                assertEquals(kArrayTestBlob, new String(blob.getContent()));
+            }
+        });
+    }
+
+    @Test
+    public void testAddObjectsToExistingArray(){
+        Array array = new Array();
+        populateData(array);
+
+        // Save
+        Document doc = new Document("doc1");
+        doc.set("array", array);
+        db.save(doc);
+        doc = db.getDocument("doc1");
+
+        // Get an existing array:
+        array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(12, array.count());
+
+        // Update:
+        populateData(array);
+        assertEquals(24, array.count());
+
+        save(doc, "array", array, new Validator<Array>(){
+            @Override
+            public void validate(Array a) {
+                assertEquals(24, a.count());
+
+                assertEquals(true, a.getObject(12+0));
+                assertEquals(false, a.getObject(12+1));
+                assertEquals("string", a.getObject(12+2));
+                assertEquals(0, a.getObject(12+3));
+                assertEquals(1, a.getObject(12+4));
+                assertEquals(-1, a.getObject(12+5));
+                assertEquals(1.1, a.getObject(12+6));
+                assertEquals(kArrayTestDate, a.getObject(12+7));
+                assertEquals(null, a.getObject(12+8));
+
+                // dictionary
+                Dictionary subdict = (Dictionary) a.getObject(12+9);
+                Map<String,Object> expectedMap = new HashMap<>();
+                expectedMap.put("name", "Scott Tiger");
+                assertEquals(expectedMap, subdict.toMap());
+
+                // array
+                Array subarray = (Array) a.getObject(12+10);
+                List<Object> expected = new ArrayList<>();
+                expected.add("a");
+                expected.add("b");
+                expected.add("c");
+                assertEquals(expected, subarray.toList());
+
+                // blob
+                Blob blob = (Blob)a.getObject(12+11);
                 assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
                 assertEquals(kArrayTestBlob, new String(blob.getContent()));
             }

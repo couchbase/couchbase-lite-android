@@ -14,6 +14,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     // member variables
     //---------------------------------------------
     private Map<String, Object> map = null;
+    Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
 
     //---------------------------------------------
@@ -285,6 +286,13 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         return true;
     }
 
+    // #pragma mark - CHANGE LISTENING
+
+    @Override
+    public void objectDidChange(Object object) {
+        setChanged();
+    }
+
     // #pragma mark - FLEECE ENCODABLE
 
     // FleeceEncodable implementation
@@ -306,11 +314,16 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     }
 
     /*package*/ void addChangeListener(ObjectChangeListener listener) {
-        //TODO
+        int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
+        changeListeners.put(listener, count + 1);
     }
 
     /*package*/ void removeChangeListener(ObjectChangeListener listener) {
-        //TODO
+        int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
+        if (count > 1)
+            changeListeners.put(listener, count - 1);
+        else
+            changeListeners.remove(listener);
     }
 
     //---------------------------------------------
@@ -332,9 +345,9 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         }
     }
 
-
     private void notifyChangeListeners() {
-        // TODO:
+        for (ObjectChangeListener listener : changeListeners.keySet())
+            listener.objectDidChange(this);
     }
 
     private void detachChangeListenerForObject(Object object) {

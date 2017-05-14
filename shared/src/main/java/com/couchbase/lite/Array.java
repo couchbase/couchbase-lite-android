@@ -5,14 +5,17 @@ import com.couchbase.litecore.fleece.FLEncoder;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChangeListener, FleeceEncodable {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private List<Object> list = null;
+    Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
 
     //---------------------------------------------
@@ -20,11 +23,11 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     //---------------------------------------------
 
     public Array() {
-        this((CBLFLArray)null);
+        this((CBLFLArray) null);
     }
 
     public Array(List<Object> array) {
-        this((CBLFLArray)null);
+        this((CBLFLArray) null);
         set(array);
     }
 
@@ -184,11 +187,23 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     // Package level access
     //---------------------------------------------
     /*package*/ void addChangeListener(ObjectChangeListener listener) {
-        //TODO
+        int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
+        changeListeners.put(listener, count + 1);
     }
 
     /*package*/ void removeChangeListener(ObjectChangeListener listener) {
-        //TODO
+        int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
+        if (count > 1)
+            changeListeners.put(listener, count - 1);
+        else
+            changeListeners.remove(listener);
+    }
+
+    // #pragma mark - CHANGE LISTENING
+
+    @Override
+    public void objectDidChange(Object object) {
+        setChanged();
     }
 
     // FleeceEncodable implementation
@@ -224,7 +239,8 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     }
 
     private void notifyChangeListeners() {
-        // TODO:
+        for (ObjectChangeListener listener : changeListeners.keySet())
+            listener.objectDidChange(this);
     }
 
     private void detachChangeListenerForObject(Object object) {
