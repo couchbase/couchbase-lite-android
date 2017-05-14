@@ -27,7 +27,7 @@ public class DateUtils {
     private static SimpleDateFormat sdf;
 
     static {
-        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH);
+        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 

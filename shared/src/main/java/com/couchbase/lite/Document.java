@@ -412,19 +412,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return database.internal().put(getId(), body, false, false, history, flags, true, 0);
     }
 
-//    private void resetChanges() {
-//        this.properties = null; // not calling setProperties(null)
-//        setHasChanges(false);
-//    }
-
-//    private void store(Blob blob) {
-//        blob.installInDatabase(database);
-//    }
-
-//    private Blob blob(Map<String, Object> properties) {
-//        return new Blob(database, properties);
-//    }
-
     // #pragma mark - FLEECE ENCODING
 
     private byte[] encode(FLEncoder encoder) throws CouchbaseLiteException {

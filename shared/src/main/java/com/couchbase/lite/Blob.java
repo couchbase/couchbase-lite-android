@@ -78,16 +78,20 @@ public final class Blob implements FleeceEncodable {
      * Gets the contents of a CBLBlob as a block of memory.
      * Not recommended for very large blobs, as it may be slow and use up lots of RAM.
      */
-    private byte[] content = null;
+    private byte[] content = null; // If new from data, or already loaded from db
 
     /**
      * The metadata associated with this CBLBlob
      */
-    private Map<String, Object> properties = null;
+    private Map<String, Object> properties = null; // Only in blob read from database
 
-    private InputStream initialContentStream = null;
+    private InputStream initialContentStream = null; // If new from stream
 
-    private Database db = null;
+    private Database database = null; // nil if blob is new and unsaved
+
+    // A newly created unsaved blob will have either _content or _initialContentStream.
+    // A new blob saved to the database will have _db and _digest.
+    // A blob loaded from the database will have _db and _properties, and _digest unless invalid
 
     //---------------------------------------------
     // Constructors
@@ -132,16 +136,18 @@ public final class Blob implements FleeceEncodable {
     }
 
     // Initializer for an existing blob being read from a document
-    /* package */ Blob(Database db, Map<String, Object> properties) {
-        this.db = db;
+    /* package */ Blob(Database database, Map<String, Object> properties) {
+        this.database = database;
         this.properties = new HashMap<>(properties);
         this.properties.remove(TYPE_META_PROPERTY);
 
         this.length = ClassUtils.cast(properties.get("length"), Number.class).longValue();
         this.digest = ClassUtils.cast(properties.get("digest"), String.class);
         this.contentType = ClassUtils.cast(properties.get("content-type"), String.class);
-        if (this.digest == null)
+        if (this.digest == null) {
             Log.w(TAG, "Blob read from database has missing digest");
+            this.digest = "";
+        }
     }
 
     //---------------------------------------------
@@ -156,11 +162,11 @@ public final class Blob implements FleeceEncodable {
      */
     public byte[] getContent() {
         if (content != null) {
-            // CBLData is in memory:
+            // Data is in memory:
             return content;
-        } else if (db != null) {
+        } else if (database != null) {
             // Read blob from the BlobStore:
-            C4BlobStore blobStore = getBlobStore(); // BlobStore does not required to close because it is created from db.
+            C4BlobStore blobStore = getBlobStore(); // BlobStore does not required to close because it is created from database.
             if (blobStore == null)
                 return null;
             try {
@@ -227,7 +233,7 @@ public final class Blob implements FleeceEncodable {
      * @return the stream of content of a Blob
      */
     public InputStream getContentStream() {
-        if (db != null) {
+        if (database != null) {
             return new BlobInputStream(getBlobStore(), getBlobKey());
         } else {
             byte[] content = getContent();
@@ -287,8 +293,8 @@ public final class Blob implements FleeceEncodable {
      */
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "%s[%s; %d KB]",
-                Blob.class.getSimpleName(), contentType, (length() + 512) / 1024);
+        return String.format(Locale.ENGLISH, "Blob[%s; %d KB]",
+                contentType, (length() + 512) / 1024);
     }
 
     //---------------------------------------------
@@ -303,10 +309,10 @@ public final class Blob implements FleeceEncodable {
 
     /* package */ void installInDatabase(Database db) throws CouchbaseLiteException {
         if (db == null)
-            throw new IllegalArgumentException("db is null");
+            throw new IllegalArgumentException("database is null");
 
-        if (this.db != null) {
-            if (this.db != db)
+        if (this.database != null) {
+            if (this.database != db)
                 throw new IllegalArgumentException("Blob belongs to a different database");
             return;
         }
@@ -314,7 +320,7 @@ public final class Blob implements FleeceEncodable {
         C4BlobKey key = null;
         try {
             // TODO: C4Database.getBlobStore() causes crashes some-where-else
-            // C4BlobStore store = db.internal().getBlobStore();
+            // C4BlobStore store = database.internal().getBlobStore();
             C4BlobStore store = getBlobStore(db);
             try {
                 if (content != null) {
@@ -349,7 +355,7 @@ public final class Blob implements FleeceEncodable {
                     }
                 }
                 this.digest = key.toString();
-                this.db = db;
+                this.database = db;
             } finally {
                 if (store != null)
                     store.free();
@@ -366,24 +372,32 @@ public final class Blob implements FleeceEncodable {
 
     // FleeceEncodable implementation
     @Override
-    public void fleeceEncode(FLEncoder encoder, Database database) {
-        //TODO!
+    public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
+        installInDatabase(database);
+
+        Map<String, Object> dict = jsonRepresentation();
+        encoder.beginDict(dict.size());
+        for(Map.Entry<String, Object>entry: dict.entrySet()){
+            encoder.writeKey(entry.getKey());
+            encoder.writeValue(entry.getValue());
+        }
+        encoder.endDict();
     }
 
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
     private C4BlobStore getBlobStore() {
-        if (db == null) {
-            Log.w(TAG, "db instance is null.");
+        if (database == null) {
+            Log.w(TAG, "database instance is null.");
             return null;
         }
 
         try {
-            File attachments = new File(db.getPath(), "Attachments");
+            File attachments = new File(database.getPath(), "Attachments");
             return C4BlobStore.open(attachments.getPath(), kC4DB_Create);
             // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
-            // return db.internal().getBlobStore();
+            // return database.internal().getBlobStore();
         } catch (LiteCoreException e) {
             Log.w(TAG, "Failed to get BlobStore instance", e);
             return null;
@@ -392,7 +406,7 @@ public final class Blob implements FleeceEncodable {
 
     private C4BlobStore getBlobStore(Database db) {
         if (db == null) {
-            Log.w(TAG, "db instance is null.");
+            Log.w(TAG, "database instance is null.");
             return null;
         }
 
@@ -400,7 +414,7 @@ public final class Blob implements FleeceEncodable {
             File attachments = new File(db.getPath(), "Attachments");
             return C4BlobStore.open(attachments.getPath(), kC4DB_Create);
             // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
-            //return db.internal().getBlobStore();
+            //return database.internal().getBlobStore();
         } catch (LiteCoreException e) {
             Log.w(TAG, "Failed to get BlobStore instance", e);
             return null;

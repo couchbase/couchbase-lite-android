@@ -96,7 +96,7 @@ public class SharedKeys implements FLValue.ISharedKeys {
         return sk != null ? sk.valueToObject(value) : null;
     }
 
-    // static inline id FLValue_GetNSObject(FLValue __nullable value, cbl::SharedKeys *sk)
+    // static inline FLValue FLDict_GetSharedKey(FLDict __nullable dict, FLSlice key, cbl::SharedKeys *sk)
     static FLValue getValue(FLDict dict, String key, SharedKeys sk) {
         return sk != null && dict != null ? sk.getValue(dict, key) : null;
     }

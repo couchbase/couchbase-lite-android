@@ -20,11 +20,11 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     //---------------------------------------------
 
     public Array() {
-        super(null);
+        this((CBLFLArray)null);
     }
 
     public Array(List<Object> array) {
-        super(null);
+        this((CBLFLArray)null);
         set(array);
     }
 
@@ -63,16 +63,24 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
 
     @Override
     public Array add(Object value) {
+        list.add(CBLData.convert(value, this));
+        setChanged();
         return this;
     }
 
     @Override
     public Array insert(int index, Object value) {
+        list.add(index, CBLData.convert(value, this));
+        setChanged();
         return this;
     }
 
     @Override
-    public Array remove(int value) {
+    public Array remove(int index) {
+        Object value = list.get(index);
+        detachChangeListenerForObject(value);
+        list.remove(index);
+        setChanged();
         return this;
     }
 

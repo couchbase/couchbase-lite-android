@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.document.RemovedValue;
 import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLArray;
 import com.couchbase.litecore.fleece.FLDict;
@@ -18,9 +17,11 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
 public class CBLData {
     /* package */
     static Object convert(Object value, ObjectChangeListener listener) {
-        if (value == null) {
-            return RemovedValue.INSTANCE;// Represent removed key
-        } else if (value instanceof Dictionary) {
+        // TODO: null is not for remove with Java. Need to consider other solution
+        //if (value == null) {
+        //    return RemovedValue.INSTANCE;// Represent removed key
+        //} else if (value instanceof Dictionary) {
+        if (value instanceof Dictionary) {
             ((Dictionary) value).addChangeListener(listener);
             return value;
         } else if (value instanceof Array) {
@@ -76,13 +77,25 @@ public class CBLData {
             }
             case kFLDict: {
                 FLDict flDict = value.asFLDict();
-                //TODO: for Blob
-                CBLFLDict data = new CBLFLDict(flDict, c4doc, database);
-                return new Dictionary(data);
+                String type = SharedKeys.getValue(flDict, Blob.TYPE_META_PROPERTY, database.getSharedKeys()).asString();
+                if(type == null)
+                    return new Dictionary(new CBLFLDict(flDict, c4doc, database));
+                else { // type == "blob"
+                    Object result = SharedKeys.valueToObject(value, database.getSharedKeys());
+                    return dictionaryToCBLObject((Map<String,Object>)result, database);
+                }
             }
             default: {
                 return SharedKeys.valueToObject(value, database.getSharedKeys());
             }
         }
+    }
+
+    private static Object dictionaryToCBLObject(Map<String, Object> dict, Database database) {
+        String type = (String) dict.get(Blob.TYPE_META_PROPERTY);
+        if (type != null && type.equals(Blob.BLOB_TYPE)) {
+            return new Blob(database, dict);
+        }
+        return null;
     }
 }

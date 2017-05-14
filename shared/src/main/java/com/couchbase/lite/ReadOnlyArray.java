@@ -101,7 +101,7 @@ import java.util.List;
     @Override
     public List<Object> toList() {
         //TODO
-        throw new RuntimeException("Work In Progress");
+        throw new UnsupportedOperationException("Work in Progress");
     }
 
     //---------------------------------------------
@@ -146,8 +146,6 @@ import java.util.List;
     // Private (in class only)
     //---------------------------------------------
 
-    // #pragma mark - FLEECE ENCODABLE
-
     // #pragma mark - FLEECE
 
     private FLValue fleeceValue(int index) {
@@ -161,6 +159,4 @@ import java.util.List;
         else
             return null;
     }
-
-
 }
