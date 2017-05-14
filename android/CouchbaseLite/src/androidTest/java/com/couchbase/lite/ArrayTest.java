@@ -14,12 +14,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class ArrayTest extends BaseTest{
+public class ArrayTest extends BaseTest {
 
     static final String kArrayTestDate = "2007-06-30T08:34:09.001Z";
     static final String kArrayTestBlob = "i'm blob";
 
-    private List<Object> arrayOfAllTypes(){
+    private List<Object> arrayOfAllTypes() {
         List<Object> list = new ArrayList<>();
         list.add(true);
         list.add(false);
@@ -48,18 +48,19 @@ public class ArrayTest extends BaseTest{
 
         return list;
     }
-    private void populateData(Array array){
+
+    private void populateData(Array array) {
         List<Object> data = arrayOfAllTypes();
-        for(Object o : data) {
+        for (Object o : data) {
             array.add(o);
         }
     }
 
-    interface Validator<T>{
+    interface Validator<T> {
         void validate(T array);
     }
 
-    private void save(Document doc, String key, Array array, Validator<Array> validator){
+    private void save(Document doc, String key, Array array, Validator<Array> validator) {
         validator.validate(array);
 
         doc.set(key, array);
@@ -71,7 +72,7 @@ public class ArrayTest extends BaseTest{
     }
 
     @Test
-    public void testCreate(){
+    public void testCreate() {
         Array array = new Array();
         assertEquals(0, array.count());
         assertEquals(new ArrayList<>(), array.toList());
@@ -86,7 +87,7 @@ public class ArrayTest extends BaseTest{
     }
 
     @Test
-    public void testCreateWithList(){
+    public void testCreateWithList() {
         List<Object> data = new ArrayList<>();
         data.add("1");
         data.add("2");
@@ -105,7 +106,7 @@ public class ArrayTest extends BaseTest{
     }
 
     @Test
-    public void testSetNSArray(){
+    public void testSetNSArray() {
         List<Object> data = new ArrayList<>();
         data.add("1");
         data.add("2");
@@ -137,14 +138,14 @@ public class ArrayTest extends BaseTest{
     }
 
     @Test
-    public void testAddObjects(){
+    public void testAddObjects() {
         Array array = new Array();
 
         // Add objects of all types:
         populateData(array);
 
         Document doc = new Document("doc1");
-        save(doc, "array", array, new Validator<Array>(){
+        save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
                 assertEquals(12, a.count());
@@ -161,7 +162,7 @@ public class ArrayTest extends BaseTest{
 
                 // dictionary
                 Dictionary subdict = (Dictionary) a.getObject(9);
-                Map<String,Object> expectedMap = new HashMap<>();
+                Map<String, Object> expectedMap = new HashMap<>();
                 expectedMap.put("name", "Scott Tiger");
                 assertEquals(expectedMap, subdict.toMap());
 
@@ -174,7 +175,7 @@ public class ArrayTest extends BaseTest{
                 assertEquals(expected, subarray.toList());
 
                 // blob
-                Blob blob = (Blob)a.getObject(11);
+                Blob blob = (Blob) a.getObject(11);
                 assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
                 assertEquals(kArrayTestBlob, new String(blob.getContent()));
             }
@@ -182,7 +183,7 @@ public class ArrayTest extends BaseTest{
     }
 
     @Test
-    public void testAddObjectsToExistingArray(){
+    public void testAddObjectsToExistingArray() {
         Array array = new Array();
         populateData(array);
 
@@ -201,29 +202,29 @@ public class ArrayTest extends BaseTest{
         populateData(array);
         assertEquals(24, array.count());
 
-        save(doc, "array", array, new Validator<Array>(){
+        save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
                 assertEquals(24, a.count());
 
-                assertEquals(true, a.getObject(12+0));
-                assertEquals(false, a.getObject(12+1));
-                assertEquals("string", a.getObject(12+2));
-                assertEquals(0, a.getObject(12+3));
-                assertEquals(1, a.getObject(12+4));
-                assertEquals(-1, a.getObject(12+5));
-                assertEquals(1.1, a.getObject(12+6));
-                assertEquals(kArrayTestDate, a.getObject(12+7));
-                assertEquals(null, a.getObject(12+8));
+                assertEquals(true, a.getObject(12 + 0));
+                assertEquals(false, a.getObject(12 + 1));
+                assertEquals("string", a.getObject(12 + 2));
+                assertEquals(0, a.getObject(12 + 3));
+                assertEquals(1, a.getObject(12 + 4));
+                assertEquals(-1, a.getObject(12 + 5));
+                assertEquals(1.1, a.getObject(12 + 6));
+                assertEquals(kArrayTestDate, a.getObject(12 + 7));
+                assertEquals(null, a.getObject(12 + 8));
 
                 // dictionary
-                Dictionary subdict = (Dictionary) a.getObject(12+9);
-                Map<String,Object> expectedMap = new HashMap<>();
+                Dictionary subdict = (Dictionary) a.getObject(12 + 9);
+                Map<String, Object> expectedMap = new HashMap<>();
                 expectedMap.put("name", "Scott Tiger");
                 assertEquals(expectedMap, subdict.toMap());
 
                 // array
-                Array subarray = (Array) a.getObject(12+10);
+                Array subarray = (Array) a.getObject(12 + 10);
                 List<Object> expected = new ArrayList<>();
                 expected.add("a");
                 expected.add("b");
@@ -231,10 +232,176 @@ public class ArrayTest extends BaseTest{
                 assertEquals(expected, subarray.toList());
 
                 // blob
-                Blob blob = (Blob)a.getObject(12+11);
+                Blob blob = (Blob) a.getObject(12 + 11);
                 assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
                 assertEquals(kArrayTestBlob, new String(blob.getContent()));
             }
         });
+    }
+
+    @Test
+    public void testSetObject() {
+        List<Object> data = arrayOfAllTypes();
+
+        // Prepare CBLArray with NSNull placeholders:
+        Array array = new Array();
+        for (int i = 0; i < data.size(); i++)
+            array.add(null);
+
+        // Set object at index:
+        for (int i = 0; i < data.size(); i++)
+            array.set(i, data.get(i));
+
+        Document doc = new Document("doc1");
+        save(doc, "array", array, new Validator<Array>() {
+            @Override
+            public void validate(Array a) {
+                assertEquals(12, a.count());
+
+                assertEquals(true, a.getObject(0));
+                assertEquals(false, a.getObject(1));
+                assertEquals("string", a.getObject(2));
+                assertEquals(0, a.getObject(3));
+                assertEquals(1, a.getObject(4));
+                assertEquals(-1, a.getObject(5));
+                assertEquals(1.1, a.getObject(6));
+                assertEquals(kArrayTestDate, a.getObject(7));
+                assertEquals(null, a.getObject(8));
+
+                // dictionary
+                Dictionary subdict = (Dictionary) a.getObject(9);
+                Map<String, Object> expectedMap = new HashMap<>();
+                expectedMap.put("name", "Scott Tiger");
+                assertEquals(expectedMap, subdict.toMap());
+
+                // array
+                Array subarray = (Array) a.getObject(10);
+                List<Object> expected = new ArrayList<>();
+                expected.add("a");
+                expected.add("b");
+                expected.add("c");
+                assertEquals(expected, subarray.toList());
+
+                // blob
+                Blob blob = (Blob) a.getObject(11);
+                assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
+                assertEquals(kArrayTestBlob, new String(blob.getContent()));
+            }
+        });
+    }
+
+    @Test
+    public void testSetObjectToExistingArray() {
+        //TODO
+    }
+
+    @Test
+    public void testSetObjectOutOfBound() {
+        //TODO
+    }
+
+    @Test
+    public void testInsertObject() {
+        //TODO
+    }
+
+    @Test
+    public void testInsertObjectToExistingArray() {
+        //TODO
+    }
+
+    @Test
+    public void testInsertObjectOutOfBound() {
+        //TODO
+    }
+
+    @Test
+    public void testRemove() {
+        //TODO
+    }
+
+    @Test
+    public void testRemoveExistingArray() {
+        //TODO
+    }
+
+    @Test
+    public void testRemoveOutOfBound() {
+        //TODO
+    }
+
+    @Test
+    public void testCount() {
+        //TODO
+    }
+
+    @Test
+    public void testGetString() {
+        //TODO
+    }
+
+    @Test
+    public void testGetNumber() {
+        //TODO
+    }
+
+    @Test
+    public void testGetInteger() {
+        //TODO
+    }
+
+    @Test
+    public void testGetFloat() {
+        //TODO
+    }
+
+    @Test
+    public void testGetDouble() {
+        //TODO
+    }
+
+    @Test
+    public void testSetGetMinMaxNumbers() {
+        //TODO
+    }
+
+    @Test
+    public void testSetGetFloatNumbers() {
+        //TODO
+    }
+
+    @Test
+    public void testGetBoolean() {
+        //TODO
+    }
+
+    @Test
+    public void testGetDate() {
+        //TODO
+    }
+
+    @Test
+    public void testGetDictionary() {
+        //TODO
+    }
+
+    @Test
+    public void testGetArray() {
+        //TODO
+    }
+
+    @Test
+    public void testSetNestedArray() {
+        //TODO
+    }
+
+    @Test
+    public void testReplaceArray() {
+        //TODO
+    }
+
+    @Test
+    public void testReplaceArrayDifferentType() {
+        //TODO
     }
 }

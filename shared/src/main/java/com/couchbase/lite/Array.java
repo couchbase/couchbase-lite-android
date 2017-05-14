@@ -56,7 +56,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     @Override
     public Array set(int index, Object value) {
         Object oldValue = getObject(index);
-        if (!value.equals(oldValue)) {
+        if ((value != null && !value.equals(oldValue)) || (value == null && oldValue != null)) {
             value = CBLData.convert(value, this);
             detachChangeListenerForObject(oldValue);
             set(index, value, true);
