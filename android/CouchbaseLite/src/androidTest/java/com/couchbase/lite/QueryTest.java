@@ -13,8 +13,22 @@
  */
 package com.couchbase.lite;
 
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 public class QueryTest extends BaseTest {
-    /*
+
     private interface QueryResult {
         void check(long n, QueryRow row) throws Exception;
     }
@@ -39,8 +53,8 @@ public class QueryTest extends BaseTest {
                     Document doc = db.getDocument("doc" + i);
                     doc.set("number1", i);
                     doc.set("number2", num - i);
-                    doc.save();
-                    numbers.add(doc.getProperties());
+                    db.save(doc);
+                    numbers.add(doc.toMap());
                 }
             }
         });
@@ -86,7 +100,7 @@ public class QueryTest extends BaseTest {
                 assertEquals(expectedID, row.getDocumentID());
                 assertEquals(n, row.getSequence());
                 Document doc = row.getDocument();
-                assertEquals(expectedID, doc.getID());
+                assertEquals(expectedID, doc.getId());
                 assertEquals(n, doc.getSequence());
             }
         });
@@ -145,15 +159,15 @@ public class QueryTest extends BaseTest {
 
     public void failingTestWhereCheckNull() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
-        Document doc1 = db.getDocument("doc1");
+        Document doc1 = new Document("doc1");
         doc1.set("name", "Scott");
         doc1.set("address", null);
-        doc1.save();
+        db.save(doc1);
 
-        Document doc2 = db.getDocument("doc2");
+        Document doc2 = new Document("doc2");
         doc2.set("name", "Tiger");
         doc2.set("address", "123 1st ave.");
-        doc2.save();
+        db.save(doc2);
 
         Expression name = Expression.property("name");
         Expression address = Expression.property("address");
@@ -190,9 +204,9 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testWhereIs() throws Exception {
-        final Document doc1 = db.getDocument();
+        final Document doc1 = new Document();
         doc1.set("string", "string");
-        doc1.save();
+        db.save(doc1);
 
         Query q;
         int numRows;
@@ -206,8 +220,8 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                assertEquals(doc1.getID(), doc.getID());
-                assertEquals(doc1.get("string"), doc.get("string"));
+                assertEquals(doc1.getId(), doc.getId());
+                assertEquals(doc1.getObject("string"), doc.getObject("string"));
             }
         });
         assertEquals(1, numRows);
@@ -221,8 +235,8 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                assertEquals(doc1.getID(), doc.getID());
-                assertEquals(doc1.get("string"), doc.get("string"));
+                assertEquals(doc1.getId(), doc.getId());
+                assertEquals(doc1.getObject("string"), doc.getObject("string"));
             }
         });
         assertEquals(1, numRows);
@@ -254,7 +268,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                Map<String, Object> name = (Map<String, Object>) doc.get("name");
+                Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
@@ -283,7 +297,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                Map<String, Object> name = (Map<String, Object>) doc.get("name");
+                Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
@@ -338,7 +352,7 @@ public class QueryTest extends BaseTest {
                 @Override
                 public void check(long n, QueryRow row) throws Exception {
                     Document doc = row.getDocument();
-                    Map<String, Object> name = (Map<String, Object>) doc.get("name");
+                    Map<String, Object> name = doc.getDictionary("name").toMap();
                     String firstName = (String) name.get("first");
                     firstNames.add(firstName);
                 }
@@ -360,22 +374,21 @@ public class QueryTest extends BaseTest {
 
     public void failingTestSelectDistinct() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1669
-        final Document doc1 = db.getDocument();
+        final Document doc1 = new Document();
         doc1.set("number", 1);
-        doc1.save();
+        db.save(doc1);
 
-        Document doc2 = db.getDocument();
+        Document doc2 = new Document();
         doc2.set("number", 1);
-        doc2.save();
+        db.save(doc2);
 
         Query q = Query.selectDistinct().from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(long n, QueryRow row) throws Exception {
-                assertEquals(doc1.getID(), row.getDocumentID());
+                assertEquals(doc1.getId(), row.getDocumentID());
             }
         });
         assertEquals(1, numRows);
     }
-    */
 }

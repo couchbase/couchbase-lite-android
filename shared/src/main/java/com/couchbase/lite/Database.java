@@ -18,6 +18,7 @@ import android.os.Looper;
 
 import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.litecore.C4DatabaseChange;
 import com.couchbase.litecore.C4DatabaseObserver;
 import com.couchbase.litecore.C4DatabaseObserverListener;
@@ -25,6 +26,8 @@ import com.couchbase.litecore.C4DocumentObserver;
 import com.couchbase.litecore.C4DocumentObserverListener;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.NativeLibraryLoader;
+
+import org.json.JSONException;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -367,51 +370,51 @@ public final class Database {
 
     // TODO: Following methods should go somewhere.
 
-//    /**
-//     * Creates a value index (type IndexType.Value) on the given expressions. This will
-//     * speed up queries that queries that test the expressions, at the expense of making
-//     * database writes a little bit slower.
-//     *
-//     * @param expressions Expressions to index, typically property expressions.
-//     * @throws CouchbaseLiteException if there is an error occurred.
-//     */
-//    public void createIndex(List<Expression> expressions) throws CouchbaseLiteException {
-//        createIndex(expressions, IndexType.Value, null);
-//    }
-//
-//    /**
-//     * Creates an index based on the given expressions, index type, and index config. This will
-//     * speed up queries that queries that test the expressions, at the expense of making
-//     * database writes a little bit slower.
-//     *
-//     * @param expressions Expressions to index, typically property expressions.
-//     * @param type        Type of index to create (Value, FullText or Geo.)
-//     * @param options     Options affecting the index, or {@code null} for default settings.
-//     * @throws CouchbaseLiteException if there is an error occurred.
-//     */
-//
-//    public void createIndex(List<Expression> expressions,
-//                            IndexType type,
-//                            IndexOptions options) throws CouchbaseLiteException {
-//        if (expressions == null)
-//            throw new IllegalArgumentException("expressions parameter cannot be null");
-//
-//        List<Object> list = new ArrayList<Object>();
-//        for (Expression exp : expressions) {
-//            list.add(exp.asJSON());
-//        }
-//
-//        try {
-//            String json = JsonUtils.toJson(list).toString();
-//            String language = options != null ? options.getLanguage() : null;
-//            boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
-//            c4db.createIndex(json, type.getValue(), language, ignoreDiacritics);
-//        } catch (JSONException e) {
-//            throw new CouchbaseLiteException(e);
-//        } catch (LiteCoreException e) {
-//            throw LiteCoreBridge.convertException(e);
-//        }
-//    }
+    /**
+     * Creates a value index (type IndexType.Value) on the given expressions. This will
+     * speed up queries that queries that test the expressions, at the expense of making
+     * database writes a little bit slower.
+     *
+     * @param expressions Expressions to index, typically property expressions.
+     * @throws CouchbaseLiteException if there is an error occurred.
+     */
+    public void createIndex(List<Expression> expressions) throws CouchbaseLiteException {
+        createIndex(expressions, IndexType.Value, null);
+    }
+
+    /**
+     * Creates an index based on the given expressions, index type, and index config. This will
+     * speed up queries that queries that test the expressions, at the expense of making
+     * database writes a little bit slower.
+     *
+     * @param expressions Expressions to index, typically property expressions.
+     * @param type        Type of index to create (Value, FullText or Geo.)
+     * @param options     Options affecting the index, or {@code null} for default settings.
+     * @throws CouchbaseLiteException if there is an error occurred.
+     */
+
+    public void createIndex(List<Expression> expressions,
+                            IndexType type,
+                            IndexOptions options) throws CouchbaseLiteException {
+        if (expressions == null)
+            throw new IllegalArgumentException("expressions parameter cannot be null");
+
+        List<Object> list = new ArrayList<Object>();
+        for (Expression exp : expressions) {
+            list.add(exp.asJSON());
+        }
+
+        try {
+            String json = JsonUtils.toJson(list).toString();
+            String language = options != null ? options.getLanguage() : null;
+            boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
+            c4db.createIndex(json, type.getValue(), language, ignoreDiacritics);
+        } catch (JSONException e) {
+            throw new CouchbaseLiteException(e);
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
 
 
     //---------------------------------------------
