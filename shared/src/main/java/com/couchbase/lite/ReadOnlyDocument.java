@@ -95,14 +95,10 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         this.c4doc = c4doc;
     }
 
-    //---------------------------------------------
-    // Private (in class only)
-    //---------------------------------------------
-
     /**
      * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
      */
-    private static long generationFromRevID(String revID) {
+    /* package */ static long generationFromRevID(String revID) {
         long generation = 0;
         long length = Math.min(revID == null ? 0 : revID.length(), 9);
         for (int i = 0; i < length; ++i) {
@@ -116,4 +112,9 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         }
         return 0;
     }
+    //---------------------------------------------
+    // Private (in class only)
+    //---------------------------------------------
+
+
 }

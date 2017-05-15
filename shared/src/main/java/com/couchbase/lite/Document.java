@@ -175,8 +175,9 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return dictionary.contains(key);
     }
 
+    // TODO: Once Iterable is implemented, change back to package level accessor
     @Override
-    /* package */List<String> allKeys() {
+    public List<String> allKeys() {
         return dictionary.allKeys();
     }
 
@@ -292,13 +293,12 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
                     throw LiteCoreBridge.convertException(e);
             }
             if (newDoc == null) {
-                //TODO
-                /*
+
                 // There's been a conflict; first merge with the new saved revision:
                 merge(resolver, deletion);
 
                 // The merge might have turned the save into a no-op:
-                if (!hasChanges)
+                if (!isChanged())
                     return;
 
                 // Now save the merged properties:
@@ -307,7 +307,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
                 } catch (LiteCoreException e) {
                     throw LiteCoreBridge.convertException(e);
                 }
-                */
             }
 
             commit = true;
@@ -325,60 +324,60 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         setC4Doc(new CBLC4Doc(newDoc));
     }
 
-//    private void merge(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
-//        com.couchbase.litecore.Document currentDoc = database.read(id, true);
-//
-//        Map<String, Object> current = null;
-//        try {
-//            // TODO: better to return C4String instead of byte[]
-//            //       This part of code is not efficient.
-//            byte[] currentData = currentDoc.getSelectedBody();
-//            if (currentData.length > 0) {
-//                FLValue currentRoot = FLValue.fromData(currentData);
-//                SharedKeys currentKeys = new SharedKeys(this.sharedKeys, currentRoot.asFLDict());
-//                current = (Map<String, Object>) SharedKeys.valueToObject(currentRoot, currentKeys);
-//                Log.e(Log.DATABASE, "merge() current -> " + current);
-//                // TODO: Need currentRoot.free()?
-//            }
-//        } catch (LiteCoreException e) {
-//            throw LiteCoreBridge.convertException(e);
-//        }
-//
-//        Map<String, Object> resolved = null;
-//        if (deletion) {
-//            // Deletion always losses a conflit
-//            resolved = current;
-//        } else if (resolver != null) {
-//            // Call the custom conflict resolver
-//            resolved = resolver.resolve(
-//                    getProperties() != null ? getProperties() : new HashMap<String, Object>(),
-//                    current != null ? current : new HashMap<String, Object>(),
-//                    getSavedProperties());
-//            if (resolved == null) {
-//                // Resolver gave up:
-//                currentDoc.free();
-//                throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
-//            }
-//        } else {
-//            // Default resolution algorithm is "most active wins", i.e. higher generation number.
-//            // TODO: Once conflict resolvers can access the document generation, move this logic
-//            //       into a default ConflictResolver.
-//            long myGeneraton = generation() + 1;
-//            long theirGeneration = generationFromRevID(currentDoc.getRevID());
-//            if (myGeneraton >= theirGeneration)
-//                resolved = getProperties();
-//            else
-//                resolved = current;
-//        }
-//
-//        // Now update my state to the current C4Document and the merged/resolved properties:
-//        setC4Doc(currentDoc);
-//        this.setProperties(resolved);
-//        // NOTE: AbstractMap.equals() calls all values in the map. Nested data's equality check is
-//        // depends on its implementation.
-//        if (resolved.equals(current))
-//            this.setHasChanges(false); // Document is now identical to current revision
-//    }
+    private void merge(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
+        com.couchbase.litecore.Document rawDoc = database.read(getId(), true);
+
+        FLDict curRoot = null;
+        try {
+            byte[] currentData = rawDoc.getSelectedBody();
+            if (currentData.length > 0)
+                curRoot = FLValue.fromData(currentData).asFLDict();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+
+        CBLC4Doc curC4doc = new CBLC4Doc(rawDoc);
+        CBLFLDict curDict = new CBLFLDict(curRoot, curC4doc, database);
+        ReadOnlyDocument current = new ReadOnlyDocument(getId(), curC4doc, curDict);
+
+        // Resolve conflict:
+        ReadOnlyDocument resolved;
+        if (deletion) {
+            // Deletion always loses a conflict:
+            resolved = current;
+        } else if (resolver != null) {
+            // Call the custom conflict resolver
+            ReadOnlyDocument base = new ReadOnlyDocument(getId(), super.getC4doc(), super.getData());
+            Conflict conflict = new Conflict(this, current, base, Conflict.OperationType.kCBLDatabaseWrite);
+            resolved = resolver.resolve(conflict);
+            if(resolved == null) {
+                rawDoc.free();
+                throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
+            }
+        } else {
+            // Default resolution algorithm is "most active wins", i.e. higher generation number.
+            // TODO: Once conflict resolvers can access the document generation, move this logic
+            //       into a default ConflictResolver.
+            long myGeneraton = generation() + 1;
+            long theirGeneration = generationFromRevID(curC4doc.getRevID());
+            if (myGeneraton >= theirGeneration)
+                resolved = this;
+            else
+                resolved = current;
+        }
+
+        // Now update my state to the current C4Document and the merged/resolved properties:
+
+        // NOTE: AbstractMap.equals() calls all values in the map. Nested data's equality check is
+        // depends on its implementation.
+        if (!resolved.equals(current)) {
+            Map map = resolved.toMap();
+            setC4Doc(curC4doc);
+            set(map);
+        } else {
+            setC4Doc(curC4doc);
+        }
+    }
 
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */

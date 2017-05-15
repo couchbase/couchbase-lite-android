@@ -148,7 +148,8 @@ import java.util.Map;
     // Package level access
     //---------------------------------------------
 
-    /* package */ List<String> allKeys() {
+    // TODO: Once Iterable is implemented. This method should be changed to package level access
+    public List<String> allKeys() {
         List<String> keys = new ArrayList<>();
         if (flDict != null) {
             FLDictIterator itr = new FLDictIterator();

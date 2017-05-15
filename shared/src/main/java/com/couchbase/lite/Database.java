@@ -73,8 +73,6 @@ public final class Database {
     // TODO: class name is conflicting between API level and LiteCore
     private com.couchbase.litecore.Database c4db;
 
-    private ConflictResolver conflictResolver;
-
     private Set<DatabaseChangeListener> dbChangeListeners;
     private C4DatabaseObserver c4DBObserver;
     private Map<String, Set<DocumentChangeListener>> docChangeListeners;
@@ -370,27 +368,6 @@ public final class Database {
     // TODO: Following methods should go somewhere.
 
 //    /**
-//     * Return the conflict resolver for this database
-//     *
-//     * @return the conflict resolver for this database
-//     */
-//    public ConflictResolver getConflictResolver() {
-//        return conflictResolver;
-//    }
-//
-//    /**
-//     * Set the conflict resolver for this database. If null, a default algorithm will be used, where
-//     * the revision with more history wins.
-//     *
-//     * @param conflictResolver the conflict resolver for this database
-//     */
-//    public void setConflictResolver(ConflictResolver conflictResolver) {
-//        this.conflictResolver = conflictResolver;
-//    }
-//
-//
-//
-//    /**
 //     * Creates a value index (type IndexType.Value) on the given expressions. This will
 //     * speed up queries that queries that test the expressions, at the expense of making
 //     * database writes a little bit slower.
@@ -461,7 +438,8 @@ public final class Database {
     //---------------------------------------------
 
     public ConflictResolver getConflictResolver() {
-        return conflictResolver;
+        return config != null ? config.getConflictResolver() : null;
+        //return conflictResolver;
     }
 
     long documentCount() {

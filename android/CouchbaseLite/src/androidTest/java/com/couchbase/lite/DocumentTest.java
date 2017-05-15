@@ -18,56 +18,7 @@ public class DocumentTest extends BaseTest {
     private static final String TAG = DocumentTest.class.getName();
     protected Document doc = null;
 
-    static class TheirsWins implements ConflictResolver {
-        @Override
-        public Map<String, Object> resolve(Map<String, Object> mine,
-                                           Map<String, Object> theirs,
-                                           Map<String, Object> base) {
-            return theirs;
-        }
-    }
 
-    static class MergeThenTheirsWins implements ConflictResolver {
-        @Override
-        public Map<String, Object> resolve(Map<String, Object> mine,
-                                           Map<String, Object> theirs,
-                                           Map<String, Object> base) {
-            Map<String, Object> resolved = new HashMap<>(base);
-            Set<String> changed = new HashSet<>();
-
-            for (Map.Entry<String, Object> entry : theirs.entrySet()) {
-                resolved.put(entry.getKey(), entry.getValue());
-                changed.add(entry.getKey());
-            }
-
-            for (Map.Entry<String, Object> entry : mine.entrySet()) {
-                if (!changed.contains(entry.getKey())) {
-                    resolved.put(entry.getKey(), entry.getValue());
-                }
-            }
-
-            return resolved;
-        }
-    }
-
-    static class GiveUp implements ConflictResolver {
-        @Override
-        public Map<String, Object> resolve(Map<String, Object> mine,
-                                           Map<String, Object> theirs,
-                                           Map<String, Object> base) {
-            return null;
-        }
-    }
-
-    static class DoNotResolve implements ConflictResolver {
-        @Override
-        public Map<String, Object> resolve(Map<String, Object> mine,
-                                           Map<String, Object> theirs,
-                                           Map<String, Object> base) {
-            fail("Resolver should not have been called!");
-            return null;
-        }
-    }
 
     @Before
     public void setUp() {
@@ -446,80 +397,7 @@ public class DocumentTest extends BaseTest {
         assertEquals("str", doc.get("string"));
     }
 
-    @Test
-    public void testConflict() {
-        db.setConflictResolver(new TheirsWins());
-        doc = setupConflict();
-        doc.save();
-        assertEquals("Scotty", doc.get("name"));
 
-        // Get a new document with its own conflict resolver
-        doc = db.getDocument("doc2");
-        db.setConflictResolver(new MergeThenTheirsWins());
-        doc.set("type", "profile");
-        doc.set("name", "Scott");
-        doc.save();
-
-        // Force a conflict again
-        Map<String, Object> properties = new HashMap<>(doc.getProperties());
-        properties.put("type", "bio");
-        properties.put("gender", "male");
-        save(properties, doc.getID());
-
-        // Save and make sure that the correct conflict resolver won
-        doc.set("type", "biography");
-        doc.set("age", "31");
-        doc.save();
-        assertEquals("31", doc.get("age"));
-        assertEquals("bio", doc.get("type"));
-        assertEquals("male", doc.get("gender"));
-        assertEquals("Scott", doc.get("name"));
-    }
-
-    @Test
-    public void testConflictResolverGivesUp() {
-        db.setConflictResolver(new GiveUp());
-        doc = setupConflict();
-        try {
-            doc.save();
-            fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(LiteCoreDomain, e.getDomain());
-            assertEquals(kC4ErrorConflict, e.getCode());
-            assertTrue(doc.hasChanges);
-        }
-    }
-
-    @Test
-    public void testDeletionConflict() {
-        db.setConflictResolver(new DoNotResolve());
-        doc = setupConflict();
-        doc.delete();
-        assertTrue(doc.exists());
-        assertFalse(doc.isDeleted());
-        assertEquals("Scotty", doc.get("name"));
-    }
-
-    @Test
-    public void testConflictMineIsDeeper() {
-        db.setConflictResolver(null);
-        doc = setupConflict();
-        doc.save();
-        assertEquals("Scott Pilgrim", doc.get("name"));
-    }
-
-    @Test
-    public void testConflictTheirsIsDeeper() {
-        db.setConflictResolver(null);
-        doc = setupConflict();
-
-        // Add another revision to the conflict, so it'll have a higher generation:
-        Map<String, Object> properties = new HashMap<>(doc.getProperties());
-        properties.put("name", "Scott of the Sahara");
-        save(properties, doc.getID());
-        doc.save();
-        assertEquals("Scott of the Sahara", doc.get("name"));
-    }
 
     @Test
     public void testBlob() throws CouchbaseLiteException, IOException {
@@ -773,42 +651,6 @@ public class DocumentTest extends BaseTest {
         assertEquals(100, db.internal().getDocumentCount());
     }
 
-    //---------------------------------------------
-    // Private (in class only)
-    //---------------------------------------------
-    private Document setupConflict() {
-        // Setup a default database conflict resolver
-        doc.set("type", "profile");
-        doc.set("name", "Scott");
-        doc.save();
 
-        // Force a conflict
-        Map<String, Object> properties = new HashMap<>(doc.getProperties());
-        properties.put("name", "Scotty");
-        save(properties, doc.getID());
-
-        // Change document in memory, so save will trigger a conflict
-        doc.set("name", "Scott Pilgrim");
-        return doc;
-    }
-
-    private void save(final Map<String, Object> props, final String docID) {
-        db.inBatch(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    com.couchbase.litecore.Document trickey = db.internal().getDocument(docID, true);
-                    FLEncoder enc = db.internal().createFleeceEncoder();
-                    enc.writeValue(props);
-                    byte[] bytes = enc.finish();
-                    com.couchbase.litecore.Document newDoc = db.internal().put(docID, bytes, false, false, (String[]) Arrays.asList(trickey.getRevID()).toArray(), 0, true, 0);
-                    assertNotNull(newDoc);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error in Runnable.run()", e);
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-    }
     */
 }

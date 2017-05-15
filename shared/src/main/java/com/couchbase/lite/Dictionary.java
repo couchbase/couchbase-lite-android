@@ -232,7 +232,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     // protected level access
     //---------------------------------------------
 
-    /* package */ List<String> allKeys() {
+    // TODO: Once Iterable is implemented, change back to package level accessor
+    public List<String> allKeys() {
         List<String> result = map != null ? new ArrayList<String>(map.keySet()) : new ArrayList<String>();
         for (String key : super.allKeys()) {
             if (!result.contains(key))
