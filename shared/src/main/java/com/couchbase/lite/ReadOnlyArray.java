@@ -33,8 +33,8 @@ import java.util.List;
     //---------------------------------------------
 
     @Override
-    public long count() {
-        return flArray != null ? flArray.count() : 0;
+    public int count() {
+        return flArray != null ? (int) flArray.count() : 0;
     }
 
     @Override

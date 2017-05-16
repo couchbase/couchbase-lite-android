@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChangeListener, FleeceEncodable {
     //---------------------------------------------
@@ -89,12 +90,14 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
 
     @Override
     public Array getArray(int index) {
-        return (Array) getObject(index);
+        Object value = getObject(index);
+        return (value instanceof  Array) ? (Array) value : null;
     }
 
     @Override
     public Dictionary getDictionary(int index) {
-        return (Dictionary) getObject(index);
+        Object value = getObject(index);
+        return (value instanceof  Dictionary) ? (Dictionary) value : null;
     }
 
     //---------------------------------------------
@@ -102,7 +105,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     //---------------------------------------------
 
     @Override
-    public long count() {
+    public int count() {
         return list != null ? list.size() : 0;
     }
 
@@ -113,32 +116,44 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
 
     @Override
     public String getString(int index) {
-        return (String) getObject(index);
+        try {
+            return (String) getObject(index);
+        } catch (ClassCastException ex) {
+            return null;
+        }
     }
 
     @Override
     public Number getNumber(int index) {
-        return (Number) getObject(index);
+        try {
+            return (Number) getObject(index);
+        } catch (ClassCastException ex) {
+            return null;
+        }
     }
 
     @Override
     public int getInt(int index) {
-        return getNumber(index).intValue();
+        Number num =  getNumber(index);
+        return  num != null ? num.intValue() : 0;
     }
 
     @Override
     public long getLong(int index) {
-        return getNumber(index).longValue();
+        Number num =  getNumber(index);
+        return  num != null ? num.longValue() : 0;
     }
 
     @Override
     public float getFloat(int index) {
-        return getNumber(index).floatValue();
+        Number num =  getNumber(index);
+        return  num != null ? num.floatValue() : 0;
     }
 
     @Override
     public double getDouble(int index) {
-        return getNumber(index).doubleValue();
+        Number num =  getNumber(index);
+        return  num != null ? num.doubleValue() : 0;
     }
 
     @Override

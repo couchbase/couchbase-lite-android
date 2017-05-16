@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 /* package */ interface ReadOnlyArrayInterface {
-    long count();
+    int count();
 
     Object getObject(int index);
 
