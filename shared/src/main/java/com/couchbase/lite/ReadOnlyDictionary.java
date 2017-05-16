@@ -21,6 +21,7 @@ import java.util.Map;
     private CBLFLDict data;
     private FLDict flDict;
     private SharedKeys sharedKeys;
+    List<String> keys = null; // dictionary key cache
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -150,16 +151,21 @@ import java.util.Map;
 
     // TODO: Once Iterable is implemented. This method should be changed to package level access
     public List<String> allKeys() {
-        List<String> keys = new ArrayList<>();
-        if (flDict != null) {
-            FLDictIterator itr = new FLDictIterator();
-            itr.begin(flDict);
-            String key;
-            while ((key = itr.getKey().asString()) != null) {
-                keys.add(key);
-                itr.next();
+        if (keys == null) {
+            List<String> results = new ArrayList<>();
+            if (flDict != null) {
+                FLDictIterator itr = new FLDictIterator();
+                itr.begin(flDict);
+                String key;
+                while ((key = SharedKeys.getKey(itr, this.sharedKeys)) != null) {
+                //while ((key = itr.getKey().asString()) != null) {
+                    results.add(key);
+                    itr.next();
+                }
+                itr.free();
             }
-            itr.free();
+
+            keys = results;
         }
         return keys;
     }

@@ -16,6 +16,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     private Map<String, Object> map = null;
     Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
+    List<String> keys = null; // dictionary key cache
 
     //---------------------------------------------
     // Constructors
@@ -61,10 +62,12 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     @Override
     public Dictionary set(String key, Object value) {
         Object oldValue = getObject(key);
-        if ((value != null && !value.equals(oldValue)) || (value == null && oldValue != null)) {
+        //if ((value != null && !value.equals(oldValue)) || (value == null && oldValue != null)) {
+        if ((value != null && !value.equals(oldValue)) || value == null) {
             value = CBLData.convert(value, this);
             detachChangeListenerForObject(oldValue);
             set(key, value, true);
+            keys = null; // Reset key cache
         }
         return this;
     }
@@ -274,15 +277,18 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
     // TODO: Once Iterable is implemented, change back to package level accessor
     public List<String> allKeys() {
-        List<String> result = map != null ? new ArrayList<String>(map.keySet()) : new ArrayList<String>();
-        for (String key : super.allKeys()) {
-            if (!result.contains(key))
-                result.add(key);
+        if(keys == null) {
+            List<String> result = map != null ? new ArrayList<>(map.keySet()) : new ArrayList<String>();
+            for (String key : super.allKeys()) {
+                if (!result.contains(key))
+                    result.add(key);
+            }
+
+            //TODO -  kCBLRemovedValue
+
+            keys = result;
         }
-
-        //TODO -  kCBLRemovedValue
-
-        return result;
+        return keys;
     }
 
     //---------------------------------------------
