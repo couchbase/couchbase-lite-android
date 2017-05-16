@@ -62,7 +62,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     public Dictionary set(String key, Object value) {
         Object oldValue = getObject(key);
         if ((value != null && !value.equals(oldValue)) || (value == null && oldValue != null)) {
-            value = CBLData.convert(value, null);
+            value = CBLData.convert(value, this);
             detachChangeListenerForObject(oldValue);
             set(key, value, true);
         }

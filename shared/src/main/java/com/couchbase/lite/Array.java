@@ -187,11 +187,15 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     // Package level access
     //---------------------------------------------
     /*package*/ void addChangeListener(ObjectChangeListener listener) {
+        if(listener==null)
+            System.out.println("listenr is null");
         int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
         changeListeners.put(listener, count + 1);
     }
 
     /*package*/ void removeChangeListener(ObjectChangeListener listener) {
+        if(listener==null)
+            System.out.println("listenr is null");
         int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
         if (count > 1)
             changeListeners.put(listener, count - 1);
