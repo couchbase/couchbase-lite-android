@@ -116,6 +116,19 @@ public class BaseTest {
         }
     }
 
+    protected Document createDocument(String id) {
+        return new Document(id);
+    }
+
+    protected Document createDocument(String id, Map<String, Object> map) {
+        return new Document(id, map);
+    }
+
+    protected Document save(Document doc) {
+        db.save(doc);
+        return db.getDocument(doc.getId());
+    }
+
     interface Validator<T> {
         void validate(final T doc);
     }

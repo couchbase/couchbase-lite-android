@@ -77,12 +77,11 @@ public class ArrayTest extends BaseTest {
         assertEquals(0, array.count());
         assertEquals(new ArrayList<>(), array.toList());
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("array", array);
         assertEquals(array, doc.getArray("array"));
 
-        db.save(doc);
-        doc = db.getDocument("doc1");
+        doc = save(doc);
         assertEquals(new ArrayList<>(), doc.getArray("array").toList());
     }
 
@@ -96,12 +95,11 @@ public class ArrayTest extends BaseTest {
         assertEquals(3, array.count());
         assertEquals(data, array.toList());
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("array", array);
         assertEquals(array, doc.getArray("array"));
 
-        db.save(doc);
-        doc = db.getDocument("doc1");
+        doc = save(doc);
         assertEquals(data, doc.getArray("array").toList());
     }
 
@@ -116,13 +114,12 @@ public class ArrayTest extends BaseTest {
         assertEquals(3, array.count());
         assertEquals(data, array.toList());
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("array", array);
         assertEquals(array, doc.getArray("array"));
 
         // save
-        db.save(doc);
-        doc = db.getDocument("doc1");
+        doc = save(doc);
         assertEquals(data, doc.getArray("array").toList());
 
         // update
@@ -144,7 +141,7 @@ public class ArrayTest extends BaseTest {
         // Add objects of all types:
         populateData(array);
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -188,10 +185,9 @@ public class ArrayTest extends BaseTest {
         populateData(array);
 
         // Save
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("array", array);
-        db.save(doc);
-        doc = db.getDocument("doc1");
+        doc = save(doc);
 
         // Get an existing array:
         array = doc.getArray("array");
@@ -252,7 +248,7 @@ public class ArrayTest extends BaseTest {
         for (int i = 0; i < data.size(); i++)
             array.set(i, data.get(i));
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -292,7 +288,8 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetObjectToExistingArray() {
-        //TODO
+        Array array = new Array();
+        populateData(array);
     }
 
     @Test
