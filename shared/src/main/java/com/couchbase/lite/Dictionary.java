@@ -61,7 +61,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     @Override
     public Dictionary set(String key, Object value) {
         Object oldValue = getObject(key);
-        if (!value.equals(oldValue)) {
+        if ((value != null && !value.equals(oldValue)) || (value == null && oldValue != null)) {
             value = CBLData.convert(value, null);
             detachChangeListenerForObject(oldValue);
             set(key, value, true);
@@ -76,12 +76,20 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
     @Override
     public Array getArray(String key) {
-        return (Array) getObject(key);
+        try {
+            return (Array) getObject(key);
+        } catch (ClassCastException ex) {
+            return null;
+        }
     }
 
     @Override
     public Dictionary getDictionary(String key) {
-        return (Dictionary) getObject(key);
+        try {
+            return (Dictionary) getObject(key);
+        } catch (ClassCastException ex) {
+            return null;
+        }
     }
 
     @Override
@@ -125,12 +133,20 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
     @Override
     public String getString(String key) {
-        return (String) getObject(key);
+        try {
+            return (String) getObject(key);
+        } catch (ClassCastException ex) {
+            return null;
+        }
     }
 
     @Override
     public Number getNumber(String key) {
-        return (Number) getObject(key);
+        try {
+            return (Number) getObject(key);
+        } catch (ClassCastException ex) {
+            return null;
+        }
     }
 
     @Override
@@ -138,8 +154,13 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         Object value = map == null ? null : map.get(key);
         if (value == null)
             return super.getInt(key);
-        else
-            return ((Number) value).intValue();
+        else {
+            try {
+                return ((Number) value).intValue();
+            } catch (ClassCastException ex) {
+                return 0;
+            }
+        }
     }
 
     @Override
@@ -147,8 +168,13 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         Object value = map == null ? null : map.get(key);
         if (value == null)
             return super.getLong(key);
-        else
-            return ((Number) value).longValue();
+        else {
+            try {
+                return ((Number) value).longValue();
+            } catch (ClassCastException ex) {
+                return 0L;
+            }
+        }
     }
 
     @Override
@@ -156,8 +182,13 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         Object value = map == null ? null : map.get(key);
         if (value == null)
             return super.getFloat(key);
-        else
-            return ((Number) value).floatValue();
+        else {
+            try {
+                return ((Number) value).floatValue();
+            } catch (ClassCastException ex) {
+                return 0.0F;
+            }
+        }
     }
 
     @Override
@@ -165,8 +196,13 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         Object value = map == null ? null : map.get(key);
         if (value == null)
             return super.getDouble(key);
-        else
-            return ((Number) value).doubleValue();
+        else {
+            try {
+                return ((Number) value).doubleValue();
+            } catch (ClassCastException ex) {
+                return 0.0;
+            }
+        }
     }
 
     @Override
@@ -183,7 +219,11 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
     @Override
     public Blob getBlob(String key) {
-        return (Blob) getObject(key);
+        try {
+            return (Blob) getObject(key);
+        } catch (ClassCastException ex) {
+            return null;
+        }
     }
 
     @Override

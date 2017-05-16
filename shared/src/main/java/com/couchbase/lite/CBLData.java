@@ -56,7 +56,9 @@ public class CBLData {
         if (object == null)
             return false;
         else {
-            if (object instanceof Number)
+            if (object instanceof Boolean)
+                return ((Boolean)object).booleanValue();
+            else if (object instanceof Number)
                 return ((Number) object).doubleValue() != 0.0;
             else
                 return true;

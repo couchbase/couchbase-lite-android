@@ -115,5 +115,17 @@ public class BaseTest {
             db.save(doc);
         }
     }
+
+    interface Validator<T> {
+        void validate(final T doc);
+    }
+
+    protected Document save(Document doc, Validator<Document> validator) {
+        validator.validate(doc);
+        db.save(doc);
+        doc = db.getDocument(doc.getId());
+        validator.validate(doc);
+        return doc;
+    }
 }
 
