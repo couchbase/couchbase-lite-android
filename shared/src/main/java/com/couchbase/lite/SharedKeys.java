@@ -8,6 +8,8 @@ import com.couchbase.litecore.fleece.FLValue;
 import java.util.HashMap;
 import java.util.Map;
 
+//TODO: Make SharedKeys in litecore or package level accessor
+
 public class SharedKeys implements FLValue.ISharedKeys {
 
     // Notes:

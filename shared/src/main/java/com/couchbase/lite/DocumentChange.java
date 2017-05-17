@@ -14,6 +14,9 @@
 package com.couchbase.lite;
 
 
+/**
+ * Provides details about a Document change.
+ */
 public class DocumentChange {
     private final String documentID;
 
@@ -21,6 +24,9 @@ public class DocumentChange {
         this.documentID = documentID;
     }
 
+    /**
+     * Returns the changed document ID
+     */
     public String getDocumentID() {
         return documentID;
     }

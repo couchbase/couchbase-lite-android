@@ -88,7 +88,7 @@ public final class Database {
     //---------------------------------------------
 
     /**
-     * Construct a  Database with a given name and database config.
+     * Construct a Database with a given name and the default database config.
      * If the database does not yet exist, it will be created.
      *
      * @param name The name of the database. May NOT contain capital letters!
@@ -141,7 +141,11 @@ public final class Database {
         return c4db != null ? new File(c4db.getPath()) : null;
     }
 
-
+    /**
+     * Returned the copied config object
+     *
+     * @return the copied config object
+     */
     public DatabaseConfiguration getConfig() {
         return config; // TODO: Returned the copied config object
     }
@@ -149,10 +153,8 @@ public final class Database {
     // Get document:
 
     /**
-     * Gets or creates a Document object with the given ID.
-     * The existence of the Document in the database can be checked by checking its documentExists() method.
-     * Documents are cached, so there will never be more than one instance in this Database
-     * object at a time with the same documentID.
+     * Gets an existing Document object with the given ID. If the document with the given ID doesn't
+     * exist in the database, the value returned will be null.
      *
      * @param documentID the document ID
      * @return the Document object
@@ -162,21 +164,45 @@ public final class Database {
     }
 
     // Save document:
+
+    /**
+     * Saves the given document to the database. If the document in the database has been updated
+     * since it was read by this Document, a conflict occurs, which will be resolved by invoking
+     * the conflict handler. This can happen if multiple application threads are writing to the
+     * database, or a pull replication is copying changes from a server.
+     *
+     * @param document
+     */
     public void save(Document document) {
         prepareDocument(document);
         document.save();
     }
 
+    /**
+     * Delete the givin document. All properties are removed, and subsequent calls to
+     * getDocument(String) will return null. Deletion adds a special "tombstone" revision
+     * to the database, as bookkeeping so that the change can be replicated to other databases.
+     * Thus, it does not free up all of the disk space occupied by the document.
+     * To delete a document entirely (but without the ability to replicate this),
+     * use purge(Document).
+     *
+     * @param document
+     */
     public void delete(Document document) {
         prepareDocument(document);
         document.delete();
     }
 
+    /**
+     * Purges the given document from the database. This is more drastic than delete(Document),
+     * it removes all traces of the document. The purge will NOT be replicated to other databases.
+     *
+     * @param document
+     */
     public void purge(Document document) {
         prepareDocument(document);
         document.purge();
     }
-
 
     // Batch operations:
 
@@ -213,21 +239,32 @@ public final class Database {
         }
     }
 
-
     // Compaction:
 
+
     public void compact() {
-        // TODO: Implement.
+        // TODO:
         throw new UnsupportedOperationException("Work in Progress!");
     }
 
     // Database changes:
+
+    /**
+     * Set the given DatabaseChangeListener to the this database.
+     *
+     * @param listener
+     */
     public void addChangeListener(DatabaseChangeListener listener) {
         if (listener == null)
             throw new IllegalArgumentException();
         addDatabaseChangeListener(listener);
     }
 
+    /**
+     * Remove the given DatabaseChangeListener from the this database.
+     *
+     * @param listener
+     */
     public void removeChangeListener(DatabaseChangeListener listener) {
         if (listener == null)
             throw new IllegalArgumentException();
@@ -235,12 +272,23 @@ public final class Database {
     }
 
     // Document changes:
+
+    /**
+     * Add the given DocumentChangeListener to the specified document.
+     *
+     * @param listener
+     */
     public void addChangeListener(String docID, DocumentChangeListener listener) {
         if (docID == null || listener == null)
             throw new IllegalArgumentException();
         addDocumentChangeListener(docID, listener);
     }
 
+    /**
+     * Remove the given DocumentChangeListener from the specified document.
+     *
+     * @param listener
+     */
     public void removeChangeListener(String docID, DocumentChangeListener listener) {
         if (docID == null || listener == null)
             throw new IllegalArgumentException();
@@ -301,7 +349,7 @@ public final class Database {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public static void changeEncryptionKey(Object key) throws CouchbaseLiteException {
-        // TODO: Implement.
+        // TODO:
         throw new UnsupportedOperationException("Work in Progress!");
     }
 
@@ -335,41 +383,6 @@ public final class Database {
         return getDatabasePath(directory, name).exists();
     }
 
-
-    /**
-     * Creates a new Document object with no properties and a new (random) UUID.
-     * The document will be saved to the database when you call save() on it.
-     *
-     * @return the Document object
-     */
-//    public Document getDocument() {
-//        return getDocument(generateDocID());
-//    }
-
-
-//    /**
-//     * Checks whether a document of the given document ID exists in the database or not.
-//     *
-//     * @param docID the document ID
-//     * @return true if exists, false otherwise
-//     */
-//    public boolean documentExists(String docID) {
-//        try {
-//            getDocument(docID, true);
-//            return true;
-//        } catch (CouchbaseLiteException e) {
-//            if (e.getDomain() == LiteCoreDomain && e.getCode() == kC4ErrorNotFound)
-//                return false;
-//
-//            // unexpected error...
-//            Log.w(TAG, "Unexpected Error with calling documentExists(docID => %s) method.", e, docID);
-//            return false;
-//        }
-//    }
-
-
-    // TODO: Following methods should go somewhere.
-
     /**
      * Creates a value index (type IndexType.Value) on the given expressions. This will
      * speed up queries that queries that test the expressions, at the expense of making
@@ -392,7 +405,6 @@ public final class Database {
      * @param options     Options affecting the index, or {@code null} for default settings.
      * @throws CouchbaseLiteException if there is an error occurred.
      */
-
     public void createIndex(List<Expression> expressions,
                             IndexType type,
                             IndexOptions options) throws CouchbaseLiteException {
@@ -415,7 +427,6 @@ public final class Database {
             throw LiteCoreBridge.convertException(e);
         }
     }
-
 
     //---------------------------------------------
     // Override public method
@@ -440,15 +451,13 @@ public final class Database {
     // Package level access
     //---------------------------------------------
 
-    public ConflictResolver getConflictResolver() {
+    /* package */ ConflictResolver getConflictResolver() {
         return config != null ? config.getConflictResolver() : null;
-        //return conflictResolver;
     }
 
     long documentCount() {
         return c4db.getDocumentCount();
     }
-
 
     // Instead of clone()
     /* package */ Database copy() {
@@ -460,7 +469,7 @@ public final class Database {
         return c4db;
     }
 
-    void beginTransaction() throws CouchbaseLiteException {
+    /* package */ void beginTransaction() throws CouchbaseLiteException {
         try {
             c4db.beginTransaction();
         } catch (LiteCoreException e) {
@@ -468,7 +477,7 @@ public final class Database {
         }
     }
 
-    void endTransaction(boolean commit) throws CouchbaseLiteException {
+    /* package */ void endTransaction(boolean commit) throws CouchbaseLiteException {
         try {
             c4db.endTransaction(commit);
         } catch (LiteCoreException e) {
@@ -476,12 +485,12 @@ public final class Database {
         }
     }
 
-    SharedKeys getSharedKeys() {
+    /* package */  SharedKeys getSharedKeys() {
         return sharedKeys;
     }
 
     //////// DOCUMENTS:
-    com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException {
+    /* package */ com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException {
         try {
             return c4db.getDocument(docID, mustExist);
         } catch (LiteCoreException e) {
@@ -545,8 +554,6 @@ public final class Database {
 
     private int getDatabaseFlags() {
         int databaseFlags = DEFAULT_DATABASE_FLAGS;
-//        if (config.isReadOnly())
-//            databaseFlags |= com.couchbase.litecore.Database.ReadOnly;
         return databaseFlags;
     }
 
@@ -747,8 +754,6 @@ public final class Database {
             for (int i = 0; i < nChanges; i++) {
                 documentIDs.add(c4DBChanges[i].getDocID());
             }
-//            if (nChanges > 0)
-//                lastSequence = c4DBChanges[nChanges - 1].getSequence();
         } while (nChanges > 0);
     }
 
@@ -770,18 +775,10 @@ public final class Database {
         }
     }
 
-
-    void prepareDocument(Document document) throws CouchbaseLiteException {
+    private void prepareDocument(Document document) throws CouchbaseLiteException {
         if (document.getDatabase() == null)
             document.setDatabase(this);
         else if (document.getDatabase() != this)
             throw new CouchbaseLiteException(CBLErrorDomain, Forbidden);
     }
 }
-
-
-
-
-
-
-

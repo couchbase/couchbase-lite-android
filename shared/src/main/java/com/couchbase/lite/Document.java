@@ -31,9 +31,7 @@ import static com.couchbase.litecore.Constants.C4RevisionFlags.kRevHasAttachment
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
 
 /**
- * A Couchbase Lite document. A document has key/value properties like a DictionaryInterface;
- * their API is defined by the superclass Properties.
- * To learn how to work with properties, see {@code Properties} documentation.
+ * A Couchbase Lite Document. A document has key/value properties like a Map.
  */
 public final class Document extends ReadOnlyDocument implements DictionaryInterface {
     //---------------------------------------------
@@ -45,22 +43,57 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+
+    /**
+     * Creates a new Document object with a new random UUID. The created document will be
+     * saved into a database when you call the Database's save(Document) method with the document
+     * object given.
+     */
     public Document() {
         this((String) null);
     }
 
+    /**
+     * Creates a new Document object with the given ID. If a null ID value is given, the document
+     * will be created with a new random UUID. The created document will be
+     * saved into a database when you call the Database's save(Document) method with the document
+     * object given.
+     *
+     * @param id the document ID.
+     */
     public Document(String id) {
         super(id != null ? id : CreateUUID(), null, null);
         this.dictionary = new Dictionary();
     }
 
+    /**
+     * Initializes a new CBLDocument object with a new random UUID and the dictionary as the content.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types.
+     * The created document will be
+     * saved into a database when you call the Database's save(Document) method with the document
+     * object given.
+     *
+     * @param dictionary the Map object
+     */
     public Document(Map<String, Object> dictionary) {
         this((String) null);
         set(dictionary);
     }
 
-    public Document(String documentID, Map<String, Object> dictionary) {
-        this(documentID);
+    /**
+     * Initializes a new Document object with a given ID and the dictionary as the content.
+     * If a null ID value is given, the document will be created with a new random UUID.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types.
+     * The created document will be saved into a database when you call
+     * the Database's save(Document) method with the document object given.
+     *
+     * @param id         the document ID.
+     * @param dictionary the Map object
+     */
+    public Document(String id, Map<String, Object> dictionary) {
+        this(id);
         set(dictionary);
     }
 
@@ -78,29 +111,67 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // DictionaryInterface implementation
     //---------------------------------------------
 
-    @Override
-    public Document set(String key, Object value) {
-        dictionary.set(key, value);
-        return this;
-    }
-
-    @Override
-    public Document remove(String key) {
-        dictionary.remove(key);
-        return this;
-    }
-
+    /**
+     * Set a dictionary as a content. Allowed value types are List, Date, Map, Number, null, String,
+     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
+     * Setting the new dictionary content will replace the current data including the existing Array
+     * and Dictionary objects.
+     *
+     * @param dictionary the dictionary object.
+     * @return this Document instance
+     */
     @Override
     public Document set(Map<String, Object> dictionary) {
         this.dictionary.set(dictionary);
         return this;
     }
 
+    /**
+     * Set an object value by key. Allowed value types are List, Date, Map, Number, null, String,
+     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
+     * An Date object will be converted to an ISO-8601 format string.
+     *
+     * @param key   the key.
+     * @param value the object value.
+     * @return this Document instance
+     */
+    @Override
+    public Document set(String key, Object value) {
+        dictionary.set(key, value);
+        return this;
+    }
+
+    /**
+     * Removes the mapping for a key from this Dictionary
+     *
+     * @param key the key.
+     * @return this Document instance
+     */
+    @Override
+    public Document remove(String key) {
+        dictionary.remove(key);
+        return this;
+    }
+
+    /**
+     * Get a property's value as a Array, which is a mapping object of an array value.
+     * Returns null if the property doesn't exists, or its value is not an array.
+     *
+     * @param key the key.
+     * @return the Array object.
+     */
     @Override
     public Array getArray(String key) {
         return dictionary.getArray(key);
     }
 
+    /**
+     * Get a property's value as a Dictionary, which is a mapping object of an dictionary value.
+     * Returns null if the property doesn't exists, or its value is not an dictionary.
+     *
+     * @param key the key.
+     * @return the Dictionary object or null if the key doesn't exist.
+     */
     @Override
     public Dictionary getDictionary(String key) {
         return dictionary.getDictionary(key);
@@ -110,70 +181,169 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // API - overridden from ReadOnlyDocument
     //---------------------------------------------
 
+    /**
+     * Gets a number of the entries in the dictionary.
+     *
+     * @return
+     */
     @Override
     public long count() {
         return dictionary.count();
     }
 
+    /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
+     *
+     * @param key the key.
+     * @return the object value or nil.
+     */
     @Override
     public Object getObject(String key) {
         return dictionary.getObject(key);
     }
 
+    /**
+     * Gets a property's value as a String. Returns null if the value doesn't exist, or its value is not a String.
+     *
+     * @param key the key
+     * @return the String or null.
+     */
     @Override
     public String getString(String key) {
         return dictionary.getString(key);
     }
 
+    /**
+     * Gets a property's value as a Number. Returns null if the value doesn't exist, or its value is not a Number.
+     *
+     * @param key the key
+     * @return the Number or nil.
+     */
     @Override
     public Number getNumber(String key) {
         return dictionary.getNumber(key);
     }
 
+    /**
+     * Gets a property's value as an int.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the int value.
+     */
     @Override
     public int getInt(String key) {
         return dictionary.getInt(key);
     }
 
+    /**
+     * Gets a property's value as an long.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the long value.
+     */
     @Override
     public long getLong(String key) {
         return dictionary.getLong(key);
     }
 
+    /**
+     * Gets a property's value as an float.
+     * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the float value.
+     */
     @Override
     public float getFloat(String key) {
         return dictionary.getFloat(key);
     }
 
+    /**
+     * Gets a property's value as an double.
+     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the double value.
+     */
     @Override
     public double getDouble(String key) {
         return dictionary.getDouble(key);
     }
 
+    /**
+     * Gets a property's value as a boolean. Returns true if the value exists, and is either `true`
+     * or a nonzero number.
+     *
+     * @param key the key
+     * @return the boolean value.
+     */
     @Override
     public boolean getBoolean(String key) {
         return dictionary.getBoolean(key);
     }
 
+    /**
+     * Gets a property's value as a Blob.
+     * Returns null if the value doesn't exist, or its value is not a Blob.
+     *
+     * @param key the key
+     * @return the Blob value or null.
+     */
     @Override
     public Blob getBlob(String key) {
         return dictionary.getBlob(key);
     }
 
+    /**
+     * Gets a property's value as a Date.
+     * JSON does not directly support dates, so the actual property value must be a string, which is
+     * then parsed according to the ISO-8601 date format (the default used in JSON.)
+     * Returns null if the value doesn't exist, is not a string, or is not parseable as a date.
+     * NOTE: This is not a generic date parser! It only recognizes the ISO-8601 format, with or
+     * without milliseconds.
+     *
+     * @param key the key
+     * @return the Date value or null.
+     */
     @Override
     public Date getDate(String key) {
         return dictionary.getDate(key);
     }
 
+    /**
+     * Gets content of the current object as an Map. The values contained in the returned
+     * Map object are all JSON based values.
+     *
+     * @return the Map object representing the content of the current object in the JSON format.
+     */
     @Override
     public Map<String, Object> toMap() {
         return dictionary.toMap();
     }
 
+    /**
+     * Tests whether a property exists or not.
+     * This can be less expensive than getObject(String), because it does not have to allocate an Object for the property value.
+     *
+     * @param key the key
+     * @return the boolean value representing whether a property exists or not.
+     */
     @Override
     public boolean contains(String key) {
         return dictionary.contains(key);
     }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
 
     // TODO: Once Iterable is implemented, change back to package level accessor
     @Override
@@ -181,9 +351,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return dictionary.allKeys();
     }
 
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
     /*package*/  Database getDatabase() {
         return database;
     }
@@ -350,7 +517,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             ReadOnlyDocument base = new ReadOnlyDocument(getId(), super.getC4doc(), super.getData());
             Conflict conflict = new Conflict(this, current, base, Conflict.OperationType.kCBLDatabaseWrite);
             resolved = resolver.resolve(conflict);
-            if(resolved == null) {
+            if (resolved == null) {
                 rawDoc.free();
                 throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
             }

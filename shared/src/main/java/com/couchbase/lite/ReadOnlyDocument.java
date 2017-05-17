@@ -5,6 +5,9 @@ import com.couchbase.lite.internal.Misc;
 
 import java.util.Locale;
 
+/**
+ * Readonly version of the Document.
+ */
 public class ReadOnlyDocument extends ReadOnlyDictionary {
     //---------------------------------------------
     // member variables
@@ -98,7 +101,8 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     /**
      * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
      */
-    /* package */ static long generationFromRevID(String revID) {
+    /* package */
+    static long generationFromRevID(String revID) {
         long generation = 0;
         long length = Math.min(revID == null ? 0 : revID.length(), 9);
         for (int i = 0; i < length; ++i) {
@@ -112,9 +116,8 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         }
         return 0;
     }
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
-
-
 }

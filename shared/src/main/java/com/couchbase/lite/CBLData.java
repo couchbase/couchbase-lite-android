@@ -14,7 +14,7 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
 
 
 // CBLData.mm
-public class CBLData {
+/*package*/ class CBLData {
     /* package */
     static Object convert(Object value, ObjectChangeListener listener) {
         // TODO: null is not for remove with Java. Need to consider other solution

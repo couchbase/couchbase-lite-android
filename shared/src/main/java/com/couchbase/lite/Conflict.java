@@ -1,5 +1,8 @@
 package com.couchbase.lite;
 
+/**
+ * Provides details about a Conflict.
+ */
 public class Conflict {
 
     public enum OperationType {
@@ -13,7 +16,7 @@ public class Conflict {
     private ReadOnlyDocument base;
     private OperationType operationType;
 
-    public Conflict(ReadOnlyDocument mine, ReadOnlyDocument theirs, ReadOnlyDocument base, OperationType operationType) {
+    /* package */ Conflict(ReadOnlyDocument mine, ReadOnlyDocument theirs, ReadOnlyDocument base, OperationType operationType) {
         this.mine = mine;
         this.theirs = theirs;
         this.base = base;
