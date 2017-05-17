@@ -1,8 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.Misc;
-
-
 import java.util.Locale;
 
 /**
@@ -37,8 +34,6 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
      * @return the document's ID
      */
     public String getId() {
-        if (id == null)
-            id = Misc.CreateUUID();
         return id;
     }
 

@@ -270,7 +270,6 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
                 itr.begin(flDict);
                 String key;
                 while ((key = SharedKeys.getKey(itr, this.sharedKeys)) != null) {
-                    //while ((key = itr.getKey().asString()) != null) {
                     results.add(key);
                     itr.next();
                 }

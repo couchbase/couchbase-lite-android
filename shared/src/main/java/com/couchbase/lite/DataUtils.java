@@ -17,25 +17,6 @@ import java.util.Date;
         return date;
     }
 
-    public static void validateType(Object value) {
-        boolean valid =
-                value == null ||
-                        value instanceof String ||
-                        value instanceof Number ||
-                        value instanceof Boolean ||
-                        value instanceof Date ||
-                        value instanceof Blob ||
-                        value instanceof Array ||
-                        value instanceof Dictionary ||
-                        value instanceof ReadOnlyArray;
-
-        if (!valid) {
-            // TODO: Throw invalid type exception.
-            // throw new InvalidTypeException(value.getClass().getTypeName());
-        }
-    }
-
-
     public static String toString(Object object) {
         String string = null;
         if (object instanceof String) {

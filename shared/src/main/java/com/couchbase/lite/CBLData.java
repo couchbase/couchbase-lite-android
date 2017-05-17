@@ -47,7 +47,16 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
             return array;
         } else if (value instanceof Date) {
             return DateUtils.toJson((Date) value);
+        }else{
+            if (!(value == null ||
+                    value instanceof String ||
+                    value instanceof Number ||
+                    value instanceof Boolean ||
+                    value instanceof Blob)) {
+                throw new IllegalArgumentException("Unsupported value type.");
+            }
         }
+
         return value;
     }
 
