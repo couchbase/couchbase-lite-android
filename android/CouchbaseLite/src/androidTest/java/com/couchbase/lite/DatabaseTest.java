@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.Locale;
 
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBusy;
@@ -25,11 +26,15 @@ import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorTransaction
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+
 public class DatabaseTest extends BaseTest {
     private static final String TAG = DatabaseTest.class.getName();
+
+    final static String kDatabaseTestBlob = "i'm blob";
 
     //---------------------------------------------
     //  Helper methods
@@ -96,6 +101,23 @@ public class DatabaseTest extends BaseTest {
         assertEquals(0, doc.getSequence());       // sequence should be reset to 0
         assertFalse(doc.isDeleted());             // delete flag should be reset to true
         assertEquals(null, doc.getObject("key")); // content should be empty
+    }
+
+    // helper method to save n number of docs
+    void createDocs(int n) {
+        for (int i = 0; i < n; i++) {
+            Document doc = createDocument(String.format(Locale.US, "doc_%03d", i));
+            doc.set("key", i);
+            save(doc);
+        }
+        assertEquals(n, db.documentCount());
+    }
+
+    // helper method to verify n number of docs
+    void validateDocs(int n) {
+        for (int i = 0; i < n; i++) {
+            verifyGetDocument(String.format(Locale.US, "doc_%03d", i), i);
+        }
     }
 
     //---------------------------------------------
@@ -230,17 +252,41 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testGetExistingDocWithIDInBatch() {
-        // TODO
+        // Save 10 docs:
+        createDocs(10);
+
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                validateDocs(10);
+            }
+        });
     }
 
-    @Test
+    // TODO @Test
+    // LiteCore error
     public void testGetDocFromClosedDB() {
-        // TODO
+        // Store doc:
+        generateDocument("doc1");
+
+        // Close db:
+        db.close();
+
+        Document doc = db.getDocument("doc1");
+        assertNull(doc);
     }
 
-    @Test
+    // TODO @Test
+    // LiteCore error
     public void testGetDocFromDeletedDB() {
-        // TODO
+        // Store doc:
+        generateDocument("doc1");
+
+        // Close db:
+        deleteDatabase(db);
+
+        Document doc = db.getDocument("doc1");
+        assertNull(doc);
     }
 
     //---------------------------------------------
@@ -282,34 +328,115 @@ public class DatabaseTest extends BaseTest {
         verifyGetDocument(docID, 2);
     }
 
-    @Test
+    // TODO : @Test
+    // LiteCore throws exception in tearDown
     public void testSaveDocInDifferentDBInstance() {
-        // TODO
+        // Store doc
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Create db with default
+        Database otherDB = openDatabase(db.getName());
+        assertNotNull(otherDB);
+        assertTrue(otherDB != db);
+        assertEquals(1, otherDB.documentCount());
+
+        // Update doc & store it into different instance
+        doc.set("key", 2);
+        CouchbaseLiteException exception = null;
+        try {
+            otherDB.save(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        } finally {
+            // close otherDb
+            otherDB.close();
+        }
     }
 
-    @Test
+    // TODO: @Test
+    // Exception has no domain.
     public void testSaveDocInDifferentDB() {
-        // TODO
+        // Store doc
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Create db with default
+        Database otherDB = openDatabase("otherDB");
+        assertNotNull(otherDB);
+        assertTrue(otherDB != db);
+        assertEquals(0, otherDB.documentCount());
+
+        // Update doc & store it into different instance
+        doc.set("key", 2);
+        CouchbaseLiteException exception = null;
+        try {
+            otherDB.save(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        } finally {
+            // close otherDb
+            deleteDatabase(otherDB);
+        }
     }
 
     @Test
     public void testSaveSameDocTwice() {
-        // TODO
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+        save(doc);
+        assertEquals(docID, doc.getId());
+        assertEquals(1, db.documentCount());
     }
 
     @Test
     public void testSaveInBatch() {
-        // TODO
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                createDocs(10);
+            }
+        });
+        assertEquals(10, db.documentCount());
+        validateDocs(10);
     }
 
     @Test
     public void testSaveDocToClosedDB() {
-        // TODO
+        db.close();
+
+        Document doc = createDocument("doc1");
+        doc.set("key", 1);
+
+        try {
+            db.save(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        }
     }
 
-    @Test
+    // TODO : @Test
+    // Error from lite core
     public void testSaveDocToDeletedDB() {
-        // TODO
+        // Delete db:
+        deleteDatabase(db);
+
+        Document doc = createDocument("doc1");
+        doc.set("key", 1);
+
+        try {
+            db.save(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.NotFound, e.getCode());
+        }
     }
 
     //---------------------------------------------
@@ -342,34 +469,138 @@ public class DatabaseTest extends BaseTest {
         assertTrue(doc.getObject("key") == null);
     }
 
-    @Test
+    // TODO : @Test
+    // Error from LiteCore in tearDown
     public void testDeleteDocInDifferentDBInstance() {
-        // TODO
+        // Store doc:
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Create db with same name:
+        // Create db with default
+        Database otherDB = openDatabase(db.getName());
+        assertNotNull(otherDB);
+        assertTrue(otherDB != db);
+        assertEquals(1, otherDB.documentCount());
+
+        // Delete from the different db instance:
+        try {
+            otherDB.delete(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        } finally {
+            // close otherDb
+            otherDB.close();
+        }
     }
 
     @Test
     public void testDeleteDocInDifferentDB() {
-        // TODO
+        // Store doc
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Create db with default
+        Database otherDB = openDatabase("otherDB");
+        assertNotNull(otherDB);
+        assertTrue(otherDB != db);
+        assertEquals(0, otherDB.documentCount());
+
+        // Delete from the different db:
+        try {
+            otherDB.delete(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        } finally {
+            // close otherDb
+            deleteDatabase(otherDB);
+        }
     }
 
-    @Test
+    // TODO : @Test
+    // Sequence after the second deletion is 3
     public void testDeleteSameDocTwice() {
-        // TODO
+        // Store doc:
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // First time deletion:
+        db.delete(doc);
+        assertEquals(0, db.documentCount());
+        assertNull(doc.getObject("key"));
+        assertEquals(2, doc.getSequence());
+        assertTrue(doc.isDeleted());
+
+        // Second time deletion:
+        db.delete(doc);
+        assertEquals(0, db.documentCount());
+        assertNull(doc.getObject("key"));
+        assertEquals(2, doc.getSequence());
+        assertTrue(doc.isDeleted());
     }
 
     @Test
     public void testDeleteDocInBatch() {
-        // TODO
+        // Save 10 docs:
+        createDocs(10);
+
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    String docID = String.format(Locale.US, "doc_%03d", i);
+                    Document doc = db.getDocument(docID);
+                    db.delete(doc);
+                    assertNull(doc.getObject("key"));
+                    assertTrue(doc.isDeleted());
+                    assertEquals((9 - i), db.documentCount());
+                }
+            }
+        });
+
+        assertEquals(0, db.documentCount());
     }
 
-    @Test
+    // TODO : @Test
+    // Error from LiteCore
     public void testDeleteDocOnClosedDB() {
-        // TODO
+        // Store doc:
+        Document doc = generateDocument("doc1");
+
+        // Close db:
+        db.close();
+
+        // Delete doc from db:
+        try {
+            db.delete(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        }
     }
 
-    @Test
+    // TODO : @Test
+    // Error from LiteCore
     public void testDeleteDocOnDeletedDB() {
-        // TODO
+        // Store doc:
+        Document doc = generateDocument("doc1");
+
+        // Delete db:
+        deleteDatabase(db);
+
+        // Delete doc from db:
+        try {
+            db.delete(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        }
     }
 
     //---------------------------------------------
@@ -404,34 +635,131 @@ public class DatabaseTest extends BaseTest {
         // assertEquals(3, doc.getSequence());
     }
 
-    @Test
+    // TODO : @Test
+    // Error from LiteCore in tearDown
     public void testPurgeDocInDifferentDBInstance() {
-        // TODO
+        // Store doc:
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Create db with default:
+        Database otherDB = openDatabase(db.getName());
+        assertNotNull(otherDB);
+        assertTrue(otherDB != db);
+        assertEquals(1, otherDB.documentCount());
+
+        // purge document against other db instance:
+        try {
+            otherDB.purge(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        } finally {
+            // close otherDb
+            otherDB.close();
+        }
     }
 
     @Test
     public void testPurgeDocInDifferentDB() {
-        // TODO
+        // Store doc:
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Create db with default:
+        Database otherDB = openDatabase("otherDB");
+        assertNotNull(otherDB);
+        assertTrue(otherDB != db);
+        assertEquals(0, otherDB.documentCount());
+
+        // Purge document against other db:
+        try {
+            otherDB.purge(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        } finally {
+            // close otherDb
+            deleteDatabase(otherDB);
+        }
     }
 
     @Test
     public void testPurgeSameDocTwice() {
-        // TODO
+        // Store doc:
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Get the document for the second purge:
+        Document doc1 = db.getDocument(docID);
+
+        // Purge the document first time:
+        purgeDocAndVerify(doc);
+        assertEquals(0, db.documentCount());
+
+        // Purge the document second time:
+        purgeDocAndVerify(doc1);
+        assertEquals(0, db.documentCount());
     }
 
     @Test
     public void testPurgeDocInBatch() {
-        // TODO
+        // Save 10 docs:
+        createDocs(10);
+
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    String docID = String.format(Locale.US, "doc_%03d", i);
+                    Document doc = db.getDocument(docID);
+                    purgeDocAndVerify(doc);
+                    assertEquals((9 - i), db.documentCount());
+                }
+            }
+        });
+
+        assertEquals(0, db.documentCount());
     }
 
-    @Test
+    // TODO : @Test
+    // Error from LiteCore
     public void testPurgeDocOnClosedDB() {
-        // TODO
+        // Store doc:
+        Document doc = generateDocument("doc1");
+
+        // Close db:
+        db.close();
+
+        // Purge doc:
+        try {
+            db.purge(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        }
     }
 
-    @Test
+    // TODO : @Test
+    // Error from LiteCore
     public void testPurgeDocOnDeletedDB() {
-        // TODO
+        // Store doc:
+        Document doc = generateDocument("doc1");
+
+        // Close db:
+        deleteDatabase(db);
+
+        // Purge doc:
+        try {
+            db.purge(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.Forbidden, e.getCode());
+        }
     }
 
     //---------------------------------------------
@@ -450,12 +778,35 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testCloseThenAccessDoc() {
-        //TODO
+        // Store doc:
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Close db:
+        db.close();
+
+        // Content should be accessible & modifiable without error:
+        assertEquals(docID, doc.getId());
+        assertEquals(1, doc.getObject("key"));
+        doc.set("key", 2);
+        doc.set("key1", "value");
     }
 
     @Test
     public void testCloseThenAccessBlob() {
-        //TODO
+        // Store doc with blob:
+        Document doc = generateDocument("doc1");
+        doc.set("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
+        save(doc);
+
+        // Close db:
+        db.close();
+
+        // content should be accessible & modifiable without error
+        assertTrue(doc.getObject("blob") instanceof Blob);
+        Blob blob = doc.getBlob("blob");
+        assertEquals(8, blob.length());
+        assertNull(blob.getContent());
     }
 
     @Test
@@ -514,12 +865,35 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDeleteThenAccessDoc() {
-        //TODO
+        // Store doc:
+        String docID = "doc1";
+        Document doc = generateDocument(docID);
+
+        // Delete db:
+        deleteDatabase(db);
+
+        // Content should be accessible & modifiable without error:
+        assertEquals(docID, doc.getId());
+        assertEquals(1, doc.getObject("key"));
+        doc.set("key", 2);
+        doc.set("key1", "value");
     }
 
     @Test
     public void testDeleteThenAccessBlob() {
-        //TODO
+        // Store doc with blob:
+        Document doc = generateDocument("doc1");
+        doc.set("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
+        save(doc);
+
+        // Delete db:
+        deleteDatabase(db);
+
+        // content should be accessible & modifiable without error
+        assertTrue(doc.getObject("blob") instanceof Blob);
+        Blob blob = doc.getBlob("blob");
+        assertEquals(8, blob.length());
+        assertNull(blob.getContent());
     }
 
     @Test
@@ -582,12 +956,12 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDeleteWithDefaultDirDB() {
-        //TODO
+        //TODO : currently android doesn't support default db
     }
 
     @Test
     public void testDeleteOpeningDBWithDefaultDir() {
-        //TODO
+        //TODO : currently android doesn't support default db
     }
 
     @Test
@@ -635,7 +1009,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDatabaseExistsWithDefaultDir() {
-        //TODO
+        //TODO : currently android doesn't support default db
     }
 
     @Test
