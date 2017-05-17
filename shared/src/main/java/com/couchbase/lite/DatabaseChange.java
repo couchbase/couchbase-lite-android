@@ -25,6 +25,7 @@ public class DatabaseChange {
 
     /**
      * Returns the list of the changed document IDs
+     *
      * @return
      */
     public List<String> getDocumentIDs() {

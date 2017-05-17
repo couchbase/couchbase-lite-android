@@ -57,7 +57,7 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
             return false;
         else {
             if (object instanceof Boolean)
-                return ((Boolean)object).booleanValue();
+                return ((Boolean) object).booleanValue();
             else if (object instanceof Number)
                 return ((Number) object).doubleValue() != 0.0;
             else
@@ -80,11 +80,11 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
             case kFLDict: {
                 FLDict flDict = value.asFLDict();
                 String type = SharedKeys.getValue(flDict, Blob.TYPE_META_PROPERTY, database.getSharedKeys()).asString();
-                if(type == null)
+                if (type == null)
                     return new Dictionary(new CBLFLDict(flDict, c4doc, database));
                 else { // type == "blob"
                     Object result = SharedKeys.valueToObject(value, database.getSharedKeys());
-                    return dictionaryToCBLObject((Map<String,Object>)result, database);
+                    return dictionaryToCBLObject((Map<String, Object>) result, database);
                 }
             }
             default: {

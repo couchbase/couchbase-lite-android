@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DictionaryTest extends BaseTest {
     @Test
-    public void testCreateDictionary(){
+    public void testCreateDictionary() {
         Dictionary address = new Dictionary();
         assertEquals(0, address.count());
         assertEquals(new HashMap<String, Object>(), address.toMap());
@@ -28,11 +28,11 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testCreateDictionaryWithNSDictionary(){
+    public void testCreateDictionaryWithNSDictionary() {
         Map<String, Object> dict = new HashMap<>();
-        dict.put("street","1 Main street");
-        dict.put("city","Mountain View");
-        dict.put("state","CA");
+        dict.put("street", "1 Main street");
+        dict.put("city", "Mountain View");
+        dict.put("state", "CA");
         Dictionary address = new Dictionary(dict);
         assertEquals(3, address.count());
         assertEquals("1 Main street", address.getObject("street"));
@@ -48,21 +48,22 @@ public class DictionaryTest extends BaseTest {
         doc1 = db.getDocument("doc1");
         assertEquals(dict, doc1.getDictionary("address").toMap());
     }
+
     @Test
-    public void testGetValueFromNewEmptyDictionary(){
+    public void testGetValueFromNewEmptyDictionary() {
         Dictionary dict = new Dictionary();
 
         assertEquals(0, dict.getInt("key"));
         assertEquals(0.0f, dict.getFloat("key"), 0.0f);
         assertEquals(0.0, dict.getDouble("key"), 0.0);
         assertFalse(dict.getBoolean("key"));
-        assertTrue(dict.getBlob("key")==null);
-        assertTrue(dict.getDate("key")==null);
-        assertTrue(dict.getNumber("key")==null);
-        assertTrue(dict.getObject("key")==null);
-        assertTrue(dict.getString("key")==null);
-        assertTrue(dict.getDictionary("key")==null);
-        assertTrue(dict.getArray("key")==null);
+        assertTrue(dict.getBlob("key") == null);
+        assertTrue(dict.getDate("key") == null);
+        assertTrue(dict.getNumber("key") == null);
+        assertTrue(dict.getObject("key") == null);
+        assertTrue(dict.getString("key") == null);
+        assertTrue(dict.getDictionary("key") == null);
+        assertTrue(dict.getArray("key") == null);
         assertEquals(new HashMap<String, Object>(), dict.toMap());
 
         Document doc = new Document("doc1");
@@ -77,18 +78,18 @@ public class DictionaryTest extends BaseTest {
         assertEquals(0.0f, dict.getFloat("key"), 0.0f);
         assertEquals(0.0, dict.getDouble("key"), 0.0);
         assertFalse(dict.getBoolean("key"));
-        assertTrue(dict.getBlob("key")==null);
-        assertTrue(dict.getDate("key")==null);
-        assertTrue(dict.getNumber("key")==null);
-        assertTrue(dict.getObject("key")==null);
-        assertTrue(dict.getString("key")==null);
-        assertTrue(dict.getDictionary("key")==null);
-        assertTrue(dict.getArray("key")==null);
+        assertTrue(dict.getBlob("key") == null);
+        assertTrue(dict.getDate("key") == null);
+        assertTrue(dict.getNumber("key") == null);
+        assertTrue(dict.getObject("key") == null);
+        assertTrue(dict.getString("key") == null);
+        assertTrue(dict.getDictionary("key") == null);
+        assertTrue(dict.getArray("key") == null);
         assertEquals(new HashMap<String, Object>(), dict.toMap());
     }
 
     @Test
-    public void testSetNestedDictionaries(){
+    public void testSetNestedDictionaries() {
         Document doc = new Document("doc1");
 
         Dictionary level1 = new Dictionary();
@@ -107,14 +108,14 @@ public class DictionaryTest extends BaseTest {
         assertEquals(level2, doc.getDictionary("level2"));
         assertEquals(level3, doc.getDictionary("level3"));
 
-        Map<String,Object> dict = new HashMap<>();
-        Map<String,Object> l1 = new HashMap<>();
+        Map<String, Object> dict = new HashMap<>();
+        Map<String, Object> l1 = new HashMap<>();
         l1.put("name", "n1");
         dict.put("level1", l1);
-        Map<String,Object> l2 = new HashMap<>();
+        Map<String, Object> l2 = new HashMap<>();
         l2.put("name", "n2");
         dict.put("level2", l2);
-        Map<String,Object> l3 = new HashMap<>();
+        Map<String, Object> l3 = new HashMap<>();
         l3.put("name", "n3");
         dict.put("level3", l3);
         assertEquals(dict, doc.toMap());
@@ -127,21 +128,21 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testDictionaryArray(){
+    public void testDictionaryArray() {
         Document doc = new Document("doc1");
 
         List<Object> data = new ArrayList<>();
 
-        Map<String,Object> d1 = new HashMap<>();
+        Map<String, Object> d1 = new HashMap<>();
         d1.put("name", "1");
         data.add(d1);
-        Map<String,Object> d2 = new HashMap<>();
+        Map<String, Object> d2 = new HashMap<>();
         d2.put("name", "2");
         data.add(d2);
-        Map<String,Object> d3 = new HashMap<>();
+        Map<String, Object> d3 = new HashMap<>();
         d3.put("name", "3");
         data.add(d3);
-        Map<String,Object> d4 = new HashMap<>();
+        Map<String, Object> d4 = new HashMap<>();
         d4.put("name", "4");
         data.add(d4);
         assertEquals(4, data.size());
@@ -180,7 +181,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testReplaceDictionary(){
+    public void testReplaceDictionary() {
         Document doc = new Document("doc1");
 
         Dictionary profile1 = new Dictionary();
@@ -206,13 +207,13 @@ public class DictionaryTest extends BaseTest {
         db.save(doc);
         doc = db.getDocument("doc1");
 
-        assertTrue(profile2!=doc.getDictionary("profile"));
+        assertTrue(profile2 != doc.getDictionary("profile"));
         profile2 = doc.getDictionary("profile");
         assertEquals("Daniel Tiger", profile2.getObject("name"));
     }
 
     @Test
-    public void testReplaceDictionaryDifferentType(){
+    public void testReplaceDictionaryDifferentType() {
         Document doc = new Document("doc1");
 
         Dictionary profile1 = new Dictionary();

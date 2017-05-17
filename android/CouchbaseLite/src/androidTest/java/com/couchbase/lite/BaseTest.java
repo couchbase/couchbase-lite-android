@@ -49,7 +49,7 @@ public class BaseTest {
     protected Database db = null;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Log.e("BaseTest", "setUp");
         context = InstrumentationRegistry.getContext();
         try {
@@ -69,7 +69,7 @@ public class BaseTest {
             db.close();
             db = null;
         }
-        if(Database.exists(kDatabaseName, dir))
+        if (Database.exists(kDatabaseName, dir))
             Database.delete(kDatabaseName, dir);
         FileUtils.cleanDirectory(dir);
     }
