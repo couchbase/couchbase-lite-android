@@ -49,7 +49,7 @@ public class BaseTest {
     protected Database db = null;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Log.e("BaseTest", "setUp");
         context = InstrumentationRegistry.getContext();
         try {
@@ -69,12 +69,15 @@ public class BaseTest {
             db.close();
             db = null;
         }
+        if (Database.exists(kDatabaseName, dir))
+            Database.delete(kDatabaseName, dir);
+        FileUtils.cleanDirectory(dir);
     }
 
     protected void openDB() {
         assertNull(db);
 
-        DatabaseOptions options = new DatabaseOptions();
+        DatabaseConfiguration options = new DatabaseConfiguration();
         options.setDirectory(dir);
         db = new Database(kDatabaseName, options);
         assertNotNull(db);
@@ -107,10 +110,35 @@ public class BaseTest {
             JSONObject json = new JSONObject(line);
             Map<String, Object> props = JsonUtils.fromJson(json);
             String docId = String.format(Locale.ENGLISH, "doc-%03d", n);
-            Document doc = db.getDocument(docId);
-            doc.setProperties(props);
-            doc.save();
+            Document doc = createDocument(docId);
+            doc.set(props);
+            save(doc);
         }
+    }
+
+    protected Document createDocument(String id) {
+        return new Document(id);
+    }
+
+    protected Document createDocument(String id, Map<String, Object> map) {
+        return new Document(id, map);
+    }
+
+    protected Document save(Document doc) {
+        db.save(doc);
+        return db.getDocument(doc.getId());
+    }
+
+    interface Validator<T> {
+        void validate(final T doc);
+    }
+
+    protected Document save(Document doc, Validator<Document> validator) {
+        validator.validate(doc);
+        db.save(doc);
+        doc = db.getDocument(doc.getId());
+        validator.validate(doc);
+        return doc;
     }
 }
 

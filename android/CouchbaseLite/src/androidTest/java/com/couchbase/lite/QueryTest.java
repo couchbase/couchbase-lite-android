@@ -28,6 +28,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class QueryTest extends BaseTest {
+
     private interface QueryResult {
         void check(long n, QueryRow row) throws Exception;
     }
@@ -49,11 +50,11 @@ public class QueryTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 1; i <= num; i++) {
-                    Document doc = db.getDocument("doc" + i);
+                    Document doc = createDocument("doc" + i);
                     doc.set("number1", i);
                     doc.set("number2", num - i);
-                    doc.save();
-                    numbers.add(doc.getProperties());
+                    save(doc);
+                    numbers.add(doc.toMap());
                 }
             }
         });
@@ -64,8 +65,8 @@ public class QueryTest extends BaseTest {
             throws Exception {
         for (Object[] c : cases) {
             Expression w = (Expression) c[0];
-            String[] docIDs = (String[]) c[1];
-            final List<String> docIDList = new ArrayList<String>(Arrays.asList(docIDs));
+            String[] documentIDs = (String[]) c[1];
+            final List<String> docIDList = new ArrayList<String>(Arrays.asList(documentIDs));
             Query q = Query.select().from(DataSource.database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
                 @Override
@@ -76,16 +77,16 @@ public class QueryTest extends BaseTest {
                 }
             });
             assertEquals(0, docIDList.size());
-            assertEquals(docIDs.length, rows);
+            assertEquals(documentIDs.length, rows);
         }
     }
 
     private String[] $docids(int... numbers) {
-        String[] docIDs = new String[numbers.length];
+        String[] documentIDs = new String[numbers.length];
         for (int i = 0; i < numbers.length; i++) {
-            docIDs[i] = "doc" + numbers[i];
+            documentIDs[i] = "doc" + numbers[i];
         }
-        return docIDs;
+        return documentIDs;
     }
 
     @Test
@@ -99,7 +100,7 @@ public class QueryTest extends BaseTest {
                 assertEquals(expectedID, row.getDocumentID());
                 assertEquals(n, row.getSequence());
                 Document doc = row.getDocument();
-                assertEquals(expectedID, doc.getID());
+                assertEquals(expectedID, doc.getId());
                 assertEquals(n, doc.getSequence());
             }
         });
@@ -158,15 +159,15 @@ public class QueryTest extends BaseTest {
 
     public void failingTestWhereCheckNull() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
-        Document doc1 = db.getDocument("doc1");
+        Document doc1 = new Document("doc1");
         doc1.set("name", "Scott");
         doc1.set("address", null);
-        doc1.save();
+        db.save(doc1);
 
-        Document doc2 = db.getDocument("doc2");
+        Document doc2 = new Document("doc2");
         doc2.set("name", "Tiger");
         doc2.set("address", "123 1st ave.");
-        doc2.save();
+        db.save(doc2);
 
         Expression name = Expression.property("name");
         Expression address = Expression.property("address");
@@ -186,26 +187,26 @@ public class QueryTest extends BaseTest {
 
         for (Object[] c : cases) {
             Expression exp = (Expression) c[0];
-            final String[] docIDs = (String[]) c[1];
+            final String[] documentIDs = (String[]) c[1];
             Query q = Query.select().from(DataSource.database(db)).where(exp);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(long n, QueryRow row) throws Exception {
-                    if (n < docIDs.length) {
-                        String docID = docIDs[(int) n - 1];
+                    if (n < documentIDs.length) {
+                        String docID = documentIDs[(int) n - 1];
                         assertEquals(docID, row.getDocumentID());
                     }
                 }
             });
-            assertEquals(docIDs.length, numRows);
+            assertEquals(documentIDs.length, numRows);
         }
     }
 
     @Test
     public void testWhereIs() throws Exception {
-        final Document doc1 = db.getDocument();
+        final Document doc1 = new Document();
         doc1.set("string", "string");
-        doc1.save();
+        db.save(doc1);
 
         Query q;
         int numRows;
@@ -219,8 +220,8 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                assertEquals(doc1.getID(), doc.getID());
-                assertEquals(doc1.get("string"), doc.get("string"));
+                assertEquals(doc1.getId(), doc.getId());
+                assertEquals(doc1.getObject("string"), doc.getObject("string"));
             }
         });
         assertEquals(1, numRows);
@@ -234,8 +235,8 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                assertEquals(doc1.getID(), doc.getID());
-                assertEquals(doc1.get("string"), doc.get("string"));
+                assertEquals(doc1.getId(), doc.getId());
+                assertEquals(doc1.getObject("string"), doc.getObject("string"));
             }
         });
         assertEquals(1, numRows);
@@ -267,7 +268,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                Map<String, Object> name = (Map<String, Object>) doc.get("name");
+                Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
@@ -296,7 +297,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(long n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
-                Map<String, Object> name = (Map<String, Object>) doc.get("name");
+                Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
@@ -351,7 +352,7 @@ public class QueryTest extends BaseTest {
                 @Override
                 public void check(long n, QueryRow row) throws Exception {
                     Document doc = row.getDocument();
-                    Map<String, Object> name = (Map<String, Object>) doc.get("name");
+                    Map<String, Object> name = doc.getDictionary("name").toMap();
                     String firstName = (String) name.get("first");
                     firstNames.add(firstName);
                 }
@@ -373,19 +374,19 @@ public class QueryTest extends BaseTest {
 
     public void failingTestSelectDistinct() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1669
-        final Document doc1 = db.getDocument();
+        final Document doc1 = new Document();
         doc1.set("number", 1);
-        doc1.save();
+        db.save(doc1);
 
-        Document doc2 = db.getDocument();
+        Document doc2 = new Document();
         doc2.set("number", 1);
-        doc2.save();
+        db.save(doc2);
 
         Query q = Query.selectDistinct().from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(long n, QueryRow row) throws Exception {
-                assertEquals(doc1.getID(), row.getDocumentID());
+                assertEquals(doc1.getId(), row.getDocumentID());
             }
         });
         assertEquals(1, numRows);

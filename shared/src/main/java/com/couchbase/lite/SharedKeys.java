@@ -8,6 +8,8 @@ import com.couchbase.litecore.fleece.FLValue;
 import java.util.HashMap;
 import java.util.Map;
 
+//TODO: Make SharedKeys in litecore or package level accessor
+
 public class SharedKeys implements FLValue.ISharedKeys {
 
     // Notes:
@@ -93,17 +95,17 @@ public class SharedKeys implements FLValue.ISharedKeys {
 
     // static inline id FLValue_GetNSObject(FLValue __nullable value, cbl::SharedKeys *sk)
     static Object valueToObject(FLValue value, SharedKeys sk) {
-        return sk.valueToObject(value);
+        return sk != null ? sk.valueToObject(value) : null;
     }
 
-    // static inline id FLValue_GetNSObject(FLValue __nullable value, cbl::SharedKeys *sk)
+    // static inline FLValue FLDict_GetSharedKey(FLDict __nullable dict, FLSlice key, cbl::SharedKeys *sk)
     static FLValue getValue(FLDict dict, String key, SharedKeys sk) {
-        return sk.getValue(dict, key);
+        return sk != null && dict != null ? sk.getValue(dict, key) : null;
     }
 
     // static inline NSString* FLDictIterator_GetKey(FLDictIterator *iter, cbl::SharedKeys *sk)
     public static String getKey(FLDictIterator itr, SharedKeys sk) {
-        return sk.getDictIterKey(itr);
+        return sk != null && itr != null ? sk.getDictIterKey(itr) : null;
     }
 }
 

@@ -8,13 +8,13 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static android.content.ContentValues.TAG;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+
 public class NotificationTest extends BaseTest {
+
     @Before
     public void setUp() {
         super.setUp();
@@ -33,9 +33,9 @@ public class NotificationTest extends BaseTest {
             public void changed(DatabaseChange change) {
                 Log.e(TAG, "DatabaseChangeListener.changed() change -> " + change);
                 assertNotNull(change);
-                assertNotNull(change.getDocIDs());
-                assertTrue(change.getLastSequence() > 0);
-                assertFalse(change.isExternal());
+                assertNotNull(change.getDocumentIDs());
+                assertEquals(10, change.getDocumentIDs().size());
+                assertEquals(db, change.getDatabase());
                 latch.countDown();
             }
         });
@@ -43,9 +43,9 @@ public class NotificationTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 0; i < 10; i++) {
-                    Document doc = db.getDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                    Document doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                     doc.set("type", "demo");
-                    doc.save();
+                    save(doc);
                 }
             }
         });
@@ -54,25 +54,25 @@ public class NotificationTest extends BaseTest {
 
     @Test
     public void testDocumentNotification() throws InterruptedException {
-        Document docA = db.getDocument("A");
-        Document docB = db.getDocument("B");
+        Document docA = createDocument("A");
+        Document docB = createDocument("B");
+
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         DocumentChangeListener listener1 = new DocumentChangeListener() {
             @Override
             public void changed(DocumentChange change) {
                 assertNotNull(change);
-                assertEquals("A", change.getDocID());
-                assertTrue(change.getSequence() > 0);
+                assertEquals("A", change.getDocumentID());
                 assertEquals(1, latch1.getCount());
                 latch1.countDown();
             }
         };
         db.addChangeListener("A", listener1);
         docB.set("thewronganswer", 18);
-        docB.save();
+        save(docB);
         docA.set("theanswer", 18);
-        docA.save();
+        save(docA);
         assertTrue(latch1.await(10, TimeUnit.SECONDS));
         db.removeChangeListener("A", listener1);
 
@@ -81,15 +81,14 @@ public class NotificationTest extends BaseTest {
             @Override
             public void changed(DocumentChange change) {
                 assertNotNull(change);
-                assertEquals("A", change.getDocID());
-                assertTrue(change.getSequence() > 0);
+                assertEquals("A", change.getDocumentID());
                 assertEquals(1, latch2.getCount());
                 latch2.countDown();
             }
         };
         db.addChangeListener("A", listener2);
         docA.set("thewronganswer", 18);
-        docA.save();
+        save(docA);
         assertTrue(latch2.await(5, TimeUnit.SECONDS));
         db.removeChangeListener("A", listener1);
     }
@@ -105,9 +104,7 @@ public class NotificationTest extends BaseTest {
                 @Override
                 public void changed(DatabaseChange change) {
                     assertNotNull(change);
-                    assertEquals(10, change.docIDs.size());
-                    assertTrue(change.getLastSequence() > 0);
-                    assertTrue(change.isExternal());
+                    assertEquals(10, change.getDocumentIDs().size());
                     assertEquals(1, latchDB.getCount());
                     latchDB.countDown();
                 }
@@ -118,10 +115,9 @@ public class NotificationTest extends BaseTest {
                 @Override
                 public void changed(DocumentChange change) {
                     assertNotNull(change);
-                    assertEquals("doc-6", change.getDocID());
-                    assertTrue(change.getSequence() > 0);
-                    Document doc = db2.getDocument(change.getDocID());
-                    assertEquals("demo", doc.get("type"));
+                    assertEquals("doc-6", change.getDocumentID());
+                    Document doc = db2.getDocument(change.getDocumentID());
+                    assertEquals("demo", doc.getString("type"));
                     assertEquals(1, latchDoc.getCount());
                     latchDoc.countDown();
                 }
@@ -131,9 +127,9 @@ public class NotificationTest extends BaseTest {
                 @Override
                 public void run() {
                     for (int i = 0; i < 10; i++) {
-                        Document doc = db.getDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                        Document doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                         doc.set("type", "demo");
-                        doc.save();
+                        save(doc);
                     }
                 }
             });
@@ -144,4 +140,5 @@ public class NotificationTest extends BaseTest {
             db2.close();
         }
     }
+
 }

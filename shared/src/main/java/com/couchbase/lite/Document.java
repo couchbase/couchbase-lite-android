@@ -21,256 +21,451 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static com.couchbase.lite.internal.Misc.CreateUUID;
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.Constants.C4RevisionFlags.kRevHasAttachments;
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
 
 /**
- * A Couchbase Lite document. A document has key/value properties like a Dictionary;
- * their API is defined by the superclass Properties.
- * To learn how to work with properties, see {@code Properties} documentation.
+ * A Couchbase Lite Document. A document has key/value properties like a Map.
  */
-public final class Document extends Properties {
+public final class Document extends ReadOnlyDocument implements DictionaryInterface {
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+    private Database database;
+    private Dictionary dictionary;
 
-    private Database db;
-    private String id;
-    private ConflictResolver conflictResolver;
-    private com.couchbase.litecore.Document c4doc;
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
 
-    Document(Database db, String docID, boolean mustExist) throws CouchbaseLiteException {
-        super(db.getSharedKeys());
-        this.db = db;
-        this.id = docID;
+    /**
+     * Creates a new Document object with a new random UUID. The created document will be
+     * saved into a database when you call the Database's save(Document) method with the document
+     * object given.
+     */
+    public Document() {
+        this((String) null);
+    }
 
-        // TODO: Reconsider if loading litecore.Document in constructor is good.
-        //       Should we pass litecoreDocument to Document constructor?
-        //       Current impl: DB.getDoc() -> Doc constructor -> db.read().....
-        load(mustExist);
+    /**
+     * Creates a new Document object with the given ID. If a null ID value is given, the document
+     * will be created with a new random UUID. The created document will be
+     * saved into a database when you call the Database's save(Document) method with the document
+     * object given.
+     *
+     * @param id the document ID.
+     */
+    public Document(String id) {
+        super(id != null ? id : CreateUUID(), null, null);
+        this.dictionary = new Dictionary();
+    }
+
+    /**
+     * Initializes a new CBLDocument object with a new random UUID and the dictionary as the content.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types.
+     * The created document will be
+     * saved into a database when you call the Database's save(Document) method with the document
+     * object given.
+     *
+     * @param dictionary the Map object
+     */
+    public Document(Map<String, Object> dictionary) {
+        this((String) null);
+        set(dictionary);
+    }
+
+    /**
+     * Initializes a new Document object with a given ID and the dictionary as the content.
+     * If a null ID value is given, the document will be created with a new random UUID.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types.
+     * The created document will be saved into a database when you call
+     * the Database's save(Document) method with the document object given.
+     *
+     * @param id         the document ID.
+     * @param dictionary the Map object
+     */
+    public Document(String id, Map<String, Object> dictionary) {
+        this(id);
+        set(dictionary);
+    }
+
+    /*package*/ Document(Database database, String documentID, boolean mustExist) throws CouchbaseLiteException {
+        super(documentID, null, null);
+        this.database = database;
+        loadDoc(mustExist);
     }
 
     //---------------------------------------------
     // public API methods
     //---------------------------------------------
 
+    //---------------------------------------------
+    // DictionaryInterface implementation
+    //---------------------------------------------
+
     /**
-     * Return the document's owning database.
+     * Set a dictionary as a content. Allowed value types are List, Date, Map, Number, null, String,
+     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
+     * Setting the new dictionary content will replace the current data including the existing Array
+     * and Dictionary objects.
      *
-     * @return the document's owning database.
+     * @param dictionary the dictionary object.
+     * @return this Document instance
      */
-    public Database getDatabase() {
-        return db;
+    @Override
+    public Document set(Map<String, Object> dictionary) {
+        this.dictionary.set(dictionary);
+        return this;
     }
 
     /**
-     * Returns the ConflictResolver added to this Document with {@code setConflictResolver()}.
+     * Set an object value by key. Allowed value types are List, Date, Map, Number, null, String,
+     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
+     * An Date object will be converted to an ISO-8601 format string.
      *
-     * @return the ConflictResolver
+     * @param key   the key.
+     * @param value the object value.
+     * @return this Document instance
      */
-    public ConflictResolver getConflictResolver() {
-        return conflictResolver;
+    @Override
+    public Document set(String key, Object value) {
+        dictionary.set(key, value);
+        return this;
     }
 
     /**
-     * Set the conflict resolver, if any, specific to this document.
-     * If nil, the database's conflict resolver will be used.
+     * Removes the mapping for a key from this Dictionary
      *
-     * @param conflictResolver the conflict resolver
+     * @param key the key.
+     * @return this Document instance
      */
-    public void setConflictResolver(ConflictResolver conflictResolver) {
-        this.conflictResolver = conflictResolver;
+    @Override
+    public Document remove(String key) {
+        dictionary.remove(key);
+        return this;
     }
 
     /**
-     * return the document's ID.
+     * Get a property's value as a Array, which is a mapping object of an array value.
+     * Returns null if the property doesn't exists, or its value is not an array.
      *
-     * @return the document's ID
+     * @param key the key.
+     * @return the Array object.
      */
-    public String getID() {
-        return id;
+    @Override
+    public Array getArray(String key) {
+        return dictionary.getArray(key);
     }
 
     /**
-     * Return the sequence number of the document in the database.
-     * This indicates how recently the document has been changed: every time any document is updated,
-     * the database assigns it the next sequential sequence number. Thus, if a document's `sequence`
-     * property changes that means it's been changed (on-disk); and if one document's `sequence`
-     * is greater than another's, that means it was changed more recently.
+     * Get a property's value as a Dictionary, which is a mapping object of an dictionary value.
+     * Returns null if the property doesn't exists, or its value is not an dictionary.
      *
-     * @return the sequence number of the document in the database.
+     * @param key the key.
+     * @return the Dictionary object or null if the key doesn't exist.
      */
-    public long getSequence() {
-        return c4doc.getSequence();
+    @Override
+    public Dictionary getDictionary(String key) {
+        return dictionary.getDictionary(key);
+    }
+
+    //---------------------------------------------
+    // API - overridden from ReadOnlyDocument
+    //---------------------------------------------
+
+    /**
+     * Gets a number of the entries in the dictionary.
+     *
+     * @return
+     */
+    @Override
+    public long count() {
+        return dictionary.count();
     }
 
     /**
-     * Return whether the document is deleted
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
      *
-     * @return true if deleted, false otherwise
+     * @param key the key.
+     * @return the object value or nil.
      */
-    public boolean isDeleted() {
-        return c4doc.deleted();
+    @Override
+    public Object getObject(String key) {
+        return dictionary.getObject(key);
     }
 
     /**
-     * Return whether the document exists in the database.
+     * Gets a property's value as a String. Returns null if the value doesn't exist, or its value is not a String.
      *
-     * @return true if exists, false otherwise.
+     * @param key the key
+     * @return the String or null.
      */
-    public boolean exists() {
-        return c4doc.exists();
+    @Override
+    public String getString(String key) {
+        return dictionary.getString(key);
     }
 
     /**
-     * Saves property changes back to the database.
-     * If the document in the database has been updated since it was read by this CBLDocument, a
-     * conflict occurs, which will be resolved by invoking the conflict handler. This can happen if
-     * multiple application threads are writing to the database, or a pull replication is copying
-     * changes from a server.
+     * Gets a property's value as a Number. Returns null if the value doesn't exist, or its value is not a Number.
      *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     * @param key the key
+     * @return the Number or nil.
      */
-    public void save() throws CouchbaseLiteException {
-        save(effectiveConflictResolver(), false);
+    @Override
+    public Number getNumber(String key) {
+        return dictionary.getNumber(key);
     }
 
     /**
-     * Deletes this document. All properties are removed, and subsequent calls to
-     * {@code getDocument(String)} will return nil.
-     * Deletion adds a special "tombstone" revision to the database, as bookkeeping so that the
-     * change can be replicated to other databases. Thus, it does not free up all of the disk space
-     * occupied by the document.
-     * To delete a document entirely (but without the ability to replicate this), use {@code purge()}.
+     * Gets a property's value as an int.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
      *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     * @param key the key
+     * @return the int value.
      */
-    public void delete() throws CouchbaseLiteException {
-        save(effectiveConflictResolver(), true);
+    @Override
+    public int getInt(String key) {
+        return dictionary.getInt(key);
     }
 
     /**
-     * Purges this document from the database.
-     * This is more drastic than deletion: it removes all traces of the document.
-     * The purge will NOT be replicated to other databases.
+     * Gets a property's value as an long.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
      *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     * @param key the key
+     * @return the long value.
      */
-    public void purge() throws CouchbaseLiteException {
-        if (!exists())
-            throw new CouchbaseLiteException("the document does not exist.");
-
-        boolean commit = false;
-        db.beginTransaction();
-        try {
-            // revID: null, all revisions are purged.
-            if (c4doc.purgeRevision(null) >= 0) {
-                c4doc.save(0);
-                commit = true;
-            }
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
-        } finally {
-            db.endTransaction(commit);
-        }
-
-        // reload
-        load(false);
-
-        // reset
-        resetChanges();
+    @Override
+    public long getLong(String key) {
+        return dictionary.getLong(key);
     }
 
     /**
-     * Reverts unsaved changes made to the document's properties.
+     * Gets a property's value as an float.
+     * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the float value.
      */
-    public void revert() {
-        resetChanges();
+    @Override
+    public float getFloat(String key) {
+        return dictionary.getFloat(key);
+    }
+
+    /**
+     * Gets a property's value as an double.
+     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the double value.
+     */
+    @Override
+    public double getDouble(String key) {
+        return dictionary.getDouble(key);
+    }
+
+    /**
+     * Gets a property's value as a boolean. Returns true if the value exists, and is either `true`
+     * or a nonzero number.
+     *
+     * @param key the key
+     * @return the boolean value.
+     */
+    @Override
+    public boolean getBoolean(String key) {
+        return dictionary.getBoolean(key);
+    }
+
+    /**
+     * Gets a property's value as a Blob.
+     * Returns null if the value doesn't exist, or its value is not a Blob.
+     *
+     * @param key the key
+     * @return the Blob value or null.
+     */
+    @Override
+    public Blob getBlob(String key) {
+        return dictionary.getBlob(key);
+    }
+
+    /**
+     * Gets a property's value as a Date.
+     * JSON does not directly support dates, so the actual property value must be a string, which is
+     * then parsed according to the ISO-8601 date format (the default used in JSON.)
+     * Returns null if the value doesn't exist, is not a string, or is not parseable as a date.
+     * NOTE: This is not a generic date parser! It only recognizes the ISO-8601 format, with or
+     * without milliseconds.
+     *
+     * @param key the key
+     * @return the Date value or null.
+     */
+    @Override
+    public Date getDate(String key) {
+        return dictionary.getDate(key);
+    }
+
+    /**
+     * Gets content of the current object as an Map. The values contained in the returned
+     * Map object are all JSON based values.
+     *
+     * @return the Map object representing the content of the current object in the JSON format.
+     */
+    @Override
+    public Map<String, Object> toMap() {
+        return dictionary.toMap();
+    }
+
+    /**
+     * Tests whether a property exists or not.
+     * This can be less expensive than getObject(String), because it does not have to allocate an Object for the property value.
+     *
+     * @param key the key
+     * @return the boolean value representing whether a property exists or not.
+     */
+    @Override
+    public boolean contains(String key) {
+        return dictionary.contains(key);
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
+    // TODO: Once Iterable is implemented, change back to package level accessor
     @Override
-    void setHasChanges(boolean hasChanges) {
-        if (this.hasChanges != hasChanges) {
-            super.setHasChanges(hasChanges);
-            getDatabase().unsavedDocument(this, hasChanges);
+    public List<String> allKeys() {
+        return dictionary.allKeys();
+    }
+
+    /*package*/  Database getDatabase() {
+        return database;
+    }
+
+    /*package*/ void setDatabase(Database database) {
+        this.database = database;
+    }
+
+    /*package*/ void save() throws CouchbaseLiteException {
+        save(effectiveConflictResolver(), false);
+    }
+
+    /*package*/  void delete() throws CouchbaseLiteException {
+        save(effectiveConflictResolver(), true);
+    }
+
+    /*package*/  void purge() throws CouchbaseLiteException {
+        if (!exists())
+            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+
+        boolean commit = false;
+        database.beginTransaction();
+        try {
+            // revID: null, all revisions are purged.
+            if (getC4doc().getRawDoc().purgeRevision(null) >= 0) {
+                getC4doc().getRawDoc().save(0);
+                commit = true;
+            }
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        } finally {
+            database.endTransaction(commit);
         }
-    }
 
-    @Override
-    void markChanges() {
-        super.markChanges();
-        // TODO DB00x: send notification
-    }
-
-    @Override
-    Blob blobWithProperties(Map<String, Object> dict) {
-        return new Blob(db, dict);
+        // reset
+        setC4Doc(null);
     }
 
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
-    private void load(boolean mustExist) throws CouchbaseLiteException {
-        com.couchbase.litecore.Document doc = db.read(id, mustExist);
+    // // (Re)loads the document from the db, updating _c4doc and other state.
+    private void loadDoc(boolean mustExist) throws CouchbaseLiteException {
+        com.couchbase.litecore.Document rawDoc = readC4Doc(mustExist);
+        if (rawDoc == null)
+            return;
         // NOTE: c4doc should not be null.
-        setC4Doc(doc);
-        setHasChanges(false);
+        setC4Doc(new CBLC4Doc(rawDoc));
+
     }
 
-    private void setC4Doc(com.couchbase.litecore.Document doc) throws CouchbaseLiteException {
-        if (c4doc != null)
-            c4doc.free();
-        c4doc = doc;
-        setRoot(null);
+    // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
+    private com.couchbase.litecore.Document readC4Doc(boolean mustExist) throws CouchbaseLiteException {
+        try {
+            return database.internal().getDocument(getId(), mustExist);
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+
+    // Sets c4doc and updates my root dictionary
+    private void setC4Doc(CBLC4Doc c4doc) throws CouchbaseLiteException {
+        super.setC4doc(c4doc);
         if (c4doc != null) {
+            FLDict root = null;
             byte[] body = null;
             try {
-                // In case of (LiteCoreDomain, kC4ErrorDeleted) -> body = null if we directly bind to C4 APIs.
-                body = c4doc.getSelectedBody();
+                if (!c4doc.getRawDoc().deleted())
+                    body = c4doc.getRawDoc().getSelectedBody();
             } catch (LiteCoreException e) {
-                if (e.domain != LiteCoreDomain || e.code != Constants.LiteCoreError.kC4ErrorDeleted)
+                // in case body is empty, deleted is thrown.
+                if (e.code != Constants.LiteCoreError.kC4ErrorDeleted)
                     throw LiteCoreBridge.convertException(e);
             }
-            if (body != null && body.length > 0) {
-                FLDict root = FLValue.fromData(body).asFLDict();
-                setRoot(root);
-            }
-        }
-        useNewRoot();
+            if (body != null && body.length > 0)
+                root = FLValue.fromData(body).asFLDict();
+            setData(new CBLFLDict(root, c4doc, database));
+        } else
+            setData(null);
+
+        this.dictionary = new Dictionary(getData());
     }
 
     private void save(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
         // No-op case of unchanged document:
-        if (!hasChanges && !deletion && exists())
+        if (!isChanged() && !deletion && exists())
             return;
+
+
+        if (deletion && !exists())
+            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
 
         com.couchbase.litecore.Document newDoc = null;
 
-        // Begin a db transaction:
+        // Begin a database transaction:
         boolean commit = false;
-        db.beginTransaction();
+        database.beginTransaction();
         try {
             // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
             try {
                 newDoc = save(deletion);
             } catch (LiteCoreException e) {
+                // conflict is not an error, here
                 if (e.domain != LiteCoreDomain || e.code != kC4ErrorConflict)
                     throw LiteCoreBridge.convertException(e);
             }
             if (newDoc == null) {
+
                 // There's been a conflict; first merge with the new saved revision:
                 merge(resolver, deletion);
 
                 // The merge might have turned the save into a no-op:
-                if (!hasChanges)
+                if (!isChanged())
                     return;
 
                 // Now save the merged properties:
@@ -283,51 +478,47 @@ public final class Document extends Properties {
 
             commit = true;
         } finally {
-            // End a db transaction.
-            db.endTransaction(commit);
+            // Save succeeded; now commit the transaction: Otherwise; abort the transaction
+            try {
+                database.endTransaction(commit);
+            } catch (CouchbaseLiteException e) {
+                newDoc.free();
+                throw e;
+            }
         }
 
         // Update my state and post a notification:
-        setC4Doc(newDoc);
-        setHasChanges(false);
-        if (deletion)
-            resetChanges();
-
-        // TODO DB00x: postChangedNotificationExternal
+        setC4Doc(new CBLC4Doc(newDoc));
     }
 
     private void merge(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
-        com.couchbase.litecore.Document currentDoc = db.read(id, true);
+        com.couchbase.litecore.Document rawDoc = database.read(getId(), true);
 
-        Map<String, Object> current = null;
+        FLDict curRoot = null;
         try {
-            // TODO: better to return C4String instead of byte[]
-            //       This part of code is not efficient.
-            byte[] currentData = currentDoc.getSelectedBody();
-            if (currentData.length > 0) {
-                FLValue currentRoot = FLValue.fromData(currentData);
-                SharedKeys currentKeys = new SharedKeys(this.sharedKeys, currentRoot.asFLDict());
-                current = (Map<String, Object>) SharedKeys.valueToObject(currentRoot, currentKeys);
-                Log.e(Log.DATABASE, "merge() current -> " + current);
-                // TODO: Need currentRoot.free()?
-            }
+            byte[] currentData = rawDoc.getSelectedBody();
+            if (currentData.length > 0)
+                curRoot = FLValue.fromData(currentData).asFLDict();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
 
-        Map<String, Object> resolved = null;
+        CBLC4Doc curC4doc = new CBLC4Doc(rawDoc);
+        CBLFLDict curDict = new CBLFLDict(curRoot, curC4doc, database);
+        ReadOnlyDocument current = new ReadOnlyDocument(getId(), curC4doc, curDict);
+
+        // Resolve conflict:
+        ReadOnlyDocument resolved;
         if (deletion) {
-            // Deletion always losses a conflit
+            // Deletion always loses a conflict:
             resolved = current;
         } else if (resolver != null) {
             // Call the custom conflict resolver
-            resolved = resolver.resolve(
-                    getProperties() != null ? getProperties() : new HashMap<String, Object>(),
-                    current != null ? current : new HashMap<String, Object>(),
-                    getSavedProperties());
+            ReadOnlyDocument base = new ReadOnlyDocument(getId(), super.getC4doc(), super.getData());
+            Conflict conflict = new Conflict(this, current, base, Conflict.OperationType.kCBLDatabaseWrite);
+            resolved = resolver.resolve(conflict);
             if (resolved == null) {
-                // Resolver gave up:
-                currentDoc.free();
+                rawDoc.free();
                 throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
             }
         } else {
@@ -335,196 +526,125 @@ public final class Document extends Properties {
             // TODO: Once conflict resolvers can access the document generation, move this logic
             //       into a default ConflictResolver.
             long myGeneraton = generation() + 1;
-            long theirGeneration = generationFromRevID(currentDoc.getRevID());
+            long theirGeneration = generationFromRevID(curC4doc.getRevID());
             if (myGeneraton >= theirGeneration)
-                resolved = getProperties();
+                resolved = this;
             else
                 resolved = current;
         }
 
         // Now update my state to the current C4Document and the merged/resolved properties:
-        setC4Doc(currentDoc);
-        this.setProperties(resolved);
+
         // NOTE: AbstractMap.equals() calls all values in the map. Nested data's equality check is
         // depends on its implementation.
-        if (resolved.equals(current))
-            this.setHasChanges(false); // Document is now identical to current revision
+        if (!resolved.equals(current)) {
+            Map map = resolved.toMap();
+            setC4Doc(curC4doc);
+            set(map);
+        } else {
+            setC4Doc(curC4doc);
+        }
     }
+
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
     private com.couchbase.litecore.Document save(boolean deletion) throws LiteCoreException {
-        Map<String, Object> propertiesToSave = deletion ? null : getProperties();
-        int flags = 0;
+
+        //String docID = this.id;
         byte[] body = null;
+        List<String> revIDs = new ArrayList<>();
+        if (getC4doc() != null && getC4doc().getRevID() != null)
+            revIDs.add(getC4doc().getRevID());
+        String[] history = revIDs.toArray(new String[revIDs.size()]);
+        int flags = 0;
         if (deletion)
             flags = Constants.C4RevisionFlags.kRevDeleted;
-        if (propertiesToSave != null && dictContainsBlob(propertiesToSave))
+        if (containsBlob(this))
             flags |= kRevHasAttachments;
-        if (propertiesToSave != null && propertiesToSave.size() > 0) {
+        if (!deletion && !isEmpty()) {
             // Encode properties to Fleece data:
-            FLEncoder encoder = db.internal().createFleeceEncoder();
-            body = encode(encoder);
-            encoder.free();
+            FLEncoder encoder = database.internal().createFleeceEncoder();
+            try {
+                body = encode(encoder);
+            } finally {
+                encoder.free();
+            }
+
             if (body == null)
                 return null;
         }
-        List<String> revIDs = new ArrayList<>();
-        if (c4doc.getRevID() != null)
-            revIDs.add(c4doc.getRevID());
-        String[] history = revIDs.toArray(new String[revIDs.size()]);
 
         // Save to database:
-        com.couchbase.litecore.Document newDoc = db.internal().put(c4doc.getDocID(), body, false, false, history, flags, true, 0);
-        return newDoc;
+        return database.internal().put(getId(), body, false, false, history, flags, true, 0);
     }
 
-    private void resetChanges() {
-        this.properties = null; // not calling setProperties(null)
-        setHasChanges(false);
-    }
+    // #pragma mark - FLEECE ENCODING
 
-    private void store(Blob blob) {
-        blob.installInDatabase(db);
-    }
-
-    private Blob blob(Map<String, Object> properties) {
-        return new Blob(db, properties);
-    }
-
-    private static boolean dictContainsBlob(Map<String, Object> dict) {
-        if (dict == null)
-            return false;
-
-        Object obj = dict.get("_cbltype");
-        if (obj != null && obj instanceof String && ((String) obj).equals("blob"))
-            return true;
-        boolean containsBlob = false;
-        for (Map.Entry<String, Object> entry : dict.entrySet()) {
-            containsBlob = objectContainsBlob(entry.getValue());
-            if (containsBlob)
-                break;
+    private byte[] encode(FLEncoder encoder) throws CouchbaseLiteException {
+        dictionary.fleeceEncode(encoder, database);
+        try {
+            return encoder.finish();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
         }
-        return containsBlob;
     }
 
-    private static boolean arrayContainsBlob(List<Object> array) {
-        if (array == null)
-            return false;
-
-        for (Object obj : array) {
-            if (objectContainsBlob(obj))
-                return true;
-        }
-        return false;
+    private ConflictResolver effectiveConflictResolver() {
+        return database != null ? database.getConflictResolver() : null;
     }
+
+    private boolean isChanged() {
+        return dictionary.isChanged();
+    }
+
+    private boolean isEmpty() {
+        return dictionary.isEmpty();
+    }
+
+
+    // The next four functions search recursively for a property "_cbltype":"blob".
 
     private static boolean objectContainsBlob(Object obj) {
         if (obj == null)
             return false;
         else if (obj instanceof Blob)
             return true;
-        else if (obj instanceof Map)
-            return dictContainsBlob((Map<String, Object>) obj);
-        else if (obj instanceof List)
-            return arrayContainsBlob((List<Object>) obj);
+        else if (obj instanceof Dictionary)
+            return dictionaryContainsBlob((Dictionary) obj);
+        else if (obj instanceof Array)
+            return arrayContainsBlob((Array) obj);
         else
             return false;
     }
 
-    // TODO: Instead of byte[], should we use FLSliceResult? Less memory transfer through JNI.
-    private byte[] encode(FLEncoder encoder) throws CouchbaseLiteException {
-        try {
-            encoder.beginDict(getProperties().size());
-            Iterator<String> keys = getProperties().keySet().iterator();
-            while (keys.hasNext()) {
-                String key = keys.next();
-                encoder.writeKey(key);
-                Object value = getProperties().get(key);
-                if (value instanceof Blob)
-                    store((Blob) value);
-                writeValue(encoder, value);
-            }
-            encoder.endDict();
-            byte[] body;
-            try {
-                body = encoder.finish();
-            } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
-            }
-            return body;
-        } finally {
-            encoder.free();
+    private static boolean arrayContainsBlob(Array array) {
+        if (array == null) return false;
+        for (int i = 0; i < array.count(); i++) {
+            if (objectContainsBlob(array.getObject(i)))
+                return true;
         }
-    }
-
-    private boolean writeValue(FLEncoder encoder, Object value) {
-        if (value == null)
-            return encoder.writeNull();
-        else if (value instanceof Boolean)
-            return encoder.writeBool((Boolean) value);
-        else if (value instanceof Number) {
-            if (value instanceof Integer || value instanceof Long)
-                return encoder.writeInt(((Number) value).longValue());
-            else if (value instanceof Double)
-                return encoder.writeDouble(((Double) value).doubleValue());
-            else
-                return encoder.writeFloat(((Float) value).floatValue());
-        } else if (value instanceof String)
-            return encoder.writeString((String) value);
-        else if (value instanceof byte[])
-            return encoder.writeData((byte[]) value);
-        else if (value instanceof List)
-            return encoder.write((List) value);
-        else if (value instanceof Map)
-            return write(encoder, (Map) value);
-        else if (value instanceof Blob)
-            return writeValueForObject(encoder, value);
         return false;
     }
 
-    private boolean write(FLEncoder encoder, Map map) {
-        encoder.beginDict(map.size());
-        Iterator keys = map.keySet().iterator();
-        while (keys.hasNext()) {
-            String key = (String) keys.next();
-            Object value = map.get(key);
-            if (value instanceof Blob)
-                store((Blob) value);
-            encoder.writeKey(key);
-            writeValueForObject(encoder, value);
-        }
-        return encoder.endDict();
-    }
-
-    private boolean writeValueForObject(FLEncoder encoder, Object value) {
-        if (value instanceof Blob)
-            value = ((Blob) value).jsonRepresentation();
-        return writeValue(encoder, value);
-    }
-
-    private ConflictResolver effectiveConflictResolver() {
-        return conflictResolver != null ? conflictResolver : db.getConflictResolver();
-    }
-
-    private long generation() {
-        return generationFromRevID(c4doc.getRevID());
-    }
-
-    /**
-     * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
-     */
-    private static long generationFromRevID(String revID) {
-        long generation = 0;
-        long length = Math.min(revID == null ? 0 : revID.length(), 9);
-        for (int i = 0; i < length; ++i) {
-            char c = revID.charAt(i);
-            if (Character.isDigit(c))
-                generation = 10 * generation + Character.getNumericValue(c);
-            else if (c == '-')
-                return generation;
-            else
+    private static boolean dictionaryContainsBlob(Dictionary dict) {
+        if (dict == null)
+            return false;
+        boolean containsBlob = false;
+        for (String key : dict.allKeys()) {
+            if (containsBlob = objectContainsBlob(dict.getObject(key)))
                 break;
         }
-        return 0;
+        return containsBlob;
+    }
+
+    private static boolean containsBlob(Document doc) {
+        if (doc == null)
+            return false;
+        boolean containsBlob = false;
+        for (String key : doc.allKeys()) {
+            if (containsBlob = objectContainsBlob(doc.getObject(key)))
+                break;
+        }
+        return containsBlob;
     }
 }

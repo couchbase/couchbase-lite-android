@@ -18,30 +18,31 @@ import java.io.File;
 /**
  * Options for opening a database. All properties default to false or null.
  */
-public final class DatabaseOptions {
+public final class DatabaseConfiguration {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private File directory = null;
     private Object encryptionKey = null;
-    private boolean readOnly = false;
+    private ConflictResolver conflictResolver = null;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     /**
-     * Constructs a new DatabaseOptions with default values.
+     * Constructs a new DatabaseConfiguration with default values.
      */
-    public DatabaseOptions() {
+    public DatabaseConfiguration() {
     }
 
-    public DatabaseOptions(File directory, Object encryptionKey, boolean readOnly) {
+    public DatabaseConfiguration(File directory, Object encryptionKey, ConflictResolver conflictResolver) {
         this.directory = directory;
         this.encryptionKey = encryptionKey;
-        this.readOnly = readOnly;
+        this.conflictResolver = conflictResolver;
     }
-//---------------------------------------------
+
+    //---------------------------------------------
     // API - public methods
     //---------------------------------------------
 
@@ -82,29 +83,19 @@ public final class DatabaseOptions {
         this.encryptionKey = encryptionKey;
     }
 
-    /**
-     * Whether the database will be opened read-only.
-     *
-     * @return true if the database is opened with read-only mode.
-     */
-    public boolean isReadOnly() {
-        return readOnly;
+    public ConflictResolver getConflictResolver() {
+        return conflictResolver;
     }
 
-    /**
-     * Set true to open the database with read-only mode
-     *
-     * @param readOnly true to open the database with read-only mode
-     */
-    public void setReadOnly(boolean readOnly) {
-        this.readOnly = readOnly;
+    public void setConflictResolver(ConflictResolver conflictResolver) {
+        this.conflictResolver = conflictResolver;
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
-    /* package */ DatabaseOptions copy() {
-        return new DatabaseOptions(this.directory, this.encryptionKey, this.readOnly);
+    /* package */ DatabaseConfiguration copy() {
+        return new DatabaseConfiguration(this.directory, this.encryptionKey, this.conflictResolver);
     }
 }
