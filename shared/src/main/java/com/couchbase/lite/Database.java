@@ -41,6 +41,8 @@ import java.util.Set;
 
 import static com.couchbase.lite.Status.CBLErrorDomain;
 import static com.couchbase.lite.Status.Forbidden;
+import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorNotFound;
 import static java.util.Collections.synchronizedSet;
 
 /**
@@ -160,7 +162,7 @@ public final class Database {
      * @return the Document object
      */
     public Document getDocument(String documentID) {
-        return getDocument(documentID, false);
+        return getDocument(documentID, true);
     }
 
     // Save document:
@@ -585,7 +587,14 @@ public final class Database {
     //////// DOCUMENTS:
 
     private Document getDocument(String documentID, boolean mustExist) throws CouchbaseLiteException {
-        return new Document(this, documentID, mustExist);
+        try {
+            return new Document(this, documentID, mustExist);
+        } catch (CouchbaseLiteException e) {
+            if (e.getDomain() == LiteCoreDomain && e.getCode() == kC4ErrorNotFound)
+                return null;
+            else
+                throw e;
+        }
     }
 
 

@@ -215,7 +215,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     //  Get Document
     //---------------------------------------------
-    //TODO: @Test
+    @Test
     public void testGetNonExistingDocWithID() {
         assertTrue(db.getDocument("non-exist") == null);
     }

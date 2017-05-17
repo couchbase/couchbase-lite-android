@@ -110,9 +110,9 @@ public class BaseTest {
             JSONObject json = new JSONObject(line);
             Map<String, Object> props = JsonUtils.fromJson(json);
             String docId = String.format(Locale.ENGLISH, "doc-%03d", n);
-            Document doc = db.getDocument(docId);
+            Document doc = createDocument(docId);
             doc.set(props);
-            db.save(doc);
+            save(doc);
         }
     }
 

@@ -43,9 +43,9 @@ public class NotificationTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 0; i < 10; i++) {
-                    Document doc = db.getDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                    Document doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                     doc.set("type", "demo");
-                    doc.save();
+                    save(doc);
                 }
             }
         });
@@ -54,8 +54,9 @@ public class NotificationTest extends BaseTest {
 
     @Test
     public void testDocumentNotification() throws InterruptedException {
-        Document docA = db.getDocument("A");
-        Document docB = db.getDocument("B");
+        Document docA = createDocument("A");
+        Document docB = createDocument("B");
+
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         DocumentChangeListener listener1 = new DocumentChangeListener() {
@@ -69,9 +70,9 @@ public class NotificationTest extends BaseTest {
         };
         db.addChangeListener("A", listener1);
         docB.set("thewronganswer", 18);
-        docB.save();
+        save(docB);
         docA.set("theanswer", 18);
-        docA.save();
+        save(docA);
         assertTrue(latch1.await(10, TimeUnit.SECONDS));
         db.removeChangeListener("A", listener1);
 
@@ -87,7 +88,7 @@ public class NotificationTest extends BaseTest {
         };
         db.addChangeListener("A", listener2);
         docA.set("thewronganswer", 18);
-        docA.save();
+        save(docA);
         assertTrue(latch2.await(5, TimeUnit.SECONDS));
         db.removeChangeListener("A", listener1);
     }
@@ -126,9 +127,9 @@ public class NotificationTest extends BaseTest {
                 @Override
                 public void run() {
                     for (int i = 0; i < 10; i++) {
-                        Document doc = db.getDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                        Document doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                         doc.set("type", "demo");
-                        doc.save();
+                        save(doc);
                     }
                 }
             });

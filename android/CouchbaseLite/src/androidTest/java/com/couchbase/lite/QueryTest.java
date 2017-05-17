@@ -50,10 +50,10 @@ public class QueryTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 1; i <= num; i++) {
-                    Document doc = db.getDocument("doc" + i);
+                    Document doc = createDocument("doc" + i);
                     doc.set("number1", i);
                     doc.set("number2", num - i);
-                    db.save(doc);
+                    save(doc);
                     numbers.add(doc.toMap());
                 }
             }
