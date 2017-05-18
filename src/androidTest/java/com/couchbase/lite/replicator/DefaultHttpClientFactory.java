@@ -56,4 +56,9 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     public CookieJar getCookieStore() {
         return null;
     }
+
+    @Override
+    public void evictAllConnectionsInPool() {
+
+    }
 }
