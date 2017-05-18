@@ -187,7 +187,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      * @return
      */
     @Override
-    public long count() {
+    public int count() {
         return dictionary.count();
     }
 

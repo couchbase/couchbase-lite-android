@@ -428,7 +428,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     }
 
     private void loadBackingFleeceData() {
-        int count = (int) super.count();
+        int count = super.count();
         for (int i = 0; i < count; i++) {
             Object value = super.getObject(i);
             list.add(CBLData.convert(value, this));

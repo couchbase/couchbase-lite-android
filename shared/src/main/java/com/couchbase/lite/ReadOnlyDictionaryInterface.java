@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.Map;
 
 /* package */ interface ReadOnlyDictionaryInterface {
-    long count();
+    int count();
 
     Object getObject(String key);
 
