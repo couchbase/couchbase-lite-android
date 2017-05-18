@@ -969,7 +969,6 @@ public class DocumentTest extends BaseTest {
         });
     }
 
-
     @Test
     public void testSetMap() {
         Map<String, Object> dict = new HashMap<>();

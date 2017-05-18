@@ -10,6 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.couchbase.lite.internal.support.ClassUtils.cast;
+
 /**
  * Array provides access to array data.
  */
@@ -196,11 +198,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public String getString(int index) {
-        try {
-            return (String) getObject(index);
-        } catch (ClassCastException ex) {
-            return null;
-        }
+        return cast(getObject(index), String.class);
     }
 
     /**
@@ -211,11 +209,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public Number getNumber(int index) {
-        try {
-            return (Number) getObject(index);
-        } catch (ClassCastException ex) {
-            return null;
-        }
+        return cast(getObject(index), Number.class);
     }
 
     /**
