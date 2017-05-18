@@ -48,7 +48,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      * @return
      */
     @Override
-    public long count() {
+    public int count() {
         return flDict != null ? flDict.count() : 0;
     }
 

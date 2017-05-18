@@ -158,8 +158,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      * @return
      */
     @Override
-    public long count() {
-        long count = map != null ? map.size() : 0;
+    public int count() {
+        int count = map != null ? map.size() : 0;
         if (count == 0)
             return super.count();
 
