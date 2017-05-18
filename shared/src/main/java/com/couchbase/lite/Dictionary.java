@@ -9,6 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.couchbase.lite.internal.support.ClassUtils.cast;
+import static com.couchbase.lite.internal.support.ClassUtils.toDouble;
+import static com.couchbase.lite.internal.support.ClassUtils.toFloat;
+import static com.couchbase.lite.internal.support.ClassUtils.toInt;
+import static com.couchbase.lite.internal.support.ClassUtils.toLong;
+
 /**
  * Dictionary provides access to dictionary data.
  */
@@ -125,11 +131,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Array getArray(String key) {
-        try {
-            return (Array) getObject(key);
-        } catch (ClassCastException ex) {
-            return null;
-        }
+        return cast(getObject(key), Array.class);
     }
 
     /**
@@ -141,11 +143,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Dictionary getDictionary(String key) {
-        try {
-            return (Dictionary) getObject(key);
-        } catch (ClassCastException ex) {
-            return null;
-        }
+        return cast(getObject(key), Dictionary.class);
     }
 
     //---------------------------------------------
@@ -208,11 +206,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public String getString(String key) {
-        try {
-            return (String) getObject(key);
-        } catch (ClassCastException ex) {
-            return null;
-        }
+        return cast(getObject(key), String.class);
     }
 
     /**
@@ -223,11 +217,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Number getNumber(String key) {
-        try {
-            return (Number) getObject(key);
-        } catch (ClassCastException ex) {
-            return null;
-        }
+        return cast(getObject(key), Number.class);
     }
 
     /**
@@ -244,11 +234,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         if (value == null)
             return super.getInt(key);
         else {
-            try {
-                return ((Number) value).intValue();
-            } catch (ClassCastException ex) {
-                return 0;
-            }
+            return toInt(value, 0);
         }
     }
 
@@ -266,11 +252,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         if (value == null)
             return super.getLong(key);
         else {
-            try {
-                return ((Number) value).longValue();
-            } catch (ClassCastException ex) {
-                return 0L;
-            }
+            return toLong(value, 0L);
         }
     }
 
@@ -288,11 +270,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         if (value == null)
             return super.getFloat(key);
         else {
-            try {
-                return ((Number) value).floatValue();
-            } catch (ClassCastException ex) {
-                return 0.0F;
-            }
+            return toFloat(value, 0.0F);
         }
     }
 
@@ -310,11 +288,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         if (value == null)
             return super.getDouble(key);
         else {
-            try {
-                return ((Number) value).doubleValue();
-            } catch (ClassCastException ex) {
-                return 0.0;
-            }
+            return toDouble(value, 0.0);
         }
     }
 
@@ -346,11 +320,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Blob getBlob(String key) {
-        try {
-            return (Blob) getObject(key);
-        } catch (ClassCastException ex) {
-            return null;
-        }
+        return cast(getObject(key), Blob.class);
     }
 
     /**
