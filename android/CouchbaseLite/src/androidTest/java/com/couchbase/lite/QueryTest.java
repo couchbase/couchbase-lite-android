@@ -159,15 +159,15 @@ public class QueryTest extends BaseTest {
 
     public void failingTestWhereCheckNull() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
-        Document doc1 = new Document("doc1");
+        Document doc1 = createDocument("doc1");
         doc1.set("name", "Scott");
         doc1.set("address", null);
-        db.save(doc1);
+        save(doc1);
 
-        Document doc2 = new Document("doc2");
+        Document doc2 = createDocument("doc2");
         doc2.set("name", "Tiger");
         doc2.set("address", "123 1st ave.");
-        db.save(doc2);
+        save(doc2);
 
         Expression name = Expression.property("name");
         Expression address = Expression.property("address");
@@ -206,7 +206,7 @@ public class QueryTest extends BaseTest {
     public void testWhereIs() throws Exception {
         final Document doc1 = new Document();
         doc1.set("string", "string");
-        db.save(doc1);
+        save(doc1);
 
         Query q;
         int numRows;
@@ -376,11 +376,11 @@ public class QueryTest extends BaseTest {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1669
         final Document doc1 = new Document();
         doc1.set("number", 1);
-        db.save(doc1);
+        save(doc1);
 
         Document doc2 = new Document();
         doc2.set("number", 1);
-        db.save(doc2);
+        save(doc2);
 
         Query q = Query.selectDistinct().from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {

@@ -125,7 +125,7 @@ public class BaseTest {
     }
 
     protected Document save(Document doc) {
-        db.save(doc);
+        save(doc);
         return db.getDocument(doc.getId());
     }
 
@@ -135,7 +135,7 @@ public class BaseTest {
 
     protected Document save(Document doc, Validator<Document> validator) {
         validator.validate(doc);
-        db.save(doc);
+        save(doc);
         doc = db.getDocument(doc.getId());
         validator.validate(doc);
         return doc;

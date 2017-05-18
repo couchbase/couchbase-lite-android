@@ -61,9 +61,9 @@ public class DatabaseTest extends BaseTest {
 
     // helper method to save document
     Document generateDocument(String docID) {
-        Document doc = new Document(docID);
+        Document doc = createDocument(docID);
         doc.set("key", 1);
-        db.save(doc);
+        save(doc);
         assertEquals(1, db.documentCount());
         assertEquals(1, doc.getSequence());
         return doc;
@@ -320,7 +320,7 @@ public class DatabaseTest extends BaseTest {
 
         // update doc
         doc.set("key", 2);
-        db.save(doc);
+        save(doc);
 
         assertEquals(1, db.documentCount());
 
@@ -413,7 +413,7 @@ public class DatabaseTest extends BaseTest {
         doc.set("key", 1);
 
         try {
-            db.save(doc);
+            save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
@@ -431,7 +431,7 @@ public class DatabaseTest extends BaseTest {
         doc.set("key", 1);
 
         try {
-            db.save(doc);
+            save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
@@ -444,7 +444,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     @Test
     public void testDeletePreSaveDoc() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("key", 1);
         try {
             db.delete(doc);
@@ -608,7 +608,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     @Test
     public void testPurgePreSaveDoc() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         try {
             db.purge(doc);
             fail();
@@ -630,7 +630,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(0, db.documentCount());
 
         // Save to check sequence number -> 3 (should it be 2 or 3?)
-        db.save(doc);
+        save(doc);
         // TODO
         // assertEquals(3, doc.getSequence());
     }
