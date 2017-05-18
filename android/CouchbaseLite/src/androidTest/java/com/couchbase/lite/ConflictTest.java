@@ -73,10 +73,10 @@ public class ConflictTest extends BaseTest {
 
     private Document setupConflict() {
         // Setup a default database conflict resolver
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("type", "profile");
         doc.set("name", "Scott");
-        db.save(doc);
+        save(doc);
 
         // Force a conflict
         Map<String, Object> properties = doc.toMap();
@@ -148,7 +148,7 @@ public class ConflictTest extends BaseTest {
         openDB(new TheirsWins());
 
         Document doc1 = setupConflict();
-        db.save(doc1);
+        save(doc1);
         assertEquals("Scotty", doc1.getObject("name"));
 
         // Get a new document with its own conflict resolver
@@ -159,7 +159,7 @@ public class ConflictTest extends BaseTest {
         Document doc2 = db.getDocument("doc2");
         doc2.set("type", "profile");
         doc2.set("name", "Scott");
-        db.save(doc2);
+        save(doc2);
 
         // Force a conflict again
         Map<String, Object> properties = doc2.toMap();
@@ -170,7 +170,7 @@ public class ConflictTest extends BaseTest {
         // Save and make sure that the correct conflict resolver won
         doc2.set("type", "biography");
         doc2.set("age", 31);
-        db.save(doc2);
+        save(doc2);
 
         assertEquals(31, doc2.getObject("age"));
         assertEquals("bio", doc2.getObject("type"));
@@ -185,7 +185,7 @@ public class ConflictTest extends BaseTest {
 
         Document doc = setupConflict();
         try {
-            db.save(doc);
+            save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(LiteCoreDomain, e.getDomain());
@@ -210,7 +210,7 @@ public class ConflictTest extends BaseTest {
         openDB(null);
 
         Document doc = setupConflict();
-        db.save(doc);
+        save(doc);
         assertEquals("Scott Pilgrim", doc.getString("name"));
     }
 
@@ -226,7 +226,7 @@ public class ConflictTest extends BaseTest {
         properties.put("name", "Scott of the Sahara");
         save(properties, doc.getId());
 
-        db.save(doc);
+        save(doc);
         assertEquals("Scott of the Sahara", doc.getString("name"));
     }
 }

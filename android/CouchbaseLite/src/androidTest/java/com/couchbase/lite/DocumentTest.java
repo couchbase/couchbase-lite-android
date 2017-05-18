@@ -93,7 +93,7 @@ public class DocumentTest extends BaseTest {
         assertFalse(doc1a.isDeleted());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
-        db.save(doc1a);
+        save(doc1a);
         Document doc1b = db.getDocument(doc1a.getId());
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
@@ -105,13 +105,13 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testNewDocWithId() {
-        Document doc1a = new Document("doc1");
+        Document doc1a = createDocument("doc1");
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
         assertFalse(doc1a.isDeleted());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
-        db.save(doc1a);
+        save(doc1a);
         Document doc1b = db.getDocument("doc1");
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
@@ -122,10 +122,10 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCreateDocWithEmptyStringID() {
-        Document doc1a = new Document("");
+        Document doc1a = createDocument("");
         assertNotNull(doc1a);
         try {
-            db.save(doc1a);
+            save(doc1a);
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(LiteCoreDomain, e.getDomain());
@@ -135,13 +135,13 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCreateDocWithNilID() {
-        Document doc1a = new Document((String) null);
+        Document doc1a = createDocument(null);
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
         assertFalse(doc1a.isDeleted());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
-        db.save(doc1a);
+        save(doc1a);
         Document doc1b = db.getDocument(doc1a.getId());
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
@@ -170,7 +170,7 @@ public class DocumentTest extends BaseTest {
         assertFalse(doc1a.isDeleted());
         assertEquals(dict, doc1a.toMap());
 
-        db.save(doc1a);
+        save(doc1a);
         Document doc1b = db.getDocument(doc1a.getId());
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
@@ -194,13 +194,13 @@ public class DocumentTest extends BaseTest {
 
         dict.put("phones", Arrays.asList("650-123-0001", "650-123-0002"));
 
-        Document doc1a = new Document("doc1", dict);
+        Document doc1a = createDocument("doc1", dict);
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
         assertFalse(doc1a.isDeleted());
         assertEquals(dict, doc1a.toMap());
 
-        db.save(doc1a);
+        save(doc1a);
         Document doc1b = db.getDocument("doc1");
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
@@ -224,11 +224,11 @@ public class DocumentTest extends BaseTest {
 
         dict.put("phones", Arrays.asList("650-123-0001", "650-123-0002"));
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set(dict);
         assertEquals(dict, doc.toMap());
 
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
         assertEquals(dict, doc.toMap());
 
@@ -247,7 +247,7 @@ public class DocumentTest extends BaseTest {
         doc.set(nuDict);
         assertEquals(nuDict, doc.toMap());
 
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
         assertEquals(nuDict, doc.toMap());
     }
@@ -255,7 +255,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetValueFromNewEmptyDoc() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         save(doc, new Validator<Document>() {
             @Override
             public void validate(final Document d) {
@@ -277,8 +277,8 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetValueFromExistingEmptyDoc() {
-        Document doc = new Document("doc1");
-        db.save(doc);
+        Document doc = createDocument("doc1");
+        save(doc);
         doc = db.getDocument("doc1");
 
         assertEquals(0, doc.getInt("key"));
@@ -298,9 +298,9 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSaveThenGetFromAnotherDB() {
-        Document doc1a = new Document("doc1");
+        Document doc1a = createDocument("doc1");
         doc1a.set("name", "Scott Tiger");
-        db.save(doc1a);
+        save(doc1a);
 
         Database anotherDb = db.copy();
         Document doc1b = anotherDb.getDocument("doc1");
@@ -312,10 +312,10 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testNoCacheNoLive() {
-        Document doc1a = new Document("doc1");
+        Document doc1a = createDocument("doc1");
         doc1a.set("name", "Scott Tiger");
 
-        db.save(doc1a);
+        save(doc1a);
 
         Document doc1b = db.getDocument("doc1");
         Document doc1c = db.getDocument("doc1");
@@ -335,7 +335,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(doc1a.toMap(), doc1d.toMap());
 
         doc1b.set("name", "Daniel Tiger");
-        db.save(doc1b);
+        save(doc1b);
 
         assertNotEquals(doc1b.toMap(), doc1a.toMap());
         assertNotEquals(doc1b.toMap(), doc1c.toMap());
@@ -346,7 +346,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetString() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("string1", "");
         doc.set("string2", "string");
         save(doc, new Validator<Document>() {
@@ -370,7 +370,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetString() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -394,7 +394,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetNumber() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         doc.set("number1", 1);
         doc.set("number2", 0);
@@ -431,7 +431,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetNumber() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -455,7 +455,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetInteger() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -480,7 +480,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetLong() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -505,7 +505,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetFloat() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -530,7 +530,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetDouble() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -555,7 +555,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetGetMinMaxNumbers() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         doc.set("min_int", Integer.MIN_VALUE);
         doc.set("max_int", Integer.MAX_VALUE);
@@ -603,7 +603,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetGetFloatNumbers() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         doc.set("number1", 1.00);
         doc.set("number2", 1.49);
@@ -657,7 +657,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetBoolean() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         doc.set("boolean1", true);
         doc.set("boolean2", false);
@@ -690,7 +690,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetBoolean() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -714,7 +714,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetDate() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         Date date = new Date();
         final String dateStr = DateUtils.toJson(date);
@@ -750,7 +750,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetDate() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -776,7 +776,7 @@ public class DocumentTest extends BaseTest {
     // TODO: Android API 16 - assertEquals(Map.toString(), Map.toString()): order is not guranteed! Need to work!!!!
     // @Test
     public void testSetBlob() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         final Blob blob = new Blob("text/plain", kDocumentTestBlob.getBytes());
         doc.set("blob", blob);
@@ -808,7 +808,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetBlob() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -833,7 +833,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetDictionary() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         Dictionary dict = new Dictionary();
         dict.set("street", "1 Main street");
@@ -842,7 +842,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(dict, doc.getObject("dict"));
         assertEquals(dict.toMap(), ((Dictionary) doc.getObject("dict")).toMap());
 
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         assertTrue(dict != doc.getObject("dict"));
@@ -859,7 +859,7 @@ public class DocumentTest extends BaseTest {
         map.put("city", "Mountain View");
         assertEquals(map, doc.getDictionary("dict").toMap());
 
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         Log.e(TAG, "doc.allKeys() -> " + doc.allKeys());
@@ -870,7 +870,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetDictionary() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -898,7 +898,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetArray() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         Array array = new Array();
         array.add("item1");
@@ -909,7 +909,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(array, doc.getObject("array"));
         assertEquals(array.toList(), ((Array) doc.getObject("array")).toList());
 
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         assertTrue(array != doc.getObject("array"));
@@ -921,7 +921,7 @@ public class DocumentTest extends BaseTest {
         array.add("item4");
         array.add("item5");
 
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         assertTrue(array != doc.getObject("array"));
@@ -932,7 +932,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetArray() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
             @Override
@@ -957,7 +957,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetNull() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("null", null);
         assertEquals(1, doc.count());
         save(doc, new Validator<Document>() {
@@ -977,7 +977,7 @@ public class DocumentTest extends BaseTest {
         dict.put("city", "Mountain View");
         dict.put("state", "CA");
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("address", dict);
 
         Dictionary address = doc.getDictionary("address");
@@ -1012,7 +1012,7 @@ public class DocumentTest extends BaseTest {
         assertNull(address.getString("zip"));
 
         // Save:
-        db.save(doc);
+        save(doc);
         doc = db.getDocument(doc.getId());
 
         nuDict.put("zip", "94302");
@@ -1025,7 +1025,7 @@ public class DocumentTest extends BaseTest {
     public void testSetList() {
         List<String> array = Arrays.asList("a", "b", "c");
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("members", array);
 
         Array members = doc.getArray("members");
@@ -1060,7 +1060,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(3, members.count());
 
         // Save
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         Map<String, Object> expected = new HashMap<>();

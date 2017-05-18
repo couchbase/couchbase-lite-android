@@ -70,7 +70,7 @@ public class ArrayTest extends BaseTest {
         validator.validate(array);
 
         doc.set(key, array);
-        db.save(doc);
+        save(doc);
         doc = db.getDocument(doc.getId());
         array = doc.getArray(key);
 

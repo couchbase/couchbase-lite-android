@@ -18,13 +18,13 @@ public class DictionaryTest extends BaseTest {
         assertEquals(0, address.count());
         assertEquals(new HashMap<String, Object>(), address.toMap());
 
-        Document doc1 = new Document("doc1");
-        doc1.set("address", address);
-        assertEquals(address, doc1.getDictionary("address"));
+        Document doc = createDocument("doc1");
+        doc.set("address", address);
+        assertEquals(address, doc.getDictionary("address"));
 
-        db.save(doc1);
-        doc1 = db.getDocument("doc1");
-        assertEquals(new HashMap<String, Object>(), doc1.getDictionary("address").toMap());
+        save(doc);
+        doc = db.getDocument("doc1");
+        assertEquals(new HashMap<String, Object>(), doc.getDictionary("address").toMap());
     }
 
     @Test
@@ -40,11 +40,11 @@ public class DictionaryTest extends BaseTest {
         assertEquals("CA", address.getObject("state"));
         assertEquals(dict, address.toMap());
 
-        Document doc1 = new Document("doc1");
+        Document doc1 = createDocument("doc1");
         doc1.set("address", address);
         assertEquals(address, doc1.getDictionary("address"));
 
-        db.save(doc1);
+        save(doc1);
         doc1 = db.getDocument("doc1");
         assertEquals(dict, doc1.getDictionary("address").toMap());
     }
@@ -66,10 +66,10 @@ public class DictionaryTest extends BaseTest {
         assertTrue(dict.getArray("key") == null);
         assertEquals(new HashMap<String, Object>(), dict.toMap());
 
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
         doc.set("dict", dict);
 
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         dict = doc.getDictionary("dict");
@@ -90,7 +90,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testSetNestedDictionaries() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         Dictionary level1 = new Dictionary();
         level1.set("name", "n1");
@@ -120,7 +120,7 @@ public class DictionaryTest extends BaseTest {
         dict.put("level3", l3);
         assertEquals(dict, doc.toMap());
 
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         assertTrue(level1 != doc.getDictionary("level1"));
@@ -129,7 +129,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testDictionaryArray() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         List<Object> data = new ArrayList<>();
 
@@ -163,7 +163,7 @@ public class DictionaryTest extends BaseTest {
         assertEquals("4", dict4.getString("name"));
 
         // after save
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         array = doc.getArray("array");
@@ -182,7 +182,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testReplaceDictionary() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         Dictionary profile1 = new Dictionary();
         profile1.set("name", "Scott Tiger");
@@ -204,7 +204,7 @@ public class DictionaryTest extends BaseTest {
         assertTrue(null == profile2.getObject("age"));
 
         // Save:
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
 
         assertTrue(profile2 != doc.getDictionary("profile"));
@@ -214,7 +214,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testReplaceDictionaryDifferentType() {
-        Document doc = new Document("doc1");
+        Document doc = createDocument("doc1");
 
         Dictionary profile1 = new Dictionary();
         profile1.set("name", "Scott Tiger");
@@ -234,7 +234,7 @@ public class DictionaryTest extends BaseTest {
         assertEquals("Daniel Tiger", doc.getObject("profile"));
 
         // Save
-        db.save(doc);
+        save(doc);
         doc = db.getDocument("doc1");
         assertEquals("Daniel Tiger", doc.getObject("profile"));
     }
