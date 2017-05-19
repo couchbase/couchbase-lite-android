@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * ReadOnlyArray provides readonly access to array data.
  */
-public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, Iterable<Object> {
+public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable {
 
     //---------------------------------------------
     // member variables
@@ -208,9 +208,24 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
     // Iterable implementation
     //---------------------------------------------
 
+    private class ArrayIterator implements Iterator<Object> {
+        private int index = 0;
+        private int count = count();
+
+        @Override
+        public boolean hasNext() {
+            return index < count;
+        }
+
+        @Override
+        public Object next() {
+            return getObject(index++);
+        }
+    }
+
     @Override
     public Iterator<Object> iterator() {
-        return null;
+        return new ArrayIterator();
     }
 
     //---------------------------------------------
