@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import java.util.Date;
 import java.util.Map;
 
-/* package */ interface ReadOnlyDictionaryInterface {
+/* package */ interface ReadOnlyDictionaryInterface extends Iterable<String> {
     int count();
 
     Object getObject(String key);

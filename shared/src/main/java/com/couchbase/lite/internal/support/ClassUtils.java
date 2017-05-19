@@ -1,8 +1,5 @@
 package com.couchbase.lite.internal.support;
 
-
-import static android.R.attr.value;
-
 public class ClassUtils {
     public static <T> T cast(Object obj, Class<T> clazz) {
         if (obj != null && !clazz.isInstance(obj))
@@ -10,29 +7,29 @@ public class ClassUtils {
         return (T) obj;
     }
 
-    public static int toInt(Object obj, int defaultValue) {
-        if (obj instanceof Number)
+    public static int toInt(Object value, int defaultValue) {
+        if (value instanceof Number)
             return ((Number) value).intValue();
         else
             return defaultValue;
     }
 
-    public static long toLong(Object obj, long defaultValue) {
-        if (obj instanceof Number)
+    public static long toLong(Object value, long defaultValue) {
+        if (value instanceof Number)
             return ((Number) value).longValue();
         else
             return defaultValue;
     }
 
-    public static float toFloat(Object obj, float defaultValue) {
-        if (obj instanceof Number)
+    public static float toFloat(Object value, float defaultValue) {
+        if (value instanceof Number)
             return ((Number) value).floatValue();
         else
             return defaultValue;
     }
 
-    public static double toDouble(Object obj, double defaultValue) {
-        if (obj instanceof Number)
+    public static double toDouble(Object value, double defaultValue) {
+        if (value instanceof Number)
             return ((Number) value).doubleValue();
         else
             return defaultValue;

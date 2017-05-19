@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import java.util.Date;
 import java.util.List;
 
-/* package */ interface ReadOnlyArrayInterface {
+/* package */ interface ReadOnlyArrayInterface extends Iterable<Object> {
     int count();
 
     Object getObject(int index);

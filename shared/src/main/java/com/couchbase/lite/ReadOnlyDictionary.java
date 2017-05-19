@@ -10,6 +10,7 @@ import com.couchbase.litecore.fleece.FLValue;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -285,6 +286,14 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     @Override
     public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
         encoder.writeValue(flDict);
+    }
+
+    //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
+    @Override
+    public Iterator<String> iterator() {
+        return allKeys().iterator();
     }
 
     //---------------------------------------------

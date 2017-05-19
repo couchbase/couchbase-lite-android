@@ -939,7 +939,7 @@ public class ArrayTest extends BaseTest {
         assertEquals("Daniel Tiger", doc.getString("array"));
     }
 
-    // TODO @Test
+    @Test
     public void testEnumeratingArray() {
         Array array = new Array();
         for (int i = 0; i < 20; i++) {
@@ -947,12 +947,15 @@ public class ArrayTest extends BaseTest {
         }
         List<Object> content = array.toList();
 
-        List<Object> result = new ArrayList<Object>();
+        List<Object> result = new ArrayList<>();
+        int counter = 0;
         for (Object item : array) {
             assertNotNull(item);
             result.add(item);
+            counter++;
         }
         assertEquals(content, result);
+        assertEquals(array.count(), counter);
 
         // Update:
         array.remove(1);
@@ -960,7 +963,7 @@ public class ArrayTest extends BaseTest {
         array.add(21);
         content = array.toList();
 
-        result = new ArrayList<Object>();
+        result = new ArrayList<>();
         for (Object item : array) {
             assertNotNull(item);
             result.add(item);
