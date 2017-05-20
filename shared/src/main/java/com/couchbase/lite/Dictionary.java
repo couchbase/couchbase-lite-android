@@ -1,13 +1,16 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.document.RemovedValue;
 import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLEncoder;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.couchbase.lite.internal.support.ClassUtils.cast;
 import static com.couchbase.lite.internal.support.ClassUtils.toDouble;
@@ -80,7 +83,13 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         }
 
         // Marked the key as removed by setting the value to kRemovedValue:
-        // TODO
+        Map<String, Object> backingData = super.toMap();
+        if (backingData != null) {
+            for (Map.Entry<String, Object> entry : backingData.entrySet()) {
+                if (!result.containsKey(entry.getKey()))
+                    result.put(entry.getKey(), RemovedValue.INSTANCE);
+            }
+        }
 
         map = result;
 
@@ -117,9 +126,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Dictionary remove(String key) {
-        // TODO
-        // https://github.com/couchbase/couchbase-lite-android/issues/1157
-        return this;
+        return set(key, RemovedValue.INSTANCE);
     }
 
     /**
@@ -167,7 +174,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         }
 
         for (Object value : map.values()) {
-            //TODO: kCBLRemovedValue
+            if (value == RemovedValue.INSTANCE)
+                count--;
         }
 
         return count;
@@ -193,8 +201,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
                 value = CBLData.convert(value, this);
                 set(key, value, false);
             }
-        }
-        // TODO: kCBLRemovedValue
+        } else if (value == RemovedValue.INSTANCE)
+            value = null;
         return value;
     }
 
@@ -305,9 +313,10 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         if (value == null)
             return super.getBoolean(key);
         else {
-            // TODO: kCBLRemovedValue
-            return CBLData.toBoolean(value);
-
+            if (value == RemovedValue.INSTANCE)
+                return false;
+            else
+                return CBLData.toBoolean(value);
         }
     }
 
@@ -358,14 +367,15 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
             }
         }
 
-        for (String key : result.keySet()) {
+        Set<String> keys = new HashSet<>(result.keySet());
+        for (String key : keys) {
             Object value = result.get(key);
-            //TODO: kCBLRemovedValue
-            if (value instanceof ReadOnlyDictionary)
+            if (value == RemovedValue.INSTANCE)
+                result.remove(key);
+            else if (value instanceof ReadOnlyDictionary)
                 result.put(key, ((ReadOnlyDictionary) value).toMap());
             else if (value instanceof ReadOnlyArray)
                 result.put(key, ((ReadOnlyArray) value).toList());
-
         }
 
         return result;
@@ -383,17 +393,15 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         Object value = map.get(key);
         if (value == null)
             return super.contains(key);
-            //TODO
         else
-            return true;
+            return value != RemovedValue.INSTANCE;
     }
 
     //---------------------------------------------
     // protected level access
     //---------------------------------------------
 
-    // TODO: Once Iterable is implemented, change back to package level accessor
-    public List<String> allKeys() {
+    /*package*/ List<String> allKeys() {
         if (keys == null) {
             List<String> result = map != null ? new ArrayList<>(map.keySet()) : new ArrayList<String>();
             for (String key : super.allKeys()) {
@@ -401,7 +409,12 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
                     result.add(key);
             }
 
-            //TODO -  kCBLRemovedValue
+            if (map != null) {
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    if (entry.getValue() == RemovedValue.INSTANCE)
+                        result.remove(entry.getKey());
+                }
+            }
 
             keys = result;
         }
@@ -438,12 +451,11 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
                 return false;
         }
 
-        // TODO
         if (map != null) {
             for (Object value : map.values()) {
-//            if(!kCBLRemovedValue.equals(value)){
-                return false;
-//            }
+                if (RemovedValue.INSTANCE != value) {
+                    return false;
+                }
             }
         }
 
@@ -466,13 +478,13 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         encoder.beginDict(keys.size());
         for (String key : keys) {
             Object value = getObject(key);
-            //if(value != kCBLRemovedValue){
-            encoder.writeKey(key);
-            if (value instanceof FleeceEncodable)
-                ((FleeceEncodable) value).fleeceEncode(encoder, database);
-            else
-                encoder.writeValue(value);
-            //}
+            if (value != RemovedValue.INSTANCE) {
+                encoder.writeKey(key);
+                if (value instanceof FleeceEncodable)
+                    ((FleeceEncodable) value).fleeceEncode(encoder, database);
+                else
+                    encoder.writeValue(value);
+            }
         }
         encoder.endDict();
     }

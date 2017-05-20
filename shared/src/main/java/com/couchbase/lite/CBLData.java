@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.document.RemovedValue;
 import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLArray;
 import com.couchbase.litecore.fleece.FLDict;
@@ -17,10 +18,6 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
 /*package*/ class CBLData {
     /* package */
     static Object convert(Object value, ObjectChangeListener listener) {
-        // TODO: null is not for remove with Java. Need to consider other solution
-        //if (value == null) {
-        //    return RemovedValue.INSTANCE;// Represent removed key
-        //} else if (value instanceof Dictionary) {
         if (value instanceof Dictionary) {
             ((Dictionary) value).addChangeListener(listener);
             return value;
@@ -47,8 +44,9 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
             return array;
         } else if (value instanceof Date) {
             return DateUtils.toJson((Date) value);
-        }else{
+        } else {
             if (!(value == null ||
+                    value == RemovedValue.INSTANCE ||
                     value instanceof String ||
                     value instanceof Number ||
                     value instanceof Boolean ||
@@ -56,7 +54,6 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
                 throw new IllegalArgumentException("Unsupported value type.");
             }
         }
-
         return value;
     }
 

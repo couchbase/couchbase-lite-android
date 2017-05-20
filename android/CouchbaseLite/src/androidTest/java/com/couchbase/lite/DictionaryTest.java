@@ -243,13 +243,13 @@ public class DictionaryTest extends BaseTest {
     @Test
     public void testEnumeratingKeys() {
         final Dictionary dict = new Dictionary();
-        for(int i = 0; i < 20; i++)
+        for (int i = 0; i < 20; i++)
             dict.set(String.format(Locale.ENGLISH, "key%d", i), i);
-        Map<String,Object> content = dict.toMap();
+        Map<String, Object> content = dict.toMap();
 
         Map<String, Object> result = new HashMap<>();
         int count = 0;
-        for(String key : dict){
+        for (String key : dict) {
             result.put(key, dict.getObject(key));
             count++;
         }
@@ -257,32 +257,31 @@ public class DictionaryTest extends BaseTest {
         assertEquals(content, result);
 
         // Update:
-        // TODO:
-        //dict.remove("key2");
+        dict.remove("key2");
         dict.set("key20", 20);
         dict.set("key21", 21);
         content = dict.toMap();
 
         result = new HashMap<>();
         count = 0;
-        for(String key : dict){
+        for (String key : dict) {
             result.put(key, dict.getObject(key));
             count++;
         }
         assertEquals(content.size(), count);
         assertEquals(content, result);
 
-        final Map<String,Object> finalContent = content;
+        final Map<String, Object> finalContent = content;
 
         Document doc = createDocument("doc1");
         doc.set("dict", dict);
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document doc) {
-                Map<String, Object>result = new HashMap<>();
+                Map<String, Object> result = new HashMap<>();
                 int count = 0;
                 Dictionary dictObj = doc.getDictionary("dict");
-                for(String key : dictObj){
+                for (String key : dictObj) {
                     result.put(key, dict.getObject(key));
                     count++;
                 }

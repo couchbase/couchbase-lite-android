@@ -345,9 +345,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // Package level access
     //---------------------------------------------
 
-    // TODO: Once Iterable is implemented, change back to package level accessor
     @Override
-    public List<String> allKeys() {
+    /*package*/ List<String> allKeys() {
         return dictionary.allKeys();
     }
 
