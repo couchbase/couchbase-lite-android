@@ -18,6 +18,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
@@ -47,7 +49,7 @@ public class DatabaseTest extends BaseTest {
         Database db = new Database(dbName, options);
         assertEquals(dbName, db.getName());
         assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
         return db;
     }
 
@@ -64,7 +66,7 @@ public class DatabaseTest extends BaseTest {
         Document doc = createDocument(docID);
         doc.set("key", 1);
         save(doc);
-        assertEquals(1, db.documentCount());
+        assertEquals(1, db.getCount());
         assertEquals(1, doc.getSequence());
         return doc;
     }
@@ -104,13 +106,16 @@ public class DatabaseTest extends BaseTest {
     }
 
     // helper method to save n number of docs
-    void createDocs(int n) {
+    List<Document> createDocs(int n) {
+        List<Document> docs = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             Document doc = createDocument(String.format(Locale.US, "doc_%03d", i));
             doc.set("key", i);
             save(doc);
+            docs.add(doc);
         }
-        assertEquals(n, db.documentCount());
+        assertEquals(n, db.getCount());
+        return docs;
     }
 
     // helper method to verify n number of docs
@@ -146,7 +151,7 @@ public class DatabaseTest extends BaseTest {
 
         Database db = openDatabase("db");
         assertNotNull(db);
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
 
         // delete database
         deleteDatabase(db);
@@ -166,7 +171,7 @@ public class DatabaseTest extends BaseTest {
     public void testCreateWithSpecialCharacterDBNames() {
         Database db = openDatabase("`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'");
         assertNotNull(db);
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
 
         // delete database
         deleteDatabase(db);
@@ -201,7 +206,7 @@ public class DatabaseTest extends BaseTest {
         assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
         assertTrue(db.getPath().getAbsolutePath().indexOf(dir.getPath()) != -1);
         assertTrue(Database.exists("db", dir));
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
 
         // delete database
         deleteDatabase(db);
@@ -243,7 +248,8 @@ public class DatabaseTest extends BaseTest {
         assertTrue(db != otherDB);
 
         // get doc from other DB.
-        assertEquals(1, otherDB.documentCount());
+        assertEquals(1, otherDB.getCount());
+        assertTrue(otherDB.contains(docID));
 
         verifyGetDocument(otherDB, docID);
 
@@ -296,7 +302,8 @@ public class DatabaseTest extends BaseTest {
         // store doc
         generateDocument(docID);
 
-        assertEquals(1, db.documentCount());
+        assertEquals(1, db.getCount());
+        assertTrue(db.contains(docID));
 
         // validate document by getDocument
         verifyGetDocument(docID);
@@ -322,7 +329,8 @@ public class DatabaseTest extends BaseTest {
         doc.set("key", 2);
         save(doc);
 
-        assertEquals(1, db.documentCount());
+        assertEquals(1, db.getCount());
+        assertTrue(db.contains(docID));
 
         // validate document by getDocument
         verifyGetDocument(docID, 2);
@@ -339,7 +347,7 @@ public class DatabaseTest extends BaseTest {
         Database otherDB = openDatabase(db.getName());
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
-        assertEquals(1, otherDB.documentCount());
+        assertEquals(1, otherDB.getCount());
 
         // Update doc & store it into different instance
         doc.set("key", 2);
@@ -367,7 +375,7 @@ public class DatabaseTest extends BaseTest {
         Database otherDB = openDatabase("otherDB");
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
-        assertEquals(0, otherDB.documentCount());
+        assertEquals(0, otherDB.getCount());
 
         // Update doc & store it into different instance
         doc.set("key", 2);
@@ -390,7 +398,7 @@ public class DatabaseTest extends BaseTest {
         Document doc = generateDocument(docID);
         save(doc);
         assertEquals(docID, doc.getId());
-        assertEquals(1, db.documentCount());
+        assertEquals(1, db.getCount());
     }
 
     @Test
@@ -401,7 +409,7 @@ public class DatabaseTest extends BaseTest {
                 createDocs(10);
             }
         });
-        assertEquals(10, db.documentCount());
+        assertEquals(10, db.getCount());
         validateDocs(10);
     }
 
@@ -461,7 +469,7 @@ public class DatabaseTest extends BaseTest {
         Document doc = generateDocument(docID);
 
         db.delete(doc);
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
 
         assertEquals(docID, doc.getId());
         assertTrue(doc.isDeleted());
@@ -481,7 +489,8 @@ public class DatabaseTest extends BaseTest {
         Database otherDB = openDatabase(db.getName());
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
-        assertEquals(1, otherDB.documentCount());
+        assertTrue(otherDB.contains(docID));
+        assertEquals(1, otherDB.getCount());
 
         // Delete from the different db instance:
         try {
@@ -506,7 +515,8 @@ public class DatabaseTest extends BaseTest {
         Database otherDB = openDatabase("otherDB");
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
-        assertEquals(0, otherDB.documentCount());
+        assertFalse(otherDB.contains(docID));
+        assertEquals(0, otherDB.getCount());
 
         // Delete from the different db:
         try {
@@ -530,14 +540,14 @@ public class DatabaseTest extends BaseTest {
 
         // First time deletion:
         db.delete(doc);
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
         assertNull(doc.getObject("key"));
         assertEquals(2, doc.getSequence());
         assertTrue(doc.isDeleted());
 
         // Second time deletion:
         db.delete(doc);
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
         assertNull(doc.getObject("key"));
         assertEquals(2, doc.getSequence());
         assertTrue(doc.isDeleted());
@@ -557,12 +567,12 @@ public class DatabaseTest extends BaseTest {
                     db.delete(doc);
                     assertNull(doc.getObject("key"));
                     assertTrue(doc.isDeleted());
-                    assertEquals((9 - i), db.documentCount());
+                    assertEquals((9 - i), db.getCount());
                 }
             }
         });
 
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
     }
 
     // TODO : @Test
@@ -616,7 +626,7 @@ public class DatabaseTest extends BaseTest {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
             assertEquals(Status.NotFound, e.getCode());
         }
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
     }
 
     @Test
@@ -625,14 +635,11 @@ public class DatabaseTest extends BaseTest {
         Document doc = generateDocument(docID);
 
         // Purge Doc
-        // Note: After purge: sequence -> 2
         purgeDocAndVerify(doc);
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
 
-        // Save to check sequence number -> 3 (should it be 2 or 3?)
         save(doc);
-        // TODO
-        // assertEquals(3, doc.getSequence());
+        assertEquals(2, doc.getSequence());
     }
 
     // TODO : @Test
@@ -646,7 +653,8 @@ public class DatabaseTest extends BaseTest {
         Database otherDB = openDatabase(db.getName());
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
-        assertEquals(1, otherDB.documentCount());
+        assertEquals(1, otherDB.getCount());
+        assertTrue(otherDB.contains(docID));
 
         // purge document against other db instance:
         try {
@@ -671,7 +679,8 @@ public class DatabaseTest extends BaseTest {
         Database otherDB = openDatabase("otherDB");
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
-        assertEquals(0, otherDB.documentCount());
+        assertEquals(0, otherDB.getCount());
+        assertFalse(otherDB.contains(docID));
 
         // Purge document against other db:
         try {
@@ -697,11 +706,11 @@ public class DatabaseTest extends BaseTest {
 
         // Purge the document first time:
         purgeDocAndVerify(doc);
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
 
         // Purge the document second time:
         purgeDocAndVerify(doc1);
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
     }
 
     @Test
@@ -716,12 +725,12 @@ public class DatabaseTest extends BaseTest {
                     String docID = String.format(Locale.US, "doc_%03d", i);
                     Document doc = db.getDocument(docID);
                     purgeDocAndVerify(doc);
-                    assertEquals((9 - i), db.documentCount());
+                    assertEquals((9 - i), db.getCount());
                 }
             }
         });
 
-        assertEquals(0, db.documentCount());
+        assertEquals(0, db.getCount());
     }
 
     // TODO : @Test
@@ -1039,5 +1048,52 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDatabaseExistsAgainstNonExistDB() {
         assertFalse(Database.exists("nonexist", dir));
+    }
+
+    //TODO: @Test - test fails because database.compact() does not delete blob files.
+    public void testCompact(){
+        final List<Document> docs = createDocs(20);
+
+        // Update each doc 25 times:
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                for(Document doc : docs){
+                    for(int i = 0; i < 25; i++){
+                        doc.set("number", i);
+                        save(doc);
+                    }
+                }
+            }
+        });
+
+        // Add each doc with a blob object:
+        for(Document doc : docs){
+            doc.set("blob", new Blob("text/plain", doc.getId().getBytes()));
+            save(doc);
+        }
+
+        assertEquals(20, db.getCount());
+
+        File attsDir = new File(db.getPath(), "Attachments");
+        assertTrue(attsDir.exists());
+        assertTrue(attsDir.isDirectory());
+        File[] atts = attsDir.listFiles();
+        assertEquals(20, atts.length);
+
+        // Compact:
+        db.compact();
+
+        // Delete all docs:
+        for(Document doc : docs){
+            db.delete(doc);
+            assertTrue(doc.isDeleted());
+        }
+
+        // Compact:
+        db.compact();
+
+        atts = attsDir.listFiles();
+        assertEquals(0, atts.length);
     }
 }

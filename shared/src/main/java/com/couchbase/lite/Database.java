@@ -143,6 +143,15 @@ public final class Database {
         return c4db != null ? new File(c4db.getPath()) : null;
     }
 
+
+    /**
+     * The number of documents in the database.
+     * @return the number of documents in the database, -1 if error.
+     */
+    public int getCount() {
+        return c4db != null ? (int) c4db.getDocumentCount() : -1;
+    }
+
     /**
      * Returned the copied config object
      *
@@ -152,7 +161,7 @@ public final class Database {
         return config; // TODO: Returned the copied config object
     }
 
-    // Get document:
+    // GET EXISTING DOCUMENT
 
     /**
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
@@ -165,7 +174,14 @@ public final class Database {
         return getDocument(documentID, true);
     }
 
-    // Save document:
+    // CHECK DOCUMENT EXISTS
+    public boolean contains(String documentID){
+        return getDocument(documentID, true) != null;
+    }
+
+    // SUBSCRIPTION
+
+    // SAVE DELETE PURGE
 
     /**
      * Saves the given document to the database. If the document in the database has been updated
@@ -243,10 +259,16 @@ public final class Database {
 
     // Compaction:
 
-
+    /**
+     * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
+     */
     public void compact() {
-        // TODO:
-        throw new UnsupportedOperationException("Work in Progress!");
+        if (c4db == null) return;
+        try {
+            c4db.compact();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
     }
 
     // Database changes:
@@ -455,10 +477,6 @@ public final class Database {
 
     /* package */ ConflictResolver getConflictResolver() {
         return config != null ? config.getConflictResolver() : null;
-    }
-
-    long documentCount() {
-        return c4db.getDocumentCount();
     }
 
     // Instead of clone()

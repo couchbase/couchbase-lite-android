@@ -50,7 +50,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public int count() {
-        return flDict != null ? flDict.count() : 0;
+        return flDict != null ? (int) flDict.count() : 0;
     }
 
     /**
