@@ -57,7 +57,7 @@ public class NotificationTest extends BaseTest {
         Document docA = createDocument("A");
         Document docB = createDocument("B");
 
-
+        // save doc
         final CountDownLatch latch1 = new CountDownLatch(1);
         DocumentChangeListener listener1 = new DocumentChangeListener() {
             @Override
@@ -76,6 +76,7 @@ public class NotificationTest extends BaseTest {
         assertTrue(latch1.await(10, TimeUnit.SECONDS));
         db.removeChangeListener("A", listener1);
 
+        // update doc
         final CountDownLatch latch2 = new CountDownLatch(1);
         DocumentChangeListener listener2 = new DocumentChangeListener() {
             @Override
@@ -90,7 +91,24 @@ public class NotificationTest extends BaseTest {
         docA.set("thewronganswer", 18);
         save(docA);
         assertTrue(latch2.await(5, TimeUnit.SECONDS));
-        db.removeChangeListener("A", listener1);
+        db.removeChangeListener("A", listener2);
+
+        // delete doc
+        final CountDownLatch latch3 = new CountDownLatch(1);
+        DocumentChangeListener listener3 = new DocumentChangeListener() {
+            @Override
+            public void changed(DocumentChange change) {
+                assertNotNull(change);
+                assertEquals("A", change.getDocumentID());
+                assertEquals(1, latch3.getCount());
+                latch3.countDown();
+            }
+        };
+        db.addChangeListener("A", listener3);
+        db.delete(docA);
+        assertTrue(latch3.await(5, TimeUnit.SECONDS));
+        db.removeChangeListener("A", listener3);
+
     }
 
     @Test
