@@ -99,7 +99,7 @@ public class DatabaseTest extends BaseTest {
         assertNotNull(doc);
         assertEquals(docID, doc.getId());
         assertFalse(doc.isDeleted());
-        assertEquals(value, doc.getObject("key"));
+        assertEquals(value, ((Number)doc.getObject("key")).intValue());
     }
 
     // helper method to purge doc and verify doc.
@@ -886,7 +886,7 @@ public class DatabaseTest extends BaseTest {
 
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
-        assertEquals(1, doc.getObject("key"));
+        assertEquals(1, ((Number)doc.getObject("key")).intValue());
         doc.set("key", 2);
         doc.set("key1", "value");
     }
@@ -973,7 +973,7 @@ public class DatabaseTest extends BaseTest {
 
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
-        assertEquals(1, doc.getObject("key"));
+        assertEquals(1, ((Number)doc.getObject("key")).intValue());
         doc.set("key", 2);
         doc.set("key1", "value");
     }

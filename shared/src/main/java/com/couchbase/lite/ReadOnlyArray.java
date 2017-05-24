@@ -88,7 +88,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable {
      */
     @Override
     public int getInt(int index) {
-        return fleeceValue(index).asInt();
+        return (int)fleeceValue(index).asInt();
     }
 
     /**

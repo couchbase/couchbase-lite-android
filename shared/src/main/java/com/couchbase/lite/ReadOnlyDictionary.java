@@ -104,7 +104,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     @Override
     public int getInt(String key) {
         FLValue value = fleeceValue(key);
-        return value != null ? value.asInt() : 0;
+        return value != null ? (int)value.asInt() : 0;
     }
 
     /**

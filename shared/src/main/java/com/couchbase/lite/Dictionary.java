@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static com.couchbase.lite.internal.support.ClassUtils.cast;
 import static com.couchbase.lite.internal.support.ClassUtils.toDouble;
@@ -365,7 +366,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Map<String, Object> toMap() {
-        Map<String, Object> result = map != null ? new HashMap<>(map) : new HashMap<String, Object>();
+        Map<String, Object> result = map != null ? new TreeMap<>(map) : new TreeMap<String, Object>();
 
         // Backing data:
         Map<String, Object> backingData = super.toMap();
