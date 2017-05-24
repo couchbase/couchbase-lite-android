@@ -10,6 +10,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DictionaryTest extends BaseTest {
@@ -238,6 +239,35 @@ public class DictionaryTest extends BaseTest {
         save(doc);
         doc = db.getDocument("doc1");
         assertEquals("Daniel Tiger", doc.getObject("profile"));
+    }
+
+    @Test
+    public void testRemoveDictionary(){
+        Document doc = createDocument("doc1");
+        Dictionary profile1 = new Dictionary();
+        profile1.set("name", "Scott Tiger");
+        doc.set("profile", profile1);
+        assertEquals(profile1.toMap(), doc.getDictionary("profile").toMap());
+        assertTrue(doc.contains("profile"));
+
+        // Remove profile
+        doc.remove("profile");
+        assertNull(doc.getObject("profile"));
+        assertFalse(doc.contains("profile"));
+
+        // Profile1 should be now detached:
+        profile1.set("age", 20);
+        assertEquals("Scott Tiger", profile1.getObject("name"));
+        assertEquals(20, profile1.getObject("age"));
+
+        // Check whether the profile value has no change:
+        assertNull(doc.getObject("profile"));
+
+        // Save:
+        doc = save(doc);
+
+        assertNull(doc.getObject("profile"));
+        assertFalse(doc.contains("profile"));
     }
 
     @Test

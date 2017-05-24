@@ -399,7 +399,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public boolean contains(String key) {
-        Object value = map.get(key);
+        Object value = map != null ? map.get(key) : null;
         if (value == null)
             return super.contains(key);
         else
