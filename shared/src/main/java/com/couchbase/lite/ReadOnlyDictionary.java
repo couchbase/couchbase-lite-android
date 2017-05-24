@@ -262,8 +262,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     // Package level access
     //---------------------------------------------
 
-    // TODO: Once Iterable is implemented. This method should be changed to package level access
-    public List<String> allKeys() {
+    /*package*/ List<String> allKeys() {
         if (keys == null) {
             List<String> results = new ArrayList<>();
             if (flDict != null) {

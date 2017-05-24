@@ -1324,7 +1324,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(12, doc.toMap().size());
     }
 
-    // TODO @Test
+    @Test
     public void testRemoveKeys() {
         Document doc = createDocument("doc1");
         Map<String, Object> mapAddress = new HashMap<>();
