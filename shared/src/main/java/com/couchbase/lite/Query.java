@@ -33,19 +33,21 @@ import java.util.Map;
 public class Query {
     private static final String LOG_TAG = Log.QUERY;
 
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+
     private Database database;
-
     private C4Query c4query;
-
     private Select select;
-
     private DataSource from;
-
     private Expression where;
-
     private OrderBy orderBy;
-
     private boolean distinct;
+
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
 
     /**
      * Create a SELECT ALL (*) query. You can then call the Select object's methods such as
@@ -90,6 +92,30 @@ public class Query {
             throw LiteCoreBridge.convertException(e);
         }
     }
+
+    /**
+     * Returns a string describing the implementation of the compiled query.
+     * This is intended to be read by a developer for purposes of optimizing the query, especially
+     * to add database indexes. It's not machine-readable and its format may change.
+     * As currently implemented, the result is two or more lines separated by newline characters:
+     * * The first line is the SQLite SELECT statement.
+     * * The subsequent lines are the output of SQLite's "EXPLAIN QUERY PLAN" command applied to that
+     * statement; for help interpreting this, see https://www.sqlite.org/eqp.html . The most
+     * important thing to know is that if you see "SCAN TABLE", it means that SQLite is doing a
+     * slow linear scan of the documents instead of using an index.
+     *
+     * @return a string describing the implementation of the compiled query.
+     * @throws CouchbaseLiteException if an error occurs
+     */
+    public String explain() throws CouchbaseLiteException {
+        if (c4query == null)
+            check();
+        return c4query.explain();
+    }
+
+    //---------------------------------------------
+    // Protected level access
+    //---------------------------------------------
 
     protected Select getSelect() {
         return select;
@@ -139,6 +165,10 @@ public class Query {
         this.distinct = query.distinct;
     }
 
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+
     /* package */ Database getDatabase() {
         return database;
     }
@@ -146,6 +176,10 @@ public class Query {
     /* package */ C4Query getC4Query() {
         return c4query;
     }
+
+    //---------------------------------------------
+    // Private (in class only)
+    //---------------------------------------------
 
     private void check() throws CouchbaseLiteException {
         database = (Database) from.getSource();
@@ -179,5 +213,4 @@ public class Query {
             json.put("ORDER_BY", orderBy.asJSON());
         return json;
     }
-
 }
