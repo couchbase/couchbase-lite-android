@@ -18,7 +18,7 @@ import java.io.File;
 /**
  * Options for opening a database. All properties default to false or null.
  */
-public final class DatabaseConfiguration {
+public class BaseDatabaseConfiguration {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -33,10 +33,10 @@ public final class DatabaseConfiguration {
     /**
      * Constructs a new DatabaseConfiguration with default values.
      */
-    public DatabaseConfiguration() {
+    /*package*/ BaseDatabaseConfiguration() {
     }
 
-    public DatabaseConfiguration(File directory, Object encryptionKey, ConflictResolver conflictResolver) {
+    /*package*/ BaseDatabaseConfiguration(File directory, Object encryptionKey, ConflictResolver conflictResolver) {
         this.directory = directory;
         this.encryptionKey = encryptionKey;
         this.conflictResolver = conflictResolver;
@@ -60,8 +60,9 @@ public final class DatabaseConfiguration {
      *
      * @param directory the directory
      */
-    public void setDirectory(File directory) {
+    public BaseDatabaseConfiguration setDirectory(File directory) {
         this.directory = directory;
+        return this;
     }
 
     /**
@@ -79,23 +80,25 @@ public final class DatabaseConfiguration {
      *
      * @param encryptionKey the key
      */
-    public void setEncryptionKey(Object encryptionKey) {
+    public BaseDatabaseConfiguration setEncryptionKey(Object encryptionKey) {
         this.encryptionKey = encryptionKey;
+        return this;
     }
 
     public ConflictResolver getConflictResolver() {
         return conflictResolver;
     }
 
-    public void setConflictResolver(ConflictResolver conflictResolver) {
+    public BaseDatabaseConfiguration setConflictResolver(ConflictResolver conflictResolver) {
         this.conflictResolver = conflictResolver;
+        return this;
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
-    /* package */ DatabaseConfiguration copy() {
-        return new DatabaseConfiguration(this.directory, this.encryptionKey, this.conflictResolver);
+    /* package */ BaseDatabaseConfiguration copy() {
+        return new BaseDatabaseConfiguration(this.directory, this.encryptionKey, this.conflictResolver);
     }
 }
