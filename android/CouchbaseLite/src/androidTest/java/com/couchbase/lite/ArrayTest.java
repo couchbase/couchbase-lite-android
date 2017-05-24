@@ -700,9 +700,10 @@ public class ArrayTest extends BaseTest {
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
-                // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1160
-//                assertEquals(1.00, a.getObject(0));
-//                assertEquals(1.00, a.getNumber(0));
+                // NOTE: Number which has no floating part is stored as Integer.
+                //       This causes type difference between before and after storing data into the database.
+                assertEquals(1.00, ((Number)a.getObject(0)).doubleValue(), 0.0);
+                assertEquals(1.00, a.getNumber(0).doubleValue(), 0.0);
                 assertEquals(1, a.getInt(0));
                 assertEquals(1L, a.getLong(0));
                 assertEquals(1.00F, a.getFloat(0), 0.0F);
