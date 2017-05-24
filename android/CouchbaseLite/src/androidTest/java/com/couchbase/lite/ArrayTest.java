@@ -716,9 +716,8 @@ public class ArrayTest extends BaseTest {
                 assertEquals(1.49F, a.getFloat(1), 0.0F);
                 assertEquals(1.49, a.getDouble(1), 0.0);
 
-                // TODO:
-//                assertEquals(1.50, a.getObject(2));
-//                assertEquals(1.50, a.getNumber(2));
+                assertEquals(1.50, ((Number)a.getObject(2)).doubleValue(), 0.0);
+                assertEquals(1.50, a.getNumber(2).doubleValue(), 0.0);
                 assertEquals(1, a.getInt(2));
                 assertEquals(1L, a.getLong(2));
                 assertEquals(1.50F, a.getFloat(2), 0.0F);
