@@ -37,17 +37,16 @@ public class ConflictTest extends BaseTest {
             Document resolved = new Document();
             Set<String> changed = new HashSet<>();
 
-            // TODO: Once ReadOnlyDictionary has Iterable implementation. Change following method
-            for (String key : conflict.getBase().allKeys()) {
+            for (String key : conflict.getBase()) {
                 resolved.set(key, conflict.getBase().getObject(key));
             }
 
-            for (String key : conflict.getTheirs().allKeys()) {
+            for (String key : conflict.getTheirs()) {
                 resolved.set(key, conflict.getTheirs().getObject(key));
                 changed.add(key);
             }
 
-            for (String key : conflict.getMine().allKeys()) {
+            for (String key : conflict.getMine()) {
                 if (!changed.contains(key))
                     resolved.set(key, conflict.getMine().getObject(key));
             }

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,6 +98,14 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         return this;
     }
 
+    @Override
+    public List<String> getKeys() {
+        if (!changed)
+            return super.getKeys();
+        else
+            return allKeys();
+    }
+
     /**
      * Set an object value by key. Allowed value types are List, Date, Map, Number, null, String,
      * Array, Blob, and Dictionary. The List and Map must contain only the above types.
@@ -168,7 +177,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         if (count == 0)
             return super.count();
 
-        for (String key : super.allKeys()) {
+        for (String key : super.getKeys()) {
             if (!map.containsKey(key))
                 count++;
         }
@@ -398,28 +407,17 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     }
 
     //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
+    @Override
+    public Iterator<String> iterator() {
+        return getKeys().iterator();
+    }
+
+    //---------------------------------------------
     // protected level access
     //---------------------------------------------
 
-    /*package*/ List<String> allKeys() {
-        if (keys == null) {
-            List<String> result = map != null ? new ArrayList<>(map.keySet()) : new ArrayList<String>();
-            for (String key : super.allKeys()) {
-                if (!result.contains(key))
-                    result.add(key);
-            }
-
-            if (map != null) {
-                for (Map.Entry<String, Object> entry : map.entrySet()) {
-                    if (entry.getValue() == RemovedValue.INSTANCE)
-                        result.remove(entry.getKey());
-                }
-            }
-
-            keys = result;
-        }
-        return keys;
-    }
 
     //---------------------------------------------
     // Package level access
@@ -441,12 +439,11 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
          map: ["name": kCBLRemovedValue]
          */
 
-        // Note: RemovedValue can not be check
-        if (map == null || map.size() == 0)
-            return super.count() == 0;
+        if (!changed)
+            return super.isEmpty();
 
         // something in fleece, but not in map
-        for (String key : allKeys()) {
+        for (String key : super.getKeys()) {
             if (map != null && !map.containsKey(key))
                 return false;
         }
@@ -474,7 +471,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     // FleeceEncodable implementation
     /* package */
     public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
-        List<String> keys = allKeys();
+        List<String> keys = getKeys();
         encoder.beginDict(keys.size());
         for (String key : keys) {
             Object value = getObject(key);
@@ -513,7 +510,26 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
             setChanged();
     }
 
+    private List<String> allKeys() {
+        if (keys == null) {
+            List<String> result = map != null ? new ArrayList<>(map.keySet()) : new ArrayList<String>();
+            for (String key : super.getKeys()) {
+                if (!result.contains(key))
+                    result.add(key);
+            }
+            if (map != null) {
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    if (entry.getValue() == RemovedValue.INSTANCE)
+                        result.remove(entry.getKey());
+                }
+            }
+            keys = result;
+        }
+        return keys;
+    }
+
     //  CHANGE
+
     private void setChanged() {
         if (!changed) {
             changed = true;

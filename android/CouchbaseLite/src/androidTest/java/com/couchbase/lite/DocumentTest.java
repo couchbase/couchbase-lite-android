@@ -862,7 +862,7 @@ public class DocumentTest extends BaseTest {
         save(doc);
         doc = db.getDocument("doc1");
 
-        Log.e(TAG, "doc.allKeys() -> " + doc.allKeys());
+        Log.e(TAG, "doc.getKeys() -> " + doc.getKeys());
         assertTrue(dict != doc.getObject("dict"));
         assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
         assertEquals(map, doc.getDictionary("dict").toMap());
