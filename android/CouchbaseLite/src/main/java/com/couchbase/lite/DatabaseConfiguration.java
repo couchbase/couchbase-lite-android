@@ -5,7 +5,12 @@ import android.content.Context;
 public class DatabaseConfiguration extends BaseDatabaseConfiguration {
     private Context context;
 
-    public DatabaseConfiguration() {
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+
+    private DatabaseConfiguration() {
+        // only for copy() method.
     }
 
     public DatabaseConfiguration(Context context) {

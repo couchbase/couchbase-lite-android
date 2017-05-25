@@ -124,7 +124,7 @@ public class ConflictTest extends BaseTest {
     protected void openDB(ConflictResolver resolver) {
         assertNull(db);
 
-        DatabaseConfiguration options = new DatabaseConfiguration();
+        DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
         options.setConflictResolver(resolver);
         db = new Database(kDatabaseName, options);

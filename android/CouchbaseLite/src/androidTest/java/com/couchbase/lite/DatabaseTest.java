@@ -51,7 +51,7 @@ public class DatabaseTest extends BaseTest {
 
     // helper method to open database
     private Database openDatabase(String dbName) {
-        DatabaseConfiguration options = new DatabaseConfiguration();
+        DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
         Database db = new Database(dbName, options);
         assertEquals(dbName, db.getName());
@@ -154,7 +154,7 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCreateConfiguration() {
         // Default:
-        DatabaseConfiguration config1 = new DatabaseConfiguration();
+        DatabaseConfiguration config1 = new DatabaseConfiguration(this.context);
         config1.setDirectory(new File("/tmp"));
         assertNotNull(config1.getDirectory());
         assertTrue(config1.getDirectory().getAbsolutePath().length() > 0);
@@ -170,7 +170,7 @@ public class DatabaseTest extends BaseTest {
 
         // Custom
         DummyResolver resolver = new DummyResolver();
-        DatabaseConfiguration config2 = new DatabaseConfiguration();
+        DatabaseConfiguration config2 = new DatabaseConfiguration(this.context);
         config2.setDirectory(new File("/tmp/mydb"));
         config2.setConflictResolver(resolver);
         config2.setEncryptionKey("key");
@@ -187,7 +187,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testGetSetConfiguration() {
-        DatabaseConfiguration config = new DatabaseConfiguration();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         config.setDirectory(this.db.getConfig().getDirectory());
 
         Database db = new Database("db", config);
@@ -204,7 +204,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testConfigurationIsCopiedWhenGetSet() {
-        DatabaseConfiguration config = new DatabaseConfiguration();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         config.setDirectory(this.db.getConfig().getDirectory());
 
         Database db = new Database("db", config);
@@ -249,12 +249,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testCreateWithDefaultOption() {
-        try {
-            Database db = new Database("db", new DatabaseConfiguration());
-            fail();
-        } catch (UnsupportedOperationException e) {
-            // NOTE: CBL Android's Database constructor does not work without specified directory.
-        }
+        new Database("db", new DatabaseConfiguration(this.context));
     }
 
     @Test
@@ -288,7 +283,7 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists("db", dir));
 
         // create db with custom directory
-        DatabaseConfiguration config = new DatabaseConfiguration();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         config.setDirectory(dir);
         Database db = new Database("db", config);
         assertNotNull(db);

@@ -55,7 +55,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
 
     @Override
     public List<String> getKeys() {
-        return fleeceKeys();
+        return new ArrayList(fleeceKeys());
     }
 
     /**

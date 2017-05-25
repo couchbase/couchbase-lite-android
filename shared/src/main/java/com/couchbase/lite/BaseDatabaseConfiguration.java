@@ -30,18 +30,6 @@ public class BaseDatabaseConfiguration {
     // Constructors
     //---------------------------------------------
 
-    /**
-     * Constructs a new DatabaseConfiguration with default values.
-     */
-    /*package*/ BaseDatabaseConfiguration() {
-    }
-
-    /*package*/ BaseDatabaseConfiguration(File directory, Object encryptionKey, ConflictResolver conflictResolver) {
-        this.directory = directory;
-        this.encryptionKey = encryptionKey;
-        this.conflictResolver = conflictResolver;
-    }
-
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
@@ -97,8 +85,4 @@ public class BaseDatabaseConfiguration {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
-    /* package */ BaseDatabaseConfiguration copy() {
-        return new BaseDatabaseConfiguration(this.directory, this.encryptionKey, this.conflictResolver);
-    }
 }
