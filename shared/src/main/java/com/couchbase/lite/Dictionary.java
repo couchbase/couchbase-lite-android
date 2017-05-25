@@ -103,7 +103,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     @Override
     public List<String> getKeys() {
         if (!changed)
-            return new ArrayList(super.getKeys());
+            // NOTE: super.getKeys() already creates copy of List.
+            return super.getKeys();
         else
             return new ArrayList(allKeys());
     }
