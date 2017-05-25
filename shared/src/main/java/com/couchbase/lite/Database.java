@@ -135,6 +135,7 @@ public final class Database {
 
     /**
      * The number of documents in the database.
+     *
      * @return the number of documents in the database, -1 if error.
      */
     public int getCount() {
@@ -164,7 +165,7 @@ public final class Database {
     }
 
     // CHECK DOCUMENT EXISTS
-    public boolean contains(String documentID){
+    public boolean contains(String documentID) {
         return getDocument(documentID, true) != null;
     }
 
@@ -774,9 +775,7 @@ public final class Database {
     }
 
     private void postDocumentChanged(String documentID, long sequence) {
-        // TODO: Temporary commented out the inTransaction check.
-        // https://github.com/couchbase/couchbase-lite-android/issues/1154
-        if (!c4DocObservers.containsKey(documentID) || c4db == null /*|| c4db.isInTransaction()*/)
+        if (!c4DocObservers.containsKey(documentID) || c4db == null)
             return;
 
         Set<DocumentChangeListener> listeners = docChangeListeners.get(documentID);
