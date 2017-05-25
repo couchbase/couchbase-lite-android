@@ -6,6 +6,7 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -325,6 +326,14 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
             }
         }
         return array;
+    }
+    //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
+
+    @Override
+    public Iterator<Object> iterator() {
+        return list != null ? list.iterator() : super.iterator();
     }
 
     //---------------------------------------------

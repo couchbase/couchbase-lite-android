@@ -5,6 +5,7 @@ import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLEncoder;
 
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +31,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     private Map<String, Object> map = null;
     private Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
+    private int     changedCount = 0;
     private List<String> keys = null; // dictionary key cache
 
     //---------------------------------------------
@@ -410,9 +412,31 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
+    class DictionaryIterator implements Iterator<String> {
+        private Iterator<String> internal;
+        private int expectedChangedCount;
+
+        public DictionaryIterator() {
+            this.internal = Dictionary.this.getKeys().iterator();
+            this.expectedChangedCount = Dictionary.this.changedCount;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return internal.hasNext();
+        }
+
+        @Override
+        public String next() {
+            if (expectedChangedCount != Dictionary.this.changedCount)
+                throw new ConcurrentModificationException();
+            return internal.next();
+        }
+    }
+
     @Override
     public Iterator<String> iterator() {
-        return getKeys().iterator();
+        return new DictionaryIterator();
     }
 
     //---------------------------------------------
@@ -536,6 +560,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
             changed = true;
             notifyChangeListeners();
         }
+        changedCount++;
     }
 
     private void notifyChangeListeners() {

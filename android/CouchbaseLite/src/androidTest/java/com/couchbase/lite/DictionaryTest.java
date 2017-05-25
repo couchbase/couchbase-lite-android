@@ -3,15 +3,18 @@ package com.couchbase.lite;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.TreeMap;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class DictionaryTest extends BaseTest {
     @Test
@@ -319,5 +322,45 @@ public class DictionaryTest extends BaseTest {
                 assertEquals(finalContent, result);
             }
         });
+    }
+
+    @Test
+    public void testDictionaryEnumerationWithDataModification() {
+        Dictionary dict = new Dictionary();
+        for (int i = 0; i < 2; i++)
+            dict.set(String.format(Locale.ENGLISH, "key%d", i), i);
+
+        Iterator<String> itr = dict.iterator();
+        int count = 0;
+        try {
+            while (itr.hasNext()) {
+                itr.next();
+                if (count++ == 0)
+                    dict.set("key2", 2);
+            }
+            fail("Expected ConcurrentModificationException");
+        } catch (ConcurrentModificationException e) {
+            // Expected to come here!
+        }
+        assertEquals(3, dict.count());
+
+        Document doc = createDocument("doc1");
+        doc.set("dict", dict);
+        doc = save(doc);
+        dict = doc.getDictionary("dict");
+
+        itr = dict.iterator();
+        count = 0;
+        try {
+            while (itr.hasNext()) {
+                itr.next();
+                if (count++ == 0)
+                    dict.set("key3", 3);
+            }
+            fail("Expected ConcurrentModificationException");
+        } catch (ConcurrentModificationException e) {
+            // Expected to come here!
+        }
+        assertEquals(4, dict.count());
     }
 }

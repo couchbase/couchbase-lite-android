@@ -8,14 +8,17 @@ import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.TreeMap;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ArrayTest extends BaseTest {
 
@@ -984,5 +987,47 @@ public class ArrayTest extends BaseTest {
                 assertEquals(c.toString(), r.toString());
             }
         });
+    }
+
+    @Test
+    public void testArrayEnumerationWithDataModification() {
+        Array array = new Array();
+        for (int i = 0; i < 2; i++)
+            array.add(i);
+
+        Iterator<Object> itr = array.iterator();
+        int count = 0;
+        try {
+            while (itr.hasNext()) {
+                itr.next();
+                if (count++ == 0)
+                    array.add(2);
+            }
+            fail("Expected ConcurrentModificationException");
+        } catch (ConcurrentModificationException e) {
+
+        }
+        assertEquals(3, array.count());
+        assertEquals(Arrays.asList(0, 1, 2).toString(), array.toList().toString());
+
+        Document doc = createDocument("doc1");
+        doc.set("array", array);
+        doc = save(doc);
+        array = doc.getArray("array");
+
+        itr = array.iterator();
+        count = 0;
+        try {
+            while (itr.hasNext()) {
+                itr.next();
+                if (count++ == 0)
+                    array.add(3);
+            }
+            fail("Expected ConcurrentModificationException");
+        } catch (ConcurrentModificationException e) {
+
+        }
+        assertEquals(4, array.count());
+        assertEquals(Arrays.asList(0, 1, 2, 3).toString(), array.toList().toString());
     }
 }
