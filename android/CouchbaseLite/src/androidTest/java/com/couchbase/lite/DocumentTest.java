@@ -27,7 +27,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.HashMap;
 
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBadDocID;
@@ -91,7 +91,7 @@ public class DocumentTest extends BaseTest {
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
         assertFalse(doc1a.isDeleted());
-        assertEquals(new TreeMap<String, Object>(), doc1a.toMap());
+        assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
         save(doc1a);
         Document doc1b = db.getDocument(doc1a.getId());
@@ -109,7 +109,7 @@ public class DocumentTest extends BaseTest {
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
         assertFalse(doc1a.isDeleted());
-        assertEquals(new TreeMap<String, Object>(), doc1a.toMap());
+        assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
         save(doc1a);
         Document doc1b = db.getDocument("doc1");
@@ -139,7 +139,7 @@ public class DocumentTest extends BaseTest {
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
         assertFalse(doc1a.isDeleted());
-        assertEquals(new TreeMap<String, Object>(), doc1a.toMap());
+        assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
         save(doc1a);
         Document doc1b = db.getDocument(doc1a.getId());
@@ -152,11 +152,11 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCreateDocWithDict() {
-        Map<String, Object> dict = new TreeMap<>();
+        Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
-        dict.put("age", 30);
+        dict.put("age", 30L);
 
-        Map<String, Object> address = new TreeMap<>();
+        Map<String, Object> address = new HashMap<>();
         address.put("street", "1 Main street");
         address.put("city", "Mountain View");
         address.put("state", "CA");
@@ -177,16 +177,16 @@ public class DocumentTest extends BaseTest {
         assertTrue(doc1b.exists());
         assertFalse(doc1b.isDeleted());
         assertEquals(doc1a.getId(), doc1b.getId());
-        assertEquals(dict.toString(), doc1b.toMap().toString());
+        assertEquals(dict, doc1b.toMap());
     }
 
     @Test
     public void testCreateDocWithIDAndDict() {
-        Map<String, Object> dict = new TreeMap<>();
+        Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
-        dict.put("age", 30);
+        dict.put("age", 30L);
 
-        Map<String, Object> address = new TreeMap<>();
+        Map<String, Object> address = new HashMap<>();
         address.put("street", "1 Main street");
         address.put("city", "Mountain View");
         address.put("state", "CA");
@@ -207,16 +207,16 @@ public class DocumentTest extends BaseTest {
         assertTrue(doc1b.exists());
         assertFalse(doc1b.isDeleted());
         assertEquals(doc1a.getId(), doc1b.getId());
-        assertEquals(dict.toString(), doc1b.toMap().toString());
+        assertEquals(dict, doc1b.toMap());
     }
 
     @Test
     public void testSetDictionaryContent() {
-        Map<String, Object> dict = new TreeMap<>();
+        Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
-        dict.put("age", 30);
+        dict.put("age", 30L);
 
-        Map<String, Object> address = new TreeMap<>();
+        Map<String, Object> address = new HashMap<>();
         address.put("street", "1 Main street");
         address.put("city", "Mountain View");
         address.put("state", "CA");
@@ -230,13 +230,13 @@ public class DocumentTest extends BaseTest {
 
         save(doc);
         doc = db.getDocument("doc1");
-        assertEquals(dict.toString(), doc.toMap().toString());
+        assertEquals(dict, doc.toMap());
 
-        Map<String, Object> nuDict = new TreeMap<>();
+        Map<String, Object> nuDict = new HashMap<>();
         nuDict.put("name", "Danial Tiger");
-        nuDict.put("age", 32);
+        nuDict.put("age", 32L);
 
-        Map<String, Object> nuAddress = new TreeMap<>();
+        Map<String, Object> nuAddress = new HashMap<>();
         nuAddress.put("street", "2 Main street");
         nuAddress.put("city", "Palo Alto");
         nuAddress.put("state", "CA");
@@ -249,7 +249,7 @@ public class DocumentTest extends BaseTest {
 
         save(doc);
         doc = db.getDocument("doc1");
-        assertEquals(nuDict.toString(), doc.toMap().toString());
+        assertEquals(nuDict, doc.toMap());
     }
 
 
@@ -270,7 +270,7 @@ public class DocumentTest extends BaseTest {
                 assertNull(d.getString("key"));
                 assertNull(d.getArray("key"));
                 assertNull(d.getDictionary("key"));
-                assertEquals(new TreeMap<>(), d.toMap());
+                assertEquals(new HashMap<>(), d.toMap());
             }
         });
     }
@@ -292,7 +292,7 @@ public class DocumentTest extends BaseTest {
         assertNull(doc.getString("key"));
         assertNull(doc.getArray("key"));
         assertNull(doc.getDictionary("key"));
-        assertEquals(new TreeMap<>(), doc.toMap());
+        assertEquals(new HashMap<>(), doc.toMap());
     }
 
 
@@ -853,7 +853,7 @@ public class DocumentTest extends BaseTest {
         dict.set("city", "Mountain View");
 
         assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
-        Map<String, Object> map = new TreeMap<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("street", "1 Main street");
         map.put("city", "Mountain View");
         assertEquals(map, doc.getDictionary("dict").toMap());
@@ -884,7 +884,7 @@ public class DocumentTest extends BaseTest {
                 assertNull(d.getDictionary("one_dot_one"));
                 assertNull(d.getDictionary("date"));
                 assertNotNull(d.getDictionary("dict"));
-                Map<String, Object> dict = new TreeMap<>();
+                Map<String, Object> dict = new HashMap<>();
                 dict.put("street", "1 Main street");
                 dict.put("city", "Mountain View");
                 dict.put("state", "CA");
@@ -970,7 +970,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetMap() {
-        Map<String, Object> dict = new TreeMap<>();
+        Map<String, Object> dict = new HashMap<>();
         dict.put("street", "1 Main street");
         dict.put("city", "Mountain View");
         dict.put("state", "CA");
@@ -987,7 +987,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(dict, address.toMap());
 
         // Update with a new dictionary:
-        Map<String, Object> nuDict = new TreeMap<>();
+        Map<String, Object> nuDict = new HashMap<>();
         nuDict.put("street", "1 Second street");
         nuDict.put("city", "Palo Alto");
         nuDict.put("state", "CA");
@@ -1014,7 +1014,7 @@ public class DocumentTest extends BaseTest {
         doc = db.getDocument(doc.getId());
 
         nuDict.put("zip", "94302");
-        Map<String, Object> expected = new TreeMap<>();
+        Map<String, Object> expected = new HashMap<>();
         expected.put("address", nuDict);
         assertEquals(expected, doc.toMap());
     }
@@ -1061,7 +1061,7 @@ public class DocumentTest extends BaseTest {
         save(doc);
         doc = db.getDocument("doc1");
 
-        Map<String, Object> expected = new TreeMap<>();
+        Map<String, Object> expected = new HashMap<>();
         expected.put("members", Arrays.asList("d", "e", "f", "g"));
         assertEquals(expected, doc.toMap());
     }
@@ -1085,14 +1085,14 @@ public class DocumentTest extends BaseTest {
 
         doc = save(doc);
 
-        Map<String, Object> mapShipping = new TreeMap<>();
+        Map<String, Object> mapShipping = new HashMap<>();
         mapShipping.put("street", "1 Main street");
         mapShipping.put("city", "Mountain View");
         mapShipping.put("state", "CA");
         mapShipping.put("zip", "94042");
-        Map<String, Object> mapAddresses = new TreeMap<>();
+        Map<String, Object> mapAddresses = new HashMap<>();
         mapAddresses.put("shipping", mapShipping);
-        Map<String, Object> expected = new TreeMap<>();
+        Map<String, Object> expected = new HashMap<>();
         expected.put("addresses", mapAddresses);
 
         assertEquals(expected, doc.toMap());
@@ -1128,19 +1128,19 @@ public class DocumentTest extends BaseTest {
 
         doc = save(doc);
 
-        Map<String, Object> mapAddress1 = new TreeMap<>();
+        Map<String, Object> mapAddress1 = new HashMap<>();
         mapAddress1.put("street", "2 Main street");
         mapAddress1.put("city", "Mountain View");
         mapAddress1.put("state", "CA");
         mapAddress1.put("zip", "94042");
 
-        Map<String, Object> mapAddress2 = new TreeMap<>();
+        Map<String, Object> mapAddress2 = new HashMap<>();
         mapAddress2.put("street", "2 Second street");
         mapAddress2.put("city", "Palo Alto");
         mapAddress2.put("state", "CA");
         mapAddress2.put("zip", "94302");
 
-        Map<String, Object> expected = new TreeMap<>();
+        Map<String, Object> expected = new HashMap<>();
         expected.put("addresses", Arrays.asList(mapAddress1, mapAddress2));
 
         assertEquals(expected, doc.toMap());
@@ -1178,9 +1178,9 @@ public class DocumentTest extends BaseTest {
 
         doc = save(doc);
 
-        Map<String, Object> expected = new TreeMap<>();
-        expected.put("groups", Arrays.asList(Arrays.asList("d", "e", "f"), Arrays.asList(4, 5, 6)));
-        assertEquals(expected.toString(), doc.toMap().toString());
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("groups", Arrays.asList(Arrays.asList("d", "e", "f"), Arrays.asList(4L, 5L, 6L)));
+        assertEquals(expected, doc.toMap());
     }
 
     @Test
@@ -1217,14 +1217,14 @@ public class DocumentTest extends BaseTest {
 
         doc = save(doc);
 
-        Map<String, Object> expected = new TreeMap<>();
-        Map<String, Object> mapGroup1 = new TreeMap<>();
+        Map<String, Object> expected = new HashMap<>();
+        Map<String, Object> mapGroup1 = new HashMap<>();
         mapGroup1.put("member", Arrays.asList("d", "e", "f"));
-        Map<String, Object> mapGroup2 = new TreeMap<>();
-        mapGroup2.put("member", Arrays.asList(4, 5, 6));
+        Map<String, Object> mapGroup2 = new HashMap<>();
+        mapGroup2.put("member", Arrays.asList(4L, 5L, 6L));
         expected.put("group1", mapGroup1);
         expected.put("group2", mapGroup2);
-        assertEquals(expected.toString(), doc.toMap().toString());
+        assertEquals(expected, doc.toMap());
     }
 
     @Test
@@ -1326,11 +1326,11 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testRemoveKeys() {
         Document doc = createDocument("doc1");
-        Map<String, Object> mapAddress = new TreeMap<>();
+        Map<String, Object> mapAddress = new HashMap<>();
         mapAddress.put("street", "1 milky way.");
         mapAddress.put("city", "galaxy city");
         mapAddress.put("zip", 12345);
-        Map<String, Object> profile = new TreeMap<>();
+        Map<String, Object> profile = new HashMap<>();
         profile.put("type", "profile");
         profile.put("name", "Jason");
         profile.put("weight", 130.5);
@@ -1360,28 +1360,28 @@ public class DocumentTest extends BaseTest {
         assertNull(doc.getDictionary("address").getObject("city"));
 
         Dictionary address = doc.getDictionary("address");
-        Map<String, Object> addr = new TreeMap<>();
+        Map<String, Object> addr = new HashMap<>();
         addr.put("street", "1 milky way.");
-        addr.put("zip", 12345);
-        assertEquals(addr.toString(), address.toMap().toString());
-        Map<String, Object> expected = new TreeMap<>();
+        addr.put("zip", 12345L);
+        assertEquals(addr, address.toMap());
+        Map<String, Object> expected = new HashMap<>();
         expected.put("type", "profile");
         expected.put("address", addr);
-        assertEquals(expected.toString(), doc.toMap().toString());
+        assertEquals(expected, doc.toMap());
 
         doc.remove("type");
         doc.remove("address");
         assertNull(doc.getObject("type"));
         assertNull(doc.getObject("address"));
-        assertEquals(new TreeMap<>(), doc.toMap());
+        assertEquals(new HashMap<>(), doc.toMap());
     }
 
     @Test
     public void testContainsKey() {
         Document doc = createDocument("doc1");
-        Map<String, Object> mapAddress = new TreeMap<>();
+        Map<String, Object> mapAddress = new HashMap<>();
         mapAddress.put("street", "1 milky way.");
-        Map<String, Object> profile = new TreeMap<>();
+        Map<String, Object> profile = new HashMap<>();
         profile.put("type", "profile");
         profile.put("name", "Jason");
         profile.put("age", 30);
@@ -1423,16 +1423,16 @@ public class DocumentTest extends BaseTest {
         db.delete(doc);
         assertTrue(doc.isDeleted());
         assertNull(doc.getObject("name"));
-        assertEquals(new TreeMap<>(), doc.toMap());
+        assertEquals(new HashMap<>(), doc.toMap());
     }
 
     @Test
     public void testDictionaryAfterDeleteDocument() {
-        Map<String, Object> addr = new TreeMap<>();
+        Map<String, Object> addr = new HashMap<>();
         addr.put("street", "1 Main street");
         addr.put("city", "Mountain View");
         addr.put("state", "CA");
-        Map<String, Object> dict = new TreeMap<>();
+        Map<String, Object> dict = new HashMap<>();
         dict.put("address", addr);
 
         Document doc = createDocument("doc1", dict);
@@ -1445,7 +1445,7 @@ public class DocumentTest extends BaseTest {
 
         db.delete(doc);
         assertNull(doc.getDictionary("address"));
-        assertEquals(new TreeMap<>(), doc.toMap());
+        assertEquals(new HashMap<>(), doc.toMap());
 
         // The dictionary still has data but is detached:
         assertEquals("1 Main street", address.getObject("street"));
@@ -1455,12 +1455,12 @@ public class DocumentTest extends BaseTest {
         // Make changes to the dictionary shouldn't affect the document.
         address.set("zip", "94042");
         assertNull(doc.getDictionary("address"));
-        assertEquals(new TreeMap<>(), doc.toMap());
+        assertEquals(new HashMap<>(), doc.toMap());
     }
 
     @Test
     public void testArrayAfterDeleteDocument() {
-        Map<String, Object> dict = new TreeMap<>();
+        Map<String, Object> dict = new HashMap<>();
         dict.put("members", Arrays.asList("a", "b", "c"));
 
         Document doc = createDocument("doc1", dict);
@@ -1475,7 +1475,7 @@ public class DocumentTest extends BaseTest {
 
         db.delete(doc);
         assertNull(doc.getDictionary("members"));
-        assertEquals(new TreeMap<>(), doc.toMap());
+        assertEquals(new HashMap<>(), doc.toMap());
 
         // The array still has data but is detached:
 
@@ -1488,7 +1488,7 @@ public class DocumentTest extends BaseTest {
         members.set(2, "1");
         members.add("2");
         assertNull(doc.getDictionary("members"));
-        assertEquals(new TreeMap<>(), doc.toMap());
+        assertEquals(new HashMap<>(), doc.toMap());
 
     }
 
@@ -1530,7 +1530,7 @@ public class DocumentTest extends BaseTest {
 
         doc = db.getDocument("doc1");
         assertEquals("str", doc.getString("string"));
-        Map<String, Object> expected = new TreeMap<>();
+        Map<String, Object> expected = new HashMap<>();
         expected.put("string", "str");
         assertEquals(expected, doc.toMap());
     }

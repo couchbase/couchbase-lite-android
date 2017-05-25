@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,7 +21,7 @@ public class DictionaryTest extends BaseTest {
     public void testCreateDictionary() {
         Dictionary address = new Dictionary();
         assertEquals(0, address.count());
-        assertEquals(new TreeMap<String, Object>(), address.toMap());
+        assertEquals(new HashMap<String, Object>(), address.toMap());
 
         Document doc = createDocument("doc1");
         doc.set("address", address);
@@ -29,12 +29,12 @@ public class DictionaryTest extends BaseTest {
 
         save(doc);
         doc = db.getDocument("doc1");
-        assertEquals(new TreeMap<String, Object>(), doc.getDictionary("address").toMap());
+        assertEquals(new HashMap<String, Object>(), doc.getDictionary("address").toMap());
     }
 
     @Test
     public void testCreateDictionaryWithNSDictionary() {
-        Map<String, Object> dict = new TreeMap<>();
+        Map<String, Object> dict = new HashMap<>();
         dict.put("street", "1 Main street");
         dict.put("city", "Mountain View");
         dict.put("state", "CA");
@@ -69,7 +69,7 @@ public class DictionaryTest extends BaseTest {
         assertTrue(dict.getString("key") == null);
         assertTrue(dict.getDictionary("key") == null);
         assertTrue(dict.getArray("key") == null);
-        assertEquals(new TreeMap<String, Object>(), dict.toMap());
+        assertEquals(new HashMap<String, Object>(), dict.toMap());
 
         Document doc = createDocument("doc1");
         doc.set("dict", dict);
@@ -90,7 +90,7 @@ public class DictionaryTest extends BaseTest {
         assertTrue(dict.getString("key") == null);
         assertTrue(dict.getDictionary("key") == null);
         assertTrue(dict.getArray("key") == null);
-        assertEquals(new TreeMap<String, Object>(), dict.toMap());
+        assertEquals(new HashMap<String, Object>(), dict.toMap());
     }
 
     @Test
@@ -113,14 +113,14 @@ public class DictionaryTest extends BaseTest {
         assertEquals(level2, doc.getDictionary("level2"));
         assertEquals(level3, doc.getDictionary("level3"));
 
-        Map<String, Object> dict = new TreeMap<>();
-        Map<String, Object> l1 = new TreeMap<>();
+        Map<String, Object> dict = new HashMap<>();
+        Map<String, Object> l1 = new HashMap<>();
         l1.put("name", "n1");
         dict.put("level1", l1);
-        Map<String, Object> l2 = new TreeMap<>();
+        Map<String, Object> l2 = new HashMap<>();
         l2.put("name", "n2");
         dict.put("level2", l2);
-        Map<String, Object> l3 = new TreeMap<>();
+        Map<String, Object> l3 = new HashMap<>();
         l3.put("name", "n3");
         dict.put("level3", l3);
         assertEquals(dict, doc.toMap());
@@ -138,16 +138,16 @@ public class DictionaryTest extends BaseTest {
 
         List<Object> data = new ArrayList<>();
 
-        Map<String, Object> d1 = new TreeMap<>();
+        Map<String, Object> d1 = new HashMap<>();
         d1.put("name", "1");
         data.add(d1);
-        Map<String, Object> d2 = new TreeMap<>();
+        Map<String, Object> d2 = new HashMap<>();
         d2.put("name", "2");
         data.add(d2);
-        Map<String, Object> d3 = new TreeMap<>();
+        Map<String, Object> d3 = new HashMap<>();
         d3.put("name", "3");
         data.add(d3);
-        Map<String, Object> d4 = new TreeMap<>();
+        Map<String, Object> d4 = new HashMap<>();
         d4.put("name", "4");
         data.add(d4);
         assertEquals(4, data.size());
@@ -280,7 +280,7 @@ public class DictionaryTest extends BaseTest {
             dict.set(String.format(Locale.ENGLISH, "key%d", i), i);
         Map<String, Object> content = dict.toMap();
 
-        Map<String, Object> result = new TreeMap<>();
+        Map<String, Object> result = new HashMap<>();
         int count = 0;
         for (String key : dict) {
             result.put(key, dict.getObject(key));
@@ -295,7 +295,7 @@ public class DictionaryTest extends BaseTest {
         dict.set("key21", 21);
         content = dict.toMap();
 
-        result = new TreeMap<>();
+        result = new HashMap<>();
         count = 0;
         for (String key : dict) {
             result.put(key, dict.getObject(key));
@@ -311,7 +311,7 @@ public class DictionaryTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document doc) {
-                Map<String, Object> result = new TreeMap<>();
+                Map<String, Object> result = new HashMap<>();
                 int count = 0;
                 Dictionary dictObj = doc.getDictionary("dict");
                 for (String key : dictObj) {

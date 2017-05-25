@@ -2,7 +2,7 @@ package com.couchbase.lite;
 
 import android.content.Context;
 
-public class DatabaseConfiguration extends BaseDatabaseConfiguration{
+public class DatabaseConfiguration extends BaseDatabaseConfiguration {
     private Context context;
 
     public DatabaseConfiguration() {
@@ -19,7 +19,7 @@ public class DatabaseConfiguration extends BaseDatabaseConfiguration{
     //---------------------------------------------
 
     /* package */ DatabaseConfiguration copy() {
-        DatabaseConfiguration config =  new DatabaseConfiguration();
+        DatabaseConfiguration config = new DatabaseConfiguration();
         config.context = this.context;
         config.setConflictResolver(this.getConflictResolver());
         config.setDirectory(this.getDirectory());

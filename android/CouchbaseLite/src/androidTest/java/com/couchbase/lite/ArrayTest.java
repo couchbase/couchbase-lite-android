@@ -12,7 +12,7 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -168,7 +168,7 @@ public class ArrayTest extends BaseTest {
 
                 // dictionary
                 Dictionary subdict = (Dictionary) a.getObject(9);
-                Map<String, Object> expectedMap = new TreeMap<>();
+                Map<String, Object> expectedMap = new HashMap<>();
                 expectedMap.put("name", "Scott Tiger");
                 assertEquals(expectedMap, subdict.toMap());
 
@@ -224,7 +224,7 @@ public class ArrayTest extends BaseTest {
 
                 // dictionary
                 Dictionary subdict = (Dictionary) a.getObject(12 + 9);
-                Map<String, Object> expectedMap = new TreeMap<>();
+                Map<String, Object> expectedMap = new HashMap<>();
                 expectedMap.put("name", "Scott Tiger");
                 assertEquals(expectedMap, subdict.toMap());
 
@@ -275,7 +275,7 @@ public class ArrayTest extends BaseTest {
 
                 // dictionary
                 Dictionary subdict = (Dictionary) a.getObject(9);
-                Map<String, Object> expectedMap = new TreeMap<>();
+                Map<String, Object> expectedMap = new HashMap<>();
                 expectedMap.put("name", "Scott Tiger");
                 assertEquals(expectedMap, subdict.toMap());
 
@@ -814,7 +814,7 @@ public class ArrayTest extends BaseTest {
                 assertNull(a.getDictionary(6));
                 assertNull(a.getDictionary(7));
                 assertNull(a.getDictionary(8));
-                Map<String, Object> map = new TreeMap<>();
+                Map<String, Object> map = new HashMap<>();
                 map.put("name", "Scott Tiger");
                 assertEquals(map, a.getDictionary(9).toMap());
                 assertNull(a.getDictionary(10));
