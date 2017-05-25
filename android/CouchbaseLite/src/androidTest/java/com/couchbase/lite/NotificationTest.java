@@ -9,6 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -116,7 +117,6 @@ public class NotificationTest extends BaseTest {
         final Database db2 = db.copy();
         assertNotNull(db2);
         try {
-
             final CountDownLatch latchDB = new CountDownLatch(1);
             db2.addChangeListener(new DatabaseChangeListener() {
                 @Override
@@ -159,4 +159,78 @@ public class NotificationTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testAddSameChangeListeners() throws InterruptedException {
+        Document doc1 = createDocument("doc1");
+        doc1.set("name", "Scott");
+        save(doc1);
+
+        final CountDownLatch latch = new CountDownLatch(5);
+        // Add change listeners:
+        DocumentChangeListener listener = new DocumentChangeListener() {
+            @Override
+            public void changed(DocumentChange change) {
+                if (change.getDocumentID().equals("doc1"))
+                    latch.countDown();
+            }
+        };
+        db.addChangeListener("doc1", listener);
+        db.addChangeListener("doc1", listener);
+        db.addChangeListener("doc1", listener);
+        db.addChangeListener("doc1", listener);
+        db.addChangeListener("doc1", listener);
+
+        // Update doc1:
+        doc1.set("name", "Scott Tiger");
+        save(doc1);
+
+        // Let's wait for 0.5 seconds:
+        assertFalse(latch.await(500, TimeUnit.MILLISECONDS));
+        assertEquals(4, latch.getCount());
+    }
+
+    @Test
+    public void testRemoveDocumentChangeListener() throws InterruptedException {
+        Document doc1 = createDocument("doc1");
+        doc1.set("name", "Scott");
+        save(doc1);
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        // Add change listeners:
+        DocumentChangeListener listener = new DocumentChangeListener() {
+            @Override
+            public void changed(DocumentChange change) {
+                if (change.getDocumentID().equals("doc1")) {
+                    latch1.countDown();
+                    latch2.countDown();
+                }
+            }
+        };
+        db.addChangeListener("doc1", listener);
+
+        // Update doc1:
+        doc1.set("name", "Scott Tiger");
+        save(doc1);
+
+        // Let's wait for 0.5 seconds:
+        assertTrue(latch1.await(500, TimeUnit.MILLISECONDS));
+
+        // Remove change listener:
+        db.removeChangeListener("doc1", listener);
+
+        // Update doc1:
+        doc1.set("name", "Scotty");
+        save(doc1);
+
+        // Let's wait for 0.5 seconds:
+        assertFalse(latch2.await(500, TimeUnit.MILLISECONDS));
+        assertEquals(1, latch2.getCount());
+
+        // Remove again:
+        db.removeChangeListener("doc1", listener);
+
+        // Remove before add:
+        db.removeChangeListener("doc2", listener);
+    }
 }

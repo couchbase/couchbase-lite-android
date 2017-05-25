@@ -90,17 +90,6 @@ public final class Database {
     //---------------------------------------------
 
     /**
-     * Construct a Database with a given name and the default database config.
-     * If the database does not yet exist, it will be created.
-     *
-     * @param name The name of the database. May NOT contain capital letters!
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-    public Database(String name) throws CouchbaseLiteException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Construct a  Database with a given name and database config.
      * If the database does not yet exist, it will be created, unless the `readOnly` option is used.
      *

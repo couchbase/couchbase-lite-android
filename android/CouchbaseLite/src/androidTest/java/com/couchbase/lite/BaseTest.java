@@ -77,7 +77,7 @@ public class BaseTest {
     protected void openDB() {
         assertNull(db);
 
-        DatabaseConfiguration options = new DatabaseConfiguration();
+        DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
         db = new Database(kDatabaseName, options);
         assertNotNull(db);

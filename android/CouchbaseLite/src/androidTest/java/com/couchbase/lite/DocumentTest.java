@@ -25,9 +25,9 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBadDocID;
@@ -154,7 +154,7 @@ public class DocumentTest extends BaseTest {
     public void testCreateDocWithDict() {
         Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
-        dict.put("age", 30);
+        dict.put("age", 30L);
 
         Map<String, Object> address = new HashMap<>();
         address.put("street", "1 Main street");
@@ -184,7 +184,7 @@ public class DocumentTest extends BaseTest {
     public void testCreateDocWithIDAndDict() {
         Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
-        dict.put("age", 30);
+        dict.put("age", 30L);
 
         Map<String, Object> address = new HashMap<>();
         address.put("street", "1 Main street");
@@ -214,7 +214,7 @@ public class DocumentTest extends BaseTest {
     public void testSetDictionaryContent() {
         Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
-        dict.put("age", 30);
+        dict.put("age", 30L);
 
         Map<String, Object> address = new HashMap<>();
         address.put("street", "1 Main street");
@@ -234,7 +234,7 @@ public class DocumentTest extends BaseTest {
 
         Map<String, Object> nuDict = new HashMap<>();
         nuDict.put("name", "Danial Tiger");
-        nuDict.put("age", 32);
+        nuDict.put("age", 32L);
 
         Map<String, Object> nuAddress = new HashMap<>();
         nuAddress.put("street", "2 Main street");
@@ -404,9 +404,9 @@ public class DocumentTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
-                assertEquals(1, d.getObject("number1"));
-                assertEquals(0, d.getObject("number2"));
-                assertEquals(-1, d.getObject("number3"));
+                assertEquals(1, ((Number)d.getObject("number1")).intValue());
+                assertEquals(0, ((Number)d.getObject("number2")).intValue());
+                assertEquals(-1, ((Number)d.getObject("number3")).intValue());
                 assertEquals(1.1, d.getObject("number4"));
             }
         });
@@ -421,10 +421,10 @@ public class DocumentTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
-                assertEquals(0, d.getObject("number1"));
-                assertEquals(1, d.getObject("number2"));
+                assertEquals(0, ((Number)d.getObject("number1")).intValue());
+                assertEquals(1, ((Number)d.getObject("number2")).intValue());
                 assertEquals(1.1, d.getObject("number3"));
-                assertEquals(-1, d.getObject("number4"));
+                assertEquals(-1, ((Number)d.getObject("number4")).intValue());
             }
         });
     }
@@ -440,9 +440,9 @@ public class DocumentTest extends BaseTest {
                 assertNull(d.getNumber("true"));
                 assertNull(d.getNumber("false"));
                 assertNull(d.getNumber("string"));
-                assertEquals(0, d.getNumber("zero"));
-                assertEquals(1, d.getNumber("one"));
-                assertEquals(-1, d.getNumber("minus_one"));
+                assertEquals(0, d.getNumber("zero").intValue());
+                assertEquals(1, d.getNumber("one").intValue());
+                assertEquals(-1, d.getNumber("minus_one").intValue());
                 assertEquals(1.1, d.getNumber("one_dot_one"));
                 assertNull(d.getNumber("date"));
                 assertNull(d.getNumber("dict"));
@@ -569,20 +569,19 @@ public class DocumentTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document doc) {
-                assertEquals(Integer.MIN_VALUE, doc.getNumber("min_int"));
-                assertEquals(Integer.MAX_VALUE, doc.getNumber("max_int"));
-                assertEquals(Integer.MIN_VALUE, doc.getObject("min_int"));
-                assertEquals(Integer.MAX_VALUE, doc.getObject("max_int"));
+                assertEquals(Integer.MIN_VALUE, doc.getNumber("min_int").intValue());
+                assertEquals(Integer.MAX_VALUE, doc.getNumber("max_int").intValue());
+                assertEquals(Integer.MIN_VALUE, ((Number)doc.getObject("min_int")).intValue());
+                assertEquals(Integer.MAX_VALUE, ((Number)doc.getObject("max_int")).intValue());
                 assertEquals(Integer.MIN_VALUE, doc.getInt("min_int"));
                 assertEquals(Integer.MAX_VALUE, doc.getInt("max_int"));
 
-                //TODO: Long does not work with current implementation
-//                assertEquals(Long.MIN_VALUE, doc.getNumber("min_long"));
-//                assertEquals(Long.MAX_VALUE, doc.getNumber("max_long"));
-//                assertEquals(Long.MIN_VALUE, doc.getObject("min_long"));
-//                assertEquals(Long.MAX_VALUE, doc.getObject("max_long"));
-//                assertEquals(Long.MIN_VALUE, doc.getLong("min_long"));
-//                assertEquals(Long.MAX_VALUE, doc.getLong("max_long"));
+                assertEquals(Long.MIN_VALUE, doc.getNumber("min_long"));
+                assertEquals(Long.MAX_VALUE, doc.getNumber("max_long"));
+                assertEquals(Long.MIN_VALUE, doc.getObject("min_long"));
+                assertEquals(Long.MAX_VALUE, doc.getObject("max_long"));
+                assertEquals(Long.MIN_VALUE, doc.getLong("min_long"));
+                assertEquals(Long.MAX_VALUE, doc.getLong("max_long"));
 
                 assertEquals(Float.MIN_VALUE, doc.getNumber("min_float"));
                 assertEquals(Float.MAX_VALUE, doc.getNumber("max_float"));
@@ -862,7 +861,7 @@ public class DocumentTest extends BaseTest {
         save(doc);
         doc = db.getDocument("doc1");
 
-        Log.e(TAG, "doc.allKeys() -> " + doc.allKeys());
+        Log.e(TAG, "doc.getKeys() -> " + doc.getKeys());
         assertTrue(dict != doc.getObject("dict"));
         assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
         assertEquals(map, doc.getDictionary("dict").toMap());
@@ -1180,7 +1179,7 @@ public class DocumentTest extends BaseTest {
         doc = save(doc);
 
         Map<String, Object> expected = new HashMap<>();
-        expected.put("groups", Arrays.asList(Arrays.asList("d", "e", "f"), Arrays.asList(4, 5, 6)));
+        expected.put("groups", Arrays.asList(Arrays.asList("d", "e", "f"), Arrays.asList(4L, 5L, 6L)));
         assertEquals(expected, doc.toMap());
     }
 
@@ -1222,7 +1221,7 @@ public class DocumentTest extends BaseTest {
         Map<String, Object> mapGroup1 = new HashMap<>();
         mapGroup1.put("member", Arrays.asList("d", "e", "f"));
         Map<String, Object> mapGroup2 = new HashMap<>();
-        mapGroup2.put("member", Arrays.asList(4, 5, 6));
+        mapGroup2.put("member", Arrays.asList(4L, 5L, 6L));
         expected.put("group1", mapGroup1);
         expected.put("group2", mapGroup2);
         assertEquals(expected, doc.toMap());
@@ -1363,7 +1362,7 @@ public class DocumentTest extends BaseTest {
         Dictionary address = doc.getDictionary("address");
         Map<String, Object> addr = new HashMap<>();
         addr.put("street", "1 milky way.");
-        addr.put("zip", 12345);
+        addr.put("zip", 12345L);
         assertEquals(addr, address.toMap());
         Map<String, Object> expected = new HashMap<>();
         expected.put("type", "profile");

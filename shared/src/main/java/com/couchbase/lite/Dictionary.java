@@ -5,9 +5,11 @@ import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLEncoder;
 
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +30,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     private Map<String, Object> map = null;
     private Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
+    private int     changedCount = 0;
     private List<String> keys = null; // dictionary key cache
 
     //---------------------------------------------
@@ -95,6 +98,15 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
         setChanged();
         return this;
+    }
+
+    @Override
+    public List<String> getKeys() {
+        if (!changed)
+            // NOTE: super.getKeys() already creates copy of List.
+            return super.getKeys();
+        else
+            return new ArrayList(allKeys());
     }
 
     /**
@@ -168,7 +180,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         if (count == 0)
             return super.count();
 
-        for (String key : super.allKeys()) {
+        for (String key : super.getKeys()) {
             if (!map.containsKey(key))
                 count++;
         }
@@ -390,7 +402,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public boolean contains(String key) {
-        Object value = map.get(key);
+        Object value = map != null ? map.get(key) : null;
         if (value == null)
             return super.contains(key);
         else
@@ -398,28 +410,39 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     }
 
     //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
+    class DictionaryIterator implements Iterator<String> {
+        private Iterator<String> internal;
+        private int expectedChangedCount;
+
+        public DictionaryIterator() {
+            this.internal = Dictionary.this.getKeys().iterator();
+            this.expectedChangedCount = Dictionary.this.changedCount;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return internal.hasNext();
+        }
+
+        @Override
+        public String next() {
+            if (expectedChangedCount != Dictionary.this.changedCount)
+                throw new ConcurrentModificationException();
+            return internal.next();
+        }
+    }
+
+    @Override
+    public Iterator<String> iterator() {
+        return new DictionaryIterator();
+    }
+
+    //---------------------------------------------
     // protected level access
     //---------------------------------------------
 
-    /*package*/ List<String> allKeys() {
-        if (keys == null) {
-            List<String> result = map != null ? new ArrayList<>(map.keySet()) : new ArrayList<String>();
-            for (String key : super.allKeys()) {
-                if (!result.contains(key))
-                    result.add(key);
-            }
-
-            if (map != null) {
-                for (Map.Entry<String, Object> entry : map.entrySet()) {
-                    if (entry.getValue() == RemovedValue.INSTANCE)
-                        result.remove(entry.getKey());
-                }
-            }
-
-            keys = result;
-        }
-        return keys;
-    }
 
     //---------------------------------------------
     // Package level access
@@ -441,12 +464,11 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
          map: ["name": kCBLRemovedValue]
          */
 
-        // Note: RemovedValue can not be check
-        if (map == null || map.size() == 0)
-            return super.count() == 0;
+        if (!changed)
+            return super.isEmpty();
 
         // something in fleece, but not in map
-        for (String key : allKeys()) {
+        for (String key : super.getKeys()) {
             if (map != null && !map.containsKey(key))
                 return false;
         }
@@ -474,7 +496,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     // FleeceEncodable implementation
     /* package */
     public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
-        List<String> keys = allKeys();
+        List<String> keys = getKeys();
         encoder.beginDict(keys.size());
         for (String key : keys) {
             Object value = getObject(key);
@@ -513,12 +535,32 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
             setChanged();
     }
 
+    private List<String> allKeys() {
+        if (keys == null) {
+            List<String> result = map != null ? new ArrayList<>(map.keySet()) : new ArrayList<String>();
+            for (String key : super.getKeys()) {
+                if (!result.contains(key))
+                    result.add(key);
+            }
+            if (map != null) {
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    if (entry.getValue() == RemovedValue.INSTANCE)
+                        result.remove(entry.getKey());
+                }
+            }
+            keys = result;
+        }
+        return keys;
+    }
+
     //  CHANGE
+
     private void setChanged() {
         if (!changed) {
             changed = true;
             notifyChangeListeners();
         }
+        changedCount++;
     }
 
     private void notifyChangeListeners() {

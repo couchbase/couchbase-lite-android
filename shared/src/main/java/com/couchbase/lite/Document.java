@@ -191,6 +191,11 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return dictionary.count();
     }
 
+    @Override
+    public List<String> getKeys() {
+        return dictionary.getKeys();
+    }
+
     /**
      * Gets a property's value as an object. The object types are Blob, Array,
      * Dictionary, Number, or String based on the underlying data type; or nil if the
@@ -341,14 +346,10 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return dictionary.contains(key);
     }
 
+
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
-    @Override
-    /*package*/ List<String> allKeys() {
-        return dictionary.allKeys();
-    }
 
     /*package*/  Database getDatabase() {
         return database;
@@ -386,6 +387,11 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 
         // reset
         setC4Doc(null);
+    }
+
+    @Override
+    /*package*/ boolean isEmpty() {
+        return dictionary.isEmpty();
     }
 
     //---------------------------------------------
@@ -596,11 +602,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return dictionary.isChanged();
     }
 
-    private boolean isEmpty() {
-        return dictionary.isEmpty();
-    }
-
-
     // The next four functions search recursively for a property "_cbltype":"blob".
 
     private static boolean objectContainsBlob(Object obj) {
@@ -629,7 +630,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         if (dict == null)
             return false;
         boolean containsBlob = false;
-        for (String key : dict.allKeys()) {
+        for (String key : dict.getKeys()) {
             if (containsBlob = objectContainsBlob(dict.getObject(key)))
                 break;
         }
@@ -640,7 +641,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         if (doc == null)
             return false;
         boolean containsBlob = false;
-        for (String key : doc.allKeys()) {
+        for (String key : doc.getKeys()) {
             if (containsBlob = objectContainsBlob(doc.getObject(key)))
                 break;
         }

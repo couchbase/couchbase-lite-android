@@ -8,14 +8,17 @@ import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ArrayTest extends BaseTest {
 
@@ -156,9 +159,9 @@ public class ArrayTest extends BaseTest {
                 assertEquals(true, a.getObject(0));
                 assertEquals(false, a.getObject(1));
                 assertEquals("string", a.getObject(2));
-                assertEquals(0, a.getObject(3));
-                assertEquals(1, a.getObject(4));
-                assertEquals(-1, a.getObject(5));
+                assertEquals(0, ((Number)a.getObject(3)).intValue());
+                assertEquals(1, ((Number)a.getObject(4)).intValue());
+                assertEquals(-1, ((Number)a.getObject(5)).intValue());
                 assertEquals(1.1, a.getObject(6));
                 assertEquals(kArrayTestDate, a.getObject(7));
                 assertEquals(null, a.getObject(8));
@@ -212,9 +215,9 @@ public class ArrayTest extends BaseTest {
                 assertEquals(true, a.getObject(12 + 0));
                 assertEquals(false, a.getObject(12 + 1));
                 assertEquals("string", a.getObject(12 + 2));
-                assertEquals(0, a.getObject(12 + 3));
-                assertEquals(1, a.getObject(12 + 4));
-                assertEquals(-1, a.getObject(12 + 5));
+                assertEquals(0, ((Number)a.getObject(12 + 3)).intValue());
+                assertEquals(1, ((Number)a.getObject(12 + 4)).intValue());
+                assertEquals(-1, ((Number)a.getObject(12 + 5)).intValue());
                 assertEquals(1.1, a.getObject(12 + 6));
                 assertEquals(kArrayTestDate, a.getObject(12 + 7));
                 assertEquals(null, a.getObject(12 + 8));
@@ -263,9 +266,9 @@ public class ArrayTest extends BaseTest {
                 assertEquals(true, a.getObject(0));
                 assertEquals(false, a.getObject(1));
                 assertEquals("string", a.getObject(2));
-                assertEquals(0, a.getObject(3));
-                assertEquals(1, a.getObject(4));
-                assertEquals(-1, a.getObject(5));
+                assertEquals(0, ((Number)a.getObject(3)).intValue());
+                assertEquals(1, ((Number)a.getObject(4)).intValue());
+                assertEquals(-1, ((Number)a.getObject(5)).intValue());
                 assertEquals(1.1, a.getObject(6));
                 assertEquals(kArrayTestDate, a.getObject(7));
                 assertEquals(null, a.getObject(8));
@@ -523,9 +526,9 @@ public class ArrayTest extends BaseTest {
                 assertNull(a.getNumber(0));
                 assertNull(a.getNumber(1));
                 assertNull(a.getNumber(2));
-                assertEquals(0, a.getNumber(3));
-                assertEquals(1, a.getNumber(4));
-                assertEquals(-1, a.getNumber(5));
+                assertEquals(0, ((Number)a.getNumber(3)).intValue());
+                assertEquals(1, ((Number)a.getNumber(4)).intValue());
+                assertEquals(-1, ((Number)a.getNumber(5)).intValue());
                 assertEquals(1.1, a.getNumber(6));
                 assertNull(a.getNumber(7));
                 assertNull(a.getNumber(8));
@@ -656,20 +659,19 @@ public class ArrayTest extends BaseTest {
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
-                assertEquals(Integer.MIN_VALUE, a.getNumber(0));
-                assertEquals(Integer.MAX_VALUE, a.getNumber(1));
-                assertEquals(Integer.MIN_VALUE, a.getObject(0));
-                assertEquals(Integer.MAX_VALUE, a.getObject(1));
+                assertEquals(Integer.MIN_VALUE, a.getNumber(0).intValue());
+                assertEquals(Integer.MAX_VALUE, a.getNumber(1).intValue());
+                assertEquals(Integer.MIN_VALUE, ((Number)a.getObject(0)).intValue());
+                assertEquals(Integer.MAX_VALUE, ((Number)a.getObject(1)).intValue());
                 assertEquals(Integer.MIN_VALUE, a.getInt(0));
                 assertEquals(Integer.MAX_VALUE, a.getInt(1));
 
-                // TODO https://github.com/couchbase/couchbase-lite-android/issues/1158
-//                assertEquals(Long.MIN_VALUE, a.getNumber(2));
-//                assertEquals(Long.MAX_VALUE, a.getNumber(3));
-//                assertEquals(Long.MIN_VALUE, a.getObject(2));
-//                assertEquals(Long.MAX_VALUE, a.getObject(3));
-//                assertEquals(Long.MIN_VALUE, a.getLong(2));
-//                assertEquals(Long.MAX_VALUE, a.getLong(3));
+                assertEquals(Long.MIN_VALUE, a.getNumber(2));
+                assertEquals(Long.MAX_VALUE, a.getNumber(3));
+                assertEquals(Long.MIN_VALUE, a.getObject(2));
+                assertEquals(Long.MAX_VALUE, a.getObject(3));
+                assertEquals(Long.MIN_VALUE, a.getLong(2));
+                assertEquals(Long.MAX_VALUE, a.getLong(3));
 
                 assertEquals(Float.MIN_VALUE, a.getNumber(4));
                 assertEquals(Float.MAX_VALUE, a.getNumber(5));
@@ -701,9 +703,10 @@ public class ArrayTest extends BaseTest {
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
-                // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1160
-//                assertEquals(1.00, a.getObject(0));
-//                assertEquals(1.00, a.getNumber(0));
+                // NOTE: Number which has no floating part is stored as Integer.
+                //       This causes type difference between before and after storing data into the database.
+                assertEquals(1.00, ((Number)a.getObject(0)).doubleValue(), 0.0);
+                assertEquals(1.00, a.getNumber(0).doubleValue(), 0.0);
                 assertEquals(1, a.getInt(0));
                 assertEquals(1L, a.getLong(0));
                 assertEquals(1.00F, a.getFloat(0), 0.0F);
@@ -716,9 +719,8 @@ public class ArrayTest extends BaseTest {
                 assertEquals(1.49F, a.getFloat(1), 0.0F);
                 assertEquals(1.49, a.getDouble(1), 0.0);
 
-                // TODO:
-//                assertEquals(1.50, a.getObject(2));
-//                assertEquals(1.50, a.getNumber(2));
+                assertEquals(1.50, ((Number)a.getObject(2)).doubleValue(), 0.0);
+                assertEquals(1.50, a.getNumber(2).doubleValue(), 0.0);
                 assertEquals(1, a.getInt(2));
                 assertEquals(1L, a.getLong(2));
                 assertEquals(1.50F, a.getFloat(2), 0.0F);
@@ -982,8 +984,50 @@ public class ArrayTest extends BaseTest {
                     assertNotNull(item);
                     r.add(item);
                 }
-                assertEquals(c, r);
+                assertEquals(c.toString(), r.toString());
             }
         });
+    }
+
+    @Test
+    public void testArrayEnumerationWithDataModification() {
+        Array array = new Array();
+        for (int i = 0; i < 2; i++)
+            array.add(i);
+
+        Iterator<Object> itr = array.iterator();
+        int count = 0;
+        try {
+            while (itr.hasNext()) {
+                itr.next();
+                if (count++ == 0)
+                    array.add(2);
+            }
+            fail("Expected ConcurrentModificationException");
+        } catch (ConcurrentModificationException e) {
+
+        }
+        assertEquals(3, array.count());
+        assertEquals(Arrays.asList(0, 1, 2).toString(), array.toList().toString());
+
+        Document doc = createDocument("doc1");
+        doc.set("array", array);
+        doc = save(doc);
+        array = doc.getArray("array");
+
+        itr = array.iterator();
+        count = 0;
+        try {
+            while (itr.hasNext()) {
+                itr.next();
+                if (count++ == 0)
+                    array.add(3);
+            }
+            fail("Expected ConcurrentModificationException");
+        } catch (ConcurrentModificationException e) {
+
+        }
+        assertEquals(4, array.count());
+        assertEquals(Arrays.asList(0, 1, 2, 3).toString(), array.toList().toString());
     }
 }

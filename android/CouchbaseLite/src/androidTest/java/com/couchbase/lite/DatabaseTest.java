@@ -42,9 +42,16 @@ public class DatabaseTest extends BaseTest {
     //  Helper methods
     //---------------------------------------------
 
+    static class DummyResolver implements ConflictResolver {
+        @Override
+        public ReadOnlyDocument resolve(Conflict conflict) {
+            return null;
+        }
+    }
+
     // helper method to open database
     private Database openDatabase(String dbName) {
-        DatabaseConfiguration options = new DatabaseConfiguration();
+        DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
         Database db = new Database(dbName, options);
         assertEquals(dbName, db.getName());
@@ -92,7 +99,7 @@ public class DatabaseTest extends BaseTest {
         assertNotNull(doc);
         assertEquals(docID, doc.getId());
         assertFalse(doc.isDeleted());
-        assertEquals(value, doc.getObject("key"));
+        assertEquals(value, ((Number)doc.getObject("key")).intValue());
     }
 
     // helper method to purge doc and verify doc.
@@ -142,6 +149,89 @@ public class DatabaseTest extends BaseTest {
     }
 
     //---------------------------------------------
+    //  DatabaseConfiguration
+    //---------------------------------------------
+    @Test
+    public void testCreateConfiguration() {
+        // Default:
+        DatabaseConfiguration config1 = new DatabaseConfiguration(this.context);
+        config1.setDirectory(new File("/tmp"));
+        assertNotNull(config1.getDirectory());
+        assertTrue(config1.getDirectory().getAbsolutePath().length() > 0);
+        assertNull(config1.getConflictResolver());
+        assertNull(config1.getEncryptionKey());
+
+        // Default + Copy
+        DatabaseConfiguration config1a = config1.copy();
+        assertNotNull(config1a.getDirectory());
+        assertTrue(config1a.getDirectory().getAbsolutePath().length() > 0);
+        assertNull(config1a.getConflictResolver());
+        assertNull(config1a.getEncryptionKey());
+
+        // Custom
+        DummyResolver resolver = new DummyResolver();
+        DatabaseConfiguration config2 = new DatabaseConfiguration(this.context);
+        config2.setDirectory(new File("/tmp/mydb"));
+        config2.setConflictResolver(resolver);
+        config2.setEncryptionKey("key");
+        assertEquals("/tmp/mydb", config2.getDirectory().getAbsolutePath());
+        assertEquals(resolver, config2.getConflictResolver());
+        assertEquals("key", config2.getEncryptionKey());
+
+        // Custom + Copy
+        DatabaseConfiguration config2a = config2.copy();
+        assertEquals("/tmp/mydb", config2a.getDirectory().getAbsolutePath());
+        assertEquals(resolver, config2a.getConflictResolver());
+        assertEquals("key", config2a.getEncryptionKey());
+    }
+
+    @Test
+    public void testGetSetConfiguration() {
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        config.setDirectory(this.db.getConfig().getDirectory());
+
+        Database db = new Database("db", config);
+        try {
+            assertNotNull(db.getConfig());
+            assertTrue(db.getConfig() != config);
+            assertEquals(db.getConfig().getDirectory(), config.getDirectory());
+            assertEquals(db.getConfig().getConflictResolver(), config.getConflictResolver());
+            assertEquals(db.getConfig().getEncryptionKey(), config.getEncryptionKey());
+        } finally {
+            db.close();
+        }
+    }
+
+    @Test
+    public void testConfigurationIsCopiedWhenGetSet() {
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        config.setDirectory(this.db.getConfig().getDirectory());
+
+        Database db = new Database("db", config);
+        try {
+            config.setConflictResolver(new DummyResolver());
+            assertNotNull(db.getConfig());
+            assertTrue(db.getConfig() != config);
+            assertTrue(db.getConfig().getConflictResolver() != config.getConflictResolver());
+        } finally {
+            db.close();
+        }
+    }
+
+    @Test
+    public void testDatabaseConfigurationWithAndroidContect() {
+        DatabaseConfiguration config = new DatabaseConfiguration(context);
+        assertEquals(config.getDirectory(), context.getFilesDir());
+
+        Database db = new Database("db", config);
+        try {
+            assertTrue(db.getPath().getAbsolutePath().contains(context.getFilesDir().getAbsolutePath()));
+        } finally {
+            db.close();
+        }
+    }
+
+    //---------------------------------------------
     //  Create Database
     //---------------------------------------------
 
@@ -159,12 +249,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testCreateWithDefaultOption() {
-        try {
-            Database db = new Database("db", new DatabaseConfiguration());
-            fail();
-        } catch (UnsupportedOperationException e) {
-            // NOTE: CBL Android's Database constructor does not work without specified directory.
-        }
+        new Database("db", new DatabaseConfiguration(this.context));
     }
 
     @Test
@@ -198,7 +283,7 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists("db", dir));
 
         // create db with custom directory
-        DatabaseConfiguration config = new DatabaseConfiguration();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         config.setDirectory(dir);
         Database db = new Database("db", config);
         assertNotNull(db);
@@ -796,7 +881,7 @@ public class DatabaseTest extends BaseTest {
 
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
-        assertEquals(1, doc.getObject("key"));
+        assertEquals(1, ((Number)doc.getObject("key")).intValue());
         doc.set("key", 2);
         doc.set("key1", "value");
     }
@@ -883,7 +968,7 @@ public class DatabaseTest extends BaseTest {
 
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
-        assertEquals(1, doc.getObject("key"));
+        assertEquals(1, ((Number)doc.getObject("key")).intValue());
         doc.set("key", 2);
         doc.set("key1", "value");
     }
@@ -1051,15 +1136,15 @@ public class DatabaseTest extends BaseTest {
     }
 
     //TODO: @Test - test fails because database.compact() does not delete blob files.
-    public void testCompact(){
+    public void testCompact() {
         final List<Document> docs = createDocs(20);
 
         // Update each doc 25 times:
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                for(Document doc : docs){
-                    for(int i = 0; i < 25; i++){
+                for (Document doc : docs) {
+                    for (int i = 0; i < 25; i++) {
                         doc.set("number", i);
                         save(doc);
                     }
@@ -1068,7 +1153,7 @@ public class DatabaseTest extends BaseTest {
         });
 
         // Add each doc with a blob object:
-        for(Document doc : docs){
+        for (Document doc : docs) {
             doc.set("blob", new Blob("text/plain", doc.getId().getBytes()));
             save(doc);
         }
@@ -1085,7 +1170,7 @@ public class DatabaseTest extends BaseTest {
         db.compact();
 
         // Delete all docs:
-        for(Document doc : docs){
+        for (Document doc : docs) {
             db.delete(doc);
             assertTrue(doc.isDeleted());
         }

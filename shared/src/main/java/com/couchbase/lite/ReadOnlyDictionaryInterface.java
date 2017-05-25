@@ -1,10 +1,13 @@
 package com.couchbase.lite;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /* package */ interface ReadOnlyDictionaryInterface extends Iterable<String> {
     int count();
+
+    List<String> getKeys();
 
     Object getObject(String key);
 

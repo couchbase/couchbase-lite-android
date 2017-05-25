@@ -3,14 +3,18 @@ package com.couchbase.lite;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class DictionaryTest extends BaseTest {
     @Test
@@ -241,6 +245,35 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
+    public void testRemoveDictionary(){
+        Document doc = createDocument("doc1");
+        Dictionary profile1 = new Dictionary();
+        profile1.set("name", "Scott Tiger");
+        doc.set("profile", profile1);
+        assertEquals(profile1.toMap(), doc.getDictionary("profile").toMap());
+        assertTrue(doc.contains("profile"));
+
+        // Remove profile
+        doc.remove("profile");
+        assertNull(doc.getObject("profile"));
+        assertFalse(doc.contains("profile"));
+
+        // Profile1 should be now detached:
+        profile1.set("age", 20);
+        assertEquals("Scott Tiger", profile1.getObject("name"));
+        assertEquals(20, profile1.getObject("age"));
+
+        // Check whether the profile value has no change:
+        assertNull(doc.getObject("profile"));
+
+        // Save:
+        doc = save(doc);
+
+        assertNull(doc.getObject("profile"));
+        assertFalse(doc.contains("profile"));
+    }
+
+    @Test
     public void testEnumeratingKeys() {
         final Dictionary dict = new Dictionary();
         for (int i = 0; i < 20; i++)
@@ -289,5 +322,45 @@ public class DictionaryTest extends BaseTest {
                 assertEquals(finalContent, result);
             }
         });
+    }
+
+    @Test
+    public void testDictionaryEnumerationWithDataModification() {
+        Dictionary dict = new Dictionary();
+        for (int i = 0; i < 2; i++)
+            dict.set(String.format(Locale.ENGLISH, "key%d", i), i);
+
+        Iterator<String> itr = dict.iterator();
+        int count = 0;
+        try {
+            while (itr.hasNext()) {
+                itr.next();
+                if (count++ == 0)
+                    dict.set("key2", 2);
+            }
+            fail("Expected ConcurrentModificationException");
+        } catch (ConcurrentModificationException e) {
+            // Expected to come here!
+        }
+        assertEquals(3, dict.count());
+
+        Document doc = createDocument("doc1");
+        doc.set("dict", dict);
+        doc = save(doc);
+        dict = doc.getDictionary("dict");
+
+        itr = dict.iterator();
+        count = 0;
+        try {
+            while (itr.hasNext()) {
+                itr.next();
+                if (count++ == 0)
+                    dict.set("key3", 3);
+            }
+            fail("Expected ConcurrentModificationException");
+        } catch (ConcurrentModificationException e) {
+            // Expected to come here!
+        }
+        assertEquals(4, dict.count());
     }
 }

@@ -53,6 +53,11 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
         return flDict != null ? (int) flDict.count() : 0;
     }
 
+    @Override
+    public List<String> getKeys() {
+        return new ArrayList(fleeceKeys());
+    }
+
     /**
      * Gets a property's value as an object. The object types are Blob, Array,
      * Dictionary, Number, or String based on the underlying data type; or nil if the
@@ -99,7 +104,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     @Override
     public int getInt(String key) {
         FLValue value = fleeceValue(key);
-        return value != null ? value.asInt() : 0;
+        return value != null ? (int)value.asInt() : 0;
     }
 
     /**
@@ -262,25 +267,6 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     // Package level access
     //---------------------------------------------
 
-    /*package*/ List<String> allKeys() {
-        if (keys == null) {
-            List<String> results = new ArrayList<>();
-            if (flDict != null) {
-                FLDictIterator itr = new FLDictIterator();
-                itr.begin(flDict);
-                String key;
-                while ((key = SharedKeys.getKey(itr, this.sharedKeys)) != null) {
-                    results.add(key);
-                    itr.next();
-                }
-                itr.free();
-            }
-
-            keys = results;
-        }
-        return keys;
-    }
-
     // FleeceEncodable implementation
     @Override
     public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
@@ -292,9 +278,15 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     //---------------------------------------------
     @Override
     public Iterator<String> iterator() {
-        return allKeys().iterator();
+        return getKeys().iterator();
     }
 
+    //---------------------------------------------
+    // Package
+    //---------------------------------------------
+    /* package */boolean isEmpty() {
+        return count() == 0;
+    }
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
@@ -327,5 +319,24 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
         itr.free();
 
         return dict;
+    }
+
+    private List<String> fleeceKeys() {
+        if (keys == null) {
+            List<String> results = new ArrayList<>();
+            if (flDict != null) {
+                FLDictIterator itr = new FLDictIterator();
+                itr.begin(flDict);
+                String key;
+                while ((key = SharedKeys.getKey(itr, this.sharedKeys)) != null) {
+                    results.add(key);
+                    itr.next();
+                }
+                itr.free();
+            }
+
+            keys = results;
+        }
+        return keys;
     }
 }

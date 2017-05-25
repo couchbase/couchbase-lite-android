@@ -71,7 +71,7 @@ public class SharedKeys implements FLValue.ISharedKeys {
             return null;
 
         if (key.isInteger())
-            return getKey(key.asInt());
+            return getKey((int)key.asInt());
 
         return (String) valueToObject(key);
     }
