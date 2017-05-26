@@ -319,7 +319,7 @@ public final class Blob implements FleeceEncodable {
 
         C4BlobKey key = null;
         try {
-            // TODO: C4Database.getBlobStore() causes crashes some-where-else
+            // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
             // C4BlobStore store = database.internal().getBlobStore();
             C4BlobStore store = getBlobStore(db);
             try {

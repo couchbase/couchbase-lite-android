@@ -141,7 +141,7 @@ public class ConflictTest extends BaseTest {
         super.tearDown();
     }
 
-    //TODO: @Test
+    @Test
     public void testConflict() {
         closeDB();
         openDB(new TheirsWins());
@@ -155,7 +155,7 @@ public class ConflictTest extends BaseTest {
         closeDB();
         openDB(new MergeThenTheirsWins());
 
-        Document doc2 = db.getDocument("doc2");
+        Document doc2 = createDocument("doc2");
         doc2.set("type", "profile");
         doc2.set("name", "Scott");
         save(doc2);
@@ -171,7 +171,7 @@ public class ConflictTest extends BaseTest {
         doc2.set("age", 31);
         save(doc2);
 
-        assertEquals(31, doc2.getObject("age"));
+        assertEquals(31L, doc2.getObject("age"));
         assertEquals("bio", doc2.getObject("type"));
         assertEquals("male", doc2.getObject("gender"));
         assertEquals("Scott", doc2.getObject("name"));
