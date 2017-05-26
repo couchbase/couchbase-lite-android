@@ -105,6 +105,7 @@ import java.io.InputStream;
             key = null;
         }
 
+        // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
         // TODO: Need to convert C4Database.getBlobStore().
         // store is crated from db. Not free.
 

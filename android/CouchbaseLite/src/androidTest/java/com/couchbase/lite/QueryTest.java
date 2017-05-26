@@ -157,7 +157,8 @@ public class QueryTest extends BaseTest {
         runTestWithNumbers(numbers, cases);
     }
 
-    public void failingTestWhereCheckNull() throws Exception {
+    //TODO @Test
+    public void testWhereCheckNull() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
         Document doc1 = createDocument("doc1");
         doc1.set("name", "Scott");
@@ -281,11 +282,11 @@ public class QueryTest extends BaseTest {
         assertEquals(5, firstNames.size());
     }
 
-    public void failingTestWhereRegex() throws Exception {
-        // https://github.com/couchbase/couchbase-lite-ios/issues/1668
-        loadJSONResource("names_100");
+    @Test
+    public void testWhereRegex() throws Exception {
+        loadJSONResource("names_100.json");
 
-        Expression w = Expression.property("name.first").regex("^Mar*");
+        Expression w = Expression.property("name.first").regex("^Mar.*");
         Query q = Query
                 .select()
                 .from(DataSource.database(db))
@@ -296,12 +297,14 @@ public class QueryTest extends BaseTest {
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(long n, QueryRow row) throws Exception {
+                Log.e(TAG, "check() n -> " + n);
                 Document doc = row.getDocument();
                 Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
                         firstNames.add(firstName);
+                        Log.e(TAG, "firstName -> " + firstName);
                     }
                 }
             }
@@ -372,8 +375,10 @@ public class QueryTest extends BaseTest {
         }
     }
 
-    public void failingTestSelectDistinct() throws Exception {
+    //TODO @Test
+    public void testSelectDistinct() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1669
+        // https://github.com/couchbase/couchbase-lite-core/issues/81
         final Document doc1 = new Document();
         doc1.set("number", 1);
         save(doc1);
