@@ -224,7 +224,12 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public Number getNumber(int index) {
-        return cast(getObject(index), Number.class);
+        Object value = getObject(index);
+        // special handling for Boolean
+        if (value != null && value instanceof Boolean)
+            return new Integer(value == Boolean.TRUE ? 1 : 0);
+        else
+            return cast(value, Number.class);
     }
 
     /**

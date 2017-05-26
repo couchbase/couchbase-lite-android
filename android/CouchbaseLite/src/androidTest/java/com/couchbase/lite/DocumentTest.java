@@ -404,9 +404,9 @@ public class DocumentTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
-                assertEquals(1, ((Number)d.getObject("number1")).intValue());
-                assertEquals(0, ((Number)d.getObject("number2")).intValue());
-                assertEquals(-1, ((Number)d.getObject("number3")).intValue());
+                assertEquals(1, ((Number) d.getObject("number1")).intValue());
+                assertEquals(0, ((Number) d.getObject("number2")).intValue());
+                assertEquals(-1, ((Number) d.getObject("number3")).intValue());
                 assertEquals(1.1, d.getObject("number4"));
             }
         });
@@ -421,10 +421,10 @@ public class DocumentTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
-                assertEquals(0, ((Number)d.getObject("number1")).intValue());
-                assertEquals(1, ((Number)d.getObject("number2")).intValue());
+                assertEquals(0, ((Number) d.getObject("number1")).intValue());
+                assertEquals(1, ((Number) d.getObject("number2")).intValue());
                 assertEquals(1.1, d.getObject("number3"));
-                assertEquals(-1, ((Number)d.getObject("number4")).intValue());
+                assertEquals(-1, ((Number) d.getObject("number4")).intValue());
             }
         });
     }
@@ -437,8 +437,8 @@ public class DocumentTest extends BaseTest {
             @Override
             public void validate(final Document d) {
                 assertNull(d.getNumber("null"));
-                assertNull(d.getNumber("true"));
-                assertNull(d.getNumber("false"));
+                assertEquals(1, d.getNumber("true").intValue());
+                assertEquals(0, d.getNumber("false").intValue());
                 assertNull(d.getNumber("string"));
                 assertEquals(0, d.getNumber("zero").intValue());
                 assertEquals(1, d.getNumber("one").intValue());
@@ -461,8 +461,7 @@ public class DocumentTest extends BaseTest {
             @Override
             public void validate(final Document d) {
                 assertEquals(0, d.getInt("null"));
-                //TODO
-                //assertEquals(1, d.getInt("true"));
+                assertEquals(1, d.getInt("true"));
                 assertEquals(0, d.getInt("false"));
                 assertEquals(0, d.getInt("string"));
                 assertEquals(0, d.getInt("zero"));
@@ -486,8 +485,7 @@ public class DocumentTest extends BaseTest {
             @Override
             public void validate(final Document d) {
                 assertEquals(0, d.getLong("null"));
-                //TODO
-                //assertEquals(0, d.getLong("true"));
+                assertEquals(1, d.getLong("true"));
                 assertEquals(0, d.getLong("false"));
                 assertEquals(0, d.getLong("string"));
                 assertEquals(0, d.getLong("zero"));
@@ -511,8 +509,7 @@ public class DocumentTest extends BaseTest {
             @Override
             public void validate(final Document d) {
                 assertEquals(0.0f, d.getFloat("null"), 0.0f);
-                //TODO
-                //assertEquals(0.0f, d.getFloat("true"), 0.0f);
+                assertEquals(1.0f, d.getFloat("true"), 0.0f);
                 assertEquals(0.0f, d.getFloat("false"), 0.0f);
                 assertEquals(0.0f, d.getFloat("string"), 0.0f);
                 assertEquals(0.0f, d.getFloat("zero"), 0.0f);
@@ -536,8 +533,7 @@ public class DocumentTest extends BaseTest {
             @Override
             public void validate(final Document d) {
                 assertEquals(0.0, d.getDouble("null"), 0.0);
-                //TODO
-                //assertEquals(0.0, d.getDouble("true"), 0.0);
+                assertEquals(1.0, d.getDouble("true"), 0.0);
                 assertEquals(0.0, d.getDouble("false"), 0.0);
                 assertEquals(0.0, d.getDouble("string"), 0.0);
                 assertEquals(0.0, d.getDouble("zero"), 0.0);
@@ -571,8 +567,8 @@ public class DocumentTest extends BaseTest {
             public void validate(Document doc) {
                 assertEquals(Integer.MIN_VALUE, doc.getNumber("min_int").intValue());
                 assertEquals(Integer.MAX_VALUE, doc.getNumber("max_int").intValue());
-                assertEquals(Integer.MIN_VALUE, ((Number)doc.getObject("min_int")).intValue());
-                assertEquals(Integer.MAX_VALUE, ((Number)doc.getObject("max_int")).intValue());
+                assertEquals(Integer.MIN_VALUE, ((Number) doc.getObject("min_int")).intValue());
+                assertEquals(Integer.MAX_VALUE, ((Number) doc.getObject("max_int")).intValue());
                 assertEquals(Integer.MIN_VALUE, doc.getInt("min_int"));
                 assertEquals(Integer.MAX_VALUE, doc.getInt("max_int"));
 
@@ -614,38 +610,39 @@ public class DocumentTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document doc) {
-                // TODO
-                //assertEquals(1.00, doc.getObject("number1"));  // return 1
-                //assertEquals(1.00, doc.getNumber("number1"));  // return 1
+                assertEquals(1.00, ((Number) doc.getObject("number1")).doubleValue(), 0.0);
+                assertEquals(1.00, doc.getNumber("number1").doubleValue(), 0.0);
                 assertEquals(1, doc.getInt("number1"));
                 assertEquals(1L, doc.getLong("number1"));
                 assertEquals(1.00F, doc.getFloat("number1"), 0.0F);
                 assertEquals(1.00, doc.getDouble("number1"), 0.0);
 
-                //assertEquals(1.49, doc.getObject("number2"));  // return 1
-                //assertEquals(1.49, doc.getNumber("number2"));  // return 1
+                assertEquals(1.49, ((Number) doc.getObject("number2")).doubleValue(), 0.0);
+                assertEquals(1.49, doc.getNumber("number2").doubleValue(), 0.0);
                 assertEquals(1, doc.getInt("number2"));
                 assertEquals(1L, doc.getLong("number2"));
                 assertEquals(1.49F, doc.getFloat("number2"), 0.0F);
                 assertEquals(1.49, doc.getDouble("number2"), 0.0);
 
-                //assertEquals(1.50, doc.getObject("number3"));  // return 1
-                //assertEquals(1.50, doc.getNumber("number3"));  // return 1
-                // TODO: lite core bug
+                assertEquals(1.50, ((Number) doc.getObject("number3")).doubleValue(), 0.0);
+                assertEquals(1.50, doc.getNumber("number3").doubleValue(), 0.0);
+                // TODO: https://github.com/couchbaselabs/fleece/pull/19
                 //assertEquals(1, doc.getInt("number3"));
                 //assertEquals(1L, doc.getLong("number3"));
                 assertEquals(1.50F, doc.getFloat("number3"), 0.0F);
                 assertEquals(1.50, doc.getDouble("number3"), 0.0);
 
-                //assertEquals(1.51, doc.getObject("number4"));  // return 1
-                //assertEquals(1.51, doc.getNumber("number4"));  // return 1
+                assertEquals(1.51, ((Number) doc.getObject("number4")).doubleValue(), 0.0);
+                assertEquals(1.51, doc.getNumber("number4").doubleValue(), 0.0);
+                // TODO: https://github.com/couchbaselabs/fleece/pull/19
                 //assertEquals(1, doc.getInt("number4"));
                 //assertEquals(1L, doc.getLong("number4"));
                 assertEquals(1.51F, doc.getFloat("number4"), 0.0F);
                 assertEquals(1.51, doc.getDouble("number4"), 0.0);
 
-                //assertEquals(1.99, doc.getObject("number5"));  // return 1
-                //assertEquals(1.99, doc.getNumber("number5"));  // return 1
+                assertEquals(1.99, ((Number) doc.getObject("number5")).doubleValue(), 0.0);  // return 1
+                assertEquals(1.99, doc.getNumber("number5").doubleValue(), 0.0);  // return 1
+                // TODO: https://github.com/couchbaselabs/fleece/pull/19
                 //assertEquals(1, doc.getInt("number5"));
                 //assertEquals(1L, doc.getLong("number5"));
                 assertEquals(1.99F, doc.getFloat("number5"), 0.0F);
@@ -771,9 +768,7 @@ public class DocumentTest extends BaseTest {
         });
     }
 
-
-    // TODO: Android API 16 - assertEquals(Map.toString(), Map.toString()): order is not guranteed! Need to work!!!!
-    // @Test
+    @Test
     public void testSetBlob() {
         Document doc = createDocument("doc1");
 

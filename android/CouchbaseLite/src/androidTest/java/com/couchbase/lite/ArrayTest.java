@@ -159,9 +159,9 @@ public class ArrayTest extends BaseTest {
                 assertEquals(true, a.getObject(0));
                 assertEquals(false, a.getObject(1));
                 assertEquals("string", a.getObject(2));
-                assertEquals(0, ((Number)a.getObject(3)).intValue());
-                assertEquals(1, ((Number)a.getObject(4)).intValue());
-                assertEquals(-1, ((Number)a.getObject(5)).intValue());
+                assertEquals(0, ((Number) a.getObject(3)).intValue());
+                assertEquals(1, ((Number) a.getObject(4)).intValue());
+                assertEquals(-1, ((Number) a.getObject(5)).intValue());
                 assertEquals(1.1, a.getObject(6));
                 assertEquals(kArrayTestDate, a.getObject(7));
                 assertEquals(null, a.getObject(8));
@@ -215,9 +215,9 @@ public class ArrayTest extends BaseTest {
                 assertEquals(true, a.getObject(12 + 0));
                 assertEquals(false, a.getObject(12 + 1));
                 assertEquals("string", a.getObject(12 + 2));
-                assertEquals(0, ((Number)a.getObject(12 + 3)).intValue());
-                assertEquals(1, ((Number)a.getObject(12 + 4)).intValue());
-                assertEquals(-1, ((Number)a.getObject(12 + 5)).intValue());
+                assertEquals(0, ((Number) a.getObject(12 + 3)).intValue());
+                assertEquals(1, ((Number) a.getObject(12 + 4)).intValue());
+                assertEquals(-1, ((Number) a.getObject(12 + 5)).intValue());
                 assertEquals(1.1, a.getObject(12 + 6));
                 assertEquals(kArrayTestDate, a.getObject(12 + 7));
                 assertEquals(null, a.getObject(12 + 8));
@@ -266,9 +266,9 @@ public class ArrayTest extends BaseTest {
                 assertEquals(true, a.getObject(0));
                 assertEquals(false, a.getObject(1));
                 assertEquals("string", a.getObject(2));
-                assertEquals(0, ((Number)a.getObject(3)).intValue());
-                assertEquals(1, ((Number)a.getObject(4)).intValue());
-                assertEquals(-1, ((Number)a.getObject(5)).intValue());
+                assertEquals(0, ((Number) a.getObject(3)).intValue());
+                assertEquals(1, ((Number) a.getObject(4)).intValue());
+                assertEquals(-1, ((Number) a.getObject(5)).intValue());
                 assertEquals(1.1, a.getObject(6));
                 assertEquals(kArrayTestDate, a.getObject(7));
                 assertEquals(null, a.getObject(8));
@@ -523,12 +523,12 @@ public class ArrayTest extends BaseTest {
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
-                assertNull(a.getNumber(0));
-                assertNull(a.getNumber(1));
+                assertEquals(1, a.getNumber(0).intValue());
+                assertEquals(0, a.getNumber(1).intValue());
                 assertNull(a.getNumber(2));
-                assertEquals(0, ((Number)a.getNumber(3)).intValue());
-                assertEquals(1, ((Number)a.getNumber(4)).intValue());
-                assertEquals(-1, ((Number)a.getNumber(5)).intValue());
+                assertEquals(0, a.getNumber(3).intValue());
+                assertEquals(1, a.getNumber(4).intValue());
+                assertEquals(-1, a.getNumber(5).intValue());
                 assertEquals(1.1, a.getNumber(6));
                 assertNull(a.getNumber(7));
                 assertNull(a.getNumber(8));
@@ -549,7 +549,7 @@ public class ArrayTest extends BaseTest {
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
-                assertEquals(0, a.getInt(0));
+                assertEquals(1, a.getInt(0));
                 assertEquals(0, a.getInt(1));
                 assertEquals(0, a.getInt(2));
                 assertEquals(0, a.getInt(3));
@@ -575,7 +575,7 @@ public class ArrayTest extends BaseTest {
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
-                assertEquals(0, a.getLong(0));
+                assertEquals(1, a.getLong(0));
                 assertEquals(0, a.getLong(1));
                 assertEquals(0, a.getLong(2));
                 assertEquals(0, a.getLong(3));
@@ -601,7 +601,7 @@ public class ArrayTest extends BaseTest {
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
-                assertEquals(0.0f, a.getFloat(0), 0.0f);
+                assertEquals(1.0f, a.getFloat(0), 0.0f);
                 assertEquals(0.0f, a.getFloat(1), 0.0f);
                 assertEquals(0.0f, a.getFloat(2), 0.0f);
                 assertEquals(0.0f, a.getFloat(3), 0.0f);
@@ -627,7 +627,7 @@ public class ArrayTest extends BaseTest {
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
-                assertEquals(0.0, a.getDouble(0), 0.0);
+                assertEquals(1.0, a.getDouble(0), 0.0);
                 assertEquals(0.0, a.getDouble(1), 0.0);
                 assertEquals(0.0, a.getDouble(2), 0.0);
                 assertEquals(0.0, a.getDouble(3), 0.0);
@@ -661,8 +661,8 @@ public class ArrayTest extends BaseTest {
             public void validate(Array a) {
                 assertEquals(Integer.MIN_VALUE, a.getNumber(0).intValue());
                 assertEquals(Integer.MAX_VALUE, a.getNumber(1).intValue());
-                assertEquals(Integer.MIN_VALUE, ((Number)a.getObject(0)).intValue());
-                assertEquals(Integer.MAX_VALUE, ((Number)a.getObject(1)).intValue());
+                assertEquals(Integer.MIN_VALUE, ((Number) a.getObject(0)).intValue());
+                assertEquals(Integer.MAX_VALUE, ((Number) a.getObject(1)).intValue());
                 assertEquals(Integer.MIN_VALUE, a.getInt(0));
                 assertEquals(Integer.MAX_VALUE, a.getInt(1));
 
@@ -705,7 +705,7 @@ public class ArrayTest extends BaseTest {
             public void validate(Array a) {
                 // NOTE: Number which has no floating part is stored as Integer.
                 //       This causes type difference between before and after storing data into the database.
-                assertEquals(1.00, ((Number)a.getObject(0)).doubleValue(), 0.0);
+                assertEquals(1.00, ((Number) a.getObject(0)).doubleValue(), 0.0);
                 assertEquals(1.00, a.getNumber(0).doubleValue(), 0.0);
                 assertEquals(1, a.getInt(0));
                 assertEquals(1L, a.getLong(0));
@@ -719,7 +719,7 @@ public class ArrayTest extends BaseTest {
                 assertEquals(1.49F, a.getFloat(1), 0.0F);
                 assertEquals(1.49, a.getDouble(1), 0.0);
 
-                assertEquals(1.50, ((Number)a.getObject(2)).doubleValue(), 0.0);
+                assertEquals(1.50, ((Number) a.getObject(2)).doubleValue(), 0.0);
                 assertEquals(1.50, a.getNumber(2).doubleValue(), 0.0);
                 assertEquals(1, a.getInt(2));
                 assertEquals(1L, a.getLong(2));

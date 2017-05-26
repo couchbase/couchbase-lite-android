@@ -10,6 +10,8 @@ public class ClassUtils {
     public static int toInt(Object value, int defaultValue) {
         if (value instanceof Number)
             return ((Number) value).intValue();
+        else if (value instanceof Boolean)
+            return value == Boolean.TRUE ? 1 : 0;
         else
             return defaultValue;
     }
@@ -17,6 +19,8 @@ public class ClassUtils {
     public static long toLong(Object value, long defaultValue) {
         if (value instanceof Number)
             return ((Number) value).longValue();
+        else if (value instanceof Boolean)
+            return value == Boolean.TRUE ? 1L : 0L;
         else
             return defaultValue;
     }
@@ -24,6 +28,8 @@ public class ClassUtils {
     public static float toFloat(Object value, float defaultValue) {
         if (value instanceof Number)
             return ((Number) value).floatValue();
+        else if (value instanceof Boolean)
+            return value == Boolean.TRUE ? 1.0F : 0.0F;
         else
             return defaultValue;
     }
@@ -31,6 +37,8 @@ public class ClassUtils {
     public static double toDouble(Object value, double defaultValue) {
         if (value instanceof Number)
             return ((Number) value).doubleValue();
+        else if (value instanceof Boolean)
+            return value == Boolean.TRUE ? 1.0 : 0.0;
         else
             return defaultValue;
     }
