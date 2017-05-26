@@ -30,7 +30,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     private Map<String, Object> map = null;
     private Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
-    private int     changedCount = 0;
+    private int changedCount = 0;
     private List<String> keys = null; // dictionary key cache
 
     //---------------------------------------------
@@ -237,7 +237,12 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Number getNumber(String key) {
-        return cast(getObject(key), Number.class);
+        Object value = getObject(key);
+        // special handling for Boolean
+        if (value != null && value instanceof Boolean)
+            return new Integer(value == Boolean.TRUE ? 1 : 0);
+        else
+            return cast(value, Number.class);
     }
 
     /**
