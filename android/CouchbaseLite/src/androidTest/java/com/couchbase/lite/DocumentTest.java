@@ -779,8 +779,12 @@ public class DocumentTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
-                assertEquals(blob.getProperties().toString(), d.getBlob("blob").getProperties().toString());
-                assertEquals(blob.getProperties().toString(), ((Blob) d.getObject("blob")).getProperties().toString());
+                assertEquals(blob.getProperties().get("length"), d.getBlob("blob").getProperties().get("length"));
+                assertEquals(blob.getProperties().get("content-type"), d.getBlob("blob").getProperties().get("content-type"));
+                assertEquals(blob.getProperties().get("digest"), d.getBlob("blob").getProperties().get("digest"));
+                assertEquals(blob.getProperties().get("length"), ((Blob) d.getObject("blob")).getProperties().get("length"));
+                assertEquals(blob.getProperties().get("content-type"), ((Blob) d.getObject("blob")).getProperties().get("content-type"));
+                assertEquals(blob.getProperties().get("digest"), ((Blob) d.getObject("blob")).getProperties().get("digest"));
                 assertEquals(kDocumentTestBlob, new String(d.getBlob("blob").getContent()));
                 assertTrue(Arrays.equals(kDocumentTestBlob.getBytes(), d.getBlob("blob").getContent()));
             }
@@ -792,8 +796,12 @@ public class DocumentTest extends BaseTest {
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
-                assertEquals(nuBlob.getProperties().toString(), d.getBlob("blob").getProperties().toString());
-                assertEquals(nuBlob.getProperties().toString(), ((Blob) d.getObject("blob")).getProperties().toString());
+                assertEquals(nuBlob.getProperties().get("length"), d.getBlob("blob").getProperties().get("length"));
+                assertEquals(nuBlob.getProperties().get("content-type"), d.getBlob("blob").getProperties().get("content-type"));
+                assertEquals(nuBlob.getProperties().get("digest"), d.getBlob("blob").getProperties().get("digest"));
+                assertEquals(nuBlob.getProperties().get("length"), ((Blob) d.getObject("blob")).getProperties().get("length"));
+                assertEquals(nuBlob.getProperties().get("content-type"), ((Blob) d.getObject("blob")).getProperties().get("content-type"));
+                assertEquals(nuBlob.getProperties().get("digest"), ((Blob) d.getObject("blob")).getProperties().get("digest"));
                 assertEquals("1234567890", new String(d.getBlob("blob").getContent()));
                 assertTrue(Arrays.equals("1234567890".getBytes(), d.getBlob("blob").getContent()));
             }
