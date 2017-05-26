@@ -4,6 +4,7 @@ import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.fleece.FLEncoder;
 
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,6 +23,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     private List<Object> list = null;
     Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
+    private int changedCount = 0;
 
     //---------------------------------------------
     // Constructors
@@ -48,8 +50,6 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
 
     /* package */ Array(CBLFLArray data) {
         super(data);
-        list = new ArrayList<>();
-        loadBackingFleeceData();
     }
 
     //---------------------------------------------
@@ -88,7 +88,6 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     @Override
     public Array set(int index, Object value) {
         Object oldValue = getObject(index);
-        //if ((value != null && !value.equals(oldValue)) || (value == null && oldValue != null)) {
         if ((value != null && !value.equals(oldValue)) || value == null) {
             value = CBLData.convert(value, this);
             detachChangeListenerForObject(oldValue);
@@ -105,6 +104,9 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public Array add(Object value) {
+        if (list == null)
+            copyFleeceData();
+
         list.add(CBLData.convert(value, this));
         setChanged();
         return this;
@@ -119,6 +121,9 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public Array insert(int index, Object value) {
+        if (list == null)
+            copyFleeceData();
+
         list.add(index, CBLData.convert(value, this));
         setChanged();
         return this;
@@ -132,6 +137,9 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public Array remove(int index) {
+        if (list == null)
+            copyFleeceData();
+
         Object value = list.get(index);
         detachChangeListenerForObject(value);
         list.remove(index);
@@ -174,7 +182,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public int count() {
-        return list != null ? list.size() : 0;
+        return list == null ? super.count() : list.size();
     }
 
     /**
@@ -187,6 +195,13 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public Object getObject(int index) {
+        if (list == null) {
+            Object value = super.getObject(index);
+            if (value instanceof ReadOnlyArray || value instanceof ReadOnlyDictionary)
+                copyFleeceData();
+            else
+                return value;
+        }
         return list.get(index);
     }
 
@@ -315,6 +330,9 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public List<Object> toList() {
+        if (list == null)
+            copyFleeceData();
+
         List<Object> array = new ArrayList<>();
         if (list != null) {
             for (Object value : list) {
@@ -327,13 +345,35 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
         }
         return array;
     }
+
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
+    class ArrayIterator implements Iterator<Object> {
+        private Iterator<Object> internal;
+        private int expectedChangedCount;
+
+        public ArrayIterator() {
+            this.internal = list == null ? Array.super.iterator() : list.iterator();
+            this.expectedChangedCount = Array.this.changedCount;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return internal.hasNext();
+        }
+
+        @Override
+        public Object next() {
+            if (expectedChangedCount != Array.this.changedCount)
+                throw new ConcurrentModificationException();
+            return internal.next();
+        }
+    }
 
     @Override
     public Iterator<Object> iterator() {
-        return list != null ? list.iterator() : super.iterator();
+        return new ArrayIterator();
     }
 
     //---------------------------------------------
@@ -386,7 +426,8 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     //---------------------------------------------
     private void set(int index, Object value, boolean isChange) {
         if (list == null)
-            list = new ArrayList<>();
+            copyFleeceData();
+
         list.set(index, value);
         if (isChange)
             setChanged();
@@ -397,6 +438,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
             changed = true;
             notifyChangeListeners();
         }
+        changedCount++;
     }
 
     private void notifyChangeListeners() {
@@ -420,8 +462,9 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
         }
     }
 
-    private void loadBackingFleeceData() {
+    private void copyFleeceData() {
         int count = super.count();
+        list = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Object value = super.getObject(i);
             list.add(CBLData.convert(value, this));
