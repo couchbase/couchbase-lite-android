@@ -129,7 +129,7 @@ public final class Database {
      * @return the database's path.
      */
     public File getPath() {
-        return c4db != null ? new File(c4db.getPath()) : null;
+        return c4db != null ? new File(internal().getPath()) : null;
     }
 
 
@@ -139,7 +139,7 @@ public final class Database {
      * @return the number of documents in the database, -1 if error.
      */
     public int getCount() {
-        return c4db != null ? (int) c4db.getDocumentCount() : -1;
+        return c4db != null ? (int) internal().getDocumentCount() : -1;
     }
 
     /**
@@ -226,7 +226,7 @@ public final class Database {
         try {
             boolean commit = false;
             Log.e(TAG, "inBatch() beginTransaction()");
-            c4db.beginTransaction();
+            internal().beginTransaction();
             try {
                 try {
                     action.run();
@@ -237,7 +237,7 @@ public final class Database {
                     throw new CouchbaseLiteException(e);
                 }
             } finally {
-                c4db.endTransaction(commit);
+                internal().endTransaction(commit);
                 Log.e(TAG, "inBatch() endTransaction()");
             }
 
@@ -253,9 +253,8 @@ public final class Database {
      * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
      */
     public void compact() {
-        if (c4db == null) return;
         try {
-            c4db.compact();
+            internal().compact();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -323,7 +322,7 @@ public final class Database {
         if (c4db == null)
             return;
 
-        Log.i(TAG, "Closing %s at path %s", this, c4db.getPath());
+        Log.i(TAG, "Closing %s at path %s", this, internal().getPath());
 
         // close db
         closeC4DB();
@@ -375,6 +374,12 @@ public final class Database {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public static void delete(String name, File directory) throws CouchbaseLiteException {
+        if (name == null || directory == null)
+            throw new IllegalArgumentException("name and/or dir arguments are null.");
+
+        if (!exists(name, directory))
+            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+
         File path = getDatabasePath(directory, name);
         try {
             Log.e(TAG, "delete(): path=%s", path.toString());
@@ -434,7 +439,7 @@ public final class Database {
             String json = JsonUtils.toJson(list).toString();
             String language = options != null ? options.getLanguage() : null;
             boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
-            c4db.createIndex(json, type.getValue(), language, ignoreDiacritics);
+            internal().createIndex(json, type.getValue(), language, ignoreDiacritics);
         } catch (JSONException e) {
             throw new CouchbaseLiteException(e);
         } catch (LiteCoreException e) {
@@ -475,13 +480,15 @@ public final class Database {
     }
 
     //////// DATABASES:
-    com.couchbase.litecore.Database internal() {
+    com.couchbase.litecore.Database internal() throws CouchbaseLiteException {
+        if (c4db == null)
+            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.DBClosed);
         return c4db;
     }
 
     /* package */ void beginTransaction() throws CouchbaseLiteException {
         try {
-            c4db.beginTransaction();
+            internal().beginTransaction();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -489,7 +496,7 @@ public final class Database {
 
     /* package */ void endTransaction(boolean commit) throws CouchbaseLiteException {
         try {
-            c4db.endTransaction(commit);
+            internal().endTransaction(commit);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -502,7 +509,7 @@ public final class Database {
     //////// DOCUMENTS:
     /* package */ com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException {
         try {
-            return c4db.getDocument(docID, mustExist);
+            return internal().getDocument(docID, mustExist);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -609,7 +616,7 @@ public final class Database {
     // --- C4Database
     private void closeC4DB() throws CouchbaseLiteException {
         try {
-            c4db.close();
+            internal().close();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -617,7 +624,7 @@ public final class Database {
 
     private void deleteC4DB() throws CouchbaseLiteException {
         try {
-            c4db.delete();
+            internal().delete();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -625,7 +632,7 @@ public final class Database {
 
     private void freeC4DB() {
         if (c4db != null) {
-            c4db.free();
+            internal().free();
             c4db = null;
         }
     }
@@ -741,7 +748,7 @@ public final class Database {
     }
 
     private void postDatabaseChanged() {
-        if (c4DBObserver == null || c4db == null || c4db.isInTransaction())
+        if (c4DBObserver == null || c4db == null || internal().isInTransaction())
             return;
 
         int nChanges = 0;

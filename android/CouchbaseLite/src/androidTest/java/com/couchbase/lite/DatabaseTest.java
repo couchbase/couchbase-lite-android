@@ -63,9 +63,13 @@ public class DatabaseTest extends BaseTest {
     // helper method to delete database
     void deleteDatabase(Database db) {
         File path = db.getPath();
-        assertTrue(path.exists());
+        // if path is null, db is already closed
+        if (path != null)
+            assertTrue(path.exists());
         db.delete();
-        assertFalse(path.exists());
+        // if path is null, db is already closed before db.delete()
+        if (path != null)
+            assertFalse(path.exists());
     }
 
     // helper method to save document
@@ -99,7 +103,7 @@ public class DatabaseTest extends BaseTest {
         assertNotNull(doc);
         assertEquals(docID, doc.getId());
         assertFalse(doc.isDeleted());
-        assertEquals(value, ((Number)doc.getObject("key")).intValue());
+        assertEquals(value, ((Number) doc.getObject("key")).intValue());
     }
 
     // helper method to purge doc and verify doc.
@@ -235,31 +239,39 @@ public class DatabaseTest extends BaseTest {
     //  Create Database
     //---------------------------------------------
 
-    // TODO: @Test
+    @Test
     public void testCreate() {
         // create db with default options
-
         Database db = openDatabase("db");
-        assertNotNull(db);
-        assertEquals(0, db.getCount());
-
-        // delete database
-        deleteDatabase(db);
+        try {
+            assertNotNull(db);
+            assertEquals(0, db.getCount());
+        } finally {
+            // delete database
+            deleteDatabase(db);
+        }
     }
 
     @Test
     public void testCreateWithDefaultOption() {
-        new Database("db", new DatabaseConfiguration(this.context));
+        Database db = new Database("db", new DatabaseConfiguration(this.context));
+        try {
+        } finally {
+            // delete database
+            deleteDatabase(db);
+        }
     }
 
     @Test
     public void testCreateWithSpecialCharacterDBNames() {
         Database db = openDatabase("`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'");
-        assertNotNull(db);
-        assertEquals(0, db.getCount());
-
-        // delete database
-        deleteDatabase(db);
+        try {
+            assertNotNull(db);
+            assertEquals(0, db.getCount());
+        } finally {
+            // delete database
+            deleteDatabase(db);
+        }
     }
 
     @Test
@@ -272,34 +284,34 @@ public class DatabaseTest extends BaseTest {
         }
     }
 
-    // TODO: @Test
+    @Test
     public void testCreateWithCustomDirectory() {
+
+        String dbName = "db";
+
         File dir = new File(context.getFilesDir(), "CouchbaseLite");
         try {
-            Database.delete("db", dir);
-        } catch (Exception ex) {
+            Database.delete(dbName, dir);
+        } catch (CouchbaseLiteException ex) {
         }
 
-        assertFalse(Database.exists("db", dir));
+        assertFalse(Database.exists(dbName, dir));
 
         // create db with custom directory
         DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         config.setDirectory(dir);
-        Database db = new Database("db", config);
-        assertNotNull(db);
-        assertEquals("db", db.getName());
-        assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
-        assertTrue(db.getPath().getAbsolutePath().indexOf(dir.getPath()) != -1);
-        assertTrue(Database.exists("db", dir));
-        assertEquals(0, db.getCount());
-
-        // delete database
-        deleteDatabase(db);
-    }
-
-    @Test
-    public void testCreateWithCustomConflictResolver() {
-        // TODO: DatabaseConfiguration.conflictResolver is not implemented yet.
+        Database db = new Database(dbName, config);
+        try {
+            assertNotNull(db);
+            assertEquals(dbName, db.getName());
+            assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
+            assertTrue(db.getPath().getAbsolutePath().indexOf(dir.getPath()) != -1);
+            assertTrue(Database.exists(dbName, dir));
+            assertEquals(0, db.getCount());
+        } finally {
+            // delete database
+            deleteDatabase(db);
+        }
     }
 
     //---------------------------------------------
@@ -320,8 +332,7 @@ public class DatabaseTest extends BaseTest {
         verifyGetDocument(docID);
     }
 
-    // TODO
-    // @Test
+    // TODO: @Test
     public void testGetExistingDocWithIDFromDifferentDBInstance() {
         // store doc
         String docID = "doc1";
@@ -354,8 +365,7 @@ public class DatabaseTest extends BaseTest {
         });
     }
 
-    // TODO @Test
-    // LiteCore error
+    @Test
     public void testGetDocFromClosedDB() {
         // Store doc:
         generateDocument("doc1");
@@ -363,21 +373,29 @@ public class DatabaseTest extends BaseTest {
         // Close db:
         db.close();
 
-        Document doc = db.getDocument("doc1");
-        assertNull(doc);
+        try {
+            Document doc = db.getDocument("doc1");
+            fail();
+        } catch (CouchbaseLiteException ex) {
+            assertEquals(Status.CBLErrorDomain, ex.getDomain());
+            assertEquals(Status.DBClosed, ex.getCode());
+        }
     }
 
-    // TODO @Test
-    // LiteCore error
+    @Test
     public void testGetDocFromDeletedDB() {
         // Store doc:
         generateDocument("doc1");
 
         // Close db:
         deleteDatabase(db);
-
-        Document doc = db.getDocument("doc1");
-        assertNull(doc);
+        try {
+            Document doc = db.getDocument("doc1");
+            fail();
+        } catch (CouchbaseLiteException ex) {
+            assertEquals(Status.CBLErrorDomain, ex.getDomain());
+            assertEquals(Status.DBClosed, ex.getCode());
+        }
     }
 
     //---------------------------------------------
@@ -449,8 +467,7 @@ public class DatabaseTest extends BaseTest {
         }
     }
 
-    // TODO: @Test
-    // Exception has no domain.
+    @Test
     public void testSaveDocInDifferentDB() {
         // Store doc
         String docID = "doc1";
@@ -472,7 +489,7 @@ public class DatabaseTest extends BaseTest {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
             assertEquals(Status.Forbidden, e.getCode());
         } finally {
-            // close otherDb
+            // delete otherDb
             deleteDatabase(otherDB);
         }
     }
@@ -498,7 +515,7 @@ public class DatabaseTest extends BaseTest {
         validateDocs(10);
     }
 
-    // TODO: @Test
+    @Test
     public void testSaveDocToClosedDB() {
         db.close();
 
@@ -510,12 +527,11 @@ public class DatabaseTest extends BaseTest {
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(Status.DBClosed, e.getCode());
         }
     }
 
-    // TODO : @Test
-    // Error from lite core
+    @Test
     public void testSaveDocToDeletedDB() {
         // Delete db:
         deleteDatabase(db);
@@ -528,7 +544,7 @@ public class DatabaseTest extends BaseTest {
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.NotFound, e.getCode());
+            assertEquals(Status.DBClosed, e.getCode());
         }
     }
 
@@ -616,8 +632,7 @@ public class DatabaseTest extends BaseTest {
         }
     }
 
-    // TODO : @Test
-    // Sequence after the second deletion is 3
+    @Test
     public void testDeleteSameDocTwice() {
         // Store doc:
         String docID = "doc1";
@@ -634,7 +649,7 @@ public class DatabaseTest extends BaseTest {
         db.delete(doc);
         assertEquals(0, db.getCount());
         assertNull(doc.getObject("key"));
-        assertEquals(2, doc.getSequence());
+        assertEquals(3, doc.getSequence());
         assertTrue(doc.isDeleted());
     }
 
@@ -660,8 +675,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(0, db.getCount());
     }
 
-    // TODO : @Test
-    // Error from LiteCore
+    @Test
     public void testDeleteDocOnClosedDB() {
         // Store doc:
         Document doc = generateDocument("doc1");
@@ -675,12 +689,11 @@ public class DatabaseTest extends BaseTest {
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(Status.DBClosed, e.getCode());
         }
     }
 
-    // TODO : @Test
-    // Error from LiteCore
+    @Test
     public void testDeleteDocOnDeletedDB() {
         // Store doc:
         Document doc = generateDocument("doc1");
@@ -694,7 +707,7 @@ public class DatabaseTest extends BaseTest {
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(Status.DBClosed, e.getCode());
         }
     }
 
@@ -818,8 +831,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(0, db.getCount());
     }
 
-    // TODO : @Test
-    // Error from LiteCore
+    @Test
     public void testPurgeDocOnClosedDB() {
         // Store doc:
         Document doc = generateDocument("doc1");
@@ -833,12 +845,11 @@ public class DatabaseTest extends BaseTest {
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(Status.DBClosed, e.getCode());
         }
     }
 
-    // TODO : @Test
-    // Error from LiteCore
+    @Test
     public void testPurgeDocOnDeletedDB() {
         // Store doc:
         Document doc = generateDocument("doc1");
@@ -852,7 +863,7 @@ public class DatabaseTest extends BaseTest {
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(Status.DBClosed, e.getCode());
         }
     }
 
@@ -881,7 +892,7 @@ public class DatabaseTest extends BaseTest {
 
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
-        assertEquals(1, ((Number)doc.getObject("key")).intValue());
+        assertEquals(1, ((Number) doc.getObject("key")).intValue());
         doc.set("key", 2);
         doc.set("key1", "value");
     }
@@ -933,7 +944,7 @@ public class DatabaseTest extends BaseTest {
         });
     }
 
-    // TODO: @Test
+    @Test
     public void testCloseThenDeleteDatabase() {
         db.close();
         deleteDatabase(db);
@@ -968,7 +979,7 @@ public class DatabaseTest extends BaseTest {
 
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
-        assertEquals(1, ((Number)doc.getObject("key")).intValue());
+        assertEquals(1, ((Number) doc.getObject("key")).intValue());
         doc.set("key", 2);
         doc.set("key1", "value");
     }
@@ -1024,7 +1035,7 @@ public class DatabaseTest extends BaseTest {
         });
     }
 
-    // TODO: @Test
+    @Test
     public void testDeleteDBOpenedByOtherInstance() {
         Database otherDB = openDatabase(db.getName());
         try {
@@ -1048,52 +1059,57 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
 
     @Test
-    public void testDeleteWithDefaultDirDB() {
-        //TODO : currently android doesn't support default db
-    }
-
-    @Test
-    public void testDeleteOpeningDBWithDefaultDir() {
-        //TODO : currently android doesn't support default db
-    }
-
-    // TODO: @Test
     public void testDeleteByStaticMethod() {
+        String dbName = "db";
+
         // create db with custom directory
-        Database db = openDatabase("db");
+        Database db = openDatabase(dbName);
         File path = db.getPath();
 
         // close db before delete
         db.close();
 
-        Database.delete("db", dir);
+        Database.delete(dbName, dir);
         assertFalse(path.exists());
     }
 
     @Test
     public void testDeleteOpeningDBByStaticMethod() {
-        // create db with custom directory
         Database db = openDatabase("db");
-
         try {
-            Database.delete("db", dir);
-            fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(LiteCoreDomain, e.getDomain());
-            assertEquals(kC4ErrorBusy, e.getCode()); // 24
+            try {
+                Database.delete("db", dir);
+                fail();
+            } catch (CouchbaseLiteException e) {
+                assertEquals(LiteCoreDomain, e.getDomain());
+                assertEquals(kC4ErrorBusy, e.getCode()); // 24
+            } finally {
+                ;
+            }
+        } finally {
+            deleteDatabase(db);
         }
     }
 
-    // TODO: @Test
+    @Test
     public void testDeleteNonExistingDBWithDefaultDir() {
-        // Expectation: No operation
-        Database.delete("notexistdb", null);
+        try {
+            Database.delete("notexistdb", null);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
     }
 
-    // TODO: @Test
+    @Test
     public void testDeleteNonExistingDB() {
-        // Expectation: No operation
-        Database.delete("notexistdb", dir);
+        try {
+            Database.delete("notexistdb", dir);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.NotFound, e.getCode());
+        }
     }
 
     //---------------------------------------------
@@ -1101,11 +1117,6 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
 
     @Test
-    public void testDatabaseExistsWithDefaultDir() {
-        //TODO : currently android doesn't support default db
-    }
-
-    // TODO: @Test
     public void testDatabaseExistsWithDir() {
         assertFalse(Database.exists("db", dir));
 
@@ -1125,9 +1136,14 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists("db", dir));
     }
 
-    // TODO: @Test
+    @Test
     public void testDatabaseExistsAgainstNonExistDBWithDefaultDir() {
-        assertFalse(Database.exists("nonexist", null));
+        try {
+            Database.exists("nonexist", null);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
     }
 
     @Test

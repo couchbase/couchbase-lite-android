@@ -5,4 +5,7 @@ package com.couchbase.lite;
 
     int Forbidden = 403;
     int NotFound = 404;
+
+
+    int DBClosed = 450; // TODO: Temporary value. Should be updated
 }
