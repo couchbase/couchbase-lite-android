@@ -129,7 +129,7 @@ public final class Database {
      * @return the database's path.
      */
     public File getPath() {
-        return c4db != null ? new File(internal().getPath()) : null;
+        return c4db != null ? new File(getC4Database().getPath()) : null;
     }
 
 
@@ -139,7 +139,7 @@ public final class Database {
      * @return the number of documents in the database, -1 if error.
      */
     public int getCount() {
-        return c4db != null ? (int) internal().getDocumentCount() : -1;
+        return c4db != null ? (int) getC4Database().getDocumentCount() : -1;
     }
 
     /**
@@ -222,11 +222,11 @@ public final class Database {
      * @param action the action which is implementation of Runnable interface
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
-    public void inBatch(Runnable action) throws CouchbaseLiteException {
+    public void inBatch(Runnable action) throws CouchbaseLiteException, IllegalStateException {
         try {
             boolean commit = false;
             Log.e(TAG, "inBatch() beginTransaction()");
-            internal().beginTransaction();
+            getC4Database().beginTransaction();
             try {
                 try {
                     action.run();
@@ -237,7 +237,7 @@ public final class Database {
                     throw new CouchbaseLiteException(e);
                 }
             } finally {
-                internal().endTransaction(commit);
+                getC4Database().endTransaction(commit);
                 Log.e(TAG, "inBatch() endTransaction()");
             }
 
@@ -252,9 +252,9 @@ public final class Database {
     /**
      * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
      */
-    public void compact() {
+    public void compact() throws CouchbaseLiteException, IllegalStateException {
         try {
-            internal().compact();
+            getC4Database().compact();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -322,7 +322,7 @@ public final class Database {
         if (c4db == null)
             return;
 
-        Log.i(TAG, "Closing %s at path %s", this, internal().getPath());
+        Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
 
         // close db
         closeC4DB();
@@ -426,7 +426,7 @@ public final class Database {
      */
     public void createIndex(List<Expression> expressions,
                             IndexType type,
-                            IndexOptions options) throws CouchbaseLiteException {
+                            IndexOptions options) throws CouchbaseLiteException, IllegalStateException {
         if (expressions == null)
             throw new IllegalArgumentException("expressions parameter cannot be null");
 
@@ -439,7 +439,7 @@ public final class Database {
             String json = JsonUtils.toJson(list).toString();
             String language = options != null ? options.getLanguage() : null;
             boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
-            internal().createIndex(json, type.getValue(), language, ignoreDiacritics);
+            getC4Database().createIndex(json, type.getValue(), language, ignoreDiacritics);
         } catch (JSONException e) {
             throw new CouchbaseLiteException(e);
         } catch (LiteCoreException e) {
@@ -480,23 +480,28 @@ public final class Database {
     }
 
     //////// DATABASES:
-    com.couchbase.litecore.Database internal() throws CouchbaseLiteException {
+
+    /**
+     * @return a reference to C4Database instance if db is open.
+     * @throws IllegalStateException
+     */
+    com.couchbase.litecore.Database getC4Database() throws IllegalStateException {
         if (c4db == null)
-            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.DBClosed);
+            throw new IllegalStateException("Database is not opened.");
         return c4db;
     }
 
-    /* package */ void beginTransaction() throws CouchbaseLiteException {
+    /* package */ void beginTransaction() throws CouchbaseLiteException, IllegalStateException {
         try {
-            internal().beginTransaction();
+            getC4Database().beginTransaction();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
     }
 
-    /* package */ void endTransaction(boolean commit) throws CouchbaseLiteException {
+    /* package */ void endTransaction(boolean commit) throws CouchbaseLiteException, IllegalStateException {
         try {
-            internal().endTransaction(commit);
+            getC4Database().endTransaction(commit);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -507,9 +512,9 @@ public final class Database {
     }
 
     //////// DOCUMENTS:
-    /* package */ com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException {
+    /* package */ com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException, IllegalStateException {
         try {
-            return internal().getDocument(docID, mustExist);
+            return getC4Database().getDocument(docID, mustExist);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -614,25 +619,25 @@ public final class Database {
 
 
     // --- C4Database
-    private void closeC4DB() throws CouchbaseLiteException {
+    private void closeC4DB() throws CouchbaseLiteException, IllegalStateException {
         try {
-            internal().close();
+            getC4Database().close();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
     }
 
-    private void deleteC4DB() throws CouchbaseLiteException {
+    private void deleteC4DB() throws CouchbaseLiteException, IllegalStateException {
         try {
-            internal().delete();
+            getC4Database().delete();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
     }
 
-    private void freeC4DB() {
+    private void freeC4DB() throws IllegalStateException {
         if (c4db != null) {
-            internal().free();
+            getC4Database().free();
             c4db = null;
         }
     }
@@ -748,7 +753,7 @@ public final class Database {
     }
 
     private void postDatabaseChanged() {
-        if (c4DBObserver == null || c4db == null || internal().isInTransaction())
+        if (c4DBObserver == null || c4db == null || getC4Database().isInTransaction())
             return;
 
         int nChanges = 0;

@@ -376,9 +376,8 @@ public class DatabaseTest extends BaseTest {
         try {
             Document doc = db.getDocument("doc1");
             fail();
-        } catch (CouchbaseLiteException ex) {
-            assertEquals(Status.CBLErrorDomain, ex.getDomain());
-            assertEquals(Status.DBClosed, ex.getCode());
+        } catch (IllegalStateException e) {
+            // should be thrown IllegalStateException!!
         }
     }
 
@@ -392,9 +391,8 @@ public class DatabaseTest extends BaseTest {
         try {
             Document doc = db.getDocument("doc1");
             fail();
-        } catch (CouchbaseLiteException ex) {
-            assertEquals(Status.CBLErrorDomain, ex.getDomain());
-            assertEquals(Status.DBClosed, ex.getCode());
+        } catch (IllegalStateException e) {
+            // should be thrown IllegalStateException!!
         }
     }
 
@@ -525,9 +523,8 @@ public class DatabaseTest extends BaseTest {
         try {
             save(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.DBClosed, e.getCode());
+        } catch (IllegalStateException e) {
+            // should be thrown IllegalStateException!!
         }
     }
 
@@ -542,9 +539,8 @@ public class DatabaseTest extends BaseTest {
         try {
             save(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.DBClosed, e.getCode());
+        } catch (IllegalStateException e) {
+            // should be thrown IllegalStateException!!
         }
     }
 
@@ -687,9 +683,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.DBClosed, e.getCode());
+        } catch (IllegalStateException e) {
+            // should be thrown IllegalStateException!!
         }
     }
 
@@ -705,9 +700,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.DBClosed, e.getCode());
+        } catch (IllegalStateException e) {
+            // should be thrown IllegalStateException!!
         }
     }
 
@@ -843,9 +837,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.DBClosed, e.getCode());
+        } catch (IllegalStateException e) {
+            // should be thrown IllegalStateException!!
         }
     }
 
@@ -861,9 +854,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.DBClosed, e.getCode());
+        } catch (IllegalStateException e) {
+            // should be thrown IllegalStateException!!
         }
     }
 

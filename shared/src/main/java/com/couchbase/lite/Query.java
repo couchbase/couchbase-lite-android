@@ -181,12 +181,12 @@ public class Query {
     // Private (in class only)
     //---------------------------------------------
 
-    private void check() throws CouchbaseLiteException {
+    private void check() throws CouchbaseLiteException, IllegalStateException {
         database = (Database) from.getSource();
         String json = encodeAsJSON();
         Log.v(LOG_TAG, "Query encoded as %s", json);
         try {
-            c4query = new C4Query(database.internal(), json);
+            c4query = new C4Query(database.getC4Database(), json);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
