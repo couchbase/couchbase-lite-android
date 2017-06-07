@@ -320,7 +320,7 @@ public final class Blob implements FleeceEncodable {
         C4BlobKey key = null;
         try {
             // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
-            // C4BlobStore store = database.internal().getBlobStore();
+            // C4BlobStore store = database.getC4Database().getBlobStore();
             C4BlobStore store = getBlobStore(db);
             try {
                 if (content != null) {
@@ -397,7 +397,7 @@ public final class Blob implements FleeceEncodable {
             File attachments = new File(database.getPath(), "Attachments");
             return C4BlobStore.open(attachments.getPath(), kC4DB_Create);
             // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
-            // return database.internal().getBlobStore();
+            // return database.getC4Database().getBlobStore();
         } catch (LiteCoreException e) {
             Log.w(TAG, "Failed to get BlobStore instance", e);
             return null;
@@ -414,7 +414,7 @@ public final class Blob implements FleeceEncodable {
             File attachments = new File(db.getPath(), "Attachments");
             return C4BlobStore.open(attachments.getPath(), kC4DB_Create);
             // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
-            //return database.internal().getBlobStore();
+            //return database.getC4Database().getBlobStore();
         } catch (LiteCoreException e) {
             Log.w(TAG, "Failed to get BlobStore instance", e);
             return null;

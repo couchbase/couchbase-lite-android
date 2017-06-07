@@ -103,7 +103,7 @@ public final class CouchbaseLiteException extends RuntimeException {
     public String toString() {
         if (domain > 0 && code > 0)
             return "CouchbaseLiteException{" +
-                    "domain=" + getDomainString() +
+                    "domain=" + domain +
                     ", code=" + code +
                     '}';
         else

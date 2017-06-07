@@ -409,9 +409,9 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
-    private com.couchbase.litecore.Document readC4Doc(boolean mustExist) throws CouchbaseLiteException {
+    private com.couchbase.litecore.Document readC4Doc(boolean mustExist) throws CouchbaseLiteException, IllegalStateException {
         try {
-            return database.internal().getDocument(getId(), mustExist);
+            return database.getC4Database().getDocument(getId(), mustExist);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -551,9 +551,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         }
     }
 
-
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
-    private com.couchbase.litecore.Document save(boolean deletion) throws LiteCoreException {
+    private com.couchbase.litecore.Document save(boolean deletion) throws LiteCoreException, IllegalStateException {
 
         //String docID = this.id;
         byte[] body = null;
@@ -568,7 +567,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             flags |= kRevHasAttachments;
         if (!deletion && !isEmpty()) {
             // Encode properties to Fleece data:
-            FLEncoder encoder = database.internal().createFleeceEncoder();
+            FLEncoder encoder = database.getC4Database().createFleeceEncoder();
             try {
                 body = encode(encoder);
             } finally {
@@ -580,7 +579,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         }
 
         // Save to database:
-        return database.internal().put(getId(), body, false, false, history, flags, true, 0);
+        return database.getC4Database().put(getId(), body, false, false, history, flags, true, 0);
     }
 
     // #pragma mark - FLEECE ENCODING

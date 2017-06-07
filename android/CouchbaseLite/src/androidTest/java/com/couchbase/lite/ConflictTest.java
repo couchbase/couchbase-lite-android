@@ -94,11 +94,11 @@ public class ConflictTest extends BaseTest {
             @Override
             public void run() {
                 try {
-                    com.couchbase.litecore.Document trickey = db.internal().getDocument(docID, true);
-                    FLEncoder enc = db.internal().createFleeceEncoder();
+                    com.couchbase.litecore.Document trickey = db.getC4Database().getDocument(docID, true);
+                    FLEncoder enc = db.getC4Database().createFleeceEncoder();
                     enc.writeValue(props);
                     byte[] bytes = enc.finish();
-                    com.couchbase.litecore.Document newDoc = db.internal().put(
+                    com.couchbase.litecore.Document newDoc = db.getC4Database().put(
                             docID,
                             bytes,
                             false,
