@@ -49,7 +49,7 @@ public class BaseTest {
     protected Database db = null;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         Log.e("BaseTest", "setUp");
         context = InstrumentationRegistry.getContext();
         try {
@@ -63,7 +63,7 @@ public class BaseTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         Log.e("BaseTest", "tearDown");
         if (db != null) {
             db.close();
@@ -74,12 +74,15 @@ public class BaseTest {
         FileUtils.cleanDirectory(dir);
     }
 
-    protected void openDB() {
-        assertNull(db);
-
+    protected Database open(String name){
         DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
-        db = new Database(kDatabaseName, options);
+        return new Database(name, options);
+    }
+
+    protected void openDB() {
+        assertNull(db);
+        db = open(kDatabaseName);
         assertNotNull(db);
     }
 

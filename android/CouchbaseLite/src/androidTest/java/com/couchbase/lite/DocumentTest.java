@@ -75,12 +75,12 @@ public class DocumentTest extends BaseTest {
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         super.setUp();
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         super.tearDown();
     }
 

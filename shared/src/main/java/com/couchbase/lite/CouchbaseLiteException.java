@@ -18,7 +18,7 @@ package com.couchbase.lite;
  */
 public final class CouchbaseLiteException extends RuntimeException {
 
-    private static final String[] DOMAINS = {null, "LiteCore", "POSIXErrorDomain", "ForestDB", "SQLite", "Fleece"};
+    private static final String[] DOMAINS = {null, "LiteCore", "POSIXErrorDomain", "ForestDB", "SQLite", "Fleece", "Network", "WebSocket"};
 
     private final int domain;
     private final int code;

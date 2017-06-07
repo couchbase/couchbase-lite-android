@@ -17,12 +17,12 @@ import static org.junit.Assert.assertTrue;
 public class NotificationTest extends BaseTest {
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         super.setUp();
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         super.tearDown();
     }
 
