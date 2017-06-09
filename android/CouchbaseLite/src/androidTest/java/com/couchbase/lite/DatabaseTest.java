@@ -939,7 +939,12 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCloseThenDeleteDatabase() {
         db.close();
-        deleteDatabase(db);
+        try {
+            deleteDatabase(db);
+            fail();
+        } catch (IllegalStateException e) {
+            // should come here!
+        }
     }
 
     //---------------------------------------------
@@ -956,7 +961,12 @@ public class DatabaseTest extends BaseTest {
         File path = db.getPath();
         assertTrue(path.exists());
         db.delete();
-        db.delete();
+        try {
+            db.delete();
+            fail();
+        } catch (IllegalStateException e) {
+            // should come here!
+        }
         assertFalse(path.exists());
     }
 
