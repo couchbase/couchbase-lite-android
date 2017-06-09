@@ -26,6 +26,7 @@ import com.couchbase.litecore.C4DocumentObserver;
 import com.couchbase.litecore.C4DocumentObserverListener;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.NativeLibraryLoader;
+import com.couchbase.litecore.SharedKeys;
 
 import org.json.JSONException;
 

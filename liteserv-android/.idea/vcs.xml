@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/../libs/couchbase-lite-core" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libs/couchbase-lite-core/vendor/fleece/vendor/jsonsl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libs/couchbase-lite-core/vendor/sqlite3-unicodesn" vcs="Git" />
+  </component>
+</project>

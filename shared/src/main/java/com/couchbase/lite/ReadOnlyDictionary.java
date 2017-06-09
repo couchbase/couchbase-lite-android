@@ -2,6 +2,7 @@ package com.couchbase.lite;
 
 
 import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLDict;
 import com.couchbase.litecore.fleece.FLDictIterator;
 import com.couchbase.litecore.fleece.FLEncoder;

@@ -51,7 +51,7 @@ public class BaseTest {
     @Before
     public void setUp() {
         Log.e("BaseTest", "setUp");
-        context = InstrumentationRegistry.getContext();
+        context = InstrumentationRegistry.getTargetContext();
         try {
             config = new Config(context.getAssets().open(TEST_PROPERTIES_FILE));
         } catch (IOException e) {

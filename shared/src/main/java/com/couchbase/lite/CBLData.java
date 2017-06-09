@@ -2,6 +2,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.document.RemovedValue;
 import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLArray;
 import com.couchbase.litecore.fleece.FLDict;
 import com.couchbase.litecore.fleece.FLValue;
