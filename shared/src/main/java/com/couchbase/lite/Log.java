@@ -47,6 +47,11 @@ public class Log {
     public static final String BLOB = "Blob";
 
     /**
+     * Logging Tag for Sync related operations
+     */
+    public static final String SYNC = "Sync";
+
+    /**
      * Priority constant for the println method; use Log.v.
      */
     public static final int VERBOSE = 2;

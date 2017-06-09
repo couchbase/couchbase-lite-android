@@ -14,6 +14,9 @@ public class DatabaseConfiguration extends BaseDatabaseConfiguration {
     }
 
     public DatabaseConfiguration(Context context) {
+        if (context == null)
+            throw new IllegalArgumentException("context is null");
+
         this.context = context;
         setDirectory(context.getFilesDir());
         setConflictResolver(null);
@@ -22,6 +25,10 @@ public class DatabaseConfiguration extends BaseDatabaseConfiguration {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    /* package */ Context getContext() {
+        return context;
+    }
 
     /* package */ DatabaseConfiguration copy() {
         DatabaseConfiguration config = new DatabaseConfiguration();

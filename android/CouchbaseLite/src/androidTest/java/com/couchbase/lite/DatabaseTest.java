@@ -141,13 +141,13 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         super.setUp();
         Log.e("DatabaseTest", "setUp");
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         Log.e("DatabaseTest", "tearDown");
         super.tearDown();
     }

@@ -31,6 +31,7 @@ import com.couchbase.litecore.SharedKeys;
 import org.json.JSONException;
 
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,8 +41,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static com.couchbase.lite.Status.CBLErrorDomain;
-import static com.couchbase.lite.Status.Forbidden;
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorNotFound;
 import static java.util.Collections.synchronizedSet;
@@ -86,6 +85,9 @@ public final class Database {
 
     private SharedKeys sharedKeys;
 
+    private Map<URI, Replicator> replications;
+    private Set<Replicator> activeReplications;
+
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
@@ -107,6 +109,9 @@ public final class Database {
         this.name = name;
         this.config = config.copy();
         open();
+
+        this.replications = new HashMap<>();
+        this.activeReplications = new HashSet<>();
     }
 
     //---------------------------------------------
@@ -541,6 +546,15 @@ public final class Database {
         }
     }
 
+
+    /* package */ Map<URI, Replicator> getReplications() {
+        return replications;
+    }
+
+    /* package */ Set<Replicator> getActiveReplications() {
+        return activeReplications;
+    }
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
@@ -831,6 +845,6 @@ public final class Database {
         if (document.getDatabase() == null)
             document.setDatabase(this);
         else if (document.getDatabase() != this)
-            throw new CouchbaseLiteException(CBLErrorDomain, Forbidden);
+            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.Forbidden);
     }
 }
