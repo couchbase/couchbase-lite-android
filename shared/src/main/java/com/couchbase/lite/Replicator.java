@@ -171,8 +171,6 @@ public class Replicator implements NetworkReachabilityListener {
     final static int kMaxOneShotRetryCount = 2;
     final static int kMaxRetryDelay = 10 * 60; // 10min (600 sec)
 
-    public final static int DEFAULT_SYNC_GATEWAY_PORT = 4984;
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -338,7 +336,7 @@ public class Replicator implements NetworkReachabilityListener {
         if (remoteURI != null) {
             schema = remoteURI.getScheme();
             host = remoteURI.getHost();
-            port = remoteURI.getPort() != -1 ? remoteURI.getPort() : DEFAULT_SYNC_GATEWAY_PORT;
+            port = remoteURI.getPort();
             path = StringUtils.stringByDeletingLastPathComponent(remoteURI.getPath());
             dbName = StringUtils.lastPathComponent(remoteURI.getPath());
         }
