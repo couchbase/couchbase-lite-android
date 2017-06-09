@@ -171,6 +171,8 @@ public class Replicator implements NetworkReachabilityListener {
     final static int kMaxOneShotRetryCount = 2;
     final static int kMaxRetryDelay = 10 * 60; // 10min (600 sec)
 
+    public final static int DEFAULT_SYNC_GATEWAY_PORT = 4984;
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -336,7 +338,7 @@ public class Replicator implements NetworkReachabilityListener {
         if (remoteURI != null) {
             schema = remoteURI.getScheme();
             host = remoteURI.getHost();
-            port = remoteURI.getPort();
+            port = remoteURI.getPort() != -1 ? remoteURI.getPort() : DEFAULT_SYNC_GATEWAY_PORT;
             path = StringUtils.stringByDeletingLastPathComponent(remoteURI.getPath());
             dbName = StringUtils.lastPathComponent(remoteURI.getPath());
         }
@@ -399,15 +401,16 @@ public class Replicator implements NetworkReachabilityListener {
         c4ReplListener = new C4ReplicatorListener() {
             @Override
             public void callback(final C4Replicator repl, final C4ReplicatorStatus status, final Object context) {
-                Log.e(TAG, "C4ReplicatorListener.callback() status -> " + status);
+                Log.i(TAG, "C4ReplicatorListener.callback() status -> " + status);
                 final Replicator replicator = (Replicator) context;
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (repl == replicator.c4repl)
+                if (repl == replicator.c4repl) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
                             replicator.c4StatusChanged(status);
-                    }
-                });
+                        }
+                    });
+                }
             }
         };
 
