@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLArray;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
