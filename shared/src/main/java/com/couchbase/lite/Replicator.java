@@ -321,7 +321,7 @@ public class Replicator implements NetworkReachabilityListener {
 
     private void _start() {
         // Source
-        com.couchbase.litecore.Database db = config.getDatabase().internal();
+        com.couchbase.litecore.Database db = config.getDatabase().getC4Database();
 
         // Target:
         String schema = null;
@@ -342,7 +342,7 @@ public class Replicator implements NetworkReachabilityListener {
         }
         // replicate against other database
         else {
-            otherDB = config.getTarget().getDatabase().internal();
+            otherDB = config.getTarget().getDatabase().getC4Database();
         }
 
         // If the URL has a hardcoded username/password, add them as an "auth" option:
