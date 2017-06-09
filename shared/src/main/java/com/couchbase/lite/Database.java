@@ -137,10 +137,10 @@ public final class Database {
     /**
      * The number of documents in the database.
      *
-     * @return the number of documents in the database, -1 if error.
+     * @return the number of documents in the database, 0 if database is closed.
      */
     public int getCount() {
-        return c4db != null ? (int) getC4Database().getDocumentCount() : -1;
+        return c4db != null ? (int) getC4Database().getDocumentCount() : 0;
     }
 
     /**
@@ -224,6 +224,8 @@ public final class Database {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void inBatch(Runnable action) throws CouchbaseLiteException, IllegalStateException {
+        mustBeOpen();
+
         try {
             boolean commit = false;
             Log.e(TAG, "inBatch() beginTransaction()");
@@ -254,6 +256,8 @@ public final class Database {
      * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
      */
     public void compact() throws CouchbaseLiteException, IllegalStateException {
+        mustBeOpen();
+
         try {
             getC4Database().compact();
         } catch (LiteCoreException e) {
@@ -269,6 +273,8 @@ public final class Database {
      * @param listener
      */
     public void addChangeListener(DatabaseChangeListener listener) {
+        mustBeOpen();
+
         if (listener == null)
             throw new IllegalArgumentException();
         addDatabaseChangeListener(listener);
@@ -280,6 +286,8 @@ public final class Database {
      * @param listener
      */
     public void removeChangeListener(DatabaseChangeListener listener) {
+        mustBeOpen();
+
         if (listener == null)
             throw new IllegalArgumentException();
         removeDatabaseChangeListener(listener);
@@ -293,6 +301,8 @@ public final class Database {
      * @param listener
      */
     public void addChangeListener(String docID, DocumentChangeListener listener) {
+        mustBeOpen();
+
         if (docID == null || listener == null)
             throw new IllegalArgumentException();
         addDocumentChangeListener(docID, listener);
@@ -304,6 +314,8 @@ public final class Database {
      * @param listener
      */
     public void removeChangeListener(String docID, DocumentChangeListener listener) {
+        mustBeOpen();
+
         if (docID == null || listener == null)
             throw new IllegalArgumentException();
         removeDocumentChangeListener(docID, listener);
@@ -339,9 +351,7 @@ public final class Database {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void delete() throws CouchbaseLiteException {
-        // TODO: Unable to delete the closed database
-        if (c4db == null)
-            return;
+        mustBeOpen();
 
         // delete db
         deleteC4DB();
@@ -428,6 +438,8 @@ public final class Database {
     public void createIndex(List<Expression> expressions,
                             IndexType type,
                             IndexOptions options) throws CouchbaseLiteException, IllegalStateException {
+        mustBeOpen();
+
         if (expressions == null)
             throw new IllegalArgumentException("expressions parameter cannot be null");
 
@@ -482,13 +494,21 @@ public final class Database {
 
     //////// DATABASES:
 
+    void mustBeOpen() {
+        if (c4db == null)
+            throw new IllegalStateException("Database is not open.");
+    }
+
     /**
      * @return a reference to C4Database instance if db is open.
      * @throws IllegalStateException
      */
     com.couchbase.litecore.Database getC4Database() throws IllegalStateException {
-        if (c4db == null)
-            throw new IllegalStateException("Database is not opened.");
+        // NOTE: In general, mustBeOpen() method is called by caller. And Thread-safety guarantees
+        //       c4db should not be closed during the method. Calling mutBeOpen() here is just try
+        //       to avoid NullPointerException.
+        mustBeOpen();
+
         return c4db;
     }
 
@@ -608,6 +628,8 @@ public final class Database {
     //////// DOCUMENTS:
 
     private Document getDocument(String documentID, boolean mustExist) throws CouchbaseLiteException {
+        mustBeOpen();
+
         try {
             return new Document(this, documentID, mustExist);
         } catch (CouchbaseLiteException e) {
@@ -804,6 +826,8 @@ public final class Database {
     }
 
     private void prepareDocument(Document document) throws CouchbaseLiteException {
+        mustBeOpen();
+
         if (document.getDatabase() == null)
             document.setDatabase(this);
         else if (document.getDatabase() != this)
