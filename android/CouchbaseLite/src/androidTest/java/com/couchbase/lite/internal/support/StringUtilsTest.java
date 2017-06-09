@@ -15,7 +15,7 @@ public class StringUtilsTest {
     }
 
     @Test
-    public void testSastPathComponent() {
+    public void testLastPathComponent() {
         assertEquals("scratch.tiff", StringUtils.lastPathComponent("/tmp/scratch.tiff"));
         assertEquals("scratch", StringUtils.lastPathComponent("/tmp/scratch"));
         assertEquals("tmp", StringUtils.lastPathComponent("/tmp/"));
