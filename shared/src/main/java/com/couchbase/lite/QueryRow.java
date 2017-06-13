@@ -66,4 +66,13 @@ public class QueryRow {
     protected C4QueryEnumerator getC4enum() {
         return c4enum;
     }
+
+    @Override
+    public String toString() {
+        return "QueryRow{" +
+                "query=" + query +
+                ", c4enum=" + c4enum +
+                ", documentID='" + documentID + '\'' +
+                '}';
+    }
 }

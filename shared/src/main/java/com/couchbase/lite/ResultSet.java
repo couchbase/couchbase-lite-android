@@ -14,6 +14,7 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.LiteCoreException;
 
@@ -22,7 +23,7 @@ import com.couchbase.litecore.LiteCoreException;
  * the {@code QueryRow} objects.
  */
 public class ResultSet {
-    private static final String LOG_TAG = Log.QUERY;
+    private static final String TAG = Log.QUERY;
 
     private Query query;
 
@@ -31,8 +32,10 @@ public class ResultSet {
     /* package */ ResultSet(Query query, C4QueryEnumerator c4enum) {
         this.query = query;
         this.c4enum = c4enum;
-        Log.v(LOG_TAG, "Beginning query enumeration (%p)", c4enum);
+        Log.v(TAG, "Beginning query enumeration (%p)", c4enum);
     }
+
+    // TODO: c4enum is better to be free.
 
     /**
      * Move the cursor forward one row from its current row position.
@@ -50,8 +53,30 @@ public class ResultSet {
             } else
                 return null;
         } catch (LiteCoreException e) {
-            Log.w(LOG_TAG, "Query enumeration error: %s", e);
+            Log.w(TAG, "Query enumeration error: %s", e);
         }
         return null;
+    }
+
+    /*package*/ResultSet refresh() throws CouchbaseLiteException {
+        if (query == null) return null;
+        try {
+            C4QueryEnumerator newEnum = c4enum.refresh();
+            return newEnum != null ? new ResultSet(query, newEnum) : null;
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+    /*package*/int getRowCount() {
+        try {
+            return (int) c4enum.getRowCount();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+    /*package*/boolean isValidEnumerator() {
+        return c4enum != null && !c4enum.isClosed();
     }
 }

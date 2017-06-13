@@ -114,6 +114,13 @@ public class Query {
     }
 
     //---------------------------------------------
+    // API - pending method
+    //---------------------------------------------
+    LiveQuery toLiveQuery(){
+        return new LiveQuery(this);
+    }
+
+    //---------------------------------------------
     // Protected level access
     //---------------------------------------------
 
@@ -170,6 +177,8 @@ public class Query {
     //---------------------------------------------
 
     /* package */ Database getDatabase() {
+        if(database == null)
+            database = (Database) from.getSource();
         return database;
     }
 
