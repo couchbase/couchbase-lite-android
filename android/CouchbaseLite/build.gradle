@@ -1,7 +1,30 @@
+// The Module-level Build File
+
 apply plugin: 'com.android.library'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 
+// NOTE: moved from project build.gradle to make CBL compilable as sub-module of application
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.0'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+    }
+}
+
+/**
+ * group and version
+ */
+group   = 'com.couchbase.lite'
+version = file("${projectDir}/../../version.txt").text.trim()
+
+/**
+ * The android block is where you configure all your Android-specific
+ * build options.
+ */
 android {
     compileSdkVersion 26
     buildToolsVersion '26.0.0'
@@ -36,26 +59,26 @@ android {
     }
     externalNativeBuild {
         cmake {
-            path "${rootDir}/../libs/couchbase-lite-core/CMakeLists.txt"
+            path "${projectDir}/../../libs/couchbase-lite-core/CMakeLists.txt"
         }
     }
     sourceSets {
         main {
             java.srcDirs = [
                     "src/main/java",                                  // android specific codes
-                    "${rootDir}/../shared/src/main/java",             // shared java codes
-                    "${rootDir}/../libs/couchbase-lite-core/Java/src" // lite-core java codes
+                    "${projectDir}/../../shared/src/main/java",             // shared java codes
+                    "${projectDir}/../../libs/couchbase-lite-core/Java/src" // lite-core java codes
             ]
         }
         androidTest {
             java.srcDirs = [
                     "src/androidTest/java",                                        // android specific codes
-                    "${rootDir}/../libs/couchbase-lite-core/Java/androidTest/java" // lite-core java codes
+                    "${projectDir}/../../libs/couchbase-lite-core/Java/androidTest/java" // lite-core java codes
             ]
             assets.srcDirs = [
                     "src/main/assets",
                     "src/androidTest/assets",
-                    "${rootDir}/../libs/couchbase-lite-core/C/tests/data" // lite-core test assets
+                    "${projectDir}/../../libs/couchbase-lite-core/C/tests/data" // lite-core test assets
             ]
         }
     }

@@ -1,16 +1,18 @@
+// The Top-level Build File
+
 buildscript {
     repositories {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.0'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+        /**
+         * NOTE: dependencies configuration moved to module level build file to allow to build
+         *       CBL as submodule of application
+         */
     }
 }
 
 allprojects {
-    group   = 'com.couchbase.lite'
-    version = file("${rootDir}/../version.txt").text.trim();
     repositories {
         jcenter()
     }
