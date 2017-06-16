@@ -23,11 +23,20 @@ import java.io.UnsupportedEncodingException;
  * A single result from a full-text Query.
  */
 public class FullTextQueryRow extends QueryRow {
-    private static final String LOG_TAG = Log.QUERY;
+    //---------------------------------------------
+    // static variables
+    //---------------------------------------------
+    private static final String TAG = Log.QUERY;
 
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
     private int matchCount;
-
     private FullTextTerm[] matches;
+
+    //---------------------------------------------
+    // constructors
+    //---------------------------------------------
 
     /* package */ FullTextQueryRow(Query query, C4QueryEnumerator c4enum) {
         super(query, c4enum);
@@ -43,6 +52,10 @@ public class FullTextQueryRow extends QueryRow {
         }
     }
 
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
+
     /**
      * Get the text emitted when the view was indexed which contains the match(es).
      *
@@ -55,7 +68,7 @@ public class FullTextQueryRow extends QueryRow {
             try {
                 text = new String(data, "UTF-8");
             } catch (UnsupportedEncodingException e) {
-                Log.w(LOG_TAG, "Text matched has an invalid encoding.", e);
+                Log.w(TAG, "Text matched has an invalid encoding.", e);
             }
         }
         return text;
@@ -106,11 +119,15 @@ public class FullTextQueryRow extends QueryRow {
         return new Range(location, length);
     }
 
+    //---------------------------------------------
+    // Private level access
+    //---------------------------------------------
+
     private byte[] getFullTextUTF8Data() {
         try {
             return getQuery().getC4Query().getFullTextMatched(getDocumentID(), getSequence());
         } catch (LiteCoreException e) {
-            Log.w(LOG_TAG, "Error when get full text matched", e);
+            Log.w(TAG, "Error when get full text matched", e);
         }
         return null;
     }
@@ -122,7 +139,7 @@ public class FullTextQueryRow extends QueryRow {
                 return str.length();
             }
         } catch (UnsupportedEncodingException e) {
-            Log.w(LOG_TAG, "Text matched has an invalid encoding.", e);
+            Log.w(TAG, "Text matched has an invalid encoding.", e);
         }
         return 0;
     }

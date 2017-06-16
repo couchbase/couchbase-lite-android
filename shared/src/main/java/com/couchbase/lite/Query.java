@@ -31,12 +31,14 @@ import java.util.Map;
  * object can be fluently constructed by calling the static select methods.
  */
 public class Query {
-    private static final String LOG_TAG = Log.QUERY;
+    //---------------------------------------------
+    // static variables
+    //---------------------------------------------
+    private static final String TAG = Log.QUERY;
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-
     private Database database;
     private C4Query c4query;
     private Select select;
@@ -113,6 +115,15 @@ public class Query {
         return c4query.explain();
     }
 
+    public String profile() {
+        // TODO:
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public LiveQuery toLive() {
+        return new LiveQuery(this);
+    }
+
     //---------------------------------------------
     // Protected level access
     //---------------------------------------------
@@ -170,6 +181,8 @@ public class Query {
     //---------------------------------------------
 
     /* package */ Database getDatabase() {
+        if (database == null)
+            database = (Database) from.getSource();
         return database;
     }
 
@@ -184,7 +197,7 @@ public class Query {
     private void check() throws CouchbaseLiteException, IllegalStateException {
         database = (Database) from.getSource();
         String json = encodeAsJSON();
-        Log.v(LOG_TAG, "Query encoded as %s", json);
+        Log.v(TAG, "Query encoded as %s", json);
         try {
             c4query = new C4Query(database.getC4Database(), json);
         } catch (LiteCoreException e) {
@@ -196,7 +209,7 @@ public class Query {
         try {
             return JsonUtils.toJson(asJSON()).toString();
         } catch (JSONException e) {
-            Log.w(LOG_TAG, "Error when encoding the query as a json string", e);
+            Log.w(TAG, "Error when encoding the query as a json string", e);
         }
         return null;
     }
