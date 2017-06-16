@@ -1,6 +1,10 @@
 package com.couchbase.lite;
 
 
+import android.support.test.InstrumentationRegistry;
+
+import com.couchbase.lite.utils.Config;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,6 +79,10 @@ public class ReplicatorTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
+        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+        if (!config.replicatorTestsEnabled())
+            return;
+
         super.setUp();
 
         timeout = 5; // seconds
@@ -84,6 +92,9 @@ public class ReplicatorTest extends BaseTest {
 
     @After
     public void tearDown() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
         if (otherDB != null) {
             otherDB.close();
             otherDB = null;
@@ -103,12 +114,18 @@ public class ReplicatorTest extends BaseTest {
 
     @Test
     public void testEmptyPush() throws InterruptedException {
+        if (!config.replicatorTestsEnabled())
+            return;
+
         ReplicatorConfiguration config = makeConfig(true, false);
         run(config, 0, null);
     }
 
     @Test
     public void testPullDoc() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
         // For https://github.com/couchbase/couchbase-lite-core/issues/156
         Document doc1 = new Document("doc1");
         doc1.set("name", "Tiger");
