@@ -13,6 +13,9 @@
  */
 package com.couchbase.lite;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -22,8 +25,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -44,16 +50,21 @@ public class QueryTest extends BaseTest {
         return n;
     }
 
+    private Document createDocNumbered(int i, int num) {
+        String docID = String.format(Locale.ENGLISH, "doc%d", i);
+        Document doc = createDocument(docID);
+        doc.set("number1", i);
+        doc.set("number2", num - i);
+        return save(doc);
+    }
+
     private List<Map<String, Object>> loadNumbers(final int num) throws Exception {
         final List<Map<String, Object>> numbers = new ArrayList<Map<String, Object>>();
         db.inBatch(new Runnable() {
             @Override
             public void run() {
                 for (int i = 1; i <= num; i++) {
-                    Document doc = createDocument("doc" + i);
-                    doc.set("number1", i);
-                    doc.set("number2", num - i);
-                    save(doc);
+                    Document doc = createDocNumbered(i, num);
                     numbers.add(doc.toMap());
                 }
             }
@@ -395,5 +406,100 @@ public class QueryTest extends BaseTest {
             }
         });
         assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testLiveQuery() throws Exception {
+        loadNumbers(100);
+
+        Query q = Query
+                .select()
+                .from(new DataSource(db))
+                .where(Expression.property("number1").lessThan(10))
+                .orderBy(OrderBy.property("number1").ascending());
+        final LiveQuery lq = q.toLiveQuery();
+
+        ResultSet rs = lq.getRS();
+        assertEquals(9, rs.getRowCount());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        QueryChangeListener listener = new QueryChangeListener() {
+            @Override
+            public void changed(QueryChange change) {
+                assertNotNull(change);
+                ResultSet rs = change.getRS();
+                assertNotNull(rs);
+                QueryRow queryRow;
+                int count = 0;
+                while ((queryRow = rs.next()) != null) {
+                    if (count == 0)
+                        assertEquals(-1L, queryRow.getDocument().getObject("number1"));
+                    count++;
+                }
+                assertEquals(10, count);
+
+                latch.countDown();
+            }
+        };
+        lq.addQueryChangeListener(listener);
+
+        // create one doc
+        new Handler(Looper.getMainLooper())
+                .postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        createDocNumbered(-1, 100);
+                    }
+                }, 500); // 500ms
+
+        // wait till listener is called
+        assertTrue(latch.await(2, TimeUnit.SECONDS));
+
+        lq.removeQueryChangeListener(listener);
+    }
+
+    @Test
+    public void testLiveQueryNoUpdate() throws Exception {
+        loadNumbers(100);
+
+        Query q = Query
+                .select()
+                .from(new DataSource(db))
+                .where(Expression.property("number1").lessThan(10))
+                .orderBy(OrderBy.property("number1").ascending());
+        final LiveQuery lq = q.toLiveQuery();
+
+        ResultSet rs = lq.getRS();
+        assertEquals(9, rs.getRowCount());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        QueryChangeListener listener = new QueryChangeListener() {
+            @Override
+            public void changed(QueryChange change) {
+                ResultSet rs = change.getRS();
+                if (rs != null) {
+                    QueryRow queryRow;
+                    while ((queryRow = rs.next()) != null) {
+                        Log.e(TAG, "result -> " + queryRow);
+                    }
+                }
+                latch.countDown();
+                // should not come here...
+            }
+        };
+        lq.addQueryChangeListener(listener);
+
+        // create one doc
+        new Handler(Looper.getMainLooper())
+                .postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        createDocNumbered(111, 100);
+                    }
+                }, 500); // 500ms
+        // wait till listener is called
+        assertFalse(latch.await(5, TimeUnit.SECONDS));
+
+        lq.removeQueryChangeListener(listener);
     }
 }
