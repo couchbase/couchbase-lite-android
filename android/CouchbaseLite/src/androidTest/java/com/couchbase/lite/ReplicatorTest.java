@@ -1,10 +1,6 @@
 package com.couchbase.lite;
 
 
-import android.support.test.InstrumentationRegistry;
-
-import com.couchbase.lite.utils.Config;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import static com.couchbase.lite.ReplicatorType.PULL;
 import static com.couchbase.lite.ReplicatorType.PUSH;
 import static com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
-import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
 import static com.couchbase.litecore.Constants.NetworkError.kC4NetErrUnknownHost;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -80,10 +75,6 @@ public class ReplicatorTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        config = new Config(InstrumentationRegistry.getContext().getAssets().open(TEST_PROPERTIES_FILE));
-        if (!config.replicatorTestsEnabled())
-            return;
-
         super.setUp();
 
         timeout = 5; // seconds
@@ -93,9 +84,6 @@ public class ReplicatorTest extends BaseTest {
 
     @After
     public void tearDown() throws Exception {
-        if (!config.replicatorTestsEnabled())
-            return;
-
         if (otherDB != null) {
             otherDB.close();
             otherDB = null;
@@ -115,11 +103,29 @@ public class ReplicatorTest extends BaseTest {
 
     @Test
     public void testEmptyPush() throws InterruptedException {
-        if (!config.replicatorTestsEnabled())
-            return;
-
         ReplicatorConfiguration config = makeConfig(true, false);
         run(config, 0, null);
+    }
+
+    @Test
+    public void testPullDoc() throws Exception {
+        // For https://github.com/couchbase/couchbase-lite-core/issues/156
+        Document doc1 = new Document("doc1");
+        doc1.set("name", "Tiger");
+        save(doc1);
+        assertEquals(1, db.getCount());
+
+        Document doc2 = new Document("doc2");
+        doc2.set("name", "Cat");
+        otherDB.save(doc2);
+        assertEquals(1, otherDB.getCount());
+
+        ReplicatorConfiguration config = makeConfig(false, true);
+        run(config, 0, null);
+
+        assertEquals(2, db.getCount());
+        doc2 = db.getDocument("doc2");
+        assertEquals("Cat", doc2.getString("name"));
     }
 
     @Test
