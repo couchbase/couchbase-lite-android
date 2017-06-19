@@ -23,12 +23,11 @@ import static com.couchbase.lite.internal.support.ClassUtils.toLong;
 /**
  * Dictionary provides access to dictionary data.
  */
-public class Dictionary extends ReadOnlyDictionary implements DictionaryInterface, ObjectChangeListener, FleeceEncodable {
+public class Dictionary extends ReadOnlyDictionary implements DictionaryInterface, FleeceEncodable {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private Map<String, Object> map = null;
-    private Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
     private int changedCount = 0;
     private List<String> keys = null; // dictionary key cache
@@ -75,13 +74,10 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Dictionary set(Map<String, Object> dictionary) {
-        // Detach all objects that we are listening to for changes:
-        detachChildChangeListeners();
-
         Map<String, Object> result = new HashMap<>();
         if (dictionary != null) {
             for (Map.Entry<String, Object> entry : dictionary.entrySet()) {
-                result.put(entry.getKey(), CBLData.convert(entry.getValue(), this));
+                result.put(entry.getKey(), CBLData.convert(entry.getValue()));
             }
         }
 
@@ -122,8 +118,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     public Dictionary set(String key, Object value) {
         Object oldValue = getObject(key);
         if ((value != null && !value.equals(oldValue)) || value == null) {
-            value = CBLData.convert(value, this);
-            detachChangeListenerForObject(oldValue);
+            value = CBLData.convert(value);
             set(key, value, true);
             keys = null; // Reset key cache
         }
@@ -207,10 +202,10 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         if (value == null) {
             value = super.getObject(key);
             if (value instanceof ReadOnlyDictionary) {
-                value = CBLData.convert(value, this);
+                value = CBLData.convert(value);
                 set(key, value, false);
             } else if (value instanceof ReadOnlyArray) {
-                value = CBLData.convert(value, this);
+                value = CBLData.convert(value);
                 set(key, value, false);
             }
         } else if (value == RemovedValue.INSTANCE)
@@ -489,13 +484,6 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         return true;
     }
 
-    // #pragma mark - CHANGE LISTENING
-
-    @Override
-    public void objectDidChange(Object object) {
-        setChanged();
-    }
-
     // #pragma mark - FLEECE ENCODABLE
 
     // FleeceEncodable implementation
@@ -514,19 +502,6 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
             }
         }
         encoder.endDict();
-    }
-
-    /*package*/ void addChangeListener(ObjectChangeListener listener) {
-        int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
-        changeListeners.put(listener, count + 1);
-    }
-
-    /*package*/ void removeChangeListener(ObjectChangeListener listener) {
-        int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
-        if (count > 1)
-            changeListeners.put(listener, count - 1);
-        else
-            changeListeners.remove(listener);
     }
 
     //---------------------------------------------
@@ -561,31 +536,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     //  CHANGE
 
     private void setChanged() {
-        if (!changed) {
+        if (!changed)
             changed = true;
-            notifyChangeListeners();
-        }
         changedCount++;
-    }
-
-    private void notifyChangeListeners() {
-        for (ObjectChangeListener listener : changeListeners.keySet())
-            listener.objectDidChange(this);
-    }
-
-    private void detachChangeListenerForObject(Object object) {
-        if (object instanceof Dictionary) {
-            ((Dictionary) object).removeChangeListener(this);
-        } else if (object instanceof Array) {
-            ((Array) object).removeChangeListener(this);
-        }
-    }
-
-    private void detachChildChangeListeners() {
-        if (map == null) return;
-
-        for (String key : map.keySet()) {
-            detachChangeListenerForObject(map.get(key));
-        }
     }
 }

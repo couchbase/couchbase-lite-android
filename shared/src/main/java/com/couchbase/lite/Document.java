@@ -442,11 +442,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     private void save(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
-        // No-op case of unchanged document:
-        if (!isChanged() && !deletion && exists())
-            return;
-
-
         if (deletion && !exists())
             throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
 
