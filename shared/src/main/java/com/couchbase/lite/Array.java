@@ -6,22 +6,19 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static com.couchbase.lite.internal.support.ClassUtils.cast;
 
 /**
  * Array provides access to array data.
  */
-public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChangeListener, FleeceEncodable {
+public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncodable {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private List<Object> list = null;
-    Map<ObjectChangeListener, Integer> changeListeners = new HashMap<>();
     private boolean changed = false;
     private int changedCount = 0;
 
@@ -67,12 +64,9 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
      */
     @Override
     public Array set(List<Object> list) {
-        // Detach all objects that we are listening to for changes:
-        detachChildChangeListeners();
-
         List<Object> result = new ArrayList<>();
         for (Object value : list) {
-            result.add(CBLData.convert(value, this));
+            result.add(CBLData.convert(value));
         }
         this.list = result;
         return this;
@@ -89,8 +83,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     public Array set(int index, Object value) {
         Object oldValue = getObject(index);
         if ((value != null && !value.equals(oldValue)) || value == null) {
-            value = CBLData.convert(value, this);
-            detachChangeListenerForObject(oldValue);
+            value = CBLData.convert(value);
             set(index, value, true);
         }
         return this;
@@ -107,7 +100,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
         if (list == null)
             copyFleeceData();
 
-        list.add(CBLData.convert(value, this));
+        list.add(CBLData.convert(value));
         setChanged();
         return this;
     }
@@ -124,7 +117,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
         if (list == null)
             copyFleeceData();
 
-        list.add(index, CBLData.convert(value, this));
+        list.add(index, CBLData.convert(value));
         setChanged();
         return this;
     }
@@ -140,8 +133,6 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
         if (list == null)
             copyFleeceData();
 
-        Object value = list.get(index);
-        detachChangeListenerForObject(value);
         list.remove(index);
         setChanged();
         return this;
@@ -388,29 +379,6 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-    /*package*/ void addChangeListener(ObjectChangeListener listener) {
-        if (listener == null)
-            System.out.println("listenr is null");
-        int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
-        changeListeners.put(listener, count + 1);
-    }
-
-    /*package*/ void removeChangeListener(ObjectChangeListener listener) {
-        if (listener == null)
-            System.out.println("listenr is null");
-        int count = changeListeners.containsKey(listener) ? changeListeners.get(listener) : 0;
-        if (count > 1)
-            changeListeners.put(listener, count - 1);
-        else
-            changeListeners.remove(listener);
-    }
-
-    // #pragma mark - CHANGE LISTENING
-
-    @Override
-    public void objectDidChange(Object object) {
-        setChanged();
-    }
 
     // FleeceEncodable implementation
     @Override
@@ -439,40 +407,15 @@ public class Array extends ReadOnlyArray implements ArrayInterface, ObjectChange
     }
 
     private void setChanged() {
-        if (!changed) {
+        if (!changed)
             changed = true;
-            notifyChangeListeners();
-        }
         changedCount++;
-    }
-
-    private void notifyChangeListeners() {
-        for (ObjectChangeListener listener : changeListeners.keySet())
-            listener.objectDidChange(this);
-    }
-
-    private void detachChangeListenerForObject(Object object) {
-        if (object instanceof Dictionary) {
-            ((Dictionary) object).removeChangeListener(this);
-        } else if (object instanceof Array) {
-            ((Array) object).removeChangeListener(this);
-        }
-    }
-
-    private void detachChildChangeListeners() {
-        if (list == null) return;
-
-        for (Object object : list) {
-            detachChangeListenerForObject(object);
-        }
     }
 
     private void copyFleeceData() {
         int count = super.count();
         list = new ArrayList<>(count);
-        for (int i = 0; i < count; i++) {
-            Object value = super.getObject(i);
-            list.add(CBLData.convert(value, this));
-        }
+        for (int i = 0; i < count; i++)
+            list.add(CBLData.convert(super.getObject(i)));
     }
 }
