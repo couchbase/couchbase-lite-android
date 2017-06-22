@@ -1,5 +1,8 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.URIUtils;
+
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
@@ -98,5 +101,29 @@ public class ReplicatorConfiguration {
 
     public ReplicatorConfiguration copy() {
         return new ReplicatorConfiguration(database, target, type, continuous, resolver, options);
+    }
+
+    /*package*/ Map<String, Object> effectiveOptions() {
+
+        Map<String, Object> options = this.options != null ? new HashMap<>(this.getOptions()) : new HashMap<String, Object>();
+
+        // If the URL has a hardcoded username/password, add them as an "auth" option:
+        if(target.getUri()!= null) {
+            String username = URIUtils.getUsername(target.getUri());
+            if (username != null && !options.containsKey(kCBLReplicatorAuthOption)) {
+                Map<String, String> auth = new HashMap<>();
+                auth.put(kCBLReplicatorAuthUserName, username);
+                auth.put(kCBLReplicatorAuthPassword, URIUtils.getPassword(target.getUri()));
+                if (options == null)
+                    options = new HashMap<String, Object>();
+                options.put(kCBLReplicatorAuthOption, auth);
+            }
+        }
+
+        // Add the pinned certificate if any:
+
+        // Add custom cookies if any:
+
+        return options;
     }
 }

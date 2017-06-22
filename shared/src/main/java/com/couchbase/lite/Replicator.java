@@ -5,11 +5,11 @@ import android.os.Looper;
 import android.util.Base64;
 
 import com.couchbase.lite.internal.support.StringUtils;
-import com.couchbase.lite.internal.support.URIUtils;
 import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4Replicator;
 import com.couchbase.litecore.C4ReplicatorListener;
 import com.couchbase.litecore.C4ReplicatorStatus;
+import com.couchbase.litecore.C4Socket;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
@@ -24,9 +24,6 @@ import java.util.Set;
 import static com.couchbase.lite.Replicator.ActivityLevel.BUSY;
 import static com.couchbase.lite.Replicator.ActivityLevel.IDLE;
 import static com.couchbase.lite.Replicator.ActivityLevel.STOPPED;
-import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthOption;
-import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthPassword;
-import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthUserName;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Continuous;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Disabled;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4OneShot;
@@ -156,13 +153,11 @@ public class Replicator implements NetworkReachabilityListener {
     // static initializer
     //---------------------------------------------
 
-    /**
-     * // NOTE: CBL Android uses CivetWeb. not using C4Socket/OkHttp
-     * static {
-     * //Register WebSocket C4Socket implementation
-     * C4Socket.registerFactory();
-     * }
-     */
+    static {
+        //Register WebSocket C4Socket implementation
+        C4Socket.registerFactory();
+    }
+
 
     final static String[] kC4ReplicatorActivityLevelNames = {
             "stopped", "offline", "connecting", "idle", "busy"
@@ -344,41 +339,9 @@ public class Replicator implements NetworkReachabilityListener {
         else {
             otherDB = config.getTarget().getDatabase().getC4Database();
         }
-
-        // If the URL has a hardcoded username/password, add them as an "auth" option:
-        Map<String, Object> options;
-        if (config.getOptions() != null)
-            options = new HashMap<>(config.getOptions());
-        else
-            options = new HashMap<>();
-        String username = URIUtils.getUsername(remoteURI);
-        /* NOTE:
-        // For C4Socket + OkHttp
-        if (username != null && !options.containsKey(kCBLReplicatorAuthOption)) {
-            Map<String, String> auth = new HashMap<>();
-            auth.put(kCBLReplicatorAuthUserName, username);
-            auth.put(kCBLReplicatorAuthPassword, URIUtils.getPassword(remoteURI));
-            if (options == null)
-                options = new HashMap<String, Object>();
-            options.put(kCBLReplicatorAuthOption, auth);
-        }
-        */
-
-        // For CivetWeb
-        if (username != null && username.length() > 0) {
-            String password = URIUtils.getPassword(remoteURI);
-            options.put("headers", getAuthenticatedHeaders(username, password));
-        } else if (options.containsKey(kCBLReplicatorAuthOption)) {
-            Map<String, Object> auth = (Map<String, Object>) options.get(kCBLReplicatorAuthOption);
-            if (auth != null) {
-                username = (String) auth.get(kCBLReplicatorAuthUserName);
-                String password = (String) auth.get(kCBLReplicatorAuthPassword);
-                options.put("headers", getAuthenticatedHeaders(username, password));
-                options.remove(kCBLReplicatorAuthOption);
-            }
-        }
-
+        
         // Encode the options:
+        Map<String, Object> options = config.effectiveOptions();
         byte[] optionsFleece = null;
         if (options.size() > 0) {
             FLEncoder enc = new FLEncoder();
