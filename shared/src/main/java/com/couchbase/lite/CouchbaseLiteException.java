@@ -13,6 +13,8 @@
  */
 package com.couchbase.lite;
 
+import java.util.Map;
+
 /**
  * A CouchbaseLiteException gets raised whenever a Couchbase Lite faces errors.
  */
@@ -22,6 +24,7 @@ public final class CouchbaseLiteException extends RuntimeException {
 
     private final int domain;
     private final int code;
+    private final Map<String, Object> info;
 
     /**
      * Constructs a new exception with the specified detail message.
@@ -32,6 +35,7 @@ public final class CouchbaseLiteException extends RuntimeException {
         super(message);
         this.domain = 0;
         this.code = 0;
+        this.info = null;
     }
 
     /**
@@ -43,6 +47,7 @@ public final class CouchbaseLiteException extends RuntimeException {
         super(cause);
         this.domain = 0;
         this.code = 0;
+        this.info = null;
     }
 
     /**
@@ -55,6 +60,7 @@ public final class CouchbaseLiteException extends RuntimeException {
         super();
         this.domain = domain;
         this.code = code;
+        this.info = null;
     }
 
     /**
@@ -68,6 +74,14 @@ public final class CouchbaseLiteException extends RuntimeException {
         super(cause);
         this.domain = domain;
         this.code = code;
+        this.info = null;
+    }
+
+    public CouchbaseLiteException(int domain, int code, Map<String, Object> info){
+        super();
+        this.domain = domain;
+        this.code = code;
+        this.info = info;
     }
 
     /**
@@ -97,6 +111,10 @@ public final class CouchbaseLiteException extends RuntimeException {
      */
     public int getCode() {
         return code;
+    }
+
+    public Map<String, Object> getInfo() {
+        return info;
     }
 
     @Override
