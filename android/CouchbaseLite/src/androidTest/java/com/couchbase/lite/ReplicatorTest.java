@@ -30,7 +30,6 @@ public class ReplicatorTest extends BaseTest {
     Database otherDB;
     Replicator repl;
     long timeout;  // seconds
-    boolean stopped;
 
     private ReplicatorConfiguration makeConfig(boolean push, boolean pull) {
         ReplicatorTarget target = new ReplicatorTarget(otherDB);
@@ -178,15 +177,28 @@ public class ReplicatorTest extends BaseTest {
     }
 
 
-    // These test are disabled because they require a password-protected database 'seekrit' to exist
-    // on localhost:4984, with a user 'pupshaw' whose password is 'frank'.
-
     @Test
     public void testAuthenticationFailure() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, uri);
+        run(config, 401, "WebSocket");
+    }
+
+    @Test
+    public void testAuthenticatedPullWithIncorrectPassword() throws InterruptedException {
+        if (!config.replicatorTestsEnabled())
+            return;
+        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
+        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        Map<String, Object> options = new HashMap<>();
+        Map<String, Object> auth = new HashMap<>();
+        auth.put("username", "pupshaw");
+        auth.put("password", "frank!");
+        options.put("auth", auth);
+        config.setOptions(options);
+        // Retry 3 times then fails with 401
         run(config, 401, "WebSocket");
     }
 
