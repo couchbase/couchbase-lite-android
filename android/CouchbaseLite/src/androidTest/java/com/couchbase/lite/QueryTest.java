@@ -441,7 +441,7 @@ public class QueryTest extends BaseTest {
                 latch.countDown();
             }
         };
-        lq.addLiveQueryChangeListener(listener);
+        lq.addChangeListener(listener);
 
         // create one doc
         new Handler(Looper.getMainLooper())
@@ -455,7 +455,7 @@ public class QueryTest extends BaseTest {
         // wait till listener is called
         assertTrue(latch.await(2, TimeUnit.SECONDS));
 
-        lq.removeLiveQueryChangeListener(listener);
+        lq.removeChangeListener(listener);
     }
 
     @Test
@@ -487,7 +487,7 @@ public class QueryTest extends BaseTest {
                 // should not come here...
             }
         };
-        lq.addLiveQueryChangeListener(listener);
+        lq.addChangeListener(listener);
 
         // create one doc
         new Handler(Looper.getMainLooper())
@@ -500,6 +500,6 @@ public class QueryTest extends BaseTest {
         // wait till listener is called
         assertFalse(latch.await(5, TimeUnit.SECONDS));
 
-        lq.removeLiveQueryChangeListener(listener);
+        lq.removeChangeListener(listener);
     }
 }

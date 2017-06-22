@@ -48,6 +48,16 @@ public class Query {
     private boolean distinct;
 
     //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+    /*package*/ Query() {
+
+    }
+
+    /*package*/ Query(Query query) {
+        copy(query);
+    }
+    //---------------------------------------------
     // API - public methods
     //---------------------------------------------
 
@@ -121,7 +131,7 @@ public class Query {
     }
 
     public LiveQuery toLive() {
-        return new LiveQuery(this);
+        return new LiveQuery(new Query(this));
     }
 
     //---------------------------------------------

@@ -72,13 +72,13 @@ public class LiveQuery implements DatabaseChangeListener {
         willUpdate = false; // cancels the delayed update started by -databaseChanged
     }
 
-    public void addLiveQueryChangeListener(LiveQueryChangeListener listener) {
+    public void addChangeListener(LiveQueryChangeListener listener) {
         queryChangeListener.add(listener);
         if (queryChangeListener.size() == 1)
             run();
     }
 
-    public void removeLiveQueryChangeListener(LiveQueryChangeListener listener) {
+    public void removeChangeListener(LiveQueryChangeListener listener) {
         queryChangeListener.remove(listener);
         if (queryChangeListener.size() == 0)
             stop();
