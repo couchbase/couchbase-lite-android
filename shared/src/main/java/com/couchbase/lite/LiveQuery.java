@@ -27,7 +27,6 @@ public class LiveQuery implements DatabaseChangeListener {
     private ResultSet resultSet;
     private boolean observing;
     private boolean willUpdate;
-    private boolean forceReload;
     private long lastUpdatedAt;
 
     //---------------------------------------------
@@ -35,13 +34,15 @@ public class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
 
     /* package */ LiveQuery(Query query) {
+        if (query == null)
+            throw new IllegalArgumentException("query should not be null.");
+
         this.query = query;
-        queryChangeListener = Collections.synchronizedSet(new HashSet<LiveQueryChangeListener>());
-        resultSet = null;
-        observing = false;
-        willUpdate = false;
-        forceReload = false;
-        lastUpdatedAt = 0L;
+        this.queryChangeListener = Collections.synchronizedSet(new HashSet<LiveQueryChangeListener>());
+        this.resultSet = null;
+        this.observing = false;
+        this.willUpdate = false;
+        this.lastUpdatedAt = 0L;
     }
 
     //---------------------------------------------
@@ -50,38 +51,31 @@ public class LiveQuery implements DatabaseChangeListener {
 
     /**
      * Starts observing database changes. The .rows property will now update automatically.
-     * (You usually don't need to call this yourself, since accessing or observing the getRows()
-     * property will call -start for you.)
+     * NOTE: Calling run method will (re)start the live query.
      */
     public void run() {
-        if (!observing) {
-            observing = true;
-            query.getDatabase().addChangeListener(this);
-            update();
-        }
+        observing = true;
+        releaseResultSet();
+        query.getDatabase().addChangeListener(this);
+        update();
     }
 
     /**
      * Stops observing database changes. Calling start() or getRows() will restart it.
      */
     public void stop() {
-        if (observing) {
-            observing = false;
-            query.getDatabase().removeChangeListener(this);
-        }
+        observing = false;
         willUpdate = false; // cancels the delayed update started by -databaseChanged
+        query.getDatabase().removeChangeListener(this);
+        releaseResultSet();
     }
 
     public void addChangeListener(LiveQueryChangeListener listener) {
         queryChangeListener.add(listener);
-        if (queryChangeListener.size() == 1)
-            run();
     }
 
     public void removeChangeListener(LiveQueryChangeListener listener) {
         queryChangeListener.remove(listener);
-        if (queryChangeListener.size() == 0)
-            stop();
     }
 
     //---------------------------------------------
@@ -92,26 +86,27 @@ public class LiveQuery implements DatabaseChangeListener {
         if (willUpdate)
             return; // Already a pending update scheduled
 
+        if (!observing)
+            return;
+
         // Schedule an update, respecting the updateInterval:
         long updateDelay = lastUpdatedAt + kDefaultLiveQueryUpdateInterval - System.currentTimeMillis();
         updateDelay = Math.max(0, Math.min(this.kDefaultLiveQueryUpdateInterval, updateDelay));
         update(updateDelay);
     }
+    //---------------------------------------------
+    // protected methods
+    //---------------------------------------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        stop();
+        super.finalize();
+    }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
-    /**
-     * The current query results; this updates as the database changes.
-     * Its value will be null until the initial asynchronous query finishes.
-     * <p>
-     * NOTE: for unit test
-     */
-    /*package*/ ResultSet getResultSet() {
-        run();
-        return resultSet;
-    }
 
     //---------------------------------------------
     // Private (in class only)
@@ -123,6 +118,9 @@ public class LiveQuery implements DatabaseChangeListener {
     private void update(long delay) {
         if (willUpdate)
             return; // Already a pending update scheduled
+
+        if (!observing)
+            return;
 
         willUpdate = true;
         // create one doc
@@ -137,16 +135,20 @@ public class LiveQuery implements DatabaseChangeListener {
 
     private void update() {
         // TODO: Make this asynchronous (as in 1.x)
+
+        if (!observing)
+            return;
+
         try {
             Log.i(TAG, "%s: Querying...", this);
             ResultSet oldResultSet = resultSet;
             ResultSet newResultSet;
-            if (oldResultSet == null || !oldResultSet.isValidEnumerator() || forceReload)
+            if (oldResultSet == null || !oldResultSet.isValidEnumerator())
                 newResultSet = query.run();
             else
                 newResultSet = oldResultSet.refresh();
 
-            willUpdate = forceReload = false;
+            willUpdate = false;
             lastUpdatedAt = System.currentTimeMillis();
 
             if (newResultSet != null) {
@@ -167,6 +169,13 @@ public class LiveQuery implements DatabaseChangeListener {
             for (LiveQueryChangeListener listener : queryChangeListener) {
                 listener.changed(change);
             }
+        }
+    }
+
+    private void releaseResultSet() {
+        if (resultSet != null) {
+            resultSet.release();
+            resultSet = null;
         }
     }
 }

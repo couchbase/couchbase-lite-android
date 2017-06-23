@@ -72,8 +72,26 @@ public class ResultSet {
     }
 
     //---------------------------------------------
+    // protected methods
+    //---------------------------------------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        release();
+        super.finalize();
+    }
+
+    //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    /*package*/void release() {
+        if (c4enum != null) {
+            c4enum.close();
+            c4enum.free();
+            c4enum = null;
+        }
+    }
 
     /*package*/ResultSet refresh() throws CouchbaseLiteException {
         if (query == null) return null;
