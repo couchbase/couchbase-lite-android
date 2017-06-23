@@ -12,14 +12,6 @@ class LiveQueryChange {
     // constructors
     //---------------------------------------------
 
-    /*package*/ LiveQueryChange(LiveQuery query, ResultSet rows) {
-        this(query, rows, null);
-    }
-
-    /*package*/ LiveQueryChange(LiveQuery query, Throwable error) {
-        this(query, null, error);
-    }
-
     /*package*/ LiveQueryChange(LiveQuery query, ResultSet rows, Throwable error) {
         this.query = query;
         this.rows = rows;

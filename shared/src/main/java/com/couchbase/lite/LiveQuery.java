@@ -50,8 +50,7 @@ public class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
 
     /**
-     * Starts observing database changes. The .rows property will now update automatically.
-     * NOTE: Calling run method will (re)start the live query.
+     * Starts observing database changes and reports changes in the query result.
      */
     public void run() {
         observing = true;
@@ -61,7 +60,7 @@ public class LiveQuery implements DatabaseChangeListener {
     }
 
     /**
-     * Stops observing database changes. Calling start() or getRows() will restart it.
+     * Stops observing database changes.
      */
     public void stop() {
         observing = false;
@@ -70,10 +69,16 @@ public class LiveQuery implements DatabaseChangeListener {
         releaseResultSet();
     }
 
+    /**
+     * Adds a change listener.
+     */
     public void addChangeListener(LiveQueryChangeListener listener) {
         queryChangeListener.add(listener);
     }
 
+    /**
+     * Removes a change listener
+     */
     public void removeChangeListener(LiveQueryChangeListener listener) {
         queryChangeListener.remove(listener);
     }
@@ -103,10 +108,6 @@ public class LiveQuery implements DatabaseChangeListener {
         stop();
         super.finalize();
     }
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
 
     //---------------------------------------------
     // Private (in class only)
@@ -160,7 +161,7 @@ public class LiveQuery implements DatabaseChangeListener {
                 Log.i(TAG, "%s: ...no change", this);
             }
         } catch (CouchbaseLiteException e) {
-            sendNotification(new LiveQueryChange(null, e));
+            sendNotification(new LiveQueryChange(this, null, e));
         }
     }
 
