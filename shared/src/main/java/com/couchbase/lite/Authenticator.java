@@ -7,9 +7,14 @@ import java.util.Map;
  * implement a custom authenticator by subclassing Authenticator interface.
  */
 public abstract class Authenticator {
-    static final String kCBLReplicatorAuthOption = "auth";
-    static final String kCBLReplicatorAuthUserName = "username";
-    static final String kCBLReplicatorAuthPassword = "password";
+
+    // Replicator option dictionary keys:
+    static final String kC4ReplicatorOptionCookies = "cookies";  // HTTP Cookie header value; string
+    static final String kCBLReplicatorAuthOption = "auth";       // Auth settings; Dict
+
+    // Auth dictionary keys:
+    static final String kCBLReplicatorAuthUserName = "username"; // Auth property; string
+    static final String kCBLReplicatorAuthPassword = "password"; // Auth property; string
 
     abstract void authenticate(Map<String, Object> options);
 }

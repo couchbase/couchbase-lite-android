@@ -3,6 +3,7 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.support.DateUtils;
 
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -50,7 +51,15 @@ public class SessionAuthenticator extends Authenticator {
     //---------------------------------------------
     @Override
     void authenticate(Map<String, Object> options) {
+        String current = (String) options.get(kC4ReplicatorOptionCookies);
+        StringBuffer cookieStr = current != null ? new StringBuffer(current) : new StringBuffer();
 
+        if (cookieStr.length() > 0)
+            cookieStr.append("; ");
+        // TODO: How about expires?
+        cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, sessionID));
+
+        options.put(kC4ReplicatorOptionCookies, cookieStr.toString());
     }
 
     private Date convert(Object expires) {
