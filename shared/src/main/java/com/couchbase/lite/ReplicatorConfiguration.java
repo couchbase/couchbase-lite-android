@@ -2,77 +2,81 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.URIUtils;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
+import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthOption;
+import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthPassword;
+import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthUserName;
+import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
 
 public class ReplicatorConfiguration {
 
-    /**
-     * Options key for authentication dictionary
-     */
-    public static final String kCBLReplicatorAuthOption = "auth";
-    /**
-     * Auth key for username string
-     */
-    public static final String kCBLReplicatorAuthUserName = "username";
-    /**
-     * Auth key for password string
-     */
-    public static final String kCBLReplicatorAuthPassword = "password";
+    public enum ReplicatorType {
+        PUSH_AND_PULL,
+        PUSH,
+        PULL
+    }
 
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
 
     private Database database = null;
-    private ReplicatorTarget target = null;
-    private ReplicatorType type = PUSH_AND_PULL;
+    private Object target = null;
+    private ReplicatorType replicatorType = PUSH_AND_PULL;
     private boolean continuous = false;
-    private ConflictResolver resolver;
-    private Map<String,Object> options;
+    private ConflictResolver conflictResolver = null;
+    private Authenticator authenticator = null;
+    // TODO: pinnedServerCertificate
+    // TODO: filter
 
-    public ReplicatorConfiguration() {
-        type = PUSH_AND_PULL;
-        continuous = false;
-        resolver = null;
-        options  = null;
-    }
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
 
-    public ReplicatorConfiguration(Database database,
-                                   ReplicatorTarget target,
-                                   ReplicatorType type,
-                                   boolean continuous,
-                                   ConflictResolver resolver,
-                                   Map<String,Object> options) {
+    public ReplicatorConfiguration(Database database, Database target) {
+        this.replicatorType = PUSH_AND_PULL;
         this.database = database;
         this.target = target;
-        this.type = type;
-        this.continuous = continuous;
-        this.resolver = resolver;
-        this.options = options;
     }
+
+    public ReplicatorConfiguration(Database database, URI target) {
+        this.replicatorType = PUSH_AND_PULL;
+        this.database = database;
+        this.target = target;
+    }
+
+    private ReplicatorConfiguration(Database database, Object target, ReplicatorType replicatorType,
+                                    boolean continuous, ConflictResolver conflictResolver,
+                                    Authenticator authenticator) {
+        this.database = database;
+        this.target = target;
+        this.replicatorType = replicatorType;
+        this.continuous = continuous;
+        this.conflictResolver = conflictResolver;
+        this.authenticator = authenticator;
+    }
+
+    //---------------------------------------------
+    // Getters/Setters
+    //---------------------------------------------
 
     public Database getDatabase() {
         return database;
     }
 
-    public void setDatabase(Database database) {
-        this.database = database;
-    }
-
-    public ReplicatorTarget getTarget() {
+    public Object getTarget() {
         return target;
     }
 
-    public void setTarget(ReplicatorTarget target) {
-        this.target = target;
+    public ReplicatorType getReplicatorType() {
+        return replicatorType;
     }
 
-    public ReplicatorType getType() {
-        return type;
-    }
-
-    public void setType(ReplicatorType type) {
-        this.type = type;
+    public void setReplicatorType(ReplicatorType replicatorType) {
+        this.replicatorType = replicatorType;
     }
 
     public boolean isContinuous() {
@@ -83,47 +87,74 @@ public class ReplicatorConfiguration {
         this.continuous = continuous;
     }
 
-    public ConflictResolver getResolver() {
-        return resolver;
+    public ConflictResolver getConflictResolver() {
+        return conflictResolver;
     }
 
-    public void setResolver(ConflictResolver resolver) {
-        this.resolver = resolver;
+    public void setConflictResolver(ConflictResolver conflictResolver) {
+        this.conflictResolver = conflictResolver;
     }
 
-    public Map<String, Object> getOptions() {
-        return options;
+    public Authenticator getAuthenticator() {
+        return authenticator;
     }
 
-    public void setOptions(Map<String, Object> options) {
-        this.options = options;
+    public void setAuthenticator(Authenticator authenticator) {
+        this.authenticator = authenticator;
     }
 
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
     public ReplicatorConfiguration copy() {
-        return new ReplicatorConfiguration(database, target, type, continuous, resolver, options);
+        return new ReplicatorConfiguration(database, target, replicatorType, continuous,
+                conflictResolver, authenticator);
     }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
 
     /*package*/ Map<String, Object> effectiveOptions() {
+        Map<String, Object> options = new HashMap<>();
 
-        Map<String, Object> options = this.options != null ? new HashMap<>(this.getOptions()) : new HashMap<String, Object>();
+        String username = getUsername();
+        if (username != null) {
+            Map<String, Object> auth = new HashMap<>();
+            auth.put(kCBLReplicatorAuthUserName, username);
+            auth.put(kCBLReplicatorAuthPassword, getPassword());
+            options.put(kCBLReplicatorAuthOption, auth);
+        } else
+            authenticator.authenticate(options);
 
-        // If the URL has a hardcoded username/password, add them as an "auth" option:
-        if(target.getUri()!= null) {
-            String username = URIUtils.getUsername(target.getUri());
-            if (username != null && !options.containsKey(kCBLReplicatorAuthOption)) {
-                Map<String, String> auth = new HashMap<>();
-                auth.put(kCBLReplicatorAuthUserName, username);
-                auth.put(kCBLReplicatorAuthPassword, URIUtils.getPassword(target.getUri()));
-                if (options == null)
-                    options = new HashMap<String, Object>();
-                options.put(kCBLReplicatorAuthOption, auth);
-            }
-        }
-
+        // TODO:
         // Add the pinned certificate if any:
 
-        // Add custom cookies if any:
-
         return options;
+    }
+
+    /*package*/URI getTargetURI() {
+        return target instanceof URI ? (URI) target : null;
+    }
+
+    /*package*/Database getTargetDatabase() {
+        return target instanceof Database ? (Database) target : null;
+    }
+
+    //---------------------------------------------
+    // Private level access
+    //---------------------------------------------
+    private String getUsername() {
+        if (target != null && target instanceof URI)
+            return URIUtils.getUsername((URI) target);
+        else
+            return null;
+    }
+
+    private String getPassword() {
+        if (target != null && target instanceof URI)
+            return URIUtils.getPassword((URI) target);
+        else
+            return null;
     }
 }

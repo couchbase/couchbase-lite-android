@@ -324,7 +324,8 @@ public class Replicator implements NetworkReachabilityListener {
         int port = 0;
         String path = null;
 
-        URI remoteURI = config.getTarget().getUri();
+
+        URI remoteURI = config.getTargetURI();
         String dbName = null;
         com.couchbase.litecore.Database otherDB = null;
         // replicate against remote endpoint
@@ -337,7 +338,7 @@ public class Replicator implements NetworkReachabilityListener {
         }
         // replicate against other database
         else {
-            otherDB = config.getTarget().getDatabase().getC4Database();
+            otherDB = config.getTargetDatabase().getC4Database();
         }
         
         // Encode the options:
@@ -355,8 +356,8 @@ public class Replicator implements NetworkReachabilityListener {
         }
 
         // Push / Pull / Continuous:
-        boolean push = isPush(config.getType());
-        boolean pull = isPull(config.getType());
+        boolean push = isPush(config.getReplicatorType());
+        boolean pull = isPull(config.getReplicatorType());
         boolean continuous = config.isContinuous();
 
         c4ReplListener = new C4ReplicatorListener() {
@@ -531,7 +532,7 @@ public class Replicator implements NetworkReachabilityListener {
     }
 
     private void startReachabilityObserver() {
-        URI remoteURI = config.getTarget().getUri();
+        URI remoteURI = config.getTargetURI();
         if (remoteURI == null)
             return;
         String hostname = remoteURI.getHost();
@@ -555,9 +556,9 @@ public class Replicator implements NetworkReachabilityListener {
     private String description() {
         return String.format(Locale.ENGLISH, "%s[%s%s%s %s]",
                 Replicator.class.getSimpleName(),
-                isPull(config.getType()) ? "<" : "",
+                isPull(config.getReplicatorType()) ? "<" : "",
                 config.isContinuous() ? "*" : "-",
-                isPush(config.getType()) ? ">" : "",
+                isPush(config.getReplicatorType()) ? ">" : "",
                 config.getTarget());
     }
 
@@ -565,12 +566,12 @@ public class Replicator implements NetworkReachabilityListener {
     // Private static methods (in class only)
     //---------------------------------------------
 
-    private static boolean isPush(ReplicatorType type) {
-        return type == ReplicatorType.PUSH_AND_PULL || type == ReplicatorType.PUSH;
+    private static boolean isPush(ReplicatorConfiguration.ReplicatorType type) {
+        return type == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL || type == ReplicatorConfiguration.ReplicatorType.PUSH;
     }
 
-    private static boolean isPull(ReplicatorType type) {
-        return type == ReplicatorType.PUSH_AND_PULL || type == ReplicatorType.PULL;
+    private static boolean isPull(ReplicatorConfiguration.ReplicatorType type) {
+        return type == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL || type == ReplicatorConfiguration.ReplicatorType.PULL;
     }
 
     private static int mkmode(boolean active, boolean continuous) {

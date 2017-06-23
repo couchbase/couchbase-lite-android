@@ -10,15 +10,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.couchbase.lite.ReplicatorType.PULL;
-import static com.couchbase.lite.ReplicatorType.PUSH;
-import static com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
+import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PULL;
+import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH;
+import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
 import static com.couchbase.litecore.Constants.NetworkError.kC4NetErrUnknownHost;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -32,20 +30,22 @@ public class ReplicatorTest extends BaseTest {
     long timeout;  // seconds
 
     private ReplicatorConfiguration makeConfig(boolean push, boolean pull) {
-        ReplicatorTarget target = new ReplicatorTarget(otherDB);
-        return makeConfig(push, pull, target);
+        return makeConfig(push, pull, otherDB);
     }
 
     private ReplicatorConfiguration makeConfig(boolean push, boolean pull, String uri) {
-        ReplicatorTarget target = new ReplicatorTarget(URI.create(uri));
-        return makeConfig(push, pull, target);
+        return makeConfig(push, pull, URI.create(uri));
     }
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, ReplicatorTarget target) {
-        ReplicatorConfiguration config = new ReplicatorConfiguration();
-        config.setDatabase(db);
-        config.setTarget(target);
-        config.setType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, URI target) {
+        ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
+        config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
+        return config;
+    }
+
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, Database target) {
+        ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
+        config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
         return config;
     }
 
@@ -192,12 +192,7 @@ public class ReplicatorTest extends BaseTest {
             return;
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, uri);
-        Map<String, Object> options = new HashMap<>();
-        Map<String, Object> auth = new HashMap<>();
-        auth.put("username", "pupshaw");
-        auth.put("password", "frank!");
-        options.put("auth", auth);
-        config.setOptions(options);
+        config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
         // Retry 3 times then fails with 401
         run(config, 401, "WebSocket");
     }
@@ -217,12 +212,7 @@ public class ReplicatorTest extends BaseTest {
             return;
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, uri);
-        Map<String, Object> options = new HashMap<>();
-        Map<String, Object> auth = new HashMap<>();
-        auth.put("username", "pupshaw");
-        auth.put("password", "frank");
-        options.put("auth", auth);
-        config.setOptions(options);
+        config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
         run(config, 0, null);
     }
 
