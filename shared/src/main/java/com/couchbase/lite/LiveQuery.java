@@ -144,7 +144,7 @@ public class LiveQuery implements DatabaseChangeListener {
             Log.i(TAG, "%s: Querying...", this);
             ResultSet oldResultSet = resultSet;
             ResultSet newResultSet;
-            if (oldResultSet == null || !oldResultSet.isValidEnumerator())
+            if (oldResultSet == null)
                 newResultSet = query.run();
             else
                 newResultSet = oldResultSet.refresh();
