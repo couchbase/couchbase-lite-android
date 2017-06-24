@@ -20,17 +20,27 @@ import com.couchbase.litecore.C4QueryEnumerator;
  * QueryRow represents a row of result set returned by a Query.
  */
 public class QueryRow {
+
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
     private Query query;
-
     private C4QueryEnumerator c4enum;
-
     private String documentID;
+
+    //---------------------------------------------
+    // constructors
+    //---------------------------------------------
 
     /* package */ QueryRow(Query query, C4QueryEnumerator c4enum) {
         this.query = query;
         this.c4enum = c4enum;
         this.documentID = c4enum.getDocID();
     }
+
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
 
     /**
      * Get the ID of the document that produced this row.
@@ -58,6 +68,19 @@ public class QueryRow {
     public Document getDocument() {
         return query.getDatabase().getDocument(documentID);
     }
+
+    @Override
+    public String toString() {
+        return "QueryRow{" +
+                "query=" + query +
+                ", c4enum=" + c4enum +
+                ", documentID='" + documentID + '\'' +
+                '}';
+    }
+
+    //---------------------------------------------
+    // Protected level access
+    //---------------------------------------------
 
     protected Query getQuery() {
         return query;
