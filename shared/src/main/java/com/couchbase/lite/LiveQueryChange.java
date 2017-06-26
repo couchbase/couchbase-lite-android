@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-class LiveQueryChange {
+public class LiveQueryChange {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
