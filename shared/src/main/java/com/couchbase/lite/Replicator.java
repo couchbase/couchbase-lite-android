@@ -362,8 +362,8 @@ public class Replicator implements NetworkReachabilityListener {
 
         c4ReplListener = new C4ReplicatorListener() {
             @Override
-            public void callback(final C4Replicator repl, final C4ReplicatorStatus status, final Object context) {
-                Log.i(TAG, "C4ReplicatorListener.callback() status -> " + status);
+            public void statusChanged(final C4Replicator repl, final C4ReplicatorStatus status, final Object context) {
+                Log.i(TAG, "C4ReplicatorListener.statusChanged() status -> " + status);
                 final Replicator replicator = (Replicator) context;
                 if (repl == replicator.c4repl) {
                     handler.post(new Runnable() {
@@ -373,6 +373,12 @@ public class Replicator implements NetworkReachabilityListener {
                         }
                     });
                 }
+            }
+
+            @Override
+            public void documentError(C4Replicator repl, boolean pushing, String docID, C4Error error, boolean trans, Object context) {
+                // TODO:
+                Log.i(TAG, "C4ReplicatorListener.documentError() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
             }
         };
 
@@ -391,7 +397,7 @@ public class Replicator implements NetworkReachabilityListener {
         updateStateProperties(status);
 
         // Post an initial notification:
-        c4ReplListener.callback(c4repl, c4ReplStatus, this);
+        c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
     }
 
     /**
@@ -424,7 +430,7 @@ public class Replicator implements NetworkReachabilityListener {
                 responseHeaders = FLValue.fromData(h).asDict();
         }
 
-        Log.e(TAG, "c4StatusChanged() c4Status -> " + c4Status);
+        Log.e(TAG, "statusChanged() c4Status -> " + c4Status);
         if (c4Status.getActivityLevel() == kC4Stopped) {
             if (handleError(c4Status.getC4Error())) {
                 // Change c4Status to offline, so my state will reflect that, and proceed:
