@@ -124,8 +124,10 @@ public class ReplicatorConfiguration {
             auth.put(kCBLReplicatorAuthUserName, username);
             auth.put(kCBLReplicatorAuthPassword, getPassword());
             options.put(kCBLReplicatorAuthOption, auth);
-        } else
-            authenticator.authenticate(options);
+        } else {
+            if (authenticator != null)
+                authenticator.authenticate(options);
+        }
 
         // TODO:
         // Add the pinned certificate if any:
