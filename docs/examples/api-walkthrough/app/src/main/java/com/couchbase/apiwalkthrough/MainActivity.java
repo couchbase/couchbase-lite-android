@@ -15,10 +15,15 @@ import com.couchbase.lite.IndexOptions;
 import com.couchbase.lite.IndexType;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryRow;
+import com.couchbase.lite.Replicator;
+import com.couchbase.lite.ReplicatorConfiguration;
+import com.couchbase.lite.ReplicatorTarget;
 import com.couchbase.lite.ResultSet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -116,6 +121,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // replication
-        // TODO
+        URI uri = null;
+        try {
+            uri = new URI("blip://10.0.2.2:4984/db");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        ReplicatorConfiguration replConfig = new ReplicatorConfiguration();
+        replConfig.setDatabase(database);
+        replConfig.setTarget(new ReplicatorTarget(uri));
+        Replicator replicator = new Replicator(replConfig);
+        replicator.start();
     }
 }
