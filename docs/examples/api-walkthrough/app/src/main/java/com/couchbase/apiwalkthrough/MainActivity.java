@@ -13,11 +13,13 @@ import com.couchbase.lite.Expression;
 import com.couchbase.lite.FullTextQueryRow;
 import com.couchbase.lite.IndexOptions;
 import com.couchbase.lite.IndexType;
+import com.couchbase.lite.LiveQuery;
+import com.couchbase.lite.LiveQueryChange;
+import com.couchbase.lite.LiveQueryChangeListener;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.Replicator;
 import com.couchbase.lite.ReplicatorConfiguration;
-import com.couchbase.lite.ReplicatorTarget;
 import com.couchbase.lite.ResultSet;
 
 import java.io.IOException;
@@ -95,6 +97,20 @@ public class MainActivity extends AppCompatActivity {
         while ((row = rows.next()) != null) {
             Log.d("app", String.format("doc ID :: %s", row.getDocumentID()));
         }
+
+        // live query
+        final LiveQuery liveQuery = query.toLive();
+        liveQuery.addChangeListener(new LiveQueryChangeListener() {
+            @Override
+            public void changed(LiveQueryChange change) {
+                Log.d("query", String.format("Number of rows :: %s", change.getRows().toString()));
+            }
+        });
+        liveQuery.run();
+        Document newDoc = new Document();
+        newDoc.set("type", "user");
+        newDoc.set("admin", false);
+        database.save(newDoc);
 
         // fts example
         // insert documents
