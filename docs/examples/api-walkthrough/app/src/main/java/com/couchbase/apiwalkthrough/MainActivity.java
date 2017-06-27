@@ -137,6 +137,23 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // replication
+        /*
+         * Tested with SG 1.5 https://www.couchbase.com/downloads
+         * Config file:
+         * {
+              "databases": {
+                "db": {
+                  "server":"walrus:",
+                  "users": {
+                    "GUEST": {"disabled": false, "admin_channels": ["*"]}
+                  },
+                  "unsupported": {
+                    "replicator_2":true
+                  }
+                }
+              }
+            }
+         */
         URI uri = null;
         try {
             uri = new URI("blip://10.0.2.2:4984/db");
