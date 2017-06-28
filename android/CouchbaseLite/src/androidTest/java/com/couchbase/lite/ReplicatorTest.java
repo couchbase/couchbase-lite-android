@@ -4,11 +4,14 @@ package com.couchbase.lite;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.utils.Config;
+import com.couchbase.lite.utils.IOUtils;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -17,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PULL;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
-import static com.couchbase.litecore.Constants.NetworkError.kC4NetErrUnknownHost;
+import static com.couchbase.litecore.Constants.NetworkError.kC4NetErrTLSCertUntrusted;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -216,17 +219,51 @@ public class ReplicatorTest extends BaseTest {
         run(config, 0, null);
     }
 
-    // TODO: Fails with https://github.com/couchbase/couchbase-lite-core/issues/149
-    // @Test
-    public void testMissingHost() throws InterruptedException {
+    /**
+     * This test assumes an SG is serving SSL at port 4994 with a self-signed cert.
+     */
+    @Test
+    public void testSelfSignedSSLFailure() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        timeout = 200;
-        String uri = String.format(Locale.ENGLISH, "blip://foo.couchbase.com/db");
+        String uri = String.format(Locale.ENGLISH, "blips://%s:4994/beer", this.config.remoteHost());
         ReplicatorConfiguration config = makeConfig(false, true, uri);
-        config.setContinuous(true);
-        run(config, kC4NetErrUnknownHost, "Network");
+        run(config, kC4NetErrTLSCertUntrusted, "Network");
     }
+
+
+    /**
+     * This test assumes an SG is serving SSL at port 4994 with a self-signed cert equal to the one
+     * stored in the test resource SelfSigned.cer. (This is the same cert used in the 1.x unit tests.)
+     */
+    @Test
+    public void testSelfSignedSSLPinned() throws InterruptedException, IOException {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        timeout = 180; // seconds
+
+        InputStream is = getAsset("cert.cer");
+        byte[] cert = IOUtils.toByteArray(is);
+        is.close();
+
+        String uri = String.format(Locale.ENGLISH, "blips://%s:4994/beer", this.config.remoteHost());
+        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        config.setPinnedServerCertificate(cert);
+        run(config, 0, null);
+    }
+
+    // TODO: Fails with https://github.com/couchbase/couchbase-lite-core/issues/149
+    // @Test
+//    public void testMissingHost() throws InterruptedException {
+//        if (!config.replicatorTestsEnabled())
+//            return;
+//        timeout = 200;
+//        String uri = String.format(Locale.ENGLISH, "blip://foo.couchbase.com/db");
+//        ReplicatorConfiguration config = makeConfig(false, true, uri);
+//        config.setContinuous(true);
+//        run(config, kC4NetErrUnknownHost, "Network");
+//    }
 
     /**
      * How to test reaciability.

@@ -10,6 +10,7 @@ import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthOption;
 import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthPassword;
 import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthUserName;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
+import static com.couchbase.litecore.C4Socket.kC4ReplicatorOptionPinnedServerCert;
 
 public class ReplicatorConfiguration {
 
@@ -29,6 +30,7 @@ public class ReplicatorConfiguration {
     private boolean continuous = false;
     private ConflictResolver conflictResolver = null;
     private Authenticator authenticator = null;
+    private byte[] pinnedServerCertificate = null;
     // TODO: pinnedServerCertificate
     // TODO: filter
 
@@ -48,15 +50,16 @@ public class ReplicatorConfiguration {
         this.target = target;
     }
 
-    private ReplicatorConfiguration(Database database, Object target, ReplicatorType replicatorType,
-                                    boolean continuous, ConflictResolver conflictResolver,
-                                    Authenticator authenticator) {
+    public ReplicatorConfiguration(Database database, Object target, ReplicatorType replicatorType,
+                                   boolean continuous, ConflictResolver conflictResolver,
+                                   Authenticator authenticator, byte[] pinnedServerCertificate) {
         this.database = database;
         this.target = target;
         this.replicatorType = replicatorType;
         this.continuous = continuous;
         this.conflictResolver = conflictResolver;
         this.authenticator = authenticator;
+        this.pinnedServerCertificate = pinnedServerCertificate;
     }
 
     //---------------------------------------------
@@ -103,12 +106,20 @@ public class ReplicatorConfiguration {
         this.authenticator = authenticator;
     }
 
+    public byte[] getPinnedServerCertificate() {
+        return pinnedServerCertificate;
+    }
+
+    public void setPinnedServerCertificate(byte[] pinnedServerCertificate) {
+        this.pinnedServerCertificate = pinnedServerCertificate;
+    }
+
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
     public ReplicatorConfiguration copy() {
         return new ReplicatorConfiguration(database, target, replicatorType, continuous,
-                conflictResolver, authenticator);
+                conflictResolver, authenticator, pinnedServerCertificate);
     }
 
     //---------------------------------------------
@@ -129,8 +140,9 @@ public class ReplicatorConfiguration {
                 authenticator.authenticate(options);
         }
 
-        // TODO:
         // Add the pinned certificate if any:
+        if (pinnedServerCertificate != null)
+            options.put(kC4ReplicatorOptionPinnedServerCert, pinnedServerCertificate);
 
         return options;
     }
