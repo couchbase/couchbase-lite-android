@@ -4,19 +4,63 @@ import com.couchbase.lite.internal.support.URIUtils;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthOption;
-import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthPassword;
-import static com.couchbase.lite.Authenticator.kCBLReplicatorAuthUserName;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
 
 public class ReplicatorConfiguration {
+
+    // Replicator option dictionary keys:
+    static final String kC4ReplicatorOptionExtraHeaders = "cookies";  // Extra HTTP headers; string[]
+    static final String kC4ReplicatorOptionCookies = "cookies";  // HTTP Cookie header value; string
+    static final String kCBLReplicatorAuthOption = "auth";       // Auth settings; Dict
+    static final String kC4ReplicatorOptionPinnedServerCert = "pinnedCert";  // Cert or public key [data]
+    static final String kC4ReplicatorOptionChannels = "channels";// SG channel names; string[]
+    static final String kC4ReplicatorOptionFilter = "filter";   // Filter name; string
+    static final String kC4ReplicatorOptionFilterParams = "filterParams";  // Filter params; Dict[string]
+    static final String kC4ReplicatorOptionSkipDeleted = "skipDeleted"; // Don't push/pull tombstones; bool
+
+    // Auth dictionary keys:
+    static final String kC4ReplicatorAuthType = "type"; // Auth property; string
+    static final String kCBLReplicatorAuthUserName = "username"; // Auth property; string
+    static final String kCBLReplicatorAuthPassword = "password"; // Auth property; string
+
+    // auth.type values:
+    static final String kC4AuthTypeBasic = "Basic"; // HTTP Basic (the default)
+    static final String kC4AuthTypeSession = "Session"; // SG session cookie
+    static final String kC4AuthTypeOpenIDConnect = "OpenID Connect";
+    static final String kC4AuthTypeFacebook = "Facebook";
+    static final String kC4AuthTypeClientCert = "Client Cert";
 
     public enum ReplicatorType {
         PUSH_AND_PULL,
         PUSH,
         PULL
+    }
+
+    public class Filter {
+        private List<String> channels = null;
+        private List<String> documentIDs = null;
+
+        /*package*/ Filter() {
+        }
+
+        public List<String> getChannels() {
+            return channels;
+        }
+
+        /*package*/ void setChannels(List<String> channels) {
+            this.channels = channels;
+        }
+
+        public List<String> getDocumentIDs() {
+            return documentIDs;
+        }
+
+        /*package*/ void setDocumentIDs(List<String> documentIDs) {
+            this.documentIDs = documentIDs;
+        }
     }
 
     //---------------------------------------------
@@ -29,8 +73,8 @@ public class ReplicatorConfiguration {
     private boolean continuous = false;
     private ConflictResolver conflictResolver = null;
     private Authenticator authenticator = null;
+    private Filter filter = null;
     // TODO: pinnedServerCertificate
-    // TODO: filter
 
     //---------------------------------------------
     // Constructors
@@ -40,23 +84,26 @@ public class ReplicatorConfiguration {
         this.replicatorType = PUSH_AND_PULL;
         this.database = database;
         this.target = target;
+        this.filter = new Filter();
     }
 
     public ReplicatorConfiguration(Database database, URI target) {
         this.replicatorType = PUSH_AND_PULL;
         this.database = database;
         this.target = target;
+        this.filter = new Filter();
     }
 
-    private ReplicatorConfiguration(Database database, Object target, ReplicatorType replicatorType,
-                                    boolean continuous, ConflictResolver conflictResolver,
-                                    Authenticator authenticator) {
+    public ReplicatorConfiguration(Database database, Object target, ReplicatorType replicatorType,
+                                   boolean continuous, ConflictResolver conflictResolver,
+                                   Authenticator authenticator, Filter filter) {
         this.database = database;
         this.target = target;
         this.replicatorType = replicatorType;
         this.continuous = continuous;
         this.conflictResolver = conflictResolver;
         this.authenticator = authenticator;
+        this.filter = filter;
     }
 
     //---------------------------------------------
@@ -103,12 +150,26 @@ public class ReplicatorConfiguration {
         this.authenticator = authenticator;
     }
 
+    public Filter getFilter() {
+        return filter;
+    }
+
+    // TODO:
+    public void setChannels(List<String> channels) {
+        this.filter.setChannels(channels);
+    }
+
+    // TODO:
+    public void setDocumentIDs(List<String> documentIDs) {
+        this.filter.setDocumentIDs(documentIDs);
+    }
+
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
     public ReplicatorConfiguration copy() {
         return new ReplicatorConfiguration(database, target, replicatorType, continuous,
-                conflictResolver, authenticator);
+                conflictResolver, authenticator, filter);
     }
 
     //---------------------------------------------
@@ -128,6 +189,14 @@ public class ReplicatorConfiguration {
             if (authenticator != null)
                 authenticator.authenticate(options);
         }
+
+        // doc_ids
+        if (filter.getDocumentIDs() != null && filter.getDocumentIDs().size() > 0)
+            options.put("doc_ids", filter.getDocumentIDs());
+
+        // channels
+        if (filter.getDocumentIDs() != null && filter.getDocumentIDs().size() > 0)
+            options.put(kC4ReplicatorOptionChannels, filter.getChannels());
 
         // TODO:
         // Add the pinned certificate if any:
