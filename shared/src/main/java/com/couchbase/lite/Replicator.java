@@ -30,6 +30,8 @@ import static com.couchbase.litecore.C4ReplicatorMode.kC4OneShot;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Connecting;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Offline;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
+import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
 import static java.util.Collections.synchronizedSet;
 
 public class Replicator implements NetworkReachabilityListener {
@@ -340,7 +342,7 @@ public class Replicator implements NetworkReachabilityListener {
         else {
             otherDB = config.getTargetDatabase().getC4Database();
         }
-        
+
         // Encode the options:
         Map<String, Object> options = config.effectiveOptions();
         byte[] optionsFleece = null;
@@ -376,9 +378,16 @@ public class Replicator implements NetworkReachabilityListener {
             }
 
             @Override
-            public void documentError(C4Replicator repl, boolean pushing, String docID, C4Error error, boolean trans, Object context) {
-                // TODO:
-                Log.i(TAG, "C4ReplicatorListener.documentError() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
+            public void documentError(C4Replicator repl, final boolean pushing, final String docID, final C4Error error, final boolean trans, Object context) {
+                final Replicator replicator = (Replicator) context;
+                if (repl == replicator.c4repl) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            replicator.documentError(pushing, docID, error, trans);
+                        }
+                    });
+                }
             }
         };
 
@@ -398,6 +407,22 @@ public class Replicator implements NetworkReachabilityListener {
 
         // Post an initial notification:
         c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
+    }
+
+    private void documentError(boolean pushing, String docID, C4Error error, boolean trans) {
+        if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
+            // Conflict pulling a document -- the revision was added but app needs to resolve it:
+            Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
+            try {
+                this.config.getDatabase().resolveConflictInDocument(docID);
+            } catch (CouchbaseLiteException ex) {
+                Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
+                // TODO: Should pass error along to listener
+            }
+        } else {
+            Log.i(TAG, "C4ReplicatorListener.documentError() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
+            // TODO: Should pass error along to listener
+        }
     }
 
     /**

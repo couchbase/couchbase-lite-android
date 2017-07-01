@@ -34,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBusy;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -47,6 +48,7 @@ public class BaseTest {
     protected Context context;
     protected File dir;
     protected Database db = null;
+    protected ConflictResolver conflictResolver = null;
 
     @Before
     public void setUp() throws Exception {
@@ -69,14 +71,35 @@ public class BaseTest {
             db.close();
             db = null;
         }
-        if (Database.exists(kDatabaseName, dir))
-            Database.delete(kDatabaseName, dir);
+
+        // database exist, delete it
+        if (Database.exists(kDatabaseName, dir)) {
+            // sometimes, db is still in used, wait for a while. Maximum 3 sec
+            for (int i = 0; i < 10; i++) {
+                try {
+                    Database.delete(kDatabaseName, dir);
+                    break;
+                } catch (CouchbaseLiteException ex) {
+                    if (ex.getCode() == kC4ErrorBusy) {
+                        try {
+                            Thread.sleep(300);
+                        } catch (Exception e) {
+                        }
+                    } else {
+                        throw ex;
+                    }
+                }
+            }
+        }
+
         FileUtils.cleanDirectory(dir);
     }
 
     protected Database open(String name){
         DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
+        if (this.conflictResolver != null)
+            options.setConflictResolver(this.conflictResolver);
         return new Database(name, options);
     }
 
