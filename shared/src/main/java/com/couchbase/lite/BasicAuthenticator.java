@@ -3,6 +3,10 @@ package com.couchbase.lite;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthOption;
+import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthPassword;
+import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthUserName;
+
 /**
  * The BasicAuthenticator class is an authenticator that will authenticate using HTTP Basic
  * auth with the given username and password. This should only be used over an SSL/TLS connection,

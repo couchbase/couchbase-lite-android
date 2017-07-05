@@ -6,6 +6,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
+import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionCookies;
+
 /**
  * SessionAuthenticator class is an authenticator that will authenticate by using the sessin ID of
  * the session created by a Sync Gateway

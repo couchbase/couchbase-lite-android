@@ -437,8 +437,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
                 if (e.domain != LiteCoreDomain || e.code != kC4ErrorConflict)
                     throw LiteCoreBridge.convertException(e);
             }
-            if (newDoc == null) {
 
+            if (newDoc == null) {
                 // There's been a conflict; first merge with the new saved revision:
                 merge(resolver, deletion);
 
@@ -460,7 +460,9 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             try {
                 getDatabase().endTransaction(commit);
             } catch (CouchbaseLiteException e) {
-                newDoc.free();
+                // NOTE: newDoc could be null if initial save() throws Exception.
+                if (newDoc != null)
+                    newDoc.free();
                 throw e;
             }
         }
