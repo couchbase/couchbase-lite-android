@@ -1,6 +1,8 @@
 package com.couchbase.lite;
 
 
+import com.couchbase.litecore.LiteCoreException;
+
 /*package*/ class CBLC4Doc {
     private com.couchbase.litecore.Document rawDoc;
 
@@ -35,5 +37,23 @@ package com.couchbase.lite;
             rawDoc.free();
             rawDoc = null;
         }
+    }
+
+    // --- Following is Java only methods
+
+    /*package*/String getSelectedRevID() {
+        return rawDoc.getSelectedRevID();
+    }
+
+    /*package*/ byte[] getSelectedBody() throws LiteCoreException {
+        return rawDoc.getSelectedBody();
+    }
+
+    /*package*/ long getSelectedSequence() {
+        return rawDoc.getSelectedSequence();
+    }
+
+    /*package*/ long getSelectedRevFlags() {
+        return rawDoc.getSelectedRevFlags();
     }
 }

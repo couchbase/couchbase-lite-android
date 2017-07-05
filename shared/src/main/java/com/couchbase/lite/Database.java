@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorNotFound;
 import static java.util.Collections.synchronizedSet;
 
@@ -553,6 +554,76 @@ public final class Database {
 
     /* package */ Set<Replicator> getActiveReplications() {
         return activeReplications;
+    }
+
+    //////// RESOLVING REPLICATED CONFLICTS:
+
+    /*package*/ boolean resolveConflictInDocument(String docID, ConflictResolver resolver) throws CouchbaseLiteException {
+        boolean commit = false;
+        beginTransaction();
+        try {
+            ReadOnlyDocument doc = new ReadOnlyDocument(this, docID, true);
+            if (doc == null)
+                return false;
+
+            // Read the conflicting remote revision:
+            ReadOnlyDocument otherDoc = new ReadOnlyDocument(this, docID, true);
+            if (otherDoc == null || !otherDoc.selectConflictingRevision())
+                return false;
+
+            // Read the common ancestor revision (if it's available):
+            ReadOnlyDocument baseDoc = new ReadOnlyDocument(this, docID, true);
+            if (!baseDoc.selectCommonAncestor(doc, otherDoc) || baseDoc.getData() == null)
+                baseDoc = null;
+
+            // Call the conflict resolver:
+            ReadOnlyDocument resolved;
+            if (otherDoc.isDeleted()) {
+                resolved = doc;
+            } else if (doc.isDeleted()) {
+                resolved = otherDoc;
+            } else {
+                if (resolver == null)
+                    resolver = doc.effectiveConflictResolver();
+                Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
+                Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)", docID, resolver.getClass().getSimpleName(), doc.getRevID(), otherDoc.getRevID(), baseDoc.getRevID());
+                resolved = resolver.resolve(conflict);
+                if (resolved == null)
+                    throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
+            }
+
+            // Figure out what revision to delete and what if anything to add:
+            String winningRevID;
+            String losingRevID;
+            byte[] mergedBody = null;
+            if (resolved == otherDoc) {
+                winningRevID = otherDoc.getRevID();
+                losingRevID = doc.getRevID();
+            } else {
+                winningRevID = doc.getRevID();
+                losingRevID = otherDoc.getRevID();
+                if (resolved != doc) {
+                    resolved.setDatabase(this);
+                    mergedBody = resolved.encode();
+                    if (mergedBody == null)
+                        return false;
+                }
+            }
+
+            // Tell LiteCore to do the resolution:
+            try {
+                com.couchbase.litecore.Document rawDoc = doc.getC4doc().getRawDoc();
+                rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody);
+                rawDoc.save(0);
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
+
+            commit = true;
+        } finally {
+            endTransaction(commit);
+        }
+        return commit;
     }
 
     //---------------------------------------------

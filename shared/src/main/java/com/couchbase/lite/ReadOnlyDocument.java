@@ -1,14 +1,24 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.litecore.Constants;
+import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.litecore.fleece.FLDict;
+import com.couchbase.litecore.fleece.FLValue;
+
+import java.util.Arrays;
 import java.util.Locale;
 
 /**
  * Readonly version of the Document.
  */
 public class ReadOnlyDocument extends ReadOnlyDictionary {
+    private static final String TAG = Log.DATABASE;
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    private Database database;
     private String id;
     private CBLC4Doc c4doc;
 
@@ -16,12 +26,27 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     // Constructors
     //---------------------------------------------
 
-    /* package */ ReadOnlyDocument(String id,
+    /* package */ ReadOnlyDocument(Database database,
+                                   String id,
                                    CBLC4Doc c4doc,
                                    CBLFLDict data) {
         super(data);
+        this.database = database;
         this.id = id;
-        this.c4doc = c4doc;
+        setC4Doc(c4doc);
+    }
+
+    /* package */ ReadOnlyDocument(Database database,
+                                   String id,
+                                   boolean mustExist)
+            throws CouchbaseLiteException {
+        this(database, id, null, null);
+
+        // NOTE: readC4Doc should not return null instead of throwing CouchbaseLiteException.
+        com.couchbase.litecore.Document rawDoc = readC4Doc(mustExist);
+
+        // NOTE: c4doc should not be null.
+        setC4Doc(new CBLC4Doc(rawDoc));
     }
 
     //---------------------------------------------
@@ -47,7 +72,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
      * @return the sequence number of the document in the database.
      */
     public long getSequence() {
-        return c4doc != null ? c4doc.getSequence() : 0;
+        return c4doc != null ? c4doc.getSelectedSequence() : 0;
     }
 
     /**
@@ -68,9 +93,40 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     // protected level access
     //---------------------------------------------
 
+    // Sets c4doc and updates my root dictionary
+    protected void setC4Doc(CBLC4Doc c4doc) throws CouchbaseLiteException {
+        this.c4doc = c4doc;
+
+        if (c4doc != null) {
+            FLDict root = null;
+            byte[] body = null;
+            try {
+                if (!c4doc.getRawDoc().deleted())
+                    body = c4doc.getRawDoc().getSelectedBody();
+            } catch (LiteCoreException e) {
+                // in case body is empty, deleted is thrown.
+                if (e.code != Constants.LiteCoreError.kC4ErrorDeleted)
+                    throw LiteCoreBridge.convertException(e);
+            }
+            if (body != null && body.length > 0)
+                root = FLValue.fromData(body).asFLDict();
+            setData(new CBLFLDict(root, c4doc, database));
+        } else {
+            setData(null);
+        }
+    }
+
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    /*package*/  Database getDatabase() {
+        return database;
+    }
+
+    /*package*/ void setDatabase(Database database) {
+        this.database = database;
+    }
 
     /**
      * Return whether the document exists in the database.
@@ -81,23 +137,16 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         return c4doc != null ? c4doc.getRawDoc().exists() : false;
     }
 
+    // Document overrides this
     /* package */ long generation() {
-        return generationFromRevID(c4doc.getRevID());
-    }
-
-    /*package*/ CBLC4Doc getC4doc() {
-        return c4doc;
-    }
-
-    /*package*/  void setC4doc(CBLC4Doc c4doc) {
-        this.c4doc = c4doc;
+        // TODO: c4rev_getGeneration
+        return generationFromRevID(getRevID());
     }
 
     /**
      * TODO: This code is from v1.x. Better to replace with c4rev_getGeneration().
      */
-    /* package */
-    static long generationFromRevID(String revID) {
+     /* package */ long generationFromRevID(String revID) {
         long generation = 0;
         long length = Math.min(revID == null ? 0 : revID.length(), 9);
         for (int i = 0; i < length; ++i) {
@@ -112,7 +161,56 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         return 0;
     }
 
-    //---------------------------------------------
-    // Private (in class only)
-    //---------------------------------------------
+    /*package*/ CBLC4Doc getC4doc() {
+        return c4doc;
+    }
+
+    // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
+    /*package*/ com.couchbase.litecore.Document readC4Doc(boolean mustExist) throws CouchbaseLiteException, IllegalStateException {
+        try {
+            return database.getC4Database().getDocument(getId(), mustExist);
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+    /*package*/ ConflictResolver effectiveConflictResolver() {
+        return getDatabase().getConflictResolver() != null ?
+                getDatabase().getConflictResolver() :
+                new DefaultConflictResolver();
+    }
+
+    /* package */ boolean selectConflictingRevision() {
+        try {
+            if (!c4doc.getRawDoc().selectNextLeaf(false, true))
+                return false;
+            setC4Doc(c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
+        } catch (LiteCoreException e) {
+            Log.e(TAG, "Failed to selectNextLeaf: doc -> " + c4doc, e);
+            return false;
+        }
+        return true;
+    }
+
+    /* package */ boolean selectCommonAncestor(ReadOnlyDocument doc1, ReadOnlyDocument doc2) {
+        if (!c4doc.getRawDoc().selectCommonAncestorRevision(doc1.getRevID(), doc2.getRevID()))
+            return false;
+        setC4Doc(c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
+        return true;
+    }
+
+    /* package */ String getRevID() {
+        return c4doc != null ? c4doc.getSelectedRevID() : null;
+    }
+
+    // Document overrides this
+    /*package*/ byte[] encode() {
+        byte[] body = new byte[0];
+        try {
+            body = c4doc.getRawDoc().getSelectedBody();
+        } catch (LiteCoreException e) {
+            Log.e(TAG, "Failed to get getSelectedBody()", e);
+        }
+        return body != null ? Arrays.copyOf(body, body.length) : new byte[0];
+    }
 }

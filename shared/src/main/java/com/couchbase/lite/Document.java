@@ -16,9 +16,7 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.litecore.Constants;
 import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.fleece.FLDict;
 import com.couchbase.litecore.fleece.FLEncoder;
-import com.couchbase.litecore.fleece.FLValue;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -37,7 +35,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Database database;
     private Dictionary dictionary;
 
     //---------------------------------------------
@@ -62,8 +59,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      * @param id the document ID.
      */
     public Document(String id) {
-        super(id != null ? id : CreateUUID(), null, null);
-        this.dictionary = new Dictionary();
+        this(null, id != null ? id : CreateUUID(), null, null);
     }
 
     /**
@@ -97,10 +93,13 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         set(dictionary);
     }
 
+    /*package*/Document(Database database, String documentID, CBLC4Doc c4doc, CBLFLDict data) {
+        super(database, documentID, c4doc, data);
+        this.dictionary = new Dictionary();
+    }
+
     /*package*/ Document(Database database, String documentID, boolean mustExist) throws CouchbaseLiteException {
-        super(documentID, null, null);
-        this.database = database;
-        loadDoc(mustExist);
+        super(database, documentID, mustExist);
     }
 
     //---------------------------------------------
@@ -346,18 +345,20 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return dictionary.contains(key);
     }
 
+    //---------------------------------------------
+    // Protected level access
+    //---------------------------------------------
+    // Sets c4doc and updates my root dictionary
+    @Override
+    protected void setC4Doc(CBLC4Doc c4doc) throws CouchbaseLiteException {
+        super.setC4Doc(c4doc);
+        // Update delegate dictionary:
+        this.dictionary = new Dictionary(getData());
+    }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
-    /*package*/  Database getDatabase() {
-        return database;
-    }
-
-    /*package*/ void setDatabase(Database database) {
-        this.database = database;
-    }
 
     /*package*/ void save() throws CouchbaseLiteException {
         save(effectiveConflictResolver(), false);
@@ -372,7 +373,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
 
         boolean commit = false;
-        database.beginTransaction();
+        getDatabase().beginTransaction();
         try {
             // revID: null, all revisions are purged.
             if (getC4doc().getRawDoc().purgeRevision(null) >= 0) {
@@ -382,7 +383,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         } finally {
-            database.endTransaction(commit);
+            getDatabase().endTransaction(commit);
         }
 
         // reset
@@ -394,52 +395,29 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         return dictionary.isEmpty();
     }
 
+    @Override
+    /* package */ long generation() {
+        return super.generation() + (isChanged() ? 1 : 0);
+    }
+
+    // #pragma mark - FLEECE ENCODING
+
+    @Override
+    /*package*/ byte[] encode() {
+        FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
+        try {
+            dictionary.fleeceEncode(encoder, getDatabase());
+            return encoder.finish();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertException(e);
+        } finally {
+            encoder.free();
+        }
+    }
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
-    // // (Re)loads the document from the db, updating _c4doc and other state.
-    private void loadDoc(boolean mustExist) throws CouchbaseLiteException {
-        com.couchbase.litecore.Document rawDoc = readC4Doc(mustExist);
-        if (rawDoc == null)
-            return;
-        // NOTE: c4doc should not be null.
-        setC4Doc(new CBLC4Doc(rawDoc));
-
-    }
-
-    // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
-    private com.couchbase.litecore.Document readC4Doc(boolean mustExist) throws CouchbaseLiteException, IllegalStateException {
-        try {
-            return database.getC4Database().getDocument(getId(), mustExist);
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
-        }
-    }
-
-
-    // Sets c4doc and updates my root dictionary
-    private void setC4Doc(CBLC4Doc c4doc) throws CouchbaseLiteException {
-        super.setC4doc(c4doc);
-        if (c4doc != null) {
-            FLDict root = null;
-            byte[] body = null;
-            try {
-                if (!c4doc.getRawDoc().deleted())
-                    body = c4doc.getRawDoc().getSelectedBody();
-            } catch (LiteCoreException e) {
-                // in case body is empty, deleted is thrown.
-                if (e.code != Constants.LiteCoreError.kC4ErrorDeleted)
-                    throw LiteCoreBridge.convertException(e);
-            }
-            if (body != null && body.length > 0)
-                root = FLValue.fromData(body).asFLDict();
-            setData(new CBLFLDict(root, c4doc, database));
-        } else
-            setData(null);
-
-        this.dictionary = new Dictionary(getData());
-    }
 
     private void save(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
         if (deletion && !exists())
@@ -449,7 +427,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 
         // Begin a database transaction:
         boolean commit = false;
-        database.beginTransaction();
+        getDatabase().beginTransaction();
         try {
             // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
             try {
@@ -480,7 +458,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         } finally {
             // Save succeeded; now commit the transaction: Otherwise; abort the transaction
             try {
-                database.endTransaction(commit);
+                getDatabase().endTransaction(commit);
             } catch (CouchbaseLiteException e) {
                 newDoc.free();
                 throw e;
@@ -491,46 +469,28 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         setC4Doc(new CBLC4Doc(newDoc));
     }
 
+    // "Pulls" from the database, merging the latest revision into the in-memory properties,
+    //  without saving. */
     private void merge(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
-        com.couchbase.litecore.Document rawDoc = database.read(getId(), true);
+        if (resolver == null)
+            throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
 
-        FLDict curRoot = null;
-        try {
-            byte[] currentData = rawDoc.getSelectedBody();
-            if (currentData.length > 0)
-                curRoot = FLValue.fromData(currentData).asFLDict();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
-        }
-
-        CBLC4Doc curC4doc = new CBLC4Doc(rawDoc);
-        CBLFLDict curDict = new CBLFLDict(curRoot, curC4doc, database);
-        ReadOnlyDocument current = new ReadOnlyDocument(getId(), curC4doc, curDict);
+        ReadOnlyDocument current = new ReadOnlyDocument(getDatabase(), getId(), true);
+        CBLC4Doc curC4doc = current.getC4doc();
 
         // Resolve conflict:
         ReadOnlyDocument resolved;
         if (deletion) {
             // Deletion always loses a conflict:
             resolved = current;
-        } else if (resolver != null) {
+        } else {
             // Call the custom conflict resolver
-            ReadOnlyDocument base = new ReadOnlyDocument(getId(), super.getC4doc(), super.getData());
-            Conflict conflict = new Conflict(this, current, base, Conflict.OperationType.kCBLDatabaseWrite);
+            ReadOnlyDocument base = new ReadOnlyDocument(getDatabase(), getId(), super.getC4doc(), super.getData());
+            Conflict conflict = new Conflict(this, current, base);
             resolved = resolver.resolve(conflict);
             if (resolved == null) {
-                rawDoc.free();
                 throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
             }
-        } else {
-            // Default resolution algorithm is "most active wins", i.e. higher generation number.
-            // TODO: Once conflict resolvers can access the document generation, move this logic
-            //       into a default ConflictResolver.
-            long myGeneraton = generation() + 1;
-            long theirGeneration = generationFromRevID(curC4doc.getRevID());
-            if (myGeneraton >= theirGeneration)
-                resolved = this;
-            else
-                resolved = current;
         }
 
         // Now update my state to the current C4Document and the merged/resolved properties:
@@ -547,49 +507,31 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
-    private com.couchbase.litecore.Document save(boolean deletion) throws LiteCoreException, IllegalStateException {
+    private com.couchbase.litecore.Document save(boolean deletion)
+            throws LiteCoreException, IllegalStateException {
 
-        //String docID = this.id;
-        byte[] body = null;
+        // history
         List<String> revIDs = new ArrayList<>();
         if (getC4doc() != null && getC4doc().getRevID() != null)
             revIDs.add(getC4doc().getRevID());
         String[] history = revIDs.toArray(new String[revIDs.size()]);
-        int flags = 0;
+
+        byte[] body = null;
+        int revFlags = 0;
         if (deletion)
-            flags = Constants.C4RevisionFlags.kRevDeleted;
+            revFlags = Constants.C4RevisionFlags.kRevDeleted;
         if (containsBlob(this))
-            flags |= kRevHasAttachments;
+            revFlags |= kRevHasAttachments;
         if (!deletion && !isEmpty()) {
             // Encode properties to Fleece data:
-            FLEncoder encoder = database.getC4Database().createFleeceEncoder();
-            try {
-                body = encode(encoder);
-            } finally {
-                encoder.free();
-            }
-
+            body = encode();
             if (body == null)
                 return null;
         }
 
+        // TODO: Refactor: use c4doc_update or c4doc_create
         // Save to database:
-        return database.getC4Database().put(getId(), body, false, false, history, flags, true, 0);
-    }
-
-    // #pragma mark - FLEECE ENCODING
-
-    private byte[] encode(FLEncoder encoder) throws CouchbaseLiteException {
-        dictionary.fleeceEncode(encoder, database);
-        try {
-            return encoder.finish();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
-        }
-    }
-
-    private ConflictResolver effectiveConflictResolver() {
-        return database != null ? database.getConflictResolver() : null;
+        return getDatabase().getC4Database().put(getId(), body, false, false, history, revFlags, true, 0);
     }
 
     private boolean isChanged() {

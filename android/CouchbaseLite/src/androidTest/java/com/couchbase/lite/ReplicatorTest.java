@@ -13,7 +13,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -85,6 +87,7 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
 
+        conflictResolver = new ConflictTest.MergeThenTheirsWins();
         super.setUp();
 
         timeout = 5; // seconds
@@ -145,6 +148,41 @@ public class ReplicatorTest extends BaseTest {
         assertEquals(2, db.getCount());
         doc2 = db.getDocument("doc2");
         assertEquals("Cat", doc2.getString("name"));
+    }
+
+    @Test
+    public void testPullConflict() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        Document doc1 = new Document("doc");
+        doc1.set("species", "Tiger");
+        save(doc1);
+        assertEquals(1, db.getCount());
+        doc1.set("name", "Hobbes");
+        save(doc1);
+        assertEquals(1, db.getCount());
+        Log.e(TAG, "doc1 -> %s", doc1.getC4doc().getRevID());
+
+        Document doc2 = new Document("doc");
+        doc2.set("species", "Tiger");
+        otherDB.save(doc2);
+        assertEquals(1, otherDB.getCount());
+        doc2.set("pattern", "striped");
+        otherDB.save(doc2);
+        assertEquals(1, otherDB.getCount());
+        Log.e(TAG, "doc2 -> %s", doc2.getC4doc().getRevID());
+
+        ReplicatorConfiguration config = makeConfig(false, true);
+        run(config, 0, null);
+        assertEquals(1, db.getCount());
+
+        doc1 = db.getDocument("doc");
+        Map<String, Object> expectedMap = new HashMap<>();
+        expectedMap.put("species", "Tiger");
+        expectedMap.put("name", "Hobbes");
+        expectedMap.put("pattern", "striped");
+        assertEquals(expectedMap, doc1.toMap());
     }
 
     @Test
