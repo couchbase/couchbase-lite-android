@@ -31,8 +31,6 @@ public class ReplicatorConfiguration {
     private ConflictResolver conflictResolver = null;
     private Authenticator authenticator = null;
     private byte[] pinnedServerCertificate = null;
-    // TODO: pinnedServerCertificate
-    // TODO: filter
 
     //---------------------------------------------
     // Constructors
@@ -90,6 +88,10 @@ public class ReplicatorConfiguration {
         this.continuous = continuous;
     }
 
+    /**
+     * The conflict resolver for this replicator.
+     * The default value is nil, which means the local database's conflict resolver will be used.
+     */
     public ConflictResolver getConflictResolver() {
         return conflictResolver;
     }

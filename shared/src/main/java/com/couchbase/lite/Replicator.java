@@ -414,7 +414,8 @@ public class Replicator implements NetworkReachabilityListener {
             // Conflict pulling a document -- the revision was added but app needs to resolve it:
             Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
             try {
-                this.config.getDatabase().resolveConflictInDocument(docID);
+                this.config.getDatabase().resolveConflictInDocument(docID,
+                        config.getConflictResolver());
             } catch (CouchbaseLiteException ex) {
                 Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
                 // TODO: Should pass error along to listener

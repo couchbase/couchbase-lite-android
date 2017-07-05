@@ -558,7 +558,7 @@ public final class Database {
 
     //////// RESOLVING REPLICATED CONFLICTS:
 
-    /*package*/ boolean resolveConflictInDocument(String docID) throws CouchbaseLiteException {
+    /*package*/ boolean resolveConflictInDocument(String docID, ConflictResolver resolver) throws CouchbaseLiteException {
         boolean commit = false;
         beginTransaction();
         try {
@@ -583,7 +583,8 @@ public final class Database {
             } else if (doc.isDeleted()) {
                 resolved = otherDoc;
             } else {
-                ConflictResolver resolver = doc.effectiveConflictResolver();
+                if (resolver == null)
+                    resolver = doc.effectiveConflictResolver();
                 Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
                 Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)", docID, resolver.getClass().getSimpleName(), doc.getRevID(), otherDoc.getRevID(), baseDoc.getRevID());
                 resolved = resolver.resolve(conflict);
