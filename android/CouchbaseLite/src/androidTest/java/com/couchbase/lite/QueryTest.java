@@ -409,12 +409,39 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testJoin() throws Exception {
+        loadNumbers(100);
+
+        final Document doc1 = new Document("joinme");
+        doc1.set("theone", 42);
+        save(doc1);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+        Expression mainPropExpr = Expression.property("main", "number1");
+        Expression secondaryExpr = Expression.property("secondary", "theone");
+        Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
+        Join join = Join.join(secondaryDS).on(joinExpr);
+        Query q = Query.select().from(mainDS).join(join);
+
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(long n, QueryRow row) throws Exception {
+                Document doc = row.getDocument();
+                assertEquals(42, doc.getInt("number1"));
+            }
+        });
+        assertEquals(1, numRows);
+    }
+
+    @Test
     public void testLiveQuery() throws Exception {
         loadNumbers(100);
 
         LiveQuery query = Query
                 .select()
-                .from(new DataSource(db))
+                .from(DataSource.database(db))
                 .where(Expression.property("number1").lessThan(10))
                 .orderBy(OrderBy.property("number1").ascending())
                 .toLive();
@@ -469,16 +496,18 @@ public class QueryTest extends BaseTest {
     public void testLiveQueryNoUpdate() throws Exception {
         _testLiveQueryNoUpdate(false);
     }
+
     @Test
     public void testLiveQueryNoUpdateConsumeAll() throws Exception {
         _testLiveQueryNoUpdate(true);
     }
+
     private void _testLiveQueryNoUpdate(final boolean consumeAll) throws Exception {
         loadNumbers(100);
 
         LiveQuery query = Query
                 .select()
-                .from(new DataSource(db))
+                .from(DataSource.database(db))
                 .where(Expression.property("number1").lessThan(10))
                 .orderBy(OrderBy.property("number1").ascending())
                 .toLive();
@@ -487,7 +516,7 @@ public class QueryTest extends BaseTest {
         LiveQueryChangeListener listener = new LiveQueryChangeListener() {
             @Override
             public void changed(LiveQueryChange change) {
-                if(consumeAll) {
+                if (consumeAll) {
                     ResultSet rs = change.getRows();
                     while (rs.next() != null) ;
                 }

@@ -32,6 +32,10 @@ public abstract class Expression {
         return new KeyPathExpression(property);
     }
 
+    public static Expression property(String from, String property) {
+        return new KeyPathExpression(from, property);
+    }
+
     /**
      * Create a negated expression to represent the negated result of the given expression.
      *
@@ -556,9 +560,15 @@ public abstract class Expression {
     }
 
     static class KeyPathExpression extends Expression {
-        private String keyPath;
+        private String from = null;
+        private String keyPath = null;
 
         KeyPathExpression(String keyPath) {
+            this.keyPath = keyPath;
+        }
+
+        KeyPathExpression(String from, String keyPath) {
+            this.from = from;
             this.keyPath = keyPath;
         }
 
@@ -571,8 +581,12 @@ public abstract class Expression {
                 params.add(".");
                 params.add(keyPath.substring(5, keyPath.length() - 1));
                 json.add(params);
-            } else
-                json.add("." + keyPath);
+            } else {
+                if (from != null)
+                    json.add("." + from + "." + keyPath);
+                else
+                    json.add("." + keyPath);
+            }
             return json;
         }
     }
