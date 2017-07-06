@@ -19,10 +19,15 @@ import java.util.Arrays;
 /**
  * A From represents a FROM clause for specifying the data source of the query.
  */
-public class From extends Query implements WhereRouter, OrderByRouter {
+public class From extends Query implements JoinRouter, WhereRouter, OrderByRouter {
     /* package */ From(Query query, DataSource dataSource) {
         copy(query);
         this.setFrom(dataSource);
+    }
+
+    @Override
+    public Join join(Join... join) {
+        return new Join(this, Arrays.asList(join));
     }
 
     /**

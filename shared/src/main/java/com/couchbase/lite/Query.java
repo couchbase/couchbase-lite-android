@@ -23,7 +23,9 @@ import com.couchbase.litecore.LiteCoreException;
 
 import org.json.JSONException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,6 +47,7 @@ public class Query {
     private DataSource from;
     private Expression where;
     private OrderBy orderBy;
+    private Join join;
     private boolean distinct;
 
     //---------------------------------------------
@@ -162,12 +165,12 @@ public class Query {
         this.where = where;
     }
 
-    protected OrderBy getOrderBy() {
-        return orderBy;
-    }
-
     protected void setOrderBy(OrderBy orderBy) {
         this.orderBy = orderBy;
+    }
+
+    protected void setJoin(Join join) {
+        this.join = join;
     }
 
     protected boolean isDistinct() {
@@ -183,6 +186,7 @@ public class Query {
         this.where = query.where;
         this.from = query.from;
         this.orderBy = query.orderBy;
+        this.join = query.join;
         this.distinct = query.distinct;
     }
 
@@ -229,11 +233,27 @@ public class Query {
         if (distinct)
             json.put("DISTINCT", true);
 
+        // Join:
+        List<Object> f = new ArrayList<>();
+        Map<String, Object> as = from.asJSON();
+        if (as.size() > 0)
+            f.add(as);
+
+        // NOTE: this `join` should be collection
+        if (join != null) {
+            for (Join j : join.getJoins())
+                f.add(j.asJSON());
+        }
+
+        if (f.size() > 0)
+            json.put("FROM", f);
+
         if (where != null)
             json.put("WHERE", where.asJSON());
 
         if (orderBy != null)
             json.put("ORDER_BY", orderBy.asJSON());
+
         return json;
     }
 }

@@ -14,37 +14,37 @@
 
 package com.couchbase.lite;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A query data source, used for specifying the source of data for a query.
  */
 public class DataSource {
-    private Object source;
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+    private Object source = null;
+    private String alias = null;
 
-    protected DataSource(Object source) {
-        this.source = source;
-    }
-
-    /**
-     * Create a database as a data source.
-     *
-     * @param database the database used as a source of data for query.
-     * @return {@code DataSource.Database} object.
-     */
-    public static Database database(com.couchbase.lite.Database database) {
-        return new Database(database);
-    }
-
-    /* package */ Object getSource() {
-        return this.source;
-    }
+    //---------------------------------------------
+    // Inner public Class
+    //---------------------------------------------
 
     /**
      * Database as a data source for query.
      */
-    public static class Database extends DataSource {
-        protected Database(com.couchbase.lite.Database source) {
+    public static class As extends DataSource {
+        //---------------------------------------------
+        // Constructors
+        //---------------------------------------------
+        private As(com.couchbase.lite.Database source) {
             super(source);
         }
+
+        //---------------------------------------------
+        // API - public methods
+        //---------------------------------------------
 
         /**
          * Set an alias to the database data source.
@@ -53,8 +53,54 @@ public class DataSource {
          * @return the data source object with the given alias set.
          */
         public DataSource as(String alias) {
-            // TODO: Implement this when JOINS is ready
+            super.alias = alias;
             return this;
         }
+    }
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    private DataSource(Object source) {
+        this.source = source;
+        this.alias = null;
+    }
+
+    //---------------------------------------------
+    // API - public static methods
+    //---------------------------------------------
+
+    /**
+     * Create a database as a data source.
+     *
+     * @param database the database used as a source of data for query.
+     * @return {@code DataSource.Database} object.
+     */
+    public static As database(com.couchbase.lite.Database database) {
+        return new As(database);
+    }
+
+    public static As query(Query query) {
+        //TODO:
+        return null;
+    }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+
+    /* package */ Object getSource() {
+        return this.source;
+    }
+
+    /* package */  String getAlias() {
+        return alias;
+    }
+
+    /* package */ Map<String, Object> asJSON() {
+        Map<String, Object> json = new HashMap<>();
+        if (alias != null)
+            json.put("AS", alias);
+        return json;
     }
 }
