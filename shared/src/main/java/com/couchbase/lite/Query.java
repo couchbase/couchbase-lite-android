@@ -43,12 +43,23 @@ public class Query {
     //---------------------------------------------
     private Database database;
     private C4Query c4query;
-    private Select select;
-    private DataSource from;
-    private Expression where;
-    private OrderBy orderBy;
-    private Join join;
-    private boolean distinct;
+
+    // https://sqlite.org/lang_select.html
+    // SELECT
+    private boolean distinct;                 // DISTINCT
+    private List<SelectResult> selectResults; // result-columns
+    // FROM
+    private DataSource from; // FROM table-or-subquery
+    private Join join;       // FROM join-clause
+    // WHERE
+    private Expression where; // WHERE expr
+    // GROUP BY
+    private GroupBy groupBy; // GROUP BY expr(s)
+    private Having having; // Having expr
+    // ORDER BY
+    private OrderBy orderBy; // ORDER BY ordering-term(s)
+    // LIMIT
+    private Limit limit; // LIMIT expr
 
     //---------------------------------------------
     // Constructor
@@ -60,6 +71,7 @@ public class Query {
     /*package*/ Query(Query query) {
         copy(query);
     }
+
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
@@ -70,8 +82,8 @@ public class Query {
      *
      * @return the Select object.
      */
-    public static Select select() {
-        return new Select(false);
+    public static Select select(SelectResult... results) {
+        return new Select(false, results);
     }
 
     /**
@@ -80,8 +92,8 @@ public class Query {
      *
      * @return the Select object.
      */
-    public static Select selectDistinct() {
-        return new Select(true);
+    public static Select selectDistinct(SelectResult... results) {
+        return new Select(true, results);
     }
 
     /**
@@ -141,66 +153,77 @@ public class Query {
     // Protected level access
     //---------------------------------------------
 
-    protected Select getSelect() {
-        return select;
-    }
-
-    protected void setSelect(Select select) {
-        this.select = select;
-    }
-
-    protected DataSource getFrom() {
-        return from;
-    }
-
-    protected void setFrom(DataSource from) {
-        this.from = from;
-    }
-
-    protected Expression getWhere() {
-        return where;
-    }
-
-    protected void setWhere(Expression where) {
-        this.where = where;
-    }
-
-    protected void setOrderBy(OrderBy orderBy) {
-        this.orderBy = orderBy;
-    }
-
-    protected void setJoin(Join join) {
-        this.join = join;
-    }
-
-    protected boolean isDistinct() {
-        return distinct;
-    }
-
-    protected void setDistinct(boolean distinct) {
-        this.distinct = distinct;
-    }
-
-    protected void copy(Query query) {
-        this.select = query.select;
-        this.where = query.where;
-        this.from = query.from;
-        this.orderBy = query.orderBy;
-        this.join = query.join;
-        this.distinct = query.distinct;
-    }
-
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
-    /* package */ Database getDatabase() {
+    void setSelectResults(List<SelectResult> selectResults) {
+        this.selectResults = selectResults;
+    }
+
+    boolean isDistinct() {
+        return distinct;
+    }
+
+    void setDistinct(boolean distinct) {
+        this.distinct = distinct;
+    }
+
+    DataSource getFrom() {
+        return from;
+    }
+
+    void setFrom(DataSource from) {
+        this.from = from;
+    }
+
+    void setJoin(Join join) {
+        this.join = join;
+    }
+
+    Expression getWhere() {
+        return where;
+    }
+
+    void setWhere(Expression where) {
+        this.where = where;
+    }
+
+    void setGroupBy(GroupBy groupBy) {
+        this.groupBy = groupBy;
+    }
+
+    void setHaving(Having having) {
+        this.having = having;
+    }
+
+    void setOrderBy(OrderBy orderBy) {
+        this.orderBy = orderBy;
+    }
+
+    void setLimit(Limit limit) {
+        this.limit = limit;
+    }
+
+    void copy(Query query) {
+        this.distinct = query.distinct;
+        this.selectResults = query.selectResults;
+        this.from = query.from;
+        this.join = query.join;
+        this.where = query.where;
+        this.groupBy = query.groupBy;
+        this.having = query.having;
+        this.orderBy = query.orderBy;
+        this.limit = query.limit;
+    }
+
+    Database getDatabase() {
         if (database == null)
             database = (Database) from.getSource();
         return database;
     }
 
-    /* package */ C4Query getC4Query() {
+    C4Query getC4Query() {
         return c4query;
     }
 
@@ -211,7 +234,7 @@ public class Query {
     private void check() throws CouchbaseLiteException, IllegalStateException {
         database = (Database) from.getSource();
         String json = encodeAsJSON();
-        Log.v(TAG, "Query encoded as %s", json);
+        Log.e(TAG, "Query encoded as %s", json);
         try {
             c4query = new C4Query(database.getC4Database(), json);
         } catch (LiteCoreException e) {
@@ -230,10 +253,20 @@ public class Query {
 
     private Map<String, Object> asJSON() {
         Map<String, Object> json = new HashMap<String, Object>();
+
+        // DISTINCT:
         if (distinct)
             json.put("DISTINCT", true);
 
-        // Join:
+        // result-columns
+        if (selectResults != null && selectResults.size() > 0) {
+            List<Object> selects = new ArrayList<>();
+            for (SelectResult select : selectResults)
+                selects.add(select.asJSON());
+            json.put("WHAT", selects);
+        }
+
+        // JOIN:
         List<Object> f = new ArrayList<>();
         Map<String, Object> as = from.asJSON();
         if (as.size() > 0)

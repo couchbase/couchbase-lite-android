@@ -19,11 +19,24 @@ import java.util.Arrays;
 /**
  * A Where represents the WHERE clause of the query for filtering the query result.
  */
-public class Where extends Query implements OrderByRouter {
+public class Where extends Query implements GroupByRouter, OrderByRouter, LimitRouter {
     /* package */ Where(Query query, Expression where) {
         copy(query);
         setWhere(where);
     }
+
+    //---------------------------------------------
+    // implementation of GroupByRouter
+    //---------------------------------------------
+
+    @Override
+    public GroupBy groupBy(GroupBy... groupBy) {
+        return null;
+    }
+
+    //---------------------------------------------
+    // implementation of OrderByRouter
+    //---------------------------------------------
 
     /**
      * Create and chain an ORDER BY component for specifying the ORDER BY clause of the query.
@@ -34,5 +47,19 @@ public class Where extends Query implements OrderByRouter {
     @Override
     public OrderBy orderBy(OrderBy... orderBy) {
         return new OrderBy(this, Arrays.asList(orderBy));
+    }
+
+    //---------------------------------------------
+    // implementation of LimitRouter
+    //---------------------------------------------
+
+    @Override
+    public Limit limit(Object limit) {
+        return null;
+    }
+
+    @Override
+    public Limit limit(Object limit, Object offset) {
+        return null;
     }
 }

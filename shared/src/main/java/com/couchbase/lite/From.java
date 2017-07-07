@@ -19,16 +19,23 @@ import java.util.Arrays;
 /**
  * A From represents a FROM clause for specifying the data source of the query.
  */
-public class From extends Query implements JoinRouter, WhereRouter, OrderByRouter {
+public class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
     /* package */ From(Query query, DataSource dataSource) {
         copy(query);
         this.setFrom(dataSource);
     }
 
+    //---------------------------------------------
+    // implementation of JoinRouter
+    //---------------------------------------------
     @Override
     public Join join(Join... join) {
         return new Join(this, Arrays.asList(join));
     }
+
+    //---------------------------------------------
+    // implementation of WhereRouter
+    //---------------------------------------------
 
     /**
      * Create and chain a WHERE component for specifying the WHERE clause of the query.
@@ -41,6 +48,18 @@ public class From extends Query implements JoinRouter, WhereRouter, OrderByRoute
         return new Where(this, expression);
     }
 
+    //---------------------------------------------
+    // implementation of GroupByRouter
+    //---------------------------------------------
+    @Override
+    public GroupBy groupBy(GroupBy... groupBy) {
+        return null;
+    }
+
+    //---------------------------------------------
+    // implementation of OrderByRouter
+    //---------------------------------------------
+
     /**
      * Create and chain an ORDER BY component for specifying the ORDER BY clause of the query.
      *
@@ -50,5 +69,19 @@ public class From extends Query implements JoinRouter, WhereRouter, OrderByRoute
     @Override
     public OrderBy orderBy(OrderBy... orderBy) {
         return new OrderBy(this, Arrays.asList(orderBy));
+    }
+
+    //---------------------------------------------
+    // implementation of LimitRouter
+    //---------------------------------------------
+
+    @Override
+    public Limit limit(Object limit) {
+        return null;
+    }
+
+    @Override
+    public Limit limit(Object limit, Object offset) {
+        return null;
     }
 }

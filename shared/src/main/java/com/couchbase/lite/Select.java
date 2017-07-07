@@ -14,14 +14,22 @@
 
 package com.couchbase.lite;
 
+import java.util.Arrays;
+
 /**
  * Select represents the SELECT clause of the query for specifying the returning properties in each
  * query result row.
  */
 public class Select extends Query implements FromRouter {
-    /* package */ Select(boolean distinct) {
+    /* package */ Select(boolean distinct, SelectResult... selectResults) {
+        super();
         setDistinct(distinct);
+        setSelectResults(Arrays.asList(selectResults));
     }
+
+    //---------------------------------------------
+    // implementation of FromRouter
+    //---------------------------------------------
 
     /**
      * Create and chain a FROM component for specifying the data source of the query.
