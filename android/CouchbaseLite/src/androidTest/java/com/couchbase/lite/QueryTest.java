@@ -504,8 +504,9 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(int n, QueryRow row) throws Exception {
                 String state = (String) row.getObject(0);
-                int count = (int) row.getObject(1);
+                long count = (long) row.getObject(1);
                 String maxZip = (String) row.getObject(2);
+                Log.e(TAG, "state=%s, count=%d, maxZip=%s", state, count, maxZip);
                 if (n - 1 < expectedStates.size()) {
                     assertEquals(expectedStates.get(n - 1), state);
                     assertEquals((int) expectedCounts.get(n - 1), count);
@@ -534,11 +535,11 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(int n, QueryRow row) throws Exception {
                 String state = (String) row.getObject(0);
-                int count = (int) row.getObject(1);
+                long count = (long) row.getObject(1);
                 String maxZip = (String) row.getObject(2);
-                if (n - 1 < expectedStates.size()) {
+                if (n - 1 < expectedStates2.size()) {
                     assertEquals(expectedStates2.get(n - 1), state);
-                    assertEquals((int) expectedCounts2.get(n - 1), count);
+                    assertEquals((long) expectedCounts2.get(n - 1), count);
                     assertEquals(expectedMaxZips2.get(n - 1), maxZip);
                 }
             }

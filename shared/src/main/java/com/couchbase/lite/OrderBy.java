@@ -71,12 +71,12 @@ public class OrderBy extends Query implements LimitRouter {
 
     @Override
     public Limit limit(Object limit) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Limit limit(Object limit, Object offset) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -89,7 +89,7 @@ public class OrderBy extends Query implements LimitRouter {
 
         /* package */ SortOrder(Expression expression) {
             this.expression = expression;
-            this.isAscending = false;
+            this.isAscending = true;
         }
 
         /**

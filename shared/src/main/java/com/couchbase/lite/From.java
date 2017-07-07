@@ -22,7 +22,7 @@ import java.util.Arrays;
 public class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
     /* package */ From(Query query, DataSource dataSource) {
         copy(query);
-        this.setFrom(dataSource);
+        setFrom(dataSource);
     }
 
     //---------------------------------------------
@@ -53,7 +53,7 @@ public class From extends Query implements JoinRouter, WhereRouter, GroupByRoute
     //---------------------------------------------
     @Override
     public GroupBy groupBy(GroupBy... groupBy) {
-        return null;
+        return new GroupBy(this, Arrays.asList(groupBy));
     }
 
     //---------------------------------------------
@@ -77,11 +77,11 @@ public class From extends Query implements JoinRouter, WhereRouter, GroupByRoute
 
     @Override
     public Limit limit(Object limit) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Limit limit(Object limit, Object offset) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 }

@@ -284,6 +284,16 @@ public class Query {
         if (where != null)
             json.put("WHERE", where.asJSON());
 
+        if (groupBy != null) {
+            List<Object> gbList = new ArrayList<>();
+            for (GroupBy gb : groupBy.getGroupBies())
+                gbList.add(gb.asJSON());
+            json.put("GROUP_BY", gbList);
+        }
+
+        if (having != null)
+            json.put("HAVING", having.asJSON());
+
         if (orderBy != null)
             json.put("ORDER_BY", orderBy.asJSON());
 

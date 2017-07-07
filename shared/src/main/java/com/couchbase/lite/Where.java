@@ -31,7 +31,7 @@ public class Where extends Query implements GroupByRouter, OrderByRouter, LimitR
 
     @Override
     public GroupBy groupBy(GroupBy... groupBy) {
-        return null;
+        return new GroupBy(this, Arrays.asList(groupBy));
     }
 
     //---------------------------------------------
@@ -55,11 +55,11 @@ public class Where extends Query implements GroupByRouter, OrderByRouter, LimitR
 
     @Override
     public Limit limit(Object limit) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Limit limit(Object limit, Object offset) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 }
