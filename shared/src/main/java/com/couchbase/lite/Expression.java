@@ -36,6 +36,10 @@ public abstract class Expression {
         return new KeyPathExpression(from, property);
     }
 
+    public static Expression parameter(String name) {
+        return new ParameterExpression(name);
+    }
+
     /**
      * Create a negated expression to represent the negated result of the given expression.
      *
@@ -629,6 +633,21 @@ public abstract class Expression {
             else
                 json.add(operand);
 
+            return json;
+        }
+    }
+
+    static final class ParameterExpression extends Expression {
+        private String name;
+
+        ParameterExpression(String name) {
+            this.name = name;
+        }
+
+        @Override
+        protected Object asJSON() {
+            List<Object> json = new ArrayList<>();
+            json.add("$" + name);
             return json;
         }
     }

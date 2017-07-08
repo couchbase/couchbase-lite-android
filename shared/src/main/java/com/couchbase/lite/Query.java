@@ -62,10 +62,14 @@ public class Query {
     // LIMIT
     private Limit limit; // LIMIT expr
 
+    // PARAMETERS
+    private Parameters parameters;
+
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
     Query() {
+        parameters = new Parameters();
     }
 
     Query(Query query) {
@@ -96,6 +100,10 @@ public class Query {
         return new Select(true, results);
     }
 
+    public Parameters parameters() {
+        return parameters;
+    }
+
     /**
      * Runs the query. The returning a result set that enumerates result rows one at a time.
      * You can run the query any number of times, and you can even have multiple ResultSet active at
@@ -111,9 +119,11 @@ public class Query {
     public ResultSet run() throws CouchbaseLiteException {
         if (c4query == null)
             check();
+
         try {
             C4QueryOptions options = new C4QueryOptions();
-            C4QueryEnumerator c4enum = c4query.run(options, null);
+            String paramJSON = parameters.encodeAsJSON();
+            C4QueryEnumerator c4enum = c4query.run(options, paramJSON);
             return new ResultSet(this, c4enum);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
@@ -198,6 +208,8 @@ public class Query {
         this.having = query.having;
         this.orderBy = query.orderBy;
         this.limit = query.limit;
+
+        this.parameters = query.parameters.copy();
     }
 
     Database getDatabase() {
@@ -217,7 +229,7 @@ public class Query {
     private void check() throws CouchbaseLiteException, IllegalStateException {
         database = (Database) from.getSource();
         String json = encodeAsJSON();
-        Log.v(TAG, "Query encoded as %s", json);
+        Log.e(TAG, "Query encoded as %s", json);
         try {
             c4query = new C4Query(database.getC4Database(), json);
         } catch (LiteCoreException e) {
