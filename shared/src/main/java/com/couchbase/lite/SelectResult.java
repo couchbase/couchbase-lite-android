@@ -26,8 +26,8 @@ public class SelectResult {
         private String alias;
 
         // Constructor
-        private As(Expression expr) {
-            super(expr);
+        private As(Expression expression) {
+            super(expression);
         }
 
         // API - public methods
@@ -40,25 +40,25 @@ public class SelectResult {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Expression expr = null;
+    private Expression expression = null;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
     private SelectResult() {
-        this.expr = null;
+        this.expression = null;
     }
 
-    private SelectResult(Expression expr) {
-        this.expr = expr;
+    private SelectResult(Expression expression) {
+        this.expression = expression;
     }
 
     //---------------------------------------------
     // API - public static methods
     //---------------------------------------------
 
-    public static SelectResult expression(Expression expr) {
-        return new SelectResult(expr);
+    public static SelectResult expression(Expression expression) {
+        return new SelectResult(expression);
     }
 
     //---------------------------------------------
@@ -66,6 +66,6 @@ public class SelectResult {
     //---------------------------------------------
 
     Object asJSON() {
-        return expr.asJSON();
+        return expression.asJSON();
     }
 }

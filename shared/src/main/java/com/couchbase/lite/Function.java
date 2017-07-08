@@ -12,24 +12,24 @@ public class Function extends Expression {
         this.param = param;
     }
 
-    public static Function avg(Object expr) {
-        return new Function("AVG()", expr);
+    public static Function avg(Object expression) {
+        return new Function("AVG()", expression);
     }
 
-    public static Function count(Object expr) {
-        return new Function("COUNT()", expr);
+    public static Function count(Object expression) {
+        return new Function("COUNT()", expression);
     } // null expression -> count *
 
-    public static Function min(Object expr) {
-        return new Function("MIN()", expr);
+    public static Function min(Object expression) {
+        return new Function("MIN()", expression);
     }
 
-    public static Function max(Object expr) {
-        return new Function("MAX()", expr);
+    public static Function max(Object expression) {
+        return new Function("MAX()", expression);
     }
 
-    public static Function sum(Object expr) {
-        return new Function("SUM()", expr);
+    public static Function sum(Object expression) {
+        return new Function("SUM()", expression);
     }
 
     @Override

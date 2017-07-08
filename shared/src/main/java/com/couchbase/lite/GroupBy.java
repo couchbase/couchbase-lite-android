@@ -23,8 +23,8 @@ public class GroupBy extends Query implements HavingRouter, OrderByRouter, Limit
     // implementation of HavingRouter
     //---------------------------------------------
     @Override
-    public Having having(Expression expr) {
-        return new Having(this, expr);
+    public Having having(Expression expression) {
+        return new Having(this, expression);
     }
 
     //---------------------------------------------
@@ -61,8 +61,8 @@ public class GroupBy extends Query implements HavingRouter, OrderByRouter, Limit
     //---------------------------------------------
     Object asJSON() {
         List<Object> groupBy = new ArrayList<>();
-        for (Expression expr : expressions)
-            groupBy.add(expr.asJSON());
+        for (Expression expression : expressions)
+            groupBy.add(expression.asJSON());
         return groupBy;
     }
 }

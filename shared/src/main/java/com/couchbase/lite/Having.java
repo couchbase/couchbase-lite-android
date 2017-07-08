@@ -7,11 +7,11 @@ import java.util.Arrays;
  * from the the GROUP BY clause.
  */
 public class Having extends Query implements OrderByRouter, LimitRouter {
-    private Expression expr;
+    private Expression expression;
 
-    Having(Query query, Expression expr) {
+    Having(Query query, Expression expression) {
         copy(query);
-        this.expr = expr;
+        this.expression = expression;
         setHaving(this);
     }
 
@@ -46,6 +46,6 @@ public class Having extends Query implements OrderByRouter, LimitRouter {
     //---------------------------------------------
 
     Object asJSON() {
-        return expr != null ? expr.asJSON() : null;
+        return expression != null ? expression.asJSON() : null;
     }
 }
