@@ -16,7 +16,7 @@ package com.couchbase.lite;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class Join extends Query {
+public abstract class Join {
     //---------------------------------------------
     // static variables
     //---------------------------------------------

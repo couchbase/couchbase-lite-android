@@ -15,5 +15,5 @@
 package com.couchbase.lite;
 
 interface WhereRouter {
-    Where where(Expression expr);
+    Where where(Expression expression);
 }
