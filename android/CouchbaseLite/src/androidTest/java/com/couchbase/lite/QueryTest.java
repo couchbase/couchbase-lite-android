@@ -548,6 +548,40 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testParameters() throws Exception {
+        loadNumbers(100);
+
+        DataSource dataSource = DataSource.database(this.db);
+
+        Expression number1 = Expression.property("number1");
+        Expression paramN1 = Expression.parameter("num1");
+        Expression paramN2 = Expression.parameter("num2");
+
+        SelectResult selectResult = SelectResult.expression(number1);
+
+        Ordering ordering = Ordering.expression(number1);
+
+        Query q = Query
+                .select(selectResult)
+                .from(dataSource)
+                .where(number1.between(paramN1, paramN2))
+                .orderBy(ordering);
+
+        q.parameters().set("num1", 2);
+        q.parameters().set("num2", 5);
+
+        final long[] expectedNumbers = {2, 3, 4, 5};
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                long number = (long) row.getObject(0);
+                assertEquals(expectedNumbers[n - 1], number);
+            }
+        });
+        assertEquals(4, numRows);
+    }
+
+    @Test
     public void testLiveQuery() throws Exception {
         loadNumbers(100);
 
