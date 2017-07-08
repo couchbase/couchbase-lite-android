@@ -14,7 +14,6 @@
 
 package com.couchbase.lite;
 
-
-/* package */ interface OrderByRouter {
-    OrderBy orderBy(OrderBy... orderBy);
+interface OrderByRouter {
+    OrderBy orderBy(Ordering... orderings);
 }

@@ -1,5 +1,5 @@
 package com.couchbase.lite;
 
-/* package */ interface JoinRouter {
-    Join join(Join... join);
+interface JoinRouter {
+    Joins join(Join... joins);
 }

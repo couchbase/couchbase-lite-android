@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 public class QueryTest extends BaseTest {
 
     private interface QueryResult {
-        void check(long n, QueryRow row) throws Exception;
+        void check(int n, QueryRow row) throws Exception;
     }
 
     private int verifyQuery(Query query, QueryResult result) throws Exception {
@@ -81,7 +81,7 @@ public class QueryTest extends BaseTest {
             Query q = Query.select().from(DataSource.database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(long n, QueryRow row) throws Exception {
+                public void check(int n, QueryRow row) throws Exception {
                     String docID = row.getDocumentID();
                     if (docIDList.contains(docID))
                         docIDList.remove(docID);
@@ -106,7 +106,7 @@ public class QueryTest extends BaseTest {
         Query q = Query.select().from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(long n, QueryRow row) throws Exception {
+            public void check(int n, QueryRow row) throws Exception {
                 String expectedID = String.format(Locale.ENGLISH, "doc-%03d", n);
                 assertEquals(expectedID, row.getDocumentID());
                 assertEquals(n, row.getSequence());
@@ -203,7 +203,7 @@ public class QueryTest extends BaseTest {
             Query q = Query.select().from(DataSource.database(db)).where(exp);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(long n, QueryRow row) throws Exception {
+                public void check(int n, QueryRow row) throws Exception {
                     if (n < documentIDs.length) {
                         String docID = documentIDs[(int) n - 1];
                         assertEquals(docID, row.getDocumentID());
@@ -230,7 +230,7 @@ public class QueryTest extends BaseTest {
                 .where(Expression.property("string").is("string"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(long n, QueryRow row) throws Exception {
+            public void check(int n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
                 assertEquals(doc1.getId(), doc.getId());
                 assertEquals(doc1.getObject("string"), doc.getObject("string"));
@@ -245,7 +245,7 @@ public class QueryTest extends BaseTest {
                 .where(Expression.property("string").isNot("string1"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(long n, QueryRow row) throws Exception {
+            public void check(int n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
                 assertEquals(doc1.getId(), doc.getId());
                 assertEquals(doc1.getObject("string"), doc.getObject("string"));
@@ -273,12 +273,12 @@ public class QueryTest extends BaseTest {
                 .select()
                 .from(DataSource.database(db))
                 .where(w)
-                .orderBy(OrderBy.property("name.first").ascending());
+                .orderBy(Ordering.property("name.first").ascending());
 
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(long n, QueryRow row) throws Exception {
+            public void check(int n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
                 Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
@@ -302,12 +302,12 @@ public class QueryTest extends BaseTest {
                 .select()
                 .from(DataSource.database(db))
                 .where(w)
-                .orderBy(OrderBy.property("name.first").ascending());
+                .orderBy(Ordering.property("name.first").ascending());
 
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(long n, QueryRow row) throws Exception {
+            public void check(int n, QueryRow row) throws Exception {
                 Log.e(TAG, "check() n -> " + n);
                 Document doc = row.getDocument();
                 Map<String, Object> name = doc.getDictionary("name").toMap();
@@ -332,11 +332,11 @@ public class QueryTest extends BaseTest {
         db.createIndex(Arrays.asList(exps), IndexType.FullText, null);
 
         Expression w = Expression.property("sentence").match("'Dummie woman'");
-        OrderBy o = OrderBy.property("rank(sentence)").descending();
+        Ordering o = Ordering.property("rank(sentence)").descending();
         Query q = Query.select().from(DataSource.database(db)).where(w).orderBy(o);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(long n, QueryRow row) throws Exception {
+            public void check(int n, QueryRow row) throws Exception {
                 FullTextQueryRow ftsRow = (FullTextQueryRow) row;
                 String text = ftsRow.getFullTextMatched();
                 assertNotNull(text);
@@ -354,17 +354,17 @@ public class QueryTest extends BaseTest {
 
         boolean[] cases = {true, false};
         for (final boolean ascending : cases) {
-            OrderBy o = null;
+            Ordering o;
             if (ascending)
-                o = OrderBy.expression(Expression.property("name.first")).ascending();
+                o = Ordering.expression(Expression.property("name.first")).ascending();
             else
-                o = OrderBy.expression(Expression.property("name.first")).descending();
+                o = Ordering.expression(Expression.property("name.first")).descending();
             Query q = Query.select().from(DataSource.database(db)).orderBy(o);
 
             final List<String> firstNames = new ArrayList<String>();
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(long n, QueryRow row) throws Exception {
+                public void check(int n, QueryRow row) throws Exception {
                     Document doc = row.getDocument();
                     Map<String, Object> name = doc.getDictionary("name").toMap();
                     String firstName = (String) name.get("first");
@@ -401,7 +401,7 @@ public class QueryTest extends BaseTest {
         Query q = Query.selectDistinct().from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(long n, QueryRow row) throws Exception {
+            public void check(int n, QueryRow row) throws Exception {
                 assertEquals(doc1.getId(), row.getDocumentID());
             }
         });
@@ -427,12 +427,124 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(long n, QueryRow row) throws Exception {
+            public void check(int n, QueryRow row) throws Exception {
                 Document doc = row.getDocument();
                 assertEquals(42, doc.getInt("number1"));
             }
         });
         assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testAggregateFunctions() throws Exception {
+        loadNumbers(100);
+
+        DataSource ds = DataSource.database(this.db);
+        Expression exprNum1 = Expression.property("number1");
+
+        Function avg = Function.avg(exprNum1);
+        Function cnt = Function.count(exprNum1);
+        Function min = Function.min(exprNum1);
+        Function max = Function.max(exprNum1);
+        Function sum = Function.sum(exprNum1);
+
+        SelectResult rsAvg = SelectResult.expression(avg);
+        SelectResult rsCnt = SelectResult.expression(cnt);
+        SelectResult rsMin = SelectResult.expression(min);
+        SelectResult rsMax = SelectResult.expression(max);
+        SelectResult rsSum = SelectResult.expression(sum);
+
+        Query q = Query.select(rsAvg, rsCnt, rsMin, rsMax, rsSum).from(ds);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                assertEquals(50.5F, (float) row.getObject(0), 0.0F);
+                assertEquals(100L, (long) row.getObject(1));
+                assertEquals(1L, (long) row.getObject(2));
+                assertEquals(100L, (long) row.getObject(3));
+                assertEquals(5050L, (long) row.getObject(4));
+            }
+        });
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testGroupBy() throws Exception {
+        loadJSONResource("names_100.json");
+
+        final List<String> expectedStates = Arrays.asList("AL", "CA", "CO", "FL", "IA");
+        final List<Integer> expectedCounts = Arrays.asList(1, 6, 1, 1, 3);
+        final List<String> expectedMaxZips = Arrays.asList("35243", "94153", "81223", "33612", "50801");
+
+        DataSource ds = DataSource.database(this.db);
+
+        Expression state = Expression.property("contact.address.state");
+        Expression count = Function.count(1);
+        Expression zip = Expression.property("contact.address.zip");
+        Expression maxZip = Function.max(zip);
+        Expression gender = Expression.property("gender");
+
+        SelectResult rsState = SelectResult.expression(state);
+        SelectResult rsCount = SelectResult.expression(count);
+        SelectResult rsMaxZip = SelectResult.expression(maxZip);
+
+        Expression groupByExpr = state;
+        Ordering ordering = Ordering.expression(state);
+
+        Query q = Query
+                .select(rsState, rsCount, rsMaxZip)
+                .from(ds)
+                .where(gender.equalTo("female"))
+                .groupBy(groupByExpr)
+                .having(null)
+                .orderBy(ordering);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                String state = (String) row.getObject(0);
+                long count = (long) row.getObject(1);
+                String maxZip = (String) row.getObject(2);
+                Log.e(TAG, "state=%s, count=%d, maxZip=%s", state, count, maxZip);
+                if (n - 1 < expectedStates.size()) {
+                    assertEquals(expectedStates.get(n - 1), state);
+                    assertEquals((int) expectedCounts.get(n - 1), count);
+                    assertEquals(expectedMaxZips.get(n - 1), maxZip);
+                }
+            }
+        });
+        assertEquals(31, numRows);
+
+        // With HAVING:
+        final List<String> expectedStates2 = Arrays.asList("CA", "IA", "IN");
+        final List<Integer> expectedCounts2 = Arrays.asList(6, 3, 2);
+        final List<String> expectedMaxZips2 = Arrays.asList("94153", "50801", "47952");
+
+        Expression havingExpr = count.greaterThan(1);
+
+        q = Query
+                .select(rsState, rsCount, rsMaxZip)
+                .from(ds)
+                .where(gender.equalTo("female"))
+                .groupBy(groupByExpr)
+                .having(havingExpr)
+                .orderBy(ordering);
+        assertNotNull(q);
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                String state = (String) row.getObject(0);
+                long count = (long) row.getObject(1);
+                String maxZip = (String) row.getObject(2);
+                if (n - 1 < expectedStates2.size()) {
+                    assertEquals(expectedStates2.get(n - 1), state);
+                    assertEquals((long) expectedCounts2.get(n - 1), count);
+                    assertEquals(expectedMaxZips2.get(n - 1), maxZip);
+                }
+            }
+        });
+        assertEquals(15, numRows);
     }
 
     @Test
@@ -443,7 +555,7 @@ public class QueryTest extends BaseTest {
                 .select()
                 .from(DataSource.database(db))
                 .where(Expression.property("number1").lessThan(10))
-                .orderBy(OrderBy.property("number1").ascending())
+                .orderBy(Ordering.property("number1").ascending())
                 .toLive();
 
         final CountDownLatch latch = new CountDownLatch(2);
@@ -509,7 +621,7 @@ public class QueryTest extends BaseTest {
                 .select()
                 .from(DataSource.database(db))
                 .where(Expression.property("number1").lessThan(10))
-                .orderBy(OrderBy.property("number1").ascending())
+                .orderBy(Ordering.property("number1").ascending())
                 .toLive();
 
         final CountDownLatch latch = new CountDownLatch(2);

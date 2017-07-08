@@ -14,14 +14,34 @@
 
 package com.couchbase.lite;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Select represents the SELECT clause of the query for specifying the returning properties in each
  * query result row.
  */
 public class Select extends Query implements FromRouter {
-    /* package */ Select(boolean distinct) {
-        setDistinct(distinct);
+    //---------------------------------------------
+    // Member variables
+    //---------------------------------------------
+    private boolean distinct;                 // DISTINCT
+    private List<SelectResult> selectResults; // result-columns
+
+    //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+
+    Select(boolean distinct, SelectResult... selectResults) {
+        this.distinct = distinct;
+        this.selectResults = Arrays.asList(selectResults);
+        setSelect(this);
     }
+
+    //---------------------------------------------
+    // implementation of FromRouter
+    //---------------------------------------------
 
     /**
      * Create and chain a FROM component for specifying the data source of the query.
@@ -32,5 +52,24 @@ public class Select extends Query implements FromRouter {
     @Override
     public From from(DataSource dataSource) {
         return new From(this, dataSource);
+    }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+
+    boolean isDistinct() {
+        return distinct;
+    }
+
+    boolean hasSelectResults() {
+        return selectResults.size() > 0;
+    }
+
+    Object asJSON() {
+        List<Object> json = new ArrayList<Object>();
+        for (SelectResult sr : selectResults)
+            json.add(sr.asJSON());
+        return json;
     }
 }

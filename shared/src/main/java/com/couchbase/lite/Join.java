@@ -13,12 +13,10 @@
  */
 package com.couchbase.lite;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class Join extends Query implements WhereRouter, OrderByRouter {
+public abstract class Join {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
@@ -32,14 +30,16 @@ public class Join extends Query implements WhereRouter, OrderByRouter {
     //---------------------------------------------
     private String type;
     private DataSource dataSource;
-    private Expression on;
-
-    private List<Join> joins;
 
     //---------------------------------------------
     // Inner public Class
     //---------------------------------------------
     public static class On extends Join {
+        //---------------------------------------------
+        // Member variables
+        //---------------------------------------------
+        private Expression on;
+
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
@@ -51,25 +51,25 @@ public class Join extends Query implements WhereRouter, OrderByRouter {
         // API - public methods
         //---------------------------------------------
         public Join on(Expression on) {
-            super.on = on;
+            this.on = on;
             return this;
+        }
+
+        Object asJSON() {
+            Map<String, Object> json = new HashMap<>();
+            json.put("JOIN", super.type);
+            json.put("ON", on.asJSON());
+            json.putAll(super.dataSource.asJSON());
+            return json;
         }
     }
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-
     private Join(String type, DataSource dataSource) {
         this.type = type;
         this.dataSource = dataSource;
-        this.on = null;
-    }
-
-    /*package*/ Join(Query query, List<Join> joins) {
-        copy(query);
-        setJoin(this);
-        this.joins = joins;
     }
 
     //---------------------------------------------
@@ -97,39 +97,8 @@ public class Join extends Query implements WhereRouter, OrderByRouter {
     }
 
     //---------------------------------------------
-    // Implementation of WhereRouter/OrderByRouter
-    //---------------------------------------------
-    @Override
-    public Where where(Expression expression) {
-        return new Where(this, expression);
-    }
-
-    @Override
-    public OrderBy orderBy(OrderBy... orderBy) {
-        return new OrderBy(this, Arrays.asList(orderBy));
-    }
-
-    //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
-    /* package */ String getType() {
-        return type;
-    }
-
-    public List<Join> getJoins() {
-        return joins;
-    }
-
-    /* package */ Expression getOn() {
-        return on;
-    }
-
-    /* package */ Map<String, Object> asJSON() {
-        Map<String, Object> json = new HashMap<>();
-        json.put("JOIN", type);
-        json.put("ON", on.asJSON());
-        json.putAll(dataSource.asJSON());
-        return json;
-    }
+    abstract Object asJSON();
 }

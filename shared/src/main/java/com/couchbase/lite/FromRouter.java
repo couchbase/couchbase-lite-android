@@ -14,6 +14,6 @@
 
 package com.couchbase.lite;
 
-/* package */ interface FromRouter {
+interface FromRouter {
     From from(DataSource dataSource);
 }

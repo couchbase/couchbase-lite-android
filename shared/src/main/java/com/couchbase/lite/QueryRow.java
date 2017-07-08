@@ -15,6 +15,8 @@
 package com.couchbase.lite;
 
 import com.couchbase.litecore.C4QueryEnumerator;
+import com.couchbase.litecore.fleece.FLArrayIterator;
+import com.couchbase.litecore.fleece.FLValue;
 
 /**
  * QueryRow represents a row of result set returned by a Query.
@@ -26,6 +28,7 @@ public class QueryRow {
     //---------------------------------------------
     private Query query;
     private C4QueryEnumerator c4enum;
+    private FLArrayIterator columns;
     private String documentID;
 
     //---------------------------------------------
@@ -36,6 +39,7 @@ public class QueryRow {
         this.query = query;
         this.c4enum = c4enum;
         this.documentID = c4enum.getDocID();
+        this.columns = c4enum.getColumns();
     }
 
     //---------------------------------------------
@@ -78,6 +82,11 @@ public class QueryRow {
                 '}';
     }
 
+    public Object getObject(int index) {
+        FLValue value = flValueAtIndex(index);
+        return value.toObject(null, null);
+    }
+
     //---------------------------------------------
     // Protected level access
     //---------------------------------------------
@@ -88,5 +97,12 @@ public class QueryRow {
 
     protected C4QueryEnumerator getC4enum() {
         return c4enum;
+    }
+
+    //---------------------------------------------
+    // private level access
+    //---------------------------------------------
+    FLValue flValueAtIndex(int index) {
+        return columns.getValueAt(index);
     }
 }

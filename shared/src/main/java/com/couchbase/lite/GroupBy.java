@@ -1,42 +1,30 @@
-/**
- * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
-
 package com.couchbase.lite;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
-/**
- * A Where represents the WHERE clause of the query for filtering the query result.
- */
-public class Where extends Query implements GroupByRouter, OrderByRouter, LimitRouter {
+public class GroupBy extends Query implements HavingRouter, OrderByRouter, LimitRouter {
+    //---------------------------------------------
+    // Member variables
+    //---------------------------------------------
+    private List<Expression> expressions;
 
     //---------------------------------------------
     // Constructor
-    //---------------------------------------------
-
-    Where(Query query, Expression where) {
+    //--------------------------------------------
+    GroupBy(Query query, List<Expression> expressions) {
         copy(query);
-        setWhere(where);
+        this.expressions = expressions;
+        setGroupBy(this);
     }
 
     //---------------------------------------------
-    // implementation of GroupByRouter
+    // implementation of HavingRouter
     //---------------------------------------------
-
     @Override
-    public GroupBy groupBy(Expression... expressions) {
-        return new GroupBy(this, Arrays.asList(expressions));
+    public Having having(Expression expr) {
+        return new Having(this, expr);
     }
 
     //---------------------------------------------
@@ -66,5 +54,15 @@ public class Where extends Query implements GroupByRouter, OrderByRouter, LimitR
     @Override
     public Limit limit(Object limit, Object offset) {
         throw new UnsupportedOperationException();
+    }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+    Object asJSON() {
+        List<Object> groupBy = new ArrayList<>();
+        for (Expression expr : expressions)
+            groupBy.add(expr.asJSON());
+        return groupBy;
     }
 }

@@ -21,91 +21,44 @@ import java.util.List;
  * An OrderBy represents an ORDER BY clause of the query for specifying properties or expressions
  * that the result rows should be sorted by.
  */
-public class OrderBy extends Query {
-    /* package */ List<OrderBy> orders;
+public class OrderBy extends Query implements LimitRouter {
 
-    /* package */ OrderBy() {
-    }
+    //---------------------------------------------
+    // Member variables
+    //---------------------------------------------
+    private List<Ordering> orderings;
 
-    /* package */ OrderBy(Query query, List<OrderBy> orders) {
+    //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+    OrderBy(Query query, List<Ordering> orderings) {
         copy(query);
+        this.orderings = orderings;
         setOrderBy(this);
-        this.orders = orders;
     }
 
-    /**
-     * Create a SortOrder, inherited from the OrderBy class, object by the given
-     * property name.
-     *
-     * @param property the property name
-     * @return the SortOrder object.
-     */
-    public static SortOrder property(String property) {
-        return expression(Expression.property(property));
+    //---------------------------------------------
+    // implementation of LimitRouter
+    //---------------------------------------------
+
+    @Override
+    public Limit limit(Object limit) {
+        throw new UnsupportedOperationException();
     }
 
-    /**
-     * Create a SortOrder, inherited from the OrderBy class, object by the given expression.
-     *
-     * @param expression the expression object.
-     * @return the SortOrder object.
-     */
-    public static SortOrder expression(Expression expression) {
-        return new SortOrder(expression);
+    @Override
+    public Limit limit(Object limit, Object offset) {
+        throw new UnsupportedOperationException();
     }
 
-    /* package */ Object asJSON() {
-        List<Object> json = new ArrayList<Object>();
-        for (OrderBy o : orders) {
-            if (o instanceof SortOrder)
-                json.add(o.asJSON());
-            else
-                json.addAll((List<Object>) o.asJSON());
-        }
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+
+    Object asJSON() {
+        List<Object> json = new ArrayList<>();
+        for (Ordering ordering : orderings)
+            json.add(ordering.asJSON());
         return json;
-    }
-
-    /**
-     * SorderOrder represents a single ORDER BY entity. You can specify either ascending or
-     * descending order. The default order is ascending.
-     */
-    public static class SortOrder extends OrderBy {
-        private Expression expression;
-        private boolean isAscending;
-
-        /* package */ SortOrder(Expression expression) {
-            this.expression = expression;
-            this.isAscending = false;
-        }
-
-        /**
-         * Set the order as ascending order.
-         *
-         * @return the OrderBy object.
-         */
-        public OrderBy ascending() {
-            this.isAscending = true;
-            return this;
-        }
-
-        /**
-         * Set the order as descending order.
-         *
-         * @return the OrderBy object.
-         */
-        public OrderBy descending() {
-            this.isAscending = false;
-            return this;
-        }
-
-        /* package */ Object asJSON() {
-            if (isAscending)
-                return expression.asJSON();
-
-            List<Object> json = new ArrayList<Object>();
-            json.add("DESC");
-            json.add(expression.asJSON());
-            return json;
-        }
     }
 }

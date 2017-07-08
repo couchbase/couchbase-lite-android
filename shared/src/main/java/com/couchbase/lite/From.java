@@ -19,16 +19,27 @@ import java.util.Arrays;
 /**
  * A From represents a FROM clause for specifying the data source of the query.
  */
-public class From extends Query implements JoinRouter, WhereRouter, OrderByRouter {
-    /* package */ From(Query query, DataSource dataSource) {
+public class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
+    //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+
+    From(Query query, DataSource dataSource) {
         copy(query);
-        this.setFrom(dataSource);
+        setFrom(dataSource);
     }
 
+    //---------------------------------------------
+    // implementation of JoinRouter
+    //---------------------------------------------
     @Override
-    public Join join(Join... join) {
-        return new Join(this, Arrays.asList(join));
+    public Joins join(Join... joins) {
+        return new Joins(this, Arrays.asList(joins));
     }
+
+    //---------------------------------------------
+    // implementation of WhereRouter
+    //---------------------------------------------
 
     /**
      * Create and chain a WHERE component for specifying the WHERE clause of the query.
@@ -41,14 +52,40 @@ public class From extends Query implements JoinRouter, WhereRouter, OrderByRoute
         return new Where(this, expression);
     }
 
+    //---------------------------------------------
+    // implementation of GroupByRouter
+    //---------------------------------------------
+    @Override
+    public GroupBy groupBy(Expression... expressions) {
+        return new GroupBy(this, Arrays.asList(expressions));
+    }
+
+    //---------------------------------------------
+    // implementation of OrderByRouter
+    //---------------------------------------------
+
     /**
      * Create and chain an ORDER BY component for specifying the ORDER BY clause of the query.
      *
-     * @param orderBy an array of the ORDER BY expressions.
+     * @param orderings an array of the ORDER BY expressions.
      * @return the ORDER BY component.
      */
     @Override
-    public OrderBy orderBy(OrderBy... orderBy) {
-        return new OrderBy(this, Arrays.asList(orderBy));
+    public OrderBy orderBy(Ordering... orderings) {
+        return new OrderBy(this, Arrays.asList(orderings));
+    }
+
+    //---------------------------------------------
+    // implementation of LimitRouter
+    //---------------------------------------------
+
+    @Override
+    public Limit limit(Object limit) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Limit limit(Object limit, Object offset) {
+        throw new UnsupportedOperationException();
     }
 }
