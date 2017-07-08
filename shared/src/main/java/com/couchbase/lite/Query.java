@@ -229,7 +229,7 @@ public class Query {
     private void check() throws CouchbaseLiteException, IllegalStateException {
         database = (Database) from.getSource();
         String json = encodeAsJSON();
-        Log.e(TAG, "Query encoded as %s", json);
+        Log.v(TAG, "Query encoded as %s", json);
         try {
             c4query = new C4Query(database.getC4Database(), json);
         } catch (LiteCoreException e) {
