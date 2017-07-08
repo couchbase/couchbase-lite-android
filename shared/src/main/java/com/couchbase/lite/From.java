@@ -20,7 +20,11 @@ import java.util.Arrays;
  * A From represents a FROM clause for specifying the data source of the query.
  */
 public class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
-    /* package */ From(Query query, DataSource dataSource) {
+    //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+
+    From(Query query, DataSource dataSource) {
         copy(query);
         setFrom(dataSource);
     }
@@ -29,8 +33,8 @@ public class From extends Query implements JoinRouter, WhereRouter, GroupByRoute
     // implementation of JoinRouter
     //---------------------------------------------
     @Override
-    public Join join(Join... join) {
-        return new Join(this, Arrays.asList(join));
+    public Joins join(Join... joins) {
+        return new Joins(this, Arrays.asList(joins));
     }
 
     //---------------------------------------------
@@ -52,8 +56,8 @@ public class From extends Query implements JoinRouter, WhereRouter, GroupByRoute
     // implementation of GroupByRouter
     //---------------------------------------------
     @Override
-    public GroupBy groupBy(GroupBy... groupBy) {
-        return new GroupBy(this, Arrays.asList(groupBy));
+    public GroupBy groupBy(Expression... expressions) {
+        return new GroupBy(this, Arrays.asList(expressions));
     }
 
     //---------------------------------------------
@@ -63,12 +67,12 @@ public class From extends Query implements JoinRouter, WhereRouter, GroupByRoute
     /**
      * Create and chain an ORDER BY component for specifying the ORDER BY clause of the query.
      *
-     * @param orderBy an array of the ORDER BY expressions.
+     * @param orderings an array of the ORDER BY expressions.
      * @return the ORDER BY component.
      */
     @Override
-    public OrderBy orderBy(OrderBy... orderBy) {
-        return new OrderBy(this, Arrays.asList(orderBy));
+    public OrderBy orderBy(Ordering... orderings) {
+        return new OrderBy(this, Arrays.asList(orderings));
     }
 
     //---------------------------------------------

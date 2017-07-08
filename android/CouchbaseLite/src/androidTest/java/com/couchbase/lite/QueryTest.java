@@ -273,7 +273,7 @@ public class QueryTest extends BaseTest {
                 .select()
                 .from(DataSource.database(db))
                 .where(w)
-                .orderBy(OrderBy.property("name.first").ascending());
+                .orderBy(Ordering.property("name.first").ascending());
 
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(q, new QueryResult() {
@@ -302,7 +302,7 @@ public class QueryTest extends BaseTest {
                 .select()
                 .from(DataSource.database(db))
                 .where(w)
-                .orderBy(OrderBy.property("name.first").ascending());
+                .orderBy(Ordering.property("name.first").ascending());
 
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(q, new QueryResult() {
@@ -332,7 +332,7 @@ public class QueryTest extends BaseTest {
         db.createIndex(Arrays.asList(exps), IndexType.FullText, null);
 
         Expression w = Expression.property("sentence").match("'Dummie woman'");
-        OrderBy o = OrderBy.property("rank(sentence)").descending();
+        Ordering o = Ordering.property("rank(sentence)").descending();
         Query q = Query.select().from(DataSource.database(db)).where(w).orderBy(o);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -354,11 +354,11 @@ public class QueryTest extends BaseTest {
 
         boolean[] cases = {true, false};
         for (final boolean ascending : cases) {
-            OrderBy o = null;
+            Ordering o;
             if (ascending)
-                o = OrderBy.expression(Expression.property("name.first")).ascending();
+                o = Ordering.expression(Expression.property("name.first")).ascending();
             else
-                o = OrderBy.expression(Expression.property("name.first")).descending();
+                o = Ordering.expression(Expression.property("name.first")).descending();
             Query q = Query.select().from(DataSource.database(db)).orderBy(o);
 
             final List<String> firstNames = new ArrayList<String>();
@@ -489,16 +489,16 @@ public class QueryTest extends BaseTest {
         SelectResult rsCount = SelectResult.expression(count);
         SelectResult rsMaxZip = SelectResult.expression(maxZip);
 
-        GroupBy gbState = GroupBy.expression(state);
-        OrderBy obState = OrderBy.expression(state);
+        Expression groupByExpr = state;
+        Ordering ordering = Ordering.expression(state);
 
         Query q = Query
                 .select(rsState, rsCount, rsMaxZip)
                 .from(ds)
                 .where(gender.equalTo("female"))
-                .groupBy(gbState)
+                .groupBy(groupByExpr)
                 .having(null)
-                .orderBy(obState);
+                .orderBy(ordering);
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -527,9 +527,9 @@ public class QueryTest extends BaseTest {
                 .select(rsState, rsCount, rsMaxZip)
                 .from(ds)
                 .where(gender.equalTo("female"))
-                .groupBy(gbState)
+                .groupBy(groupByExpr)
                 .having(havingExpr)
-                .orderBy(obState);
+                .orderBy(ordering);
         assertNotNull(q);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -555,7 +555,7 @@ public class QueryTest extends BaseTest {
                 .select()
                 .from(DataSource.database(db))
                 .where(Expression.property("number1").lessThan(10))
-                .orderBy(OrderBy.property("number1").ascending())
+                .orderBy(Ordering.property("number1").ascending())
                 .toLive();
 
         final CountDownLatch latch = new CountDownLatch(2);
@@ -621,7 +621,7 @@ public class QueryTest extends BaseTest {
                 .select()
                 .from(DataSource.database(db))
                 .where(Expression.property("number1").lessThan(10))
-                .orderBy(OrderBy.property("number1").ascending())
+                .orderBy(Ordering.property("number1").ascending())
                 .toLive();
 
         final CountDownLatch latch = new CountDownLatch(2);

@@ -22,47 +22,19 @@ import java.util.List;
  * that the result rows should be sorted by.
  */
 public class OrderBy extends Query implements LimitRouter {
-    /* package */ List<OrderBy> orders;
 
-    /* package */ OrderBy() {
-    }
+    //---------------------------------------------
+    // Member variables
+    //---------------------------------------------
+    private List<Ordering> orderings;
 
-    /* package */ OrderBy(Query query, List<OrderBy> orders) {
+    //---------------------------------------------
+    // Constructor
+    //---------------------------------------------
+    OrderBy(Query query, List<Ordering> orderings) {
         copy(query);
+        this.orderings = orderings;
         setOrderBy(this);
-        this.orders = orders;
-    }
-
-    /**
-     * Create a SortOrder, inherited from the OrderBy class, object by the given
-     * property name.
-     *
-     * @param property the property name
-     * @return the SortOrder object.
-     */
-    public static SortOrder property(String property) {
-        return expression(Expression.property(property));
-    }
-
-    /**
-     * Create a SortOrder, inherited from the OrderBy class, object by the given expression.
-     *
-     * @param expression the expression object.
-     * @return the SortOrder object.
-     */
-    public static SortOrder expression(Expression expression) {
-        return new SortOrder(expression);
-    }
-
-    /* package */ Object asJSON() {
-        List<Object> json = new ArrayList<Object>();
-        for (OrderBy o : orders) {
-            if (o instanceof SortOrder)
-                json.add(o.asJSON());
-            else
-                json.addAll((List<Object>) o.asJSON());
-        }
-        return json;
     }
 
     //---------------------------------------------
@@ -79,47 +51,14 @@ public class OrderBy extends Query implements LimitRouter {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * SorderOrder represents a single ORDER BY entity. You can specify either ascending or
-     * descending order. The default order is ascending.
-     */
-    public static class SortOrder extends OrderBy {
-        private Expression expression;
-        private boolean isAscending;
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
 
-        /* package */ SortOrder(Expression expression) {
-            this.expression = expression;
-            this.isAscending = true;
-        }
-
-        /**
-         * Set the order as ascending order.
-         *
-         * @return the OrderBy object.
-         */
-        public OrderBy ascending() {
-            this.isAscending = true;
-            return this;
-        }
-
-        /**
-         * Set the order as descending order.
-         *
-         * @return the OrderBy object.
-         */
-        public OrderBy descending() {
-            this.isAscending = false;
-            return this;
-        }
-
-        /* package */ Object asJSON() {
-            if (isAscending)
-                return expression.asJSON();
-
-            List<Object> json = new ArrayList<Object>();
-            json.add("DESC");
-            json.add(expression.asJSON());
-            return json;
-        }
+    Object asJSON() {
+        List<Object> json = new ArrayList<>();
+        for (Ordering ordering : orderings)
+            json.add(ordering.asJSON());
+        return json;
     }
 }

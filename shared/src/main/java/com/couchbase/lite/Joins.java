@@ -1,68 +1,61 @@
 package com.couchbase.lite;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class GroupBy extends Query implements HavingRouter, OrderByRouter, LimitRouter {
+public class Joins extends Query implements WhereRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
-    // Member variables
+    // member variables
     //---------------------------------------------
-    private List<Expression> expressions;
+    private List<Join> joins;
 
     //---------------------------------------------
-    // Constructor
-    //--------------------------------------------
-    GroupBy(Query query, List<Expression> expressions) {
+    // Constructors
+    //---------------------------------------------
+    Joins(Query query, List<Join> joins) {
         copy(query);
-        this.expressions = expressions;
-        setGroupBy(this);
+        this.joins = joins;
+        setJoins(this);
     }
 
     //---------------------------------------------
-    // implementation of HavingRouter
+    // Implementation of WhereRouter
     //---------------------------------------------
     @Override
-    public Having having(Expression expr) {
-        return new Having(this, expr);
+    public Where where(Expression expression) {
+        return new Where(this, expression);
     }
 
     //---------------------------------------------
-    // implementation of OrderByRouter
+    // Implementation of OrderByRouter
     //---------------------------------------------
-
-    /**
-     * Create and chain an ORDER BY component for specifying the ORDER BY clause of the query.
-     *
-     * @param orderings an array of the ORDER BY expressions.
-     * @return the ORDER BY component.
-     */
     @Override
     public OrderBy orderBy(Ordering... orderings) {
         return new OrderBy(this, Arrays.asList(orderings));
     }
 
     //---------------------------------------------
-    // implementation of LimitRouter
+    // Implementation of LimitRouter
     //---------------------------------------------
-
     @Override
     public Limit limit(Object limit) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public Limit limit(Object limit, Object offset) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
     Object asJSON() {
-        List<Object> groupBy = new ArrayList<>();
-        for (Expression expr : expressions)
-            groupBy.add(expr.asJSON());
-        return groupBy;
+        List<Object> json = new ArrayList<>();
+        for (Join join : joins)
+            json.add(join.asJSON());
+        return json;
     }
 }

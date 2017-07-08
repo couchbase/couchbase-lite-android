@@ -3,8 +3,6 @@ package com.couchbase.lite;
 
 public class SelectResult {
 
-    // TODO
-
     //---------------------------------------------
     // Inner public Class
     //---------------------------------------------
@@ -59,20 +57,13 @@ public class SelectResult {
     // API - public static methods
     //---------------------------------------------
 
-    // TODO:
-
-//    public static SelectResult.As expression(Expression expr) {
-//        return new As(expr);
-//    }
-//
-//    public static SelectResult.From all() {
-//        return new From();
-//    }
-
     public static SelectResult expression(Expression expr) {
         return new SelectResult(expr);
     }
 
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
 
     Object asJSON() {
         return expr.asJSON();

@@ -44,13 +44,14 @@ public class Query {
     private Database database;
     private C4Query c4query;
 
+    // NOTE:
     // https://sqlite.org/lang_select.html
+
     // SELECT
-    private boolean distinct;                 // DISTINCT
-    private List<SelectResult> selectResults; // result-columns
+    private Select select;
     // FROM
     private DataSource from; // FROM table-or-subquery
-    private Join join;       // FROM join-clause
+    private Joins joins;     // FROM join-clause
     // WHERE
     private Expression where; // WHERE expr
     // GROUP BY
@@ -64,11 +65,10 @@ public class Query {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
-    /*package*/ Query() {
-
+    Query() {
     }
 
-    /*package*/ Query(Query query) {
+    Query(Query query) {
         copy(query);
     }
 
@@ -157,32 +157,16 @@ public class Query {
     // Package level access
     //---------------------------------------------
 
-    void setSelectResults(List<SelectResult> selectResults) {
-        this.selectResults = selectResults;
-    }
-
-    boolean isDistinct() {
-        return distinct;
-    }
-
-    void setDistinct(boolean distinct) {
-        this.distinct = distinct;
-    }
-
-    DataSource getFrom() {
-        return from;
+    void setSelect(Select select) {
+        this.select = select;
     }
 
     void setFrom(DataSource from) {
         this.from = from;
     }
 
-    void setJoin(Join join) {
-        this.join = join;
-    }
-
-    Expression getWhere() {
-        return where;
+    void setJoins(Joins joins) {
+        this.joins = joins;
     }
 
     void setWhere(Expression where) {
@@ -206,10 +190,9 @@ public class Query {
     }
 
     void copy(Query query) {
-        this.distinct = query.distinct;
-        this.selectResults = query.selectResults;
+        this.select = query.select;
         this.from = query.from;
-        this.join = query.join;
+        this.joins = query.joins;
         this.where = query.where;
         this.groupBy = query.groupBy;
         this.having = query.having;
@@ -255,41 +238,29 @@ public class Query {
         Map<String, Object> json = new HashMap<String, Object>();
 
         // DISTINCT:
-        if (distinct)
+        if (select != null && select.isDistinct())
             json.put("DISTINCT", true);
 
-        // result-columns
-        if (selectResults != null && selectResults.size() > 0) {
-            List<Object> selects = new ArrayList<>();
-            for (SelectResult select : selectResults)
-                selects.add(select.asJSON());
-            json.put("WHAT", selects);
-        }
+        // result-columns / SELECT-RESULTS
+        if (select != null && select.hasSelectResults())
+            json.put("WHAT", select.asJSON());
 
         // JOIN:
         List<Object> f = new ArrayList<>();
         Map<String, Object> as = from.asJSON();
         if (as.size() > 0)
             f.add(as);
-
-        // NOTE: this `join` should be collection
-        if (join != null) {
-            for (Join j : join.getJoins())
-                f.add(j.asJSON());
+        if (joins != null) {
+            f.addAll((List<Object>) joins.asJSON());
         }
-
         if (f.size() > 0)
             json.put("FROM", f);
 
         if (where != null)
             json.put("WHERE", where.asJSON());
 
-        if (groupBy != null) {
-            List<Object> gbList = new ArrayList<>();
-            for (GroupBy gb : groupBy.getGroupBies())
-                gbList.add(gb.asJSON());
-            json.put("GROUP_BY", gbList);
-        }
+        if (groupBy != null)
+            json.put("GROUP_BY", groupBy.asJSON());
 
         if (having != null)
             json.put("HAVING", having.asJSON());

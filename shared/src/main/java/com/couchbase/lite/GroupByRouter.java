@@ -1,5 +1,5 @@
 package com.couchbase.lite;
 
 interface GroupByRouter {
-    GroupBy groupBy(GroupBy... groupBy);
+    GroupBy groupBy(Expression... expressions);
 }

@@ -23,8 +23,8 @@ public class Having extends Query implements OrderByRouter, LimitRouter {
      * Create and chain an ORDER BY component for specifying the orderings of the query result.
      */
     @Override
-    public OrderBy orderBy(OrderBy... orderBy) {
-        return new OrderBy(this, Arrays.asList(orderBy));
+    public OrderBy orderBy(Ordering... orderings) {
+        return new OrderBy(this, Arrays.asList(orderings));
     }
 
     //---------------------------------------------
