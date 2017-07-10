@@ -28,16 +28,16 @@ public abstract class Expression {
      * @param property the name of the property in the form of a key path.
      * @return a property expression.
      */
-    public static Expression property(String property) {
-        return new KeyPathExpression(property);
-    }
-
-    public static Expression property(String from, String property) {
-        return new KeyPathExpression(from, property);
+    public static PropertyExpression property(String property) {
+        return new PropertyExpression(property);
     }
 
     public static Expression parameter(String name) {
         return new ParameterExpression(name);
+    }
+
+    public static Meta meta() {
+        return new Meta();
     }
 
     /**
@@ -563,17 +563,22 @@ public abstract class Expression {
         }
     }
 
-    static class KeyPathExpression extends Expression {
-        private String from = null;
-        private String keyPath = null;
+    static class PropertyExpression extends Expression {
+        private final String from;
+        private final String keyPath;
 
-        KeyPathExpression(String keyPath) {
+        PropertyExpression(String keyPath) {
+            this.from = null;
             this.keyPath = keyPath;
         }
 
-        KeyPathExpression(String from, String keyPath) {
+        private PropertyExpression(String from, String keyPath) {
             this.from = from;
             this.keyPath = keyPath;
+        }
+
+        public Expression from(String alias) {
+            return new PropertyExpression(alias, this.keyPath);
         }
 
         @Override

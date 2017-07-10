@@ -418,8 +418,8 @@ public class QueryTest extends BaseTest {
 
         DataSource mainDS = DataSource.database(this.db).as("main");
         DataSource secondaryDS = DataSource.database(this.db).as("secondary");
-        Expression mainPropExpr = Expression.property("main", "number1");
-        Expression secondaryExpr = Expression.property("secondary", "theone");
+        Expression mainPropExpr = Expression.property("number1").from("main");
+        Expression secondaryExpr = Expression.property("theone").from("secondary");
         Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
         Join join = Join.join(secondaryDS).on(joinExpr);
         Query q = Query.select().from(mainDS).join(join);
@@ -579,6 +579,40 @@ public class QueryTest extends BaseTest {
             }
         });
         assertEquals(4, numRows);
+    }
+
+    @Test
+    public void testMeta() throws Exception {
+        loadNumbers(5);
+
+        DataSource dataSource = DataSource.database(this.db);
+
+        Expression metaDocID = Expression.meta().getDocumentID();
+        Expression metaDocSeq = Expression.meta().getSequence();
+        Expression propNumber1 = Expression.property("number1");
+
+        SelectResult srDocID = SelectResult.expression(metaDocID);
+        SelectResult srDocSeq = SelectResult.expression(metaDocSeq);
+        SelectResult srNumber1 = SelectResult.expression(propNumber1);
+
+        Query q = Query
+                .select(srDocID, srDocSeq, srNumber1)
+                .from(dataSource)
+                .orderBy(Ordering.expression(metaDocSeq));
+
+        final String[] expectedDocIDs = {"doc1", "doc2", "doc3", "doc4", "doc5"};
+        final long[] expectedSeqs = {1, 2, 3, 4, 5};
+        final long[] expectedNumbers = {1, 2, 3, 4, 5};
+
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                String docID = (String) row.getObject(0);
+                long seq = (long) row.getObject(1);
+                long number = (long) row.getObject(2);
+            }
+        });
+        assertEquals(5, numRows);
     }
 
     @Test
