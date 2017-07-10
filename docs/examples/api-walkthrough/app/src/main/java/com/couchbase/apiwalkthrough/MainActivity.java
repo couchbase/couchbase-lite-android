@@ -160,9 +160,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
-        ReplicatorConfiguration replConfig = new ReplicatorConfiguration();
-        replConfig.setDatabase(database);
-        replConfig.setTarget(new ReplicatorTarget(uri));
+        ReplicatorConfiguration replConfig = new ReplicatorConfiguration(database, uri);
         Replicator replicator = new Replicator(replConfig);
         replicator.start();
     }
