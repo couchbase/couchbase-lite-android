@@ -41,12 +41,12 @@ public class Joins extends Query implements WhereRouter, OrderByRouter, LimitRou
     //---------------------------------------------
     @Override
     public Limit limit(Object limit) {
-        return null;
+        return new Limit(this, limit, null);
     }
 
     @Override
     public Limit limit(Object limit, Object offset) {
-        return null;
+        return new Limit(this, limit, offset);
     }
 
     //---------------------------------------------
