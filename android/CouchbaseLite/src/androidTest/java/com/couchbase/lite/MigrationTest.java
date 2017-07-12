@@ -57,6 +57,31 @@ public class MigrationTest extends BaseTest {
     //TODO: @Test
     public void testOpenExsitingDBv1x() throws Exception {
         // https://github.com/couchbase/couchbase-lite-android/issues/1237
+
+        // if db exist, delete it
+        deleteDB("android140-sqlite", context.getFilesDir());
+
+        ZipUtils.unzip(getAsset("replacedb/android140-sqlite.cblite2.zip"), context.getFilesDir());
+
+        Database db = new Database("android140-sqlite", new DatabaseConfiguration(context));
+        try {
+            assertEquals(2, db.getCount());
+            for (int i = 1; i <= 2; i++) {
+                Document doc = db.getDocument("doc" + i);
+                assertNotNull(doc);
+                assertEquals(String.valueOf(i), doc.getString("key"));
+                Blob blob = doc.getBlob("attach" + i);
+                assertNotNull(blob);
+                byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes();
+                Arrays.equals(attach, blob.getContent());
+            }
+        } finally {
+            // close db
+            db.close();
+
+            // if db exist, delete it
+            deleteDB("android140-sqlite", context.getFilesDir());
+        }
     }
 
     @Test
@@ -65,6 +90,7 @@ public class MigrationTest extends BaseTest {
         deleteDB("android-sqlite", context.getFilesDir());
 
         ZipUtils.unzip(getAsset("replacedb/android200-sqlite.cblite2.zip"), context.getFilesDir());
+
         Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
         try {
             assertEquals(2, db.getCount());
