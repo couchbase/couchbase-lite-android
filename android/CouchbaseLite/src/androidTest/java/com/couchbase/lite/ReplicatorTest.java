@@ -34,23 +34,25 @@ public class ReplicatorTest extends BaseTest {
     Replicator repl;
     long timeout;  // seconds
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull) {
-        return makeConfig(push, pull, otherDB);
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous) {
+        return makeConfig(push, pull, continuous, otherDB);
     }
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, String uri) {
-        return makeConfig(push, pull, URI.create(uri));
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, String uri) {
+        return makeConfig(push, pull, continuous, URI.create(uri));
     }
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, URI target) {
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, URI target) {
         ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
         config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
+        config.setContinuous(continuous);
         return config;
     }
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, Database target) {
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, Database target) {
         ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
         config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
+        config.setContinuous(continuous);
         return config;
     }
 
@@ -65,15 +67,29 @@ public class ReplicatorTest extends BaseTest {
                         kActivityNames[status.getActivityLevel().getValue()],
                         status.getProgress().getCompleted(), status.getProgress().getTotal(),
                         error);
-                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
-                    if (code != 0) {
-                        assertEquals(code, error.getCode());
-                        if (domain != null)
-                            assertEquals(domain, error.getDomainString());
-                    } else {
-                        assertNull(error);
+                if (config.isContinuous()) {
+                    if (status.getActivityLevel() == Replicator.ActivityLevel.IDLE &&
+                            status.getProgress().getCompleted() == status.getProgress().getTotal()) {
+                        if (code != 0) {
+                            assertEquals(code, error.getCode());
+                            if (domain != null)
+                                assertEquals(domain, error.getDomainString());
+                        } else {
+                            assertNull(error);
+                        }
+                        latch.countDown();
                     }
-                    latch.countDown();
+                } else {
+                    if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                        if (code != 0) {
+                            assertEquals(code, error.getCode());
+                            if (domain != null)
+                                assertEquals(domain, error.getDomainString());
+                        } else {
+                            assertNull(error);
+                        }
+                        latch.countDown();
+                    }
                 }
             }
         });
@@ -113,7 +129,7 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
 
-        ReplicatorConfiguration config = makeConfig(false, true, "blxp://localhost/db");
+        ReplicatorConfiguration config = makeConfig(false, true, false, "blxp://localhost/db");
         run(config, 15, "LiteCore");
     }
 
@@ -122,8 +138,54 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
 
-        ReplicatorConfiguration config = makeConfig(true, false);
+        ReplicatorConfiguration config = makeConfig(true, false, false);
         run(config, 0, null);
+    }
+
+    @Test
+    public void testPushDoc() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        Document doc1 = new Document("doc1");
+        doc1.set("name", "Tiger");
+        save(doc1);
+        assertEquals(1, db.getCount());
+
+        Document doc2 = new Document("doc2");
+        doc2.set("name", "Cat");
+        otherDB.save(doc2);
+        assertEquals(1, otherDB.getCount());
+
+        ReplicatorConfiguration config = makeConfig(true, false, false);
+        run(config, 0, null);
+
+        assertEquals(2, otherDB.getCount());
+        doc2 = otherDB.getDocument("doc2");
+        assertEquals("Cat", doc2.getString("name"));
+    }
+
+    //TODO: @Test
+    public void testPushDocContinuous() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        Document doc1 = new Document("doc1");
+        doc1.set("name", "Tiger");
+        save(doc1);
+        assertEquals(1, db.getCount());
+
+        Document doc2 = new Document("doc2");
+        doc2.set("name", "Cat");
+        otherDB.save(doc2);
+        assertEquals(1, otherDB.getCount());
+
+        ReplicatorConfiguration config = makeConfig(true, false, true);
+        run(config, 0, null);
+
+        assertEquals(2, otherDB.getCount());
+        doc2 = otherDB.getDocument("doc2");
+        assertEquals("Cat", doc2.getString("name"));
     }
 
     @Test
@@ -142,7 +204,32 @@ public class ReplicatorTest extends BaseTest {
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
 
-        ReplicatorConfiguration config = makeConfig(false, true);
+        ReplicatorConfiguration config = makeConfig(false, true, false);
+        run(config, 0, null);
+
+        assertEquals(2, db.getCount());
+        doc2 = db.getDocument("doc2");
+        assertEquals("Cat", doc2.getString("name"));
+    }
+
+    //TODO @Test
+    public void testPullDocContinuous() throws Exception {
+        // For https://github.com/couchbase/couchbase-lite-core/issues/156
+
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        Document doc1 = new Document("doc1");
+        doc1.set("name", "Tiger");
+        save(doc1);
+        assertEquals(1, db.getCount());
+
+        Document doc2 = new Document("doc2");
+        doc2.set("name", "Cat");
+        otherDB.save(doc2);
+        assertEquals(1, otherDB.getCount());
+
+        ReplicatorConfiguration config = makeConfig(false, true, true);
         run(config, 0, null);
 
         assertEquals(2, db.getCount());
@@ -173,7 +260,7 @@ public class ReplicatorTest extends BaseTest {
         assertEquals(1, otherDB.getCount());
         Log.e(TAG, "doc2 -> %s", doc2.getC4doc().getRevID());
 
-        ReplicatorConfiguration config = makeConfig(false, true);
+        ReplicatorConfiguration config = makeConfig(false, true, false);
         run(config, 0, null);
         assertEquals(1, db.getCount());
 
@@ -191,7 +278,7 @@ public class ReplicatorTest extends BaseTest {
             return;
 
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db", this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration config = makeConfig(true, false, uri);
+        ReplicatorConfiguration config = makeConfig(true, false, false, uri);
         run(config, 0, null);
     }
 
@@ -201,7 +288,7 @@ public class ReplicatorTest extends BaseTest {
             return;
 
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db", this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, 0, null);
     }
 
@@ -213,7 +300,7 @@ public class ReplicatorTest extends BaseTest {
         loadJSONResource("names_100.json");
 
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db", this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration config = makeConfig(true, false, uri);
+        ReplicatorConfiguration config = makeConfig(true, false, false, uri);
         run(config, 0, null);
     }
 
@@ -223,7 +310,7 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, 401, "WebSocket");
     }
 
@@ -232,7 +319,7 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
         // Retry 3 times then fails with 401
         run(config, 401, "WebSocket");
@@ -243,7 +330,7 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
         String uri = String.format(Locale.ENGLISH, "blip://pupshaw:frank@%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, 0, null);
     }
 
@@ -252,7 +339,7 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
         run(config, 0, null);
     }
@@ -265,7 +352,7 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
         String uri = String.format(Locale.ENGLISH, "blips://%s:4994/beer", this.config.remoteHost());
-        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, kC4NetErrTLSCertUntrusted, "Network");
     }
 
@@ -286,7 +373,7 @@ public class ReplicatorTest extends BaseTest {
         is.close();
 
         String uri = String.format(Locale.ENGLISH, "blips://%s:4994/beer", this.config.remoteHost());
-        ReplicatorConfiguration config = makeConfig(false, true, uri);
+        ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setPinnedServerCertificate(cert);
         run(config, 0, null);
     }
