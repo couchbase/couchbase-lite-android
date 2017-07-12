@@ -281,9 +281,10 @@ public class Query {
             json.put("ORDER_BY", orderBy.asJSON());
 
         if (limit != null) {
-            json.put("LIMIT", limit.asJSON());
-            if (limit.hasOffset())
-                json.put("OFFSET", limit.asJSONOffset());
+            List<Object> list = (List<Object>) limit.asJSON();
+            json.put("LIMIT", list.get(0));
+            if (list.size() > 1)
+                json.put("OFFSET", list.get(1));
         }
         return json;
     }

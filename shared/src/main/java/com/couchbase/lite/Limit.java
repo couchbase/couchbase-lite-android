@@ -1,5 +1,8 @@
 package com.couchbase.lite;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Limit extends Query {
     //---------------------------------------------
     // member variables
@@ -20,21 +23,21 @@ public class Limit extends Query {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-    boolean hasOffset() {
-        return offset != null;
-    }
-
     Object asJSON() {
-        if (limit instanceof Expression)
-            return ((Expression) limit).asJSON();
-        else
-            return limit;
-    }
+        List<Object> json = new ArrayList<>();
 
-    Object asJSONOffset() {
-        if (offset instanceof Expression)
-            return ((Expression) offset).asJSON();
+        if (limit instanceof Expression)
+            json.add(((Expression) limit).asJSON());
         else
-            return offset;
+            json.add(limit);
+
+        if (offset != null) {
+            if (offset instanceof Expression)
+                json.add(((Expression) offset).asJSON());
+            else
+                json.add(offset);
+        }
+
+        return json;
     }
 }
