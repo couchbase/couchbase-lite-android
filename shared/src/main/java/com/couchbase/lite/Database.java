@@ -586,7 +586,12 @@ public final class Database {
                 if (resolver == null)
                     resolver = doc.effectiveConflictResolver();
                 Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
-                Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)", docID, resolver.getClass().getSimpleName(), doc.getRevID(), otherDoc.getRevID(), baseDoc.getRevID());
+                Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)",
+                        docID,
+                        resolver != null ? resolver.getClass().getSimpleName() : "null",
+                        doc != null ? doc.getRevID() : "null",
+                        otherDoc != null ? otherDoc.getRevID() : "null",
+                        baseDoc != null ? baseDoc.getRevID() : "null");
                 resolved = resolver.resolve(conflict);
                 if (resolved == null)
                     throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
