@@ -563,7 +563,7 @@ public abstract class Expression {
         }
     }
 
-    static class PropertyExpression extends Expression {
+    public static class PropertyExpression extends Expression {
         private final String from;
         private final String keyPath;
 
