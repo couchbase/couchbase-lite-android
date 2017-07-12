@@ -42,4 +42,12 @@ public class FileUtils {
         dir.delete();
         return true;
     }
+
+    public static boolean setPermissionRecursive(File fileOrDirectory, boolean readable, boolean writable) {
+        if (fileOrDirectory.isDirectory()) {
+            for (File child : fileOrDirectory.listFiles())
+                setPermissionRecursive(child, readable, writable);
+        }
+        return fileOrDirectory.setReadable(readable) && fileOrDirectory.setWritable(writable);
+    }
 }
