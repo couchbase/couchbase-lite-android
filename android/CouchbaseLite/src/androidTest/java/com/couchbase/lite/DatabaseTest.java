@@ -1199,4 +1199,22 @@ public class DatabaseTest extends BaseTest {
         atts = attsDir.listFiles();
         assertEquals(0, atts.length);
     }
+
+    @Test
+    public void testOverwriteDocWithNewDocInstgance() {
+        // REF: https://github.com/couchbase/couchbase-lite-android/issues/1231
+
+        Document doc1 = new Document("abc");
+        doc1.set("someKey", "someVar");
+        db.save(doc1);
+
+        // This cause conflict, DefaultConflictResolver should be applied.
+        Document doc2 = new Document("abc");
+        doc2.set("someKey", "newVar");
+        db.save(doc2);
+
+        // NOTE: Both doc1 and doc2 are generation 1. So mine (doc2) should win.
+        assertEquals(1, db.getCount());
+        assertEquals("newVar", db.getDocument("abc").getString("someKey"));
+    }
 }
