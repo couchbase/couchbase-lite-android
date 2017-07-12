@@ -184,9 +184,11 @@ public class ReplicatorConfiguration {
                 continuous,
                 conflictResolver,
                 authenticator,
-                Arrays.copyOf(pinnedServerCertificate, pinnedServerCertificate.length),
-                new ArrayList<>(channels),
-                new ArrayList<>(documentIDs));
+                pinnedServerCertificate != null ?
+                        Arrays.copyOf(pinnedServerCertificate, pinnedServerCertificate.length) :
+                        null,
+                channels != null ? new ArrayList<>(channels) : null,
+                documentIDs != null ? new ArrayList<>(documentIDs) : null);
     }
 
     //---------------------------------------------
