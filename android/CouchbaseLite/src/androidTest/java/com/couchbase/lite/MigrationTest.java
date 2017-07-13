@@ -1,6 +1,8 @@
 package com.couchbase.lite;
 
 
+import android.support.test.InstrumentationRegistry;
+
 import com.couchbase.lite.utils.ZipUtils;
 
 import org.junit.After;
@@ -24,14 +26,15 @@ public class MigrationTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        super.setUp();
+        //super.setUp();
         Log.e("MigrationTest", "setUp");
+        context = InstrumentationRegistry.getTargetContext();
     }
 
     @After
     public void tearDown() throws Exception {
         Log.e("MigrationTest", "tearDown");
-        super.tearDown();
+        //super.tearDown();
     }
 
     /**
@@ -59,11 +62,11 @@ public class MigrationTest extends BaseTest {
         // https://github.com/couchbase/couchbase-lite-android/issues/1237
 
         // if db exist, delete it
-        deleteDB("android140-sqlite", context.getFilesDir());
+        deleteDB("android-sqlite", context.getFilesDir());
 
         ZipUtils.unzip(getAsset("replacedb/android140-sqlite.cblite2.zip"), context.getFilesDir());
 
-        Database db = new Database("android140-sqlite", new DatabaseConfiguration(context));
+        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
         try {
             assertEquals(2, db.getCount());
             for (int i = 1; i <= 2; i++) {
@@ -78,9 +81,33 @@ public class MigrationTest extends BaseTest {
         } finally {
             // close db
             db.close();
-
             // if db exist, delete it
-            deleteDB("android140-sqlite", context.getFilesDir());
+            deleteDB("android-sqlite", context.getFilesDir());
+        }
+    }
+
+    //TODO: @Test
+    public void testOpenExsitingDBv1xNoAttachment() throws Exception {
+        // https://github.com/couchbase/couchbase-lite-android/issues/1237
+
+        // if db exist, delete it
+        deleteDB("android-sqlite", context.getFilesDir());
+
+        ZipUtils.unzip(getAsset("replacedb/android140-sqlite-noattachment.cblite2.zip"), context.getFilesDir());
+
+        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
+        try {
+            assertEquals(2, db.getCount());
+            for (int i = 1; i <= 2; i++) {
+                Document doc = db.getDocument("doc" + i);
+                assertNotNull(doc);
+                assertEquals(String.valueOf(i), doc.getString("key"));
+            }
+        } finally {
+            // close db
+            db.close();
+            // if db exist, delete it
+            deleteDB("android-sqlite", context.getFilesDir());
         }
     }
 
