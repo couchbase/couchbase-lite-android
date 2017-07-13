@@ -89,6 +89,6 @@ public class JsonDocumentTest extends LiteTestCase {
         ObjectMapper mapper = new ObjectMapper();
         byte[] json = mapper.writeValueAsBytes(fragment);
         JsonDocument jsdoc = new JsonDocument(json);
-        assertEquals(fragment, new Date((Long)jsdoc.jsonObject()));
+        assertEquals(fragment, new Date(((Number)jsdoc.jsonObject()).longValue()));
     }
 }
