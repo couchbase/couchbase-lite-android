@@ -26,11 +26,11 @@ public class DatabaseConfiguration extends BaseDatabaseConfiguration {
     // Package level access
     //---------------------------------------------
 
-    /* package */ Context getContext() {
+    Context getContext() {
         return context;
     }
 
-    /* package */ DatabaseConfiguration copy() {
+    DatabaseConfiguration copy() {
         DatabaseConfiguration config = new DatabaseConfiguration();
         config.context = this.context;
         config.setConflictResolver(this.getConflictResolver());

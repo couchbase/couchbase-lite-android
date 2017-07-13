@@ -13,7 +13,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-
 public class NotificationTest extends BaseTest {
 
     @Before
@@ -27,7 +26,8 @@ public class NotificationTest extends BaseTest {
     }
 
     @Test
-    public void testDatabaseNotification() throws InterruptedException {
+    public void testDatabaseNotification()
+            throws InterruptedException, CouchbaseLiteException {
         final CountDownLatch latch = new CountDownLatch(1);
         db.addChangeListener(new DatabaseChangeListener() {
             @Override
@@ -46,7 +46,11 @@ public class NotificationTest extends BaseTest {
                 for (int i = 0; i < 10; i++) {
                     Document doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                     doc.set("type", "demo");
-                    save(doc);
+                    try {
+                        save(doc);
+                    } catch (CouchbaseLiteException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         });
@@ -54,7 +58,8 @@ public class NotificationTest extends BaseTest {
     }
 
     @Test
-    public void testDocumentNotification() throws InterruptedException {
+    public void testDocumentNotification()
+            throws InterruptedException, CouchbaseLiteException {
         Document docA = createDocument("A");
         Document docB = createDocument("B");
 
@@ -113,7 +118,8 @@ public class NotificationTest extends BaseTest {
     }
 
     @Test
-    public void testExternalChanges() throws InterruptedException {
+    public void testExternalChanges()
+            throws InterruptedException, CouchbaseLiteException {
         final Database db2 = db.copy();
         assertNotNull(db2);
         try {
@@ -147,7 +153,11 @@ public class NotificationTest extends BaseTest {
                     for (int i = 0; i < 10; i++) {
                         Document doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                         doc.set("type", "demo");
-                        save(doc);
+                        try {
+                            save(doc);
+                        } catch (CouchbaseLiteException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
             });
@@ -160,7 +170,8 @@ public class NotificationTest extends BaseTest {
     }
 
     @Test
-    public void testAddSameChangeListeners() throws InterruptedException {
+    public void testAddSameChangeListeners()
+            throws InterruptedException, CouchbaseLiteException {
         Document doc1 = createDocument("doc1");
         doc1.set("name", "Scott");
         save(doc1);
@@ -190,7 +201,8 @@ public class NotificationTest extends BaseTest {
     }
 
     @Test
-    public void testRemoveDocumentChangeListener() throws InterruptedException {
+    public void testRemoveDocumentChangeListener()
+            throws InterruptedException, CouchbaseLiteException {
         Document doc1 = createDocument("doc1");
         doc1.set("name", "Scott");
         save(doc1);

@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-/*package*/ interface Status {
+interface Status {
     int CBLErrorDomain = 1000;
 
     int Forbidden = 403;

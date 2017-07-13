@@ -1,7 +1,8 @@
 package com.couchbase.lite;
 
-/*package*/ class DefaultConflictResolver implements ConflictResolver {
+class DefaultConflictResolver implements ConflictResolver {
     private static final String TAG = Log.DATABASE;
+
     /**
      * Default resolution algorithm is "most active wins", i.e. higher generation number.
      * If they are same generation, mine should win.

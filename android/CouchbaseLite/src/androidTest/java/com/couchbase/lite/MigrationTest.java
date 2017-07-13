@@ -41,7 +41,7 @@ public class MigrationTest extends BaseTest {
      * Tool to generate test db
      */
     //NOTE: @Test
-    public void testPrepareDB() {
+    public void testPrepareDB() throws CouchbaseLiteException {
         Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
         try {
             for (int i = 1; i <= 2; i++) {
@@ -139,7 +139,7 @@ public class MigrationTest extends BaseTest {
     }
 
     //  // if db exist, delete it
-    private void deleteDB(String name, File dir) {
+    private void deleteDB(String name, File dir) throws CouchbaseLiteException {
         // database exist, delete it
         if (Database.exists("android-sqlite", context.getFilesDir())) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec

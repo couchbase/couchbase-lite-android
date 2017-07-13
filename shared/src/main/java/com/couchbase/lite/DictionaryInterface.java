@@ -2,7 +2,7 @@ package com.couchbase.lite;
 
 import java.util.Map;
 
-/* package */ interface DictionaryInterface extends ReadOnlyDictionaryInterface {
+interface DictionaryInterface extends ReadOnlyDictionaryInterface {
     DictionaryInterface set(String key, Object value);
 
     DictionaryInterface remove(String key);

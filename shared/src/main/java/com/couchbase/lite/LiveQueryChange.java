@@ -12,7 +12,7 @@ public class LiveQueryChange {
     // constructors
     //---------------------------------------------
 
-    /*package*/ LiveQueryChange(LiveQuery query, ResultSet rows, Throwable error) {
+    LiveQueryChange(LiveQuery query, ResultSet rows, Throwable error) {
         this.query = query;
         this.rows = rows;
         this.error = error;

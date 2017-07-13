@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/* package */ interface ReadOnlyDictionaryInterface extends Iterable<String> {
+interface ReadOnlyDictionaryInterface extends Iterable<String> {
     int count();
 
     List<String> getKeys();

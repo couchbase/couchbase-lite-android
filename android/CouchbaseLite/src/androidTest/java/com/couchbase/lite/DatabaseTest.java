@@ -32,7 +32,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
 public class DatabaseTest extends BaseTest {
     private static final String TAG = DatabaseTest.class.getName();
 
@@ -50,7 +49,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     // helper method to open database
-    private Database openDatabase(String dbName) {
+    private Database openDatabase(String dbName) throws CouchbaseLiteException {
         DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
         Database db = new Database(dbName, options);
@@ -61,7 +60,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     // helper method to delete database
-    void deleteDatabase(Database db) {
+    void deleteDatabase(Database db) throws CouchbaseLiteException {
         File path = db.getPath();
         // if path is null, db is already closed
         if (path != null)
@@ -73,7 +72,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     // helper method to save document
-    Document generateDocument(String docID) {
+    Document generateDocument(String docID) throws CouchbaseLiteException {
         Document doc = createDocument(docID);
         doc.set("key", 1);
         save(doc);
@@ -107,7 +106,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     // helper method to purge doc and verify doc.
-    void purgeDocAndVerify(Document doc) {
+    void purgeDocAndVerify(Document doc) throws CouchbaseLiteException {
         String docID = doc.getId();
         db.purge(doc);
         assertEquals(docID, doc.getId());         // docID should be same
@@ -117,7 +116,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     // helper method to save n number of docs
-    List<Document> createDocs(int n) {
+    List<Document> createDocs(int n) throws CouchbaseLiteException {
         List<Document> docs = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             Document doc = createDocument(String.format(Locale.US, "doc_%03d", i));
@@ -190,7 +189,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testGetSetConfiguration() {
+    public void testGetSetConfiguration() throws CouchbaseLiteException {
         DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         config.setDirectory(this.db.getConfig().getDirectory());
 
@@ -207,7 +206,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testConfigurationIsCopiedWhenGetSet() {
+    public void testConfigurationIsCopiedWhenGetSet() throws CouchbaseLiteException {
         DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         config.setDirectory(this.db.getConfig().getDirectory());
 
@@ -223,13 +222,14 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDatabaseConfigurationWithAndroidContect() {
+    public void testDatabaseConfigurationWithAndroidContect() throws CouchbaseLiteException {
         DatabaseConfiguration config = new DatabaseConfiguration(context);
         assertEquals(config.getDirectory(), context.getFilesDir());
 
         Database db = new Database("db", config);
         try {
-            assertTrue(db.getPath().getAbsolutePath().contains(context.getFilesDir().getAbsolutePath()));
+            String expectedPath = context.getFilesDir().getAbsolutePath();
+            assertTrue(db.getPath().getAbsolutePath().contains(expectedPath));
         } finally {
             db.close();
         }
@@ -240,7 +240,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
 
     @Test
-    public void testCreate() {
+    public void testCreate() throws CouchbaseLiteException {
         // create db with default options
         Database db = openDatabase("db");
         try {
@@ -253,7 +253,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testCreateWithDefaultOption() {
+    public void testCreateWithDefaultOption() throws CouchbaseLiteException {
         Database db = new Database("db", new DatabaseConfiguration(this.context));
         try {
         } finally {
@@ -263,7 +263,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testCreateWithSpecialCharacterDBNames() {
+    public void testCreateWithSpecialCharacterDBNames() throws CouchbaseLiteException {
         Database db = openDatabase("`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'");
         try {
             assertNotNull(db);
@@ -281,11 +281,13 @@ public class DatabaseTest extends BaseTest {
             fail();
         } catch (IllegalArgumentException e) {
             // NOTE: CBL Android's Database constructor does not work without specified directory.
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
         }
     }
 
     @Test
-    public void testCreateWithCustomDirectory() {
+    public void testCreateWithCustomDirectory() throws CouchbaseLiteException {
 
         String dbName = "db";
 
@@ -323,7 +325,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testGetExistingDocWithID() {
+    public void testGetExistingDocWithID() throws CouchbaseLiteException {
         // store doc
         String docID = "doc1";
         generateDocument(docID);
@@ -333,7 +335,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     // TODO: @Test
-    public void testGetExistingDocWithIDFromDifferentDBInstance() {
+    public void testGetExistingDocWithIDFromDifferentDBInstance() throws CouchbaseLiteException {
         // store doc
         String docID = "doc1";
         generateDocument(docID);
@@ -353,7 +355,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testGetExistingDocWithIDInBatch() {
+    public void testGetExistingDocWithIDInBatch() throws CouchbaseLiteException {
         // Save 10 docs:
         createDocs(10);
 
@@ -366,7 +368,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testGetDocFromClosedDB() {
+    public void testGetDocFromClosedDB() throws CouchbaseLiteException {
         // Store doc:
         generateDocument("doc1");
 
@@ -376,13 +378,13 @@ public class DatabaseTest extends BaseTest {
         try {
             Document doc = db.getDocument("doc1");
             fail();
-        } catch (IllegalStateException e) {
-            // should be thrown IllegalStateException!!
+        } catch (CouchbaseLiteRuntimeException e) {
+            // should be thrown CouchbaseLiteRuntimeException!!
         }
     }
 
     @Test
-    public void testGetDocFromDeletedDB() {
+    public void testGetDocFromDeletedDB() throws CouchbaseLiteException {
         // Store doc:
         generateDocument("doc1");
 
@@ -391,15 +393,15 @@ public class DatabaseTest extends BaseTest {
         try {
             Document doc = db.getDocument("doc1");
             fail();
-        } catch (IllegalStateException e) {
-            // should be thrown IllegalStateException!!
+        } catch (CouchbaseLiteRuntimeException e) {
+            // should be thrown CouchbaseLiteRuntimeException!!
         }
     }
 
     //---------------------------------------------
     //  Save Document
     //---------------------------------------------
-    private void testSaveNewDocWithID(String docID) {
+    private void testSaveNewDocWithID(String docID) throws CouchbaseLiteException {
         // store doc
         generateDocument(docID);
 
@@ -411,17 +413,17 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testSaveNewDocWithID() {
+    public void testSaveNewDocWithID() throws CouchbaseLiteException {
         testSaveNewDocWithID("doc1");
     }
 
     @Test
-    public void testSaveNewDocWithSpecialCharactersDocID() {
+    public void testSaveNewDocWithSpecialCharactersDocID() throws CouchbaseLiteException {
         testSaveNewDocWithID("`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'");
     }
 
     @Test
-    public void testSaveDoc() {
+    public void testSaveDoc() throws CouchbaseLiteException {
         // store doc
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -439,7 +441,7 @@ public class DatabaseTest extends BaseTest {
 
     // TODO : @Test
     // LiteCore throws exception in tearDown
-    public void testSaveDocInDifferentDBInstance() {
+    public void testSaveDocInDifferentDBInstance() throws CouchbaseLiteException {
         // Store doc
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -466,7 +468,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testSaveDocInDifferentDB() {
+    public void testSaveDocInDifferentDB() throws CouchbaseLiteException {
         // Store doc
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -493,7 +495,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testSaveSameDocTwice() {
+    public void testSaveSameDocTwice() throws CouchbaseLiteException {
         String docID = "doc1";
         Document doc = generateDocument(docID);
         save(doc);
@@ -502,11 +504,15 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testSaveInBatch() {
+    public void testSaveInBatch() throws CouchbaseLiteException {
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                createDocs(10);
+                try {
+                    createDocs(10);
+                } catch (CouchbaseLiteException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
         assertEquals(10, db.getCount());
@@ -514,7 +520,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testSaveDocToClosedDB() {
+    public void testSaveDocToClosedDB() throws CouchbaseLiteException {
         db.close();
 
         Document doc = createDocument("doc1");
@@ -523,13 +529,13 @@ public class DatabaseTest extends BaseTest {
         try {
             save(doc);
             fail();
-        } catch (IllegalStateException e) {
-            // should be thrown IllegalStateException!!
+        } catch (CouchbaseLiteRuntimeException e) {
+            // should be thrown CouchbaseLiteRuntimeException!!
         }
     }
 
     @Test
-    public void testSaveDocToDeletedDB() {
+    public void testSaveDocToDeletedDB() throws CouchbaseLiteException {
         // Delete db:
         deleteDatabase(db);
 
@@ -539,8 +545,8 @@ public class DatabaseTest extends BaseTest {
         try {
             save(doc);
             fail();
-        } catch (IllegalStateException e) {
-            // should be thrown IllegalStateException!!
+        } catch (CouchbaseLiteRuntimeException e) {
+            // should be thrown CouchbaseLiteRuntimeException!!
         }
     }
 
@@ -561,7 +567,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteDoc() {
+    public void testDeleteDoc() throws CouchbaseLiteException {
         String docID = "doc1";
         Document doc = generateDocument(docID);
 
@@ -576,7 +582,7 @@ public class DatabaseTest extends BaseTest {
 
     // TODO : @Test
     // Error from LiteCore in tearDown
-    public void testDeleteDocInDifferentDBInstance() {
+    public void testDeleteDocInDifferentDBInstance() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -603,7 +609,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteDocInDifferentDB() {
+    public void testDeleteDocInDifferentDB() throws CouchbaseLiteException {
         // Store doc
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -629,7 +635,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteSameDocTwice() {
+    public void testDeleteSameDocTwice() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -650,7 +656,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteDocInBatch() {
+    public void testDeleteDocInBatch() throws CouchbaseLiteException {
         // Save 10 docs:
         createDocs(10);
 
@@ -660,7 +666,11 @@ public class DatabaseTest extends BaseTest {
                 for (int i = 0; i < 10; i++) {
                     String docID = String.format(Locale.US, "doc_%03d", i);
                     Document doc = db.getDocument(docID);
-                    db.delete(doc);
+                    try {
+                        db.delete(doc);
+                    } catch (CouchbaseLiteException e) {
+                        throw new RuntimeException(e);
+                    }
                     assertNull(doc.getObject("key"));
                     assertTrue(doc.isDeleted());
                     assertEquals((9 - i), db.getCount());
@@ -672,7 +682,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteDocOnClosedDB() {
+    public void testDeleteDocOnClosedDB() throws CouchbaseLiteException {
         // Store doc:
         Document doc = generateDocument("doc1");
 
@@ -683,13 +693,13 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (IllegalStateException e) {
-            // should be thrown IllegalStateException!!
+        } catch (CouchbaseLiteRuntimeException e) {
+            // should be thrown CouchbaseLiteRuntimeException!!
         }
     }
 
     @Test
-    public void testDeleteDocOnDeletedDB() {
+    public void testDeleteDocOnDeletedDB() throws CouchbaseLiteException {
         // Store doc:
         Document doc = generateDocument("doc1");
 
@@ -700,8 +710,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (IllegalStateException e) {
-            // should be thrown IllegalStateException!!
+        } catch (CouchbaseLiteRuntimeException e) {
+            // should be thrown CouchbaseLiteRuntimeException!!
         }
     }
 
@@ -722,7 +732,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testPurgeDoc() {
+    public void testPurgeDoc() throws CouchbaseLiteException {
         String docID = "doc1";
         Document doc = generateDocument(docID);
 
@@ -736,7 +746,7 @@ public class DatabaseTest extends BaseTest {
 
     // TODO : @Test
     // Error from LiteCore in tearDown
-    public void testPurgeDocInDifferentDBInstance() {
+    public void testPurgeDocInDifferentDBInstance() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -762,7 +772,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testPurgeDocInDifferentDB() {
+    public void testPurgeDocInDifferentDB() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -788,7 +798,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testPurgeSameDocTwice() {
+    public void testPurgeSameDocTwice() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -806,7 +816,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testPurgeDocInBatch() {
+    public void testPurgeDocInBatch() throws CouchbaseLiteException {
         // Save 10 docs:
         createDocs(10);
 
@@ -816,7 +826,11 @@ public class DatabaseTest extends BaseTest {
                 for (int i = 0; i < 10; i++) {
                     String docID = String.format(Locale.US, "doc_%03d", i);
                     Document doc = db.getDocument(docID);
-                    purgeDocAndVerify(doc);
+                    try {
+                        purgeDocAndVerify(doc);
+                    } catch (CouchbaseLiteException e) {
+                        throw new RuntimeException(e);
+                    }
                     assertEquals((9 - i), db.getCount());
                 }
             }
@@ -826,7 +840,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testPurgeDocOnClosedDB() {
+    public void testPurgeDocOnClosedDB() throws CouchbaseLiteException {
         // Store doc:
         Document doc = generateDocument("doc1");
 
@@ -837,13 +851,13 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (IllegalStateException e) {
-            // should be thrown IllegalStateException!!
+        } catch (CouchbaseLiteRuntimeException e) {
+            // should be thrown CouchbaseLiteRuntimeException!!
         }
     }
 
     @Test
-    public void testPurgeDocOnDeletedDB() {
+    public void testPurgeDocOnDeletedDB() throws CouchbaseLiteException {
         // Store doc:
         Document doc = generateDocument("doc1");
 
@@ -854,8 +868,8 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (IllegalStateException e) {
-            // should be thrown IllegalStateException!!
+        } catch (CouchbaseLiteRuntimeException e) {
+            // should be thrown CouchbaseLiteRuntimeException!!
         }
     }
 
@@ -863,18 +877,18 @@ public class DatabaseTest extends BaseTest {
     //  Close Database
     //---------------------------------------------
     @Test
-    public void testClose() {
+    public void testClose() throws CouchbaseLiteException {
         db.close();
     }
 
     @Test
-    public void testCloseTwice() {
+    public void testCloseTwice() throws CouchbaseLiteException {
         db.close();
         db.close();
     }
 
     @Test
-    public void testCloseThenAccessDoc() {
+    public void testCloseThenAccessDoc() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -890,7 +904,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testCloseThenAccessBlob() {
+    public void testCloseThenAccessBlob() throws CouchbaseLiteException {
         // Store doc with blob:
         Document doc = generateDocument("doc1");
         doc.set("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
@@ -907,19 +921,19 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testCloseThenGetDatabaseName() {
+    public void testCloseThenGetDatabaseName() throws CouchbaseLiteException {
         db.close();
         assertEquals("testdb", db.getName());
     }
 
     @Test
-    public void testCloseThenGetDatabasePath() {
+    public void testCloseThenGetDatabasePath() throws CouchbaseLiteException {
         db.close();
         assertTrue(db.getPath() == null);
     }
 
     @Test
-    public void testCloseThenCallInBatch() {
+    public void testCloseThenCallInBatch() throws CouchbaseLiteException {
         db.inBatch(new Runnable() {
             @Override
             public void run() {
@@ -929,7 +943,8 @@ public class DatabaseTest extends BaseTest {
                     fail();
                 } catch (CouchbaseLiteException e) {
                     assertEquals(LiteCoreDomain, e.getDomain());
-                    // 26 -> kC4ErrorTransactionNotClosed: Function cannot be called while in a transaction
+                    // 26 -> kC4ErrorTransactionNotClosed:
+                    //          Function cannot be called while in a transaction
                     assertEquals(kC4ErrorTransactionNotClosed, e.getCode()); // 26
                 }
             }
@@ -937,12 +952,12 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testCloseThenDeleteDatabase() {
+    public void testCloseThenDeleteDatabase() throws CouchbaseLiteException {
         db.close();
         try {
             deleteDatabase(db);
             fail();
-        } catch (IllegalStateException e) {
+        } catch (CouchbaseLiteRuntimeException e) {
             // should come here!
         }
     }
@@ -951,12 +966,12 @@ public class DatabaseTest extends BaseTest {
     //  Delete Database
     //---------------------------------------------
     @Test
-    public void testDelete() {
+    public void testDelete() throws CouchbaseLiteException {
         deleteDatabase(db);
     }
 
     @Test
-    public void testDeleteTwice() {
+    public void testDeleteTwice() throws CouchbaseLiteException {
         // delete db twice
         File path = db.getPath();
         assertTrue(path.exists());
@@ -964,14 +979,14 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (CouchbaseLiteRuntimeException e) {
             // should come here!
         }
         assertFalse(path.exists());
     }
 
     @Test
-    public void testDeleteThenAccessDoc() {
+    public void testDeleteThenAccessDoc() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
         Document doc = generateDocument(docID);
@@ -987,7 +1002,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteThenAccessBlob() {
+    public void testDeleteThenAccessBlob() throws CouchbaseLiteException {
         // Store doc with blob:
         Document doc = generateDocument("doc1");
         doc.set("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
@@ -1004,7 +1019,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteThenGetDatabaseName() {
+    public void testDeleteThenGetDatabaseName() throws CouchbaseLiteException {
         // delete db
         deleteDatabase(db);
 
@@ -1012,7 +1027,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteThenGetDatabasePath() {
+    public void testDeleteThenGetDatabasePath() throws CouchbaseLiteException {
         // delete db
         deleteDatabase(db);
 
@@ -1020,7 +1035,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteThenCallInBatch() {
+    public void testDeleteThenCallInBatch() throws CouchbaseLiteException {
         db.inBatch(new Runnable() {
             @Override
             public void run() {
@@ -1030,7 +1045,8 @@ public class DatabaseTest extends BaseTest {
                     fail();
                 } catch (CouchbaseLiteException e) {
                     assertEquals(LiteCoreDomain, e.getDomain());
-                    // 26 -> kC4ErrorTransactionNotClosed: Function cannot be called while in a transaction
+                    // 26 -> kC4ErrorTransactionNotClosed:
+                    //          Function cannot be called while in a transaction
                     assertEquals(kC4ErrorTransactionNotClosed, e.getCode()); // 26
                 }
             }
@@ -1038,7 +1054,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteDBOpenedByOtherInstance() {
+    public void testDeleteDBOpenedByOtherInstance() throws CouchbaseLiteException {
         Database otherDB = openDatabase(db.getName());
         try {
             assertTrue(db != otherDB);
@@ -1061,7 +1077,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
 
     @Test
-    public void testDeleteByStaticMethod() {
+    public void testDeleteByStaticMethod() throws CouchbaseLiteException {
         String dbName = "db";
 
         // create db with custom directory
@@ -1076,7 +1092,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteOpeningDBByStaticMethod() {
+    public void testDeleteOpeningDBByStaticMethod() throws CouchbaseLiteException {
         Database db = openDatabase("db");
         try {
             try {
@@ -1100,6 +1116,8 @@ public class DatabaseTest extends BaseTest {
             fail();
         } catch (IllegalArgumentException e) {
             // expected
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
         }
     }
 
@@ -1119,7 +1137,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
 
     @Test
-    public void testDatabaseExistsWithDir() {
+    public void testDatabaseExistsWithDir() throws CouchbaseLiteException {
         assertFalse(Database.exists("db", dir));
 
         // create db with custom directory
@@ -1154,7 +1172,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     //TODO: @Test - test fails because database.compact() does not delete blob files.
-    public void testCompact() {
+    public void testCompact() throws CouchbaseLiteException {
         final List<Document> docs = createDocs(20);
 
         // Update each doc 25 times:
@@ -1164,7 +1182,11 @@ public class DatabaseTest extends BaseTest {
                 for (Document doc : docs) {
                     for (int i = 0; i < 25; i++) {
                         doc.set("number", i);
-                        save(doc);
+                        try {
+                            save(doc);
+                        } catch (CouchbaseLiteException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
             }
@@ -1201,7 +1223,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testOverwriteDocWithNewDocInstgance() {
+    public void testOverwriteDocWithNewDocInstgance() throws CouchbaseLiteException {
         // REF: https://github.com/couchbase/couchbase-lite-android/issues/1231
 
         Document doc1 = new Document("abc");

@@ -101,7 +101,6 @@ public class Log {
      *                 is passed as a paremeter, it will return true.
      * @return boolean indicating whether logging is enabled.
      */
-    /* package */
     static boolean isLoggingEnabled(String tag, int logLevel) {
 
         // this hashmap lookup might be a little expensive, and so it might make

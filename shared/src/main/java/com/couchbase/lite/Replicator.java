@@ -46,7 +46,7 @@ public class Replicator implements NetworkReachabilityListener {
          */
         STOPPED(0),
         /**
-         * The replication is unactive; either waiting for changes or offline as the remote host is
+         * The replication is inactive; either waiting for changes or offline as the remote host is
          * unreachable.
          */
         IDLE(1),
@@ -57,11 +57,11 @@ public class Replicator implements NetworkReachabilityListener {
 
         private int value;
 
-        /* package */ ActivityLevel(int value) {
+        ActivityLevel(int value) {
             this.value = value;
         }
 
-        /* package */ int getValue() {
+        int getValue() {
             return value;
         }
     }
@@ -104,7 +104,7 @@ public class Replicator implements NetworkReachabilityListener {
             return total;
         }
 
-        /*package*/ Progress copy() {
+        Progress copy() {
             return new Progress(completed, total);
         }
     }
@@ -146,7 +146,7 @@ public class Replicator implements NetworkReachabilityListener {
         }
 
 
-        /*package*/ Status copy() {
+        Status copy() {
             return new Status(activityLevel, progress.copy());
         }
     }

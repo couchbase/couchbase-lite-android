@@ -48,12 +48,12 @@ public final class Blob implements FleeceEncodable {
     // static constant variables
     //---------------------------------------------
 
-    /* package */ static final String TAG = Log.BLOB;
-    /* package */ static final String TYPE_META_PROPERTY = "_cbltype";
-    /* package */ static final String BLOB_TYPE = "blob";
+    static final String TAG = Log.BLOB;
+    static final String TYPE_META_PROPERTY = "_cbltype";
+    static final String BLOB_TYPE = "blob";
 
     // Max size of data that will be cached in memory with the CBLBlob
-    /* package */ static final int MAX_CACHED_CONTENT_LENGTH = 8 * 1024;
+    static final int MAX_CACHED_CONTENT_LENGTH = 8 * 1024;
 
     //---------------------------------------------
     // member variables
@@ -136,7 +136,7 @@ public final class Blob implements FleeceEncodable {
     }
 
     // Initializer for an existing blob being read from a document
-    /* package */ Blob(Database database, Map<String, Object> properties) {
+    Blob(Database database, Map<String, Object> properties) {
         this.database = database;
         this.properties = new HashMap<>(properties);
         this.properties.remove(TYPE_META_PROPERTY);
@@ -208,7 +208,7 @@ public final class Blob implements FleeceEncodable {
                     length = content.length;
                 } catch (IOException e) {
                     Log.w(TAG, "I/O Error with the given stream.", e);
-                    throw new CouchbaseLiteException(e);
+                    throw new CouchbaseLiteRuntimeException(e);
                 } finally {
                     try {
                         initialContentStream.close();
@@ -301,13 +301,13 @@ public final class Blob implements FleeceEncodable {
     // Package level access
     //---------------------------------------------
 
-    /* package */ Map<String, Object> jsonRepresentation() {
+    Map<String, Object> jsonRepresentation() {
         Map<String, Object> json = new HashMap<>(getProperties());
         json.put(TYPE_META_PROPERTY, BLOB_TYPE);
         return json;
     }
 
-    /* package */ void installInDatabase(Database db) throws CouchbaseLiteException {
+    void installInDatabase(Database db) {
         if (db == null)
             throw new IllegalArgumentException("database is null");
 
@@ -324,11 +324,7 @@ public final class Blob implements FleeceEncodable {
             C4BlobStore store = getBlobStore(db);
             try {
                 if (content != null) {
-                    try {
-                        key = store.create(content);
-                    } catch (LiteCoreException e) {
-                        throw LiteCoreBridge.convertException(e);
-                    }
+                    key = store.create(content);
                 } else {
                     C4BlobWriteStream blobOut = store.openWriteStream();
                     try {
@@ -361,9 +357,9 @@ public final class Blob implements FleeceEncodable {
                     store.free();
             }
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw LiteCoreBridge.convertRuntimeException(e);
         } catch (IOException ioe) {
-            throw new CouchbaseLiteException(ioe);
+            throw new CouchbaseLiteRuntimeException(ioe);
         } finally {
             if (key != null)
                 key.free();
@@ -372,7 +368,7 @@ public final class Blob implements FleeceEncodable {
 
     // FleeceEncodable implementation
     @Override
-    public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
+    public void fleeceEncode(FLEncoder encoder, Database database) {
         installInDatabase(database);
 
         Map<String, Object> dict = jsonRepresentation();

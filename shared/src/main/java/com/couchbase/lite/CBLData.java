@@ -15,8 +15,7 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLArray;
 import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
 
 // CBLData.mm
-/*package*/ class CBLData {
-    /* package */
+class CBLData {
     static Object convert(Object value) {
         if (value instanceof Dictionary) {
             return value;
@@ -51,7 +50,6 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
         return value;
     }
 
-    /*package*/
     static boolean toBoolean(Object object) {
         if (object == null)
             return false;
@@ -68,7 +66,6 @@ import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
     // + (id) fleeceValueToObject: (FLValue)value
     //                      c4doc: (CBLC4Document*)c4doc
     //                  database: (CBLDatabase*)database
-    /*package*/
     static Object fleeceValueToObject(FLValue value, CBLC4Doc c4doc, Database database) {
         if (value == null) return null;
         switch (value.getType()) {

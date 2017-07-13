@@ -33,12 +33,11 @@ public enum IndexType {
 
     private int value;
 
-    /* package */ IndexType(int value) {
+    IndexType(int value) {
         this.value = value;
     }
 
-    /* package */ int getValue() {
+    int getValue() {
         return value;
     }
 }
-

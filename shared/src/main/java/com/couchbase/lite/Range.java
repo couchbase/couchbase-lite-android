@@ -26,7 +26,7 @@ public class Range {
     private int location;
     private int length;
 
-    /* package */ Range(int location, int length) {
+    Range(int location, int length) {
         this.location = location;
         this.length = length;
     }

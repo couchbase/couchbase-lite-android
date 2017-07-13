@@ -3,10 +3,10 @@ package com.couchbase.lite;
 
 import com.couchbase.litecore.LiteCoreException;
 
-/*package*/ class CBLC4Doc {
+class CBLC4Doc {
     private com.couchbase.litecore.Document rawDoc;
 
-    /*package*/ CBLC4Doc(com.couchbase.litecore.Document rawDoc) {
+    CBLC4Doc(com.couchbase.litecore.Document rawDoc) {
         this.rawDoc = rawDoc;
     }
 
@@ -16,23 +16,23 @@ import com.couchbase.litecore.LiteCoreException;
         super.finalize();
     }
 
-    /*package*/ com.couchbase.litecore.Document getRawDoc() {
+    com.couchbase.litecore.Document getRawDoc() {
         return rawDoc;
     }
 
-    /*package*/ int getFlags() {
+    int getFlags() {
         return rawDoc.getFlags();
     }
 
-    /*package*/ long getSequence() {
+    long getSequence() {
         return rawDoc.getSequence();
     }
 
-    /*package*/ String getRevID() {
+    String getRevID() {
         return rawDoc.getRevID();
     }
 
-    /*package*/ void free() {
+    void free() {
         if (rawDoc != null) {
             rawDoc.free();
             rawDoc = null;
@@ -41,19 +41,19 @@ import com.couchbase.litecore.LiteCoreException;
 
     // --- Following is Java only methods
 
-    /*package*/String getSelectedRevID() {
+    String getSelectedRevID() {
         return rawDoc.getSelectedRevID();
     }
 
-    /*package*/ byte[] getSelectedBody() throws LiteCoreException {
+    byte[] getSelectedBody() throws LiteCoreException {
         return rawDoc.getSelectedBody();
     }
 
-    /*package*/ long getSelectedSequence() {
+    long getSelectedSequence() {
         return rawDoc.getSelectedSequence();
     }
 
-    /*package*/ long getSelectedRevFlags() {
+    long getSelectedRevFlags() {
         return rawDoc.getSelectedRevFlags();
     }
 }

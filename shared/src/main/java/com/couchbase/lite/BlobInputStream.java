@@ -9,14 +9,14 @@ import com.couchbase.litecore.LiteCoreException;
 import java.io.IOException;
 import java.io.InputStream;
 
-/* package */ class BlobInputStream extends InputStream {
+class BlobInputStream extends InputStream {
     C4BlobStore store = null;
     C4BlobKey key = null;
     boolean hasBytesAvailable = false;
     boolean closed = true;
     C4BlobReadStream readStream = null;
 
-    /* package */ BlobInputStream(C4BlobStore store, C4BlobKey key) throws CouchbaseLiteException {
+    BlobInputStream(C4BlobStore store, C4BlobKey key) {
         if (key == null)
             throw new IllegalArgumentException("key is null.");
         if (store == null) {
@@ -31,7 +31,7 @@ import java.io.InputStream;
             this.hasBytesAvailable = true;
             this.closed = false;
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw LiteCoreBridge.convertRuntimeException(e);
         }
     }
 

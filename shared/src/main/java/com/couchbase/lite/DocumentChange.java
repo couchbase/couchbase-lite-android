@@ -20,7 +20,7 @@ package com.couchbase.lite;
 public class DocumentChange {
     private final String documentID;
 
-    /* package */ DocumentChange(String documentID) {
+    DocumentChange(String documentID) {
         this.documentID = documentID;
     }
 

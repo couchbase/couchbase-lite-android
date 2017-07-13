@@ -9,7 +9,7 @@ import static org.junit.Assert.assertEquals;
 
 public class URIUtilsTest {
     @Test
-    public void testGetPort() throws URISyntaxException{
+    public void testGetPort() throws URISyntaxException {
         URI uri = new URI("blip://foo.couchbase.com/db");
         assertEquals(-1, uri.getPort());
     }

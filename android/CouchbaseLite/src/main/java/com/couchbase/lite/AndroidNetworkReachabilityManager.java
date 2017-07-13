@@ -23,7 +23,7 @@ import android.net.NetworkInfo;
 /**
  * NOTE: https://developer.android.com/training/basics/network-ops/managing.html
  */
-/* package */ class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {
+class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {
 
     private static final String TAG = Log.SYNC;
 
@@ -31,7 +31,7 @@ import android.net.NetworkInfo;
     private Context context;
     private NetworkReceiver receiver;
 
-    /* package */ AndroidNetworkReachabilityManager(Context context) {
+    AndroidNetworkReachabilityManager(Context context) {
         this.listening = false;
         this.context = context;
         this.receiver = new NetworkReceiver();

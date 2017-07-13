@@ -608,7 +608,7 @@ public abstract class Expression {
         private Object operand;
         private OpType type;
 
-        /* package */ UnaryExpression(Object operand, OpType type) {
+        UnaryExpression(Object operand, OpType type) {
             if (operand == null)
                 throw new AssertionError("operand is null.");
             this.operand = operand;

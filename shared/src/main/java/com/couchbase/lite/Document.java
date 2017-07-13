@@ -93,12 +93,12 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         set(dictionary);
     }
 
-    /*package*/Document(Database database, String documentID, CBLC4Doc c4doc, CBLFLDict data) {
+    Document(Database database, String documentID, CBLC4Doc c4doc, CBLFLDict data) {
         super(database, documentID, c4doc, data);
         this.dictionary = new Dictionary();
     }
 
-    /*package*/ Document(Database database, String documentID, boolean mustExist) throws CouchbaseLiteException {
+    Document(Database database, String documentID, boolean mustExist) {
         super(database, documentID, mustExist);
     }
 
@@ -209,7 +209,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     /**
-     * Gets a property's value as a String. Returns null if the value doesn't exist, or its value is not a String.
+     * Gets a property's value as a String.
+     * Returns null if the value doesn't exist, or its value is not a String.
      *
      * @param key the key
      * @return the String or null.
@@ -220,7 +221,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     /**
-     * Gets a property's value as a Number. Returns null if the value doesn't exist, or its value is not a Number.
+     * Gets a property's value as a Number.
+     * Returns null if the value doesn't exist, or its value is not a Number.
      *
      * @param key the key
      * @return the Number or nil.
@@ -335,7 +337,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 
     /**
      * Tests whether a property exists or not.
-     * This can be less expensive than getObject(String), because it does not have to allocate an Object for the property value.
+     * This can be less expensive than getObject(String),
+     * because it does not have to allocate an Object for the property value.
      *
      * @param key the key
      * @return the boolean value representing whether a property exists or not.
@@ -350,7 +353,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     //---------------------------------------------
     // Sets c4doc and updates my root dictionary
     @Override
-    protected void setC4Doc(CBLC4Doc c4doc) throws CouchbaseLiteException {
+    protected void setC4Doc(CBLC4Doc c4doc) {
         super.setC4Doc(c4doc);
         // Update delegate dictionary:
         this.dictionary = new Dictionary(getData());
@@ -360,15 +363,15 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // Package level access
     //---------------------------------------------
 
-    /*package*/ void save() throws CouchbaseLiteException {
+    void save() throws CouchbaseLiteException {
         save(effectiveConflictResolver(), false);
     }
 
-    /*package*/  void delete() throws CouchbaseLiteException {
+    void delete() throws CouchbaseLiteException {
         save(effectiveConflictResolver(), true);
     }
 
-    /*package*/  void purge() throws CouchbaseLiteException {
+    void purge() throws CouchbaseLiteException {
         if (!exists())
             throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
 
@@ -391,25 +394,25 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     @Override
-    /*package*/ boolean isEmpty() {
+    boolean isEmpty() {
         return dictionary.isEmpty();
     }
 
     @Override
-    /* package */ long generation() {
+    long generation() {
         return super.generation() + (isChanged() ? 1 : 0);
     }
 
     // #pragma mark - FLEECE ENCODING
 
     @Override
-    /*package*/ byte[] encode() {
+    byte[] encode() {
         FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
         try {
             dictionary.fleeceEncode(encoder, getDatabase());
             return encoder.finish();
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw LiteCoreBridge.convertRuntimeException(e);
         } finally {
             encoder.free();
         }
@@ -417,7 +420,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
-
 
     private void save(ConflictResolver resolver, boolean deletion) throws CouchbaseLiteException {
         if (deletion && !exists())
@@ -487,7 +489,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             resolved = current;
         } else {
             // Call the custom conflict resolver
-            ReadOnlyDocument base = new ReadOnlyDocument(getDatabase(), getId(), super.getC4doc(), super.getData());
+            ReadOnlyDocument base = new ReadOnlyDocument(
+                    getDatabase(), getId(), super.getC4doc(), super.getData());
             Conflict conflict = new Conflict(this, current, base);
             resolved = resolver.resolve(conflict);
             if (resolved == null) {
@@ -509,8 +512,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
-    private com.couchbase.litecore.Document save(boolean deletion)
-            throws LiteCoreException, IllegalStateException {
+    private com.couchbase.litecore.Document save(boolean deletion) throws LiteCoreException {
 
         // history
         List<String> revIDs = new ArrayList<>();
@@ -533,7 +535,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 
         // TODO: Refactor: use c4doc_update or c4doc_create
         // Save to database:
-        return getDatabase().getC4Database().put(getId(), body, false, false, history, revFlags, true, 0);
+        return getDatabase().getC4Database().put(
+                getId(), body, false, false, history, revFlags, true, 0);
     }
 
     private boolean isChanged() {

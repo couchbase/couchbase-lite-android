@@ -86,7 +86,7 @@ public class DocumentTest extends BaseTest {
 
 
     @Test
-    public void testCreateDoc() {
+    public void testCreateDoc() throws CouchbaseLiteException {
         Document doc1a = new Document();
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
@@ -104,7 +104,7 @@ public class DocumentTest extends BaseTest {
 
 
     @Test
-    public void testNewDocWithId() {
+    public void testNewDocWithId() throws CouchbaseLiteException {
         Document doc1a = createDocument("doc1");
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
@@ -134,7 +134,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testCreateDocWithNilID() {
+    public void testCreateDocWithNilID() throws CouchbaseLiteException {
         Document doc1a = createDocument(null);
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
@@ -151,7 +151,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testCreateDocWithDict() {
+    public void testCreateDocWithDict() throws CouchbaseLiteException {
         Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
         dict.put("age", 30L);
@@ -181,7 +181,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testCreateDocWithIDAndDict() {
+    public void testCreateDocWithIDAndDict() throws CouchbaseLiteException {
         Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
         dict.put("age", 30L);
@@ -211,7 +211,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetDictionaryContent() {
+    public void testSetDictionaryContent() throws CouchbaseLiteException {
         Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
         dict.put("age", 30L);
@@ -254,7 +254,7 @@ public class DocumentTest extends BaseTest {
 
 
     @Test
-    public void testGetValueFromNewEmptyDoc() {
+    public void testGetValueFromNewEmptyDoc() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         save(doc, new Validator<Document>() {
             @Override
@@ -276,7 +276,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetValueFromExistingEmptyDoc() {
+    public void testGetValueFromExistingEmptyDoc() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         save(doc);
         doc = db.getDocument("doc1");
@@ -297,7 +297,7 @@ public class DocumentTest extends BaseTest {
 
 
     @Test
-    public void testSaveThenGetFromAnotherDB() {
+    public void testSaveThenGetFromAnotherDB() throws CouchbaseLiteException {
         Document doc1a = createDocument("doc1");
         doc1a.set("name", "Scott Tiger");
         save(doc1a);
@@ -311,7 +311,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testNoCacheNoLive() {
+    public void testNoCacheNoLive() throws CouchbaseLiteException {
         Document doc1a = createDocument("doc1");
         doc1a.set("name", "Scott Tiger");
 
@@ -345,7 +345,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetString() {
+    public void testSetString() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         doc.set("string1", "");
         doc.set("string2", "string");
@@ -369,7 +369,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetString() {
+    public void testGetString() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -393,7 +393,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetNumber() {
+    public void testSetNumber() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         doc.set("number1", 1);
@@ -430,7 +430,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetNumber() {
+    public void testGetNumber() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -454,7 +454,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetInteger() {
+    public void testGetInteger() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -478,7 +478,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetLong() {
+    public void testGetLong() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -502,7 +502,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetFloat() {
+    public void testGetFloat() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -526,7 +526,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetDouble() {
+    public void testGetDouble() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -550,7 +550,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetGetMinMaxNumbers() {
+    public void testSetGetMinMaxNumbers() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         doc.set("min_int", Integer.MIN_VALUE);
@@ -597,7 +597,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetGetFloatNumbers() {
+    public void testSetGetFloatNumbers() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         doc.set("number1", 1.00);
@@ -605,7 +605,6 @@ public class DocumentTest extends BaseTest {
         doc.set("number3", 1.50);
         doc.set("number4", 1.51);
         doc.set("number5", 1.99);
-
 
         save(doc, new Validator<Document>() {
             @Override
@@ -640,7 +639,7 @@ public class DocumentTest extends BaseTest {
                 assertEquals(1.51F, doc.getFloat("number4"), 0.0F);
                 assertEquals(1.51, doc.getDouble("number4"), 0.0);
 
-                assertEquals(1.99, ((Number) doc.getObject("number5")).doubleValue(), 0.0);  // return 1
+                assertEquals(1.99, ((Number) doc.getObject("number5")).doubleValue(), 0.0);// return 1
                 assertEquals(1.99, doc.getNumber("number5").doubleValue(), 0.0);  // return 1
                 // TODO: https://github.com/couchbaselabs/fleece/pull/19
                 //assertEquals(1, doc.getInt("number5"));
@@ -652,7 +651,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetBoolean() {
+    public void testSetBoolean() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         doc.set("boolean1", true);
@@ -685,7 +684,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetBoolean() {
+    public void testGetBoolean() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -709,7 +708,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetDate() {
+    public void testSetDate() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Date date = new Date();
@@ -745,7 +744,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetDate() {
+    public void testGetDate() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -769,12 +768,11 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetBlob() {
+    public void testSetBlob() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         final Blob blob = new Blob("text/plain", kDocumentTestBlob.getBytes());
         doc.set("blob", blob);
-
 
         save(doc, new Validator<Document>() {
             @Override
@@ -809,7 +807,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetBlob() {
+    public void testGetBlob() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -827,14 +825,15 @@ public class DocumentTest extends BaseTest {
                 assertNull(d.getBlob("dict"));
                 assertNull(d.getBlob("array"));
                 assertEquals(kDocumentTestBlob, new String(d.getBlob("blob").getContent()));
-                assertTrue(Arrays.equals(kDocumentTestBlob.getBytes(), d.getBlob("blob").getContent()));
+                assertTrue(Arrays.equals(kDocumentTestBlob.getBytes(),
+                        d.getBlob("blob").getContent()));
                 assertNull(d.getBlob("non_existing_key"));
             }
         });
     }
 
     @Test
-    public void testSetDictionary() {
+    public void testSetDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Dictionary dict = new Dictionary();
@@ -871,7 +870,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetDictionary() {
+    public void testGetDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -899,7 +898,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetArray() {
+    public void testSetArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Array array = new Array();
@@ -933,7 +932,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetArray() {
+    public void testGetArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
         save(doc, new Validator<Document>() {
@@ -958,7 +957,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetNull() {
+    public void testSetNull() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         doc.set("null", null);
         assertEquals(1, doc.count());
@@ -972,7 +971,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetMap() {
+    public void testSetMap() throws CouchbaseLiteException {
         Map<String, Object> dict = new HashMap<>();
         dict.put("street", "1 Main street");
         dict.put("city", "Mountain View");
@@ -1023,7 +1022,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetList() {
+    public void testSetList() throws CouchbaseLiteException {
         List<String> array = Arrays.asList("a", "b", "c");
 
         Document doc = createDocument("doc1");
@@ -1070,7 +1069,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testUpdateNestedDictionary() {
+    public void testUpdateNestedDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Dictionary addresses = new Dictionary();
         doc.set("addresses", addresses);
@@ -1102,7 +1101,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testUpdateDictionaryInArray() {
+    public void testUpdateDictionaryInArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array addresses = new Array();
         doc.set("addresses", addresses);
@@ -1150,7 +1149,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testUpdateNestedArray() {
+    public void testUpdateNestedArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array groups = new Array();
         doc.set("groups", groups);
@@ -1182,12 +1181,13 @@ public class DocumentTest extends BaseTest {
         doc = save(doc);
 
         Map<String, Object> expected = new HashMap<>();
-        expected.put("groups", Arrays.asList(Arrays.asList("d", "e", "f"), Arrays.asList(4L, 5L, 6L)));
+        expected.put("groups", Arrays.asList(Arrays.asList("d", "e", "f"),
+                Arrays.asList(4L, 5L, 6L)));
         assertEquals(expected, doc.toMap());
     }
 
     @Test
-    public void testUpdateArrayInDictionary() {
+    public void testUpdateArrayInDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Dictionary group1 = new Dictionary();
@@ -1231,7 +1231,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetDictionaryToMultipleKeys() {
+    public void testSetDictionaryToMultipleKeys() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Dictionary address = new Dictionary();
@@ -1266,7 +1266,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetArrayToMultipleKeys() {
+    public void testSetArrayToMultipleKeys() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Array phones = new Array();
@@ -1282,8 +1282,10 @@ public class DocumentTest extends BaseTest {
         // Update phones: both mobile and home should get the update
         phones.add("650-000-0003");
 
-        assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003"), doc.getArray("mobile").toList());
-        assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003"), doc.getArray("home").toList());
+        assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003"),
+                doc.getArray("mobile").toList());
+        assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003"),
+                doc.getArray("home").toList());
 
         doc = save(doc);
 
@@ -1301,8 +1303,10 @@ public class DocumentTest extends BaseTest {
         // Save update:
         doc = save(doc);
 
-        assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003", "650-000-1234"), doc.getArray("mobile").toList());
-        assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003", "650-000-5678"), doc.getArray("home").toList());
+        assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003", "650-000-1234"),
+                doc.getArray("mobile").toList());
+        assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003", "650-000-5678"),
+                doc.getArray("home").toList());
     }
 
     @Test
@@ -1313,7 +1317,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testCount() {
+    public void testCount() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         populateData(doc);
 
@@ -1327,7 +1331,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testRemoveKeys() {
+    public void testRemoveKeys() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Map<String, Object> mapAddress = new HashMap<>();
         mapAddress.put("street", "1 milky way.");
@@ -1414,7 +1418,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testDeleteDocument() {
+    public void testDeleteDocument() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         doc.set("name", "Scott Tiger");
         assertFalse(doc.isDeleted());
@@ -1430,7 +1434,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testDictionaryAfterDeleteDocument() {
+    public void testDictionaryAfterDeleteDocument() throws CouchbaseLiteException {
         Map<String, Object> addr = new HashMap<>();
         addr.put("street", "1 Main street");
         addr.put("city", "Mountain View");
@@ -1462,7 +1466,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testArrayAfterDeleteDocument() {
+    public void testArrayAfterDeleteDocument() throws CouchbaseLiteException {
         Map<String, Object> dict = new HashMap<>();
         dict.put("members", Arrays.asList("a", "b", "c"));
 
@@ -1492,11 +1496,10 @@ public class DocumentTest extends BaseTest {
         members.add("2");
         assertNull(doc.getDictionary("members"));
         assertEquals(new HashMap<>(), doc.toMap());
-
     }
 
     @Test
-    public void testPurgeDocument() {
+    public void testPurgeDocument() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         doc.set("type", "profile");
         doc.set("name", "Scott");
@@ -1524,7 +1527,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testReopenDB() {
+    public void testReopenDB() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         doc.set("string", "str");
         save(doc);
@@ -1539,7 +1542,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testBlob() throws IOException {
+    public void testBlob() throws IOException, CouchbaseLiteException {
         byte[] content = kDocumentTestBlob.getBytes();
 
         // store blob
@@ -1573,7 +1576,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testEmptyBlob() throws IOException {
+    public void testEmptyBlob() throws IOException, CouchbaseLiteException {
         byte[] content = "".getBytes();
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);
@@ -1603,7 +1606,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testBlobWithStream() throws IOException {
+    public void testBlobWithStream() throws IOException, CouchbaseLiteException {
         Document doc = createDocument("doc1");
         byte[] content = "".getBytes();
         InputStream stream = new ByteArrayInputStream(content);
@@ -1636,7 +1639,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testMultipleBlobRead() throws IOException {
+    public void testMultipleBlobRead() throws IOException, CouchbaseLiteException {
         byte[] content = kDocumentTestBlob.getBytes();
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);
@@ -1685,7 +1688,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testReadExistingBlob() {
+    public void testReadExistingBlob() throws CouchbaseLiteException {
         byte[] content = kDocumentTestBlob.getBytes();
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);

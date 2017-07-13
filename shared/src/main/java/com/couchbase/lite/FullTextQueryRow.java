@@ -38,7 +38,7 @@ public class FullTextQueryRow extends QueryRow {
     // constructors
     //---------------------------------------------
 
-    /* package */ FullTextQueryRow(Query query, C4QueryEnumerator c4enum) {
+    FullTextQueryRow(Query query, C4QueryEnumerator c4enum) {
         super(query, c4enum);
         this.matchCount = (int) c4enum.getFullTextTermCount();
         if (this.matchCount > 0) {

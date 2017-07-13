@@ -50,7 +50,7 @@ public class QueryTest extends BaseTest {
         return n;
     }
 
-    private Document createDocNumbered(int i, int num) {
+    private Document createDocNumbered(int i, int num) throws CouchbaseLiteException {
         String docID = String.format(Locale.ENGLISH, "doc%d", i);
         Document doc = createDocument(docID);
         doc.set("number1", i);
@@ -64,7 +64,12 @@ public class QueryTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 1; i <= num; i++) {
-                    Document doc = createDocNumbered(i, num);
+                    Document doc = null;
+                    try {
+                        doc = createDocNumbered(i, num);
+                    } catch (CouchbaseLiteException e) {
+                        throw new RuntimeException(e);
+                    }
                     numbers.add(doc.toMap());
                 }
             }
@@ -660,7 +665,11 @@ public class QueryTest extends BaseTest {
                     .postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            createDocNumbered(-1, 100);
+                            try {
+                                createDocNumbered(-1, 100);
+                            } catch (CouchbaseLiteException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }, 500); // 500ms
 
@@ -713,7 +722,11 @@ public class QueryTest extends BaseTest {
                     .postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            createDocNumbered(111, 100);
+                            try {
+                                createDocNumbered(111, 100);
+                            } catch (CouchbaseLiteException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }, 500); // 500ms
             // wait till listener is called

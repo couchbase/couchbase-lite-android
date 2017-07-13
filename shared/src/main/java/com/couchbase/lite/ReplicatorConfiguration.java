@@ -195,7 +195,7 @@ public class ReplicatorConfiguration {
     // Package level access
     //---------------------------------------------
 
-    /*package*/ Map<String, Object> effectiveOptions() {
+    Map<String, Object> effectiveOptions() {
         Map<String, Object> options = new HashMap<>();
 
         String username = getUsername();
@@ -222,11 +222,11 @@ public class ReplicatorConfiguration {
         return options;
     }
 
-    /*package*/URI getTargetURI() {
+    URI getTargetURI() {
         return target instanceof URI ? (URI) target : null;
     }
 
-    /*package*/Database getTargetDatabase() {
+    Database getTargetDatabase() {
         return target instanceof Database ? (Database) target : null;
     }
 

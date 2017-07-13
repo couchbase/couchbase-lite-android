@@ -45,7 +45,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncoda
         set(array);
     }
 
-    /* package */ Array(CBLFLArray data) {
+    Array(CBLFLArray data) {
         super(data);
     }
 

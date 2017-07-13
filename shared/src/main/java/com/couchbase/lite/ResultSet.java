@@ -38,7 +38,7 @@ public class ResultSet {
     // constructors
     //---------------------------------------------
 
-    /* package */ ResultSet(Query query, C4QueryEnumerator c4enum) {
+    ResultSet(Query query, C4QueryEnumerator c4enum) {
         this.query = query;
         this.c4enum = c4enum;
         Log.v(TAG, "Beginning query enumeration (%p)", c4enum);
@@ -85,7 +85,7 @@ public class ResultSet {
     // Package level access
     //---------------------------------------------
 
-    /*package*/void release() {
+    void release() {
         if (c4enum != null) {
             c4enum.close();
             c4enum.free();
@@ -93,7 +93,7 @@ public class ResultSet {
         }
     }
 
-    /*package*/ResultSet refresh() throws CouchbaseLiteException {
+    ResultSet refresh() throws CouchbaseLiteException {
         if (query == null) return null;
         try {
             C4QueryEnumerator newEnum = c4enum.refresh();
@@ -103,7 +103,7 @@ public class ResultSet {
         }
     }
 
-    /*package*/int getRowCount() {
+    int getRowCount() throws CouchbaseLiteException {
         try {
             return (int) c4enum.getRowCount();
         } catch (LiteCoreException e) {
@@ -111,7 +111,7 @@ public class ResultSet {
         }
     }
 
-    /*package*/boolean isValidEnumerator() {
+    boolean isValidEnumerator() {
         return c4enum != null && !c4enum.isClosed();
     }
 }

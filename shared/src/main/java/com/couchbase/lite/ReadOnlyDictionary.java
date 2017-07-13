@@ -32,7 +32,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     // Constructors
     //-------------------------------------------------------------------------
 
-    /* package */ ReadOnlyDictionary(CBLFLDict data) {
+    ReadOnlyDictionary(CBLFLDict data) {
         setData(data);
     }
 
@@ -105,7 +105,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     @Override
     public int getInt(String key) {
         FLValue value = fleeceValue(key);
-        return value != null ? (int)value.asInt() : 0;
+        return value != null ? (int) value.asInt() : 0;
     }
 
     /**
@@ -270,7 +270,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
 
     // FleeceEncodable implementation
     @Override
-    public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
+    public void fleeceEncode(FLEncoder encoder, Database database) {
         encoder.writeValue(flDict);
     }
 
@@ -285,7 +285,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     //---------------------------------------------
     // Package
     //---------------------------------------------
-    /* package */boolean isEmpty() {
+    boolean isEmpty() {
         return count() == 0;
     }
     //---------------------------------------------

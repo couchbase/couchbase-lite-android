@@ -188,7 +188,7 @@ public final class Database {
      *
      * @param document
      */
-    public void save(Document document) {
+    public void save(Document document) throws CouchbaseLiteException {
         prepareDocument(document);
         document.save();
     }
@@ -203,7 +203,7 @@ public final class Database {
      *
      * @param document
      */
-    public void delete(Document document) {
+    public void delete(Document document) throws CouchbaseLiteException {
         prepareDocument(document);
         document.delete();
     }
@@ -214,7 +214,7 @@ public final class Database {
      *
      * @param document
      */
-    public void purge(Document document) {
+    public void purge(Document document) throws CouchbaseLiteException {
         prepareDocument(document);
         document.purge();
     }
@@ -229,7 +229,7 @@ public final class Database {
      * @param action the action which is implementation of Runnable interface
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
-    public void inBatch(Runnable action) throws CouchbaseLiteException, IllegalStateException {
+    public void inBatch(Runnable action) throws CouchbaseLiteException {
         mustBeOpen();
 
         try {
@@ -241,8 +241,6 @@ public final class Database {
                     action.run();
                     commit = true;
                 } catch (RuntimeException e) {
-                    if (e instanceof CouchbaseLiteException)
-                        throw e;
                     throw new CouchbaseLiteException(e);
                 }
             } finally {
@@ -261,7 +259,7 @@ public final class Database {
     /**
      * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
      */
-    public void compact() throws CouchbaseLiteException, IllegalStateException {
+    public void compact() throws CouchbaseLiteException {
         mustBeOpen();
 
         try {
@@ -443,7 +441,7 @@ public final class Database {
      */
     public void createIndex(List<Expression> expressions,
                             IndexType type,
-                            IndexOptions options) throws CouchbaseLiteException, IllegalStateException {
+                            IndexOptions options) throws CouchbaseLiteException {
         mustBeOpen();
 
         if (expressions == null)
@@ -489,12 +487,12 @@ public final class Database {
     // Package level access
     //---------------------------------------------
 
-    /* package */ ConflictResolver getConflictResolver() {
+    ConflictResolver getConflictResolver() {
         return config != null ? config.getConflictResolver() : null;
     }
 
     // Instead of clone()
-    /* package */ Database copy() {
+    Database copy() throws CouchbaseLiteException {
         return new Database(this.name, this.config);
     }
 
@@ -502,14 +500,13 @@ public final class Database {
 
     void mustBeOpen() {
         if (c4db == null)
-            throw new IllegalStateException("Database is not open.");
+            throw new CouchbaseLiteRuntimeException("Database is not open.");
     }
 
     /**
      * @return a reference to C4Database instance if db is open.
-     * @throws IllegalStateException
      */
-    com.couchbase.litecore.Database getC4Database() throws IllegalStateException {
+    com.couchbase.litecore.Database getC4Database() {
         // NOTE: In general, mustBeOpen() method is called by caller. And Thread-safety guarantees
         //       c4db should not be closed during the method. Calling mutBeOpen() here is just try
         //       to avoid NullPointerException.
@@ -518,7 +515,7 @@ public final class Database {
         return c4db;
     }
 
-    /* package */ void beginTransaction() throws CouchbaseLiteException, IllegalStateException {
+    void beginTransaction() throws CouchbaseLiteException {
         try {
             getC4Database().beginTransaction();
         } catch (LiteCoreException e) {
@@ -526,7 +523,7 @@ public final class Database {
         }
     }
 
-    /* package */ void endTransaction(boolean commit) throws CouchbaseLiteException, IllegalStateException {
+    void endTransaction(boolean commit) throws CouchbaseLiteException {
         try {
             getC4Database().endTransaction(commit);
         } catch (LiteCoreException e) {
@@ -534,12 +531,13 @@ public final class Database {
         }
     }
 
-    /* package */  SharedKeys getSharedKeys() {
+    SharedKeys getSharedKeys() {
         return sharedKeys;
     }
 
     //////// DOCUMENTS:
-    /* package */ com.couchbase.litecore.Document read(String docID, boolean mustExist) throws CouchbaseLiteException, IllegalStateException {
+    com.couchbase.litecore.Document read(String docID, boolean mustExist)
+            throws CouchbaseLiteException {
         try {
             return getC4Database().getDocument(docID, mustExist);
         } catch (LiteCoreException e) {
@@ -548,17 +546,18 @@ public final class Database {
     }
 
 
-    /* package */ Map<URI, Replicator> getReplications() {
+    Map<URI, Replicator> getReplications() {
         return replications;
     }
 
-    /* package */ Set<Replicator> getActiveReplications() {
+    Set<Replicator> getActiveReplications() {
         return activeReplications;
     }
 
     //////// RESOLVING REPLICATED CONFLICTS:
 
-    /*package*/ boolean resolveConflictInDocument(String docID, ConflictResolver resolver) throws CouchbaseLiteException {
+    boolean resolveConflictInDocument(String docID, ConflictResolver resolver)
+            throws CouchbaseLiteException {
         boolean commit = false;
         beginTransaction();
         try {
@@ -717,12 +716,12 @@ public final class Database {
 
     //////// DOCUMENTS:
 
-    private Document getDocument(String documentID, boolean mustExist) throws CouchbaseLiteException {
+    private Document getDocument(String documentID, boolean mustExist) {
         mustBeOpen();
 
         try {
             return new Document(this, documentID, mustExist);
-        } catch (CouchbaseLiteException e) {
+        } catch (CouchbaseLiteRuntimeException e) {
             if (e.getDomain() == LiteCoreDomain && e.getCode() == kC4ErrorNotFound)
                 return null;
             else
@@ -732,7 +731,7 @@ public final class Database {
 
 
     // --- C4Database
-    private void closeC4DB() throws CouchbaseLiteException, IllegalStateException {
+    private void closeC4DB() throws CouchbaseLiteException {
         try {
             getC4Database().close();
         } catch (LiteCoreException e) {
@@ -740,7 +739,7 @@ public final class Database {
         }
     }
 
-    private void deleteC4DB() throws CouchbaseLiteException, IllegalStateException {
+    private void deleteC4DB() throws CouchbaseLiteException {
         try {
             getC4Database().delete();
         } catch (LiteCoreException e) {
@@ -748,7 +747,7 @@ public final class Database {
         }
     }
 
-    private void freeC4DB() throws IllegalStateException {
+    private void freeC4DB() {
         if (c4db != null) {
             getC4Database().free();
             c4db = null;

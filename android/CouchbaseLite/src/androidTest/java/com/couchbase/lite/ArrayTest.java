@@ -69,7 +69,8 @@ public class ArrayTest extends BaseTest {
         void validate(T array);
     }
 
-    private void save(Document doc, String key, Array array, Validator<Array> validator) {
+    private void save(Document doc, String key, Array array, Validator<Array> validator)
+            throws CouchbaseLiteException {
         validator.validate(array);
 
         doc.set(key, array);
@@ -81,7 +82,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testCreate() {
+    public void testCreate() throws CouchbaseLiteException {
         Array array = new Array();
         assertEquals(0, array.count());
         assertEquals(new ArrayList<>(), array.toList());
@@ -95,7 +96,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testCreateWithList() {
+    public void testCreateWithList() throws CouchbaseLiteException {
         List<Object> data = new ArrayList<>();
         data.add("1");
         data.add("2");
@@ -113,7 +114,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testSetNSArray() {
+    public void testSetNSArray() throws CouchbaseLiteException {
         List<Object> data = new ArrayList<>();
         data.add("1");
         data.add("2");
@@ -144,7 +145,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testAddObjects() {
+    public void testAddObjects() throws CouchbaseLiteException {
         Array array = new Array();
 
         // Add objects of all types:
@@ -189,7 +190,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testAddObjectsToExistingArray() {
+    public void testAddObjectsToExistingArray() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
 
@@ -245,7 +246,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testSetObject() {
+    public void testSetObject() throws CouchbaseLiteException {
         List<Object> data = arrayOfAllTypes();
 
         // Prepare CBLArray with NSNull placeholders:
@@ -343,7 +344,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testInsertObjectToExistingArray() {
+    public void testInsertObjectToExistingArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         doc.set("array", new Array());
         doc = save(doc);
@@ -420,7 +421,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testRemove() {
+    public void testRemove() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
 
@@ -439,7 +440,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testRemoveExistingArray() {
+    public void testRemoveExistingArray() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
 
@@ -474,7 +475,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testCount() {
+    public void testCount() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
 
@@ -488,7 +489,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetString() {
+    public void testGetString() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -514,7 +515,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetNumber() {
+    public void testGetNumber() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -540,7 +541,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetInteger() {
+    public void testGetInteger() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -566,7 +567,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetLong() {
+    public void testGetLong() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -592,7 +593,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetFloat() {
+    public void testGetFloat() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -618,7 +619,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetDouble() {
+    public void testGetDouble() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -644,7 +645,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testSetGetMinMaxNumbers() {
+    public void testSetGetMinMaxNumbers() throws CouchbaseLiteException {
         Array array = new Array();
         array.add(Integer.MIN_VALUE);
         array.add(Integer.MAX_VALUE);
@@ -691,7 +692,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testSetGetFloatNumbers() {
+    public void testSetGetFloatNumbers() throws CouchbaseLiteException {
         Array array = new Array();
         array.add(1.00);
         array.add(1.49);
@@ -704,7 +705,8 @@ public class ArrayTest extends BaseTest {
             @Override
             public void validate(Array a) {
                 // NOTE: Number which has no floating part is stored as Integer.
-                //       This causes type difference between before and after storing data into the database.
+                //       This causes type difference between before and after storing data
+                //       into the database.
                 assertEquals(1.00, ((Number) a.getObject(0)).doubleValue(), 0.0);
                 assertEquals(1.00, a.getNumber(0).doubleValue(), 0.0);
                 assertEquals(1, a.getInt(0));
@@ -744,7 +746,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetBoolean() {
+    public void testGetBoolean() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -770,7 +772,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetDate() {
+    public void testGetDate() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -796,7 +798,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetMap() {
+    public void testGetMap() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -824,7 +826,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testGetArray() {
+    public void testGetArray() throws CouchbaseLiteException {
         Array array = new Array();
         populateData(array);
         assertEquals(12, array.count());
@@ -849,7 +851,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testSetNestedArray() {
+    public void testSetNestedArray() throws CouchbaseLiteException {
         Array array1 = new Array();
         Array array2 = new Array();
         Array array3 = new Array();
@@ -878,7 +880,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testReplaceArray() {
+    public void testReplaceArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array array1 = new Array();
         array1.add("a");
@@ -918,7 +920,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testReplaceArrayDifferentType() {
+    public void testReplaceArrayDifferentType() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array array1 = new Array();
         array1.add("a");
@@ -942,7 +944,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testEnumeratingArray() {
+    public void testEnumeratingArray() throws CouchbaseLiteException {
         Array array = new Array();
         for (int i = 0; i < 20; i++) {
             array.add(i);
@@ -990,7 +992,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testArrayEnumerationWithDataModification() {
+    public void testArrayEnumerationWithDataModification() throws CouchbaseLiteException {
         Array array = new Array();
         for (int i = 0; i < 2; i++)
             array.add(i);

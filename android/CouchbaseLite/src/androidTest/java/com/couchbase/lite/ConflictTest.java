@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-
 import com.couchbase.litecore.fleece.FLEncoder;
 
 import org.junit.After;
@@ -21,8 +20,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class ConflictTest extends BaseTest {
-
-    //ReadOnlyDocument resolve(Conflict conflict);
 
     static class TheirsWins implements ConflictResolver {
         @Override
@@ -70,7 +67,7 @@ public class ConflictTest extends BaseTest {
         }
     }
 
-    private Document setupConflict() {
+    private Document setupConflict() throws CouchbaseLiteException {
         // Setup a default database conflict resolver
         Document doc = createDocument("doc1");
         doc.set("type", "profile");
@@ -88,13 +85,15 @@ public class ConflictTest extends BaseTest {
         return doc;
     }
 
-    private void save(final Map<String, Object> props, final String docID) {
+    private void save(final Map<String, Object> props, final String docID)
+            throws CouchbaseLiteException {
         // Save to database:
         db.inBatch(new Runnable() {
             @Override
             public void run() {
                 try {
-                    com.couchbase.litecore.Document trickey = db.getC4Database().getDocument(docID, true);
+                    com.couchbase.litecore.Document trickey
+                            = db.getC4Database().getDocument(docID, true);
                     FLEncoder enc = db.getC4Database().createFleeceEncoder();
                     enc.writeValue(props);
                     byte[] bytes = enc.finish();
@@ -117,11 +116,11 @@ public class ConflictTest extends BaseTest {
     }
 
     @Override
-    protected void openDB() {
+    protected void openDB() throws CouchbaseLiteException {
         openDB(new DoNotResolve());
     }
 
-    protected void openDB(ConflictResolver resolver) {
+    protected void openDB(ConflictResolver resolver) throws CouchbaseLiteException {
         assertNull(db);
 
         DatabaseConfiguration options = new DatabaseConfiguration(this.context);
@@ -142,7 +141,7 @@ public class ConflictTest extends BaseTest {
     }
 
     @Test
-    public void testConflict() {
+    public void testConflict() throws CouchbaseLiteException {
         closeDB();
         openDB(new TheirsWins());
 
@@ -178,7 +177,7 @@ public class ConflictTest extends BaseTest {
     }
 
     @Test
-    public void testConflictResolverGivesUp() {
+    public void testConflictResolverGivesUp() throws CouchbaseLiteException {
         closeDB();
         openDB(new GiveUp());
 
@@ -193,7 +192,7 @@ public class ConflictTest extends BaseTest {
     }
 
     @Test
-    public void testDeletionConflict() {
+    public void testDeletionConflict() throws CouchbaseLiteException {
         closeDB();
         openDB(new DoNotResolve());
 
@@ -204,7 +203,7 @@ public class ConflictTest extends BaseTest {
     }
 
     @Test
-    public void testConflictMineIsDeeper() {
+    public void testConflictMineIsDeeper() throws CouchbaseLiteException {
         closeDB();
         openDB(null);
 
@@ -214,7 +213,7 @@ public class ConflictTest extends BaseTest {
     }
 
     @Test
-    public void testConflictTheirsIsDeeper() {
+    public void testConflictTheirsIsDeeper() throws CouchbaseLiteException {
         closeDB();
         openDB(null);
 
