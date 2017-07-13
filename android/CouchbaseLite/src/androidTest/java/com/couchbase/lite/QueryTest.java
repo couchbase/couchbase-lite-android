@@ -610,9 +610,101 @@ public class QueryTest extends BaseTest {
                 String docID = (String) row.getObject(0);
                 long seq = (long) row.getObject(1);
                 long number = (long) row.getObject(2);
+
+                assertEquals(expectedDocIDs[n - 1], docID);
+                assertEquals(expectedSeqs[n - 1], seq);
+                assertEquals(expectedNumbers[n - 1], number);
             }
         });
         assertEquals(5, numRows);
+    }
+
+    @Test
+    public void testLimit() throws Exception {
+        loadNumbers(10);
+
+        DataSource dataSource = DataSource.database(this.db);
+
+        Expression propNumber1 = Expression.property("number1");
+        SelectResult srNumber1 = SelectResult.expression(propNumber1);
+        Query q = Query
+                .select(srNumber1)
+                .from(dataSource)
+                .orderBy(Ordering.expression(propNumber1))
+                .limit(5);
+
+        final long[] expectedNumbers = {1, 2, 3, 4, 5};
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                long number = (long) row.getObject(0);
+                assertEquals(expectedNumbers[n - 1], number);
+            }
+        });
+        assertEquals(5, numRows);
+
+        Expression paramExpr = Expression.parameter("LIMIT_NUM");
+        q = Query
+                .select(srNumber1)
+                .from(dataSource)
+                .orderBy(Ordering.expression(propNumber1))
+                .limit(paramExpr);
+        q.parameters().set("LIMIT_NUM", 3);
+
+        final long[] expectedNumbers2 = {1, 2, 3};
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                long number = (long) row.getObject(0);
+                assertEquals(expectedNumbers2[n - 1], number);
+            }
+        });
+        assertEquals(3, numRows);
+    }
+
+    @Test
+    public void testLimitOffset() throws Exception {
+        loadNumbers(10);
+
+        DataSource dataSource = DataSource.database(this.db);
+
+        Expression propNumber1 = Expression.property("number1");
+        SelectResult srNumber1 = SelectResult.expression(propNumber1);
+        Query q = Query
+                .select(srNumber1)
+                .from(dataSource)
+                .orderBy(Ordering.expression(propNumber1))
+                .limit(5, 3);
+
+        final long[] expectedNumbers = {4, 5, 6, 7, 8};
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                long number = (long) row.getObject(0);
+                assertEquals(expectedNumbers[n - 1], number);
+            }
+        });
+        assertEquals(5, numRows);
+
+        Expression paramLimitExpr = Expression.parameter("LIMIT_NUM");
+        Expression paramOffsetExpr = Expression.parameter("OFFSET_NUM");
+        q = Query
+                .select(srNumber1)
+                .from(dataSource)
+                .orderBy(Ordering.expression(propNumber1))
+                .limit(paramLimitExpr, paramOffsetExpr);
+        q.parameters().set("LIMIT_NUM", 3);
+        q.parameters().set("OFFSET_NUM", 5);
+
+        final long[] expectedNumbers2 = {6, 7, 8};
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, QueryRow row) throws Exception {
+                long number = (long) row.getObject(0);
+                assertEquals(expectedNumbers2[n - 1], number);
+            }
+        });
+        assertEquals(3, numRows);
     }
 
     @Test

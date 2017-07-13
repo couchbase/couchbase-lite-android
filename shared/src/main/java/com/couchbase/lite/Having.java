@@ -30,15 +30,14 @@ public class Having extends Query implements OrderByRouter, LimitRouter {
     //---------------------------------------------
     // implementation of FromRouter
     //---------------------------------------------
-
     @Override
     public Limit limit(Object limit) {
-        throw new UnsupportedOperationException();
+        return new Limit(this, limit, null);
     }
 
     @Override
     public Limit limit(Object limit, Object offset) {
-        throw new UnsupportedOperationException();
+        return new Limit(this, limit, offset);
     }
 
     //---------------------------------------------

@@ -280,6 +280,12 @@ public class Query {
         if (orderBy != null)
             json.put("ORDER_BY", orderBy.asJSON());
 
+        if (limit != null) {
+            List<Object> list = (List<Object>) limit.asJSON();
+            json.put("LIMIT", list.get(0));
+            if (list.size() > 1)
+                json.put("OFFSET", list.get(1));
+        }
         return json;
     }
 }
