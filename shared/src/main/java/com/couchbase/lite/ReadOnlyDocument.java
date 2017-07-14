@@ -180,7 +180,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
                 new DefaultConflictResolver();
     }
 
-    boolean selectConflictingRevision() throws CouchbaseLiteException {
+    boolean selectConflictingRevision() {
         try {
             if (!c4doc.getRawDoc().selectNextLeaf(false, true))
                 return false;
@@ -192,8 +192,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         return true;
     }
 
-    boolean selectCommonAncestor(ReadOnlyDocument doc1, ReadOnlyDocument doc2)
-            throws CouchbaseLiteException {
+    boolean selectCommonAncestor(ReadOnlyDocument doc1, ReadOnlyDocument doc2) {
         if (!c4doc.getRawDoc().selectCommonAncestorRevision(doc1.getRevID(), doc2.getRevID()))
             return false;
         setC4Doc(c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision

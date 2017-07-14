@@ -500,7 +500,7 @@ public final class Database {
 
     void mustBeOpen() {
         if (c4db == null)
-            throw new CouchbaseLiteRuntimeException("Database is not open.");
+            throw new IllegalStateException("Database is not open.");
     }
 
     /**
