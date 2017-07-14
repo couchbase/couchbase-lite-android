@@ -226,7 +226,7 @@ public class Query {
     // Private (in class only)
     //---------------------------------------------
 
-    private void check() throws CouchbaseLiteException, IllegalStateException {
+    private void check() throws CouchbaseLiteException {
         database = (Database) from.getSource();
         String json = encodeAsJSON();
         Log.v(TAG, "Query encoded as %s", json);

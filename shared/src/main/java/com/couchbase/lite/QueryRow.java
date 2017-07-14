@@ -35,7 +35,7 @@ public class QueryRow {
     // constructors
     //---------------------------------------------
 
-    /* package */ QueryRow(Query query, C4QueryEnumerator c4enum) {
+    QueryRow(Query query, C4QueryEnumerator c4enum) {
         this.query = query;
         this.c4enum = c4enum;
         this.documentID = c4enum.getDocID();

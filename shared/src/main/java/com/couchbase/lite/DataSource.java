@@ -89,15 +89,15 @@ public class DataSource {
     // Package level access
     //---------------------------------------------
 
-    /* package */ Object getSource() {
+    Object getSource() {
         return this.source;
     }
 
-    /* package */  String getAlias() {
+    String getAlias() {
         return alias;
     }
 
-    /* package */ Map<String, Object> asJSON() {
+    Map<String, Object> asJSON() {
         Map<String, Object> json = new HashMap<>();
         if (alias != null)
             json.put("AS", alias);

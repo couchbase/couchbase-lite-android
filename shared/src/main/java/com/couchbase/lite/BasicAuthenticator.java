@@ -47,7 +47,7 @@ public class BasicAuthenticator extends Authenticator {
     //---------------------------------------------
 
     @Override
-    /* package */ void authenticate(Map<String, Object> options) {
+    void authenticate(Map<String, Object> options) {
         Map<String, Object> auth = new HashMap<>();
         auth.put(kCBLReplicatorAuthUserName, username);
         auth.put(kCBLReplicatorAuthPassword, password);

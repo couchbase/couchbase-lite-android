@@ -34,29 +34,34 @@ public class ReplicatorTest extends BaseTest {
     Replicator repl;
     long timeout;  // seconds
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous) {
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull,
+                                               boolean continuous) {
         return makeConfig(push, pull, continuous, otherDB);
     }
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, String uri) {
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull,
+                                               boolean continuous, String uri) {
         return makeConfig(push, pull, continuous, URI.create(uri));
     }
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, URI target) {
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull,
+                                               boolean continuous, URI target) {
         ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
         config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
         config.setContinuous(continuous);
         return config;
     }
 
-    private ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, Database target) {
+    private ReplicatorConfiguration makeConfig(boolean push, boolean pull,
+                                               boolean continuous, Database target) {
         ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
         config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
         config.setContinuous(continuous);
         return config;
     }
 
-    private void run(final ReplicatorConfiguration config, final int code, final String domain) throws InterruptedException {
+    private void run(final ReplicatorConfiguration config, final int code, final String domain)
+            throws InterruptedException {
         repl = new Replicator(config);
         final CountDownLatch latch = new CountDownLatch(1);
         repl.addChangeListener(new ReplicatorChangeListener() {
@@ -99,7 +104,8 @@ public class ReplicatorTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+        config = new Config(
+                InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
         if (!config.replicatorTestsEnabled())
             return;
 
@@ -277,7 +283,8 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
 
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db", this.config.remoteHost(), this.config.remotePort());
+        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db",
+                this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(true, false, false, uri);
         run(config, 0, null);
     }
@@ -287,7 +294,8 @@ public class ReplicatorTest extends BaseTest {
         if (!config.replicatorTestsEnabled())
             return;
 
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db", this.config.remoteHost(), this.config.remotePort());
+        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db",
+                this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, 0, null);
     }
@@ -299,7 +307,8 @@ public class ReplicatorTest extends BaseTest {
 
         loadJSONResource("names_100.json");
 
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db", this.config.remoteHost(), this.config.remotePort());
+        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/db",
+                this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(true, false, false, uri);
         run(config, 0, null);
     }
@@ -309,7 +318,8 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticationFailure() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
+        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
+                this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, 401, "WebSocket");
     }
@@ -318,7 +328,8 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticatedPullWithIncorrectPassword() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
+        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
+                this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
         // Retry 3 times then fails with 401
@@ -329,7 +340,8 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticatedPullHardcoded() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://pupshaw:frank@%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
+        String uri = String.format(Locale.ENGLISH, "blip://pupshaw:frank@%s:%d/seekrit",
+                this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, 0, null);
     }
@@ -338,7 +350,8 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticatedPull() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit", this.config.remoteHost(), this.config.remotePort());
+        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
+                this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
         run(config, 0, null);
@@ -351,7 +364,8 @@ public class ReplicatorTest extends BaseTest {
     public void testSelfSignedSSLFailure() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blips://%s:4994/beer", this.config.remoteHost());
+        String uri = String.format(Locale.ENGLISH, "blips://%s:4994/beer",
+                this.config.remoteHost());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, kC4NetErrTLSCertUntrusted, "Network");
     }
@@ -372,7 +386,8 @@ public class ReplicatorTest extends BaseTest {
         byte[] cert = IOUtils.toByteArray(is);
         is.close();
 
-        String uri = String.format(Locale.ENGLISH, "blips://%s:4994/beer", this.config.remoteHost());
+        String uri = String.format(Locale.ENGLISH, "blips://%s:4994/beer",
+                this.config.remoteHost());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setPinnedServerCertificate(cert);
         run(config, 0, null);

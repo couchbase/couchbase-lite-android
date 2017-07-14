@@ -18,7 +18,7 @@ import static org.junit.Assert.fail;
 
 public class DictionaryTest extends BaseTest {
     @Test
-    public void testCreateDictionary() {
+    public void testCreateDictionary() throws CouchbaseLiteException {
         Dictionary address = new Dictionary();
         assertEquals(0, address.count());
         assertEquals(new HashMap<String, Object>(), address.toMap());
@@ -33,7 +33,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testCreateDictionaryWithNSDictionary() {
+    public void testCreateDictionaryWithNSDictionary() throws CouchbaseLiteException {
         Map<String, Object> dict = new HashMap<>();
         dict.put("street", "1 Main street");
         dict.put("city", "Mountain View");
@@ -55,7 +55,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testGetValueFromNewEmptyDictionary() {
+    public void testGetValueFromNewEmptyDictionary() throws CouchbaseLiteException {
         Dictionary dict = new Dictionary();
 
         assertEquals(0, dict.getInt("key"));
@@ -94,7 +94,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testSetNestedDictionaries() {
+    public void testSetNestedDictionaries() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Dictionary level1 = new Dictionary();
@@ -133,7 +133,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testDictionaryArray() {
+    public void testDictionaryArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         List<Object> data = new ArrayList<>();
@@ -186,7 +186,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testReplaceDictionary() {
+    public void testReplaceDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Dictionary profile1 = new Dictionary();
@@ -218,7 +218,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testReplaceDictionaryDifferentType() {
+    public void testReplaceDictionaryDifferentType() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
         Dictionary profile1 = new Dictionary();
@@ -245,7 +245,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testRemoveDictionary(){
+    public void testRemoveDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Dictionary profile1 = new Dictionary();
         profile1.set("name", "Scott Tiger");
@@ -274,7 +274,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testEnumeratingKeys() {
+    public void testEnumeratingKeys() throws CouchbaseLiteException {
         final Dictionary dict = new Dictionary();
         for (int i = 0; i < 20; i++)
             dict.set(String.format(Locale.ENGLISH, "key%d", i), i);
@@ -325,7 +325,7 @@ public class DictionaryTest extends BaseTest {
     }
 
     @Test
-    public void testDictionaryEnumerationWithDataModification() {
+    public void testDictionaryEnumerationWithDataModification() throws CouchbaseLiteException {
         Dictionary dict = new Dictionary();
         for (int i = 0; i < 2; i++)
             dict.set(String.format(Locale.ENGLISH, "key%d", i), i);

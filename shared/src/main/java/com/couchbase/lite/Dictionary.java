@@ -55,7 +55,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         set(dictionary);
     }
 
-    /* package */ Dictionary(CBLFLDict data) {
+    Dictionary(CBLFLDict data) {
         super(data);
     }
 
@@ -214,7 +214,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     }
 
     /**
-     * Gets a property's value as a String. Returns null if the value doesn't exist, or its value is not a String.
+     * Gets a property's value as a String.
+     * Returns null if the value doesn't exist, or its value is not a String.
      *
      * @param key the key
      * @return the String or null.
@@ -225,7 +226,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     }
 
     /**
-     * Gets a property's value as a Number. Returns null if the value doesn't exist, or its value is not a Number.
+     * Gets a property's value as a Number.
+     * Returns null if the value doesn't exist, or its value is not a Number.
      *
      * @param key the key
      * @return the Number or nil.
@@ -447,7 +449,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-    /* package */boolean isChanged() {
+    boolean isChanged() {
         return changed;
     }
 
@@ -456,8 +458,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      *
      * @return
      */
-    /* package */boolean isEmpty() {
-
+    boolean isEmpty() {
         /*
          -- Remove name field: data structure --
          fleece ["name": "pasin", "address": "1 street"]
@@ -487,8 +488,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     // #pragma mark - FLEECE ENCODABLE
 
     // FleeceEncodable implementation
-    /* package */
-    public void fleeceEncode(FLEncoder encoder, Database database) throws CouchbaseLiteException {
+    public void fleeceEncode(FLEncoder encoder, Database database) {
         List<String> keys = getKeys();
         encoder.beginDict(keys.size());
         for (String key : keys) {
@@ -517,7 +517,8 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
     private List<String> allKeys() {
         if (keys == null) {
-            List<String> result = map != null ? new ArrayList<>(map.keySet()) : new ArrayList<String>();
+            List<String> result = map != null ? new ArrayList<>(map.keySet()) :
+                    new ArrayList<String>();
             for (String key : super.getKeys()) {
                 if (!result.contains(key))
                     result.add(key);

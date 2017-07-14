@@ -26,7 +26,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable {
     // Constructors
     //---------------------------------------------
 
-    /* package */ ReadOnlyArray(CBLFLArray data) {
+    ReadOnlyArray(CBLFLArray data) {
         setData(data);
     }
 
@@ -89,7 +89,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable {
      */
     @Override
     public int getInt(int index) {
-        return (int)fleeceValue(index).asInt();
+        return (int) fleeceValue(index).asInt();
     }
 
     /**

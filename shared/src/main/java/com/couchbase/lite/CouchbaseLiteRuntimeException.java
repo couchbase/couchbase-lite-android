@@ -1,24 +1,8 @@
-/**
- * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
 package com.couchbase.lite;
 
 import java.util.Map;
 
-/**
- * A CouchbaseLiteException gets raised whenever a Couchbase Lite faces errors.
- */
-public final class CouchbaseLiteException extends Exception {
+public final class CouchbaseLiteRuntimeException extends RuntimeException {
 
     private static final String[] DOMAINS = {
             null,
@@ -39,7 +23,7 @@ public final class CouchbaseLiteException extends Exception {
      *
      * @param message the detail message.
      */
-    public CouchbaseLiteException(String message) {
+    public CouchbaseLiteRuntimeException(String message) {
         super(message);
         this.domain = 0;
         this.code = 0;
@@ -51,7 +35,7 @@ public final class CouchbaseLiteException extends Exception {
      *
      * @param cause the cause
      */
-    public CouchbaseLiteException(Throwable cause) {
+    public CouchbaseLiteRuntimeException(Throwable cause) {
         super(cause);
         this.domain = 0;
         this.code = 0;
@@ -64,7 +48,7 @@ public final class CouchbaseLiteException extends Exception {
      * @param domain the error domain
      * @param code   the error code
      */
-    public CouchbaseLiteException(int domain, int code) {
+    public CouchbaseLiteRuntimeException(int domain, int code) {
         super();
         this.domain = domain;
         this.code = code;
@@ -78,14 +62,14 @@ public final class CouchbaseLiteException extends Exception {
      * @param code   the error code
      * @param cause  the cause
      */
-    public CouchbaseLiteException(int domain, int code, Throwable cause) {
+    public CouchbaseLiteRuntimeException(int domain, int code, Throwable cause) {
         super(cause);
         this.domain = domain;
         this.code = code;
         this.info = null;
     }
 
-    public CouchbaseLiteException(int domain, int code, Map<String, Object> info) {
+    public CouchbaseLiteRuntimeException(int domain, int code, Map<String, Object> info) {
         super();
         this.domain = domain;
         this.code = code;
@@ -128,7 +112,7 @@ public final class CouchbaseLiteException extends Exception {
     @Override
     public String toString() {
         if (domain > 0 && code > 0)
-            return "CouchbaseLiteException{" +
+            return "CouchbaseLiteRuntimeException{" +
                     "domain=" + domain +
                     ", code=" + code +
                     '}';

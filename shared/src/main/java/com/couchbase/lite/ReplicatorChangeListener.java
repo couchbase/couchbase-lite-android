@@ -6,4 +6,3 @@ package com.couchbase.lite;
 public interface ReplicatorChangeListener {
     void changed(Replicator replicator, Replicator.Status status, CouchbaseLiteException error);
 }
-

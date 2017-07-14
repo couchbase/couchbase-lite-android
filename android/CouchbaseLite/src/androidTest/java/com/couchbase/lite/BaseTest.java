@@ -95,7 +95,7 @@ public class BaseTest {
         FileUtils.cleanDirectory(dir);
     }
 
-    protected Database open(String name){
+    protected Database open(String name) throws CouchbaseLiteException {
         DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
         if (this.conflictResolver != null)
@@ -103,20 +103,20 @@ public class BaseTest {
         return new Database(name, options);
     }
 
-    protected void openDB() {
+    protected void openDB() throws CouchbaseLiteException {
         assertNull(db);
         db = open(kDatabaseName);
         assertNotNull(db);
     }
 
-    protected void closeDB() {
+    protected void closeDB() throws CouchbaseLiteException {
         if (db != null) {
             db.close();
             db = null;
         }
     }
 
-    protected void reopenDB() {
+    protected void reopenDB() throws CouchbaseLiteException {
         closeDB();
         openDB();
     }
@@ -150,7 +150,7 @@ public class BaseTest {
         return new Document(id, map);
     }
 
-    protected Document save(Document doc) {
+    protected Document save(Document doc) throws CouchbaseLiteException {
         db.save(doc);
         return db.getDocument(doc.getId());
     }
@@ -159,7 +159,8 @@ public class BaseTest {
         void validate(final T doc);
     }
 
-    protected Document save(Document doc, Validator<Document> validator) {
+    protected Document save(Document doc, Validator<Document> validator)
+            throws CouchbaseLiteException {
         validator.validate(doc);
         db.save(doc);
         doc = db.getDocument(doc.getId());
@@ -167,4 +168,3 @@ public class BaseTest {
         return doc;
     }
 }
-

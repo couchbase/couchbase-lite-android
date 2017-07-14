@@ -33,7 +33,7 @@ public class LiveQuery implements DatabaseChangeListener {
     // Constructors
     //---------------------------------------------
 
-    /* package */ LiveQuery(Query query) {
+    LiveQuery(Query query) {
         if (query == null)
             throw new IllegalArgumentException("query should not be null.");
 
