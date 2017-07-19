@@ -46,8 +46,13 @@ public final class Blob implements FleeceEncodable {
     //---------------------------------------------
 
     static final String TAG = Log.BLOB;
-    static final String TYPE_META_PROPERTY = "_cbltype";
-    static final String BLOB_TYPE = "blob";
+
+    /**
+     * The sub-document property that identifies it as a special type of object.
+     * For example, a blob is represented as `{"@type":"blob", "digest":"xxxx", ...}`
+     */
+    static final String kC4ObjectTypeProperty = "@type";
+    static final String kC4ObjectType_Blob = "blob";
 
     // Max size of data that will be cached in memory with the CBLBlob
     static final int MAX_CACHED_CONTENT_LENGTH = 8 * 1024;
@@ -136,7 +141,7 @@ public final class Blob implements FleeceEncodable {
     Blob(Database database, Map<String, Object> properties) {
         this.database = database;
         this.properties = new HashMap<>(properties);
-        this.properties.remove(TYPE_META_PROPERTY);
+        this.properties.remove(kC4ObjectTypeProperty);
 
         this.length = ClassUtils.cast(properties.get("length"), Number.class).longValue();
         this.digest = ClassUtils.cast(properties.get("digest"), String.class);
@@ -300,7 +305,7 @@ public final class Blob implements FleeceEncodable {
 
     Map<String, Object> jsonRepresentation() {
         Map<String, Object> json = new HashMap<>(getProperties());
-        json.put(TYPE_META_PROPERTY, BLOB_TYPE);
+        json.put(kC4ObjectTypeProperty, kC4ObjectType_Blob);
         return json;
     }
 

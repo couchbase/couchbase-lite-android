@@ -76,7 +76,7 @@ class CBLData {
             }
             case kFLDict: {
                 FLDict flDict = value.asFLDict();
-                String type = SharedKeys.getValue(flDict, Blob.TYPE_META_PROPERTY, database.getSharedKeys()).asString();
+                String type = SharedKeys.getValue(flDict, Blob.kC4ObjectTypeProperty, database.getSharedKeys()).asString();
                 if (type == null)
                     return new Dictionary(new CBLFLDict(flDict, c4doc, database));
                 else { // type == "blob"
@@ -91,8 +91,8 @@ class CBLData {
     }
 
     private static Object dictionaryToCBLObject(Map<String, Object> dict, Database database) {
-        String type = (String) dict.get(Blob.TYPE_META_PROPERTY);
-        if (type != null && type.equals(Blob.BLOB_TYPE)) {
+        String type = (String) dict.get(Blob.kC4ObjectTypeProperty);
+        if (type != null && type.equals(Blob.kC4ObjectType_Blob)) {
             return new Blob(database, dict);
         }
         return null;
