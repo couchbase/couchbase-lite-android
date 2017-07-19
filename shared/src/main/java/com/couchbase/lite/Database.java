@@ -19,9 +19,13 @@ import android.os.Looper;
 import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.lite.internal.support.JsonUtils;
+import com.couchbase.litecore.C4BlobStore;
+import com.couchbase.litecore.C4Constants;
+import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4DatabaseChange;
 import com.couchbase.litecore.C4DatabaseObserver;
 import com.couchbase.litecore.C4DatabaseObserverListener;
+import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.C4DocumentObserver;
 import com.couchbase.litecore.C4DocumentObserverListener;
 import com.couchbase.litecore.LiteCoreException;
@@ -41,15 +45,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorNotFound;
+import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotFound;
 import static java.util.Collections.synchronizedSet;
 
 /**
  * A Couchbase Lite database.
  */
-public final class Database {
+public final class Database implements C4Constants {
 
     //---------------------------------------------
     // Load LiteCore library and its dependencies
@@ -66,10 +70,10 @@ public final class Database {
     private static final int MAX_CHANGES = 100;
 
     private static final int DEFAULT_DATABASE_FLAGS
-            = com.couchbase.litecore.Database.Create
-            | com.couchbase.litecore.Database.AutoCompact
-            | com.couchbase.litecore.Database.Bundle
-            | com.couchbase.litecore.Database.SharedKeys;
+            = C4DatabaseFlags.kC4DB_Create
+            | C4DatabaseFlags.kC4DB_AutoCompact
+            | C4DatabaseFlags.kC4DB_Bundled
+            | C4DatabaseFlags.kC4DB_SharedKeys;
 
     //---------------------------------------------
     // member variables
@@ -77,7 +81,7 @@ public final class Database {
     private String name;
     private DatabaseConfiguration config;
     // TODO: class name is conflicting between API level and LiteCore
-    private com.couchbase.litecore.Database c4db;
+    private C4Database c4db;
 
     private Set<DatabaseChangeListener> dbChangeListeners;
     private C4DatabaseObserver c4DBObserver;
@@ -398,7 +402,7 @@ public final class Database {
         File path = getDatabasePath(directory, name);
         try {
             Log.e(TAG, "delete(): path=%s", path.toString());
-            com.couchbase.litecore.Database.deleteAtPath(path.getPath(), DEFAULT_DATABASE_FLAGS);
+            C4Database.deleteAtPath(path.getPath(), DEFAULT_DATABASE_FLAGS, null, C4DocumentVersioning.kC4RevisionTrees);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -486,6 +490,14 @@ public final class Database {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+    C4BlobStore getBlobStore() throws CouchbaseLiteRuntimeException {
+        mustBeOpen();
+        try {
+            return c4db.getBlobStore();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertRuntimeException(e);
+        }
+    }
 
     ConflictResolver getConflictResolver() {
         return config != null ? config.getConflictResolver() : null;
@@ -506,7 +518,7 @@ public final class Database {
     /**
      * @return a reference to C4Database instance if db is open.
      */
-    com.couchbase.litecore.Database getC4Database() {
+    C4Database getC4Database() {
         // NOTE: In general, mustBeOpen() method is called by caller. And Thread-safety guarantees
         //       c4db should not be closed during the method. Calling mutBeOpen() here is just try
         //       to avoid NullPointerException.
@@ -536,15 +548,14 @@ public final class Database {
     }
 
     //////// DOCUMENTS:
-    com.couchbase.litecore.Document read(String docID, boolean mustExist)
+    C4Document read(String docID, boolean mustExist)
             throws CouchbaseLiteException {
         try {
-            return getC4Database().getDocument(docID, mustExist);
+            return getC4Database().get(docID, mustExist);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
     }
-
 
     Map<URI, Replicator> getReplications() {
         return replications;
@@ -616,7 +627,7 @@ public final class Database {
 
             // Tell LiteCore to do the resolution:
             try {
-                com.couchbase.litecore.Document rawDoc = doc.getC4doc().getRawDoc();
+                C4Document rawDoc = doc.getC4doc().getRawDoc();
                 rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody);
                 rawDoc.save(0);
             } catch (LiteCoreException e) {
@@ -649,17 +660,17 @@ public final class Database {
         int databaseFlags = getDatabaseFlags();
 
         // TODO:
-        int encryptionAlgorithm = com.couchbase.litecore.Database.NoEncryption;
+        int encryptionAlgorithm = C4EncryptionAlgorithm.kC4EncryptionNone;
         byte[] encryptionKey = null;
 
         Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
-            // TODO: com.couchbase.litecore.Database is same class name with this classname.
-            //       Need to change the name.
-            c4db = new com.couchbase.litecore.Database(
+            c4db = new C4Database(
                     dbFile.getPath(),
                     databaseFlags,
+                    null,
+                    C4DocumentVersioning.kC4RevisionTrees,
                     encryptionAlgorithm,
                     encryptionKey);
         } catch (LiteCoreException e) {
@@ -667,7 +678,7 @@ public final class Database {
         }
 
         sharedKeys = new SharedKeys(c4db);
-        c4DBObserver = new C4DatabaseObserver(c4db, new C4DatabaseObserverListener() {
+        c4DBObserver = c4db.createDatabaseObserver(new C4DatabaseObserverListener() {
             @Override
             public void callback(C4DatabaseObserver observer, Object context) {
                 new Handler(Looper.getMainLooper())
@@ -794,7 +805,7 @@ public final class Database {
     }
 
     private void registerC4DBObserver() {
-        c4DBObserver = new C4DatabaseObserver(c4db, new C4DatabaseObserverListener() {
+        c4DBObserver = c4db.createDatabaseObserver(new C4DatabaseObserverListener() {
             @Override
             public void callback(C4DatabaseObserver observer, Object context) {
                 new Handler(Looper.getMainLooper())
@@ -820,7 +831,7 @@ public final class Database {
         if (c4DocObservers.containsKey(docID))
             return;
 
-        C4DocumentObserver docObserver = new C4DocumentObserver(c4db, docID, new C4DocumentObserverListener() {
+        C4DocumentObserver docObserver = c4db.createDocumentObserver(docID, new C4DocumentObserverListener() {
             @Override
             public void callback(C4DocumentObserver observer, final String docID, final long sequence, Object context) {
                 new Handler(Looper.getMainLooper())

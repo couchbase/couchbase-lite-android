@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBusy;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorTransactionNotClosed;
+import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorTransactionNotClosed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

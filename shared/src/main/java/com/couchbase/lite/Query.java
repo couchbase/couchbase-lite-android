@@ -11,7 +11,6 @@
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
@@ -231,7 +230,7 @@ public class Query {
         String json = encodeAsJSON();
         Log.v(TAG, "Query encoded as %s", json);
         try {
-            c4query = new C4Query(database.getC4Database(), json);
+            c4query = database.getC4Database().createQuery(json);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }

@@ -1,12 +1,11 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
-import com.couchbase.litecore.Constants;
+import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLDict;
 import com.couchbase.litecore.fleece.FLValue;
 
-import java.util.Arrays;
 import java.util.Locale;
 
 /**
@@ -41,7 +40,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
                      boolean mustExist) {
         this(database, id, null, null);
 
-        com.couchbase.litecore.Document rawDoc;
+        C4Document rawDoc;
         try {
             rawDoc = readC4Doc(mustExist);
         } catch (LiteCoreException e) {
@@ -99,18 +98,11 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     // Sets c4doc and updates my root dictionary
     protected void setC4Doc(CBLC4Doc c4doc) {
         this.c4doc = c4doc;
-
         if (c4doc != null) {
             FLDict root = null;
             byte[] body = null;
-            try {
-                if (!c4doc.getRawDoc().deleted())
-                    body = c4doc.getRawDoc().getSelectedBody();
-            } catch (LiteCoreException e) {
-                // in case body is empty, deleted is thrown.
-                if (e.code != Constants.LiteCoreError.kC4ErrorDeleted)
-                    throw LiteCoreBridge.convertRuntimeException(e);
-            }
+            if (!c4doc.getRawDoc().deleted())
+                body = c4doc.getRawDoc().getSelectedBody();
             if (body != null && body.length > 0)
                 root = FLValue.fromData(body).asFLDict();
             setData(new CBLFLDict(root, c4doc, database));
@@ -169,9 +161,8 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     }
 
     // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
-    com.couchbase.litecore.Document readC4Doc(boolean mustExist)
-            throws LiteCoreException {
-        return database.getC4Database().getDocument(getId(), mustExist);
+    C4Document readC4Doc(boolean mustExist) throws LiteCoreException {
+        return database.getC4Database().get(getId(), mustExist);
     }
 
     ConflictResolver effectiveConflictResolver() {
@@ -182,8 +173,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
 
     boolean selectConflictingRevision() {
         try {
-            if (!c4doc.getRawDoc().selectNextLeaf(false, true))
-                return false;
+            c4doc.getRawDoc().selectNextLeafRevision(false, true);
             setC4Doc(c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
         } catch (LiteCoreException e) {
             Log.e(TAG, "Failed to selectNextLeaf: doc -> " + c4doc, e);
@@ -205,12 +195,6 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
 
     // Document overrides this
     byte[] encode() {
-        byte[] body = new byte[0];
-        try {
-            body = c4doc.getRawDoc().getSelectedBody();
-        } catch (LiteCoreException e) {
-            Log.e(TAG, "Failed to get getSelectedBody()", e);
-        }
-        return body != null ? Arrays.copyOf(body, body.length) : new byte[0];
+        return c4doc.getRawDoc().getSelectedBody();
     }
 }

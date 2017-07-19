@@ -1,12 +1,12 @@
 package com.couchbase.lite;
 
-
+import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 
 class CBLC4Doc {
-    private com.couchbase.litecore.Document rawDoc;
+    private C4Document rawDoc;
 
-    CBLC4Doc(com.couchbase.litecore.Document rawDoc) {
+    CBLC4Doc(C4Document rawDoc) {
         this.rawDoc = rawDoc;
     }
 
@@ -16,7 +16,7 @@ class CBLC4Doc {
         super.finalize();
     }
 
-    com.couchbase.litecore.Document getRawDoc() {
+    C4Document getRawDoc() {
         return rawDoc;
     }
 
@@ -54,6 +54,6 @@ class CBLC4Doc {
     }
 
     long getSelectedRevFlags() {
-        return rawDoc.getSelectedRevFlags();
+        return rawDoc.getSelectedFlags();
     }
 }
