@@ -14,7 +14,8 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
-import com.couchbase.litecore.Constants;
+import com.couchbase.litecore.C4Constants;
+import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
 
@@ -24,14 +25,14 @@ import java.util.List;
 import java.util.Map;
 
 import static com.couchbase.lite.internal.Misc.CreateUUID;
-import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.Constants.C4RevisionFlags.kRevHasAttachments;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
+import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevHasAttachments;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 
 /**
  * A Couchbase Lite Document. A document has key/value properties like a Map.
  */
-public final class Document extends ReadOnlyDocument implements DictionaryInterface {
+public final class Document extends ReadOnlyDocument implements DictionaryInterface, C4Constants {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -425,7 +426,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         if (deletion && !exists())
             throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
 
-        com.couchbase.litecore.Document newDoc = null;
+        C4Document newDoc = null;
 
         // Begin a database transaction:
         boolean commit = false;
@@ -512,7 +513,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
-    private com.couchbase.litecore.Document save(boolean deletion) throws LiteCoreException {
+    private C4Document save(boolean deletion) throws LiteCoreException {
 
         // history
         List<String> revIDs = new ArrayList<>();
@@ -523,7 +524,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         byte[] body = null;
         int revFlags = 0;
         if (deletion)
-            revFlags = Constants.C4RevisionFlags.kRevDeleted;
+            revFlags = C4RevisionFlags.kRevDeleted;
         if (containsBlob(this))
             revFlags |= kRevHasAttachments;
         if (!deletion && !isEmpty()) {
@@ -533,10 +534,12 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
                 return null;
         }
 
-        // TODO: Refactor: use c4doc_update or c4doc_create
         // Save to database:
-        return getDatabase().getC4Database().put(
-                getId(), body, false, false, history, revFlags, true, 0);
+        C4Document c4Doc = getC4doc() != null ? getC4doc().getRawDoc() : null;
+        if (c4Doc != null)
+            return c4Doc.update(body, revFlags);
+        else
+            return getDatabase().getC4Database().create(getId(), body, revFlags);
     }
 
     private boolean isChanged() {

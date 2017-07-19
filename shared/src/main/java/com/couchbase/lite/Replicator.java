@@ -5,6 +5,7 @@ import android.os.Looper;
 import android.util.Base64;
 
 import com.couchbase.lite.internal.support.StringUtils;
+import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4Replicator;
 import com.couchbase.litecore.C4ReplicatorListener;
@@ -24,14 +25,15 @@ import java.util.Set;
 import static com.couchbase.lite.Replicator.ActivityLevel.BUSY;
 import static com.couchbase.lite.Replicator.ActivityLevel.IDLE;
 import static com.couchbase.lite.Replicator.ActivityLevel.STOPPED;
+import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Continuous;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Disabled;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4OneShot;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Connecting;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Offline;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
-import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
+
 import static java.util.Collections.synchronizedSet;
 
 public class Replicator implements NetworkReachabilityListener {
@@ -318,7 +320,7 @@ public class Replicator implements NetworkReachabilityListener {
 
     private void _start() {
         // Source
-        com.couchbase.litecore.Database db = config.getDatabase().getC4Database();
+        C4Database db = config.getDatabase().getC4Database();
 
         // Target:
         String schema = null;
@@ -329,7 +331,7 @@ public class Replicator implements NetworkReachabilityListener {
 
         URI remoteURI = config.getTargetURI();
         String dbName = null;
-        com.couchbase.litecore.Database otherDB = null;
+        C4Database otherDB = null;
         // replicate against remote endpoint
         if (remoteURI != null) {
             schema = remoteURI.getScheme();
@@ -394,7 +396,7 @@ public class Replicator implements NetworkReachabilityListener {
         // Create a C4Replicator:
         C4ReplicatorStatus status = null;
         try {
-            c4repl = new C4Replicator(db, schema, host, port, path, dbName, otherDB,
+            c4repl = db.createReplicator(schema, host, port, path, dbName, otherDB,
                     mkmode(push, continuous), mkmode(pull, continuous),
                     optionsFleece,
                     c4ReplListener, this);

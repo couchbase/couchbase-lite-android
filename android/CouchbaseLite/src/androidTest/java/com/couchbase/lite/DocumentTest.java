@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
-import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBadDocID;
+import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBadDocID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;

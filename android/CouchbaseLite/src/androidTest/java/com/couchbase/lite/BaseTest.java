@@ -20,6 +20,7 @@ import android.util.Log;
 import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
+import com.couchbase.litecore.C4Constants;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -34,12 +35,12 @@ import java.util.Locale;
 import java.util.Map;
 
 import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBusy;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-public class BaseTest {
+public class BaseTest implements C4Constants {
     public static final String TAG = BaseTest.class.getSimpleName();
 
     protected final static String kDatabaseName = "testdb";

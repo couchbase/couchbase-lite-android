@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.utils.ZipUtils;
@@ -13,7 +12,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
 
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorBusy;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

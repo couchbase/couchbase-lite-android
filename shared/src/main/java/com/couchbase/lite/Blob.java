@@ -24,7 +24,6 @@ import com.couchbase.litecore.fleece.FLSliceResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -32,8 +31,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import static com.couchbase.litecore.Constants.C4DatabaseFlags.kC4DB_Create;
 
 /**
  * A Couchbase Lite Blob. A Blob appears as a property of a Document; it contains arbitrary binary
@@ -319,9 +316,7 @@ public final class Blob implements FleeceEncodable {
 
         C4BlobKey key = null;
         try {
-            // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
-            // C4BlobStore store = database.getC4Database().getBlobStore();
-            C4BlobStore store = getBlobStore(db);
+            C4BlobStore store = db.getBlobStore();
             try {
                 if (content != null) {
                     key = store.create(content);
@@ -388,30 +383,9 @@ public final class Blob implements FleeceEncodable {
             Log.w(TAG, "database instance is null.");
             return null;
         }
-
         try {
-            File attachments = new File(database.getPath(), "Attachments");
-            return C4BlobStore.open(attachments.getPath(), kC4DB_Create);
-            // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
-            // return database.getC4Database().getBlobStore();
-        } catch (LiteCoreException e) {
-            Log.w(TAG, "Failed to get BlobStore instance", e);
-            return null;
-        }
-    }
-
-    private C4BlobStore getBlobStore(Database db) {
-        if (db == null) {
-            Log.w(TAG, "database instance is null.");
-            return null;
-        }
-
-        try {
-            File attachments = new File(db.getPath(), "Attachments");
-            return C4BlobStore.open(attachments.getPath(), kC4DB_Create);
-            // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1136
-            //return database.getC4Database().getBlobStore();
-        } catch (LiteCoreException e) {
+            return database.getBlobStore();
+        } catch (RuntimeException e) {
             Log.w(TAG, "Failed to get BlobStore instance", e);
             return null;
         }

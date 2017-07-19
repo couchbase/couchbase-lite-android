@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.fleece.FLEncoder;
 
 import org.junit.After;
@@ -11,8 +12,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.couchbase.litecore.Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.Constants.LiteCoreError.kC4ErrorConflict;
+import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -92,18 +93,17 @@ public class ConflictTest extends BaseTest {
             @Override
             public void run() {
                 try {
-                    com.couchbase.litecore.Document trickey
-                            = db.getC4Database().getDocument(docID, true);
+                    C4Document trickey = db.getC4Database().get(docID, true);
                     FLEncoder enc = db.getC4Database().createFleeceEncoder();
                     enc.writeValue(props);
                     byte[] bytes = enc.finish();
-                    com.couchbase.litecore.Document newDoc = db.getC4Database().put(
-                            docID,
+                    C4Document newDoc = db.getC4Database().put(
                             bytes,
+                            docID,
+                            0,
                             false,
                             false,
                             (String[]) Arrays.asList(trickey.getRevID()).toArray(),
-                            0,
                             true,
                             0);
                     assertNotNull(newDoc);

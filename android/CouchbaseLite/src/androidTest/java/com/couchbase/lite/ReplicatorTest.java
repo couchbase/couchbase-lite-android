@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.utils.Config;
@@ -22,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PULL;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
-import static com.couchbase.litecore.Constants.NetworkError.kC4NetErrTLSCertUntrusted;
+import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -87,6 +86,7 @@ public class ReplicatorTest extends BaseTest {
                 } else {
                     if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
                         if (code != 0) {
+                            assertNotNull(error);
                             assertEquals(code, error.getCode());
                             if (domain != null)
                                 assertEquals(domain, error.getDomainString());
@@ -328,7 +328,7 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticatedPullWithIncorrectPassword() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
+        String uri = String.format(Locale.ENGLISH, "blip://%s:4994/seekrit",
                 this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
@@ -340,7 +340,7 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticatedPullHardcoded() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://pupshaw:frank@%s:%d/seekrit",
+        String uri = String.format(Locale.ENGLISH, "blip://pupshaw:frank@%s:4994/seekrit",
                 this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, 0, null);
@@ -350,7 +350,7 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticatedPull() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
+        String uri = String.format(Locale.ENGLISH, "blip://%s:4994/seekrit",
                 this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
