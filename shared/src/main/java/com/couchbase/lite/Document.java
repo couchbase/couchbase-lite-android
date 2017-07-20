@@ -18,6 +18,7 @@ import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
+import com.couchbase.litecore.fleece.FLSliceResult;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -418,6 +419,19 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             encoder.free();
         }
     }
+
+    FLSliceResult encode2() {
+        FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
+        try {
+            dictionary.fleeceEncode(encoder, getDatabase());
+            return encoder.finish2();
+        } catch (LiteCoreException e) {
+            throw LiteCoreBridge.convertRuntimeException(e);
+        } finally {
+            encoder.free();
+        }
+    }
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
@@ -521,7 +535,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             revIDs.add(getC4doc().getRevID());
         String[] history = revIDs.toArray(new String[revIDs.size()]);
 
-        byte[] body = null;
+        FLSliceResult body = null;
         int revFlags = 0;
         if (deletion)
             revFlags = C4RevisionFlags.kRevDeleted;
@@ -529,17 +543,21 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             revFlags |= kRevHasAttachments;
         if (!deletion && !isEmpty()) {
             // Encode properties to Fleece data:
-            body = encode();
+            body = encode2();
             if (body == null)
                 return null;
         }
 
         // Save to database:
+        C4Document newDoc = null;
         C4Document c4Doc = getC4doc() != null ? getC4doc().getRawDoc() : null;
         if (c4Doc != null)
-            return c4Doc.update(body, revFlags);
+            newDoc = c4Doc.update(body, revFlags);
         else
-            return getDatabase().getC4Database().create(getId(), body, revFlags);
+            newDoc = getDatabase().getC4Database().create(getId(), body, revFlags);
+        if (body != null)
+            body.free();
+        return newDoc;
     }
 
     private boolean isChanged() {
