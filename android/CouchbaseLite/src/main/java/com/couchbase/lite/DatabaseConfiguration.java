@@ -38,4 +38,8 @@ public class DatabaseConfiguration extends BaseDatabaseConfiguration {
         config.setEncryptionKey(this.getEncryptionKey());
         return config;
     }
+
+    String getTempDir(){
+        return context.getCacheDir().getAbsolutePath();
+    }
 }

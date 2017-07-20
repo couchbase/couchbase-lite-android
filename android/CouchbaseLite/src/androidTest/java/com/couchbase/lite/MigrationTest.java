@@ -3,6 +3,7 @@ package com.couchbase.lite;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.utils.ZipUtils;
+import com.couchbase.litecore.C4BlobKey;
 
 import org.junit.After;
 import org.junit.Before;
@@ -56,8 +57,10 @@ public class MigrationTest extends BaseTest {
         }
     }
 
-    //TODO: @Test
+    // TODO: 1.x DB's attachment is not automatically ditected as blob
+    @Test
     public void testOpenExsitingDBv1x() throws Exception {
+
         // https://github.com/couchbase/couchbase-lite-android/issues/1237
 
         // if db exist, delete it
@@ -72,7 +75,25 @@ public class MigrationTest extends BaseTest {
                 Document doc = db.getDocument("doc" + i);
                 assertNotNull(doc);
                 assertEquals(String.valueOf(i), doc.getString("key"));
-                Blob blob = doc.getBlob("attach" + i);
+
+                Dictionary attachments = doc.getDictionary("_attachments");
+                assertNotNull(attachments);
+                Log.e(TAG, "attachments -> %s", attachments.toMap());
+                String key = "attach" + i;
+                Log.e(TAG, "key -> %s", key);
+
+                // NOTE: following is temporary solution as Upgrader does not set @type = blob.
+                Dictionary content = attachments.getDictionary(key);
+                assertNotNull(content);
+                Log.e(TAG, "content -> %s", content);
+                String digest = content.getString("digest");
+                C4BlobKey blobKey = new C4BlobKey(digest);
+                db.getBlobStore().getFilePath(blobKey);
+                Blob blob = new Blob(db, content.toMap());
+
+                // TODO: OR
+                //Blob blob = attachments.getBlob(key);
+
                 assertNotNull(blob);
                 byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes();
                 Arrays.equals(attach, blob.getContent());
@@ -85,7 +106,7 @@ public class MigrationTest extends BaseTest {
         }
     }
 
-    //TODO: @Test
+    @Test
     public void testOpenExsitingDBv1xNoAttachment() throws Exception {
         // https://github.com/couchbase/couchbase-lite-android/issues/1237
 
