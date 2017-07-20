@@ -19,6 +19,7 @@ import android.os.Looper;
 import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.lite.internal.support.JsonUtils;
+import com.couchbase.litecore.C4;
 import com.couchbase.litecore.C4BlobStore;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Database;
@@ -113,6 +114,9 @@ public final class Database implements C4Constants {
 
         this.name = name;
         this.config = config.copy();
+        String tempdir = config.getTempDir();
+        if (tempdir != null)
+            C4.setenv("TMPDIR", tempdir, 1);
         open();
 
         this.replications = new HashMap<>();

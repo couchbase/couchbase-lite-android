@@ -77,9 +77,9 @@ class CBLData {
             case kFLDict: {
                 FLDict flDict = value.asFLDict();
                 String type = SharedKeys.getValue(flDict, Blob.kC4ObjectTypeProperty, database.getSharedKeys()).asString();
-                if (type == null)
+                if (type == null) {
                     return new Dictionary(new CBLFLDict(flDict, c4doc, database));
-                else { // type == "blob"
+                } else { // type == "blob"
                     Object result = SharedKeys.valueToObject(value, database.getSharedKeys());
                     return dictionaryToCBLObject((Map<String, Object>) result, database);
                 }
