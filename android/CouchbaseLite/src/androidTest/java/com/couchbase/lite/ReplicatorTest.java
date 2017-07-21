@@ -340,7 +340,7 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticatedPullHardcoded() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://pupshaw:frank@%s:4994/seekrit",
+        String uri = String.format(Locale.ENGLISH, "blip://pupshaw:frank@%s:4984/seekrit",
                 this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, 0, null);
