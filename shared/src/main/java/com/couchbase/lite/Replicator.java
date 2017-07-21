@@ -4,13 +4,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
 
+import com.couchbase.lite.internal.replicator.CBLWebSocket;
 import com.couchbase.lite.internal.support.StringUtils;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4Replicator;
 import com.couchbase.litecore.C4ReplicatorListener;
 import com.couchbase.litecore.C4ReplicatorStatus;
-import com.couchbase.litecore.C4Socket;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
@@ -33,7 +33,6 @@ import static com.couchbase.litecore.C4ReplicatorMode.kC4OneShot;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Connecting;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Offline;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
-
 import static java.util.Collections.synchronizedSet;
 
 public class Replicator implements NetworkReachabilityListener {
@@ -147,7 +146,6 @@ public class Replicator implements NetworkReachabilityListener {
             return progress;
         }
 
-
         Status copy() {
             return new Status(activityLevel, progress.copy());
         }
@@ -158,8 +156,8 @@ public class Replicator implements NetworkReachabilityListener {
     //---------------------------------------------
 
     static {
-        //Register WebSocket C4Socket implementation
-        C4Socket.registerFactory();
+        //Register CBLWebSocket which is C4Socket implementation
+        CBLWebSocket.register();
     }
 
 
