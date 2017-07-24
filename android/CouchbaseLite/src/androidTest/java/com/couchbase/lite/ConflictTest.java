@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -226,5 +227,47 @@ public class ConflictTest extends BaseTest {
 
         save(doc);
         assertEquals("Scott of the Sahara", doc.getString("name"));
+    }
+
+    // REF: https://github.com/couchbase/couchbase-lite-android/issues/1293
+    @Test
+    public void testConflictWithoutCommonAncestor() throws CouchbaseLiteException {
+        closeDB();
+
+        // open db with special conflict resolver
+        openDB(new ConflictResolver() {
+            @Override
+            public ReadOnlyDocument resolve(Conflict conflict) {
+                assertNotNull(conflict);
+                assertNull(conflict.getBase()); // make sure base is null
+                return conflict.getBase();      // null -> cause 409
+            }
+        });
+
+        String docID = "doc1";
+        Map<String, Object> props = new HashMap<>();
+        props.put("hello", "world");
+
+        //STEP 1: Created a new document with id = "doc1"
+        Document doc = new Document(docID, props);
+        db.save(doc);
+
+        //STEP 2: Added a revision to the document
+        doc = db.getDocument(docID);
+        doc.set("university", 1);
+        db.save(doc);
+
+        // STEP3: Create Conflict as follows
+        doc = new Document(docID, props);
+        doc.set("university", 2);
+        try {
+            db.save(doc);
+            fail();
+       } catch (CouchbaseLiteException e) {
+            // Currently returned error code is LiteCore error code.
+            // This could change to HTTP error code.
+            assertEquals(LiteCoreDomain, e.getDomain());
+            assertEquals(kC4ErrorConflict, e.getCode()); // int kC4ErrorConflict = 14;
+        }
     }
 }

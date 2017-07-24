@@ -504,8 +504,11 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             resolved = current;
         } else {
             // Call the custom conflict resolver
-            ReadOnlyDocument base = new ReadOnlyDocument(
-                    getDatabase(), getId(), super.getC4doc(), super.getData());
+            ReadOnlyDocument base = null;
+            CBLC4Doc c4doc = super.getC4doc();
+            if (c4doc != null)
+                base = new ReadOnlyDocument(
+                        getDatabase(), getId(), super.getC4doc(), super.getData());
             Conflict conflict = new Conflict(this, current, base);
             resolved = resolver.resolve(conflict);
             if (resolved == null) {
