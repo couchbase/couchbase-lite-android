@@ -45,33 +45,33 @@ public class DocumentTest extends BaseTest {
     final static String kDocumentTestBlob = "i'm blob";
 
     private void populateData(Document doc) {
-        doc.set("true", true);
-        doc.set("false", false);
-        doc.set("string", "string");
-        doc.set("zero", 0);
-        doc.set("one", 1);
-        doc.set("minus_one", -1);
-        doc.set("one_dot_one", 1.1);
-        doc.set("date", DateUtils.fromJson(kDocumentTestDate));
-        doc.set("null", null);
+        doc.setObject("true", true);
+        doc.setObject("false", false);
+        doc.setObject("string", "string");
+        doc.setObject("zero", 0);
+        doc.setObject("one", 1);
+        doc.setObject("minus_one", -1);
+        doc.setObject("one_dot_one", 1.1);
+        doc.setObject("date", DateUtils.fromJson(kDocumentTestDate));
+        doc.setObject("null", null);
 
         // Dictionary:
         Dictionary dict = new Dictionary();
-        dict.set("street", "1 Main street");
-        dict.set("city", "Mountain View");
-        dict.set("state", "CA");
-        doc.set("dict", dict);
+        dict.setObject("street", "1 Main street");
+        dict.setObject("city", "Mountain View");
+        dict.setObject("state", "CA");
+        doc.setObject("dict", dict);
 
         // Array:
         Array array = new Array();
-        array.add("650-123-0001");
-        array.add("650-123-0002");
-        doc.set("array", array);
+        array.addObject("650-123-0001");
+        array.addObject("650-123-0002");
+        doc.setObject("array", array);
 
         // Blob:
         byte[] content = kDocumentTestBlob.getBytes();
         Blob blob = new Blob("text/plain", content);
-        doc.set("blob", blob);
+        doc.setObject("blob", blob);
     }
 
     @Before
@@ -299,7 +299,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testSaveThenGetFromAnotherDB() throws CouchbaseLiteException {
         Document doc1a = createDocument("doc1");
-        doc1a.set("name", "Scott Tiger");
+        doc1a.setObject("name", "Scott Tiger");
         save(doc1a);
 
         Database anotherDb = db.copy();
@@ -313,7 +313,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testNoCacheNoLive() throws CouchbaseLiteException {
         Document doc1a = createDocument("doc1");
-        doc1a.set("name", "Scott Tiger");
+        doc1a.setObject("name", "Scott Tiger");
 
         save(doc1a);
 
@@ -334,7 +334,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(doc1a.toMap(), doc1c.toMap());
         assertEquals(doc1a.toMap(), doc1d.toMap());
 
-        doc1b.set("name", "Daniel Tiger");
+        doc1b.setObject("name", "Daniel Tiger");
         save(doc1b);
 
         assertNotEquals(doc1b.toMap(), doc1a.toMap());
@@ -347,8 +347,8 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testSetString() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("string1", "");
-        doc.set("string2", "string");
+        doc.setObject("string1", "");
+        doc.setObject("string2", "string");
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
@@ -357,8 +357,8 @@ public class DocumentTest extends BaseTest {
             }
         });
 
-        doc.set("string1", "string");
-        doc.set("string2", "");
+        doc.setObject("string1", "string");
+        doc.setObject("string2", "");
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
@@ -396,10 +396,10 @@ public class DocumentTest extends BaseTest {
     public void testSetNumber() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
-        doc.set("number1", 1);
-        doc.set("number2", 0);
-        doc.set("number3", -1);
-        doc.set("number4", 1.1);
+        doc.setObject("number1", 1);
+        doc.setObject("number2", 0);
+        doc.setObject("number3", -1);
+        doc.setObject("number4", 1.1);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -413,10 +413,10 @@ public class DocumentTest extends BaseTest {
 
         // Update:
 
-        doc.set("number1", 0);
-        doc.set("number2", 1);
-        doc.set("number3", 1.1);
-        doc.set("number4", -1);
+        doc.setObject("number1", 0);
+        doc.setObject("number2", 1);
+        doc.setObject("number3", 1.1);
+        doc.setObject("number4", -1);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -553,14 +553,14 @@ public class DocumentTest extends BaseTest {
     public void testSetGetMinMaxNumbers() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
-        doc.set("min_int", Integer.MIN_VALUE);
-        doc.set("max_int", Integer.MAX_VALUE);
-        doc.set("min_long", Long.MIN_VALUE);
-        doc.set("max_long", Long.MAX_VALUE);
-        doc.set("min_float", Float.MIN_VALUE);
-        doc.set("max_float", Float.MAX_VALUE);
-        doc.set("min_double", Double.MIN_VALUE);
-        doc.set("max_double", Double.MAX_VALUE);
+        doc.setObject("min_int", Integer.MIN_VALUE);
+        doc.setObject("max_int", Integer.MAX_VALUE);
+        doc.setObject("min_long", Long.MIN_VALUE);
+        doc.setObject("max_long", Long.MAX_VALUE);
+        doc.setObject("min_float", Float.MIN_VALUE);
+        doc.setObject("max_float", Float.MAX_VALUE);
+        doc.setObject("min_double", Double.MIN_VALUE);
+        doc.setObject("max_double", Double.MAX_VALUE);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -600,11 +600,11 @@ public class DocumentTest extends BaseTest {
     public void testSetGetFloatNumbers() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
-        doc.set("number1", 1.00);
-        doc.set("number2", 1.49);
-        doc.set("number3", 1.50);
-        doc.set("number4", 1.51);
-        doc.set("number5", 1.99);
+        doc.setObject("number1", 1.00);
+        doc.setObject("number2", 1.49);
+        doc.setObject("number3", 1.50);
+        doc.setObject("number4", 1.51);
+        doc.setObject("number5", 1.99);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -654,8 +654,8 @@ public class DocumentTest extends BaseTest {
     public void testSetBoolean() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
 
-        doc.set("boolean1", true);
-        doc.set("boolean2", false);
+        doc.setObject("boolean1", true);
+        doc.setObject("boolean2", false);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -669,8 +669,8 @@ public class DocumentTest extends BaseTest {
 
         // Update:
 
-        doc.set("boolean1", false);
-        doc.set("boolean2", true);
+        doc.setObject("boolean1", false);
+        doc.setObject("boolean2", true);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -714,7 +714,7 @@ public class DocumentTest extends BaseTest {
         Date date = new Date();
         final String dateStr = DateUtils.toJson(date);
         assertTrue(dateStr.length() > 0);
-        doc.set("date", date);
+        doc.setObject("date", date);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -731,7 +731,7 @@ public class DocumentTest extends BaseTest {
         cal.add(Calendar.SECOND, 60);
         Date nuDate = cal.getTime();
         final String nuDateStr = DateUtils.toJson(nuDate);
-        doc.set("date", nuDate);
+        doc.setObject("date", nuDate);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -772,7 +772,7 @@ public class DocumentTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         final Blob blob = new Blob("text/plain", kDocumentTestBlob.getBytes());
-        doc.set("blob", blob);
+        doc.setObject("blob", blob);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -790,7 +790,7 @@ public class DocumentTest extends BaseTest {
 
         // Update:
         final Blob nuBlob = new Blob("text/plain", "1234567890".getBytes());
-        doc.set("blob", nuBlob);
+        doc.setObject("blob", nuBlob);
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
@@ -837,8 +837,8 @@ public class DocumentTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Dictionary dict = new Dictionary();
-        dict.set("street", "1 Main street");
-        doc.set("dict", dict);
+        dict.setObject("street", "1 Main street");
+        doc.setObject("dict", dict);
 
         assertEquals(dict, doc.getObject("dict"));
         assertEquals(dict.toMap(), ((Dictionary) doc.getObject("dict")).toMap());
@@ -852,7 +852,7 @@ public class DocumentTest extends BaseTest {
 
         // Update:
         dict = doc.getDictionary("dict");
-        dict.set("city", "Mountain View");
+        dict.setObject("city", "Mountain View");
 
         assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
         Map<String, Object> map = new HashMap<>();
@@ -902,10 +902,10 @@ public class DocumentTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Array array = new Array();
-        array.add("item1");
-        array.add("item2");
-        array.add("item3");
-        doc.set("array", array);
+        array.addObject("item1");
+        array.addObject("item2");
+        array.addObject("item3");
+        doc.setObject("array", array);
 
         assertEquals(array, doc.getObject("array"));
         assertEquals(array.toList(), ((Array) doc.getObject("array")).toList());
@@ -919,8 +919,8 @@ public class DocumentTest extends BaseTest {
 
         // Update:
         array = doc.getArray("array");
-        array.add("item4");
-        array.add("item5");
+        array.addObject("item4");
+        array.addObject("item5");
 
         save(doc);
         doc = db.getDocument("doc1");
@@ -959,7 +959,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testSetNull() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("null", null);
+        doc.setObject("null", null);
         assertEquals(1, doc.count());
         save(doc, new Validator<Document>() {
             @Override
@@ -978,7 +978,7 @@ public class DocumentTest extends BaseTest {
         dict.put("state", "CA");
 
         Document doc = createDocument("doc1");
-        doc.set("address", dict);
+        doc.setObject("address", dict);
 
         Dictionary address = doc.getDictionary("address");
         assertNotNull(address);
@@ -993,7 +993,7 @@ public class DocumentTest extends BaseTest {
         nuDict.put("street", "1 Second street");
         nuDict.put("city", "Palo Alto");
         nuDict.put("state", "CA");
-        doc.set("address", nuDict);
+        doc.setObject("address", nuDict);
 
         // Check whether the old address dictionary is still accessible:
         assertTrue(address != doc.getDictionary("address"));
@@ -1007,7 +1007,7 @@ public class DocumentTest extends BaseTest {
         assertTrue(address != nuAddress);
 
         // Update nuAddress:
-        nuAddress.set("zip", "94302");
+        nuAddress.setObject("zip", "94302");
         assertEquals("94302", nuAddress.getString("zip"));
         assertNull(address.getString("zip"));
 
@@ -1026,7 +1026,7 @@ public class DocumentTest extends BaseTest {
         List<String> array = Arrays.asList("a", "b", "c");
 
         Document doc = createDocument("doc1");
-        doc.set("members", array);
+        doc.setObject("members", array);
 
         Array members = doc.getArray("members");
         assertNotNull(members);
@@ -1040,7 +1040,7 @@ public class DocumentTest extends BaseTest {
 
         // Update with a new array:
         List<String> nuArray = Arrays.asList("d", "e", "f");
-        doc.set("members", nuArray);
+        doc.setObject("members", nuArray);
 
         // Check whether the old members array is still accessible:
         assertEquals(3, members.count());
@@ -1054,7 +1054,7 @@ public class DocumentTest extends BaseTest {
         assertTrue(members != nuMembers);
 
         // Update nuMembers:
-        nuMembers.add("g");
+        nuMembers.addObject("g");
         assertEquals(4, nuMembers.count());
         assertEquals("g", nuMembers.getObject(3));
         assertEquals(3, members.count());
@@ -1072,18 +1072,18 @@ public class DocumentTest extends BaseTest {
     public void testUpdateNestedDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Dictionary addresses = new Dictionary();
-        doc.set("addresses", addresses);
+        doc.setObject("addresses", addresses);
 
         Dictionary shipping = new Dictionary();
-        shipping.set("street", "1 Main street");
-        shipping.set("city", "Mountain View");
-        shipping.set("state", "CA");
-        addresses.set("shipping", shipping);
+        shipping.setObject("street", "1 Main street");
+        shipping.setObject("city", "Mountain View");
+        shipping.setObject("state", "CA");
+        addresses.setObject("shipping", shipping);
 
         doc = save(doc);
 
         shipping = doc.getDictionary("addresses").getDictionary("shipping");
-        shipping.set("zip", "94042");
+        shipping.setObject("zip", "94042");
 
         doc = save(doc);
 
@@ -1104,29 +1104,29 @@ public class DocumentTest extends BaseTest {
     public void testUpdateDictionaryInArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array addresses = new Array();
-        doc.set("addresses", addresses);
+        doc.setObject("addresses", addresses);
 
         Dictionary address1 = new Dictionary();
-        address1.set("street", "1 Main street");
-        address1.set("city", "Mountain View");
-        address1.set("state", "CA");
-        addresses.add(address1);
+        address1.setObject("street", "1 Main street");
+        address1.setObject("city", "Mountain View");
+        address1.setObject("state", "CA");
+        addresses.addObject(address1);
 
         Dictionary address2 = new Dictionary();
-        address2.set("street", "1 Second street");
-        address2.set("city", "Palo Alto");
-        address2.set("state", "CA");
-        addresses.add(address2);
+        address2.setObject("street", "1 Second street");
+        address2.setObject("city", "Palo Alto");
+        address2.setObject("state", "CA");
+        addresses.addObject(address2);
 
         doc = save(doc);
 
         address1 = doc.getArray("addresses").getDictionary(0);
-        address1.set("street", "2 Main street");
-        address1.set("zip", "94042");
+        address1.setObject("street", "2 Main street");
+        address1.setObject("zip", "94042");
 
         address2 = doc.getArray("addresses").getDictionary(1);
-        address2.set("street", "2 Second street");
-        address2.set("zip", "94302");
+        address2.setObject("street", "2 Second street");
+        address2.setObject("zip", "94302");
 
         doc = save(doc);
 
@@ -1152,31 +1152,31 @@ public class DocumentTest extends BaseTest {
     public void testUpdateNestedArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array groups = new Array();
-        doc.set("groups", groups);
+        doc.setObject("groups", groups);
 
         Array group1 = new Array();
-        group1.add("a");
-        group1.add("b");
-        group1.add("c");
-        groups.add(group1);
+        group1.addObject("a");
+        group1.addObject("b");
+        group1.addObject("c");
+        groups.addObject(group1);
 
         Array group2 = new Array();
-        group2.add(1);
-        group2.add(2);
-        group2.add(3);
-        groups.add(group2);
+        group2.addObject(1);
+        group2.addObject(2);
+        group2.addObject(3);
+        groups.addObject(group2);
 
         doc = save(doc);
 
         group1 = doc.getArray("groups").getArray(0);
-        group1.set(0, "d");
-        group1.set(1, "e");
-        group1.set(2, "f");
+        group1.setObject(0, "d");
+        group1.setObject(1, "e");
+        group1.setObject(2, "f");
 
         group2 = doc.getArray("groups").getArray(1);
-        group2.set(0, 4);
-        group2.set(1, 5);
-        group2.set(2, 6);
+        group2.setObject(0, 4);
+        group2.setObject(1, 5);
+        group2.setObject(2, 6);
 
         doc = save(doc);
 
@@ -1192,31 +1192,31 @@ public class DocumentTest extends BaseTest {
 
         Dictionary group1 = new Dictionary();
         Array member1 = new Array();
-        member1.add("a");
-        member1.add("b");
-        member1.add("c");
-        group1.set("member", member1);
-        doc.set("group1", group1);
+        member1.addObject("a");
+        member1.addObject("b");
+        member1.addObject("c");
+        group1.setObject("member", member1);
+        doc.setObject("group1", group1);
 
         Dictionary group2 = new Dictionary();
         Array member2 = new Array();
-        member2.add(1);
-        member2.add(2);
-        member2.add(3);
-        group2.set("member", member2);
-        doc.set("group2", group2);
+        member2.addObject(1);
+        member2.addObject(2);
+        member2.addObject(3);
+        group2.setObject("member", member2);
+        doc.setObject("group2", group2);
 
         doc = save(doc);
 
         member1 = doc.getDictionary("group1").getArray("member");
-        member1.set(0, "d");
-        member1.set(1, "e");
-        member1.set(2, "f");
+        member1.setObject(0, "d");
+        member1.setObject(1, "e");
+        member1.setObject(2, "f");
 
         member2 = doc.getDictionary("group2").getArray("member");
-        member2.set(0, 4);
-        member2.set(1, 5);
-        member2.set(2, 6);
+        member2.setObject(0, 4);
+        member2.setObject(1, 5);
+        member2.setObject(2, 6);
 
         doc = save(doc);
 
@@ -1235,14 +1235,14 @@ public class DocumentTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Dictionary address = new Dictionary();
-        address.set("street", "1 Main street");
-        address.set("city", "Mountain View");
-        address.set("state", "CA");
-        doc.set("shipping", address);
-        doc.set("billing", address);
+        address.setObject("street", "1 Main street");
+        address.setObject("city", "Mountain View");
+        address.setObject("state", "CA");
+        doc.setObject("shipping", address);
+        doc.setObject("billing", address);
 
         // Update address: both shipping and billing should get the update.
-        address.set("zip", "94042");
+        address.setObject("zip", "94042");
         assertEquals("94042", doc.getDictionary("shipping").getString("zip"));
         assertEquals("94042", doc.getDictionary("billing").getString("zip"));
 
@@ -1256,8 +1256,8 @@ public class DocumentTest extends BaseTest {
         assertTrue(billing != address);
         assertTrue(shipping != billing);
 
-        shipping.set("street", "2 Main street");
-        billing.set("street", "3 Main street");
+        shipping.setObject("street", "2 Main street");
+        billing.setObject("street", "3 Main street");
 
         // Save update:
         doc = save(doc);
@@ -1270,17 +1270,17 @@ public class DocumentTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Array phones = new Array();
-        phones.add("650-000-0001");
-        phones.add("650-000-0002");
+        phones.addObject("650-000-0001");
+        phones.addObject("650-000-0002");
 
-        doc.set("mobile", phones);
-        doc.set("home", phones);
+        doc.setObject("mobile", phones);
+        doc.setObject("home", phones);
 
         assertEquals(phones, doc.getObject("mobile"));
         assertEquals(phones, doc.getObject("home"));
 
         // Update phones: both mobile and home should get the update
-        phones.add("650-000-0003");
+        phones.addObject("650-000-0003");
 
         assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003"),
                 doc.getArray("mobile").toList());
@@ -1297,8 +1297,8 @@ public class DocumentTest extends BaseTest {
         assertTrue(mobile != home);
 
         // Update mobile and home:
-        mobile.add("650-000-1234");
-        home.add("650-000-5678");
+        mobile.addObject("650-000-1234");
+        home.addObject("650-000-5678");
 
         // Save update:
         doc = save(doc);
@@ -1405,7 +1405,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testDeleteNewDocument() {
         Document doc = createDocument("doc1");
-        doc.set("name", "Scott Tiger");
+        doc.setObject("name", "Scott Tiger");
         assertFalse(doc.isDeleted());
         try {
             db.delete(doc);
@@ -1420,7 +1420,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testDeleteDocument() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("name", "Scott Tiger");
+        doc.setObject("name", "Scott Tiger");
         assertFalse(doc.isDeleted());
 
         // Save:
@@ -1460,7 +1460,7 @@ public class DocumentTest extends BaseTest {
         assertEquals("CA", address.getObject("state"));
 
         // Make changes to the dictionary shouldn't affect the document.
-        address.set("zip", "94042");
+        address.setObject("zip", "94042");
         assertNull(doc.getDictionary("address"));
         assertEquals(new HashMap<>(), doc.toMap());
     }
@@ -1492,8 +1492,8 @@ public class DocumentTest extends BaseTest {
         assertEquals("c", members.getObject(2));
 
         // Make changes to the dictionary shouldn't affect the document.
-        members.set(2, "1");
-        members.add("2");
+        members.setObject(2, "1");
+        members.addObject("2");
         assertNull(doc.getDictionary("members"));
         assertEquals(new HashMap<>(), doc.toMap());
     }
@@ -1501,8 +1501,8 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testPurgeDocument() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("type", "profile");
-        doc.set("name", "Scott");
+        doc.setObject("type", "profile");
+        doc.setObject("name", "Scott");
         assertFalse(doc.isDeleted());
 
         // Purge before save:
@@ -1529,7 +1529,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testReopenDB() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("string", "str");
+        doc.setObject("string", "str");
         save(doc);
 
         reopenDB();
@@ -1550,8 +1550,8 @@ public class DocumentTest extends BaseTest {
         assertNotNull(data);
 
         Document doc = createDocument("doc1");
-        doc.set("name", "Jim");
-        doc.set("data", data);
+        doc.setObject("name", "Jim");
+        doc.setObject("data", data);
 
         doc = save(doc);
 
@@ -1582,7 +1582,7 @@ public class DocumentTest extends BaseTest {
         assertNotNull(data);
 
         Document doc = createDocument("doc1");
-        doc.set("data", data);
+        doc.setObject("data", data);
 
         doc = save(doc);
 
@@ -1613,7 +1613,7 @@ public class DocumentTest extends BaseTest {
         try {
             Blob data = new Blob("text/plain", stream);
             assertNotNull(data);
-            doc.set("data", data);
+            doc.setObject("data", data);
             doc = save(doc);
         } finally {
             stream.close();
@@ -1645,7 +1645,7 @@ public class DocumentTest extends BaseTest {
         assertNotNull(data);
 
         Document doc = createDocument("doc1");
-        doc.set("data", data);
+        doc.setObject("data", data);
 
         data = (Blob) doc.getObject("data");
         for (int i = 0; i < 5; i++) {
@@ -1694,8 +1694,8 @@ public class DocumentTest extends BaseTest {
         assertNotNull(data);
 
         Document doc = createDocument("doc1");
-        doc.set("data", data);
-        doc.set("name", "Jim");
+        doc.setObject("data", data);
+        doc.setObject("name", "Jim");
         doc = save(doc);
 
         assertTrue(doc.getObject("data") instanceof Blob);
@@ -1705,7 +1705,7 @@ public class DocumentTest extends BaseTest {
         reopenDB();
 
         doc = db.getDocument("doc1");
-        doc.set("foo", "bar");
+        doc.setObject("foo", "bar");
         doc = save(doc);
 
         assertTrue(doc.getObject("data") instanceof Blob);

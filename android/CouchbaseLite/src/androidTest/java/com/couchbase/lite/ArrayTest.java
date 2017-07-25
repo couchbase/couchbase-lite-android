@@ -41,13 +41,13 @@ public class ArrayTest extends BaseTest {
         list.add(null);
 
         Dictionary subdict = new Dictionary();
-        subdict.set("name", "Scott Tiger");
+        subdict.setObject("name", "Scott Tiger");
         list.add(subdict);
 
         Array subarray = new Array();
-        subarray.add("a");
-        subarray.add("b");
-        subarray.add("c");
+        subarray.addObject("a");
+        subarray.addObject("b");
+        subarray.addObject("c");
         list.add(subarray);
 
         // Blob
@@ -61,7 +61,7 @@ public class ArrayTest extends BaseTest {
     private void populateData(Array array) {
         List<Object> data = arrayOfAllTypes();
         for (Object o : data) {
-            array.add(o);
+            array.addObject(o);
         }
     }
 
@@ -73,7 +73,7 @@ public class ArrayTest extends BaseTest {
             throws CouchbaseLiteException {
         validator.validate(array);
 
-        doc.set(key, array);
+        doc.setObject(key, array);
         save(doc);
         doc = db.getDocument(doc.getId());
         array = doc.getArray(key);
@@ -88,7 +88,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(new ArrayList<>(), array.toList());
 
         Document doc = createDocument("doc1");
-        doc.set("array", array);
+        doc.setObject("array", array);
         assertEquals(array, doc.getArray("array"));
 
         doc = save(doc);
@@ -106,7 +106,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(data, array.toList());
 
         Document doc = createDocument("doc1");
-        doc.set("array", array);
+        doc.setObject("array", array);
         assertEquals(array, doc.getArray("array"));
 
         doc = save(doc);
@@ -125,7 +125,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(data, array.toList());
 
         Document doc = createDocument("doc1");
-        doc.set("array", array);
+        doc.setObject("array", array);
         assertEquals(array, doc.getArray("array"));
 
         // save
@@ -196,7 +196,7 @@ public class ArrayTest extends BaseTest {
 
         // Save
         Document doc = createDocument("doc1");
-        doc.set("array", array);
+        doc.setObject("array", array);
         doc = save(doc);
 
         // Get an existing array:
@@ -252,11 +252,11 @@ public class ArrayTest extends BaseTest {
         // Prepare CBLArray with NSNull placeholders:
         Array array = new Array();
         for (int i = 0; i < data.size(); i++)
-            array.add(null);
+            array.addObject(null);
 
         // Set object at index:
         for (int i = 0; i < data.size(); i++)
-            array.set(i, data.get(i));
+            array.setObject(i, data.get(i));
 
         Document doc = createDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
@@ -299,42 +299,42 @@ public class ArrayTest extends BaseTest {
     @Test
     public void testSetObjectOutOfBound() {
         Array array = new Array();
-        array.add("a");
+        array.addObject("a");
 
         thrown.expect(IndexOutOfBoundsException.class);
-        array.set(-1, "b");
+        array.setObject(-1, "b");
 
         thrown.expect(IndexOutOfBoundsException.class);
-        array.set(1, "b");
+        array.setObject(1, "b");
     }
 
     @Test
     public void testInsertObject() {
         Array array = new Array();
 
-        array.insert(0, "a");
+        array.insertObject(0, "a");
         assertEquals(1, array.count());
         assertEquals("a", array.getObject(0));
 
-        array.insert(0, "c");
+        array.insertObject(0, "c");
         assertEquals(2, array.count());
         assertEquals("c", array.getObject(0));
         assertEquals("a", array.getObject(1));
 
-        array.insert(1, "d");
+        array.insertObject(1, "d");
         assertEquals(3, array.count());
         assertEquals("c", array.getObject(0));
         assertEquals("d", array.getObject(1));
         assertEquals("a", array.getObject(2));
 
-        array.insert(2, "e");
+        array.insertObject(2, "e");
         assertEquals(4, array.count());
         assertEquals("c", array.getObject(0));
         assertEquals("d", array.getObject(1));
         assertEquals("e", array.getObject(2));
         assertEquals("a", array.getObject(3));
 
-        array.insert(4, "f");
+        array.insertObject(4, "f");
         assertEquals(5, array.count());
         assertEquals("c", array.getObject(0));
         assertEquals("d", array.getObject(1));
@@ -346,13 +346,13 @@ public class ArrayTest extends BaseTest {
     @Test
     public void testInsertObjectToExistingArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("array", new Array());
+        doc.setObject("array", new Array());
         doc = save(doc);
 
         Array array = doc.getArray("array");
         assertNotNull(array);
 
-        array.insert(0, "a");
+        array.insertObject(0, "a");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -361,7 +361,7 @@ public class ArrayTest extends BaseTest {
             }
         });
 
-        array.insert(0, "c");
+        array.insertObject(0, "c");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -371,7 +371,7 @@ public class ArrayTest extends BaseTest {
             }
         });
 
-        array.insert(1, "d");
+        array.insertObject(1, "d");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -382,7 +382,7 @@ public class ArrayTest extends BaseTest {
             }
         });
 
-        array.insert(2, "e");
+        array.insertObject(2, "e");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -394,7 +394,7 @@ public class ArrayTest extends BaseTest {
             }
         });
 
-        array.insert(4, "f");
+        array.insertObject(4, "f");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -411,13 +411,13 @@ public class ArrayTest extends BaseTest {
     @Test
     public void testInsertObjectOutOfBound() {
         Array array = new Array();
-        array.add("a");
+        array.addObject("a");
 
         thrown.expect(IndexOutOfBoundsException.class);
-        array.insert(-1, "b");
+        array.insertObject(-1, "b");
 
         thrown.expect(IndexOutOfBoundsException.class);
-        array.insert(2, "b");
+        array.insertObject(2, "b");
     }
 
     @Test
@@ -445,7 +445,7 @@ public class ArrayTest extends BaseTest {
         populateData(array);
 
         Document doc = createDocument("doc1");
-        doc.set("array", array);
+        doc.setObject("array", array);
         doc = save(doc);
         array = doc.getArray("array");
 
@@ -465,7 +465,7 @@ public class ArrayTest extends BaseTest {
     @Test
     public void testRemoveOutOfBound() {
         Array array = new Array();
-        array.add("a");
+        array.addObject("a");
 
         thrown.expect(IndexOutOfBoundsException.class);
         array.remove(-1);
@@ -647,14 +647,14 @@ public class ArrayTest extends BaseTest {
     @Test
     public void testSetGetMinMaxNumbers() throws CouchbaseLiteException {
         Array array = new Array();
-        array.add(Integer.MIN_VALUE);
-        array.add(Integer.MAX_VALUE);
-        array.add(Long.MIN_VALUE);
-        array.add(Long.MAX_VALUE);
-        array.add(Float.MIN_VALUE);
-        array.add(Float.MAX_VALUE);
-        array.add(Double.MIN_VALUE);
-        array.add(Double.MAX_VALUE);
+        array.addObject(Integer.MIN_VALUE);
+        array.addObject(Integer.MAX_VALUE);
+        array.addObject(Long.MIN_VALUE);
+        array.addObject(Long.MAX_VALUE);
+        array.addObject(Float.MIN_VALUE);
+        array.addObject(Float.MAX_VALUE);
+        array.addObject(Double.MIN_VALUE);
+        array.addObject(Double.MAX_VALUE);
 
         Document doc = createDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
@@ -694,11 +694,11 @@ public class ArrayTest extends BaseTest {
     @Test
     public void testSetGetFloatNumbers() throws CouchbaseLiteException {
         Array array = new Array();
-        array.add(1.00);
-        array.add(1.49);
-        array.add(1.50);
-        array.add(1.51);
-        array.add(1.99);
+        array.addObject(1.00);
+        array.addObject(1.49);
+        array.addObject(1.50);
+        array.addObject(1.51);
+        array.addObject(1.99);
 
         Document doc = createDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
@@ -856,11 +856,11 @@ public class ArrayTest extends BaseTest {
         Array array2 = new Array();
         Array array3 = new Array();
 
-        array1.add(array2);
-        array2.add(array3);
-        array3.add("a");
-        array3.add("b");
-        array3.add("c");
+        array1.addObject(array2);
+        array2.addObject(array3);
+        array3.addObject("a");
+        array3.addObject("b");
+        array3.addObject("c");
 
         Document doc = createDocument("doc1");
         save(doc, "array", array1, new Validator<Array>() {
@@ -883,25 +883,25 @@ public class ArrayTest extends BaseTest {
     public void testReplaceArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array array1 = new Array();
-        array1.add("a");
-        array1.add("b");
-        array1.add("c");
+        array1.addObject("a");
+        array1.addObject("b");
+        array1.addObject("c");
         assertEquals(3, array1.count());
         assertEquals(Arrays.asList("a", "b", "c"), array1.toList());
-        doc.set("array", array1);
+        doc.setObject("array", array1);
 
         Array array2 = new Array();
-        array2.add("x");
-        array2.add("y");
-        array2.add("z");
+        array2.addObject("x");
+        array2.addObject("y");
+        array2.addObject("z");
         assertEquals(3, array2.count());
         assertEquals(Arrays.asList("x", "y", "z"), array2.toList());
 
         // Replace:
-        doc.set("array", array2);
+        doc.setObject("array", array2);
 
         // array1 shoud be now detached:
-        array1.add("d");
+        array1.addObject("d");
         assertEquals(4, array1.count());
         assertEquals(Arrays.asList("a", "b", "c", "d"), array1.toList());
 
@@ -923,18 +923,18 @@ public class ArrayTest extends BaseTest {
     public void testReplaceArrayDifferentType() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array array1 = new Array();
-        array1.add("a");
-        array1.add("b");
-        array1.add("c");
+        array1.addObject("a");
+        array1.addObject("b");
+        array1.addObject("c");
         assertEquals(3, array1.count());
         assertEquals(Arrays.asList("a", "b", "c"), array1.toList());
-        doc.set("array", array1);
+        doc.setObject("array", array1);
 
         // Replace:
-        doc.set("array", "Daniel Tiger");
+        doc.setObject("array", "Daniel Tiger");
 
         // array1 shoud be now detached:
-        array1.add("d");
+        array1.addObject("d");
         assertEquals(4, array1.count());
         assertEquals(Arrays.asList("a", "b", "c", "d"), array1.toList());
 
@@ -947,7 +947,7 @@ public class ArrayTest extends BaseTest {
     public void testEnumeratingArray() throws CouchbaseLiteException {
         Array array = new Array();
         for (int i = 0; i < 20; i++) {
-            array.add(i);
+            array.addObject(i);
         }
         List<Object> content = array.toList();
 
@@ -963,8 +963,8 @@ public class ArrayTest extends BaseTest {
 
         // Update:
         array.remove(1);
-        array.add(20);
-        array.add(21);
+        array.addObject(20);
+        array.addObject(21);
         content = array.toList();
 
         result = new ArrayList<>();
@@ -975,7 +975,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(content, result);
 
         Document doc = createDocument("doc1");
-        doc.set("array", array);
+        doc.setObject("array", array);
 
         final List<Object> c = content;
         save(doc, "array", array, new Validator<Array>() {
@@ -995,7 +995,7 @@ public class ArrayTest extends BaseTest {
     public void testArrayEnumerationWithDataModification() throws CouchbaseLiteException {
         Array array = new Array();
         for (int i = 0; i < 2; i++)
-            array.add(i);
+            array.addObject(i);
 
         Iterator<Object> itr = array.iterator();
         int count = 0;
@@ -1003,7 +1003,7 @@ public class ArrayTest extends BaseTest {
             while (itr.hasNext()) {
                 itr.next();
                 if (count++ == 0)
-                    array.add(2);
+                    array.addObject(2);
             }
             fail("Expected ConcurrentModificationException");
         } catch (ConcurrentModificationException e) {
@@ -1013,7 +1013,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(Arrays.asList(0, 1, 2).toString(), array.toList().toString());
 
         Document doc = createDocument("doc1");
-        doc.set("array", array);
+        doc.setObject("array", array);
         doc = save(doc);
         array = doc.getArray("array");
 
@@ -1023,7 +1023,7 @@ public class ArrayTest extends BaseTest {
             while (itr.hasNext()) {
                 itr.next();
                 if (count++ == 0)
-                    array.add(3);
+                    array.addObject(3);
             }
             fail("Expected ConcurrentModificationException");
         } catch (ConcurrentModificationException e) {

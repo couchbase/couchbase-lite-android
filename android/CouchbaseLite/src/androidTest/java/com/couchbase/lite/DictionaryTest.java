@@ -24,7 +24,7 @@ public class DictionaryTest extends BaseTest {
         assertEquals(new HashMap<String, Object>(), address.toMap());
 
         Document doc = createDocument("doc1");
-        doc.set("address", address);
+        doc.setObject("address", address);
         assertEquals(address, doc.getDictionary("address"));
 
         save(doc);
@@ -46,7 +46,7 @@ public class DictionaryTest extends BaseTest {
         assertEquals(dict, address.toMap());
 
         Document doc1 = createDocument("doc1");
-        doc1.set("address", address);
+        doc1.setObject("address", address);
         assertEquals(address, doc1.getDictionary("address"));
 
         save(doc1);
@@ -72,7 +72,7 @@ public class DictionaryTest extends BaseTest {
         assertEquals(new HashMap<String, Object>(), dict.toMap());
 
         Document doc = createDocument("doc1");
-        doc.set("dict", dict);
+        doc.setObject("dict", dict);
 
         save(doc);
         doc = db.getDocument("doc1");
@@ -98,16 +98,16 @@ public class DictionaryTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Dictionary level1 = new Dictionary();
-        level1.set("name", "n1");
-        doc.set("level1", level1);
+        level1.setObject("name", "n1");
+        doc.setObject("level1", level1);
 
         Dictionary level2 = new Dictionary();
-        level2.set("name", "n2");
-        doc.set("level2", level2);
+        level2.setObject("name", "n2");
+        doc.setObject("level2", level2);
 
         Dictionary level3 = new Dictionary();
-        level3.set("name", "n3");
-        doc.set("level3", level3);
+        level3.setObject("name", "n3");
+        doc.setObject("level3", level3);
 
         assertEquals(level1, doc.getDictionary("level1"));
         assertEquals(level2, doc.getDictionary("level2"));
@@ -152,7 +152,7 @@ public class DictionaryTest extends BaseTest {
         data.add(d4);
         assertEquals(4, data.size());
 
-        doc.set("array", data);
+        doc.setObject("array", data);
 
         Array array = doc.getArray("array");
         assertEquals(4, array.count());
@@ -190,17 +190,17 @@ public class DictionaryTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Dictionary profile1 = new Dictionary();
-        profile1.set("name", "Scott Tiger");
-        doc.set("profile", profile1);
+        profile1.setObject("name", "Scott Tiger");
+        doc.setObject("profile", profile1);
         assertEquals(profile1, doc.getDictionary("profile"));
 
         Dictionary profile2 = new Dictionary();
-        profile2.set("name", "Daniel Tiger");
-        doc.set("profile", profile2);
+        profile2.setObject("name", "Daniel Tiger");
+        doc.setObject("profile", profile2);
         assertEquals(profile2, doc.getDictionary("profile"));
 
         // Profile1 should be now detached:
-        profile1.set("age", 20);
+        profile1.setObject("age", 20);
         assertEquals("Scott Tiger", profile1.getObject("name"));
         assertEquals(20, profile1.getObject("age"));
 
@@ -222,16 +222,16 @@ public class DictionaryTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Dictionary profile1 = new Dictionary();
-        profile1.set("name", "Scott Tiger");
-        doc.set("profile", profile1);
+        profile1.setObject("name", "Scott Tiger");
+        doc.setObject("profile", profile1);
         assertEquals(profile1, doc.getDictionary("profile"));
 
         // Set string value to profile:
-        doc.set("profile", "Daniel Tiger");
+        doc.setObject("profile", "Daniel Tiger");
         assertEquals("Daniel Tiger", doc.getObject("profile"));
 
         // Profile1 should be now detached:
-        profile1.set("age", 20);
+        profile1.setObject("age", 20);
         assertEquals("Scott Tiger", profile1.getObject("name"));
         assertEquals(20, profile1.getObject("age"));
 
@@ -248,8 +248,8 @@ public class DictionaryTest extends BaseTest {
     public void testRemoveDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Dictionary profile1 = new Dictionary();
-        profile1.set("name", "Scott Tiger");
-        doc.set("profile", profile1);
+        profile1.setObject("name", "Scott Tiger");
+        doc.setObject("profile", profile1);
         assertEquals(profile1.toMap(), doc.getDictionary("profile").toMap());
         assertTrue(doc.contains("profile"));
 
@@ -259,7 +259,7 @@ public class DictionaryTest extends BaseTest {
         assertFalse(doc.contains("profile"));
 
         // Profile1 should be now detached:
-        profile1.set("age", 20);
+        profile1.setObject("age", 20);
         assertEquals("Scott Tiger", profile1.getObject("name"));
         assertEquals(20, profile1.getObject("age"));
 
@@ -277,7 +277,7 @@ public class DictionaryTest extends BaseTest {
     public void testEnumeratingKeys() throws CouchbaseLiteException {
         final Dictionary dict = new Dictionary();
         for (int i = 0; i < 20; i++)
-            dict.set(String.format(Locale.ENGLISH, "key%d", i), i);
+            dict.setObject(String.format(Locale.ENGLISH, "key%d", i), i);
         Map<String, Object> content = dict.toMap();
 
         Map<String, Object> result = new HashMap<>();
@@ -291,8 +291,8 @@ public class DictionaryTest extends BaseTest {
 
         // Update:
         dict.remove("key2");
-        dict.set("key20", 20);
-        dict.set("key21", 21);
+        dict.setObject("key20", 20);
+        dict.setObject("key21", 21);
         content = dict.toMap();
 
         result = new HashMap<>();
@@ -307,7 +307,7 @@ public class DictionaryTest extends BaseTest {
         final Map<String, Object> finalContent = content;
 
         Document doc = createDocument("doc1");
-        doc.set("dict", dict);
+        doc.setObject("dict", dict);
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document doc) {
@@ -328,7 +328,7 @@ public class DictionaryTest extends BaseTest {
     public void testDictionaryEnumerationWithDataModification() throws CouchbaseLiteException {
         Dictionary dict = new Dictionary();
         for (int i = 0; i < 2; i++)
-            dict.set(String.format(Locale.ENGLISH, "key%d", i), i);
+            dict.setObject(String.format(Locale.ENGLISH, "key%d", i), i);
 
         Iterator<String> itr = dict.iterator();
         int count = 0;
@@ -336,7 +336,7 @@ public class DictionaryTest extends BaseTest {
             while (itr.hasNext()) {
                 itr.next();
                 if (count++ == 0)
-                    dict.set("key2", 2);
+                    dict.setObject("key2", 2);
             }
             fail("Expected ConcurrentModificationException");
         } catch (ConcurrentModificationException e) {
@@ -345,7 +345,7 @@ public class DictionaryTest extends BaseTest {
         assertEquals(3, dict.count());
 
         Document doc = createDocument("doc1");
-        doc.set("dict", dict);
+        doc.setObject("dict", dict);
         doc = save(doc);
         dict = doc.getDictionary("dict");
 
@@ -355,7 +355,7 @@ public class DictionaryTest extends BaseTest {
             while (itr.hasNext()) {
                 itr.next();
                 if (count++ == 0)
-                    dict.set("key3", 3);
+                    dict.setObject("key3", 3);
             }
             fail("Expected ConcurrentModificationException");
         } catch (ConcurrentModificationException e) {

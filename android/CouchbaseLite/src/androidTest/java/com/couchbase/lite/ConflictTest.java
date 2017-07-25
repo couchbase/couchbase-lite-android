@@ -37,17 +37,17 @@ public class ConflictTest extends BaseTest {
             Set<String> changed = new HashSet<>();
 
             for (String key : conflict.getBase()) {
-                resolved.set(key, conflict.getBase().getObject(key));
+                resolved.setObject(key, conflict.getBase().getObject(key));
             }
 
             for (String key : conflict.getTheirs()) {
-                resolved.set(key, conflict.getTheirs().getObject(key));
+                resolved.setObject(key, conflict.getTheirs().getObject(key));
                 changed.add(key);
             }
 
             for (String key : conflict.getMine()) {
                 if (!changed.contains(key))
-                    resolved.set(key, conflict.getMine().getObject(key));
+                    resolved.setObject(key, conflict.getMine().getObject(key));
             }
 
             return resolved;
@@ -72,8 +72,8 @@ public class ConflictTest extends BaseTest {
     private Document setupConflict() throws CouchbaseLiteException {
         // Setup a default database conflict resolver
         Document doc = createDocument("doc1");
-        doc.set("type", "profile");
-        doc.set("name", "Scott");
+        doc.setObject("type", "profile");
+        doc.setObject("name", "Scott");
         save(doc);
 
         // Force a conflict
@@ -82,7 +82,7 @@ public class ConflictTest extends BaseTest {
         save(properties, doc.getId());
 
         // Change document in memory, so save will trigger a conflict
-        doc.set("name", "Scott Pilgrim");
+        doc.setObject("name", "Scott Pilgrim");
 
         return doc;
     }
@@ -156,8 +156,8 @@ public class ConflictTest extends BaseTest {
         openDB(new MergeThenTheirsWins());
 
         Document doc2 = createDocument("doc2");
-        doc2.set("type", "profile");
-        doc2.set("name", "Scott");
+        doc2.setObject("type", "profile");
+        doc2.setObject("name", "Scott");
         save(doc2);
 
         // Force a conflict again
@@ -167,8 +167,8 @@ public class ConflictTest extends BaseTest {
         save(properties, doc2.getId());
 
         // Save and make sure that the correct conflict resolver won
-        doc2.set("type", "biography");
-        doc2.set("age", 31);
+        doc2.setObject("type", "biography");
+        doc2.setObject("age", 31);
         save(doc2);
 
         assertEquals(31L, doc2.getObject("age"));
@@ -254,16 +254,16 @@ public class ConflictTest extends BaseTest {
 
         //STEP 2: Added a revision to the document
         doc = db.getDocument(docID);
-        doc.set("university", 1);
+        doc.setObject("university", 1);
         db.save(doc);
 
         // STEP3: Create Conflict as follows
         doc = new Document(docID, props);
-        doc.set("university", 2);
+        doc.setObject("university", 2);
         try {
             db.save(doc);
             fail();
-       } catch (CouchbaseLiteException e) {
+        } catch (CouchbaseLiteException e) {
             // Currently returned error code is LiteCore error code.
             // This could change to HTTP error code.
             assertEquals(LiteCoreDomain, e.getDomain());

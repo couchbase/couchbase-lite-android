@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * ReadOnlyArray provides readonly access to array data.
  */
-public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable {
+public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, Iterable<Object> {
 
     //---------------------------------------------
     // member variables

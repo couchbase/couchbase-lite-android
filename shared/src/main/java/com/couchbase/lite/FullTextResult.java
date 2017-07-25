@@ -22,7 +22,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * A single result from a full-text Query.
  */
-public class FullTextQueryRow extends QueryRow {
+public class FullTextResult extends Result {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
@@ -38,7 +38,7 @@ public class FullTextQueryRow extends QueryRow {
     // constructors
     //---------------------------------------------
 
-    FullTextQueryRow(Query query, C4QueryEnumerator c4enum) {
+    FullTextResult(Query query, C4QueryEnumerator c4enum) {
         super(query, c4enum);
         this.matchCount = (int) c4enum.getFullTextTermCount();
         if (this.matchCount > 0) {

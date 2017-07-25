@@ -18,7 +18,7 @@ import java.util.Map;
 /**
  * ReadOnlyDictionary provides readonly access to dictionary data.
  */
-public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEncodable {
+public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEncodable, Iterable<String> {
 
     //-------------------------------------------------------------------------
     // member variables

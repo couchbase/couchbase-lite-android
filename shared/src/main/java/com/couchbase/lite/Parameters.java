@@ -4,6 +4,7 @@ import com.couchbase.lite.internal.support.JsonUtils;
 
 import org.json.JSONException;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,8 +21,49 @@ public class Parameters {
         this.params = new HashMap<>(params);
     }
 
-    public void set(String name, Object value) {
+    public Parameters setObject(String name, Object value) {
         params.put(name, value);
+        return this;
+    }
+
+    public Parameters setString(String name, String value) {
+        params.put(name, value);
+        return this;
+    }
+
+    public Parameters setNumber(String name, Number value) {
+        params.put(name, value);
+        return this;
+    }
+
+    public Parameters setInt(String name, int value) {
+        params.put(name, value);
+        return this;
+    }
+
+    public Parameters setLong(String name, long value) {
+        params.put(name, value);
+        return this;
+    }
+
+    public Parameters setFloat(String name, float value) {
+        params.put(name, value);
+        return this;
+    }
+
+    public Parameters setDouble(String name, double value) {
+        params.put(name, value);
+        return this;
+    }
+
+    public Parameters setBoolean(String name, boolean value) {
+        params.put(name, value);
+        return this;
+    }
+
+    public Parameters setDate(String name, Date value) {
+        params.put(name, value);
+        return this;
     }
 
     Parameters copy() {

@@ -154,12 +154,12 @@ public class ReplicatorTest extends BaseTest {
             return;
 
         Document doc1 = new Document("doc1");
-        doc1.set("name", "Tiger");
+        doc1.setObject("name", "Tiger");
         save(doc1);
         assertEquals(1, db.getCount());
 
         Document doc2 = new Document("doc2");
-        doc2.set("name", "Cat");
+        doc2.setObject("name", "Cat");
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
 
@@ -177,12 +177,12 @@ public class ReplicatorTest extends BaseTest {
             return;
 
         Document doc1 = new Document("doc1");
-        doc1.set("name", "Tiger");
+        doc1.setObject("name", "Tiger");
         save(doc1);
         assertEquals(1, db.getCount());
 
         Document doc2 = new Document("doc2");
-        doc2.set("name", "Cat");
+        doc2.setObject("name", "Cat");
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
 
@@ -201,12 +201,12 @@ public class ReplicatorTest extends BaseTest {
 
         // For https://github.com/couchbase/couchbase-lite-core/issues/156
         Document doc1 = new Document("doc1");
-        doc1.set("name", "Tiger");
+        doc1.setObject("name", "Tiger");
         save(doc1);
         assertEquals(1, db.getCount());
 
         Document doc2 = new Document("doc2");
-        doc2.set("name", "Cat");
+        doc2.setObject("name", "Cat");
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
 
@@ -226,12 +226,12 @@ public class ReplicatorTest extends BaseTest {
             return;
 
         Document doc1 = new Document("doc1");
-        doc1.set("name", "Tiger");
+        doc1.setObject("name", "Tiger");
         save(doc1);
         assertEquals(1, db.getCount());
 
         Document doc2 = new Document("doc2");
-        doc2.set("name", "Cat");
+        doc2.setObject("name", "Cat");
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
 
@@ -249,19 +249,19 @@ public class ReplicatorTest extends BaseTest {
             return;
 
         Document doc1 = new Document("doc");
-        doc1.set("species", "Tiger");
+        doc1.setObject("species", "Tiger");
         save(doc1);
         assertEquals(1, db.getCount());
-        doc1.set("name", "Hobbes");
+        doc1.setObject("name", "Hobbes");
         save(doc1);
         assertEquals(1, db.getCount());
         Log.e(TAG, "doc1 -> %s", doc1.getC4doc().getRevID());
 
         Document doc2 = new Document("doc");
-        doc2.set("species", "Tiger");
+        doc2.setObject("species", "Tiger");
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
-        doc2.set("pattern", "striped");
+        doc2.setObject("pattern", "striped");
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
         Log.e(TAG, "doc2 -> %s", doc2.getC4doc().getRevID());

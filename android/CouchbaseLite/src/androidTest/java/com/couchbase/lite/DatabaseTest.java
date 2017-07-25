@@ -74,7 +74,7 @@ public class DatabaseTest extends BaseTest {
     // helper method to save document
     Document generateDocument(String docID) throws CouchbaseLiteException {
         Document doc = createDocument(docID);
-        doc.set("key", 1);
+        doc.setObject("key", 1);
         save(doc);
         assertEquals(1, db.getCount());
         assertEquals(1, doc.getSequence());
@@ -120,7 +120,7 @@ public class DatabaseTest extends BaseTest {
         List<Document> docs = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             Document doc = createDocument(String.format(Locale.US, "doc_%03d", i));
-            doc.set("key", i);
+            doc.setObject("key", i);
             save(doc);
             docs.add(doc);
         }
@@ -429,7 +429,7 @@ public class DatabaseTest extends BaseTest {
         Document doc = generateDocument(docID);
 
         // update doc
-        doc.set("key", 2);
+        doc.setObject("key", 2);
         save(doc);
 
         assertEquals(1, db.getCount());
@@ -453,7 +453,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(1, otherDB.getCount());
 
         // Update doc & store it into different instance
-        doc.set("key", 2);
+        doc.setObject("key", 2);
         CouchbaseLiteException exception = null;
         try {
             otherDB.save(doc);
@@ -480,7 +480,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(0, otherDB.getCount());
 
         // Update doc & store it into different instance
-        doc.set("key", 2);
+        doc.setObject("key", 2);
         CouchbaseLiteException exception = null;
         try {
             otherDB.save(doc);
@@ -524,7 +524,7 @@ public class DatabaseTest extends BaseTest {
         db.close();
 
         Document doc = createDocument("doc1");
-        doc.set("key", 1);
+        doc.setObject("key", 1);
 
         try {
             save(doc);
@@ -540,7 +540,7 @@ public class DatabaseTest extends BaseTest {
         deleteDatabase(db);
 
         Document doc = createDocument("doc1");
-        doc.set("key", 1);
+        doc.setObject("key", 1);
 
         try {
             save(doc);
@@ -556,7 +556,7 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDeletePreSaveDoc() {
         Document doc = createDocument("doc1");
-        doc.set("key", 1);
+        doc.setObject("key", 1);
         try {
             db.delete(doc);
             fail();
@@ -899,15 +899,15 @@ public class DatabaseTest extends BaseTest {
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
         assertEquals(1, ((Number) doc.getObject("key")).intValue());
-        doc.set("key", 2);
-        doc.set("key1", "value");
+        doc.setObject("key", 2);
+        doc.setObject("key1", "value");
     }
 
     @Test
     public void testCloseThenAccessBlob() throws CouchbaseLiteException {
         // Store doc with blob:
         Document doc = generateDocument("doc1");
-        doc.set("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
+        doc.setObject("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
         save(doc);
 
         // Close db:
@@ -997,15 +997,15 @@ public class DatabaseTest extends BaseTest {
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
         assertEquals(1, ((Number) doc.getObject("key")).intValue());
-        doc.set("key", 2);
-        doc.set("key1", "value");
+        doc.setObject("key", 2);
+        doc.setObject("key1", "value");
     }
 
     @Test
     public void testDeleteThenAccessBlob() throws CouchbaseLiteException {
         // Store doc with blob:
         Document doc = generateDocument("doc1");
-        doc.set("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
+        doc.setObject("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
         save(doc);
 
         // Delete db:
@@ -1181,7 +1181,7 @@ public class DatabaseTest extends BaseTest {
             public void run() {
                 for (Document doc : docs) {
                     for (int i = 0; i < 25; i++) {
-                        doc.set("number", i);
+                        doc.setObject("number", i);
                         try {
                             save(doc);
                         } catch (CouchbaseLiteException e) {
@@ -1194,7 +1194,7 @@ public class DatabaseTest extends BaseTest {
 
         // Add each doc with a blob object:
         for (Document doc : docs) {
-            doc.set("blob", new Blob("text/plain", doc.getId().getBytes()));
+            doc.setObject("blob", new Blob("text/plain", doc.getId().getBytes()));
             save(doc);
         }
 
@@ -1227,12 +1227,12 @@ public class DatabaseTest extends BaseTest {
         // REF: https://github.com/couchbase/couchbase-lite-android/issues/1231
 
         Document doc1 = new Document("abc");
-        doc1.set("someKey", "someVar");
+        doc1.setObject("someKey", "someVar");
         db.save(doc1);
 
         // This cause conflict, DefaultConflictResolver should be applied.
         Document doc2 = new Document("abc");
-        doc2.set("someKey", "newVar");
+        doc2.setObject("someKey", "newVar");
         db.save(doc2);
 
         // NOTE: Both doc1 and doc2 are generation 1. So mine (doc2) should win.
