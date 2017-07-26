@@ -5,4 +5,7 @@ interface Status {
 
     int Forbidden = 403;
     int NotFound = 404;
+
+    // Non-HTTP error:
+    int InvalidQuery = 490;
 }

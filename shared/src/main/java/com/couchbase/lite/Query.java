@@ -25,7 +25,11 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+
+import static com.couchbase.lite.Status.CBLErrorDomain;
+import static com.couchbase.lite.Status.InvalidQuery;
 
 /**
  * A database query used for querying data from the database. The query statement of the Query
@@ -63,6 +67,9 @@ public class Query {
 
     // PARAMETERS
     private Parameters parameters;
+
+    // column names
+    private Map<String, Integer> columnNames = null;
 
     //---------------------------------------------
     // Constructor
@@ -123,7 +130,7 @@ public class Query {
             C4QueryOptions options = new C4QueryOptions();
             String paramJSON = parameters.encodeAsJSON();
             C4QueryEnumerator c4enum = c4query.run(options, paramJSON);
-            return new ResultSet(this, c4enum);
+            return new ResultSet(this, c4enum, columnNames);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -229,11 +236,42 @@ public class Query {
         database = (Database) from.getSource();
         String json = encodeAsJSON();
         Log.v(TAG, "Query encoded as %s", json);
+        if (json == null)
+            throw new CouchbaseLiteException("Failed to generate JSON query.");
+
+        if (columnNames == null)
+            columnNames = generateColumnNames();
+
+        C4Query query = null;
         try {
-            c4query = database.getC4Database().createQuery(json);
+            query = database.getC4Database().createQuery(json);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
+        } finally {
+            if (c4query != null)
+                c4query.free();
         }
+        c4query = query;
+    }
+
+    private Map<String, Integer> generateColumnNames() throws CouchbaseLiteException {
+        Map<String, Integer> map = new HashMap<>();
+        int index = 0;
+        int provisionKeyIndex = 0;
+        for (SelectResult selectResult : this.select.getSelectResults()) {
+            // TODO: Support SELECT *
+            String name = selectResult.getColumnName();
+            Log.e(TAG, "generateColumnNames() name -> %s", name);
+            if (name == null)
+                name = String.format(Locale.ENGLISH, "$%d", ++provisionKeyIndex);
+            if (map.containsKey(name)) {
+                String desc = String.format(Locale.ENGLISH, "Duplicate select result named %s", name);
+                throw new CouchbaseLiteException(desc, CBLErrorDomain, InvalidQuery);
+            }
+            map.put(name, index);
+            index++;
+        }
+        return map;
     }
 
     private String encodeAsJSON() {

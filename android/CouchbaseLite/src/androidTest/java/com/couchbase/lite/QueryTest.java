@@ -730,6 +730,77 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testQueryResult() throws Exception {
+        loadJSONResource("names_100.json");
+
+        Expression FNAME = Expression.property("name.first");
+        Expression LNAME = Expression.property("name.last");
+        Expression GENDER = Expression.property("gender");
+        Expression CITY = Expression.property("contact.address.city");
+
+        SelectResult RES_FNAME = SelectResult.expression(FNAME).as("firstname");
+        SelectResult RES_LNAME = SelectResult.expression(LNAME).as("lastname");
+        SelectResult RES_GENDER = SelectResult.expression(GENDER);
+        SelectResult RES_CITY = SelectResult.expression(CITY);
+
+        DataSource DS = DataSource.database(db);
+
+        Query q = Query
+                .select(RES_FNAME, RES_LNAME, RES_GENDER, RES_CITY)
+                .from(DS);
+
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(4, result.count());
+                assertEquals(result.getObject(0), result.getObject("firstname"));
+                assertEquals(result.getObject(1), result.getObject("lastname"));
+                assertEquals(result.getObject(2), result.getObject("gender"));
+                assertEquals(result.getObject(3), result.getObject("city"));
+            }
+        }, true);
+        assertEquals(100, numRows);
+    }
+
+    @Test
+    public void testQueryProjectingKeys() throws Exception {
+        loadNumbers(100);
+
+        DataSource DS = DataSource.database(db);
+
+        Expression NUM1 = Expression.property("number1");
+
+        Expression AVG = Function.avg(NUM1);
+        Expression CNT = Function.count(NUM1);
+        Expression MIN = Function.min(NUM1);
+        Expression MAX = Function.max(NUM1);
+        Expression SUM = Function.sum(NUM1);
+
+        SelectResult RES_AVG = SelectResult.expression(AVG);
+        SelectResult RES_CNT = SelectResult.expression(CNT);
+        SelectResult RES_MIN = SelectResult.expression(MIN).as("min");
+        SelectResult RES_MAX = SelectResult.expression(MAX);
+        SelectResult RES_SUM = SelectResult.expression(SUM).as("sum");
+
+        Query q = Query
+                .select(RES_AVG, RES_CNT, RES_MIN, RES_MAX, RES_SUM)
+                .from(DS);
+
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(5, result.count());
+                assertEquals(result.getObject(0), result.getObject("$1"));
+                assertEquals(result.getObject(1), result.getObject("$2"));
+                assertEquals(result.getObject(2), result.getObject("min"));
+                assertEquals(result.getObject(3), result.getObject("$3"));
+                assertEquals(result.getObject(4), result.getObject("sum"));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
+
+    @Test
     public void testLiveQuery() throws Exception {
         loadNumbers(100);
 

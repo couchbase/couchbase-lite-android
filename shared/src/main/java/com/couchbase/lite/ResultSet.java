@@ -19,12 +19,13 @@ import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.LiteCoreException;
 
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * A result set representing the query result. The result set is an iterator of
  * the {@code Result} objects.
  */
-public class ResultSet implements Iterable<Result> {
+public class ResultSet implements Iterable<Result>, CBLFLDataSource {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
@@ -35,14 +36,16 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
     private Query query;
     private C4QueryEnumerator c4enum;
+    private Map<String, Integer> columnNames;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
-    ResultSet(Query query, C4QueryEnumerator c4enum) {
+    ResultSet(Query query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
         this.query = query;
         this.c4enum = c4enum;
+        this.columnNames = columnNames;
         Log.v(TAG, "Beginning query enumeration (%p)", c4enum);
     }
 
@@ -62,9 +65,9 @@ public class ResultSet implements Iterable<Result> {
         try {
             if (c4enum.next()) {
                 if (c4enum.getFullTextTermCount() > 0)
-                    return new FullTextResult(query, c4enum);
+                    return new FullTextResult(this, c4enum);
                 else
-                    return new Result(query, c4enum);
+                    return new Result(this, c4enum);
             } else
                 return null;
         } catch (LiteCoreException e) {
@@ -129,7 +132,7 @@ public class ResultSet implements Iterable<Result> {
         if (query == null) return null;
         try {
             C4QueryEnumerator newEnum = c4enum.refresh();
-            return newEnum != null ? new ResultSet(query, newEnum) : null;
+            return newEnum != null ? new ResultSet(query, newEnum, columnNames) : null;
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -151,13 +154,21 @@ public class ResultSet implements Iterable<Result> {
         try {
             if (c4enum.seek(index)) {
                 if (c4enum.getFullTextTermCount() > 0)
-                    return new FullTextResult(query, c4enum);
+                    return new FullTextResult(this, c4enum);
                 else
-                    return new Result(query, c4enum);
+                    return new Result(this, c4enum);
             } else
                 return null;
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertRuntimeException(e);
         }
+    }
+
+    Map<String, Integer> getColumnNames() {
+        return columnNames;
+    }
+
+    Query getQuery() {
+        return query;
     }
 }

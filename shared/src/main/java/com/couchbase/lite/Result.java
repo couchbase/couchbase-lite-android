@@ -14,11 +14,14 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.fleece.FLArrayIterator;
 import com.couchbase.litecore.fleece.FLValue;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,12 +29,13 @@ import java.util.Map;
 /**
  * Result represents a row of result set returned by a Query.
  */
-public class Result implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterface, Iterable<String> {
+public class Result
+        implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterface, Iterable<String> {
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Query query;
+    private ResultSet rs;
     private C4QueryEnumerator c4enum;
     private FLArrayIterator columns;
     private String documentID;
@@ -40,9 +44,10 @@ public class Result implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterfa
     // constructors
     //---------------------------------------------
 
-    Result(Query query, C4QueryEnumerator c4enum) {
-        this.query = query;
+    Result(ResultSet rs, C4QueryEnumerator c4enum) {
+        this.rs = rs;
         this.c4enum = c4enum;
+
         this.documentID = c4enum.getDocID();
         this.columns = c4enum.getColumns();
     }
@@ -75,22 +80,17 @@ public class Result implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterfa
      * @return the document object.
      */
     public Document getDocument() {
-        return query.getDatabase().getDocument(documentID);
+        return rs.getQuery().getDatabase().getDocument(documentID);
     }
 
     @Override
     public String toString() {
         return "Result{" +
-                "query=" + query +
+                "rs=" + rs +
                 ", c4enum=" + c4enum +
                 ", documentID='" + documentID + '\'' +
                 '}';
     }
-
-//    public Object getObject(int index) {
-//        FLValue value = flValueAtIndex(index);
-//        return value.toObject(null, null);
-//    }
 
     //---------------------------------------------
     // implementation of common betwen ReadOnlyArrayInterface and ReadOnlyDictionaryInterface
@@ -98,7 +98,7 @@ public class Result implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterfa
 
     @Override
     public int count() {
-        return 0;
+        return rs.getQuery().getC4Query().columnCount();
     }
 
     //---------------------------------------------
@@ -107,68 +107,70 @@ public class Result implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterfa
 
     @Override
     public Object getObject(int index) {
-        FLValue value = flValueAtIndex(index);
-        return value.toObject(null, null);
+        return fleeceValueToObject(index);
     }
 
     @Override
     public String getString(int index) {
-        return null;
+        return (String) fleeceValueToObject(index);
     }
 
     @Override
     public Number getNumber(int index) {
-        return null;
+        return (Number) fleeceValueToObject(index);
     }
 
     @Override
     public int getInt(int index) {
-        return 0;
+        return (int) fleeceValue(index).asInt();
     }
 
     @Override
     public long getLong(int index) {
-        return 0;
+        return fleeceValue(index).asInt();
     }
 
     @Override
     public float getFloat(int index) {
-        return 0;
+        return fleeceValue(index).asFloat();
     }
 
     @Override
     public double getDouble(int index) {
-        return 0;
+        return fleeceValue(index).asDouble();
     }
 
     @Override
     public boolean getBoolean(int index) {
-        return false;
+        return fleeceValue(index).asBool();
     }
 
     @Override
     public Blob getBlob(int index) {
-        return null;
+        return (Blob) fleeceValueToObject(index);
     }
 
     @Override
     public Date getDate(int index) {
-        return null;
+        return DateUtils.fromJson(getString(index));
     }
 
     @Override
     public ReadOnlyArrayInterface getArray(int index) {
-        return null;
+        return (ReadOnlyArrayInterface) fleeceValueToObject(index);
     }
 
     @Override
     public ReadOnlyDictionaryInterface getDictionary(int index) {
-        return null;
+        return (ReadOnlyDictionaryInterface) fleeceValueToObject(index);
     }
 
     @Override
     public List<Object> toList() {
-        return null;
+        List<Object> array = new ArrayList<>();
+        for (int i = 0; i < count(); i++)
+            array.add(getObject(i));
+        return array;
     }
 
     //---------------------------------------------
@@ -176,77 +178,93 @@ public class Result implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterfa
     //---------------------------------------------
     @Override
     public List<String> getKeys() {
-        return null;
+        return new ArrayList<>(rs.getColumnNames().keySet());
     }
 
     @Override
     public Object getObject(String key) {
-        return null;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getObject(index) : null;
     }
 
     @Override
     public String getString(String key) {
-        return null;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getString(index) : null;
     }
 
     @Override
     public Number getNumber(String key) {
-        return null;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getNumber(index) : null;
     }
 
     @Override
     public int getInt(String key) {
-        return 0;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getInt(index) : 0;
     }
 
     @Override
     public long getLong(String key) {
-        return 0;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getLong(index) : 0L;
     }
 
     @Override
     public float getFloat(String key) {
-        return 0;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getFloat(index) : 0.0f;
     }
 
     @Override
     public double getDouble(String key) {
-        return 0;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getDouble(index) : 0.0;
     }
 
     @Override
     public boolean getBoolean(String key) {
-        return false;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getBoolean(index) : false;
     }
 
     @Override
     public Blob getBlob(String key) {
-        return null;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getBlob(index) : null;
     }
 
     @Override
     public Date getDate(String key) {
-        return null;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getDate(index) : null;
     }
 
     @Override
     public ReadOnlyArrayInterface getArray(String key) {
-        return null;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getArray(index) : null;
     }
 
     @Override
     public ReadOnlyDictionaryInterface getDictionary(String key) {
-        return null;
+        int index = indexForColumnName(key);
+        return index >= 0 ? getDictionary(index) : null;
     }
 
     @Override
     public Map<String, Object> toMap() {
-        return null;
+        Map<String, Object> dict = new HashMap<>();
+        for (String name : rs.getColumnNames().keySet()) {
+            dict.put(name, getObject(indexForColumnName(name)));
+        }
+        return dict;
     }
 
     @Override
     public boolean contains(String key) {
-        return false;
+        return indexForColumnName(key) >= 0;
     }
 
     //---------------------------------------------
@@ -261,8 +279,8 @@ public class Result implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterfa
     // Protected level access
     //---------------------------------------------
 
-    protected Query getQuery() {
-        return query;
+    protected ResultSet getRs() {
+        return rs;
     }
 
     protected C4QueryEnumerator getC4enum() {
@@ -272,9 +290,24 @@ public class Result implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterfa
     //---------------------------------------------
     // private level access
     //---------------------------------------------
-    FLValue flValueAtIndex(int index) {
+
+    // - (NSInteger) indexForColumnName: (NSString*)name
+    private int indexForColumnName(String name) {
+        Integer index = rs.getColumnNames().get(name);
+        return index != null ? index.intValue() : -1;
+    }
+
+    // - (FLValue) fleeceValueAtIndex: (NSUInteger)index
+    private FLValue fleeceValue(int index) {
         return columns.getValueAt(index);
     }
 
-
+    // - (id) fleeceValueToObjectAtIndex: (NSUInteger)index
+    private Object fleeceValueToObject(int index) {
+        FLValue value = fleeceValue(index);
+        if (value != null)
+            return CBLData.fleeceValueToObject(value, rs, rs.getQuery().getDatabase());
+        else
+            return null;
+    }
 }

@@ -35,12 +35,20 @@ public class SelectResult {
             this.alias = alias;
             return this;
         }
+
+        String getColumnName() {
+            if(alias != null)
+                return alias;
+
+            return super.getColumnName();
+        }
     }
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private Expression expression = null;
+
 
     //---------------------------------------------
     // Constructors
@@ -57,13 +65,23 @@ public class SelectResult {
     // API - public static methods
     //---------------------------------------------
 
-    public static SelectResult expression(Expression expression) {
-        return new SelectResult(expression);
+    public static SelectResult.As expression(Expression expression) {
+        return new SelectResult.As(expression);
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    String getColumnName() {
+        if (expression instanceof Expression.PropertyExpression) {
+            Expression.PropertyExpression propExpr = (Expression.PropertyExpression) expression;
+            String keyPath = propExpr.getKeyPath();
+            String[] pathes = keyPath.split("\\.");
+            return pathes[pathes.length - 1];
+        }
+        return null;
+    }
 
     Object asJSON() {
         return expression.asJSON();

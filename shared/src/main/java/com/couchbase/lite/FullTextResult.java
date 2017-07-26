@@ -38,8 +38,8 @@ public class FullTextResult extends Result {
     // constructors
     //---------------------------------------------
 
-    FullTextResult(Query query, C4QueryEnumerator c4enum) {
-        super(query, c4enum);
+    FullTextResult(ResultSet rs, C4QueryEnumerator c4enum) {
+        super(rs, c4enum);
         this.matchCount = (int) c4enum.getFullTextTermCount();
         if (this.matchCount > 0) {
             matches = new FullTextTerm[this.matchCount];
@@ -125,7 +125,7 @@ public class FullTextResult extends Result {
 
     private byte[] getFullTextUTF8Data() {
         try {
-            return getQuery().getC4Query().getFullTextMatched(getDocumentID(), getSequence());
+            return getRs().getQuery().getC4Query().getFullTextMatched(getDocumentID(), getSequence());
         } catch (LiteCoreException e) {
             Log.w(TAG, "Error when get full text matched", e);
         }
