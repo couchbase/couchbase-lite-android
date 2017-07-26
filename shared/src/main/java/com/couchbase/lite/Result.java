@@ -16,6 +16,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.litecore.C4QueryEnumerator;
+import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLArrayIterator;
 import com.couchbase.litecore.fleece.FLValue;
 
@@ -55,33 +56,6 @@ public class Result
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
-
-    /**
-     * Get the ID of the document that produced this row.
-     *
-     * @return the ID of the document that produced this row.
-     */
-    public String getDocumentID() {
-        return c4enum.getDocID();
-    }
-
-    /**
-     * Get the sequence number of the document revision that produced this row.
-     *
-     * @return the sequence number of the document revision that produced this row.
-     */
-    public long getSequence() {
-        return c4enum.getDocSequence();
-    }
-
-    /**
-     * Get the document that produced this row.
-     *
-     * @return the document object.
-     */
-    public Document getDocument() {
-        return rs.getQuery().getDatabase().getDocument(documentID);
-    }
 
     @Override
     public String toString() {
@@ -156,20 +130,22 @@ public class Result
     }
 
     @Override
-    public ReadOnlyArrayInterface getArray(int index) {
-        return (ReadOnlyArrayInterface) fleeceValueToObject(index);
+    public ReadOnlyArray getArray(int index) {
+        return (ReadOnlyArray) fleeceValueToObject(index);
     }
 
     @Override
-    public ReadOnlyDictionaryInterface getDictionary(int index) {
-        return (ReadOnlyDictionaryInterface) fleeceValueToObject(index);
+    public ReadOnlyDictionary getDictionary(int index) {
+        return (ReadOnlyDictionary) fleeceValueToObject(index);
     }
 
     @Override
     public List<Object> toList() {
         List<Object> array = new ArrayList<>();
-        for (int i = 0; i < count(); i++)
-            array.add(getObject(i));
+        for (int i = 0; i < count(); i++) {
+            SharedKeys sk = rs.getQuery().getDatabase().getSharedKeys();
+            array.add(SharedKeys.valueToObject(fleeceValue(i), sk));
+        }
         return array;
     }
 
@@ -242,22 +218,24 @@ public class Result
     }
 
     @Override
-    public ReadOnlyArrayInterface getArray(String key) {
+    public ReadOnlyArray getArray(String key) {
         int index = indexForColumnName(key);
         return index >= 0 ? getArray(index) : null;
     }
 
     @Override
-    public ReadOnlyDictionaryInterface getDictionary(String key) {
+    public ReadOnlyDictionary getDictionary(String key) {
         int index = indexForColumnName(key);
         return index >= 0 ? getDictionary(index) : null;
     }
 
     @Override
     public Map<String, Object> toMap() {
+        List<Object> values = toList();
         Map<String, Object> dict = new HashMap<>();
         for (String name : rs.getColumnNames().keySet()) {
-            dict.put(name, getObject(indexForColumnName(name)));
+            int index = indexForColumnName(name);
+            dict.put(name, values.get(index));
         }
         return dict;
     }
@@ -285,6 +263,37 @@ public class Result
 
     protected C4QueryEnumerator getC4enum() {
         return c4enum;
+    }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+
+    /**
+     * Get the ID of the document that produced this row.
+     *
+     * @return the ID of the document that produced this row.
+     */
+    String getDocumentID() {
+        return c4enum.getDocID();
+    }
+
+    /**
+     * Get the sequence number of the document revision that produced this row.
+     *
+     * @return the sequence number of the document revision that produced this row.
+     */
+    long getSequence() {
+        return c4enum.getDocSequence();
+    }
+
+    /**
+     * Get the document that produced this row.
+     *
+     * @return the document object.
+     */
+    Document getDocument() {
+        return rs.getQuery().getDatabase().getDocument(documentID);
     }
 
     //---------------------------------------------

@@ -301,7 +301,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     private Object fleeceValueToObject(String key) {
         FLValue value = fleeceValue(key);
         if (value != null)
-            return CBLData.fleeceValueToObject(value, data.getLflDataSource(), data.getDatabase());
+            return CBLData.fleeceValueToObject(value, data.getFlDataSource(), data.getDatabase());
         else
             return null;
     }
@@ -314,7 +314,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
         itr.begin(flDict);
         String key;
         while ((key = SharedKeys.getKey(itr, sharedKeys)) != null) {
-            dict.put(key, CBLData.fleeceValueToObject(itr.getValue(), data.getLflDataSource(), data.getDatabase()));
+            dict.put(key, CBLData.fleeceValueToObject(itr.getValue(), data.getFlDataSource(), data.getDatabase()));
             itr.next();
         }
         itr.free();

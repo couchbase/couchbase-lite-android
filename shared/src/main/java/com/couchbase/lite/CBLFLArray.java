@@ -5,12 +5,12 @@ import com.couchbase.litecore.fleece.FLArray;
 class CBLFLArray {
     private FLArray flArray;
     private CBLC4Doc c4doc;
-    private CBLFLDataSource lflDataSource;
+    private CBLFLDataSource flDataSource;
     private Database database;
 
-    CBLFLArray(FLArray array, CBLFLDataSource lflDataSource, Database database) {
+    CBLFLArray(FLArray array, CBLFLDataSource flDataSource, Database database) {
         this.flArray = array;
-        this.lflDataSource = lflDataSource;
+        this.flDataSource = flDataSource;
         this.database = database;
     }
 
@@ -22,8 +22,8 @@ class CBLFLArray {
         return c4doc;
     }
 
-    CBLFLDataSource getLflDataSource() {
-        return lflDataSource;
+    CBLFLDataSource getFlDataSource() {
+        return flDataSource;
     }
 
     Database getDatabase() {
