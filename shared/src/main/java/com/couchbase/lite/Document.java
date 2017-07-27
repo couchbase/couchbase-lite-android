@@ -586,7 +586,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
     private C4Document save(boolean deletion) throws LiteCoreException {
-
         // history
         List<String> revIDs = new ArrayList<>();
         if (getC4doc() != null && getC4doc().getRevID() != null)
@@ -597,13 +596,13 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         int revFlags = 0;
         if (deletion)
             revFlags = C4RevisionFlags.kRevDeleted;
-        if (containsBlob(this))
-            revFlags |= kRevHasAttachments;
         if (!deletion && !isEmpty()) {
             // Encode properties to Fleece data:
             body = encode2();
             if (body == null)
                 return null;
+            if (C4Document.dictContainsBlobs(body, getDatabase().getSharedKeys()))
+                revFlags |= kRevHasAttachments;
         }
 
         // Save to database:
@@ -620,51 +619,5 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 
     private boolean isChanged() {
         return dictionary.isChanged();
-    }
-
-    // The next four functions search recursively for a property "_cbltype":"blob".
-
-    private static boolean objectContainsBlob(Object obj) {
-        if (obj == null)
-            return false;
-        else if (obj instanceof Blob)
-            return true;
-        else if (obj instanceof Dictionary)
-            return dictionaryContainsBlob((Dictionary) obj);
-        else if (obj instanceof Array)
-            return arrayContainsBlob((Array) obj);
-        else
-            return false;
-    }
-
-    private static boolean arrayContainsBlob(Array array) {
-        if (array == null) return false;
-        for (int i = 0; i < array.count(); i++) {
-            if (objectContainsBlob(array.getObject(i)))
-                return true;
-        }
-        return false;
-    }
-
-    private static boolean dictionaryContainsBlob(Dictionary dict) {
-        if (dict == null)
-            return false;
-        boolean containsBlob = false;
-        for (String key : dict.getKeys()) {
-            if (containsBlob = objectContainsBlob(dict.getObject(key)))
-                break;
-        }
-        return containsBlob;
-    }
-
-    private static boolean containsBlob(Document doc) {
-        if (doc == null)
-            return false;
-        boolean containsBlob = false;
-        for (String key : doc.getKeys()) {
-            if (containsBlob = objectContainsBlob(doc.getObject(key)))
-                break;
-        }
-        return containsBlob;
     }
 }
