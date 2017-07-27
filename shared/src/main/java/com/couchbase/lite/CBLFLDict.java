@@ -4,12 +4,12 @@ import com.couchbase.litecore.fleece.FLDict;
 
 class CBLFLDict {
     private FLDict flDict;
-    private CBLC4Doc c4doc;
+    private CBLFLDataSource flDataSource;
     private Database database;
 
-    CBLFLDict(FLDict dict, CBLC4Doc c4doc, Database database) {
+    CBLFLDict(FLDict dict, CBLFLDataSource flDataSource, Database database) {
         this.flDict = dict;
-        this.c4doc = c4doc;
+        this.flDataSource = flDataSource;
         this.database = database;
     }
 
@@ -17,8 +17,8 @@ class CBLFLDict {
         return flDict;
     }
 
-    CBLC4Doc getC4doc() {
-        return c4doc;
+    CBLFLDataSource getFlDataSource() {
+        return flDataSource;
     }
 
     Database getDatabase() {

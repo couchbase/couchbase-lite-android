@@ -58,6 +58,10 @@ public class Select extends Query implements FromRouter {
     // Package level access
     //---------------------------------------------
 
+    List<SelectResult> getSelectResults() {
+        return selectResults;
+    }
+
     boolean isDistinct() {
         return distinct;
     }

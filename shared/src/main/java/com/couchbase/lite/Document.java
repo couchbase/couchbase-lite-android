@@ -143,57 +143,57 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     @Override
-    public DictionaryInterface setString(String key, String value) {
+    public Document setString(String key, String value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setNumber(String key, Number value) {
+    public Document setNumber(String key, Number value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setInt(String key, int value) {
+    public Document setInt(String key, int value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setLong(String key, long value) {
+    public Document setLong(String key, long value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setFloat(String key, float value) {
+    public Document setFloat(String key, float value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setDouble(String key, double value) {
+    public Document setDouble(String key, double value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setBoolean(String key, boolean value) {
+    public Document setBoolean(String key, boolean value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setBlob(String key, Blob value) {
+    public Document setBlob(String key, Blob value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setDate(String key, Date value) {
+    public Document setDate(String key, Date value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setArray(String key, Array value) {
+    public Document setArray(String key, Array value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setDictionary(String key, Dictionary value) {
+    public Document setDictionary(String key, Dictionary value) {
         return setObject(key, value);
     }
 

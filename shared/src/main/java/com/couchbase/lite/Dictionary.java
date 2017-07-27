@@ -126,57 +126,57 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
     }
 
     @Override
-    public DictionaryInterface setString(String key, String value) {
+    public Dictionary setString(String key, String value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setNumber(String key, Number value) {
+    public Dictionary setNumber(String key, Number value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setInt(String key, int value) {
+    public Dictionary setInt(String key, int value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setLong(String key, long value) {
+    public Dictionary setLong(String key, long value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setFloat(String key, float value) {
+    public Dictionary setFloat(String key, float value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setDouble(String key, double value) {
+    public Dictionary setDouble(String key, double value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setBoolean(String key, boolean value) {
+    public Dictionary setBoolean(String key, boolean value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setBlob(String key, Blob value) {
+    public Dictionary setBlob(String key, Blob value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setDate(String key, Date value) {
+    public Dictionary setDate(String key, Date value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setArray(String key, Array value) {
+    public Dictionary setArray(String key, Array value) {
         return setObject(key, value);
     }
 
     @Override
-    public DictionaryInterface setDictionary(String key, Dictionary value) {
+    public Dictionary setDictionary(String key, Dictionary value) {
         return setObject(key, value);
     }
 

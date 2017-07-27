@@ -598,6 +598,10 @@ public abstract class Expression {
             }
             return json;
         }
+
+        String getKeyPath() {
+            return keyPath;
+        }
     }
 
     static final class UnaryExpression extends Expression {

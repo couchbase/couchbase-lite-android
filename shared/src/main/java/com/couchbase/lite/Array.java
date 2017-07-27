@@ -90,57 +90,57 @@ public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncoda
     }
 
     @Override
-    public ArrayInterface setString(int index, String value) {
+    public Array setString(int index, String value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setNumber(int index, Number value) {
+    public Array setNumber(int index, Number value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setInt(int index, int value) {
+    public Array setInt(int index, int value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setLong(int index, long value) {
+    public Array setLong(int index, long value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setFloat(int index, float value) {
+    public Array setFloat(int index, float value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setDouble(int index, double value) {
+    public Array setDouble(int index, double value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setBoolean(int index, boolean value) {
+    public Array setBoolean(int index, boolean value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setBlob(int index, Blob value) {
+    public Array setBlob(int index, Blob value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setDate(int index, Date value) {
+    public Array setDate(int index, Date value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setArray(int index, Array value) {
+    public Array setArray(int index, Array value) {
         return setObject(index, value);
     }
 
     @Override
-    public ArrayInterface setDictionary(int index, Dictionary value) {
+    public Array setDictionary(int index, Dictionary value) {
         return setObject(index, value);
     }
 
@@ -161,57 +161,57 @@ public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncoda
     }
 
     @Override
-    public ArrayInterface addString(String value) {
+    public Array addString(String value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addNumber(Number value) {
+    public Array addNumber(Number value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addInt(int value) {
+    public Array addInt(int value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addLong(long value) {
+    public Array addLong(long value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addFloat(float value) {
+    public Array addFloat(float value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addDouble(double value) {
+    public Array addDouble(double value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addBoolean(boolean value) {
+    public Array addBoolean(boolean value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addBlob(Blob value) {
+    public Array addBlob(Blob value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addDate(Date value) {
+    public Array addDate(Date value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addArray(Array value) {
+    public Array addArray(Array value) {
         return addObject(value);
     }
 
     @Override
-    public ArrayInterface addDictionary(Dictionary value) {
+    public Array addDictionary(Dictionary value) {
         return addObject(value);
     }
 
@@ -233,57 +233,57 @@ public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncoda
     }
 
     @Override
-    public ArrayInterface insertString(int index, String value) {
+    public Array insertString(int index, String value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertNumber(int index, Number value) {
+    public Array insertNumber(int index, Number value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertInt(int index, int value) {
+    public Array insertInt(int index, int value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertLong(int index, long value) {
+    public Array insertLong(int index, long value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertFloat(int index, float value) {
+    public Array insertFloat(int index, float value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertDouble(int index, double value) {
+    public Array insertDouble(int index, double value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertBoolean(int index, boolean value) {
+    public Array insertBoolean(int index, boolean value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertBlob(int index, Blob value) {
+    public Array insertBlob(int index, Blob value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertDate(int index, Date value) {
+    public Array insertDate(int index, Date value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertArray(int index, Array value) {
+    public Array insertArray(int index, Array value) {
         return insertObject(index, value);
     }
 
     @Override
-    public ArrayInterface insertDictionary(int index, Dictionary value) {
+    public Array insertDictionary(int index, Dictionary value) {
         return insertObject(index, value);
     }
 
