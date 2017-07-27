@@ -114,7 +114,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testSetNSArray() throws CouchbaseLiteException {
+    public void testSetArrayList() throws CouchbaseLiteException {
         List<Object> data = new ArrayList<>();
         data.add("1");
         data.add("2");
