@@ -19,7 +19,7 @@ public class Meta {
     //---------------------------------------------
     // API - public methods
     //------------------------------------------
-    MetaExpression getDocumentID() {
+    MetaExpression getId() {
         return new MetaExpression("_id");
     }
 

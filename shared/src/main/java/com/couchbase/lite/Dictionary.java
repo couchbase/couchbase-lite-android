@@ -115,7 +115,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      * @return this Dictionary instance
      */
     @Override
-    public Dictionary set(String key, Object value) {
+    public Dictionary setObject(String key, Object value) {
         Object oldValue = getObject(key);
         if ((value != null && !value.equals(oldValue)) || value == null) {
             value = CBLData.convert(value);
@@ -123,6 +123,61 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
             keys = null; // Reset key cache
         }
         return this;
+    }
+
+    @Override
+    public Dictionary setString(String key, String value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setNumber(String key, Number value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setInt(String key, int value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setLong(String key, long value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setFloat(String key, float value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setDouble(String key, double value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setBoolean(String key, boolean value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setBlob(String key, Blob value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setDate(String key, Date value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setArray(String key, Array value) {
+        return setObject(key, value);
+    }
+
+    @Override
+    public Dictionary setDictionary(String key, Dictionary value) {
+        return setObject(key, value);
     }
 
     /**
@@ -133,7 +188,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
      */
     @Override
     public Dictionary remove(String key) {
-        return set(key, RemovedValue.INSTANCE);
+        return setObject(key, RemovedValue.INSTANCE);
     }
 
     /**

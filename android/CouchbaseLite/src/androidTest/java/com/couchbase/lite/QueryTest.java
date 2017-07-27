@@ -36,25 +36,43 @@ import static org.junit.Assert.assertTrue;
 public class QueryTest extends BaseTest {
 
     private interface QueryResult {
-        void check(int n, QueryRow row) throws Exception;
+        void check(int n, Result result) throws Exception;
     }
 
-    private int verifyQuery(Query query, QueryResult result) throws Exception {
+    private int verifyQuery(Query query, QueryResult queryResult) throws Exception {
         int n = 0;
-        QueryRow row;
+        Result result;
         ResultSet rs = query.run();
-        while ((row = rs.next()) != null) {
+        while ((result = rs.next()) != null) {
             n += 1;
-            result.check(n, row);
+            queryResult.check(n, result);
         }
         return n;
+    }
+
+    private int verifyQueryWithIterable(Query query, QueryResult queryResult) throws Exception {
+        int n = 0;
+        for (Result result : query.run()) {
+            n += 1;
+            queryResult.check(n, result);
+        }
+        return n;
+    }
+
+    private int verifyQuery(Query query, QueryResult result, boolean runBoth) throws Exception {
+        int counter1 = verifyQuery(query, result);
+        if (runBoth) {
+            int counter2 = verifyQueryWithIterable(query, result);
+            assertEquals(counter1, counter2);
+        }
+        return counter1;
     }
 
     private Document createDocNumbered(int i, int num) throws CouchbaseLiteException {
         String docID = String.format(Locale.ENGLISH, "doc%d", i);
         Document doc = createDocument(docID);
-        doc.set("number1", i);
-        doc.set("number2", num - i);
+        doc.setObject("number1", i);
+        doc.setObject("number2", num - i);
         return save(doc);
     }
 
@@ -86,8 +104,8 @@ public class QueryTest extends BaseTest {
             Query q = Query.select().from(DataSource.database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, QueryRow row) throws Exception {
-                    String docID = row.getDocumentID();
+                public void check(int n, Result result) throws Exception {
+                    String docID = result.getDocumentID();
                     if (docIDList.contains(docID))
                         docIDList.remove(docID);
                 }
@@ -111,15 +129,16 @@ public class QueryTest extends BaseTest {
         Query q = Query.select().from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
+            public void check(int n, Result result) throws Exception {
                 String expectedID = String.format(Locale.ENGLISH, "doc-%03d", n);
-                assertEquals(expectedID, row.getDocumentID());
-                assertEquals(n, row.getSequence());
-                Document doc = row.getDocument();
+                assertEquals(expectedID, result.getDocumentID());
+                assertEquals(n, result.getSequence());
+                Document doc = result.getDocument();
                 assertEquals(expectedID, doc.getId());
                 assertEquals(n, doc.getSequence());
             }
-        });
+        }, true);
+        assertEquals(100, numRows);
     }
 
     @Test
@@ -177,13 +196,13 @@ public class QueryTest extends BaseTest {
     public void testWhereCheckNull() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
         Document doc1 = createDocument("doc1");
-        doc1.set("name", "Scott");
-        doc1.set("address", null);
+        doc1.setObject("name", "Scott");
+        doc1.setObject("address", null);
         save(doc1);
 
         Document doc2 = createDocument("doc2");
-        doc2.set("name", "Tiger");
-        doc2.set("address", "123 1st ave.");
+        doc2.setObject("name", "Tiger");
+        doc2.setObject("address", "123 1st ave.");
         save(doc2);
 
         Expression name = Expression.property("name");
@@ -208,13 +227,13 @@ public class QueryTest extends BaseTest {
             Query q = Query.select().from(DataSource.database(db)).where(exp);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, QueryRow row) throws Exception {
+                public void check(int n, Result result) throws Exception {
                     if (n < documentIDs.length) {
                         String docID = documentIDs[(int) n - 1];
-                        assertEquals(docID, row.getDocumentID());
+                        assertEquals(docID, result.getDocumentID());
                     }
                 }
-            });
+            }, true);
             assertEquals(documentIDs.length, numRows);
         }
     }
@@ -222,7 +241,7 @@ public class QueryTest extends BaseTest {
     @Test
     public void testWhereIs() throws Exception {
         final Document doc1 = new Document();
-        doc1.set("string", "string");
+        doc1.setObject("string", "string");
         save(doc1);
 
         Query q;
@@ -235,12 +254,12 @@ public class QueryTest extends BaseTest {
                 .where(Expression.property("string").is("string"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                Document doc = row.getDocument();
+            public void check(int n, Result result) throws Exception {
+                Document doc = result.getDocument();
                 assertEquals(doc1.getId(), doc.getId());
                 assertEquals(doc1.getObject("string"), doc.getObject("string"));
             }
-        });
+        }, true);
         assertEquals(1, numRows);
 
         // Test IS NOT:
@@ -250,12 +269,12 @@ public class QueryTest extends BaseTest {
                 .where(Expression.property("string").isNot("string1"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                Document doc = row.getDocument();
+            public void check(int n, Result result) throws Exception {
+                Document doc = result.getDocument();
                 assertEquals(doc1.getId(), doc.getId());
                 assertEquals(doc1.getObject("string"), doc.getObject("string"));
             }
-        });
+        }, true);
         assertEquals(1, numRows);
     }
 
@@ -283,8 +302,8 @@ public class QueryTest extends BaseTest {
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                Document doc = row.getDocument();
+            public void check(int n, Result result) throws Exception {
+                Document doc = result.getDocument();
                 Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
@@ -312,9 +331,9 @@ public class QueryTest extends BaseTest {
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
+            public void check(int n, Result result) throws Exception {
                 Log.e(TAG, "check() n -> " + n);
-                Document doc = row.getDocument();
+                Document doc = result.getDocument();
                 Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
@@ -341,15 +360,15 @@ public class QueryTest extends BaseTest {
         Query q = Query.select().from(DataSource.database(db)).where(w).orderBy(o);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                FullTextQueryRow ftsRow = (FullTextQueryRow) row;
+            public void check(int n, Result result) throws Exception {
+                FullTextResult ftsRow = (FullTextResult) result;
                 String text = ftsRow.getFullTextMatched();
                 assertNotNull(text);
                 assertTrue(text.contains("Dummie"));
                 assertTrue(text.contains("woman"));
                 assertEquals(2, ftsRow.getMatchCount());
             }
-        });
+        }, true);
         assertEquals(2, numRows);
     }
 
@@ -369,8 +388,8 @@ public class QueryTest extends BaseTest {
             final List<String> firstNames = new ArrayList<String>();
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, QueryRow row) throws Exception {
-                    Document doc = row.getDocument();
+                public void check(int n, Result result) throws Exception {
+                    Document doc = result.getDocument();
                     Map<String, Object> name = doc.getDictionary("name").toMap();
                     String firstName = (String) name.get("first");
                     firstNames.add(firstName);
@@ -396,20 +415,20 @@ public class QueryTest extends BaseTest {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1669
         // https://github.com/couchbase/couchbase-lite-core/issues/81
         final Document doc1 = new Document();
-        doc1.set("number", 1);
+        doc1.setObject("number", 1);
         save(doc1);
 
         Document doc2 = new Document();
-        doc2.set("number", 1);
+        doc2.setObject("number", 1);
         save(doc2);
 
         Query q = Query.selectDistinct().from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                assertEquals(doc1.getId(), row.getDocumentID());
+            public void check(int n, Result result) throws Exception {
+                assertEquals(doc1.getId(), result.getDocumentID());
             }
-        });
+        }, true);
         assertEquals(1, numRows);
     }
 
@@ -418,7 +437,7 @@ public class QueryTest extends BaseTest {
         loadNumbers(100);
 
         final Document doc1 = new Document("joinme");
-        doc1.set("theone", 42);
+        doc1.setObject("theone", 42);
         save(doc1);
 
         DataSource mainDS = DataSource.database(this.db).as("main");
@@ -432,11 +451,11 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                Document doc = row.getDocument();
+            public void check(int n, Result result) throws Exception {
+                Document doc = result.getDocument();
                 assertEquals(42, doc.getInt("number1"));
             }
-        });
+        }, true);
         assertEquals(1, numRows);
     }
 
@@ -463,14 +482,14 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                assertEquals(50.5F, (float) row.getObject(0), 0.0F);
-                assertEquals(100L, (long) row.getObject(1));
-                assertEquals(1L, (long) row.getObject(2));
-                assertEquals(100L, (long) row.getObject(3));
-                assertEquals(5050L, (long) row.getObject(4));
+            public void check(int n, Result result) throws Exception {
+                assertEquals(50.5F, (float) result.getObject(0), 0.0F);
+                assertEquals(100L, (long) result.getObject(1));
+                assertEquals(1L, (long) result.getObject(2));
+                assertEquals(100L, (long) result.getObject(3));
+                assertEquals(5050L, (long) result.getObject(4));
             }
-        });
+        }, true);
         assertEquals(1, numRows);
     }
 
@@ -507,10 +526,10 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                String state = (String) row.getObject(0);
-                long count = (long) row.getObject(1);
-                String maxZip = (String) row.getObject(2);
+            public void check(int n, Result result) throws Exception {
+                String state = (String) result.getObject(0);
+                long count = (long) result.getObject(1);
+                String maxZip = (String) result.getObject(2);
                 Log.e(TAG, "state=%s, count=%d, maxZip=%s", state, count, maxZip);
                 if (n - 1 < expectedStates.size()) {
                     assertEquals(expectedStates.get(n - 1), state);
@@ -518,7 +537,7 @@ public class QueryTest extends BaseTest {
                     assertEquals(expectedMaxZips.get(n - 1), maxZip);
                 }
             }
-        });
+        }, true);
         assertEquals(31, numRows);
 
         // With HAVING:
@@ -538,17 +557,17 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                String state = (String) row.getObject(0);
-                long count = (long) row.getObject(1);
-                String maxZip = (String) row.getObject(2);
+            public void check(int n, Result result) throws Exception {
+                String state = (String) result.getObject(0);
+                long count = (long) result.getObject(1);
+                String maxZip = (String) result.getObject(2);
                 if (n - 1 < expectedStates2.size()) {
                     assertEquals(expectedStates2.get(n - 1), state);
                     assertEquals((long) expectedCounts2.get(n - 1), count);
                     assertEquals(expectedMaxZips2.get(n - 1), maxZip);
                 }
             }
-        });
+        }, true);
         assertEquals(15, numRows);
     }
 
@@ -572,17 +591,16 @@ public class QueryTest extends BaseTest {
                 .where(number1.between(paramN1, paramN2))
                 .orderBy(ordering);
 
-        q.parameters().set("num1", 2);
-        q.parameters().set("num2", 5);
+        q.parameters().setObject("num1", 2).setObject("num2", 5);
 
         final long[] expectedNumbers = {2, 3, 4, 5};
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                long number = (long) row.getObject(0);
+            public void check(int n, Result result) throws Exception {
+                long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers[n - 1], number);
             }
-        });
+        }, true);
         assertEquals(4, numRows);
     }
 
@@ -592,7 +610,7 @@ public class QueryTest extends BaseTest {
 
         DataSource dataSource = DataSource.database(this.db);
 
-        Expression metaDocID = Expression.meta().getDocumentID();
+        Expression metaDocID = Expression.meta().getId();
         Expression metaDocSeq = Expression.meta().getSequence();
         Expression propNumber1 = Expression.property("number1");
 
@@ -611,16 +629,16 @@ public class QueryTest extends BaseTest {
 
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                String docID = (String) row.getObject(0);
-                long seq = (long) row.getObject(1);
-                long number = (long) row.getObject(2);
+            public void check(int n, Result result) throws Exception {
+                String docID = (String) result.getObject(0);
+                long seq = (long) result.getObject(1);
+                long number = (long) result.getObject(2);
 
                 assertEquals(expectedDocIDs[n - 1], docID);
                 assertEquals(expectedSeqs[n - 1], seq);
                 assertEquals(expectedNumbers[n - 1], number);
             }
-        });
+        }, true);
         assertEquals(5, numRows);
     }
 
@@ -641,11 +659,11 @@ public class QueryTest extends BaseTest {
         final long[] expectedNumbers = {1, 2, 3, 4, 5};
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                long number = (long) row.getObject(0);
+            public void check(int n, Result result) throws Exception {
+                long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers[n - 1], number);
             }
-        });
+        }, true);
         assertEquals(5, numRows);
 
         Expression paramExpr = Expression.parameter("LIMIT_NUM");
@@ -654,16 +672,16 @@ public class QueryTest extends BaseTest {
                 .from(dataSource)
                 .orderBy(Ordering.expression(propNumber1))
                 .limit(paramExpr);
-        q.parameters().set("LIMIT_NUM", 3);
+        q.parameters().setObject("LIMIT_NUM", 3);
 
         final long[] expectedNumbers2 = {1, 2, 3};
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                long number = (long) row.getObject(0);
+            public void check(int n, Result result) throws Exception {
+                long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers2[n - 1], number);
             }
-        });
+        }, true);
         assertEquals(3, numRows);
     }
 
@@ -684,11 +702,11 @@ public class QueryTest extends BaseTest {
         final long[] expectedNumbers = {4, 5, 6, 7, 8};
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                long number = (long) row.getObject(0);
+            public void check(int n, Result result) throws Exception {
+                long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers[n - 1], number);
             }
-        });
+        }, true);
         assertEquals(5, numRows);
 
         Expression paramLimitExpr = Expression.parameter("LIMIT_NUM");
@@ -698,18 +716,88 @@ public class QueryTest extends BaseTest {
                 .from(dataSource)
                 .orderBy(Ordering.expression(propNumber1))
                 .limit(paramLimitExpr, paramOffsetExpr);
-        q.parameters().set("LIMIT_NUM", 3);
-        q.parameters().set("OFFSET_NUM", 5);
+        q.parameters().setObject("LIMIT_NUM", 3).setObject("OFFSET_NUM", 5);
 
         final long[] expectedNumbers2 = {6, 7, 8};
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, QueryRow row) throws Exception {
-                long number = (long) row.getObject(0);
+            public void check(int n, Result result) throws Exception {
+                long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers2[n - 1], number);
             }
-        });
+        }, true);
         assertEquals(3, numRows);
+    }
+
+    @Test
+    public void testQueryResult() throws Exception {
+        loadJSONResource("names_100.json");
+
+        Expression FNAME = Expression.property("name.first");
+        Expression LNAME = Expression.property("name.last");
+        Expression GENDER = Expression.property("gender");
+        Expression CITY = Expression.property("contact.address.city");
+
+        SelectResult RES_FNAME = SelectResult.expression(FNAME).as("firstname");
+        SelectResult RES_LNAME = SelectResult.expression(LNAME).as("lastname");
+        SelectResult RES_GENDER = SelectResult.expression(GENDER);
+        SelectResult RES_CITY = SelectResult.expression(CITY);
+
+        DataSource DS = DataSource.database(db);
+
+        Query q = Query
+                .select(RES_FNAME, RES_LNAME, RES_GENDER, RES_CITY)
+                .from(DS);
+
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(4, result.count());
+                assertEquals(result.getObject(0), result.getObject("firstname"));
+                assertEquals(result.getObject(1), result.getObject("lastname"));
+                assertEquals(result.getObject(2), result.getObject("gender"));
+                assertEquals(result.getObject(3), result.getObject("city"));
+            }
+        }, true);
+        assertEquals(100, numRows);
+    }
+
+    @Test
+    public void testQueryProjectingKeys() throws Exception {
+        loadNumbers(100);
+
+        DataSource DS = DataSource.database(db);
+
+        Expression NUM1 = Expression.property("number1");
+
+        Expression AVG = Function.avg(NUM1);
+        Expression CNT = Function.count(NUM1);
+        Expression MIN = Function.min(NUM1);
+        Expression MAX = Function.max(NUM1);
+        Expression SUM = Function.sum(NUM1);
+
+        SelectResult RES_AVG = SelectResult.expression(AVG);
+        SelectResult RES_CNT = SelectResult.expression(CNT);
+        SelectResult RES_MIN = SelectResult.expression(MIN).as("min");
+        SelectResult RES_MAX = SelectResult.expression(MAX);
+        SelectResult RES_SUM = SelectResult.expression(SUM).as("sum");
+
+        Query q = Query
+                .select(RES_AVG, RES_CNT, RES_MIN, RES_MAX, RES_SUM)
+                .from(DS);
+
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(5, result.count());
+                assertEquals(result.getObject(0), result.getObject("$1"));
+                assertEquals(result.getObject(1), result.getObject("$2"));
+                assertEquals(result.getObject(2), result.getObject("min"));
+                assertEquals(result.getObject(3), result.getObject("$3"));
+                assertEquals(result.getObject(4), result.getObject("sum"));
+            }
+        }, true);
+        assertEquals(1, numRows);
     }
 
     @Test
@@ -736,11 +824,11 @@ public class QueryTest extends BaseTest {
                         count++;
                     assertEquals(9, count);
                 } else if (latch.getCount() == 1) {
-                    QueryRow queryRow;
+                    Result result;
                     int count = 0;
-                    while ((queryRow = rs.next()) != null) {
+                    while ((result = rs.next()) != null) {
                         if (count == 0)
-                            assertEquals(-1L, queryRow.getDocument().getObject("number1"));
+                            assertEquals(-1L, result.getDocument().getObject("number1"));
                         count++;
                     }
                     assertEquals(10, count);

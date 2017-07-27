@@ -80,13 +80,68 @@ public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncoda
      * @return this Array instance
      */
     @Override
-    public Array set(int index, Object value) {
+    public Array setObject(int index, Object value) {
         Object oldValue = getObject(index);
         if ((value != null && !value.equals(oldValue)) || value == null) {
             value = CBLData.convert(value);
             set(index, value, true);
         }
         return this;
+    }
+
+    @Override
+    public Array setString(int index, String value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setNumber(int index, Number value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setInt(int index, int value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setLong(int index, long value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setFloat(int index, float value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setDouble(int index, double value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setBoolean(int index, boolean value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setBlob(int index, Blob value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setDate(int index, Date value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setArray(int index, Array value) {
+        return setObject(index, value);
+    }
+
+    @Override
+    public Array setDictionary(int index, Dictionary value) {
+        return setObject(index, value);
     }
 
     /**
@@ -96,13 +151,68 @@ public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncoda
      * @return this Array instance
      */
     @Override
-    public Array add(Object value) {
+    public Array addObject(Object value) {
         if (list == null)
             copyFleeceData();
 
         list.add(CBLData.convert(value));
         setChanged();
         return this;
+    }
+
+    @Override
+    public Array addString(String value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addNumber(Number value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addInt(int value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addLong(long value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addFloat(float value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addDouble(double value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addBoolean(boolean value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addBlob(Blob value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addDate(Date value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addArray(Array value) {
+        return addObject(value);
+    }
+
+    @Override
+    public Array addDictionary(Dictionary value) {
+        return addObject(value);
     }
 
     /**
@@ -113,13 +223,68 @@ public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncoda
      * @return this Array instance
      */
     @Override
-    public Array insert(int index, Object value) {
+    public Array insertObject(int index, Object value) {
         if (list == null)
             copyFleeceData();
 
         list.add(index, CBLData.convert(value));
         setChanged();
         return this;
+    }
+
+    @Override
+    public Array insertString(int index, String value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertNumber(int index, Number value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertInt(int index, int value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertLong(int index, long value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertFloat(int index, float value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertDouble(int index, double value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertBoolean(int index, boolean value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertBlob(int index, Blob value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertDate(int index, Date value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertArray(int index, Array value) {
+        return insertObject(index, value);
+    }
+
+    @Override
+    public Array insertDictionary(int index, Dictionary value) {
+        return insertObject(index, value);
     }
 
     /**

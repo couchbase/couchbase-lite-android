@@ -72,6 +72,20 @@ public final class CouchbaseLiteException extends Exception {
     }
 
     /**
+     * Constructs a new exception with the specified detail message, error domain and error code
+     *
+     * @param message the detail message
+     * @param domain  the error domain
+     * @param code    the error code
+     */
+    public CouchbaseLiteException(String message, int domain, int code) {
+        super(message);
+        this.domain = domain;
+        this.code = code;
+        this.info = null;
+    }
+
+    /**
      * Constructs a new exception with the specified error domain, error code and the specified cause
      *
      * @param domain the error domain

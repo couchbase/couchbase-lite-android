@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -45,33 +46,63 @@ public class DocumentTest extends BaseTest {
     final static String kDocumentTestBlob = "i'm blob";
 
     private void populateData(Document doc) {
-        doc.set("true", true);
-        doc.set("false", false);
-        doc.set("string", "string");
-        doc.set("zero", 0);
-        doc.set("one", 1);
-        doc.set("minus_one", -1);
-        doc.set("one_dot_one", 1.1);
-        doc.set("date", DateUtils.fromJson(kDocumentTestDate));
-        doc.set("null", null);
+        doc.setObject("true", true);
+        doc.setObject("false", false);
+        doc.setObject("string", "string");
+        doc.setObject("zero", 0);
+        doc.setObject("one", 1);
+        doc.setObject("minus_one", -1);
+        doc.setObject("one_dot_one", 1.1);
+        doc.setObject("date", DateUtils.fromJson(kDocumentTestDate));
+        doc.setObject("null", null);
 
         // Dictionary:
         Dictionary dict = new Dictionary();
-        dict.set("street", "1 Main street");
-        dict.set("city", "Mountain View");
-        dict.set("state", "CA");
-        doc.set("dict", dict);
+        dict.setObject("street", "1 Main street");
+        dict.setObject("city", "Mountain View");
+        dict.setObject("state", "CA");
+        doc.setObject("dict", dict);
 
         // Array:
         Array array = new Array();
-        array.add("650-123-0001");
-        array.add("650-123-0002");
-        doc.set("array", array);
+        array.addObject("650-123-0001");
+        array.addObject("650-123-0002");
+        doc.setObject("array", array);
 
         // Blob:
         byte[] content = kDocumentTestBlob.getBytes();
         Blob blob = new Blob("text/plain", content);
-        doc.set("blob", blob);
+        doc.setObject("blob", blob);
+    }
+
+    private void populateDataByTypedSetter(Document doc) {
+        doc.setBoolean("true", true);
+        doc.setBoolean("false", false);
+        doc.setString("string", "string");
+        doc.setNumber("zero", 0);
+        doc.setInt("one", 1);
+        doc.setLong("minus_one", -1);
+        doc.setDouble("one_dot_one", 1.1);
+        doc.setDate("date", DateUtils.fromJson(kDocumentTestDate));
+        doc.setString("null", null);
+
+        // Dictionary:
+        Dictionary dict = new Dictionary();
+        dict.setString("street", "1 Main street");
+        dict.setString("city", "Mountain View");
+        dict.setString("state", "CA");
+        doc.setDictionary("dict", dict);
+
+        // Array:
+        Array array = new Array();
+        array.addString("650-123-0001");
+        array.addString("650-123-0002");
+        doc.setArray("array", array);
+
+        // Blob:
+        byte[] content = kDocumentTestBlob.getBytes();
+        Blob blob = new Blob("text/plain", content);
+        doc.setBlob("blob", blob);
     }
 
     @Before
@@ -83,7 +114,6 @@ public class DocumentTest extends BaseTest {
     public void tearDown() throws Exception {
         super.tearDown();
     }
-
 
     @Test
     public void testCreateDoc() throws CouchbaseLiteException {
@@ -101,7 +131,6 @@ public class DocumentTest extends BaseTest {
         assertFalse(doc1b.isDeleted());
         assertEquals(doc1a.getId(), doc1b.getId());
     }
-
 
     @Test
     public void testNewDocWithId() throws CouchbaseLiteException {
@@ -152,7 +181,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCreateDocWithDict() throws CouchbaseLiteException {
-        Map<String, Object> dict = new HashMap<>();
+        final Map<String, Object> dict = new HashMap<>();
         dict.put("name", "Scott Tiger");
         dict.put("age", 30L);
 
@@ -164,7 +193,7 @@ public class DocumentTest extends BaseTest {
 
         dict.put("phones", Arrays.asList("650-123-0001", "650-123-0002"));
 
-        Document doc1a = new Document(dict);
+        final Document doc1a = new Document(dict);
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
         assertFalse(doc1a.isDeleted());
@@ -299,7 +328,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testSaveThenGetFromAnotherDB() throws CouchbaseLiteException {
         Document doc1a = createDocument("doc1");
-        doc1a.set("name", "Scott Tiger");
+        doc1a.setObject("name", "Scott Tiger");
         save(doc1a);
 
         Database anotherDb = db.copy();
@@ -313,7 +342,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testNoCacheNoLive() throws CouchbaseLiteException {
         Document doc1a = createDocument("doc1");
-        doc1a.set("name", "Scott Tiger");
+        doc1a.setObject("name", "Scott Tiger");
 
         save(doc1a);
 
@@ -334,7 +363,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(doc1a.toMap(), doc1c.toMap());
         assertEquals(doc1a.toMap(), doc1d.toMap());
 
-        doc1b.set("name", "Daniel Tiger");
+        doc1b.setObject("name", "Daniel Tiger");
         save(doc1b);
 
         assertNotEquals(doc1b.toMap(), doc1a.toMap());
@@ -346,223 +375,347 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetString() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        doc.set("string1", "");
-        doc.set("string2", "string");
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator4Save = new Validator<Document>() {
             @Override
             public void validate(Document d) {
                 assertEquals("", d.getObject("string1"));
                 assertEquals("string", d.getObject("string2"));
             }
-        });
+        };
 
-        doc.set("string1", "string");
-        doc.set("string2", "");
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator4SUpdate = new Validator<Document>() {
             @Override
             public void validate(Document d) {
                 assertEquals("string", d.getObject("string1"));
                 assertEquals("", d.getObject("string2"));
             }
-        });
+        };
+
+        // -- setObject
+        // save
+        Document doc = createDocument("doc1");
+        doc.setObject("string1", "");
+        doc.setObject("string2", "string");
+        save(doc, validator4Save);
+        // update
+        doc.setObject("string1", "string");
+        doc.setObject("string2", "");
+        save(doc, validator4SUpdate);
+
+        // -- setString
+        // save
+        Document doc2 = createDocument("doc2");
+        doc2.setString("string1", "");
+        doc2.setString("string2", "string");
+        save(doc2, validator4Save);
+
+        // update
+        doc2.setString("string1", "string");
+        doc2.setString("string2", "");
+        save(doc2, validator4SUpdate);
     }
 
     @Test
     public void testGetString() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertNull(d.getString("null"));
-                assertNull(d.getString("true"));
-                assertNull(d.getString("false"));
-                assertEquals("string", d.getString("string"));
-                assertNull(d.getString("zero"));
-                assertNull(d.getString("one"));
-                assertNull(d.getString("minus_one"));
-                assertNull(d.getString("one_dot_one"));
-                assertEquals(kDocumentTestDate, d.getString("date"));
-                assertNull(d.getString("dict"));
-                assertNull(d.getString("array"));
-                assertNull(d.getString("blob"));
-                assertNull(d.getString("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertNull(d.getString("null"));
+                    assertNull(d.getString("true"));
+                    assertNull(d.getString("false"));
+                    assertEquals("string", d.getString("string"));
+                    assertNull(d.getString("zero"));
+                    assertNull(d.getString("one"));
+                    assertNull(d.getString("minus_one"));
+                    assertNull(d.getString("one_dot_one"));
+                    assertEquals(kDocumentTestDate, d.getString("date"));
+                    assertNull(d.getString("dict"));
+                    assertNull(d.getString("array"));
+                    assertNull(d.getString("blob"));
+                    assertNull(d.getString("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
     public void testSetNumber() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-
-        doc.set("number1", 1);
-        doc.set("number2", 0);
-        doc.set("number3", -1);
-        doc.set("number4", 1.1);
-
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator4Save = new Validator<Document>() {
             @Override
             public void validate(Document d) {
                 assertEquals(1, ((Number) d.getObject("number1")).intValue());
                 assertEquals(0, ((Number) d.getObject("number2")).intValue());
                 assertEquals(-1, ((Number) d.getObject("number3")).intValue());
-                assertEquals(1.1, d.getObject("number4"));
+                assertEquals(-10, ((Number) d.getObject("number4")).intValue());
             }
-        });
+        };
 
-        // Update:
-
-        doc.set("number1", 0);
-        doc.set("number2", 1);
-        doc.set("number3", 1.1);
-        doc.set("number4", -1);
-
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator4SUpdate = new Validator<Document>() {
             @Override
             public void validate(Document d) {
                 assertEquals(0, ((Number) d.getObject("number1")).intValue());
                 assertEquals(1, ((Number) d.getObject("number2")).intValue());
-                assertEquals(1.1, d.getObject("number3"));
+                assertEquals(-10, ((Number) d.getObject("number3")).intValue());
                 assertEquals(-1, ((Number) d.getObject("number4")).intValue());
             }
-        });
+        };
+
+        // -- setObject
+        Document doc = createDocument("doc1");
+        doc.setObject("number1", 1);
+        doc.setObject("number2", 0);
+        doc.setObject("number3", -1);
+        doc.setObject("number4", -10);
+        save(doc, validator4Save);
+
+        // Update:
+        doc.setObject("number1", 0);
+        doc.setObject("number2", 1);
+        doc.setObject("number3", -10);
+        doc.setObject("number4", -1);
+        save(doc, validator4SUpdate);
+
+        // -- setNumber
+        // save
+        Document doc2 = createDocument("doc2");
+        doc2.setNumber("number1", 1);
+        doc2.setNumber("number2", 0);
+        doc2.setNumber("number3", -1);
+        doc2.setNumber("number4", -10);
+        save(doc2, validator4Save);
+
+        // Update:
+        doc2.setNumber("number1", 0);
+        doc2.setNumber("number2", 1);
+        doc2.setNumber("number3", -10);
+        doc2.setNumber("number4", -1);
+        save(doc2, validator4SUpdate);
+
+        // -- setInt
+        // save
+        Document doc3 = createDocument("doc3");
+        doc3.setInt("number1", 1);
+        doc3.setInt("number2", 0);
+        doc3.setInt("number3", -1);
+        doc3.setInt("number4", -10);
+        save(doc3, validator4Save);
+
+        // Update:
+        doc3.setInt("number1", 0);
+        doc3.setInt("number2", 1);
+        doc3.setInt("number3", -10);
+        doc3.setInt("number4", -1);
+        save(doc3, validator4SUpdate);
+
+        // -- setLong
+        // save
+        Document doc4 = createDocument("doc4");
+        doc4.setLong("number1", 1);
+        doc4.setLong("number2", 0);
+        doc4.setLong("number3", -1);
+        doc4.setLong("number4", -10);
+        save(doc4, validator4Save);
+
+        // Update:
+        doc4.setLong("number1", 0);
+        doc4.setLong("number2", 1);
+        doc4.setLong("number3", -10);
+        doc4.setLong("number4", -1);
+        save(doc4, validator4SUpdate);
+
+        // -- setFloat
+        // save
+        Document doc5 = createDocument("doc5");
+        doc5.setFloat("number1", 1);
+        doc5.setFloat("number2", 0);
+        doc5.setFloat("number3", -1);
+        doc5.setFloat("number4", -10);
+        save(doc5, validator4Save);
+
+        // Update:
+        doc5.setFloat("number1", 0);
+        doc5.setFloat("number2", 1);
+        doc5.setFloat("number3", -10);
+        doc5.setFloat("number4", -1);
+        save(doc5, validator4SUpdate);
+
+        // -- setDouble
+        // save
+        Document doc6 = createDocument("doc6");
+        doc6.setDouble("number1", 1);
+        doc6.setDouble("number2", 0);
+        doc6.setDouble("number3", -1);
+        doc6.setDouble("number4", -10);
+        save(doc6, validator4Save);
+
+        // Update:
+        doc6.setDouble("number1", 0);
+        doc6.setDouble("number2", 1);
+        doc6.setDouble("number3", -10);
+        doc6.setDouble("number4", -1);
+        save(doc6, validator4SUpdate);
     }
 
     @Test
     public void testGetNumber() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertNull(d.getNumber("null"));
-                assertEquals(1, d.getNumber("true").intValue());
-                assertEquals(0, d.getNumber("false").intValue());
-                assertNull(d.getNumber("string"));
-                assertEquals(0, d.getNumber("zero").intValue());
-                assertEquals(1, d.getNumber("one").intValue());
-                assertEquals(-1, d.getNumber("minus_one").intValue());
-                assertEquals(1.1, d.getNumber("one_dot_one"));
-                assertNull(d.getNumber("date"));
-                assertNull(d.getNumber("dict"));
-                assertNull(d.getNumber("array"));
-                assertNull(d.getNumber("blob"));
-                assertNull(d.getNumber("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertNull(d.getNumber("null"));
+                    assertEquals(1, d.getNumber("true").intValue());
+                    assertEquals(0, d.getNumber("false").intValue());
+                    assertNull(d.getNumber("string"));
+                    assertEquals(0, d.getNumber("zero").intValue());
+                    assertEquals(1, d.getNumber("one").intValue());
+                    assertEquals(-1, d.getNumber("minus_one").intValue());
+                    assertEquals(1.1, d.getNumber("one_dot_one"));
+                    assertNull(d.getNumber("date"));
+                    assertNull(d.getNumber("dict"));
+                    assertNull(d.getNumber("array"));
+                    assertNull(d.getNumber("blob"));
+                    assertNull(d.getNumber("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetInteger() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertEquals(0, d.getInt("null"));
-                assertEquals(1, d.getInt("true"));
-                assertEquals(0, d.getInt("false"));
-                assertEquals(0, d.getInt("string"));
-                assertEquals(0, d.getInt("zero"));
-                assertEquals(1, d.getInt("one"));
-                assertEquals(-1, d.getInt("minus_one"));
-                assertEquals(1, d.getInt("one_dot_one"));
-                assertEquals(0, d.getInt("date"));
-                assertEquals(0, d.getInt("dict"));
-                assertEquals(0, d.getInt("array"));
-                assertEquals(0, d.getInt("blob"));
-                assertEquals(0, d.getInt("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertEquals(0, d.getInt("null"));
+                    assertEquals(1, d.getInt("true"));
+                    assertEquals(0, d.getInt("false"));
+                    assertEquals(0, d.getInt("string"));
+                    assertEquals(0, d.getInt("zero"));
+                    assertEquals(1, d.getInt("one"));
+                    assertEquals(-1, d.getInt("minus_one"));
+                    assertEquals(1, d.getInt("one_dot_one"));
+                    assertEquals(0, d.getInt("date"));
+                    assertEquals(0, d.getInt("dict"));
+                    assertEquals(0, d.getInt("array"));
+                    assertEquals(0, d.getInt("blob"));
+                    assertEquals(0, d.getInt("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetLong() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertEquals(0, d.getLong("null"));
-                assertEquals(1, d.getLong("true"));
-                assertEquals(0, d.getLong("false"));
-                assertEquals(0, d.getLong("string"));
-                assertEquals(0, d.getLong("zero"));
-                assertEquals(1, d.getLong("one"));
-                assertEquals(-1, d.getLong("minus_one"));
-                assertEquals(1, d.getLong("one_dot_one"));
-                assertEquals(0, d.getLong("date"));
-                assertEquals(0, d.getLong("dict"));
-                assertEquals(0, d.getLong("array"));
-                assertEquals(0, d.getLong("blob"));
-                assertEquals(0, d.getLong("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertEquals(0, d.getLong("null"));
+                    assertEquals(1, d.getLong("true"));
+                    assertEquals(0, d.getLong("false"));
+                    assertEquals(0, d.getLong("string"));
+                    assertEquals(0, d.getLong("zero"));
+                    assertEquals(1, d.getLong("one"));
+                    assertEquals(-1, d.getLong("minus_one"));
+                    assertEquals(1, d.getLong("one_dot_one"));
+                    assertEquals(0, d.getLong("date"));
+                    assertEquals(0, d.getLong("dict"));
+                    assertEquals(0, d.getLong("array"));
+                    assertEquals(0, d.getLong("blob"));
+                    assertEquals(0, d.getLong("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetFloat() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertEquals(0.0f, d.getFloat("null"), 0.0f);
-                assertEquals(1.0f, d.getFloat("true"), 0.0f);
-                assertEquals(0.0f, d.getFloat("false"), 0.0f);
-                assertEquals(0.0f, d.getFloat("string"), 0.0f);
-                assertEquals(0.0f, d.getFloat("zero"), 0.0f);
-                assertEquals(1.0f, d.getFloat("one"), 0.0f);
-                assertEquals(-1.0f, d.getFloat("minus_one"), 0.0f);
-                assertEquals(1.1f, d.getFloat("one_dot_one"), 0.0f);
-                assertEquals(0.0f, d.getFloat("date"), 0.0f);
-                assertEquals(0.0f, d.getFloat("dict"), 0.0f);
-                assertEquals(0.0f, d.getFloat("array"), 0.0f);
-                assertEquals(0.0f, d.getFloat("blob"), 0.0f);
-                assertEquals(0.0f, d.getFloat("non_existing_key"), 0.0f);
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertEquals(0.0f, d.getFloat("null"), 0.0f);
+                    assertEquals(1.0f, d.getFloat("true"), 0.0f);
+                    assertEquals(0.0f, d.getFloat("false"), 0.0f);
+                    assertEquals(0.0f, d.getFloat("string"), 0.0f);
+                    assertEquals(0.0f, d.getFloat("zero"), 0.0f);
+                    assertEquals(1.0f, d.getFloat("one"), 0.0f);
+                    assertEquals(-1.0f, d.getFloat("minus_one"), 0.0f);
+                    assertEquals(1.1f, d.getFloat("one_dot_one"), 0.0f);
+                    assertEquals(0.0f, d.getFloat("date"), 0.0f);
+                    assertEquals(0.0f, d.getFloat("dict"), 0.0f);
+                    assertEquals(0.0f, d.getFloat("array"), 0.0f);
+                    assertEquals(0.0f, d.getFloat("blob"), 0.0f);
+                    assertEquals(0.0f, d.getFloat("non_existing_key"), 0.0f);
+                }
+            });
+        }
     }
 
     @Test
     public void testGetDouble() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertEquals(0.0, d.getDouble("null"), 0.0);
-                assertEquals(1.0, d.getDouble("true"), 0.0);
-                assertEquals(0.0, d.getDouble("false"), 0.0);
-                assertEquals(0.0, d.getDouble("string"), 0.0);
-                assertEquals(0.0, d.getDouble("zero"), 0.0);
-                assertEquals(1.0, d.getDouble("one"), 0.0);
-                assertEquals(-1.0, d.getDouble("minus_one"), 0.0);
-                assertEquals(1.1, d.getDouble("one_dot_one"), 0.0);
-                assertEquals(0.0, d.getDouble("date"), 0.0);
-                assertEquals(0.0, d.getDouble("dict"), 0.0);
-                assertEquals(0.0, d.getDouble("array"), 0.0);
-                assertEquals(0.0, d.getDouble("blob"), 0.0);
-                assertEquals(0.0, d.getDouble("non_existing_key"), 0.0);
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertEquals(0.0, d.getDouble("null"), 0.0);
+                    assertEquals(1.0, d.getDouble("true"), 0.0);
+                    assertEquals(0.0, d.getDouble("false"), 0.0);
+                    assertEquals(0.0, d.getDouble("string"), 0.0);
+                    assertEquals(0.0, d.getDouble("zero"), 0.0);
+                    assertEquals(1.0, d.getDouble("one"), 0.0);
+                    assertEquals(-1.0, d.getDouble("minus_one"), 0.0);
+                    assertEquals(1.1, d.getDouble("one_dot_one"), 0.0);
+                    assertEquals(0.0, d.getDouble("date"), 0.0);
+                    assertEquals(0.0, d.getDouble("dict"), 0.0);
+                    assertEquals(0.0, d.getDouble("array"), 0.0);
+                    assertEquals(0.0, d.getDouble("blob"), 0.0);
+                    assertEquals(0.0, d.getDouble("non_existing_key"), 0.0);
+                }
+            });
+        }
     }
 
     @Test
     public void testSetGetMinMaxNumbers() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-
-        doc.set("min_int", Integer.MIN_VALUE);
-        doc.set("max_int", Integer.MAX_VALUE);
-        doc.set("min_long", Long.MIN_VALUE);
-        doc.set("max_long", Long.MAX_VALUE);
-        doc.set("min_float", Float.MIN_VALUE);
-        doc.set("max_float", Float.MAX_VALUE);
-        doc.set("min_double", Double.MIN_VALUE);
-        doc.set("max_double", Double.MAX_VALUE);
-
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator = new Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(Integer.MIN_VALUE, doc.getNumber("min_int").intValue());
@@ -593,71 +746,109 @@ public class DocumentTest extends BaseTest {
                 assertEquals(Double.MIN_VALUE, doc.getDouble("min_double"), 0.0);
                 assertEquals(Double.MAX_VALUE, doc.getDouble("max_double"), 0.0);
             }
-        });
+        };
+
+        // -- setObject
+        Document doc = createDocument("doc1");
+        doc.setObject("min_int", Integer.MIN_VALUE);
+        doc.setObject("max_int", Integer.MAX_VALUE);
+        doc.setObject("min_long", Long.MIN_VALUE);
+        doc.setObject("max_long", Long.MAX_VALUE);
+        doc.setObject("min_float", Float.MIN_VALUE);
+        doc.setObject("max_float", Float.MAX_VALUE);
+        doc.setObject("min_double", Double.MIN_VALUE);
+        doc.setObject("max_double", Double.MAX_VALUE);
+        save(doc, validator);
+
+        // -- setInt, setLong, setFloat, setDouble
+        Document doc2 = createDocument("doc2");
+        doc2.setInt("min_int", Integer.MIN_VALUE);
+        doc2.setInt("max_int", Integer.MAX_VALUE);
+        doc2.setLong("min_long", Long.MIN_VALUE);
+        doc2.setLong("max_long", Long.MAX_VALUE);
+        doc2.setFloat("min_float", Float.MIN_VALUE);
+        doc2.setFloat("max_float", Float.MAX_VALUE);
+        doc2.setDouble("min_double", Double.MIN_VALUE);
+        doc2.setDouble("max_double", Double.MAX_VALUE);
+        save(doc2, validator);
     }
+
 
     @Test
     public void testSetGetFloatNumbers() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-
-        doc.set("number1", 1.00);
-        doc.set("number2", 1.49);
-        doc.set("number3", 1.50);
-        doc.set("number4", 1.51);
-        doc.set("number5", 1.99);
-
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator = new Validator<Document>() {
             @Override
             public void validate(Document doc) {
-                assertEquals(1.00, ((Number) doc.getObject("number1")).doubleValue(), 0.0);
-                assertEquals(1.00, doc.getNumber("number1").doubleValue(), 0.0);
+                assertEquals(1.00, ((Number) doc.getObject("number1")).doubleValue(), 0.00001);
+                assertEquals(1.00, doc.getNumber("number1").doubleValue(), 0.00001);
                 assertEquals(1, doc.getInt("number1"));
                 assertEquals(1L, doc.getLong("number1"));
-                assertEquals(1.00F, doc.getFloat("number1"), 0.0F);
-                assertEquals(1.00, doc.getDouble("number1"), 0.0);
+                assertEquals(1.00F, doc.getFloat("number1"), 0.00001F);
+                assertEquals(1.00, doc.getDouble("number1"), 0.00001);
 
-                assertEquals(1.49, ((Number) doc.getObject("number2")).doubleValue(), 0.0);
-                assertEquals(1.49, doc.getNumber("number2").doubleValue(), 0.0);
+                assertEquals(1.49, ((Number) doc.getObject("number2")).doubleValue(), 0.00001);
+                assertEquals(1.49, doc.getNumber("number2").doubleValue(), 0.00001);
                 assertEquals(1, doc.getInt("number2"));
                 assertEquals(1L, doc.getLong("number2"));
-                assertEquals(1.49F, doc.getFloat("number2"), 0.0F);
-                assertEquals(1.49, doc.getDouble("number2"), 0.0);
+                assertEquals(1.49F, doc.getFloat("number2"), 0.00001F);
+                assertEquals(1.49, doc.getDouble("number2"), 0.00001);
 
-                assertEquals(1.50, ((Number) doc.getObject("number3")).doubleValue(), 0.0);
-                assertEquals(1.50, doc.getNumber("number3").doubleValue(), 0.0);
-                // TODO: https://github.com/couchbaselabs/fleece/pull/19
-                //assertEquals(1, doc.getInt("number3"));
-                //assertEquals(1L, doc.getLong("number3"));
-                assertEquals(1.50F, doc.getFloat("number3"), 0.0F);
-                assertEquals(1.50, doc.getDouble("number3"), 0.0);
+                assertEquals(1.50, ((Number) doc.getObject("number3")).doubleValue(), 0.00001);
+                assertEquals(1.50, doc.getNumber("number3").doubleValue(), 0.00001);
+                assertEquals(1, doc.getInt("number3"));
+                assertEquals(1L, doc.getLong("number3"));
+                assertEquals(1.50F, doc.getFloat("number3"), 0.00001F);
+                assertEquals(1.50, doc.getDouble("number3"), 0.00001);
 
-                assertEquals(1.51, ((Number) doc.getObject("number4")).doubleValue(), 0.0);
-                assertEquals(1.51, doc.getNumber("number4").doubleValue(), 0.0);
-                // TODO: https://github.com/couchbaselabs/fleece/pull/19
-                //assertEquals(1, doc.getInt("number4"));
-                //assertEquals(1L, doc.getLong("number4"));
-                assertEquals(1.51F, doc.getFloat("number4"), 0.0F);
-                assertEquals(1.51, doc.getDouble("number4"), 0.0);
+                assertEquals(1.51, ((Number) doc.getObject("number4")).doubleValue(), 0.00001);
+                assertEquals(1.51, doc.getNumber("number4").doubleValue(), 0.00001);
+                assertEquals(1, doc.getInt("number4"));
+                assertEquals(1L, doc.getLong("number4"));
+                assertEquals(1.51F, doc.getFloat("number4"), 0.00001F);
+                assertEquals(1.51, doc.getDouble("number4"), 0.00001);
 
-                assertEquals(1.99, ((Number) doc.getObject("number5")).doubleValue(), 0.0);// return 1
-                assertEquals(1.99, doc.getNumber("number5").doubleValue(), 0.0);  // return 1
-                // TODO: https://github.com/couchbaselabs/fleece/pull/19
-                //assertEquals(1, doc.getInt("number5"));
-                //assertEquals(1L, doc.getLong("number5"));
-                assertEquals(1.99F, doc.getFloat("number5"), 0.0F);
-                assertEquals(1.99, doc.getDouble("number5"), 0.0);
+                assertEquals(1.99, ((Number) doc.getObject("number5")).doubleValue(), 0.00001);// return 1
+                assertEquals(1.99, doc.getNumber("number5").doubleValue(), 0.00001);  // return 1
+                assertEquals(1, doc.getInt("number5"));
+                assertEquals(1L, doc.getLong("number5"));
+                assertEquals(1.99F, doc.getFloat("number5"), 0.00001F);
+                assertEquals(1.99, doc.getDouble("number5"), 0.00001);
             }
-        });
+        };
+
+
+        // -- setObject
+        Document doc = createDocument("doc1");
+
+        doc.setObject("number1", 1.00);
+        doc.setObject("number2", 1.49);
+        doc.setObject("number3", 1.50);
+        doc.setObject("number4", 1.51);
+        doc.setObject("number5", 1.99);
+        save(doc, validator);
+
+        // -- setFloat
+        Document doc2 = createDocument("doc2");
+        doc2.setFloat("number1", 1.00f);
+        doc2.setFloat("number2", 1.49f);
+        doc2.setFloat("number3", 1.50f);
+        doc2.setFloat("number4", 1.51f);
+        doc2.setFloat("number5", 1.99f);
+        save(doc2, validator);
+
+        // -- setDouble
+        Document doc3 = createDocument("doc3");
+        doc3.setDouble("number1", 1.00);
+        doc3.setDouble("number2", 1.49);
+        doc3.setDouble("number3", 1.50);
+        doc3.setDouble("number4", 1.51);
+        doc3.setDouble("number5", 1.99);
+        save(doc3, validator);
     }
 
     @Test
     public void testSetBoolean() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-
-        doc.set("boolean1", true);
-        doc.set("boolean2", false);
-
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator4Save = new Validator<Document>() {
             @Override
             public void validate(Document d) {
                 assertEquals(true, d.getObject("boolean1"));
@@ -665,14 +856,8 @@ public class DocumentTest extends BaseTest {
                 assertEquals(true, d.getBoolean("boolean1"));
                 assertEquals(false, d.getBoolean("boolean2"));
             }
-        });
-
-        // Update:
-
-        doc.set("boolean1", false);
-        doc.set("boolean2", true);
-
-        save(doc, new Validator<Document>() {
+        };
+        Validator<Document> validator4Update = new Validator<Document>() {
             @Override
             public void validate(Document d) {
                 assertEquals(false, d.getObject("boolean1"));
@@ -680,31 +865,59 @@ public class DocumentTest extends BaseTest {
                 assertEquals(false, d.getBoolean("boolean1"));
                 assertEquals(true, d.getBoolean("boolean2"));
             }
-        });
+        };
+
+        // -- setObject
+        Document doc = createDocument("doc1");
+        doc.setObject("boolean1", true);
+        doc.setObject("boolean2", false);
+        save(doc, validator4Save);
+
+        // Update:
+        doc.setObject("boolean1", false);
+        doc.setObject("boolean2", true);
+        save(doc, validator4Update);
+
+        // -- setBoolean
+        Document doc2 = createDocument("doc2");
+        doc2.setObject("boolean1", true);
+        doc2.setObject("boolean2", false);
+        save(doc2, validator4Save);
+
+        // Update:
+        doc2.setObject("boolean1", false);
+        doc2.setObject("boolean2", true);
+        save(doc2, validator4Update);
     }
 
     @Test
     public void testGetBoolean() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertEquals(false, d.getBoolean("null"));
-                assertEquals(true, d.getBoolean("true"));
-                assertEquals(false, d.getBoolean("false"));
-                assertEquals(true, d.getBoolean("string"));
-                assertEquals(false, d.getBoolean("zero"));
-                assertEquals(true, d.getBoolean("one"));
-                assertEquals(true, d.getBoolean("minus_one"));
-                assertEquals(true, d.getBoolean("one_dot_one"));
-                assertEquals(true, d.getBoolean("date"));
-                assertEquals(true, d.getBoolean("dict"));
-                assertEquals(true, d.getBoolean("array"));
-                assertEquals(true, d.getBoolean("blob"));
-                assertEquals(false, d.getBoolean("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertEquals(false, d.getBoolean("null"));
+                    assertEquals(true, d.getBoolean("true"));
+                    assertEquals(false, d.getBoolean("false"));
+                    assertEquals(true, d.getBoolean("string"));
+                    assertEquals(false, d.getBoolean("zero"));
+                    assertEquals(true, d.getBoolean("one"));
+                    assertEquals(true, d.getBoolean("minus_one"));
+                    assertEquals(true, d.getBoolean("one_dot_one"));
+                    assertEquals(true, d.getBoolean("date"));
+                    assertEquals(true, d.getBoolean("dict"));
+                    assertEquals(true, d.getBoolean("array"));
+                    assertEquals(true, d.getBoolean("blob"));
+                    assertEquals(false, d.getBoolean("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
@@ -714,7 +927,7 @@ public class DocumentTest extends BaseTest {
         Date date = new Date();
         final String dateStr = DateUtils.toJson(date);
         assertTrue(dateStr.length() > 0);
-        doc.set("date", date);
+        doc.setObject("date", date);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -731,7 +944,7 @@ public class DocumentTest extends BaseTest {
         cal.add(Calendar.SECOND, 60);
         Date nuDate = cal.getTime();
         final String nuDateStr = DateUtils.toJson(nuDate);
-        doc.set("date", nuDate);
+        doc.setObject("date", nuDate);
 
         save(doc, new Validator<Document>() {
             @Override
@@ -745,36 +958,40 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetDate() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertNull(d.getDate("null"));
-                assertNull(d.getDate("true"));
-                assertNull(d.getDate("false"));
-                assertNull(d.getDate("string"));
-                assertNull(d.getDate("zero"));
-                assertNull(d.getDate("one"));
-                assertNull(d.getDate("minus_one"));
-                assertNull(d.getDate("one_dot_one"));
-                assertEquals(kDocumentTestDate, DateUtils.toJson(d.getDate("date")));
-                assertNull(d.getDate("dict"));
-                assertNull(d.getDate("array"));
-                assertNull(d.getDate("blob"));
-                assertNull(d.getDate("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertNull(d.getDate("null"));
+                    assertNull(d.getDate("true"));
+                    assertNull(d.getDate("false"));
+                    assertNull(d.getDate("string"));
+                    assertNull(d.getDate("zero"));
+                    assertNull(d.getDate("one"));
+                    assertNull(d.getDate("minus_one"));
+                    assertNull(d.getDate("one_dot_one"));
+                    assertEquals(kDocumentTestDate, DateUtils.toJson(d.getDate("date")));
+                    assertNull(d.getDate("dict"));
+                    assertNull(d.getDate("array"));
+                    assertNull(d.getDate("blob"));
+                    assertNull(d.getDate("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
     public void testSetBlob() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-
         final Blob blob = new Blob("text/plain", kDocumentTestBlob.getBytes());
-        doc.set("blob", blob);
+        final Blob nuBlob = new Blob("text/plain", "1234567890".getBytes());
 
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator4Save = new Validator<Document>() {
             @Override
             public void validate(Document d) {
                 assertEquals(blob.getProperties().get("length"), d.getBlob("blob").getProperties().get("length"));
@@ -786,12 +1003,9 @@ public class DocumentTest extends BaseTest {
                 assertEquals(kDocumentTestBlob, new String(d.getBlob("blob").getContent()));
                 assertTrue(Arrays.equals(kDocumentTestBlob.getBytes(), d.getBlob("blob").getContent()));
             }
-        });
+        };
 
-        // Update:
-        final Blob nuBlob = new Blob("text/plain", "1234567890".getBytes());
-        doc.set("blob", nuBlob);
-        save(doc, new Validator<Document>() {
+        Validator<Document> validator4Update = new Validator<Document>() {
             @Override
             public void validate(Document d) {
                 assertEquals(nuBlob.getProperties().get("length"), d.getBlob("blob").getProperties().get("length"));
@@ -803,169 +1017,214 @@ public class DocumentTest extends BaseTest {
                 assertEquals("1234567890", new String(d.getBlob("blob").getContent()));
                 assertTrue(Arrays.equals("1234567890".getBytes(), d.getBlob("blob").getContent()));
             }
-        });
+        };
+
+        // --setObject
+        Document doc = createDocument("doc1");
+        doc.setObject("blob", blob);
+        save(doc, validator4Save);
+
+        // Update:
+        doc.setObject("blob", nuBlob);
+        save(doc, validator4Update);
+
+        // --setBlob
+        Document doc2 = createDocument("doc2");
+        doc2.setBlob("blob", blob);
+        save(doc2, validator4Save);
+
+        // Update:
+        doc2.setBlob("blob", nuBlob);
+        save(doc2, validator4Update);
     }
 
     @Test
     public void testGetBlob() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertNull(d.getBlob("null"));
-                assertNull(d.getBlob("true"));
-                assertNull(d.getBlob("false"));
-                assertNull(d.getBlob("string"));
-                assertNull(d.getBlob("zero"));
-                assertNull(d.getBlob("one"));
-                assertNull(d.getBlob("minus_one"));
-                assertNull(d.getBlob("one_dot_one"));
-                assertNull(d.getBlob("date"));
-                assertNull(d.getBlob("dict"));
-                assertNull(d.getBlob("array"));
-                assertEquals(kDocumentTestBlob, new String(d.getBlob("blob").getContent()));
-                assertTrue(Arrays.equals(kDocumentTestBlob.getBytes(),
-                        d.getBlob("blob").getContent()));
-                assertNull(d.getBlob("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertNull(d.getBlob("null"));
+                    assertNull(d.getBlob("true"));
+                    assertNull(d.getBlob("false"));
+                    assertNull(d.getBlob("string"));
+                    assertNull(d.getBlob("zero"));
+                    assertNull(d.getBlob("one"));
+                    assertNull(d.getBlob("minus_one"));
+                    assertNull(d.getBlob("one_dot_one"));
+                    assertNull(d.getBlob("date"));
+                    assertNull(d.getBlob("dict"));
+                    assertNull(d.getBlob("array"));
+                    assertEquals(kDocumentTestBlob, new String(d.getBlob("blob").getContent()));
+                    assertTrue(Arrays.equals(kDocumentTestBlob.getBytes(),
+                            d.getBlob("blob").getContent()));
+                    assertNull(d.getBlob("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
     public void testSetDictionary() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            // -- setObject
+            Document doc = createDocument(docID);
+            Dictionary dict = new Dictionary();
+            dict.setObject("street", "1 Main street");
+            if (i % 2 == 1)
+                doc.setObject("dict", dict);
+            else
+                doc.setDictionary("dict", dict);
+            assertEquals(dict, doc.getObject("dict"));
+            assertEquals(dict.toMap(), ((Dictionary) doc.getObject("dict")).toMap());
+            save(doc);
+            doc = db.getDocument(docID);
+            assertTrue(dict != doc.getObject("dict"));
+            assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
+            assertEquals(dict.toMap(), ((Dictionary) doc.getObject("dict")).toMap());
 
-        Dictionary dict = new Dictionary();
-        dict.set("street", "1 Main street");
-        doc.set("dict", dict);
-
-        assertEquals(dict, doc.getObject("dict"));
-        assertEquals(dict.toMap(), ((Dictionary) doc.getObject("dict")).toMap());
-
-        save(doc);
-        doc = db.getDocument("doc1");
-
-        assertTrue(dict != doc.getObject("dict"));
-        assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
-        assertEquals(dict.toMap(), ((Dictionary) doc.getObject("dict")).toMap());
-
-        // Update:
-        dict = doc.getDictionary("dict");
-        dict.set("city", "Mountain View");
-
-        assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
-        Map<String, Object> map = new HashMap<>();
-        map.put("street", "1 Main street");
-        map.put("city", "Mountain View");
-        assertEquals(map, doc.getDictionary("dict").toMap());
-
-        save(doc);
-        doc = db.getDocument("doc1");
-
-        Log.e(TAG, "doc.getKeys() -> " + doc.getKeys());
-        assertTrue(dict != doc.getObject("dict"));
-        assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
-        assertEquals(map, doc.getDictionary("dict").toMap());
+            // Update:
+            dict = doc.getDictionary("dict");
+            dict.setObject("city", "Mountain View");
+            assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
+            Map<String, Object> map = new HashMap<>();
+            map.put("street", "1 Main street");
+            map.put("city", "Mountain View");
+            assertEquals(map, doc.getDictionary("dict").toMap());
+            save(doc);
+            doc = db.getDocument(docID);
+            assertTrue(dict != doc.getObject("dict"));
+            assertEquals(doc.getObject("dict"), doc.getDictionary("dict"));
+            assertEquals(map, doc.getDictionary("dict").toMap());
+        }
     }
 
     @Test
     public void testGetDictionary() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertNull(d.getDictionary("null"));
-                assertNull(d.getDictionary("true"));
-                assertNull(d.getDictionary("false"));
-                assertNull(d.getDictionary("string"));
-                assertNull(d.getDictionary("zero"));
-                assertNull(d.getDictionary("one"));
-                assertNull(d.getDictionary("minus_one"));
-                assertNull(d.getDictionary("one_dot_one"));
-                assertNull(d.getDictionary("date"));
-                assertNotNull(d.getDictionary("dict"));
-                Map<String, Object> dict = new HashMap<>();
-                dict.put("street", "1 Main street");
-                dict.put("city", "Mountain View");
-                dict.put("state", "CA");
-                assertEquals(dict, d.getDictionary("dict").toMap());
-                assertNull(d.getDictionary("array"));
-                assertNull(d.getDictionary("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertNull(d.getDictionary("null"));
+                    assertNull(d.getDictionary("true"));
+                    assertNull(d.getDictionary("false"));
+                    assertNull(d.getDictionary("string"));
+                    assertNull(d.getDictionary("zero"));
+                    assertNull(d.getDictionary("one"));
+                    assertNull(d.getDictionary("minus_one"));
+                    assertNull(d.getDictionary("one_dot_one"));
+                    assertNull(d.getDictionary("date"));
+                    assertNotNull(d.getDictionary("dict"));
+                    Map<String, Object> dict = new HashMap<>();
+                    dict.put("street", "1 Main street");
+                    dict.put("city", "Mountain View");
+                    dict.put("state", "CA");
+                    assertEquals(dict, d.getDictionary("dict").toMap());
+                    assertNull(d.getDictionary("array"));
+                    assertNull(d.getDictionary("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
     public void testSetArray() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            Array array = new Array();
+            array.addObject("item1");
+            array.addObject("item2");
+            array.addObject("item3");
+            if (i % 2 == 1)
+                doc.setObject("array", array);
+            else
+                doc.setArray("array", array);
+            assertEquals(array, doc.getObject("array"));
+            assertEquals(array.toList(), ((Array) doc.getObject("array")).toList());
+            save(doc);
+            doc = db.getDocument(docID);
+            assertTrue(array != doc.getObject("array"));
+            assertEquals(doc.getObject("array"), doc.getArray("array"));
+            assertEquals(array.toList(), ((Array) doc.getObject("array")).toList());
 
-        Array array = new Array();
-        array.add("item1");
-        array.add("item2");
-        array.add("item3");
-        doc.set("array", array);
-
-        assertEquals(array, doc.getObject("array"));
-        assertEquals(array.toList(), ((Array) doc.getObject("array")).toList());
-
-        save(doc);
-        doc = db.getDocument("doc1");
-
-        assertTrue(array != doc.getObject("array"));
-        assertEquals(doc.getObject("array"), doc.getArray("array"));
-        assertEquals(array.toList(), ((Array) doc.getObject("array")).toList());
-
-        // Update:
-        array = doc.getArray("array");
-        array.add("item4");
-        array.add("item5");
-
-        save(doc);
-        doc = db.getDocument("doc1");
-
-        assertTrue(array != doc.getObject("array"));
-        assertEquals(doc.getObject("array"), doc.getArray("array"));
-        List<String> list = Arrays.asList("item1", "item2", "item3", "item4", "item5");
-        assertEquals(list, doc.getArray("array").toList());
+            // Update:
+            array = doc.getArray("array");
+            array.addObject("item4");
+            array.addObject("item5");
+            save(doc);
+            doc = db.getDocument(docID);
+            assertTrue(array != doc.getObject("array"));
+            assertEquals(doc.getObject("array"), doc.getArray("array"));
+            List<String> list = Arrays.asList("item1", "item2", "item3", "item4", "item5");
+            assertEquals(list, doc.getArray("array").toList());
+        }
     }
 
     @Test
     public void testGetArray() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
-        save(doc, new Validator<Document>() {
-            @Override
-            public void validate(final Document d) {
-                assertNull(d.getArray("null"));
-                assertNull(d.getArray("true"));
-                assertNull(d.getArray("false"));
-                assertNull(d.getArray("string"));
-                assertNull(d.getArray("zero"));
-                assertNull(d.getArray("one"));
-                assertNull(d.getArray("minus_one"));
-                assertNull(d.getArray("one_dot_one"));
-                assertNull(d.getArray("date"));
-                assertNull(d.getArray("dict"));
-                assertNotNull(d.getArray("array"));
-                List<Object> list = Arrays.asList((Object) "650-123-0001", (Object) "650-123-0002");
-                assertEquals(list, d.getArray("array").toList());
-                assertNull(d.getArray("non_existing_key"));
-            }
-        });
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
+            save(doc, new Validator<Document>() {
+                @Override
+                public void validate(final Document d) {
+                    assertNull(d.getArray("null"));
+                    assertNull(d.getArray("true"));
+                    assertNull(d.getArray("false"));
+                    assertNull(d.getArray("string"));
+                    assertNull(d.getArray("zero"));
+                    assertNull(d.getArray("one"));
+                    assertNull(d.getArray("minus_one"));
+                    assertNull(d.getArray("one_dot_one"));
+                    assertNull(d.getArray("date"));
+                    assertNull(d.getArray("dict"));
+                    assertNotNull(d.getArray("array"));
+                    List<Object> list = Arrays.asList((Object) "650-123-0001", (Object) "650-123-0002");
+                    assertEquals(list, d.getArray("array").toList());
+                    assertNull(d.getArray("non_existing_key"));
+                }
+            });
+        }
     }
 
     @Test
     public void testSetNull() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("null", null);
-        assertEquals(1, doc.count());
+        doc.setObject("obj-null", null);
+        doc.setString("string-null", null);
+        doc.setNumber("number-null", null);
+        doc.setDate("date-null", null);
+        doc.setArray("array-null", null);
+        doc.setDictionary("dict-null", null);
+        assertEquals(6, doc.count());
         save(doc, new Validator<Document>() {
             @Override
             public void validate(Document d) {
-                assertNull(d.getObject("null"));
-                assertEquals(1, d.count());
+                assertNull(d.getObject("obj-null"));
+                assertNull(d.getObject("string-null"));
+                assertNull(d.getObject("number-null"));
+                assertNull(d.getObject("date-null"));
+                assertNull(d.getObject("array-null"));
+                assertNull(d.getObject("dict-null"));
+                assertEquals(6, d.count());
             }
         });
     }
@@ -978,7 +1237,7 @@ public class DocumentTest extends BaseTest {
         dict.put("state", "CA");
 
         Document doc = createDocument("doc1");
-        doc.set("address", dict);
+        doc.setObject("address", dict);
 
         Dictionary address = doc.getDictionary("address");
         assertNotNull(address);
@@ -993,7 +1252,7 @@ public class DocumentTest extends BaseTest {
         nuDict.put("street", "1 Second street");
         nuDict.put("city", "Palo Alto");
         nuDict.put("state", "CA");
-        doc.set("address", nuDict);
+        doc.setObject("address", nuDict);
 
         // Check whether the old address dictionary is still accessible:
         assertTrue(address != doc.getDictionary("address"));
@@ -1007,7 +1266,7 @@ public class DocumentTest extends BaseTest {
         assertTrue(address != nuAddress);
 
         // Update nuAddress:
-        nuAddress.set("zip", "94302");
+        nuAddress.setObject("zip", "94302");
         assertEquals("94302", nuAddress.getString("zip"));
         assertNull(address.getString("zip"));
 
@@ -1026,7 +1285,7 @@ public class DocumentTest extends BaseTest {
         List<String> array = Arrays.asList("a", "b", "c");
 
         Document doc = createDocument("doc1");
-        doc.set("members", array);
+        doc.setObject("members", array);
 
         Array members = doc.getArray("members");
         assertNotNull(members);
@@ -1040,7 +1299,7 @@ public class DocumentTest extends BaseTest {
 
         // Update with a new array:
         List<String> nuArray = Arrays.asList("d", "e", "f");
-        doc.set("members", nuArray);
+        doc.setObject("members", nuArray);
 
         // Check whether the old members array is still accessible:
         assertEquals(3, members.count());
@@ -1054,7 +1313,7 @@ public class DocumentTest extends BaseTest {
         assertTrue(members != nuMembers);
 
         // Update nuMembers:
-        nuMembers.add("g");
+        nuMembers.addObject("g");
         assertEquals(4, nuMembers.count());
         assertEquals("g", nuMembers.getObject(3));
         assertEquals(3, members.count());
@@ -1072,18 +1331,18 @@ public class DocumentTest extends BaseTest {
     public void testUpdateNestedDictionary() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Dictionary addresses = new Dictionary();
-        doc.set("addresses", addresses);
+        doc.setObject("addresses", addresses);
 
         Dictionary shipping = new Dictionary();
-        shipping.set("street", "1 Main street");
-        shipping.set("city", "Mountain View");
-        shipping.set("state", "CA");
-        addresses.set("shipping", shipping);
+        shipping.setObject("street", "1 Main street");
+        shipping.setObject("city", "Mountain View");
+        shipping.setObject("state", "CA");
+        addresses.setObject("shipping", shipping);
 
         doc = save(doc);
 
         shipping = doc.getDictionary("addresses").getDictionary("shipping");
-        shipping.set("zip", "94042");
+        shipping.setObject("zip", "94042");
 
         doc = save(doc);
 
@@ -1104,29 +1363,29 @@ public class DocumentTest extends BaseTest {
     public void testUpdateDictionaryInArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array addresses = new Array();
-        doc.set("addresses", addresses);
+        doc.setObject("addresses", addresses);
 
         Dictionary address1 = new Dictionary();
-        address1.set("street", "1 Main street");
-        address1.set("city", "Mountain View");
-        address1.set("state", "CA");
-        addresses.add(address1);
+        address1.setObject("street", "1 Main street");
+        address1.setObject("city", "Mountain View");
+        address1.setObject("state", "CA");
+        addresses.addObject(address1);
 
         Dictionary address2 = new Dictionary();
-        address2.set("street", "1 Second street");
-        address2.set("city", "Palo Alto");
-        address2.set("state", "CA");
-        addresses.add(address2);
+        address2.setObject("street", "1 Second street");
+        address2.setObject("city", "Palo Alto");
+        address2.setObject("state", "CA");
+        addresses.addObject(address2);
 
         doc = save(doc);
 
         address1 = doc.getArray("addresses").getDictionary(0);
-        address1.set("street", "2 Main street");
-        address1.set("zip", "94042");
+        address1.setObject("street", "2 Main street");
+        address1.setObject("zip", "94042");
 
         address2 = doc.getArray("addresses").getDictionary(1);
-        address2.set("street", "2 Second street");
-        address2.set("zip", "94302");
+        address2.setObject("street", "2 Second street");
+        address2.setObject("zip", "94302");
 
         doc = save(doc);
 
@@ -1152,31 +1411,31 @@ public class DocumentTest extends BaseTest {
     public void testUpdateNestedArray() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
         Array groups = new Array();
-        doc.set("groups", groups);
+        doc.setObject("groups", groups);
 
         Array group1 = new Array();
-        group1.add("a");
-        group1.add("b");
-        group1.add("c");
-        groups.add(group1);
+        group1.addObject("a");
+        group1.addObject("b");
+        group1.addObject("c");
+        groups.addObject(group1);
 
         Array group2 = new Array();
-        group2.add(1);
-        group2.add(2);
-        group2.add(3);
-        groups.add(group2);
+        group2.addObject(1);
+        group2.addObject(2);
+        group2.addObject(3);
+        groups.addObject(group2);
 
         doc = save(doc);
 
         group1 = doc.getArray("groups").getArray(0);
-        group1.set(0, "d");
-        group1.set(1, "e");
-        group1.set(2, "f");
+        group1.setObject(0, "d");
+        group1.setObject(1, "e");
+        group1.setObject(2, "f");
 
         group2 = doc.getArray("groups").getArray(1);
-        group2.set(0, 4);
-        group2.set(1, 5);
-        group2.set(2, 6);
+        group2.setObject(0, 4);
+        group2.setObject(1, 5);
+        group2.setObject(2, 6);
 
         doc = save(doc);
 
@@ -1192,31 +1451,31 @@ public class DocumentTest extends BaseTest {
 
         Dictionary group1 = new Dictionary();
         Array member1 = new Array();
-        member1.add("a");
-        member1.add("b");
-        member1.add("c");
-        group1.set("member", member1);
-        doc.set("group1", group1);
+        member1.addObject("a");
+        member1.addObject("b");
+        member1.addObject("c");
+        group1.setObject("member", member1);
+        doc.setObject("group1", group1);
 
         Dictionary group2 = new Dictionary();
         Array member2 = new Array();
-        member2.add(1);
-        member2.add(2);
-        member2.add(3);
-        group2.set("member", member2);
-        doc.set("group2", group2);
+        member2.addObject(1);
+        member2.addObject(2);
+        member2.addObject(3);
+        group2.setObject("member", member2);
+        doc.setObject("group2", group2);
 
         doc = save(doc);
 
         member1 = doc.getDictionary("group1").getArray("member");
-        member1.set(0, "d");
-        member1.set(1, "e");
-        member1.set(2, "f");
+        member1.setObject(0, "d");
+        member1.setObject(1, "e");
+        member1.setObject(2, "f");
 
         member2 = doc.getDictionary("group2").getArray("member");
-        member2.set(0, 4);
-        member2.set(1, 5);
-        member2.set(2, 6);
+        member2.setObject(0, 4);
+        member2.setObject(1, 5);
+        member2.setObject(2, 6);
 
         doc = save(doc);
 
@@ -1235,14 +1494,14 @@ public class DocumentTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Dictionary address = new Dictionary();
-        address.set("street", "1 Main street");
-        address.set("city", "Mountain View");
-        address.set("state", "CA");
-        doc.set("shipping", address);
-        doc.set("billing", address);
+        address.setObject("street", "1 Main street");
+        address.setObject("city", "Mountain View");
+        address.setObject("state", "CA");
+        doc.setObject("shipping", address);
+        doc.setObject("billing", address);
 
         // Update address: both shipping and billing should get the update.
-        address.set("zip", "94042");
+        address.setObject("zip", "94042");
         assertEquals("94042", doc.getDictionary("shipping").getString("zip"));
         assertEquals("94042", doc.getDictionary("billing").getString("zip"));
 
@@ -1256,8 +1515,8 @@ public class DocumentTest extends BaseTest {
         assertTrue(billing != address);
         assertTrue(shipping != billing);
 
-        shipping.set("street", "2 Main street");
-        billing.set("street", "3 Main street");
+        shipping.setObject("street", "2 Main street");
+        billing.setObject("street", "3 Main street");
 
         // Save update:
         doc = save(doc);
@@ -1270,17 +1529,17 @@ public class DocumentTest extends BaseTest {
         Document doc = createDocument("doc1");
 
         Array phones = new Array();
-        phones.add("650-000-0001");
-        phones.add("650-000-0002");
+        phones.addObject("650-000-0001");
+        phones.addObject("650-000-0002");
 
-        doc.set("mobile", phones);
-        doc.set("home", phones);
+        doc.setObject("mobile", phones);
+        doc.setObject("home", phones);
 
         assertEquals(phones, doc.getObject("mobile"));
         assertEquals(phones, doc.getObject("home"));
 
         // Update phones: both mobile and home should get the update
-        phones.add("650-000-0003");
+        phones.addObject("650-000-0003");
 
         assertEquals(Arrays.asList("650-000-0001", "650-000-0002", "650-000-0003"),
                 doc.getArray("mobile").toList());
@@ -1297,8 +1556,8 @@ public class DocumentTest extends BaseTest {
         assertTrue(mobile != home);
 
         // Update mobile and home:
-        mobile.add("650-000-1234");
-        home.add("650-000-5678");
+        mobile.addObject("650-000-1234");
+        home.addObject("650-000-5678");
 
         // Save update:
         doc = save(doc);
@@ -1318,16 +1577,22 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCount() throws CouchbaseLiteException {
-        Document doc = createDocument("doc1");
-        populateData(doc);
+        for (int i = 1; i <= 2; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = createDocument(docID);
+            if (i % 2 == 1)
+                populateData(doc);
+            else
+                populateDataByTypedSetter(doc);
 
-        assertEquals(12, doc.count());
-        assertEquals(12, doc.toMap().size());
+            assertEquals(12, doc.count());
+            assertEquals(12, doc.toMap().size());
 
-        doc = save(doc);
+            doc = save(doc);
 
-        assertEquals(12, doc.count());
-        assertEquals(12, doc.toMap().size());
+            assertEquals(12, doc.count());
+            assertEquals(12, doc.toMap().size());
+        }
     }
 
     @Test
@@ -1405,7 +1670,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testDeleteNewDocument() {
         Document doc = createDocument("doc1");
-        doc.set("name", "Scott Tiger");
+        doc.setObject("name", "Scott Tiger");
         assertFalse(doc.isDeleted());
         try {
             db.delete(doc);
@@ -1420,7 +1685,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testDeleteDocument() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("name", "Scott Tiger");
+        doc.setObject("name", "Scott Tiger");
         assertFalse(doc.isDeleted());
 
         // Save:
@@ -1460,7 +1725,7 @@ public class DocumentTest extends BaseTest {
         assertEquals("CA", address.getObject("state"));
 
         // Make changes to the dictionary shouldn't affect the document.
-        address.set("zip", "94042");
+        address.setObject("zip", "94042");
         assertNull(doc.getDictionary("address"));
         assertEquals(new HashMap<>(), doc.toMap());
     }
@@ -1492,8 +1757,8 @@ public class DocumentTest extends BaseTest {
         assertEquals("c", members.getObject(2));
 
         // Make changes to the dictionary shouldn't affect the document.
-        members.set(2, "1");
-        members.add("2");
+        members.setObject(2, "1");
+        members.addObject("2");
         assertNull(doc.getDictionary("members"));
         assertEquals(new HashMap<>(), doc.toMap());
     }
@@ -1501,8 +1766,8 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testPurgeDocument() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("type", "profile");
-        doc.set("name", "Scott");
+        doc.setObject("type", "profile");
+        doc.setObject("name", "Scott");
         assertFalse(doc.isDeleted());
 
         // Purge before save:
@@ -1529,7 +1794,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testReopenDB() throws CouchbaseLiteException {
         Document doc = createDocument("doc1");
-        doc.set("string", "str");
+        doc.setObject("string", "str");
         save(doc);
 
         reopenDB();
@@ -1550,8 +1815,8 @@ public class DocumentTest extends BaseTest {
         assertNotNull(data);
 
         Document doc = createDocument("doc1");
-        doc.set("name", "Jim");
-        doc.set("data", data);
+        doc.setObject("name", "Jim");
+        doc.setObject("data", data);
 
         doc = save(doc);
 
@@ -1582,7 +1847,7 @@ public class DocumentTest extends BaseTest {
         assertNotNull(data);
 
         Document doc = createDocument("doc1");
-        doc.set("data", data);
+        doc.setObject("data", data);
 
         doc = save(doc);
 
@@ -1613,7 +1878,7 @@ public class DocumentTest extends BaseTest {
         try {
             Blob data = new Blob("text/plain", stream);
             assertNotNull(data);
-            doc.set("data", data);
+            doc.setObject("data", data);
             doc = save(doc);
         } finally {
             stream.close();
@@ -1645,7 +1910,7 @@ public class DocumentTest extends BaseTest {
         assertNotNull(data);
 
         Document doc = createDocument("doc1");
-        doc.set("data", data);
+        doc.setObject("data", data);
 
         data = (Blob) doc.getObject("data");
         for (int i = 0; i < 5; i++) {
@@ -1694,8 +1959,8 @@ public class DocumentTest extends BaseTest {
         assertNotNull(data);
 
         Document doc = createDocument("doc1");
-        doc.set("data", data);
-        doc.set("name", "Jim");
+        doc.setObject("data", data);
+        doc.setObject("name", "Jim");
         doc = save(doc);
 
         assertTrue(doc.getObject("data") instanceof Blob);
@@ -1705,7 +1970,7 @@ public class DocumentTest extends BaseTest {
         reopenDB();
 
         doc = db.getDocument("doc1");
-        doc.set("foo", "bar");
+        doc.setObject("foo", "bar");
         doc = save(doc);
 
         assertTrue(doc.getObject("data") instanceof Blob);

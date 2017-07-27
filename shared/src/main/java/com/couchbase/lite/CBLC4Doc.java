@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 
-class CBLC4Doc {
+class CBLC4Doc implements CBLFLDataSource{
     private C4Document rawDoc;
 
     CBLC4Doc(C4Document rawDoc) {

@@ -46,10 +46,10 @@ public class MigrationTest extends BaseTest {
         try {
             for (int i = 1; i <= 2; i++) {
                 Document doc = new Document("doc" + i);
-                doc.set("key", String.valueOf(i));
+                doc.setObject("key", String.valueOf(i));
                 byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes();
                 Blob blob = new Blob("text/plain", attach);
-                doc.set("attach" + i, blob);
+                doc.setObject("attach" + i, blob);
                 db.save(doc);
             }
         } finally {

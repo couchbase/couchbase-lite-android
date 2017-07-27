@@ -22,7 +22,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * A single result from a full-text Query.
  */
-public class FullTextQueryRow extends QueryRow {
+public class FullTextResult extends Result {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
@@ -38,8 +38,8 @@ public class FullTextQueryRow extends QueryRow {
     // constructors
     //---------------------------------------------
 
-    FullTextQueryRow(Query query, C4QueryEnumerator c4enum) {
-        super(query, c4enum);
+    FullTextResult(ResultSet rs, C4QueryEnumerator c4enum) {
+        super(rs, c4enum);
         this.matchCount = (int) c4enum.getFullTextTermCount();
         if (this.matchCount > 0) {
             matches = new FullTextTerm[this.matchCount];
@@ -125,7 +125,7 @@ public class FullTextQueryRow extends QueryRow {
 
     private byte[] getFullTextUTF8Data() {
         try {
-            return getQuery().getC4Query().getFullTextMatched(getDocumentID(), getSequence());
+            return getRs().getQuery().getC4Query().getFullTextMatched(getDocumentID(), getSequence());
         } catch (LiteCoreException e) {
             Log.w(TAG, "Error when get full text matched", e);
         }
