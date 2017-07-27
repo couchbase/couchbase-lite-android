@@ -460,10 +460,18 @@ public final class Database implements C4Constants {
             list.add(exp.asJSON());
         }
 
+        String language = options != null ? options.getLanguage() : null;
+        boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
+        if (language == null) {
+            // Get default language code:
+            Locale locale = Locale.getDefault();
+            language = locale.getLanguage();
+            if (options != null)
+                ignoreDiacritics = language.equals("en");
+        }
+
         try {
             String json = JsonUtils.toJson(list).toString();
-            String language = options != null ? options.getLanguage() : null;
-            boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
             getC4Database().createIndex(json, type.getValue(), language, ignoreDiacritics);
         } catch (JSONException e) {
             throw new CouchbaseLiteException(e);
