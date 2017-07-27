@@ -22,9 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static com.couchbase.lite.Replicator.ActivityLevel.BUSY;
-import static com.couchbase.lite.Replicator.ActivityLevel.IDLE;
-import static com.couchbase.lite.Replicator.ActivityLevel.STOPPED;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Continuous;
@@ -47,14 +44,22 @@ public class Replicator implements NetworkReachabilityListener {
          */
         STOPPED(0),
         /**
+         * The replicator is offline as the remote host is unreachable.
+         */
+        OFFLINE(1),
+        /**
+         * The replicator is connecting to the remote host.
+         */
+        CONNECTING(2),
+        /**
          * The replication is inactive; either waiting for changes or offline as the remote host is
          * unreachable.
          */
-        IDLE(1),
+        IDLE(3),
         /**
          * The replication is actively transferring data.
          */
-        BUSY(2);
+        BUSY(4);
 
         private int value;
 
@@ -75,14 +80,18 @@ public class Replicator implements NetworkReachabilityListener {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
-        private int completed;
-        private int total;
+
+        // The number of completed changes processed.
+        private long completed;
+
+        // The total number of changes to be processed.
+        private long total;
 
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
 
-        private Progress(int completed, int total) {
+        private Progress(long completed, long total) {
             this.completed = completed;
             this.total = total;
         }
@@ -94,14 +103,14 @@ public class Replicator implements NetworkReachabilityListener {
         /**
          * The number of completed changes processed.
          */
-        public int getCompleted() {
+        public long getCompleted() {
             return completed;
         }
 
         /**
          * The total number of changes to be processed.
          */
-        public int getTotal() {
+        public long getTotal() {
             return total;
         }
 
@@ -536,21 +545,8 @@ public class Replicator implements NetworkReachabilityListener {
         //c4ReplStatus = status.copy();
         c4ReplStatus = status.copy();
 
-        ActivityLevel level;
-        switch (status.getActivityLevel()) {
-            case C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped:
-                level = STOPPED;
-                break;
-            case kC4Offline:
-            case C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Idle:
-                level = IDLE;
-                break;
-            case C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Connecting:
-            case C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Busy:
-            default:
-                level = BUSY;
-                break;
-        }
+        // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:
+        ActivityLevel level = ActivityLevel.values()[status.getActivityLevel()];
 
         Progress progress = new Progress((int) status.getProgressCompleted(), (int) status.getProgressTotal());
         this.status = new Status(level, progress);

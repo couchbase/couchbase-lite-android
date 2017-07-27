@@ -66,7 +66,7 @@ public class ReplicatorTest extends BaseTest {
         repl.addChangeListener(new ReplicatorChangeListener() {
             @Override
             public void changed(Replicator replicator, Replicator.Status status, CouchbaseLiteException error) {
-                final String kActivityNames[] = {"stopped", "idle", "busy"};
+                final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
                 Log.i(TAG, "---Status: %s (%d / %d), lastError = %s",
                         kActivityNames[status.getActivityLevel().getValue()],
                         status.getProgress().getCompleted(), status.getProgress().getTotal(),
