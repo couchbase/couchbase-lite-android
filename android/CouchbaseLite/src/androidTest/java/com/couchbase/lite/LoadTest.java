@@ -22,27 +22,27 @@ public class LoadTest extends BaseTest {
             doc = new Document(id);
 
         // Tag
-        doc.set("tag", tag);
+        doc.setObject("tag", tag);
 
         // String
-        doc.set("firstName", "Daniel");
-        doc.set("lastName", "Tiger");
+        doc.setObject("firstName", "Daniel");
+        doc.setObject("lastName", "Tiger");
 
         // Dictionary:
         Dictionary address = new Dictionary();
-        address.set("street", "1 Main street");
-        address.set("city", "Mountain View");
-        address.set("state", "CA");
-        doc.set("address", address);
+        address.setObject("street", "1 Main street");
+        address.setObject("city", "Mountain View");
+        address.setObject("state", "CA");
+        doc.setObject("address", address);
 
         // Array:
         Array phones = new Array();
-        phones.add("650-123-0001");
-        phones.add("650-123-0002");
-        doc.set("phones", phones);
+        phones.addObject("650-123-0001");
+        phones.addObject("650-123-0002");
+        doc.setObject("phones", phones);
 
         // Date:
-        doc.set("updated", new Date());
+        doc.setObject("updated", new Date());
 
         return doc;
     }
@@ -61,39 +61,39 @@ public class LoadTest extends BaseTest {
 
     void updateDoc(Document doc, int rounds, String tag) throws CouchbaseLiteException {
         for (int i = 1; i <= rounds; i++) {
-            doc.set("update", i);
+            doc.setObject("update", i);
 
-            doc.set("tag", tag);
+            doc.setObject("tag", tag);
 
             Dictionary address = doc.getDictionary("address");
             assertNotNull(address);
             String street = String.format(Locale.ENGLISH, "%d street.", i);
-            address.set("street", street);
+            address.setObject("street", street);
 
             Array phones = doc.getArray("phones");
             assertNotNull(phones);
             assertEquals(2, phones.count());
             String phone = String.format(Locale.ENGLISH, "650-000-%04d", i);
-            phones.set(0, phone);
+            phones.setObject(0, phone);
 
-            doc.set("updated", new Date());
+            doc.setObject("updated", new Date());
 
             db.save(doc);
         }
     }
 
     interface VerifyBlock {
-        void verify(int n, QueryRow row);
+        void verify(int n, Result result);
     }
 
     void verifyByTagName(String tag, VerifyBlock block) throws CouchbaseLiteException {
         Expression TAG_EXPR = Expression.property("tag");
-        SelectResult DOCID = SelectResult.expression(Expression.meta().getDocumentID());
+        SelectResult DOCID = SelectResult.expression(Expression.meta().getId());
         DataSource ds = DataSource.database(db);
         Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(tag));
         Log.e(TAG, "query - > %s", q.explain());
         ResultSet rs = q.run();
-        QueryRow row;
+        Result row;
         int n = 0;
         while ((row = rs.next()) != null) {
             block.verify(++n, row);
@@ -104,7 +104,7 @@ public class LoadTest extends BaseTest {
         final AtomicInteger count = new AtomicInteger(0);
         verifyByTagName(tag, new VerifyBlock() {
             @Override
-            public void verify(int n, QueryRow row) {
+            public void verify(int n, Result result) {
                 count.incrementAndGet();
             }
         });
@@ -113,7 +113,7 @@ public class LoadTest extends BaseTest {
 
     @Test
     public void testCreate() throws InterruptedException, CouchbaseLiteException {
-        final int n = 10000;
+        final int n = 2000;
         final String tag = "Create";
         createDocumentNSave(tag, n);
         verifyByTagName(tag, n);
@@ -122,7 +122,7 @@ public class LoadTest extends BaseTest {
 
     @Test
     public void testUpdate() throws CouchbaseLiteException {
-        final int n = 10000;
+        final int n = 2000;
         final String docID = "doc1";
         String tag = "Create";
 
@@ -147,7 +147,7 @@ public class LoadTest extends BaseTest {
 
     @Test
     public void testRead() throws CouchbaseLiteException {
-        final int n = 10000;
+        final int n = 2000;
         final String docID = "doc1";
         final String tag = "Read";
 
@@ -165,7 +165,7 @@ public class LoadTest extends BaseTest {
 
     @Test
     public void testDelete() throws CouchbaseLiteException {
-        final int n = 10000;
+        final int n = 2000;
         final String tag = "Delete";
 
         // create & delete doc n times
