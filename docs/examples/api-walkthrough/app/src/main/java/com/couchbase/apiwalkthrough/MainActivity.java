@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
         // create database
         DatabaseConfiguration config = new DatabaseConfiguration(getApplicationContext());
-        config.setConflictResolver(new LocalWins());
+        config.setConflictResolver(new ExampleConflictResolver());
         Database database = null;
         try {
             database = new Database("my-database", config);
