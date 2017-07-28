@@ -1,0 +1,788 @@
+package com.couchbase.lite;
+
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotOpen;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class ConcurrentDatabaseTest extends BaseTest {
+    private static final String TAG = ConcurrentDatabaseTest.class.getSimpleName();
+
+    Document createDocumentWithTag(String tag) {
+        Document doc = new Document();
+
+        // Tag
+        doc.setObject("tag", tag);
+
+        // String
+        doc.setObject("firstName", "Daniel");
+        doc.setObject("lastName", "Tiger");
+
+        // Dictionary:
+        Dictionary address = new Dictionary();
+        address.setObject("street", "1 Main street");
+        address.setObject("city", "Mountain View");
+        address.setObject("state", "CA");
+        doc.setObject("address", address);
+
+        // Array:
+        Array phones = new Array();
+        phones.addObject("650-123-0001");
+        phones.addObject("650-123-0002");
+        doc.setObject("phones", phones);
+
+        // Date:
+        doc.setObject("updated", new Date());
+
+        return doc;
+    }
+
+    List<String> createDocs(int nDocs, String tag) throws CouchbaseLiteException {
+        List<String> docs = Collections.synchronizedList(new ArrayList<String>(nDocs));
+        for (int i = 0; i < nDocs; i++) {
+            Document doc = createDocumentWithTag(tag);
+            db.save(doc);
+            docs.add(doc.getId());
+        }
+        return docs;
+    }
+
+    boolean updateDocs(List<String> docIds, int rounds, String tag) {
+        for (int i = 1; i <= rounds; i++) {
+            for (String docId : docIds) {
+                Document doc = db.getDocument(docId);
+                doc.setObject("tag", tag);
+
+                Dictionary address = doc.getDictionary("address");
+                assertNotNull(address);
+                String street = String.format(Locale.ENGLISH, "%d street.", i);
+                address.setObject("street", street);
+
+                Array phones = doc.getArray("phones");
+                assertNotNull(phones);
+                assertEquals(2, phones.count());
+                String phone = String.format(Locale.ENGLISH, "650-000-%04d", i);
+                phones.setObject(0, phone);
+
+                doc.setObject("updated", new Date());
+
+                Log.i(TAG, "[%s] rounds: %d updating %s", tag, i, doc.getId());
+                try {
+                    db.save(doc);
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in Database.save()", e);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    void readDocs(List<String> docIDs, int rounds) {
+        for (int i = 1; i <= rounds; i++) {
+            for (String docID : docIDs) {
+                Document doc = db.getDocument(docID);
+                assertNotNull(doc);
+                assertEquals(docID, doc.getId());
+            }
+        }
+    }
+
+    interface VerifyBlock {
+        void verify(int n, Result result);
+    }
+
+    void verifyByTagName(String tag, VerifyBlock block) throws CouchbaseLiteException {
+        Expression TAG_EXPR = Expression.property("tag");
+        SelectResult DOCID = SelectResult.expression(Expression.meta().getId());
+        DataSource ds = DataSource.database(db);
+        Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(tag));
+        Log.e(TAG, "query - > %s", q.explain());
+        ResultSet rs = q.run();
+        Result result;
+        int n = 0;
+        while ((result = rs.next()) != null) {
+            block.verify(++n, result);
+        }
+
+    }
+
+    void verifyByTagName(String tag, int nRows) throws CouchbaseLiteException {
+        final AtomicInteger count = new AtomicInteger(0);
+        verifyByTagName(tag, new VerifyBlock() {
+            @Override
+            public void verify(int n, Result result) {
+                count.incrementAndGet();
+            }
+        });
+        assertEquals(nRows, count.intValue());
+    }
+
+    @Test
+    public void testConcurrentCreate() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 1000;
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final String tag1 = "Create1";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createDocs(kNDocs, tag1);
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
+                    fail();
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final String tag2 = "Create2";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createDocs(kNDocs, tag2);
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag2 -> %s", e, kNDocs, tag2);
+                    fail();
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+
+        verifyByTagName(tag1, kNDocs);
+        verifyByTagName(tag2, kNDocs);
+    }
+
+    @Test
+    public void testConcurrentCreateInBatch() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 1000;
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final String tag1 = "Create1";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.inBatch(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                createDocs(kNDocs, tag1);
+                            } catch (CouchbaseLiteException e) {
+                                Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
+                                fail();
+                            }
+                        }
+                    });
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in inBatch()", e);
+                    fail();
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final String tag2 = "Create2";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.inBatch(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                createDocs(kNDocs, tag2);
+                            } catch (CouchbaseLiteException e) {
+                                Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag2 -> %s", e, kNDocs, tag2);
+                                fail();
+                            }
+                        }
+                    });
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in inBatch()", e);
+                    fail();
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+
+        verifyByTagName(tag1, kNDocs);
+        verifyByTagName(tag2, kNDocs);
+    }
+
+    @Test
+    public void testConcurrentUpdate() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 5;
+        final int kNRounds = 50;
+
+        // createDocs2 returns synchronized List.
+        final List<String> docs = createDocs(kNDocs, "Create");
+        assertEquals(kNDocs, docs.size());
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final String tag1 = "Update1";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                assertTrue(updateDocs(docs, kNRounds, tag1));
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final String tag2 = "Update2";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                assertTrue(updateDocs(docs, kNRounds, tag2));
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+
+        final AtomicInteger count = new AtomicInteger(0);
+
+        verifyByTagName(tag1, new VerifyBlock() {
+            @Override
+            public void verify(int n, Result result) {
+                count.incrementAndGet();
+            }
+        });
+        verifyByTagName(tag2, new VerifyBlock() {
+            @Override
+            public void verify(int n, Result result) {
+                count.incrementAndGet();
+            }
+        });
+
+        assertEquals(kNDocs, count.intValue());
+    }
+
+    @Test
+    public void testConcurrentRead() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 10;
+        final int kNRounds = 100;
+
+        // createDocs2 returns synchronized List.
+        final List<String> docIDs = createDocs(kNDocs, "Create");
+        assertEquals(kNDocs, docIDs.size());
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                readDocs(docIDs, kNRounds);
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                readDocs(docIDs, kNRounds);
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testConcurrentReadInBatch() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 10;
+        final int kNRounds = 100;
+
+        // createDocs2 returns synchronized List.
+        final List<String> docIDs = createDocs(kNDocs, "Create");
+        assertEquals(kNDocs, docIDs.size());
+
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.inBatch(new Runnable() {
+                        @Override
+                        public void run() {
+                            readDocs(docIDs, kNRounds);
+                        }
+                    });
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in inBatch()", e);
+                    fail();
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.inBatch(new Runnable() {
+                        @Override
+                        public void run() {
+                            readDocs(docIDs, kNRounds);
+                        }
+                    });
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in inBatch()", e);
+                    fail();
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testConcurrentReadNUpdate() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 10;
+        final int kNRounds = 100;
+
+        // createDocs2 returns synchronized List.
+        final List<String> docIDs = createDocs(kNDocs, "Create");
+        assertEquals(kNDocs, docIDs.size());
+
+        // Read:
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                readDocs(docIDs, kNRounds);
+                latch1.countDown();
+            }
+        }).start();
+
+        // Update:
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final String tag = "Update";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                assertTrue(updateDocs(docIDs, kNRounds, tag));
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+
+        verifyByTagName(tag, kNDocs);
+    }
+
+    @Test
+    public void testConcurrentDelete() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 1000;
+
+        // createDocs2 returns synchronized List.
+        final List<String> docIDs = createDocs(kNDocs, "Create");
+        assertEquals(kNDocs, docIDs.size());
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (String docID : docIDs) {
+                    try {
+                        Document doc = db.getDocument(docID);
+                        db.delete(doc);
+                    } catch (CouchbaseLiteException e) {
+                        Log.e(TAG, "Error in Database.delete(Document)", e);
+                        fail();
+                    }
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (String docID : docIDs) {
+                    try {
+                        db.delete(db.getDocument(docID));
+                    } catch (CouchbaseLiteException e) {
+                        Log.e(TAG, "Error in Database.delete(Document)", e);
+                        fail();
+                    }
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+
+        assertEquals(0, db.getCount());
+    }
+
+    @Test
+    public void testConcurrentPurge() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 1000;
+
+        // createDocs2 returns synchronized List.
+        final List<String> docIDs = createDocs(kNDocs, "Create");
+        assertEquals(kNDocs, docIDs.size());
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (String docID : docIDs) {
+                    Document doc = db.getDocument(docID);
+                    if (doc != null) {
+                        try {
+
+                            db.purge(doc);
+                        } catch (CouchbaseLiteException e) {
+                            assertEquals(404, e.getCode());
+                        }
+                    }
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (String docID : docIDs) {
+                    Document doc = db.getDocument(docID);
+                    if (doc != null) {
+                        try {
+                            db.purge(doc);
+                        } catch (CouchbaseLiteException e) {
+                            assertEquals(404, e.getCode());
+                        }
+                    }
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+
+        assertEquals(0, db.getCount());
+    }
+
+    @Test
+    public void testConcurrentCreateNCloseDB() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 1000;
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final String tag1 = "Create1";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createDocs(kNDocs, tag1);
+                } catch (CouchbaseLiteException e) {
+                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
+                        fail();
+                    }
+                } catch (CouchbaseLiteRuntimeException re) {
+                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
+                        fail();
+                    }
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.close();
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in Database.close()", e);
+                    fail();
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testConcurrentCreateNDeleteDB() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 1000;
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final String tag1 = "Create1";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createDocs(kNDocs, tag1);
+                } catch (CouchbaseLiteException e) {
+                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
+                        fail();
+                    }
+                } catch (CouchbaseLiteRuntimeException re) {
+                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
+                        fail();
+                    }
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.delete();
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in Database.delete()", e);
+                    fail();
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testConcurrentCreateNCompactDB() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final int kNDocs = 1000;
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final String tag1 = "Create1";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createDocs(kNDocs, tag1);
+                } catch (CouchbaseLiteException e) {
+                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
+                        fail();
+                    }
+                } catch (CouchbaseLiteRuntimeException re) {
+                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
+                        fail();
+                    }
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.compact();
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in Database.compact()", e);
+                    fail();
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testConcurrentCreateNCreateIndexDB() throws Exception {
+        if (!config.threadTestsEnabled())
+            return;
+
+        loadJSONResource("sentences.json");
+
+        final int kNDocs = 1000;
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final String tag1 = "Create1";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createDocs(kNDocs, tag1);
+                } catch (CouchbaseLiteException e) {
+                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
+                        fail();
+                    }
+                } catch (CouchbaseLiteRuntimeException re) {
+                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
+                        fail();
+                    }
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Expression[] exps = new Expression[]{Expression.property("sentence")};
+                    db.createIndex(Arrays.asList(exps), IndexType.FullText, null);
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in Database.createIndex()", e);
+                    fail();
+                }
+                latch2.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(60, TimeUnit.SECONDS));
+        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+    }
+
+    // TODO: DatabaseChangeNotification is sent from main thread.
+    //       This code waits threads to finish on main thread. so cause deadlock.
+    //       And test fail
+    //@Test
+    public void testBlockDatabaseChange() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+
+        db.addChangeListener(new DatabaseChangeListener() {
+            @Override
+            public void changed(DatabaseChange change) {
+                Log.e(TAG, "changed() change -> %s", change);
+                latch2.countDown();
+            }
+        });
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.save(new Document("doc1"));
+                } catch (CouchbaseLiteException e) {
+                    fail();
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(10, TimeUnit.SECONDS));
+        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+    }
+
+    // TODO: DatabaseChangeNotification is sent from main thread.
+    //       This code waits threads to finish on main thread. so cause deadlock.
+    //       And test fail
+    //@Test
+    public void testBlockDocumentChange() throws InterruptedException, CouchbaseLiteException {
+        if (!config.threadTestsEnabled())
+            return;
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+
+        db.addChangeListener("doc1", new DocumentChangeListener() {
+            @Override
+            public void changed(DocumentChange change) {
+                latch2.countDown();
+            }
+        });
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    db.save(new Document("doc1"));
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in save()", e);
+                    fail();
+                }
+                latch1.countDown();
+            }
+        }).start();
+
+        assertTrue(latch1.await(10, TimeUnit.SECONDS));
+        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+    }
+}

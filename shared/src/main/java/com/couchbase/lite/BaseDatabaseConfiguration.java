@@ -81,8 +81,4 @@ public class BaseDatabaseConfiguration {
         this.conflictResolver = conflictResolver;
         return this;
     }
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
 }

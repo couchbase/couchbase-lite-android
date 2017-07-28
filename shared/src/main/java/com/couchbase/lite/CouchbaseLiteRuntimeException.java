@@ -58,12 +58,27 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
     /**
      * Constructs a new exception with the specified error domain, error code and the specified cause
      *
-     * @param domain the error domain
-     * @param code   the error code
-     * @param cause  the cause
+     * @param message the detail message.
+     * @param cause   the cause
+     * @param domain  the error domain
+     * @param code    the error code
      */
-    public CouchbaseLiteRuntimeException(int domain, int code, Throwable cause) {
-        super(cause);
+    public CouchbaseLiteRuntimeException(String message, Throwable cause, int domain, int code) {
+        super(message, cause);
+        this.domain = domain;
+        this.code = code;
+        this.info = null;
+    }
+
+    /**
+     * Constructs a new exception with the specified error domain, error code and the specified cause
+     *
+     * @param message the detail message.
+     * @param domain  the error domain
+     * @param code    the error code
+     */
+    public CouchbaseLiteRuntimeException(String message, int domain, int code) {
+        super(message);
         this.domain = domain;
         this.code = code;
         this.info = null;
@@ -115,6 +130,7 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
             return "CouchbaseLiteRuntimeException{" +
                     "domain=" + domain +
                     ", code=" + code +
+                    ", msg=" + super.getMessage() +
                     '}';
         else
             return super.toString();

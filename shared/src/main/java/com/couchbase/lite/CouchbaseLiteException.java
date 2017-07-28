@@ -99,6 +99,21 @@ public final class CouchbaseLiteException extends Exception {
         this.info = null;
     }
 
+    /**
+     * Constructs a new exception with the specified error domain, error code and the specified cause
+     *
+     * @param message the detail message
+     * @param cause   the cause
+     * @param domain  the error domain
+     * @param code    the error code
+     */
+    public CouchbaseLiteException(String message, Throwable cause, int domain, int code) {
+        super(message, cause);
+        this.domain = domain;
+        this.code = code;
+        this.info = null;
+    }
+
     public CouchbaseLiteException(int domain, int code, Map<String, Object> info) {
         super();
         this.domain = domain;
@@ -145,6 +160,7 @@ public final class CouchbaseLiteException extends Exception {
             return "CouchbaseLiteException{" +
                     "domain=" + domain +
                     ", code=" + code +
+                    ", msg=" + super.getMessage() +
                     '}';
         else
             return super.toString();

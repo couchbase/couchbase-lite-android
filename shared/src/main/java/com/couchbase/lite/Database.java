@@ -49,6 +49,7 @@ import java.util.Set;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotFound;
+import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotOpen;
 import static java.util.Collections.synchronizedSet;
 
 /**
@@ -81,7 +82,6 @@ public final class Database implements C4Constants {
     //---------------------------------------------
     private String name;
     private DatabaseConfiguration config;
-    // TODO: class name is conflicting between API level and LiteCore
     private C4Database c4db;
 
     private Set<DatabaseChangeListener> dbChangeListeners;
@@ -93,6 +93,8 @@ public final class Database implements C4Constants {
 
     private Map<URI, Replicator> replications;
     private Set<Replicator> activeReplications;
+
+    private Object lock = new Object(); // lock for thread-safety
 
     //---------------------------------------------
     // Constructors
@@ -144,7 +146,9 @@ public final class Database implements C4Constants {
      * @return the database's path.
      */
     public File getPath() {
-        return c4db != null ? new File(getC4Database().getPath()) : null;
+        synchronized (lock) {
+            return c4db != null ? new File(getC4Database().getPath()) : null;
+        }
     }
 
 
@@ -154,7 +158,9 @@ public final class Database implements C4Constants {
      * @return the number of documents in the database, 0 if database is closed.
      */
     public int getCount() {
-        return c4db != null ? (int) getC4Database().getDocumentCount() : 0;
+        synchronized (lock) {
+            return c4db != null ? (int) getC4Database().getDocumentCount() : 0;
+        }
     }
 
     /**
@@ -163,7 +169,7 @@ public final class Database implements C4Constants {
      * @return the copied config object
      */
     public DatabaseConfiguration getConfig() {
-        return config; // TODO: Returned the copied config object
+        return config.copy();
     }
 
     // GET EXISTING DOCUMENT
@@ -176,7 +182,12 @@ public final class Database implements C4Constants {
      * @return the Document object
      */
     public Document getDocument(String documentID) {
-        return getDocument(documentID, true);
+        if (documentID == null)
+            throw new IllegalArgumentException("a documentID parameter is null");
+
+        synchronized (lock) {
+            return getDocument(documentID, true);
+        }
     }
 
     // CHECK DOCUMENT EXISTS
@@ -197,8 +208,13 @@ public final class Database implements C4Constants {
      * @param document
      */
     public void save(Document document) throws CouchbaseLiteException {
-        prepareDocument(document);
-        document.save();
+        if (document == null)
+            throw new IllegalArgumentException("a document parameter is null");
+
+        synchronized (lock) {
+            prepareDocument(document);
+            document.save();
+        }
     }
 
     /**
@@ -212,8 +228,13 @@ public final class Database implements C4Constants {
      * @param document
      */
     public void delete(Document document) throws CouchbaseLiteException {
-        prepareDocument(document);
-        document.delete();
+        if (document == null)
+            throw new IllegalArgumentException("a document parameter is null");
+
+        synchronized (lock) {
+            prepareDocument(document);
+            document.delete();
+        }
     }
 
     /**
@@ -223,8 +244,13 @@ public final class Database implements C4Constants {
      * @param document
      */
     public void purge(Document document) throws CouchbaseLiteException {
-        prepareDocument(document);
-        document.purge();
+        if (document == null)
+            throw new IllegalArgumentException("a document parameter is null");
+
+        synchronized (lock) {
+            prepareDocument(document);
+            document.purge();
+        }
     }
 
     // Batch operations:
@@ -238,27 +264,35 @@ public final class Database implements C4Constants {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void inBatch(Runnable action) throws CouchbaseLiteException {
-        mustBeOpen();
+        synchronized (lock) {
+            mustBeOpen();
 
-        try {
-            boolean commit = false;
-            Log.e(TAG, "inBatch() beginTransaction()");
-            getC4Database().beginTransaction();
             try {
+                boolean commit = false;
+                Log.e(TAG, "inBatch() beginTransaction()");
+                getC4Database().beginTransaction();
                 try {
-                    action.run();
-                    commit = true;
-                } catch (RuntimeException e) {
-                    throw new CouchbaseLiteException(e);
+                    try {
+                        action.run();
+                        commit = true;
+                    } catch (RuntimeException e) {
+                        throw new CouchbaseLiteException(e);
+                    }
+                } finally {
+                    getC4Database().endTransaction(commit);
+                    Log.e(TAG, "inBatch() endTransaction()");
                 }
-            } finally {
-                getC4Database().endTransaction(commit);
-                Log.e(TAG, "inBatch() endTransaction()");
-            }
 
-            postDatabaseChanged();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+                new Handler(Looper.getMainLooper())
+                        .post(new Runnable() {
+                            @Override
+                            public void run() {
+                                postDatabaseChanged();
+                            }
+                        });
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
         }
     }
 
@@ -268,12 +302,13 @@ public final class Database implements C4Constants {
      * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
      */
     public void compact() throws CouchbaseLiteException {
-        mustBeOpen();
-
-        try {
-            getC4Database().compact();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+        synchronized (lock) {
+            mustBeOpen();
+            try {
+                getC4Database().compact();
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
         }
     }
 
@@ -285,11 +320,13 @@ public final class Database implements C4Constants {
      * @param listener
      */
     public void addChangeListener(DatabaseChangeListener listener) {
-        mustBeOpen();
-
         if (listener == null)
-            throw new IllegalArgumentException();
-        addDatabaseChangeListener(listener);
+            throw new IllegalArgumentException("a listener parameter is null");
+
+        synchronized (lock) {
+            mustBeOpen();
+            addDatabaseChangeListener(listener);
+        }
     }
 
     /**
@@ -298,11 +335,13 @@ public final class Database implements C4Constants {
      * @param listener
      */
     public void removeChangeListener(DatabaseChangeListener listener) {
-        mustBeOpen();
-
         if (listener == null)
-            throw new IllegalArgumentException();
-        removeDatabaseChangeListener(listener);
+            throw new IllegalArgumentException("a listener parameter is null");
+
+        synchronized (lock) {
+            mustBeOpen();
+            removeDatabaseChangeListener(listener);
+        }
     }
 
     // Document changes:
@@ -313,11 +352,13 @@ public final class Database implements C4Constants {
      * @param listener
      */
     public void addChangeListener(String docID, DocumentChangeListener listener) {
-        mustBeOpen();
-
         if (docID == null || listener == null)
-            throw new IllegalArgumentException();
-        addDocumentChangeListener(docID, listener);
+            throw new IllegalArgumentException("a listener parameter and/or a listener parameter are null");
+
+        synchronized (lock) {
+            mustBeOpen();
+            addDocumentChangeListener(docID, listener);
+        }
     }
 
     /**
@@ -326,15 +367,14 @@ public final class Database implements C4Constants {
      * @param listener
      */
     public void removeChangeListener(String docID, DocumentChangeListener listener) {
-        mustBeOpen();
-
         if (docID == null || listener == null)
-            throw new IllegalArgumentException();
-        removeDocumentChangeListener(docID, listener);
-    }
+            throw new IllegalArgumentException("a listener parameter and/or a listener parameter are null");
 
-    // Fragment / Subscription:
-    // NOTE: Java does not support Fragment
+        synchronized (lock) {
+            mustBeOpen();
+            removeDocumentChangeListener(docID, listener);
+        }
+    }
 
     // Others:
 
@@ -347,14 +387,16 @@ public final class Database implements C4Constants {
         if (c4db == null)
             return;
 
-        Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
+        synchronized (lock) {
+            Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
 
-        // close db
-        closeC4DB();
+            // close db
+            closeC4DB();
 
-        // release instances
-        freeC4Observers();
-        freeC4DB();
+            // release instances
+            freeC4Observers();
+            freeC4DB();
+        }
     }
 
     /**
@@ -363,67 +405,19 @@ public final class Database implements C4Constants {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void delete() throws CouchbaseLiteException {
-        mustBeOpen();
+        synchronized (lock) {
+            mustBeOpen();
 
-        // delete db
-        deleteC4DB();
+            // delete db
+            deleteC4DB();
 
-        // release instances
-        freeC4Observers();
-        freeC4DB();
-    }
-
-    // Maintenance operations:
-
-    /**
-     * Changes the database's encryption key, or removes encryption if the new key is null.
-     *
-     * @param key The encryption key in the form of an String (a password) or
-     *            an byte[] object exactly 32 bytes in length (a raw AES key.)
-     *            If a string is given, it will be internally converted to a raw key
-     *            using 64,000 rounds of PBKDF2 hashing. A null value will decrypt the database.
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-    public static void changeEncryptionKey(Object key) throws CouchbaseLiteException {
-        // TODO:
-        throw new UnsupportedOperationException("Work in Progress!");
-    }
-
-    /**
-     * Deletes a database of the given name in the given directory.
-     *
-     * @param name      the database's name
-     * @param directory the path where the database is located.
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-    public static void delete(String name, File directory) throws CouchbaseLiteException {
-        if (name == null || directory == null)
-            throw new IllegalArgumentException("name and/or dir arguments are null.");
-
-        if (!exists(name, directory))
-            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
-
-        File path = getDatabasePath(directory, name);
-        try {
-            Log.e(TAG, "delete(): path=%s", path.toString());
-            C4Database.deleteAtPath(path.getPath(), DEFAULT_DATABASE_FLAGS, null, C4DocumentVersioning.kC4RevisionTrees);
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            // release instances
+            freeC4Observers();
+            freeC4DB();
         }
     }
 
-    /**
-     * Checks whether a database of the given name exists in the given directory or not.
-     *
-     * @param name      the database's name
-     * @param directory the path where the database is located.
-     * @return true if exists, false otherwise.
-     */
-    public static boolean exists(String name, File directory) {
-        if (name == null || directory == null)
-            throw new IllegalArgumentException("name and/or dir arguments are null.");
-        return getDatabasePath(directory, name).exists();
-    }
+    // Maintenance operations:
 
     /**
      * Creates a value index (type IndexType.Value) on the given expressions. This will
@@ -450,34 +444,89 @@ public final class Database implements C4Constants {
     public void createIndex(List<Expression> expressions,
                             IndexType type,
                             IndexOptions options) throws CouchbaseLiteException {
-        mustBeOpen();
+        if (expressions == null || type == null)
+            throw new IllegalArgumentException("an expressions parameter and/or a type parameter are null");
 
-        if (expressions == null)
-            throw new IllegalArgumentException("expressions parameter cannot be null");
+        synchronized (lock) {
+            mustBeOpen();
 
-        List<Object> list = new ArrayList<Object>();
-        for (Expression exp : expressions) {
-            list.add(exp.asJSON());
+            List<Object> list = new ArrayList<Object>();
+            for (Expression exp : expressions) {
+                list.add(exp.asJSON());
+            }
+
+            String language = options != null ? options.getLanguage() : null;
+            boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
+            if (language == null) {
+                // Get default language code:
+                Locale locale = Locale.getDefault();
+                language = locale.getLanguage();
+                if (options != null)
+                    ignoreDiacritics = language.equals("en");
+            }
+
+            try {
+                String json = JsonUtils.toJson(list).toString();
+                getC4Database().createIndex(json, type.getValue(), language, ignoreDiacritics);
+            } catch (JSONException e) {
+                throw new CouchbaseLiteException(e);
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
         }
+    }
 
-        String language = options != null ? options.getLanguage() : null;
-        boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
-        if (language == null) {
-            // Get default language code:
-            Locale locale = Locale.getDefault();
-            language = locale.getLanguage();
-            if (options != null)
-                ignoreDiacritics = language.equals("en");
-        }
+    //---------------------------------------------
+    // API - public static methods
+    //---------------------------------------------
 
+    /**
+     * Changes the database's encryption key, or removes encryption if the new key is null.
+     *
+     * @param key The encryption key in the form of an String (a password) or
+     *            an byte[] object exactly 32 bytes in length (a raw AES key.)
+     *            If a string is given, it will be internally converted to a raw key
+     *            using 64,000 rounds of PBKDF2 hashing. A null value will decrypt the database.
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
+    public static void changeEncryptionKey(Object key) throws CouchbaseLiteException {
+        throw new UnsupportedOperationException("Work in Progress!");
+    }
+
+    /**
+     * Deletes a database of the given name in the given directory.
+     *
+     * @param name      the database's name
+     * @param directory the path where the database is located.
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
+    public static void delete(String name, File directory) throws CouchbaseLiteException {
+        if (name == null || directory == null)
+            throw new IllegalArgumentException("a name parameter and/or a dir parameter are null.");
+
+        if (!exists(name, directory))
+            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+
+        File path = getDatabasePath(directory, name);
         try {
-            String json = JsonUtils.toJson(list).toString();
-            getC4Database().createIndex(json, type.getValue(), language, ignoreDiacritics);
-        } catch (JSONException e) {
-            throw new CouchbaseLiteException(e);
+            Log.e(TAG, "delete(): path=%s", path.toString());
+            C4Database.deleteAtPath(path.getPath(), DEFAULT_DATABASE_FLAGS, null, C4DocumentVersioning.kC4RevisionTrees);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
+    }
+
+    /**
+     * Checks whether a database of the given name exists in the given directory or not.
+     *
+     * @param name      the database's name
+     * @param directory the path where the database is located.
+     * @return true if exists, false otherwise.
+     */
+    public static boolean exists(String name, File directory) {
+        if (name == null || directory == null)
+            throw new IllegalArgumentException("a name parameter and/or a dir parameter are null.");
+        return getDatabasePath(directory, name).exists();
     }
 
     //---------------------------------------------
@@ -524,7 +573,7 @@ public final class Database implements C4Constants {
 
     void mustBeOpen() {
         if (c4db == null)
-            throw new IllegalStateException("Database is not open.");
+            throw new CouchbaseLiteRuntimeException("A database is not open", LiteCoreDomain, kC4ErrorNotOpen);
     }
 
     /**
@@ -690,18 +739,7 @@ public final class Database implements C4Constants {
         }
 
         sharedKeys = new SharedKeys(c4db);
-        c4DBObserver = c4db.createDatabaseObserver(new C4DatabaseObserverListener() {
-            @Override
-            public void callback(C4DatabaseObserver observer, Object context) {
-                new Handler(Looper.getMainLooper())
-                        .post(new Runnable() {
-                            @Override
-                            public void run() {
-                                postDatabaseChanged();
-                            }
-                        });
-            }
-        }, this);
+        c4DBObserver = null;
         dbChangeListeners = synchronizedSet(new HashSet<DatabaseChangeListener>());
         docChangeListeners = Collections.synchronizedMap(new HashMap<String, Set<DocumentChangeListener>>());
         c4DocObservers = Collections.synchronizedMap(new HashMap<String, C4DocumentObserver>());

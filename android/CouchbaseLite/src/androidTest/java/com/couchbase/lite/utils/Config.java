@@ -19,6 +19,10 @@ public class Config extends java.util.Properties {
         return Boolean.parseBoolean(getProperty("replicatorTestsEnabled"));
     }
 
+    public boolean threadTestsEnabled() {
+        return Boolean.parseBoolean(getProperty("threadTestsEnabled"));
+    }
+
     public String remoteHost() {
         return getProperty("remoteHost");
     }
