@@ -50,12 +50,16 @@ public class DatabaseTest extends BaseTest {
 
     // helper method to open database
     private Database openDatabase(String dbName) throws CouchbaseLiteException {
+        return openDatabase(dbName, true);
+    }
+    private Database openDatabase(String dbName, boolean countCheck) throws CouchbaseLiteException {
         DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
         Database db = new Database(dbName, options);
         assertEquals(dbName, db.getName());
         assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
-        assertEquals(0, db.getCount());
+        if(countCheck)
+            assertEquals(0, db.getCount());
         return db;
     }
 
@@ -334,14 +338,14 @@ public class DatabaseTest extends BaseTest {
         verifyGetDocument(docID);
     }
 
-    // TODO: @Test
+    @Test
     public void testGetExistingDocWithIDFromDifferentDBInstance() throws CouchbaseLiteException {
         // store doc
         String docID = "doc1";
         generateDocument(docID);
 
         // open db with same db name and default option
-        Database otherDB = openDatabase(db.getName());
+        Database otherDB = openDatabase(db.getName(), false);
         assertNotNull(otherDB);
         assertTrue(db != otherDB);
 
@@ -439,15 +443,14 @@ public class DatabaseTest extends BaseTest {
         verifyGetDocument(docID, 2);
     }
 
-    // TODO : @Test
-    // LiteCore throws exception in tearDown
+    @Test
     public void testSaveDocInDifferentDBInstance() throws CouchbaseLiteException {
         // Store doc
         String docID = "doc1";
         Document doc = generateDocument(docID);
 
         // Create db with default
-        Database otherDB = openDatabase(db.getName());
+        Database otherDB = openDatabase(db.getName(), false);
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
         assertEquals(1, otherDB.getCount());
@@ -580,8 +583,7 @@ public class DatabaseTest extends BaseTest {
         assertTrue(doc.getObject("key") == null);
     }
 
-    // TODO : @Test
-    // Error from LiteCore in tearDown
+    @Test
     public void testDeleteDocInDifferentDBInstance() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
@@ -589,7 +591,7 @@ public class DatabaseTest extends BaseTest {
 
         // Create db with same name:
         // Create db with default
-        Database otherDB = openDatabase(db.getName());
+        Database otherDB = openDatabase(db.getName(), false);
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
         assertTrue(otherDB.contains(docID));
@@ -744,15 +746,14 @@ public class DatabaseTest extends BaseTest {
         assertEquals(2, doc.getSequence());
     }
 
-    // TODO : @Test
-    // Error from LiteCore in tearDown
+    @Test
     public void testPurgeDocInDifferentDBInstance() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
         Document doc = generateDocument(docID);
 
         // Create db with default:
-        Database otherDB = openDatabase(db.getName());
+        Database otherDB = openDatabase(db.getName(), false);
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
         assertEquals(1, otherDB.getCount());
@@ -1171,7 +1172,7 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists("nonexist", dir));
     }
 
-    //TODO: @Test - test fails because database.compact() does not delete blob files.
+    @Test
     public void testCompact() throws CouchbaseLiteException {
         final List<Document> docs = createDocs(20);
 
