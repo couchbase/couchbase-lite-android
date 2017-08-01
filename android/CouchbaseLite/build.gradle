@@ -27,7 +27,7 @@ version = file("${projectDir}/../../version.txt").text.trim()
  */
 android {
     compileSdkVersion 26
-    buildToolsVersion '26.0.0'
+    buildToolsVersion '26.0.1'
 
     defaultConfig {
         minSdkVersion 16
