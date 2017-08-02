@@ -22,12 +22,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.couchbase.lite.DataSource.database;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -101,7 +104,7 @@ public class QueryTest extends BaseTest {
             Expression w = (Expression) c[0];
             String[] documentIDs = (String[]) c[1];
             final List<String> docIDList = new ArrayList<String>(Arrays.asList(documentIDs));
-            Query q = Query.select().from(DataSource.database(db)).where(w);
+            Query q = Query.select().from(database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(int n, Result result) throws Exception {
@@ -126,7 +129,7 @@ public class QueryTest extends BaseTest {
     @Test
     public void testNoWhereQuery() throws Exception {
         loadJSONResource("names_100.json");
-        Query q = Query.select().from(DataSource.database(db));
+        Query q = Query.select().from(database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -224,7 +227,7 @@ public class QueryTest extends BaseTest {
         for (Object[] c : cases) {
             Expression exp = (Expression) c[0];
             final String[] documentIDs = (String[]) c[1];
-            Query q = Query.select().from(DataSource.database(db)).where(exp);
+            Query q = Query.select().from(database(db)).where(exp);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(int n, Result result) throws Exception {
@@ -250,7 +253,7 @@ public class QueryTest extends BaseTest {
         // Test IS:
         q = Query
                 .select()
-                .from(DataSource.database(db))
+                .from(database(db))
                 .where(Expression.property("string").is("string"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -265,7 +268,7 @@ public class QueryTest extends BaseTest {
         // Test IS NOT:
         q = Query
                 .select()
-                .from(DataSource.database(db))
+                .from(database(db))
                 .where(Expression.property("string").isNot("string1"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -295,7 +298,7 @@ public class QueryTest extends BaseTest {
         Expression w = Expression.property("name.first").like("%Mar%");
         Query q = Query
                 .select()
-                .from(DataSource.database(db))
+                .from(database(db))
                 .where(w)
                 .orderBy(Ordering.property("name.first").ascending());
 
@@ -324,7 +327,7 @@ public class QueryTest extends BaseTest {
         Expression w = Expression.property("name.first").regex("^Mar.*");
         Query q = Query
                 .select()
-                .from(DataSource.database(db))
+                .from(database(db))
                 .where(w)
                 .orderBy(Ordering.property("name.first").ascending());
 
@@ -357,7 +360,7 @@ public class QueryTest extends BaseTest {
 
         Expression w = Expression.property("sentence").match("'Dummie woman'");
         Ordering o = Ordering.property("rank(sentence)").descending();
-        Query q = Query.select().from(DataSource.database(db)).where(w).orderBy(o);
+        Query q = Query.select().from(database(db)).where(w).orderBy(o);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -383,7 +386,7 @@ public class QueryTest extends BaseTest {
                 o = Ordering.expression(Expression.property("name.first")).ascending();
             else
                 o = Ordering.expression(Expression.property("name.first")).descending();
-            Query q = Query.select().from(DataSource.database(db)).orderBy(o);
+            Query q = Query.select().from(database(db)).orderBy(o);
 
             final List<String> firstNames = new ArrayList<String>();
             int numRows = verifyQuery(q, new QueryResult() {
@@ -422,7 +425,7 @@ public class QueryTest extends BaseTest {
         doc2.setObject("number", 1);
         save(doc2);
 
-        Query q = Query.selectDistinct().from(DataSource.database(db));
+        Query q = Query.selectDistinct().from(database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -440,8 +443,8 @@ public class QueryTest extends BaseTest {
         doc1.setObject("theone", 42);
         save(doc1);
 
-        DataSource mainDS = DataSource.database(this.db).as("main");
-        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+        DataSource mainDS = database(this.db).as("main");
+        DataSource secondaryDS = database(this.db).as("secondary");
         Expression mainPropExpr = Expression.property("number1").from("main");
         Expression secondaryExpr = Expression.property("theone").from("secondary");
         Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
@@ -460,40 +463,6 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testAggregateFunctions() throws Exception {
-        loadNumbers(100);
-
-        DataSource ds = DataSource.database(this.db);
-        Expression exprNum1 = Expression.property("number1");
-
-        Function avg = Function.avg(exprNum1);
-        Function cnt = Function.count(exprNum1);
-        Function min = Function.min(exprNum1);
-        Function max = Function.max(exprNum1);
-        Function sum = Function.sum(exprNum1);
-
-        SelectResult rsAvg = SelectResult.expression(avg);
-        SelectResult rsCnt = SelectResult.expression(cnt);
-        SelectResult rsMin = SelectResult.expression(min);
-        SelectResult rsMax = SelectResult.expression(max);
-        SelectResult rsSum = SelectResult.expression(sum);
-
-        Query q = Query.select(rsAvg, rsCnt, rsMin, rsMax, rsSum).from(ds);
-        assertNotNull(q);
-        int numRows = verifyQuery(q, new QueryResult() {
-            @Override
-            public void check(int n, Result result) throws Exception {
-                assertEquals(50.5F, (float) result.getObject(0), 0.0F);
-                assertEquals(100L, (long) result.getObject(1));
-                assertEquals(1L, (long) result.getObject(2));
-                assertEquals(100L, (long) result.getObject(3));
-                assertEquals(5050L, (long) result.getObject(4));
-            }
-        }, true);
-        assertEquals(1, numRows);
-    }
-
-    @Test
     public void testGroupBy() throws Exception {
         loadJSONResource("names_100.json");
 
@@ -501,7 +470,7 @@ public class QueryTest extends BaseTest {
         final List<Integer> expectedCounts = Arrays.asList(1, 6, 1, 1, 3);
         final List<String> expectedMaxZips = Arrays.asList("35243", "94153", "81223", "33612", "50801");
 
-        DataSource ds = DataSource.database(this.db);
+        DataSource ds = database(this.db);
 
         Expression state = Expression.property("contact.address.state");
         Expression count = Function.count(1);
@@ -575,7 +544,7 @@ public class QueryTest extends BaseTest {
     public void testParameters() throws Exception {
         loadNumbers(100);
 
-        DataSource dataSource = DataSource.database(this.db);
+        DataSource dataSource = database(this.db);
 
         Expression number1 = Expression.property("number1");
         Expression paramN1 = Expression.parameter("num1");
@@ -608,7 +577,7 @@ public class QueryTest extends BaseTest {
     public void testMeta() throws Exception {
         loadNumbers(5);
 
-        DataSource dataSource = DataSource.database(this.db);
+        DataSource dataSource = database(this.db);
 
         Expression metaDocID = Expression.meta().getId();
         Expression metaDocSeq = Expression.meta().getSequence();
@@ -646,7 +615,7 @@ public class QueryTest extends BaseTest {
     public void testLimit() throws Exception {
         loadNumbers(10);
 
-        DataSource dataSource = DataSource.database(this.db);
+        DataSource dataSource = database(this.db);
 
         Expression propNumber1 = Expression.property("number1");
         SelectResult srNumber1 = SelectResult.expression(propNumber1);
@@ -689,7 +658,7 @@ public class QueryTest extends BaseTest {
     public void testLimitOffset() throws Exception {
         loadNumbers(10);
 
-        DataSource dataSource = DataSource.database(this.db);
+        DataSource dataSource = database(this.db);
 
         Expression propNumber1 = Expression.property("number1");
         SelectResult srNumber1 = SelectResult.expression(propNumber1);
@@ -743,7 +712,7 @@ public class QueryTest extends BaseTest {
         SelectResult RES_GENDER = SelectResult.expression(GENDER);
         SelectResult RES_CITY = SelectResult.expression(CITY);
 
-        DataSource DS = DataSource.database(db);
+        DataSource DS = database(db);
 
         Query q = Query
                 .select(RES_FNAME, RES_LNAME, RES_GENDER, RES_CITY)
@@ -766,7 +735,7 @@ public class QueryTest extends BaseTest {
     public void testQueryProjectingKeys() throws Exception {
         loadNumbers(100);
 
-        DataSource DS = DataSource.database(db);
+        DataSource DS = database(db);
 
         Expression NUM1 = Expression.property("number1");
 
@@ -801,12 +770,263 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testAggregateFunctions() throws Exception {
+        loadNumbers(100);
+
+        DataSource ds = database(this.db);
+        Expression exprNum1 = Expression.property("number1");
+
+        Function avg = Function.avg(exprNum1);
+        Function cnt = Function.count(exprNum1);
+        Function min = Function.min(exprNum1);
+        Function max = Function.max(exprNum1);
+        Function sum = Function.sum(exprNum1);
+
+        SelectResult rsAvg = SelectResult.expression(avg);
+        SelectResult rsCnt = SelectResult.expression(cnt);
+        SelectResult rsMin = SelectResult.expression(min);
+        SelectResult rsMax = SelectResult.expression(max);
+        SelectResult rsSum = SelectResult.expression(sum);
+
+        Query q = Query.select(rsAvg, rsCnt, rsMin, rsMax, rsSum).from(ds);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(50.5F, (float) result.getObject(0), 0.0F);
+                assertEquals(100L, (long) result.getObject(1));
+                assertEquals(1L, (long) result.getObject(2));
+                assertEquals(100L, (long) result.getObject(3));
+                assertEquals(5050L, (long) result.getObject(4));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testArrayFunctions() throws Exception {
+        Document doc = createDocument("doc1");
+        Array array = new Array();
+        array.addObject("650-123-0001");
+        array.addObject("650-123-0002");
+        doc.setObject("array", array);
+        save(doc);
+
+        DataSource ds = database(db);
+        Expression exprArray = Expression.property("array");
+        Expression exprArrayLength = Function.arrayLength(exprArray);
+        SelectResult srArrayLength = SelectResult.expression(exprArrayLength);
+        Query q = Query.select(srArrayLength).from(ds);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(2, result.getInt(0));
+            }
+        }, true);
+        assertEquals(1, numRows);
+
+        Expression exArrayContains1 = Function.arrayContains(exprArray, "650-123-0001");
+        Expression exArrayContains2 = Function.arrayContains(exprArray, "650-123-0003");
+        SelectResult srArrayContains1 = SelectResult.expression(exArrayContains1);
+        SelectResult srArrayContains2 = SelectResult.expression(exArrayContains2);
+
+        q = Query.select(srArrayContains1, srArrayContains2).from(ds);
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(true, result.getBoolean(0));
+                assertEquals(false, result.getBoolean(1));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testMathFunctions() throws Exception {
+        double num = 0.6;
+
+        Document doc = createDocument("doc1");
+        doc.setObject("number", num);
+        save(doc);
+
+        final Double[] expectedValues = {
+                Math.abs(num),
+                Math.acos(num),
+                Math.asin(num),
+                Math.atan(num),
+                Math.atan2(num, 90.0),
+                Math.ceil(num),
+                Math.cos(num),
+                num * 180.0 / Math.PI,
+                Math.exp(num),
+                Math.floor(num),
+                Math.log(num),
+                Math.log10(num),
+                Math.pow(num, 2),
+                num * Math.PI / 180.0,
+                (double) Math.round(num),
+                Math.round(num * 10.0) / 10.0,
+                (double) 1,
+                Math.sin(num),
+                Math.sqrt(num),
+                Math.tan(num),
+                (double) 0,
+                0.6
+        };
+
+        Expression p = Expression.property("number");
+        List<Function> functions = Arrays.asList(
+                Function.abs(p),
+                Function.acos(p),
+                Function.asin(p),
+                Function.atan(p),
+                Function.atan2(p, 90),
+                Function.ceil(p),
+                Function.cos(p),
+                Function.degrees(p),
+                Function.exp(p),
+                Function.floor(p),
+                Function.ln(p),
+                Function.log(p),
+                Function.power(p, 2),
+                Function.radians(p),
+                Function.round(p),
+                Function.round(p, 1),
+                Function.sign(p),
+                Function.sin(p),
+                Function.sqrt(p),
+                Function.tan(p),
+                Function.trunc(p),
+                Function.trunc(p, 1)
+        );
+        final AtomicInteger index = new AtomicInteger(0);
+        for (Function f : functions) {
+            Log.e(TAG, "index -> " + index.intValue());
+            Query q = Query.select(SelectResult.expression(f))
+                    .from(database(db));
+            int numRows = verifyQuery(q, new QueryResult() {
+                @Override
+                public void check(int n, Result result) throws Exception {
+                    double expected = expectedValues[index.intValue()];
+                    assertEquals(expected, result.getDouble(0), 0.0);
+                }
+            }, true);
+            assertEquals(1, numRows);
+            index.incrementAndGet();
+        }
+    }
+
+    @Test
+    public void testStringFunctions() throws Exception {
+        final String str = "  See you 18r  ";
+        Document doc = createDocument("doc1");
+        doc.setObject("greeting", str);
+        save(doc);
+
+        DataSource ds = DataSource.database(db);
+
+        Expression prop = Expression.property("greeting");
+
+        // Contains:
+        Function fnContains1 = Function.contains(prop, "8");
+        Function fnContains2 = Function.contains(prop, "9");
+        SelectResult srFnContains1 = SelectResult.expression(fnContains1);
+        SelectResult srFnContains2 = SelectResult.expression(fnContains2);
+
+        Query q = Query.select(srFnContains1, srFnContains2).from(ds);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertTrue(result.getBoolean(0));
+                assertFalse(result.getBoolean(1));
+            }
+        }, true);
+        assertEquals(1, numRows);
+
+        // Length
+        Function fnLength = Function.length(prop);
+        q = Query.select(SelectResult.expression(fnLength)).from(ds);
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(str.length(), result.getInt(0));
+            }
+        }, true);
+        assertEquals(1, numRows);
+
+        // Lower, Ltrim, Rtrim, Trim, Upper:
+        Function fnLower = Function.lower(prop);
+        Function fnLTrim = Function.ltrim(prop);
+        Function fnRTrim = Function.rtrim(prop);
+        Function fnTrim = Function.trim(prop);
+        Function fnUpper = Function.upper(prop);
+
+        q = Query.select(
+                SelectResult.expression(fnLower),
+                SelectResult.expression(fnLTrim),
+                SelectResult.expression(fnRTrim),
+                SelectResult.expression(fnTrim),
+                SelectResult.expression(fnUpper))
+                .from(ds);
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(str.toLowerCase(), result.getString(0));
+                assertEquals(str.replaceAll("^\\s+", ""), result.getString(1));
+                assertEquals(str.replaceAll("\\s+$", ""), result.getString(2));
+                assertEquals(str.trim(), result.getString(3));
+                assertEquals(str.toUpperCase(), result.getString(4));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testTypeFunctions() throws Exception {
+        Document doc = createDocument("doc1");
+        doc.setObject("array", new Array(Arrays.<Object>asList("a", "b")));
+        doc.setObject("dictionary", new Dictionary(new HashMap<String, Object>() {{
+            put("foo", "bar");
+        }}));
+        doc.setObject("number", 3.14);
+        doc.setObject("string", "string");
+        save(doc);
+
+        Expression exprArray = Expression.property("array");
+        Expression exprDict = Expression.property("dictionary");
+        Expression exprNum = Expression.property("number");
+        Expression exprStr = Expression.property("string");
+
+        Function fnIsArray = Function.isArray(exprArray);
+        Function fnIsDict = Function.isDictionary(exprDict);
+        Function fnIsNum = Function.isNumber(exprNum);
+        Function fnIsStr = Function.isString(exprStr);
+
+        Query q = Query.select(
+                SelectResult.expression(fnIsArray),
+                SelectResult.expression(fnIsDict),
+                SelectResult.expression(fnIsNum),
+                SelectResult.expression(fnIsStr))
+                .from(DataSource.database(db));
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertTrue(result.getBoolean(0));
+                assertTrue(result.getBoolean(1));
+                assertTrue(result.getBoolean(2));
+                assertTrue(result.getBoolean(3));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
+
+    @Test
     public void testLiveQuery() throws Exception {
         loadNumbers(100);
 
         LiveQuery query = Query
                 .select()
-                .from(DataSource.database(db))
+                .from(database(db))
                 .where(Expression.property("number1").lessThan(10))
                 .orderBy(Ordering.property("number1").ascending())
                 .toLive();
@@ -876,7 +1096,7 @@ public class QueryTest extends BaseTest {
 
         LiveQuery query = Query
                 .select()
-                .from(DataSource.database(db))
+                .from(database(db))
                 .where(Expression.property("number1").lessThan(10))
                 .orderBy(Ordering.property("number1").ascending())
                 .toLive();
