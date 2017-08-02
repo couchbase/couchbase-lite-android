@@ -854,7 +854,7 @@ public class QueryTest extends BaseTest {
                 Math.acos(num),
                 Math.asin(num),
                 Math.atan(num),
-                Math.atan2(num, 90.0),
+                Math.atan2(num, 90.0), // NOTE: Math.atan2(double y, double x);
                 Math.ceil(num),
                 Math.cos(num),
                 num * 180.0 / Math.PI,
@@ -880,7 +880,7 @@ public class QueryTest extends BaseTest {
                 Function.acos(p),
                 Function.asin(p),
                 Function.atan(p),
-                Function.atan2(p, 90),
+                Function.atan2(p, 90), // NOTE: Function atan2(Object y, Object x)
                 Function.ceil(p),
                 Function.cos(p),
                 Function.degrees(p),
