@@ -319,25 +319,6 @@ public abstract class Expression {
     }
 
     /**
-     * Create an IS NULL expression that evaluates whether or not the current expression is null.
-     *
-     * @return an IS NULL expression.
-     */
-    public Expression isNull() {
-        return new UnaryExpression(this, UnaryExpression.OpType.Null);
-    }
-
-    /**
-     * Create an IS NOT NULL expression that evaluates whether or not the current expression is
-     * not null.
-     *
-     * @return an IS NOT NULL expression.
-     */
-    public Expression notNull() {
-        return new UnaryExpression(this, UnaryExpression.OpType.NotNull);
-    }
-
-    /**
      * Create an IS expression that evaluates whether or not the current expression is equal to
      * the given expression.
      *
@@ -382,6 +363,17 @@ public abstract class Expression {
      */
     public Expression notBetween(Object expression1, Object expression2) {
         return Expression.negated(between(expression1, expression2));
+    }
+
+    // Null or Missing:
+
+    public Expression isNullOrMissing() {
+        return new UnaryExpression(this, UnaryExpression.OpType.Null)
+                .or(new UnaryExpression(this, UnaryExpression.OpType.Missing));
+    }
+
+    public Expression notNullOrMissing() {
+        return negated(isNullOrMissing());
     }
 
     /**
@@ -606,7 +598,10 @@ public abstract class Expression {
 
     static final class UnaryExpression extends Expression {
         enum OpType {
-            Missing, NotMissing, NotNull, Null
+            Missing,
+            NotMissing,
+            NotNull,
+            Null
         }
 
         private Object operand;
@@ -621,28 +616,33 @@ public abstract class Expression {
 
         @Override
         protected Object asJSON() {
-            List<Object> json = new ArrayList<>();
-            switch (type) {
-                case Missing:
-                    json.add("IS MISSING");
-                    break;
-                case NotMissing:
-                    json.add("IS NOT MISSING");
-                    break;
-                case NotNull:
-                    json.add("IS NOT NULL");
-                    break;
-                case Null:
-                    json.add("IS NULL");
-                    break;
-            }
-
+            Object opd;
             if (operand instanceof Expression)
-                json.add(((Expression) operand).asJSON());
+                opd = ((Expression) operand).asJSON();
             else
-                json.add(operand);
+                opd = operand;
 
-            return json;
+
+            switch (type) {
+                case Missing: {
+                    List<Object> values = new ArrayList<>();
+                    values.add("MISSING");
+                    return Arrays.asList("IS", opd, values);
+                }
+                case NotMissing: {
+                    List<Object> values = new ArrayList<>();
+                    values.add("MISSING");
+                    return Arrays.asList("IS NOT", opd, values);
+                }
+                case Null: {
+                    return Arrays.asList("IS", opd, null);
+                }
+                case NotNull: {
+                    return Arrays.asList("IS NOT", opd, null);
+                }
+                default:
+                    return Arrays.asList(); // should't happend
+            }
         }
     }
 
