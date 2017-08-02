@@ -229,7 +229,6 @@ public class ConcurrentDatabaseTest extends BaseTest {
             verifyByTagName("tag-" + i, kNDocs);
     }
 
-
     @Test
     public void testConcurrentUpdate() throws InterruptedException, CouchbaseLiteException {
         if (!config.concurrentTestsEnabled())
@@ -653,10 +652,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         assertTrue(latch2.await(60, TimeUnit.SECONDS));
     }
 
-    // TODO: DatabaseChangeNotification is sent from main thread.
-    //       This code waits threads to finish on main thread. so cause deadlock.
-    //       And test fail
-    //@Test
+    @Test
     public void testBlockDatabaseChange() throws InterruptedException, CouchbaseLiteException {
         if (!config.concurrentTestsEnabled())
             return;
@@ -688,10 +684,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         assertTrue(latch2.await(10, TimeUnit.SECONDS));
     }
 
-    // TODO: DatabaseChangeNotification is sent from main thread.
-    //       This code waits threads to finish on main thread. so cause deadlock.
-    //       And test fail
-    //@Test
+    @Test
     public void testBlockDocumentChange() throws InterruptedException, CouchbaseLiteException {
         if (!config.concurrentTestsEnabled())
             return;
