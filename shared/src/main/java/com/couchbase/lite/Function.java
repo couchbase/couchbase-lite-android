@@ -73,7 +73,16 @@ public class Function extends Expression {
         return new Function("ATAN()", Arrays.asList(expression));
     }
 
-    public static Function atan2(Object x, Object y) {
+    /**
+     * Returns the angle theta from the conversion of rectangular coordinates (x, y)
+     * to polar coordinates (r, theta).
+     *
+     * @param y the ordinate coordinate
+     * @param x the abscissa coordinate
+     * @return the theta component of the point (r, theta) in polar coordinates that corresponds
+     * to the point (x, y) in Cartesian coordinates.
+     */
+    public static Function atan2(Object y, Object x) {
         return new Function("ATAN2()", Arrays.asList(x, y));
     }
 
