@@ -20,7 +20,6 @@ import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLSliceResult;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -586,35 +585,33 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
 
     // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL. */
     private C4Document save(boolean deletion) throws LiteCoreException {
-        // history
-        List<String> revIDs = new ArrayList<>();
-        if (getC4doc() != null && getC4doc().getRevID() != null)
-            revIDs.add(getC4doc().getRevID());
-        String[] history = revIDs.toArray(new String[revIDs.size()]);
-
         FLSliceResult body = null;
-        int revFlags = 0;
-        if (deletion)
-            revFlags = C4RevisionFlags.kRevDeleted;
-        if (!deletion && !isEmpty()) {
-            // Encode properties to Fleece data:
-            body = encode2();
-            if (body == null)
-                return null;
-            if (C4Document.dictContainsBlobs(body, getDatabase().getSharedKeys()))
-                revFlags |= kRevHasAttachments;
-        }
+        try {
+            int revFlags = 0;
+            if (deletion)
+                revFlags = C4RevisionFlags.kRevDeleted;
+            if (!deletion && !isEmpty()) {
+                // Encode properties to Fleece data:
+                body = encode2();
+                if (body == null)
+                    return null;
+                if (C4Document.dictContainsBlobs(body, getDatabase().getSharedKeys()))
+                    revFlags |= kRevHasAttachments;
+            }
 
-        // Save to database:
-        C4Document newDoc = null;
-        C4Document c4Doc = getC4doc() != null ? getC4doc().getRawDoc() : null;
-        if (c4Doc != null)
-            newDoc = c4Doc.update(body, revFlags);
-        else
-            newDoc = getDatabase().getC4Database().create(getId(), body, revFlags);
-        if (body != null)
-            body.free();
-        return newDoc;
+            // Save to database:
+            C4Document newDoc = null;
+            C4Document c4Doc = getC4doc() != null ? getC4doc().getRawDoc() : null;
+            if (c4Doc != null)
+                newDoc = c4Doc.update(body, revFlags);
+            else
+                newDoc = getDatabase().getC4Database().create(getId(), body, revFlags);
+
+            return newDoc;
+        } finally {
+            if (body != null)
+                body.free();
+        }
     }
 
     private boolean isChanged() {

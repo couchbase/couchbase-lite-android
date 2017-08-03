@@ -362,8 +362,9 @@ public class Replicator implements NetworkReachabilityListener {
                 optionsFleece = enc.finish();
             } catch (LiteCoreException e) {
                 Log.e(TAG, "Failed to encode", e);
+            } finally {
+                enc.free();
             }
-            enc.free();
         }
 
         // Push / Pull / Continuous:
