@@ -377,8 +377,9 @@ public class CBLWebSocket extends C4Socket {
                 headersFleece = enc.finish();
             } catch (LiteCoreException e) {
                 Log.e(TAG, "Failed to encode", e);
+            } finally {
+                enc.free();
             }
-            enc.free();
             gotHTTPResponse(httpStatus, headersFleece);
         }
     }

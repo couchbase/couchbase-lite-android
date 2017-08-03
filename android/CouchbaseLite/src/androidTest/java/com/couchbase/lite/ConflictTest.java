@@ -94,10 +94,15 @@ public class ConflictTest extends BaseTest {
             @Override
             public void run() {
                 try {
+                    byte[] bytes;
                     C4Document trickey = db.getC4Database().get(docID, true);
                     FLEncoder enc = db.getC4Database().createFleeceEncoder();
-                    enc.writeValue(props);
-                    byte[] bytes = enc.finish();
+                    try {
+                        enc.writeValue(props);
+                        bytes = enc.finish();
+                    } finally {
+                        enc.free();
+                    }
                     C4Document newDoc = db.getC4Database().put(
                             bytes,
                             docID,

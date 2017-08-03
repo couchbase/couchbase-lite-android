@@ -311,14 +311,16 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
 
         Map<String, Object> dict = new HashMap<>();
         FLDictIterator itr = new FLDictIterator();
-        itr.begin(flDict);
-        String key;
-        while ((key = SharedKeys.getKey(itr, sharedKeys)) != null) {
-            dict.put(key, CBLData.fleeceValueToObject(itr.getValue(), data.getFlDataSource(), data.getDatabase()));
-            itr.next();
+        try {
+            itr.begin(flDict);
+            String key;
+            while ((key = SharedKeys.getKey(itr, sharedKeys)) != null) {
+                dict.put(key, CBLData.fleeceValueToObject(itr.getValue(), data.getFlDataSource(), data.getDatabase()));
+                itr.next();
+            }
+        } finally {
+            itr.free();
         }
-        itr.free();
-
         return dict;
     }
 
@@ -327,15 +329,17 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
             List<String> results = new ArrayList<>();
             if (flDict != null) {
                 FLDictIterator itr = new FLDictIterator();
-                itr.begin(flDict);
-                String key;
-                while ((key = SharedKeys.getKey(itr, this.sharedKeys)) != null) {
-                    results.add(key);
-                    itr.next();
+                try {
+                    itr.begin(flDict);
+                    String key;
+                    while ((key = SharedKeys.getKey(itr, this.sharedKeys)) != null) {
+                        results.add(key);
+                        itr.next();
+                    }
+                } finally {
+                    itr.free();
                 }
-                itr.free();
             }
-
             keys = results;
         }
         return keys;

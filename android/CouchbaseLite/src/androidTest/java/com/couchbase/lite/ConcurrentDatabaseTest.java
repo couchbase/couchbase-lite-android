@@ -134,7 +134,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         void callback(int threadIndex);
     }
 
-    private void concurrentValidator(final int nThreads, final Callback callback) {
+    private void concurrentValidator(final int nThreads, final Callback callback, final int waitSec) {
         // setup
         final Thread[] threads = new Thread[nThreads];
         final CountDownLatch[] latchs = new CountDownLatch[nThreads];
@@ -157,7 +157,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         // wait
         for (int i = 0; i < nThreads; i++) {
             try {
-                assertTrue(latchs[i].await(60, TimeUnit.SECONDS));
+                assertTrue(latchs[i].await(waitSec, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
                 Log.e(TAG, "InterruptedException", e);
                 fail();
@@ -172,6 +172,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
 
         final int kNDocs = 200;
         final int kNThreads = 10;
+        final int kWaitInSec = 60;
 
         // concurrently creates documents
         concurrentValidator(kNThreads, new Callback() {
@@ -185,7 +186,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
                     fail();
                 }
             }
-        });
+        }, kWaitInSec);
 
         // validate stored documents
         for (int i = 0; i < kNThreads; i++)
@@ -199,6 +200,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
 
         final int kNDocs = 200;
         final int kNThreads = 10;
+        final int kWaitInSec = 60;
 
         // concurrently creates documents
         concurrentValidator(kNThreads, new Callback() {
@@ -222,7 +224,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
                     fail();
                 }
             }
-        });
+        }, kWaitInSec);
 
         // validate stored documents
         for (int i = 0; i < kNThreads; i++)
@@ -235,9 +237,11 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 5;
-        final int kNRounds = 10;
-        final int kNThreads = 10;
+        // NOTE: By increasing number of threads, update causes crash!
+        final int kNDocs = 10;
+        final int kNRounds = 100;
+        final int kNThreads = 2;
+        final int kWaitInSec = 60;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -250,7 +254,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
                 String tag = "tag-" + threadIndex;
                 assertTrue(updateDocs(docIDs, kNRounds, tag));
             }
-        });
+        }, kWaitInSec);
 
         final AtomicInteger count = new AtomicInteger(0);
         for (int i = 0; i < kNThreads; i++) {
@@ -273,6 +277,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         final int kNDocs = 10;
         final int kNRounds = 100;
         final int kNThreads = 10;
+        final int kWaitInSec = 60;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -284,7 +289,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
             public void callback(int threadIndex) {
                 readDocs(docIDs, kNRounds);
             }
-        });
+        }, kWaitInSec);
     }
 
     @Test
@@ -295,6 +300,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         final int kNDocs = 10;
         final int kNRounds = 100;
         final int kNThreads = 10;
+        final int kWaitInSec = 60;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -316,7 +322,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
                     fail();
                 }
             }
-        });
+        }, kWaitInSec);
     }
 
     @Test

@@ -97,6 +97,8 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
 
     // Sets c4doc and updates my root dictionary
     protected void setC4Doc(CBLC4Doc c4doc) {
+        free();
+
         this.c4doc = c4doc;
         if (c4doc != null) {
             FLDict root = null;
@@ -111,9 +113,22 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         }
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
+
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    void free() {
+        if (c4doc != null) {
+            c4doc.free();
+            c4doc = null;
+        }
+    }
 
     Database getDatabase() {
         return database;
