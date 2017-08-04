@@ -399,6 +399,25 @@ public abstract class Expression {
         return Expression.negated(in(expressions));
     }
 
+
+    // Quantified operators:
+    public static Expression variable(String name) {
+        return new VariableExpression(name);
+    }
+
+    public static Expression.In any(String variable) {
+        return new Expression.In(QuantifiesType.ANY, variable);
+    }
+
+    public static Expression.In every(String variable) {
+        return new Expression.In(QuantifiesType.EVERY, variable);
+    }
+
+    public static Expression.In anyAndEvery(String variable) {
+        return new Expression.In(QuantifiesType.ANY_AND_EVERY, variable);
+    }
+
+
     protected abstract Object asJSON();
 
     static class AggregateExpression extends Expression {
@@ -657,6 +676,103 @@ public abstract class Expression {
         protected Object asJSON() {
             List<Object> json = new ArrayList<>();
             json.add("$" + name);
+            return json;
+        }
+    }
+
+    enum QuantifiesType {
+        ANY,
+        ANY_AND_EVERY,
+        EVERY
+    }
+
+    static final class In {
+        QuantifiesType type;
+        String variable;
+
+        In(QuantifiesType type, String variable) {
+            this.type = type;
+            this.variable = variable;
+        }
+
+        Satisfies in(Object expression) {
+            return new Satisfies(type, variable, expression);
+        }
+    }
+
+    static final class Satisfies {
+        QuantifiesType type;
+        String variable;
+        Object inExpression;
+
+        Satisfies(QuantifiesType type, String variable, Object inExpression) {
+            this.type = type;
+            this.variable = variable;
+            this.inExpression = inExpression;
+        }
+
+        Expression satisfies(Expression expression) {
+            return new QuantifiedExpression(type, variable, inExpression, expression);
+        }
+    }
+
+    static final class QuantifiedExpression extends Expression {
+        QuantifiesType type;
+        String variable;
+        Object inExpression;
+        Expression satisfiedExpression;
+
+        QuantifiedExpression(QuantifiesType type, String variable, Object inExpression, Expression satisfiesExpression) {
+            this.type = type;
+            this.variable = variable;
+            this.inExpression = inExpression;
+            this.satisfiedExpression = satisfiesExpression;
+        }
+
+        @Override
+        protected Object asJSON() {
+            List<Object> json = new ArrayList<>(4);
+
+            // type
+            switch (type) {
+                case ANY:
+                    json.add("ANY");
+                    break;
+                case ANY_AND_EVERY:
+                    json.add("ANY AND EVERY");
+                    break;
+                case EVERY:
+                    json.add("EVERY");
+                    break;
+            }
+
+            // variable
+            json.add(variable);
+
+            // in Expression
+            if (inExpression instanceof Expression)
+                json.add(((Expression) inExpression).asJSON());
+            else
+                json.add(inExpression);
+
+            // satisfies Expression
+            json.add(satisfiedExpression.asJSON());
+
+            return json;
+        }
+    }
+
+    static final class VariableExpression extends Expression {
+        String name;
+
+        VariableExpression(String name) {
+            this.name = name;
+        }
+
+        @Override
+        protected Object asJSON() {
+            List<Object> json = new ArrayList<>();
+            json.add("?" + name);
             return json;
         }
     }

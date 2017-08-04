@@ -774,6 +774,55 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testQuantifiedOperators() throws Exception {
+        loadJSONResource("names_100.json");
+
+        DataSource ds = DataSource.database(db);
+
+        Expression exprDocID = Expression.meta().getId();
+        SelectResult srDocID = SelectResult.expression(exprDocID);
+
+        Expression exprLikes = Expression.property("likes");
+        Expression exprVarLike = Expression.variable("LIKE");
+
+        // ANY:
+        Query q = Query.select(srDocID).from(ds).where(
+                Expression.any("LIKE").in(exprLikes).satisfies(exprVarLike.equalTo("climbing")));
+
+        final AtomicInteger i = new AtomicInteger(0);
+        final String[] expected = {"doc-017", "doc-021", "doc-023", "doc-045", "doc-060"};
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(expected[i.getAndIncrement()], result.getString(0));
+            }
+        }, false);
+        assertEquals(expected.length, numRows);
+
+        // EVERY:
+        q = Query.select(srDocID).from(ds).where(
+                Expression.every("LIKE").in(exprLikes).satisfies(exprVarLike.equalTo("taxes")));
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                if (n == 1)
+                    assertEquals("doc-007", result.getString(0));
+            }
+        }, false);
+        assertEquals(42, numRows);
+
+        // ANY AND EVERY:
+        q = Query.select(srDocID).from(ds).where(
+                Expression.anyAndEvery("LIKE").in(exprLikes).satisfies(exprVarLike.equalTo("taxes")));
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+            }
+        }, false);
+        assertEquals(0, numRows);
+    }
+
+    @Test
     public void testAggregateFunctions() throws Exception {
         loadNumbers(100);
 
@@ -884,7 +933,7 @@ public class QueryTest extends BaseTest {
                 Function.acos(p),
                 Function.asin(p),
                 Function.atan(p),
-                Function.atan2(p, 90), // NOTE: Function atan2(Object y, Object x)
+                Function.atan2(num, 90.0),
                 Function.ceil(p),
                 Function.cos(p),
                 Function.degrees(p),
