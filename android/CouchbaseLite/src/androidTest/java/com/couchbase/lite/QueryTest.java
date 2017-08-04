@@ -195,7 +195,7 @@ public class QueryTest extends BaseTest {
         runTestWithNumbers(numbers, cases);
     }
 
-    //TODO @Test
+    @Test
     public void testWhereCheckNull() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
         Document doc1 = createDocument("doc1");
@@ -206,6 +206,7 @@ public class QueryTest extends BaseTest {
         Document doc2 = createDocument("doc2");
         doc2.setObject("name", "Tiger");
         doc2.setObject("address", "123 1st ave.");
+        doc2.setObject("age", 20);
         save(doc2);
 
         Expression name = Expression.property("name");
@@ -214,26 +215,29 @@ public class QueryTest extends BaseTest {
         Expression work = Expression.property("work");
 
         Object[][] cases = {
-                {name.notNull(), $docids(1, 2)},
-                {name.isNull(), $docids()},
-                {address.notNull(), $docids(2)},
-                {address.isNull(), $docids(1)},
-                {age.notNull(), $docids(2)},
-                {age.isNull(), $docids(1)},
-                {work.notNull(), $docids()},
-                {work.isNull(), $docids(1, 2)},
+                {name.isNullOrMissing(), $docids()},
+                {name.notNullOrMissing(), $docids(1, 2)},
+                {address.isNullOrMissing(), $docids(1)},
+                {address.notNullOrMissing(), $docids(2)},
+                {age.isNullOrMissing(), $docids(1)},
+                {age.notNullOrMissing(), $docids(2)},
+                {work.isNullOrMissing(), $docids(1, 2)},
+                {work.notNullOrMissing(), $docids()},
         };
+
+        Expression exprDocID = Expression.meta().getId();
+        SelectResult srDocID = SelectResult.expression(exprDocID);
 
         for (Object[] c : cases) {
             Expression exp = (Expression) c[0];
             final String[] documentIDs = (String[]) c[1];
-            Query q = Query.select().from(database(db)).where(exp);
+            Query q = Query.select(srDocID).from(database(db)).where(exp);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(int n, Result result) throws Exception {
                     if (n < documentIDs.length) {
                         String docID = documentIDs[(int) n - 1];
-                        assertEquals(docID, result.getDocumentID());
+                        assertEquals(docID, result.getString(0));
                     }
                 }
             }, true);
