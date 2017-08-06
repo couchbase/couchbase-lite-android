@@ -7,24 +7,20 @@ public class SelectResult {
     // Inner public Class
     //---------------------------------------------
     public static class From extends SelectResult {
-        // Member variables
-        private String alias;
-
         // Constructor
-        private From() {
+        private From(Expression expression) {
+            super(expression);
         }
 
         // API - public methods
-        public SelectResult from(String alias) {
+        public SelectResult.From from(String alias) {
+            this.expression = Expression.PropertyExpression.allFrom(alias);
             this.alias = alias;
             return this;
         }
     }
 
     public static class As extends SelectResult {
-        // Member variables
-        private String alias;
-
         // Constructor
         private As(Expression expression) {
             super(expression);
@@ -35,28 +31,17 @@ public class SelectResult {
             this.alias = alias;
             return this;
         }
-
-        String getColumnName() {
-            if(alias != null)
-                return alias;
-
-            return super.getColumnName();
-        }
     }
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Expression expression = null;
-
+    Expression expression = null;
+    String alias;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    private SelectResult() {
-        this.expression = null;
-    }
-
     private SelectResult(Expression expression) {
         this.expression = expression;
     }
@@ -69,17 +54,22 @@ public class SelectResult {
         return new SelectResult.As(expression);
     }
 
+    public static SelectResult.From all() {
+        Expression.PropertyExpression expr = Expression.PropertyExpression.allFrom(null);
+        return new SelectResult.From(expr).from(null);
+    }
+
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
     String getColumnName() {
-        if (expression instanceof Expression.PropertyExpression) {
-            Expression.PropertyExpression propExpr = (Expression.PropertyExpression) expression;
-            String keyPath = propExpr.getKeyPath();
-            String[] pathes = keyPath.split("\\.");
-            return pathes[pathes.length - 1];
-        }
+        if (alias != null)
+            return alias;
+
+        if (expression instanceof Expression.PropertyExpression)
+            return ((Expression.PropertyExpression) expression).getColumnName();
+
         return null;
     }
 

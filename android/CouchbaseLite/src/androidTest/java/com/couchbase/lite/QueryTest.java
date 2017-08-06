@@ -1074,6 +1074,92 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testSelectAll() throws Exception {
+        loadNumbers(100);
+
+        DataSource.As ds = DataSource.database(db);
+
+        Expression exprNum1 = Expression.property("number1");
+        SelectResult srNum1 = SelectResult.expression(exprNum1);
+        SelectResult.From srAll = SelectResult.all();
+
+        Expression exprTestDBNum1 = Expression.property("number1").from("testdb");
+        SelectResult srTestDBNum1 = SelectResult.expression(exprTestDBNum1);
+        SelectResult srTestDBAll = SelectResult.all().from("testdb");
+
+        Query q;
+        int numRows;
+
+        // SELECT *
+        q = Query.select(srAll).from(ds);
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(1, result.count());
+                ReadOnlyDictionary a1 = result.getDictionary(0);
+                ReadOnlyDictionary a2 = result.getDictionary(db.getName());
+                assertEquals(n, a1.getInt("number1"));
+                assertEquals(100 - n, a1.getInt("number2"));
+                assertEquals(n, a2.getInt("number1"));
+                assertEquals(100 - n, a2.getInt("number2"));
+            }
+        }, true);
+        assertEquals(100, numRows);
+
+        // SELECT *, number1
+        q = Query.select(srAll, srNum1).from(ds);
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(2, result.count());
+                ReadOnlyDictionary a1 = result.getDictionary(0);
+                ReadOnlyDictionary a2 = result.getDictionary(db.getName());
+                assertEquals(n, a1.getInt("number1"));
+                assertEquals(100 - n, a1.getInt("number2"));
+                assertEquals(n, a2.getInt("number1"));
+                assertEquals(100 - n, a2.getInt("number2"));
+                assertEquals(n, result.getInt(1));
+                assertEquals(n, result.getInt("number1"));
+            }
+        }, true);
+        assertEquals(100, numRows);
+
+        // SELECT testdb.*
+        q = Query.select(srTestDBAll).from(ds.as("testdb"));
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(1, result.count());
+                ReadOnlyDictionary a1 = result.getDictionary(0);
+                ReadOnlyDictionary a2 = result.getDictionary("testdb");
+                assertEquals(n, a1.getInt("number1"));
+                assertEquals(100 - n, a1.getInt("number2"));
+                assertEquals(n, a2.getInt("number1"));
+                assertEquals(100 - n, a2.getInt("number2"));
+            }
+        }, true);
+        assertEquals(100, numRows);
+
+        // SELECT testdb.*, testdb.number1
+        q = Query.select(srTestDBAll, srTestDBNum1).from(ds.as("testdb"));
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(2, result.count());
+                ReadOnlyDictionary a1 = result.getDictionary(0);
+                ReadOnlyDictionary a2 = result.getDictionary("testdb");
+                assertEquals(n, a1.getInt("number1"));
+                assertEquals(100 - n, a1.getInt("number2"));
+                assertEquals(n, a2.getInt("number1"));
+                assertEquals(100 - n, a2.getInt("number2"));
+                assertEquals(n, result.getInt(1));
+                assertEquals(n, result.getInt("number1"));
+            }
+        }, true);
+        assertEquals(100, numRows);
+    }
+
+    @Test
     public void testLiveQuery() throws Exception {
         loadNumbers(100);
 

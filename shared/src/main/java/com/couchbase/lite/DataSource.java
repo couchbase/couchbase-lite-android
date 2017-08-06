@@ -97,6 +97,16 @@ public class DataSource {
         return alias;
     }
 
+    String getColumnName() {
+        if (alias != null)
+            return alias;
+        else {
+            if (source != null && source instanceof Database)
+                return ((Database) source).getName();
+        }
+        return null;
+    }
+
     Map<String, Object> asJSON() {
         Map<String, Object> json = new HashMap<>();
         if (alias != null)
