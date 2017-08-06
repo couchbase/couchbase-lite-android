@@ -30,4 +30,11 @@ public class DocumentChange {
     public String getDocumentID() {
         return documentID;
     }
+
+    @Override
+    public String toString() {
+        return "DocumentChange{" +
+                "documentID='" + documentID + '\'' +
+                '}';
+    }
 }

@@ -630,76 +630,78 @@ public final class Database implements C4Constants {
 
     boolean resolveConflictInDocument(String docID, ConflictResolver resolver)
             throws CouchbaseLiteException {
-        boolean commit = false;
-        beginTransaction();
-        try {
-            ReadOnlyDocument doc = new ReadOnlyDocument(this, docID, true);
-            if (doc == null)
-                return false;
-
-            // Read the conflicting remote revision:
-            ReadOnlyDocument otherDoc = new ReadOnlyDocument(this, docID, true);
-            if (otherDoc == null || !otherDoc.selectConflictingRevision())
-                return false;
-
-            // Read the common ancestor revision (if it's available):
-            ReadOnlyDocument baseDoc = new ReadOnlyDocument(this, docID, true);
-            if (!baseDoc.selectCommonAncestor(doc, otherDoc) || baseDoc.getData() == null)
-                baseDoc = null;
-
-            // Call the conflict resolver:
-            ReadOnlyDocument resolved;
-            if (otherDoc.isDeleted()) {
-                resolved = doc;
-            } else if (doc.isDeleted()) {
-                resolved = otherDoc;
-            } else {
-                if (resolver == null)
-                    resolver = doc.effectiveConflictResolver();
-                Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
-                Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)",
-                        docID,
-                        resolver != null ? resolver.getClass().getSimpleName() : "null",
-                        doc != null ? doc.getRevID() : "null",
-                        otherDoc != null ? otherDoc.getRevID() : "null",
-                        baseDoc != null ? baseDoc.getRevID() : "null");
-                resolved = resolver.resolve(conflict);
-                if (resolved == null)
-                    throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
-            }
-
-            // Figure out what revision to delete and what if anything to add:
-            String winningRevID;
-            String losingRevID;
-            byte[] mergedBody = null;
-            if (resolved == otherDoc) {
-                winningRevID = otherDoc.getRevID();
-                losingRevID = doc.getRevID();
-            } else {
-                winningRevID = doc.getRevID();
-                losingRevID = otherDoc.getRevID();
-                if (resolved != doc) {
-                    resolved.setDatabase(this);
-                    mergedBody = resolved.encode();
-                    if (mergedBody == null)
-                        return false;
-                }
-            }
-
-            // Tell LiteCore to do the resolution:
+        synchronized (lock) {
+            boolean commit = false;
+            beginTransaction();
             try {
-                C4Document rawDoc = doc.getC4doc().getRawDoc();
-                rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody);
-                rawDoc.save(0);
-            } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
-            }
+                ReadOnlyDocument doc = new ReadOnlyDocument(this, docID, true);
+                if (doc == null)
+                    return false;
 
-            commit = true;
-        } finally {
-            endTransaction(commit);
+                // Read the conflicting remote revision:
+                ReadOnlyDocument otherDoc = new ReadOnlyDocument(this, docID, true);
+                if (otherDoc == null || !otherDoc.selectConflictingRevision())
+                    return false;
+
+                // Read the common ancestor revision (if it's available):
+                ReadOnlyDocument baseDoc = new ReadOnlyDocument(this, docID, true);
+                if (!baseDoc.selectCommonAncestor(doc, otherDoc) || baseDoc.getData() == null)
+                    baseDoc = null;
+
+                // Call the conflict resolver:
+                ReadOnlyDocument resolved;
+                if (otherDoc.isDeleted()) {
+                    resolved = doc;
+                } else if (doc.isDeleted()) {
+                    resolved = otherDoc;
+                } else {
+                    if (resolver == null)
+                        resolver = doc.effectiveConflictResolver();
+                    Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
+                    Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)",
+                            docID,
+                            resolver != null ? resolver.getClass().getSimpleName() : "null",
+                            doc != null ? doc.getRevID() : "null",
+                            otherDoc != null ? otherDoc.getRevID() : "null",
+                            baseDoc != null ? baseDoc.getRevID() : "null");
+                    resolved = resolver.resolve(conflict);
+                    if (resolved == null)
+                        throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
+                }
+
+                // Figure out what revision to delete and what if anything to add:
+                String winningRevID;
+                String losingRevID;
+                byte[] mergedBody = null;
+                if (resolved == otherDoc) {
+                    winningRevID = otherDoc.getRevID();
+                    losingRevID = doc.getRevID();
+                } else {
+                    winningRevID = doc.getRevID();
+                    losingRevID = otherDoc.getRevID();
+                    if (resolved != doc) {
+                        resolved.setDatabase(this);
+                        mergedBody = resolved.encode();
+                        if (mergedBody == null)
+                            return false;
+                    }
+                }
+
+                // Tell LiteCore to do the resolution:
+                try {
+                    C4Document rawDoc = doc.getC4doc().getRawDoc();
+                    rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody);
+                    rawDoc.save(0);
+                } catch (LiteCoreException e) {
+                    throw LiteCoreBridge.convertException(e);
+                }
+
+                commit = true;
+            } finally {
+                endTransaction(commit);
+            }
+            return commit;
         }
-        return commit;
     }
 
     //---------------------------------------------
@@ -888,7 +890,7 @@ public final class Database implements C4Constants {
                         .post(new Runnable() {
                             @Override
                             public void run() {
-                                postDocumentChanged(docID, sequence);
+                                postDocumentChanged(docID);
                             }
                         });
             }
@@ -924,53 +926,59 @@ public final class Database implements C4Constants {
         freeC4DBObserver();
         freeC4DocObservers();
     }
-
+    
     private void postDatabaseChanged() {
-        if (c4DBObserver == null || c4db == null || getC4Database().isInTransaction())
-            return;
+        List<DatabaseChange> allChanges = new ArrayList<>();
 
-        int nChanges = 0;
-        List<String> documentIDs = new ArrayList<>();
-        //long lastSequence = 0L;
-        boolean external = false;
-        do {
-            // Read changes in batches of kMaxChanges:
-            C4DatabaseChange[] c4DBChanges = c4DBObserver.getChanges(MAX_CHANGES);
-            nChanges = c4DBChanges.length;
-            boolean newExternal = nChanges > 0 ? c4DBChanges[0].isExternal() : false;
-            if (c4DBChanges == null || c4DBChanges.length == 0 || external != newExternal || documentIDs.size() > 1000) {
-                if (documentIDs.size() > 0) {
-                    // Only notify if there are actually changes to send
-                    DatabaseChange change = new DatabaseChange(this, documentIDs/*, lastSequence, external*/);
-                    // not allow to add/remove middle of iteration
-                    synchronized (dbChangeListeners) {
-                        for (DatabaseChangeListener listener : dbChangeListeners) {
-                            listener.changed(change);
-                        }
+        synchronized (lock) {
+            if (c4DBObserver == null || c4db == null || getC4Database().isInTransaction())
+                return;
+
+            boolean external = false;
+            int nChanges;
+            List<String> docIDs = new ArrayList<>();
+            do {
+                // Read changes in batches of kMaxChanges:
+                C4DatabaseChange[] c4DBChanges = c4DBObserver.getChanges(MAX_CHANGES);
+                nChanges = c4DBChanges.length;
+                boolean newExternal = nChanges > 0 ? c4DBChanges[0].isExternal() : false;
+                if (c4DBChanges == null || c4DBChanges.length == 0 || external != newExternal || docIDs.size() > 1000) {
+                    if (docIDs.size() > 0) {
+                        allChanges.add(new DatabaseChange(this, docIDs));
+                        docIDs = new ArrayList<>();
                     }
-                    documentIDs.clear();
                 }
-            }
+                external = newExternal;
+                for (int i = 0; i < nChanges; i++)
+                    docIDs.add(c4DBChanges[i].getDocID());
+            } while (nChanges > 0);
+        }
 
-            external = newExternal;
-            for (int i = 0; i < nChanges; i++) {
-                documentIDs.add(c4DBChanges[i].getDocID());
+        // NOTE: dbChangeListeners is synchronized collections. And, DatabaseChange is immutable.
+        for (DatabaseChange change : allChanges) {
+            // not allow to add/remove middle of iteration
+            synchronized (dbChangeListeners) {
+                for (DatabaseChangeListener listener : dbChangeListeners)
+                    listener.changed(change);
             }
-        } while (nChanges > 0);
+        }
     }
 
-    private void postDocumentChanged(String documentID, long sequence) {
-        if (!c4DocObservers.containsKey(documentID) || c4db == null)
-            return;
+    private void postDocumentChanged(final String documentID) {
+        synchronized (lock) {
+            if (!c4DocObservers.containsKey(documentID) || c4db == null)
+                return;
+        }
 
+        // NOTE: docChangeListeners and its Set value are synchronized collections.
+        //       And DocumentChange is immutable
         Set<DocumentChangeListener> listeners = docChangeListeners.get(documentID);
-        if (listeners == null)
-            return;
-
-        DocumentChange change = new DocumentChange(documentID/*, sequence*/);
-        synchronized (listeners) {
-            for (DocumentChangeListener listener : listeners) {
-                listener.changed(change);
+        if (listeners != null) {
+            synchronized (listeners) {
+                DocumentChange change = new DocumentChange(documentID);
+                for (DocumentChangeListener listener : listeners) {
+                    listener.changed(change);
+                }
             }
         }
     }

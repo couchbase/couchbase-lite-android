@@ -31,4 +31,12 @@ public class DatabaseChange {
     public List<String> getDocumentIDs() {
         return documentIDs;
     }
+
+    @Override
+    public String toString() {
+        return "DatabaseChange{" +
+                "database=" + database +
+                ", documentIDs=" + documentIDs +
+                '}';
+    }
 }
