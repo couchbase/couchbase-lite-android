@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static com.couchbase.lite.Expression.PropertyExpression.kCBLAllPropertiesName;
 import static com.couchbase.lite.Status.CBLErrorDomain;
 import static com.couchbase.lite.Status.InvalidQuery;
 
@@ -259,8 +260,12 @@ public class Query {
         int index = 0;
         int provisionKeyIndex = 0;
         for (SelectResult selectResult : this.select.getSelectResults()) {
-            // TODO: Support SELECT *
+
             String name = selectResult.getColumnName();
+
+            if (name != null && name.equals(kCBLAllPropertiesName))
+                name = from.getColumnName();
+
             Log.e(TAG, "generateColumnNames() name -> %s", name);
             if (name == null)
                 name = String.format(Locale.ENGLISH, "$%d", ++provisionKeyIndex);
