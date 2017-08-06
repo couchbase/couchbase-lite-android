@@ -19,11 +19,11 @@ public class Meta {
     //---------------------------------------------
     // API - public methods
     //------------------------------------------
-    MetaExpression getId() {
+    public MetaExpression getId() {
         return new MetaExpression("_id");
     }
 
-    MetaExpression getSequence() {
+    public MetaExpression getSequence() {
         return new MetaExpression("_sequence");
     }
 }
