@@ -19,13 +19,9 @@ public class NativeLibraryLoader {
     private static final String TAG = Log.DATABASE;
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
-    private static final String SHARED_SQLITE_LIBRARY = "sqlite3";
-
+    
     public static void load() {
-        boolean success = load(SHARED_SQLITE_LIBRARY);
-        if (success)
-            success = load(LITECORE_JNI_LIBRARY);
-        if (success)
+        if (load(LITECORE_JNI_LIBRARY))
             Log.v(TAG, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
         else
             Log.e(TAG, "Cannot load native library");
