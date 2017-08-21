@@ -2,6 +2,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.document.RemovedValue;
 import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLEncoder;
 
 import java.util.ArrayList;
@@ -431,6 +432,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         Map<String, Object> backingData = super.toMap();
         if (backingData != null) {
             for (Map.Entry<String, Object> entry : backingData.entrySet()) {
+                if (entry.getKey() == null) throw new IllegalStateException();
                 if (!result.containsKey(entry.getKey()))
                     result.put(entry.getKey(), entry.getValue());
             }
@@ -438,6 +440,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
 
         Set<String> keys = new HashSet<>(result.keySet());
         for (String key : keys) {
+            if (key == null) throw new IllegalStateException();
             Object value = result.get(key);
             if (value == RemovedValue.INSTANCE)
                 result.remove(key);
@@ -549,7 +552,7 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         for (String key : keys) {
             Object value = getObject(key);
             if (value != RemovedValue.INSTANCE) {
-                encoder.writeKey(key);
+                SharedKeys.writeKey(encoder, key, database.getSharedKeys());
                 if (value instanceof FleeceEncodable)
                     ((FleeceEncodable) value).fleeceEncode(encoder, database);
                 else

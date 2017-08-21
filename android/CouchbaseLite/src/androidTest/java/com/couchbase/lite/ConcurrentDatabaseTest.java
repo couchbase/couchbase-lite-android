@@ -141,13 +141,14 @@ public class ConcurrentDatabaseTest extends BaseTest {
         for (int i = 0; i < nThreads; i++) {
             final Integer counter = new Integer(i);
             latchs[i] = new CountDownLatch(1);
+            String threadName = String.format(Locale.ENGLISH, "Thread-%d", i);
             threads[i] = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     callback.callback(counter);
                     latchs[counter].countDown();
                 }
-            });
+            }, threadName);
         }
 
         // start

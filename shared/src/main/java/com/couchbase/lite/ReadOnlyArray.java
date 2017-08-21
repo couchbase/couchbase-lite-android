@@ -6,6 +6,7 @@ import com.couchbase.litecore.fleece.FLArray;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -20,7 +21,6 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
     //---------------------------------------------
     private CBLFLArray data;
     private FLArray flArray;
-    private SharedKeys sharedKeys;
 
     //---------------------------------------------
     // Constructors
@@ -201,8 +201,10 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public List<Object> toList() {
-        //TODO
-        throw new UnsupportedOperationException("Work in Progress");
+        if (flArray != null)
+            return (List<Object>) SharedKeys.valueToObject(new FLValue(flArray), data.getDatabase().getSharedKeys());
+        else
+            return new ArrayList();
     }
 
     //---------------------------------------------
@@ -240,11 +242,8 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
     protected void setData(CBLFLArray data) {
         this.data = data;
         this.flArray = null;
-        this.sharedKeys = null;
         if (data != null) {
             this.flArray = data.getFLArray();
-            if (data.getDatabase() != null)
-                this.sharedKeys = data.getDatabase().getSharedKeys();
         }
     }
 
@@ -255,7 +254,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
     // FleeceEncodable implementation
     @Override
     public void fleeceEncode(FLEncoder encoder, Database database) {
-        encoder.writeValue(flArray);
+        SharedKeys.writeValue(encoder, new FLValue(flArray), database.getSharedKeys());
     }
 
     //---------------------------------------------

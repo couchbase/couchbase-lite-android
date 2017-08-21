@@ -25,7 +25,6 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     //-------------------------------------------------------------------------
     private CBLFLDict data;
     private FLDict flDict;
-    private SharedKeys sharedKeys;
     private List<String> keys = null; // dictionary key cache
 
     //-------------------------------------------------------------------------
@@ -224,10 +223,9 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public Map<String, Object> toMap() {
-        if (flDict != null)
-            // TODO: Need to review!
-            return flDictToMap(flDict);
-        else
+        if (flDict != null) {
+            return flDict.toObject(data.getDatabase().getSharedKeys());
+        } else
             return new HashMap<>();
     }
 
@@ -255,11 +253,8 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     protected void setData(CBLFLDict data) {
         this.data = data;
         this.flDict = null;
-        this.sharedKeys = null;
         if (data != null) {
             this.flDict = data.getFlDict();
-            if (data.getDatabase() != null)
-                this.sharedKeys = data.getDatabase().getSharedKeys();
         }
     }
 
@@ -271,7 +266,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     // FleeceEncodable implementation
     @Override
     public void fleeceEncode(FLEncoder encoder, Database database) {
-        encoder.writeValue(flDict);
+        SharedKeys.writeValue(encoder, new FLValue(flDict.getHandle()), database.getSharedKeys());
     }
 
     //---------------------------------------------
@@ -295,7 +290,8 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     // #pragma mark - FLEECE
 
     private FLValue fleeceValue(String key) {
-        return SharedKeys.getValue(flDict, key, sharedKeys);
+        if (data == null) return null;
+        return SharedKeys.getValue(flDict, key, data.getDatabase().getSharedKeys());
     }
 
     private Object fleeceValueToObject(String key) {
@@ -306,24 +302,6 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
             return null;
     }
 
-    private Map<String, Object> flDictToMap(FLDict flDict) {
-        if (flDict == null) return null;
-
-        Map<String, Object> dict = new HashMap<>();
-        FLDictIterator itr = new FLDictIterator();
-        try {
-            itr.begin(flDict);
-            String key;
-            while ((key = SharedKeys.getKey(itr, sharedKeys)) != null) {
-                dict.put(key, CBLData.fleeceValueToObject(itr.getValue(), data.getFlDataSource(), data.getDatabase()));
-                itr.next();
-            }
-        } finally {
-            itr.free();
-        }
-        return dict;
-    }
-
     private List<String> fleeceKeys() {
         if (keys == null) {
             List<String> results = new ArrayList<>();
@@ -332,7 +310,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
                 try {
                     itr.begin(flDict);
                     String key;
-                    while ((key = SharedKeys.getKey(itr, this.sharedKeys)) != null) {
+                    while ((key = SharedKeys.getKey(itr, data.getDatabase().getSharedKeys())) != null) {
                         results.add(key);
                         itr.next();
                     }

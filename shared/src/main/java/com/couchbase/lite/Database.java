@@ -16,7 +16,6 @@ package com.couchbase.lite;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.couchbase.lite.internal.Misc;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.litecore.C4;
@@ -89,12 +88,12 @@ public final class Database implements C4Constants {
     private Map<String, Set<DocumentChangeListener>> docChangeListeners;
     private Map<String, C4DocumentObserver> c4DocObservers;
 
-    private SharedKeys sharedKeys;
+    private final SharedKeys sharedKeys;
 
     private Map<URI, Replicator> replications;
     private Set<Replicator> activeReplications;
 
-    private Object lock = new Object(); // lock for thread-safety
+    private final Object lock = new Object(); // lock for thread-safety
 
     //---------------------------------------------
     // Constructors
@@ -120,6 +119,7 @@ public final class Database implements C4Constants {
         if (tempdir != null)
             C4.setenv("TMPDIR", tempdir, 1);
         open();
+        this.sharedKeys = new SharedKeys(c4db);
 
         this.replications = new HashMap<>();
         this.activeReplications = new HashSet<>();
@@ -740,7 +740,6 @@ public final class Database implements C4Constants {
             throw LiteCoreBridge.convertException(e);
         }
 
-        sharedKeys = new SharedKeys(c4db);
         c4DBObserver = null;
         dbChangeListeners = synchronizedSet(new HashSet<DatabaseChangeListener>());
         docChangeListeners = Collections.synchronizedMap(new HashMap<String, Set<DocumentChangeListener>>());
@@ -771,10 +770,6 @@ public final class Database implements C4Constants {
         name = name.replaceAll("/", ":");
         name = String.format(Locale.ENGLISH, "%s.%s", name, DB_EXTENSION);
         return new File(dir, name);
-    }
-
-    private static String generateDocID() {
-        return Misc.CreateUUID();
     }
 
     //////// DOCUMENTS:
@@ -926,7 +921,7 @@ public final class Database implements C4Constants {
         freeC4DBObserver();
         freeC4DocObservers();
     }
-    
+
     private void postDatabaseChanged() {
         List<DatabaseChange> allChanges = new ArrayList<>();
 
