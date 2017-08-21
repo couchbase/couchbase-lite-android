@@ -17,6 +17,7 @@ import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLSliceResult;
 
@@ -595,19 +596,16 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
                 body = encode2();
                 if (body == null)
                     return null;
-                if (C4Document.dictContainsBlobs(body, getDatabase().getSharedKeys()))
+                if (SharedKeys.dictContainsBlobs(body, getDatabase().getSharedKeys()))
                     revFlags |= kRevHasAttachments;
             }
 
             // Save to database:
-            C4Document newDoc = null;
             C4Document c4Doc = getC4doc() != null ? getC4doc().getRawDoc() : null;
             if (c4Doc != null)
-                newDoc = c4Doc.update(body, revFlags);
+                return c4Doc.update(body, revFlags);
             else
-                newDoc = getDatabase().getC4Database().create(getId(), body, revFlags);
-
-            return newDoc;
+                return getDatabase().getC4Database().create(getId(), body, revFlags);
         } finally {
             if (body != null)
                 body.free();

@@ -4,7 +4,6 @@ import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLDict;
-import com.couchbase.litecore.fleece.FLValue;
 
 import java.util.Locale;
 
@@ -102,15 +101,11 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         this.c4doc = c4doc;
         if (c4doc != null) {
             FLDict root = null;
-            byte[] body = null;
             if (!c4doc.getRawDoc().deleted())
-                body = c4doc.getRawDoc().getSelectedBody();
-            if (body != null && body.length > 0)
-                root = FLValue.fromData(body).asFLDict();
+                root = c4doc.getRawDoc().getSelectedBody2();
             setData(new CBLFLDict(root, c4doc, database));
-        } else {
+        } else
             setData(null);
-        }
     }
 
     @Override

@@ -19,6 +19,7 @@ import com.couchbase.litecore.C4BlobKey;
 import com.couchbase.litecore.C4BlobStore;
 import com.couchbase.litecore.C4BlobWriteStream;
 import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLSliceResult;
 
@@ -374,7 +375,7 @@ public final class Blob implements FleeceEncodable {
         Map<String, Object> dict = jsonRepresentation();
         encoder.beginDict(dict.size());
         for (Map.Entry<String, Object> entry : dict.entrySet()) {
-            encoder.writeKey(entry.getKey());
+            SharedKeys.writeKey(encoder, entry.getKey(), database.getSharedKeys());
             encoder.writeValue(entry.getValue());
         }
         encoder.endDict();

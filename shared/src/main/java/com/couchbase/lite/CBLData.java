@@ -44,7 +44,7 @@ class CBLData {
                     value instanceof Number ||
                     value instanceof Boolean ||
                     value instanceof Blob)) {
-                throw new IllegalArgumentException("Unsupported value type.");
+                throw new IllegalArgumentException("Unsupported value type. value = " + value.getClass().getSimpleName());
             }
         }
         return value;
@@ -75,6 +75,8 @@ class CBLData {
                 return new Array(data);
             }
             case kFLDict: {
+                if (value.getType() != kFLDict)
+                    throw new IllegalStateException("value is not kFLDict");
                 FLDict flDict = value.asFLDict();
                 String type = SharedKeys.getValue(flDict, Blob.kC4ObjectTypeProperty, database.getSharedKeys()).asString();
                 if (type == null) {
@@ -99,6 +101,8 @@ class CBLData {
                 return new Array(data);
             }
             case kFLDict: {
+                if (value.getType() != kFLDict)
+                    throw new IllegalStateException("value is not kFLDict");
                 FLDict flDict = value.asFLDict();
                 String type = SharedKeys.getValue(flDict, Blob.kC4ObjectTypeProperty, database.getSharedKeys()).asString();
                 if (type == null) {
