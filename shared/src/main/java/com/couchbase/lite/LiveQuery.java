@@ -5,6 +5,7 @@ import android.os.Looper;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -81,6 +82,11 @@ public class LiveQuery implements DatabaseChangeListener {
      */
     public void removeChangeListener(LiveQueryChangeListener listener) {
         queryChangeListener.remove(listener);
+    }
+
+    @Override
+    public String toString() {
+        return String.format(Locale.ENGLISH, "%s[%s]", this.getClass().getSimpleName(), query.toString());
     }
 
     //---------------------------------------------

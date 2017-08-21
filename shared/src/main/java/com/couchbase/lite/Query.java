@@ -166,6 +166,11 @@ public class Query {
         return new LiveQuery(new Query(this));
     }
 
+    @Override
+    public String toString() {
+        return String.format(Locale.ENGLISH, "%s[json=%s]", this.getClass().getSimpleName(), asJSON());
+    }
+
     //---------------------------------------------
     // Protected level access
     //---------------------------------------------

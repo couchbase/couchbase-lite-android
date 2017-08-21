@@ -17,6 +17,7 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * An expression used for constructing a query statement.
@@ -417,6 +418,10 @@ public abstract class Expression {
         return new Expression.In(QuantifiesType.ANY_AND_EVERY, variable);
     }
 
+    @Override
+    public String toString() {
+        return String.format(Locale.ENGLISH, "%s[json=%s]", getClass().getSimpleName(), asJSON());
+    }
 
     protected abstract Object asJSON();
 
