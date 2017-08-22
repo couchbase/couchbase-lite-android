@@ -425,22 +425,30 @@ public abstract class Expression {
 
     protected abstract Object asJSON();
 
-    static class AggregateExpression extends Expression {
-        private List<Object> subexpressions;
+    protected Object jsonValue(Object value) {
+        if (value instanceof Expression)
+            return ((Expression) value).asJSON();
+        else
+            return value;
+    }
 
-        AggregateExpression(List<Object> subexpressions) {
-            this.subexpressions = subexpressions;
+    static class AggregateExpression extends Expression {
+        private List<Object> expressions;
+
+        AggregateExpression(List<Object> expressions) {
+            this.expressions = expressions;
+        }
+
+        public List<Object> getExpressions() {
+            return expressions;
         }
 
         @Override
         protected Object asJSON() {
             List<Object> json = new ArrayList<Object>();
-            for (Object exp : subexpressions) {
-                if (exp instanceof Expression)
-                    json.add(((Expression) exp).asJSON());
-                else
-                    json.add(exp);
-            }
+            json.add(new ArrayList<>());
+            for (Object exp : expressions)
+                json.add(jsonValue(exp));
             return json;
         }
     }
@@ -522,17 +530,16 @@ public abstract class Expression {
                     break;
             }
 
-            if (lhs instanceof Expression)
-                json.add(((Expression) lhs).asJSON());
-            else
-                json.add(lhs);
+            json.add(jsonValue((lhs)));
 
-            if (rhs instanceof AggregateExpression)
-                json.addAll((List<Object>) ((AggregateExpression) rhs).asJSON());
-            else if (rhs instanceof Expression)
-                json.add(((Expression) rhs).asJSON());
-            else
-                json.add(rhs);
+            if (type == OpType.Between) {
+                // "between"'s RHS is an aggregate of the min and max, but the min and max need to be
+                // written out as parameters to the BETWEEN operation:
+                List<Object> rangeExprs = ((AggregateExpression) rhs).getExpressions();
+                json.add(jsonValue((rangeExprs.get(0))));
+                json.add(jsonValue((rangeExprs.get(1))));
+            } else
+                json.add(jsonValue((rhs)));
 
             return json;
         }
