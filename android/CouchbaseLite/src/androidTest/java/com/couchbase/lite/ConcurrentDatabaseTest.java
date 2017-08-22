@@ -646,7 +646,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
             public void run() {
                 try {
                     Expression[] exps = new Expression[]{Expression.property("sentence")};
-                    db.createIndex(Arrays.asList(exps), IndexType.FullText, null);
+                    db.createIndex("sentence", Arrays.asList(exps), IndexType.FullText, null);
                 } catch (CouchbaseLiteException e) {
                     Log.e(TAG, "Error in Database.createIndex()", e);
                     fail();

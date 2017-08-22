@@ -360,7 +360,7 @@ public class QueryTest extends BaseTest {
         loadJSONResource("sentences.json");
 
         Expression[] exps = new Expression[]{Expression.property("sentence")};
-        db.createIndex(Arrays.asList(exps), IndexType.FullText, null);
+        db.createIndex("sentence", Arrays.asList(exps), IndexType.FullText, null);
 
         Expression w = Expression.property("sentence").match("'Dummie woman'");
         Ordering o = Ordering.property("rank(sentence)").descending();

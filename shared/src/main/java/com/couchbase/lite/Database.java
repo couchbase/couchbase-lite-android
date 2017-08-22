@@ -427,8 +427,8 @@ public final class Database implements C4Constants {
      * @param expressions Expressions to index, typically property expressions.
      * @throws CouchbaseLiteException if there is an error occurred.
      */
-    public void createIndex(List<Expression> expressions) throws CouchbaseLiteException {
-        createIndex(expressions, IndexType.Value, null);
+    public void createIndex(String name, List<Expression> expressions) throws CouchbaseLiteException {
+        createIndex(name, expressions, IndexType.Value, null);
     }
 
     /**
@@ -441,7 +441,8 @@ public final class Database implements C4Constants {
      * @param options     Options affecting the index, or {@code null} for default settings.
      * @throws CouchbaseLiteException if there is an error occurred.
      */
-    public void createIndex(List<Expression> expressions,
+    public void createIndex(String name,
+                            List<Expression> expressions,
                             IndexType type,
                             IndexOptions options) throws CouchbaseLiteException {
         if (expressions == null || type == null)
@@ -467,7 +468,7 @@ public final class Database implements C4Constants {
 
             try {
                 String json = JsonUtils.toJson(list).toString();
-                getC4Database().createIndex(json, type.getValue(), language, ignoreDiacritics);
+                getC4Database().createIndex(name, json, type.getValue(), language, ignoreDiacritics);
             } catch (JSONException e) {
                 throw new CouchbaseLiteException(e);
             } catch (LiteCoreException e) {
