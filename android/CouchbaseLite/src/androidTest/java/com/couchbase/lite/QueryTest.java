@@ -1161,6 +1161,133 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testGenerateJSONCollation() {
+        Collation[] collations = {
+                Collation.ascii().ignoreCase(false),
+                Collation.ascii().ignoreCase(true),
+                Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(false),
+                Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(false),
+                Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(true),
+                Collation.unicode().locale("en").ignoreCase(false).ignoreAccents(false),
+                Collation.unicode().locale("en").ignoreCase(true).ignoreAccents(false),
+                Collation.unicode().locale("en").ignoreCase(true).ignoreAccents(true)
+        };
+
+        List<Map<String, Object>> expected = new ArrayList<>();
+        Map<String, Object> json1 = new HashMap<>();
+        json1.put("UNICODE", false);
+        json1.put("LOCALE", null);
+        json1.put("CASE", true);
+        json1.put("DIAC", true);
+        expected.add(json1);
+        Map<String, Object> json2 = new HashMap<>();
+        json2.put("UNICODE", false);
+        json2.put("LOCALE", null);
+        json2.put("CASE", false);
+        json2.put("DIAC", true);
+        expected.add(json2);
+        Map<String, Object> json3 = new HashMap<>();
+        json3.put("UNICODE", true);
+        json3.put("LOCALE", null);
+        json3.put("CASE", true);
+        json3.put("DIAC", true);
+        expected.add(json3);
+        Map<String, Object> json4 = new HashMap<>();
+        json4.put("UNICODE", true);
+        json4.put("LOCALE", null);
+        json4.put("CASE", false);
+        json4.put("DIAC", true);
+        expected.add(json4);
+        Map<String, Object> json5 = new HashMap<>();
+        json5.put("UNICODE", true);
+        json5.put("LOCALE", null);
+        json5.put("CASE", false);
+        json5.put("DIAC", false);
+        expected.add(json5);
+        Map<String, Object> json6 = new HashMap<>();
+        json6.put("UNICODE", true);
+        json6.put("LOCALE", "en");
+        json6.put("CASE", true);
+        json6.put("DIAC", true);
+        expected.add(json6);
+        Map<String, Object> json7 = new HashMap<>();
+        json7.put("UNICODE", true);
+        json7.put("LOCALE", "en");
+        json7.put("CASE", false);
+        json7.put("DIAC", true);
+        expected.add(json7);
+        Map<String, Object> json8 = new HashMap<>();
+        json8.put("UNICODE", true);
+        json8.put("LOCALE", "en");
+        json8.put("CASE", false);
+        json8.put("DIAC", false);
+        expected.add(json8);
+        for (int i = 0; i < collations.length; i++)
+            assertEquals(expected.get(i), collations[i].asJSON());
+
+    }
+
+    //TODO - Enable the test once LiteCore support ICU for Android
+    // @Test
+    public void testUnicodeCollationWithLocale() throws Exception {
+        String[] letters = {"B", "A", "Z", "Å"};
+        for (String letter : letters) {
+            Document doc = createDocument();
+            doc.setObject("string", letter);
+            save(doc);
+        }
+
+        Expression STRING = Expression.property("string");
+        SelectResult S_STRING = SelectResult.expression(STRING);
+
+        // Without locale:
+        Collation NO_LOCALE = Collation.unicode()
+                .locale(null)
+                .ignoreCase(false)
+                .ignoreAccents(false);
+
+        Query q = Query.select(S_STRING)
+                .from(DataSource.database(db))
+                .where(null)
+                .orderBy(Ordering.expression(STRING.collate(NO_LOCALE)));
+
+        final String[] expected = {"A", "Å", "B", "Z"};
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(expected[n - 1], result.getString(0));
+            }
+        }, true);
+        assertEquals(expected.length, numRows);
+
+        // With locale:
+        Collation WITH_LOCALE = Collation.unicode()
+                .locale("se")
+                .ignoreCase(false)
+                .ignoreAccents(false);
+
+        q = Query.select(S_STRING)
+                .from(DataSource.database(db))
+                .where(null)
+                .orderBy(Ordering.expression(STRING.collate(WITH_LOCALE)));
+
+        final String[] expected2 = {"A", "B", "Z", "Å"};
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(expected2[n - 1], result.getString(0));
+            }
+        }, true);
+        assertEquals(expected2.length, numRows);
+    }
+
+    //TODO - Implement once LiteCore support ICU for Android
+    // @Test
+    public void testCompareWithUnicodeCollation() {
+
+    }
+
+    @Test
     public void testLiveQuery() throws Exception {
         loadNumbers(100);
 
