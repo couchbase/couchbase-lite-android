@@ -221,6 +221,14 @@ public class Function extends Expression {
     */
 
     //---------------------------------------------
+    // FTS
+    //---------------------------------------------
+
+    public static Function rank(Expression property) {
+        return new Function("RANK()", Arrays.asList((Object) property));
+    }
+
+    //---------------------------------------------
     // Protected level access
     //---------------------------------------------
     @Override
