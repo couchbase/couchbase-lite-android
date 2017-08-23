@@ -1241,4 +1241,58 @@ public class DatabaseTest extends BaseTest {
         assertEquals(1, db.getCount());
         assertEquals("newVar", db.getDocument("abc").getString("someKey"));
     }
+
+    @Test
+    public void testCopy() throws CouchbaseLiteException {
+        for (int i = 0; i < 10; i++) {
+            String docID = String.format(Locale.US, "doc_%03d", i);
+            Document doc = createDocument(docID);
+            doc.setObject("name", docID);
+            byte[] data = docID.getBytes();
+            Blob blob = new Blob("text/plain", data);
+            doc.setObject("data", blob);
+            save(doc);
+        }
+
+        String dbName = "nudb";
+        DatabaseConfiguration config = db.getConfig();
+        File dir = config.getDirectory();
+
+        // Make sure no an existing database at the new location:
+        if (Database.exists(dbName, dir))
+            Database.delete(dbName, dir);
+
+        // Copy:
+        Database.copy(db.getPath(), dbName, config);
+
+        // Verify:
+        assertTrue(Database.exists(dbName, dir));
+
+        Database nudb = new Database(dbName, config);
+        assertNotNull(nudb);
+        assertEquals(10, nudb.getCount());
+
+        Expression DOCID = Expression.meta().getId();
+        SelectResult S_DOCID = SelectResult.expression(DOCID);
+        Query query = Query.select(S_DOCID).from(DataSource.database(nudb));
+        ResultSet rs = query.run();
+        for (Result r : rs) {
+            String docID = r.getString(0);
+            assertNotNull(docID);
+
+            Document doc = nudb.getDocument(docID);
+            assertNotNull(doc);
+            assertEquals(docID, doc.getString("name"));
+
+            Blob blob = doc.getBlob("data");
+            assertNotNull(blob);
+
+            String data = new String(blob.getContent());
+            assertEquals(docID, data);
+        }
+
+        // Clean up:
+        nudb.close();
+        Database.delete(dbName, dir);
+    }
 }
