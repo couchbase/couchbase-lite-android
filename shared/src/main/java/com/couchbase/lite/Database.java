@@ -17,6 +17,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.lite.internal.support.FileUtils;
 import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.litecore.C4;
 import com.couchbase.litecore.C4BlobStore;
@@ -528,6 +529,33 @@ public final class Database implements C4Constants {
         if (name == null || directory == null)
             throw new IllegalArgumentException("a name parameter and/or a dir parameter are null.");
         return getDatabasePath(directory, name).exists();
+    }
+
+    public static void copy(File path, String name, DatabaseConfiguration config) throws CouchbaseLiteException {
+
+        String fromPath = path.getPath();
+        if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar)
+            fromPath += File.separator;
+        String toPath = getDatabasePath(config.getDirectory(), name).getPath();
+        if (toPath.charAt(toPath.length() - 1) != File.separatorChar)
+            toPath += File.separator;
+        // TODO:
+        int databaseFlags = DEFAULT_DATABASE_FLAGS;
+        int encryptionAlgorithm = C4EncryptionAlgorithm.kC4EncryptionNone;
+        byte[] encryptionKey = null;
+
+        try {
+            C4Database.copy(fromPath,
+                    toPath,
+                    databaseFlags,
+                    null,
+                    C4DocumentVersioning.kC4RevisionTrees,
+                    encryptionAlgorithm,
+                    encryptionKey);
+        } catch (LiteCoreException e) {
+            FileUtils.deleteRecursive(toPath);
+            throw LiteCoreBridge.convertException(e);
+        }
     }
 
     //---------------------------------------------
