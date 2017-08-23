@@ -363,4 +363,24 @@ public class DictionaryTest extends BaseTest {
         }
         assertEquals(4, dict.count());
     }
+
+    // https://github.com/couchbase/couchbase-lite-core/issues/230
+    // https://github.com/couchbase/couchbase-lite-core/issues/230
+    // @Test
+    public void testLargeLongValue() throws CouchbaseLiteException {
+        Document doc = createDocument("test");
+        long num1 = 1234567L;
+        long num2 = 12345678L;
+        long num3 = 123456789L;
+        doc.setObject("num1", num1);
+        doc.setObject("num2", num2);
+        doc.setObject("num3", num3);
+        doc = save(doc);
+        Log.i(TAG, "num1 long -> " + doc.getLong("num1"));
+        Log.i(TAG, "num2 long -> " + doc.getLong("num2"));
+        Log.i(TAG, "num3 long -> " + doc.getLong("num3"));
+        assertEquals(num1, doc.getLong("num1"));
+        assertEquals(num2, doc.getLong("num2"));
+        assertEquals(num3, doc.getLong("num3"));
+    }
 }
