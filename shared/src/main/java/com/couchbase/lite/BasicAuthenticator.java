@@ -3,6 +3,8 @@ package com.couchbase.lite;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.couchbase.lite.ReplicatorConfiguration.kC4AuthTypeBasic;
+import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorAuthType;
 import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthOption;
 import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthPassword;
 import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthUserName;
@@ -49,6 +51,7 @@ public class BasicAuthenticator extends Authenticator {
     @Override
     void authenticate(Map<String, Object> options) {
         Map<String, Object> auth = new HashMap<>();
+        auth.put(kC4ReplicatorAuthType, kC4AuthTypeBasic);
         auth.put(kCBLReplicatorAuthUserName, username);
         auth.put(kCBLReplicatorAuthPassword, password);
         options.put(kCBLReplicatorAuthOption, auth);
