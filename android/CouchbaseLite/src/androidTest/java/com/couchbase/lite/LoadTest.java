@@ -91,7 +91,7 @@ public class LoadTest extends BaseTest {
         SelectResult DOCID = SelectResult.expression(Expression.meta().getId());
         DataSource ds = DataSource.database(db);
         Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(tag));
-        Log.e(TAG, "query - > %s", q.explain());
+        Log.v(TAG, "query - > %s", q.explain());
         ResultSet rs = q.run();
         Result row;
         int n = 0;

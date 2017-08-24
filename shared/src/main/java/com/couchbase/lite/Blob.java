@@ -46,7 +46,7 @@ public final class Blob implements FleeceEncodable {
     // static constant variables
     //---------------------------------------------
 
-    static final String TAG = Log.BLOB;
+    static final String TAG = Log.DATABASE;
 
     /**
      * The sub-document property that identifies it as a special type of object.

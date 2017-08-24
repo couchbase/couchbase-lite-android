@@ -15,7 +15,7 @@ package com.couchbase.lite;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
-import android.util.Log;
+
 
 import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.lite.utils.Config;
@@ -53,7 +53,11 @@ public class BaseTest implements C4Constants {
 
     @Before
     public void setUp() throws Exception {
-        Log.e("BaseTest", "setUp");
+
+        Database.enableLogging(Database.LogDomain.ALL, Database.LogLevel.INFO);
+
+        Log.i(TAG, "setUp");
+
         context = InstrumentationRegistry.getTargetContext();
         try {
             config = new Config(context.getAssets().open(TEST_PROPERTIES_FILE));
@@ -67,7 +71,7 @@ public class BaseTest implements C4Constants {
 
     @After
     public void tearDown() throws Exception {
-        Log.e("BaseTest", "tearDown");
+        Log.i(TAG, "tearDown");
         if (db != null) {
             db.close();
             db = null;

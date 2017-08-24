@@ -32,7 +32,7 @@ public class NotificationTest extends BaseTest {
         db.addChangeListener(new DatabaseChangeListener() {
             @Override
             public void changed(DatabaseChange change) {
-                Log.e(TAG, "DatabaseChangeListener.changed() change -> " + change);
+                Log.v(TAG, "DatabaseChangeListener.changed() change -> " + change);
                 assertNotNull(change);
                 assertNotNull(change.getDocumentIDs());
                 assertEquals(10, change.getDocumentIDs().size());

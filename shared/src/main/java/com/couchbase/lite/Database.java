@@ -78,6 +78,33 @@ public final class Database implements C4Constants {
             | C4DatabaseFlags.kC4DB_SharedKeys;
 
     //---------------------------------------------
+    // enums
+    //---------------------------------------------
+
+    public enum LogDomain {
+        ALL, DATABASE, QUERY, REPLICATOR, NETWORK
+    }
+
+    public enum LogLevel {
+        DEBUG(Log.DEBUG),
+        VERBOSE(Log.VERBOSE),
+        INFO(Log.INFO),
+        WARNING(Log.WARN),
+        ERROR(Log.ERROR),
+        NONE(Log.NONE);
+
+        private final int value;
+
+        LogLevel(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
+
+    //---------------------------------------------
     // member variables
     //---------------------------------------------
     private String name;
@@ -270,7 +297,7 @@ public final class Database implements C4Constants {
 
             try {
                 boolean commit = false;
-                Log.e(TAG, "inBatch() beginTransaction()");
+                Log.v(TAG, "inBatch() beginTransaction()");
                 getC4Database().beginTransaction();
                 try {
                     try {
@@ -281,7 +308,7 @@ public final class Database implements C4Constants {
                     }
                 } finally {
                     getC4Database().endTransaction(commit);
-                    Log.e(TAG, "inBatch() endTransaction()");
+                    Log.v(TAG, "inBatch() endTransaction()");
                 }
 
                 new Handler(Looper.getMainLooper())
@@ -511,7 +538,7 @@ public final class Database implements C4Constants {
 
         File path = getDatabasePath(directory, name);
         try {
-            Log.e(TAG, "delete(): path=%s", path.toString());
+            Log.i(TAG, "delete(): path=%s", path.toString());
             C4Database.deleteAtPath(path.getPath(), DEFAULT_DATABASE_FLAGS, null, C4DocumentVersioning.kC4RevisionTrees);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
@@ -555,6 +582,54 @@ public final class Database implements C4Constants {
         } catch (LiteCoreException e) {
             FileUtils.deleteRecursive(toPath);
             throw LiteCoreBridge.convertException(e);
+        }
+    }
+
+    public static void enableLogging(LogDomain domain, LogLevel level) {
+        switch(domain){
+            case ALL:
+                // Database
+                Log.enableLogging(Log.DATABASE, level.getValue(), false);
+                Log.enableLogging(C4LogDomain.DB, level.getValue(), true);         // LiteCore
+                Log.enableLogging(C4LogDomain.Enum, level.getValue(), true);       // LiteCore
+                Log.enableLogging(C4LogDomain.Blob, level.getValue(), true);       // LiteCore
+
+                // Query
+                Log.enableLogging(Log.QUERY, level.getValue(), false);
+                Log.enableLogging(C4LogDomain.SQL, level.getValue(), true);        // LiteCore
+
+                // REPLICATOR
+                Log.enableLogging(Log.SYNC, level.getValue(), false);
+
+                // Network
+                Log.enableLogging(Log.WebSocket, level.getValue(), false);
+                Log.enableLogging(C4LogDomain.BLIP, level.getValue(), true);         // LiteCore
+                Log.enableLogging(C4LogDomain.BLIPMessages, level.getValue(), true); // LiteCore
+                Log.enableLogging(C4LogDomain.ACTOR, level.getValue(), true);        // LiteCore
+                break;
+
+            case DATABASE:
+                Log.enableLogging(Log.DATABASE, level.getValue(), false);
+                Log.enableLogging(C4LogDomain.DB, level.getValue(), true);         // LiteCore
+                Log.enableLogging(C4LogDomain.Enum, level.getValue(), true);       // LiteCore
+                Log.enableLogging(C4LogDomain.Blob, level.getValue(), true);       // LiteCore
+                break;
+
+            case QUERY:
+                Log.enableLogging(Log.QUERY, level.getValue(), false);
+                Log.enableLogging(C4LogDomain.SQL, level.getValue(), true);        // LiteCore
+                break;
+
+            case REPLICATOR:
+                Log.enableLogging(Log.SYNC, level.getValue(), false);
+                break;
+
+            case NETWORK:
+                Log.enableLogging(Log.WebSocket, level.getValue(), false);
+                Log.enableLogging(C4LogDomain.BLIP, level.getValue(), true);         // LiteCore
+                Log.enableLogging(C4LogDomain.BLIPMessages, level.getValue(), true); // LiteCore
+                Log.enableLogging(C4LogDomain.ACTOR, level.getValue(), true);        // LiteCore
+                break;
         }
     }
 

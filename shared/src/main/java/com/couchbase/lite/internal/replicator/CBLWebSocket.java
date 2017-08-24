@@ -56,7 +56,7 @@ public class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
-    private static final String TAG = CBLWebSocket.class.getSimpleName();
+    private static final String TAG = Log.WebSocket;
 
     //-------------------------------------------------------------------------
     // Member Variables
