@@ -146,12 +146,12 @@ public class DatabaseTest extends BaseTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        Log.e("DatabaseTest", "setUp");
+        Log.i("DatabaseTest", "setUp");
     }
 
     @After
     public void tearDown() throws Exception {
-        Log.e("DatabaseTest", "tearDown");
+        Log.i("DatabaseTest", "tearDown");
         super.tearDown();
     }
 

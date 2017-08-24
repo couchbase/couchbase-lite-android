@@ -37,6 +37,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class QueryTest extends BaseTest {
+    public static final String TAG = QueryTest.class.getSimpleName();
 
     private interface QueryResult {
         void check(int n, Result result) throws Exception;
@@ -339,14 +340,14 @@ public class QueryTest extends BaseTest {
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Log.e(TAG, "check() n -> " + n);
+                Log.v(TAG, "check() n -> " + n);
                 Document doc = result.getDocument();
                 Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
                     if (firstName != null) {
                         firstNames.add(firstName);
-                        Log.e(TAG, "firstName -> " + firstName);
+                        Log.v(TAG, "firstName -> " + firstName);
                     }
                 }
             }
@@ -503,7 +504,7 @@ public class QueryTest extends BaseTest {
                 String state = (String) result.getObject(0);
                 long count = (long) result.getObject(1);
                 String maxZip = (String) result.getObject(2);
-                Log.e(TAG, "state=%s, count=%d, maxZip=%s", state, count, maxZip);
+                Log.v(TAG, "state=%s, count=%d, maxZip=%s", state, count, maxZip);
                 if (n - 1 < expectedStates.size()) {
                     assertEquals(expectedStates.get(n - 1), state);
                     assertEquals((int) expectedCounts.get(n - 1), count);
@@ -954,7 +955,7 @@ public class QueryTest extends BaseTest {
         );
         final AtomicInteger index = new AtomicInteger(0);
         for (Function f : functions) {
-            Log.e(TAG, "index -> " + index.intValue());
+            Log.v(TAG, "index -> " + index.intValue());
             Query q = Query.select(SelectResult.expression(f))
                     .from(database(db));
             int numRows = verifyQuery(q, new QueryResult() {

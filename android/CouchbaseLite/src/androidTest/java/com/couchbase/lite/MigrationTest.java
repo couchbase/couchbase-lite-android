@@ -26,15 +26,13 @@ public class MigrationTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        //super.setUp();
-        Log.e("MigrationTest", "setUp");
+        Log.i("MigrationTest", "setUp");
         context = InstrumentationRegistry.getTargetContext();
     }
 
     @After
     public void tearDown() throws Exception {
-        Log.e("MigrationTest", "tearDown");
-        //super.tearDown();
+        Log.i("MigrationTest", "tearDown");
     }
 
     /**
@@ -78,14 +76,11 @@ public class MigrationTest extends BaseTest {
 
                 Dictionary attachments = doc.getDictionary("_attachments");
                 assertNotNull(attachments);
-                Log.e(TAG, "attachments -> %s", attachments.toMap());
                 String key = "attach" + i;
-                Log.e(TAG, "key -> %s", key);
 
                 // NOTE: following is temporary solution as Upgrader does not set @type = blob.
                 Dictionary content = attachments.getDictionary(key);
                 assertNotNull(content);
-                Log.e(TAG, "content -> %s", content);
                 String digest = content.getString("digest");
                 C4BlobKey blobKey = new C4BlobKey(digest);
                 db.getBlobStore().getFilePath(blobKey);

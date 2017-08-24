@@ -271,7 +271,6 @@ public class Query {
             if (name != null && name.equals(kCBLAllPropertiesName))
                 name = from.getColumnName();
 
-            Log.e(TAG, "generateColumnNames() name -> %s", name);
             if (name == null)
                 name = String.format(Locale.ENGLISH, "$%d", ++provisionKeyIndex);
             if (map.containsKey(name)) {

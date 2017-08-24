@@ -15,9 +15,17 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Logger;
 import com.couchbase.lite.internal.support.LoggerFactory;
+import com.couchbase.litecore.C4Log;
 
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogDebug;
+import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogError;
+import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogInfo;
+import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogNone;
+import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogVerbose;
+import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogWarning;
 
 /**
  * Couchbase Lite Logging API.
@@ -42,31 +50,37 @@ public class Log {
     public static final String QUERY = "Query";
 
     /**
-     * Logging Tag for Blob related operations
-     */
-    public static final String BLOB = "Blob";
-
-    /**
      * Logging Tag for Sync related operations
      */
     public static final String SYNC = "Sync";
 
     /**
+     * Logging Tag for Sync related operations
+     */
+    public static final String WebSocket = "WebSocket";
+
+    /**
+     * Priority constant for the println method; use Log.d.
+     */
+    public static final int DEBUG = kC4LogDebug; // 2
+    /**
      * Priority constant for the println method; use Log.v.
      */
-    public static final int VERBOSE = 2;
+    public static final int VERBOSE = kC4LogVerbose; // 3
     /**
      * Priority constant for the println method; use Log.i.
      */
-    public static final int INFO = 4;
+    public static final int INFO = kC4LogInfo; // 3
     /**
      * Priority constant for the println method; use Log.w.
      */
-    public static final int WARN = 5;
+    public static final int WARN = kC4LogWarning; // 3
     /**
      * Priority constant for the println method; use Log.e.
      */
-    public static final int ERROR = 6;
+    public static final int ERROR = kC4LogError; // 4
+
+    public static final int NONE = kC4LogNone; // 5
 
     static {
         enabledTags = new ConcurrentHashMap<String, Integer>();
@@ -79,16 +93,22 @@ public class Log {
     private Log() {
     }
 
-    /**
-     * Enable logging for a particular tag / loglevel combo
-     *
-     * @param tag      Used to identify the source of a log message.  It usually identifies
-     *                 the class or activity where the log call occurs.
-     * @param logLevel The loglevel to enable.  Anything matching this loglevel
-     *                 or having a more urgent loglevel will be emitted.  Eg, Log.VERBOSE.
-     */
-    public static void enableLogging(String tag, int logLevel) {
+//    /**
+//     * Enable logging for a particular tag / loglevel combo
+//     *
+//     * @param tag      Used to identify the source of a log message.  It usually identifies
+//     *                 the class or activity where the log call occurs.
+//     * @param logLevel The loglevel to enable.  Anything matching this loglevel
+//     *                 or having a more urgent loglevel will be emitted.  Eg, Log.VERBOSE.
+//     */
+//    public static void enableLogging(String tag, int logLevel) {
+//        enableLogging(tag, logLevel, false);
+//    }
+
+    static void enableLogging(String tag, int logLevel, boolean litecore) {
         enabledTags.put(tag, logLevel);
+        if(litecore)
+            C4Log.setLevel(tag, logLevel);
     }
 
     /**
@@ -106,7 +126,7 @@ public class Log {
         // this hashmap lookup might be a little expensive, and so it might make
         // sense to convert this over to a CopyOnWriteArrayList
         Integer logLevelForTag = enabledTags.get(tag);
-        return logLevel >= (logLevelForTag == null ? INFO : logLevelForTag);
+        return logLevel >= (logLevelForTag == null ? WARN : logLevelForTag);
     }
 
     /**

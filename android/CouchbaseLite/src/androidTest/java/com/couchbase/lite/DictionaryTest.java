@@ -366,7 +366,7 @@ public class DictionaryTest extends BaseTest {
 
     // https://github.com/couchbase/couchbase-lite-core/issues/230
     // https://github.com/couchbase/couchbase-lite-core/issues/230
-    // @Test
+    @Test
     public void testLargeLongValue() throws CouchbaseLiteException {
         Document doc = createDocument("test");
         long num1 = 1234567L;
