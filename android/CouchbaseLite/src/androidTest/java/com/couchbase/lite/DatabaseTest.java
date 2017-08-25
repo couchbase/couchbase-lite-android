@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -52,13 +53,14 @@ public class DatabaseTest extends BaseTest {
     private Database openDatabase(String dbName) throws CouchbaseLiteException {
         return openDatabase(dbName, true);
     }
+
     private Database openDatabase(String dbName, boolean countCheck) throws CouchbaseLiteException {
         DatabaseConfiguration options = new DatabaseConfiguration(this.context);
         options.setDirectory(dir);
         Database db = new Database(dbName, options);
         assertEquals(dbName, db.getName());
         assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
-        if(countCheck)
+        if (countCheck)
             assertEquals(0, db.getCount());
         return db;
     }
@@ -1294,5 +1296,109 @@ public class DatabaseTest extends BaseTest {
         // Clean up:
         nudb.close();
         Database.delete(dbName, dir);
+    }
+
+    @Test
+    public void testCreateIndex() throws CouchbaseLiteException {
+        assertEquals(0, db.getIndexes().size());
+
+        // Create value index:
+        Expression fName = Expression.property("firstName");
+        Expression lName = Expression.property("lastName");
+
+        ValueIndexItem fNameItem = ValueIndexItem.expression(fName);
+        ValueIndexItem lNameItem = ValueIndexItem.expression(lName);
+
+        Index index1 = Index.valueIndex().on(fNameItem, lNameItem);
+        db.createIndex("index1", index1);
+        assertEquals(1, db.getIndexes().size());
+
+        // Create FTS index:
+        Expression detail = Expression.property("detail");
+        FTSIndexItem detailItem = FTSIndexItem.expression(detail);
+        Index index2 = Index.ftsIndex().on(detailItem);
+        db.createIndex("index2", index2);
+        assertEquals(2, db.getIndexes().size());
+
+        Expression detail2 = Expression.property("es-detail");
+        FTSIndexItem detailItem2 = FTSIndexItem.expression(detail2);
+        Index index3 = Index.ftsIndex().on(detailItem2).ignoreAccents(true).setLocale("es");
+        db.createIndex("index3", index3);
+        assertEquals(3, db.getIndexes().size());
+        assertEquals(Arrays.asList("index1", "index2", "index3"), db.getIndexes());
+
+        Log.e(TAG, "db.getIndexes() -> " + db.getIndexes());
+    }
+
+    @Test
+    public void testCreateSameIndexTwice() throws CouchbaseLiteException {
+        // Create index with first name:
+        ValueIndexItem indexItem = ValueIndexItem.expression(Expression.property("firstName"));
+        Index index = Index.valueIndex().on(indexItem);
+        db.createIndex("myindex", index);
+
+        // Call create index again:
+        db.createIndex("myindex", index);
+
+        assertEquals(1, db.getIndexes().size());
+        assertEquals(Arrays.asList("myindex"), db.getIndexes());
+    }
+
+    @Test
+    public void testCreateSameNameIndexes() throws CouchbaseLiteException {
+        Expression fName = Expression.property("firstName");
+        Expression lName = Expression.property("lastName");
+        Expression detail = Expression.property("detail");
+
+        ValueIndexItem fNameItem = ValueIndexItem.expression(fName);
+        ValueIndexItem lNameItem = ValueIndexItem.expression(lName);
+        FTSIndexItem detailItem = FTSIndexItem.expression(detail);
+
+        // Create value index with first name:
+        Index fNameindex = Index.valueIndex().on(fNameItem);
+        db.createIndex("myindex", fNameindex);
+
+        // Create value index with last name:
+        Index lNameindex = Index.valueIndex().on(lNameItem);
+        db.createIndex("myindex", lNameindex);
+
+        // Check:
+        assertEquals(1, db.getIndexes().size());
+        assertEquals(Arrays.asList("myindex"), db.getIndexes());
+
+        // Create FTS index:
+        Index detailIndex = Index.ftsIndex().on(detailItem);
+        db.createIndex("myindex", lNameindex);
+
+        // Check:
+        assertEquals(1, db.getIndexes().size());
+        assertEquals(Arrays.asList("myindex"), db.getIndexes());
+    }
+
+    @Test
+    public void testDeleteIndex() throws CouchbaseLiteException {
+        testCreateIndex();
+
+        // Delete indexes:
+        db.deleteIndex("index1");
+        assertEquals(2, db.getIndexes().size());
+        assertEquals(Arrays.asList("index2", "index3"), db.getIndexes());
+
+        db.deleteIndex("index2");
+        assertEquals(1, db.getIndexes().size());
+        assertEquals(Arrays.asList("index3"), db.getIndexes());
+
+        db.deleteIndex("index3");
+        assertEquals(0, db.getIndexes().size());
+        assertEquals(Arrays.asList(), db.getIndexes());
+
+        // Delete non existing index:
+        db.deleteIndex("dummy");
+
+        // Delete deleted indexes:
+        db.deleteIndex("index1");
+        db.deleteIndex("index2");
+        db.deleteIndex("index3");
+
     }
 }

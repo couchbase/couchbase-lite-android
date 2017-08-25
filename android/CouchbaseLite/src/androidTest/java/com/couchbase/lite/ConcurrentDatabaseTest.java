@@ -3,7 +3,6 @@ package com.couchbase.lite;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -645,8 +644,8 @@ public class ConcurrentDatabaseTest extends BaseTest {
             @Override
             public void run() {
                 try {
-                    Expression[] exps = new Expression[]{Expression.property("sentence")};
-                    db.createIndex("sentence", Arrays.asList(exps), IndexType.FullText, null);
+                    Index index = Index.ftsIndex().on(FTSIndexItem.expression(Expression.property("sentence")));
+                    db.createIndex("sentence", index);
                 } catch (CouchbaseLiteException e) {
                     Log.e(TAG, "Error in Database.createIndex()", e);
                     fail();

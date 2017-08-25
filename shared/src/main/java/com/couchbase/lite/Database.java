@@ -447,58 +447,37 @@ public final class Database implements C4Constants {
 
     // Maintenance operations:
 
-    /**
-     * Creates a value index (type IndexType.Value) on the given expressions. This will
-     * speed up queries that queries that test the expressions, at the expense of making
-     * database writes a little bit slower.
-     *
-     * @param expressions Expressions to index, typically property expressions.
-     * @throws CouchbaseLiteException if there is an error occurred.
-     */
-    public void createIndex(String name, List<Expression> expressions) throws CouchbaseLiteException {
-        createIndex(name, expressions, IndexType.Value, null);
-    }
-
-    /**
-     * Creates an index based on the given expressions, index type, and index config. This will
-     * speed up queries that queries that test the expressions, at the expense of making
-     * database writes a little bit slower.
-     *
-     * @param expressions Expressions to index, typically property expressions.
-     * @param type        Type of index to create (Value, FullText or Geo.)
-     * @param options     Options affecting the index, or {@code null} for default settings.
-     * @throws CouchbaseLiteException if there is an error occurred.
-     */
-    public void createIndex(String name,
-                            List<Expression> expressions,
-                            IndexType type,
-                            IndexOptions options) throws CouchbaseLiteException {
-        if (expressions == null || type == null)
-            throw new IllegalArgumentException("an expressions parameter and/or a type parameter are null");
-
+    public List<String> getIndexes() throws CouchbaseLiteException {
         synchronized (lock) {
             mustBeOpen();
-
-            List<Object> list = new ArrayList<Object>();
-            for (Expression exp : expressions) {
-                list.add(exp.asJSON());
-            }
-
-            String language = options != null ? options.getLanguage() : null;
-            boolean ignoreDiacritics = options != null ? options.isIgnoreDiacritics() : false;
-            if (language == null) {
-                // Get default language code:
-                Locale locale = Locale.getDefault();
-                language = locale.getLanguage();
-                if (options != null)
-                    ignoreDiacritics = language.equals("en");
-            }
-
             try {
-                String json = JsonUtils.toJson(list).toString();
-                getC4Database().createIndex(name, json, type.getValue(), language, ignoreDiacritics);
+                return (List<String>) SharedKeys.valueToObject(c4db.getIndexes(), sharedKeys);
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
+        }
+    }
+
+    public void createIndex(String name, Index index) throws CouchbaseLiteException {
+        synchronized (lock) {
+            mustBeOpen();
+            try {
+                String json = JsonUtils.toJson(index.items()).toString();
+                getC4Database().createIndex(name, json,
+                        index.type().getValue(), index.locale(), index.ignoreDiacritics());
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
             } catch (JSONException e) {
                 throw new CouchbaseLiteException(e);
+            }
+        }
+    }
+
+    public void deleteIndex(String name) throws CouchbaseLiteException {
+        synchronized (lock) {
+            mustBeOpen();
+            try {
+                c4db.deleteIndex(name);
             } catch (LiteCoreException e) {
                 throw LiteCoreBridge.convertException(e);
             }
@@ -586,7 +565,7 @@ public final class Database implements C4Constants {
     }
 
     public static void enableLogging(LogDomain domain, LogLevel level) {
-        switch(domain){
+        switch (domain) {
             case ALL:
                 // Database
                 Log.enableLogging(Log.DATABASE, level.getValue(), false);
