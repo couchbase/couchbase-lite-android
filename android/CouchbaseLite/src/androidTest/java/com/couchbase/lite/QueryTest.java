@@ -360,8 +360,8 @@ public class QueryTest extends BaseTest {
     public void testWhereMatch() throws Exception {
         loadJSONResource("sentences.json");
 
-        Expression[] exps = new Expression[]{Expression.property("sentence")};
-        db.createIndex("sentence", Arrays.asList(exps), IndexType.FullText, null);
+        Index index = Index.ftsIndex().on(FTSIndexItem.expression(Expression.property("sentence")));
+        db.createIndex("sentence", index);
 
         SelectResult S_DOCID = SelectResult.expression(Expression.meta().getId());
         Expression SENTENCE = Expression.property("sentence");

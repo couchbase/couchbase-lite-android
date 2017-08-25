@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static com.couchbase.litecore.SharedKeys.getValue;
 import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLArray;
 import static com.couchbase.litecore.fleece.FLConstants.FLValueType.kFLDict;
 
@@ -78,7 +79,8 @@ class CBLData {
                 if (value.getType() != kFLDict)
                     throw new IllegalStateException("value is not kFLDict");
                 FLDict flDict = value.asFLDict();
-                String type = SharedKeys.getValue(flDict, Blob.kC4ObjectTypeProperty, database.getSharedKeys()).asString();
+                FLValue flType = SharedKeys.getValue(flDict, Blob.kC4ObjectTypeProperty, database.getSharedKeys());
+                String type = flType != null ? flType.asString() : null;
                 if (type == null) {
                     return new Dictionary(new CBLFLDict(flDict, c4doc, database));
                 } else { // type == "blob"
@@ -104,7 +106,8 @@ class CBLData {
                 if (value.getType() != kFLDict)
                     throw new IllegalStateException("value is not kFLDict");
                 FLDict flDict = value.asFLDict();
-                String type = SharedKeys.getValue(flDict, Blob.kC4ObjectTypeProperty, database.getSharedKeys()).asString();
+                FLValue flType = getValue(flDict, Blob.kC4ObjectTypeProperty, database.getSharedKeys());
+                String type = flType != null ? flType.asString() : null;
                 if (type == null) {
                     return new Dictionary(new CBLFLDict(flDict, flDataSource, database));
                 } else { // type == "blob"
