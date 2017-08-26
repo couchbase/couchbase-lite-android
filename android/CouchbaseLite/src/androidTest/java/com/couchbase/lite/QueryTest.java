@@ -13,6 +13,7 @@
  */
 package com.couchbase.lite;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -1228,7 +1229,7 @@ public class QueryTest extends BaseTest {
     }
 
     //TODO - Enable the test once LiteCore support ICU for Android
-    // @Test
+    @Test
     public void testUnicodeCollationWithLocale() throws Exception {
         String[] letters = {"B", "A", "Z", "Å"};
         for (String letter : letters) {
@@ -1260,25 +1261,51 @@ public class QueryTest extends BaseTest {
         }, true);
         assertEquals(expected.length, numRows);
 
-        // With locale:
-        Collation WITH_LOCALE = Collation.unicode()
-                .locale("se")
-                .ignoreCase(false)
-                .ignoreAccents(false);
+        // Spanish
+        {
+            // With locale:
+            Collation WITH_LOCALE = Collation.unicode()
+                    .locale("es")
+                    .ignoreCase(false)
+                    .ignoreAccents(false);
 
-        q = Query.select(S_STRING)
-                .from(DataSource.database(db))
-                .where(null)
-                .orderBy(Ordering.expression(STRING.collate(WITH_LOCALE)));
+            q = Query.select(S_STRING)
+                    .from(DataSource.database(db))
+                    .where(null)
+                    .orderBy(Ordering.expression(STRING.collate(WITH_LOCALE)));
 
-        final String[] expected2 = {"A", "B", "Z", "Å"};
-        numRows = verifyQuery(q, new QueryResult() {
-            @Override
-            public void check(int n, Result result) throws Exception {
-                assertEquals(expected2[n - 1], result.getString(0));
-            }
-        }, true);
-        assertEquals(expected2.length, numRows);
+            final String[] expected2 = {"A", "Å", "B", "Z"};
+            numRows = verifyQuery(q, new QueryResult() {
+                @Override
+                public void check(int n, Result result) throws Exception {
+                    assertEquals(expected2[n - 1], result.getString(0));
+                }
+            }, true);
+            assertEquals(expected2.length, numRows);
+        }
+
+        // NOTE: API 16 - 22, ICU does not support Locale "se"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // With locale:
+            Collation WITH_LOCALE = Collation.unicode()
+                    .locale("se")
+                    .ignoreCase(false)
+                    .ignoreAccents(false);
+
+            q = Query.select(S_STRING)
+                    .from(DataSource.database(db))
+                    .where(null)
+                    .orderBy(Ordering.expression(STRING.collate(WITH_LOCALE)));
+
+            final String[] expected2 = {"A", "B", "Z", "Å"};
+            numRows = verifyQuery(q, new QueryResult() {
+                @Override
+                public void check(int n, Result result) throws Exception {
+                    assertEquals(expected2[n - 1], result.getString(0));
+                }
+            }, true);
+            assertEquals(expected2.length, numRows);
+        }
     }
 
     //TODO - Implement once LiteCore support ICU for Android
