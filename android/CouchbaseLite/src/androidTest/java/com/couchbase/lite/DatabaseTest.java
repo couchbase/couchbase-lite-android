@@ -148,12 +148,12 @@ public class DatabaseTest extends BaseTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        Log.i("DatabaseTest", "setUp");
+        Log.i(TAG, "setUp");
     }
 
     @After
     public void tearDown() throws Exception {
-        Log.i("DatabaseTest", "tearDown");
+        Log.i(TAG, "tearDown");
         super.tearDown();
     }
 
@@ -178,20 +178,21 @@ public class DatabaseTest extends BaseTest {
         assertNull(config1a.getEncryptionKey());
 
         // Custom
+        EncryptionKey key = new EncryptionKey("key");
         DummyResolver resolver = new DummyResolver();
         DatabaseConfiguration config2 = new DatabaseConfiguration(this.context);
         config2.setDirectory(new File("/tmp/mydb"));
         config2.setConflictResolver(resolver);
-        config2.setEncryptionKey("key");
+        config2.setEncryptionKey(key);
         assertEquals("/tmp/mydb", config2.getDirectory().getAbsolutePath());
         assertEquals(resolver, config2.getConflictResolver());
-        assertEquals("key", config2.getEncryptionKey());
+        assertEquals(key, config2.getEncryptionKey());
 
         // Custom + Copy
         DatabaseConfiguration config2a = config2.copy();
         assertEquals("/tmp/mydb", config2a.getDirectory().getAbsolutePath());
         assertEquals(resolver, config2a.getConflictResolver());
-        assertEquals("key", config2a.getEncryptionKey());
+        assertEquals(key, config2a.getEncryptionKey());
     }
 
     @Test
