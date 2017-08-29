@@ -1,6 +1,8 @@
 package com.couchbase.lite.utils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,6 +14,15 @@ public class IOUtils {
 
     public static byte[] toByteArray(URL url) throws IOException {
         return toByteArray(url.openStream());
+    }
+
+    public static byte[] toByteArray(File file) throws IOException {
+        FileInputStream fis = new FileInputStream(file);
+        try {
+            return toByteArray(fis);
+        } finally {
+            fis.close();
+        }
     }
 
     public static byte[] toByteArray(InputStream input) throws IOException {

@@ -23,7 +23,7 @@ public class BaseDatabaseConfiguration {
     // member variables
     //---------------------------------------------
     private File directory = null;
-    private Object encryptionKey = null;
+    private EncryptionKey encryptionKey = null;
     private ConflictResolver conflictResolver = null;
 
     //---------------------------------------------
@@ -58,7 +58,7 @@ public class BaseDatabaseConfiguration {
      *
      * @return the key
      */
-    public Object getEncryptionKey() {
+    public EncryptionKey getEncryptionKey() {
         return encryptionKey;
     }
 
@@ -68,7 +68,7 @@ public class BaseDatabaseConfiguration {
      *
      * @param encryptionKey the key
      */
-    public BaseDatabaseConfiguration setEncryptionKey(Object encryptionKey) {
+    public BaseDatabaseConfiguration setEncryptionKey(EncryptionKey encryptionKey) {
         this.encryptionKey = encryptionKey;
         return this;
     }

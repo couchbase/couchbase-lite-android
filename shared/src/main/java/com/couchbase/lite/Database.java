@@ -46,6 +46,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm.kC4EncryptionAES256;
+import static com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm.kC4EncryptionNone;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotFound;
@@ -445,6 +447,24 @@ public final class Database implements C4Constants {
         }
     }
 
+    /**
+     * Changes the database's encryption key, or removes encryption if the new key is null.
+     *
+     * @param encryptionKey The encryption key
+     * @throws CouchbaseLiteException
+     */
+    public void setEncryptionKey(EncryptionKey encryptionKey) throws CouchbaseLiteException {
+        synchronized (lock) {
+            mustBeOpen();
+            int keyType = encryptionKey == null || encryptionKey.getKey() == null ? kC4EncryptionNone : kC4EncryptionAES256;
+            try {
+                c4db.rekey(keyType, encryptionKey.getKey());
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
+        }
+    }
+
     // Maintenance operations:
 
     public List<String> getIndexes() throws CouchbaseLiteException {
@@ -547,7 +567,7 @@ public final class Database implements C4Constants {
             toPath += File.separator;
         // TODO:
         int databaseFlags = DEFAULT_DATABASE_FLAGS;
-        int encryptionAlgorithm = C4EncryptionAlgorithm.kC4EncryptionNone;
+        int encryptionAlgorithm = kC4EncryptionNone;
         byte[] encryptionKey = null;
 
         try {
@@ -805,9 +825,9 @@ public final class Database implements C4Constants {
         // TODO:
         int databaseFlags = getDatabaseFlags();
 
-        // TODO:
-        int encryptionAlgorithm = C4EncryptionAlgorithm.kC4EncryptionNone;
-        byte[] encryptionKey = null;
+        // encryption key
+        int encryptionAlgorithm = config.getEncryptionKey() == null ? kC4EncryptionNone : kC4EncryptionAES256;
+        byte[] encryptionKey = config.getEncryptionKey() == null ? null : config.getEncryptionKey().getKey();
 
         Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
 
