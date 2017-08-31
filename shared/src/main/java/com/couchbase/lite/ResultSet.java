@@ -46,7 +46,6 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
         this.query = query;
         this.c4enum = c4enum;
         this.columnNames = columnNames;
-        Log.v(TAG, "Beginning query enumeration (%p)", c4enum);
     }
 
     // TODO: c4enum is better to be free.
