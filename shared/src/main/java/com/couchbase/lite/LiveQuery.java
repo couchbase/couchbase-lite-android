@@ -111,7 +111,11 @@ public class LiveQuery implements DatabaseChangeListener {
 
     @Override
     protected void finalize() throws Throwable {
-        stop();
+        try {
+            stop();
+        } catch (CouchbaseLiteRuntimeException e) {
+            Log.w(TAG, "Error in LiveQuery.finalize()", e);
+        }
         super.finalize();
     }
 
