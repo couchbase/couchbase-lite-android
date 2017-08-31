@@ -101,7 +101,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
         this.c4doc = c4doc;
         if (c4doc != null) {
             FLDict root = null;
-            if (!c4doc.getRawDoc().deleted())
+            if (c4doc.getRawDoc() != null && !c4doc.getRawDoc().deleted())
                 root = c4doc.getRawDoc().getSelectedBody2();
             setData(new CBLFLDict(root, c4doc, database));
         } else
