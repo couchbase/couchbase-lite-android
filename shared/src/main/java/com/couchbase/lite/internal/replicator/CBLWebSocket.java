@@ -322,19 +322,11 @@ public class CBLWebSocket extends C4Socket {
                 for (Map.Entry<String, Object> entry : value.asDict().entrySet())
                     builder.header(entry.getKey(), entry.getValue().toString());
             }
+
             // Cookies:
-            // NOTE: BasicAuthenticator -> FLValue (Map)
-            //       SessionAuthenticator -> String
-            Object cookieObject = options.get(kC4ReplicatorOptionCookies);
-            if (cookieObject != null) {
-                String cookieString = null;
-                if (cookieObject instanceof String)
-                    cookieString = (String) cookieObject;
-                else if (cookieObject instanceof FLValue)
-                    cookieString = ((FLValue) cookieObject).asString();
-                if (cookieString != null)
-                    builder.addHeader("Cookie", cookieString);
-            }
+            String cookieString = (String) options.get(kC4ReplicatorOptionCookies);
+            if (cookieString != null)
+                builder.addHeader("Cookie", cookieString);
         }
 
         // other header values
