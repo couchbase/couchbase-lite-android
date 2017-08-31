@@ -2,9 +2,12 @@ package com.couchbase.lite;
 
 import android.support.test.InstrumentationRegistry;
 
+import com.couchbase.lite.internal.support.DateUtils;
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.IOUtils;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,6 +21,12 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PULL;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH;
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
@@ -27,6 +36,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+  * Note: https://github.com/couchbase/couchbase-lite-core/tree/master/Replicator/tests/data
+  */
 public class ReplicatorTest extends BaseTest {
 
     Database otherDB;
@@ -112,7 +124,7 @@ public class ReplicatorTest extends BaseTest {
         conflictResolver = new ConflictTest.MergeThenTheirsWins();
         super.setUp();
 
-        timeout = 5; // seconds
+        timeout = 10; // seconds
         otherDB = open("otherdb");
         assertNotNull(otherDB);
     }
@@ -350,11 +362,47 @@ public class ReplicatorTest extends BaseTest {
     public void testAuthenticatedPull() throws InterruptedException {
         if (!config.replicatorTestsEnabled())
             return;
-        String uri = String.format(Locale.ENGLISH, "blip://%s:4994/seekrit",
+        String uri = String.format(Locale.ENGLISH, "blip://%s:4984/seekrit",
                 this.config.remoteHost(), this.config.remotePort());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
         run(config, 0, null);
+    }
+
+    @Test
+    public void testSessionAuthenticatorPull() throws InterruptedException, IOException, JSONException {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        // Obtain Sync-Gateway Session ID
+        SessionAuthenticator auth = getSessionAuthenticatorFromSG();
+        Log.e(TAG, "auth -> " + auth);
+
+        String uri = String.format(Locale.ENGLISH, "blip://%s:4984/seekrit",
+                this.config.remoteHost(), this.config.remotePort());
+        ReplicatorConfiguration config = makeConfig(false, true, false, uri);
+        config.setAuthenticator(auth);
+        run(config, 0, null);
+    }
+
+    SessionAuthenticator getSessionAuthenticatorFromSG() throws IOException, JSONException {
+        // Obtain Sync-Gateway Session ID
+        final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+        OkHttpClient client = new OkHttpClient();
+        String url = String.format(Locale.ENGLISH, "http://%s:4985/seekrit/_session", config.remoteHost());
+        RequestBody body = RequestBody.create(JSON, "{\"name\": \"pupshaw\"}");
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        Response response = client.newCall(request).execute();
+        String respBody = response.body().string();
+        Log.e(TAG, "json string -> " + respBody);
+        JSONObject json = new JSONObject(respBody);
+        return new SessionAuthenticator(
+                json.getString("session_id"),
+                DateUtils.fromJson(json.getString("expires")),
+                json.getString("cookie_name"));
     }
 
     /**
