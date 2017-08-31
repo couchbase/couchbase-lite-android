@@ -147,6 +147,10 @@ public class BaseTest implements C4Constants {
         }
     }
 
+    protected Document createDocument() {
+        return new Document();
+    }
+
     protected Document createDocument(String id) {
         return new Document(id);
     }

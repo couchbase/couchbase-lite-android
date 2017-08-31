@@ -377,6 +377,11 @@ public abstract class Expression {
         return negated(isNullOrMissing());
     }
 
+    // Collation:
+    public Expression collate(Collation collation) {
+        return new CollationExpression(this, collation);
+    }
+
     /**
      * Create an IN expression that evaluates whether or not the current expression is in the
      * given expressions.
@@ -809,6 +814,25 @@ public abstract class Expression {
         protected Object asJSON() {
             List<Object> json = new ArrayList<>();
             json.add("?" + name);
+            return json;
+        }
+    }
+
+    static final class CollationExpression extends Expression {
+        Expression operand;
+        Collation collation;
+
+        public CollationExpression(Expression operand, Collation collation) {
+            this.operand = operand;
+            this.collation = collation;
+        }
+
+        @Override
+        protected Object asJSON() {
+            List<Object> json = new ArrayList<>(3);
+            json.add("COLLATE");
+            json.add(collation.asJSON());
+            json.add(operand.asJSON());
             return json;
         }
     }
