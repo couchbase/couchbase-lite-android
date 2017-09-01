@@ -1431,4 +1431,24 @@ public class QueryTest extends BaseTest {
             query.stop();
         }
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1356
+    @Test
+    public void testCountFunctions() throws Exception {
+        loadNumbers(100);
+
+        DataSource ds = database(this.db);
+        Expression exprNum1 = Expression.property("number1");
+        Function cnt = Function.count(exprNum1);
+        SelectResult rsCnt = SelectResult.expression(cnt);
+        Query q = Query.select(rsCnt).from(ds);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(100L, (long) result.getObject(0));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
 }
