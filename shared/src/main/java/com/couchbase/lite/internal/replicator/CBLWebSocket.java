@@ -1,12 +1,9 @@
 package com.couchbase.lite.internal.replicator;
 
-import android.os.Build;
-
 import com.couchbase.lite.Log;
 import com.couchbase.litecore.C4Socket;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
-import com.couchbase.litecore.fleece.FLValue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -317,10 +314,12 @@ public class CBLWebSocket extends C4Socket {
 
         // Construct the HTTP request:
         if (options != null) {
-            FLValue value = (FLValue) options.get(kC4ReplicatorOptionExtraHeaders);
-            if (value != null && value.asDict() != null) {
-                for (Map.Entry<String, Object> entry : value.asDict().entrySet())
+            // Extra Headers
+            Map<String, Object> extraHeaders = (Map<String, Object>) options.get(kC4ReplicatorOptionExtraHeaders);
+            if (extraHeaders != null) {
+                for (Map.Entry<String, Object> entry : extraHeaders.entrySet()) {
                     builder.header(entry.getKey(), entry.getValue().toString());
+                }
             }
 
             // Cookies:
@@ -335,28 +334,7 @@ public class CBLWebSocket extends C4Socket {
         builder.header("Sec-WebSocket-Version", "13");
         builder.header("Sec-WebSocket-Key", nonceKey);
 
-        // Add User-Agent if necessary:
-        builder.header("User-Agent", getUserAgent());
-
         return builder.build();
-    }
-
-    /**
-     * Return User-Agent value
-     * Format: ex: CouchbaseLite/1.2 (Java Linux/MIPS Android/)
-     */
-    private static String USER_AGENT = null;
-
-    // TODO:
-    private static String getUserAgent() {
-        if (USER_AGENT == null) {
-            USER_AGENT = String.format(Locale.ENGLISH, "%s/%s (%s/%s)",
-                    "CouchbaseLite",
-                    "2.0.0",
-                    "Android",
-                    Build.VERSION.RELEASE);
-        }
-        return USER_AGENT;
     }
 
     private void receivedHTTPResponse(Response response) {

@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import android.os.Build;
+
 import com.couchbase.lite.internal.support.URIUtils;
 
 import java.net.URI;
@@ -7,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
@@ -14,7 +17,7 @@ import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND
 public class ReplicatorConfiguration {
 
     // Replicator option dictionary keys:
-    static final String kC4ReplicatorOptionExtraHeaders = "cookies";  // Extra HTTP headers; string[]
+    static final String kC4ReplicatorOptionExtraHeaders = "headers";  // Extra HTTP headers; string[]
     static final String kC4ReplicatorOptionCookies = "cookies";  // HTTP Cookie header value; string
     static final String kCBLReplicatorAuthOption = "auth";       // Auth settings; Dict
     static final String kC4ReplicatorOptionPinnedServerCert = "pinnedCert";  // Cert or public key; data
@@ -23,11 +26,14 @@ public class ReplicatorConfiguration {
     static final String kC4ReplicatorOptionFilter = "filter";   // Filter name; string
     static final String kC4ReplicatorOptionFilterParams = "filterParams";  // Filter params; Dict[string]
     static final String kC4ReplicatorOptionSkipDeleted = "skipDeleted"; // Don't push/pull tombstones; bool
+    static final String kC4ReplicatorOptionNoConflicts = "noConflicts"; // Puller rejects conflicts; bool
+    static final String kC4ReplicatorCheckpointInterval = "checkpointInterval"; // How often to checkpoint, in seconds; number
 
     // Auth dictionary keys:
     static final String kC4ReplicatorAuthType = "type"; // Auth property; string
     static final String kCBLReplicatorAuthUserName = "username"; // Auth property; string
     static final String kCBLReplicatorAuthPassword = "password"; // Auth property; string
+    static final String kC4ReplicatorAuthClientCert = "clientCert"; // Auth property; value platform-dependent
 
     // auth.type values:
     static final String kC4AuthTypeBasic = "Basic"; // HTTP Basic (the default)
@@ -219,6 +225,11 @@ public class ReplicatorConfiguration {
         if (channels != null && channels.size() > 0)
             options.put(kC4ReplicatorOptionChannels, channels);
 
+        // User-Agent:
+        Map<String, Object> userAgentHeader = new HashMap<>();
+        userAgentHeader.put("User-Agent", getUserAgent());
+        options.put(kC4ReplicatorOptionExtraHeaders, userAgentHeader);
+
         return options;
     }
 
@@ -245,5 +256,37 @@ public class ReplicatorConfiguration {
             return URIUtils.getPassword((URI) target);
         else
             return null;
+    }
+
+    static String userAgent = null;
+
+    static String getUserAgent() {
+        if (userAgent == null) {
+            userAgent = String.format(Locale.ENGLISH,
+                    "CouchbaseLite/%s %s Build/%d Commit/%.8s",
+                    BuildConfig.VERSION_NAME,
+                    getSystemInfo(),
+                    BuildConfig.BUILD_NO,
+                    BuildConfig.GitHash
+            );
+        }
+        return userAgent;
+    }
+
+    static String getSystemInfo() {
+        StringBuilder result = new StringBuilder(64);
+        result.append("(Java; Android ");
+        String version = Build.VERSION.RELEASE; // "1.0" or "3.4b5"
+        result.append(version.length() > 0 ? version : "1.0");
+        // add the model for the release build
+        if ("REL".equals(Build.VERSION.CODENAME)) {
+            String model = Build.MODEL;
+            if (model.length() > 0) {
+                result.append("; ");
+                result.append(model);
+            }
+        }
+        result.append(")");
+        return result.toString();
     }
 }
