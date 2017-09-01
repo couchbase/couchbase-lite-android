@@ -170,8 +170,8 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 200;
-        final int kNThreads = 10;
+        final int kNDocs = 50;
+        final int kNThreads = 4;
         final int kWaitInSec = 60;
 
         // concurrently creates documents
@@ -198,8 +198,8 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 200;
-        final int kNThreads = 10;
+        final int kNDocs = 50;
+        final int kNThreads = 4;
         final int kWaitInSec = 60;
 
         // concurrently creates documents
@@ -237,9 +237,9 @@ public class ConcurrentDatabaseTest extends BaseTest {
             return;
 
         // NOTE: By increasing number of threads, update causes crash!
-        final int kNDocs = 10;
-        final int kNRounds = 100;
-        final int kNThreads = 2;
+        final int kNDocs = 5;
+        final int kNRounds = 50;
+        final int kNThreads = 4;
         final int kWaitInSec = 60;
 
         // createDocs2 returns synchronized List.
@@ -273,9 +273,9 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 10;
-        final int kNRounds = 100;
-        final int kNThreads = 10;
+        final int kNDocs = 5;
+        final int kNRounds = 50;
+        final int kNThreads = 4;
         final int kWaitInSec = 60;
 
         // createDocs2 returns synchronized List.
@@ -296,9 +296,9 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 10;
-        final int kNRounds = 100;
-        final int kNThreads = 10;
+        final int kNDocs = 5;
+        final int kNRounds = 50;
+        final int kNThreads = 4;
         final int kWaitInSec = 60;
 
         // createDocs2 returns synchronized List.
@@ -329,8 +329,8 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 10;
-        final int kNRounds = 100;
+        final int kNDocs = 5;
+        final int kNRounds = 50;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -368,7 +368,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 1000;
+        final int kNDocs = 100;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -418,7 +418,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 1000;
+        final int kNDocs = 100;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -472,7 +472,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 1000;
+        final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final String tag1 = "Create1";
@@ -519,7 +519,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 1000;
+        final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final String tag1 = "Create1";
@@ -566,7 +566,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         if (!config.concurrentTestsEnabled())
             return;
 
-        final int kNDocs = 1000;
+        final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final String tag1 = "Create1";
@@ -615,7 +615,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
 
         loadJSONResource("sentences.json");
 
-        final int kNDocs = 1000;
+        final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final String tag1 = "Create1";
