@@ -93,18 +93,6 @@ public class Log {
     private Log() {
     }
 
-//    /**
-//     * Enable logging for a particular tag / loglevel combo
-//     *
-//     * @param tag      Used to identify the source of a log message.  It usually identifies
-//     *                 the class or activity where the log call occurs.
-//     * @param logLevel The loglevel to enable.  Anything matching this loglevel
-//     *                 or having a more urgent loglevel will be emitted.  Eg, Log.VERBOSE.
-//     */
-//    public static void enableLogging(String tag, int logLevel) {
-//        enableLogging(tag, logLevel, false);
-//    }
-
     static void enableLogging(String tag, int logLevel, boolean litecore) {
         enabledTags.put(tag, logLevel);
         if(litecore)

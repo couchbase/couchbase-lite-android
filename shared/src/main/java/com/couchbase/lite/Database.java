@@ -509,19 +509,6 @@ public final class Database implements C4Constants {
     //---------------------------------------------
 
     /**
-     * Changes the database's encryption key, or removes encryption if the new key is null.
-     *
-     * @param key The encryption key in the form of an String (a password) or
-     *            an byte[] object exactly 32 bytes in length (a raw AES key.)
-     *            If a string is given, it will be internally converted to a raw key
-     *            using 64,000 rounds of PBKDF2 hashing. A null value will decrypt the database.
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-    public static void changeEncryptionKey(Object key) throws CouchbaseLiteException {
-        throw new UnsupportedOperationException("Work in Progress!");
-    }
-
-    /**
      * Deletes a database of the given name in the given directory.
      *
      * @param name      the database's name
@@ -584,7 +571,7 @@ public final class Database implements C4Constants {
         }
     }
 
-    public static void enableLogging(LogDomain domain, LogLevel level) {
+    public static void setLogLevel(LogDomain domain, LogLevel level) {
         switch (domain) {
             case ALL:
                 // Database
