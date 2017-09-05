@@ -54,7 +54,7 @@ public class BaseTest implements C4Constants {
     @Before
     public void setUp() throws Exception {
 
-        Database.enableLogging(Database.LogDomain.ALL, Database.LogLevel.INFO);
+        Database.setLogLevel(Database.LogDomain.ALL, Database.LogLevel.INFO);
 
         Log.i(TAG, "setUp");
 
