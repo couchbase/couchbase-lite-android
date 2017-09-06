@@ -1469,4 +1469,60 @@ public class QueryTest extends BaseTest {
         }, true);
         assertEquals(1, numRows);
     }
+
+    @Test
+    public void testJoinWithArrayContains() throws Exception {
+        // Data preparation
+
+        // Hotels
+        Document hotel1 = new Document("hotel1");
+        hotel1.setString("type", "hotel");
+        hotel1.setString("name", "Hilton");
+        db.save(hotel1);
+
+        Document hotel2 = new Document("hotel2");
+        hotel2.setString("type", "hotel");
+        hotel2.setString("name", "Sheraton");
+        db.save(hotel2);
+
+        Document hotel3 = new Document("hotel2");
+        hotel3.setString("type", "hotel");
+        hotel3.setString("name", "Marriott");
+        db.save(hotel3);
+
+        // Bookmark
+        Document bookmark1 = new Document("bookmark1");
+        bookmark1.setString("type", "bookmark");
+        bookmark1.setString("title", "Bookmark For Hawaii");
+        Array hotels1 = new Array();
+        hotels1.addString("hotel1");
+        hotels1.addString("hotel2");
+        bookmark1.setArray("hotels", hotels1);
+        db.save(bookmark1);
+
+        Document bookmark2 = new Document("bookmark2");
+        bookmark2.setString("type", "bookmark");
+        bookmark2.setString("title", "Bookmark for New York");
+        Array hotels2 = new Array();
+        hotels2.addString("hotel3");
+        bookmark2.setArray("hotels", hotels2);
+        db.save(bookmark2);
+
+        // Join Query
+        DataSource mainDS = database(this.db).as("main");
+        DataSource secondaryDS = database(this.db).as("secondary");
+
+        Expression typeExpr = Expression.property("type").from("main");
+        Expression hotelsExpr = Expression.property("hotels").from("main");
+        Expression hotelIdExpr = Expression.meta().getId().from("secondary");
+        Expression joinExpr = Function.arrayContains(hotelsExpr, hotelIdExpr);
+        Join join = Join.join(secondaryDS).on(joinExpr);
+
+        SelectResult srMainAll = SelectResult.all().from("main");
+        SelectResult srSecondaryAll = SelectResult.all().from("secondary");
+        Query q = Query.select(srMainAll, srSecondaryAll).from(mainDS).join(join).where(typeExpr.equalTo("bookmark"));
+        ResultSet rs = q.run();
+        for (Result r : rs)
+            Log.e(TAG, "RESULT: " + r.toMap());
+    }
 }
