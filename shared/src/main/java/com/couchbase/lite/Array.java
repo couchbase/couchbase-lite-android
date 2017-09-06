@@ -383,7 +383,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface, FleeceEncoda
         Object value = getObject(index);
         // special handling for Boolean
         if (value != null && value instanceof Boolean)
-            return new Integer(value == Boolean.TRUE ? 1 : 0);
+            return value == Boolean.TRUE ? Integer.valueOf(1) : Integer.valueOf(0);
         else
             return cast(value, Number.class);
     }

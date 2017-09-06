@@ -138,7 +138,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         final Thread[] threads = new Thread[nThreads];
         final CountDownLatch[] latchs = new CountDownLatch[nThreads];
         for (int i = 0; i < nThreads; i++) {
-            final Integer counter = new Integer(i);
+            final Integer counter = Integer.valueOf(i);
             latchs[i] = new CountDownLatch(1);
             String threadName = String.format(Locale.ENGLISH, "Thread-%d", i);
             threads[i] = new Thread(new Runnable() {

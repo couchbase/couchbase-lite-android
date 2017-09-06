@@ -99,7 +99,7 @@ public class Function extends Expression {
     }
 
     public static Function e() {
-        return new Function("E()", Arrays.asList(null));
+        return new Function("E()", Arrays.asList((Object) null));
     }
 
     public static Function exp(Object expression) {
@@ -119,7 +119,7 @@ public class Function extends Expression {
     }
 
     public static Function pi() {
-        return new Function("PI()", Arrays.asList(null));
+        return new Function("PI()", Arrays.asList((Object) null));
     }
 
     public static Function power(Object base, Object exponent) {
