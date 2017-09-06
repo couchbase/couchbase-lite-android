@@ -266,37 +266,6 @@ public class Result
     }
 
     //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
-    /**
-     * Get the ID of the document that produced this row.
-     *
-     * @return the ID of the document that produced this row.
-     */
-    String getDocumentID() {
-        return c4enum.getDocID();
-    }
-
-    /**
-     * Get the sequence number of the document revision that produced this row.
-     *
-     * @return the sequence number of the document revision that produced this row.
-     */
-    long getSequence() {
-        return c4enum.getDocSequence();
-    }
-
-    /**
-     * Get the document that produced this row.
-     *
-     * @return the document object.
-     */
-    Document getDocument() {
-        return rs.getQuery().getDatabase().getDocument(documentID);
-    }
-
-    //---------------------------------------------
     // private level access
     //---------------------------------------------
 

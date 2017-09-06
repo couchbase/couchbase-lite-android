@@ -63,17 +63,13 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
     public Result next() {
         try {
             if (c4enum.next()) {
-                if (c4enum.getFullTextTermCount() > 0)
-                    return new FullTextResult(this, c4enum);
-                else
-                    return new Result(this, c4enum);
+                return new Result(this, c4enum);
             } else
                 return null;
         } catch (LiteCoreException e) {
             Log.w(TAG, "Query enumeration error: %s", e);
             return null;
         }
-
     }
 
     //---------------------------------------------
@@ -152,10 +148,7 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
     Result get(int index) {
         try {
             if (c4enum.seek(index)) {
-                if (c4enum.getFullTextTermCount() > 0)
-                    return new FullTextResult(this, c4enum);
-                else
-                    return new Result(this, c4enum);
+                return new Result(this, c4enum);
             } else
                 return null;
         } catch (LiteCoreException e) {
