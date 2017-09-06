@@ -104,7 +104,7 @@ android {
     }
 
     lintOptions {
-        disable 'InvalidPackage'
+        disable 'InvalidPackage', 'UseSparseArrays', 'AuthLeak', 'BadHostnameVerifier'
         abortOnError false
     }
 }

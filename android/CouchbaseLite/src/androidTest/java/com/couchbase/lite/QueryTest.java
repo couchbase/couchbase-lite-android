@@ -1026,11 +1026,11 @@ public class QueryTest extends BaseTest {
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                assertEquals(str.toLowerCase(), result.getString(0));
+                assertEquals(str.toLowerCase(Locale.ENGLISH), result.getString(0));
                 assertEquals(str.replaceAll("^\\s+", ""), result.getString(1));
                 assertEquals(str.replaceAll("\\s+$", ""), result.getString(2));
                 assertEquals(str.trim(), result.getString(3));
-                assertEquals(str.toUpperCase(), result.getString(4));
+                assertEquals(str.toUpperCase(Locale.ENGLISH), result.getString(4));
             }
         }, true);
         assertEquals(1, numRows);
