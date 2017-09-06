@@ -40,6 +40,9 @@ import static org.junit.Assert.assertTrue;
 public class QueryTest extends BaseTest {
     public static final String TAG = QueryTest.class.getSimpleName();
 
+    private static SelectResult kDOCID = SelectResult.expression(Expression.meta().getId());
+    private static SelectResult kSEQUENCE = SelectResult.expression(Expression.meta().getSequence());
+
     private interface QueryResult {
         void check(int n, Result result) throws Exception;
     }
@@ -106,11 +109,11 @@ public class QueryTest extends BaseTest {
             Expression w = (Expression) c[0];
             String[] documentIDs = (String[]) c[1];
             final List<String> docIDList = new ArrayList<String>(Arrays.asList(documentIDs));
-            Query q = Query.select().from(database(db)).where(w);
+            Query q = Query.select(kDOCID).from(database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(int n, Result result) throws Exception {
-                    String docID = result.getDocumentID();
+                    String docID = result.getString(0);
                     if (docIDList.contains(docID))
                         docIDList.remove(docID);
                 }
@@ -131,14 +134,18 @@ public class QueryTest extends BaseTest {
     @Test
     public void testNoWhereQuery() throws Exception {
         loadJSONResource("names_100.json");
-        Query q = Query.select().from(database(db));
+        Query q = Query.select(kDOCID, kSEQUENCE).from(database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
+                String docID = result.getString(0);
                 String expectedID = String.format(Locale.ENGLISH, "doc-%03d", n);
-                assertEquals(expectedID, result.getDocumentID());
-                assertEquals(n, result.getSequence());
-                Document doc = result.getDocument();
+                assertEquals(expectedID, docID);
+
+                int sequence = result.getInt(1);
+                assertEquals(n, sequence);
+
+                Document doc = db.getDocument(docID);
                 assertEquals(expectedID, doc.getId());
                 assertEquals(n, doc.getSequence());
             }
@@ -258,14 +265,15 @@ public class QueryTest extends BaseTest {
 
         // Test IS:
         q = Query
-                .select()
+                .select(kDOCID)
                 .from(database(db))
                 .where(Expression.property("string").is("string"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Document doc = result.getDocument();
-                assertEquals(doc1.getId(), doc.getId());
+                String docID = result.getString(0);
+                assertEquals(doc1.getId(), docID);
+                Document doc = db.getDocument(docID);
                 assertEquals(doc1.getObject("string"), doc.getObject("string"));
             }
         }, true);
@@ -273,14 +281,15 @@ public class QueryTest extends BaseTest {
 
         // Test IS NOT:
         q = Query
-                .select()
+                .select(kDOCID)
                 .from(database(db))
                 .where(Expression.property("string").isNot("string1"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Document doc = result.getDocument();
-                assertEquals(doc1.getId(), doc.getId());
+                String docID = result.getString(0);
+                assertEquals(doc1.getId(), docID);
+                Document doc = db.getDocument(docID);
                 assertEquals(doc1.getObject("string"), doc.getObject("string"));
             }
         }, true);
@@ -303,7 +312,7 @@ public class QueryTest extends BaseTest {
 
         Expression w = Expression.property("name.first").like("%Mar%");
         Query q = Query
-                .select()
+                .select(kDOCID)
                 .from(database(db))
                 .where(w)
                 .orderBy(Ordering.property("name.first").ascending());
@@ -312,7 +321,8 @@ public class QueryTest extends BaseTest {
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Document doc = result.getDocument();
+                String docID = result.getString(0);
+                Document doc = db.getDocument(docID);
                 Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
@@ -332,7 +342,7 @@ public class QueryTest extends BaseTest {
 
         Expression w = Expression.property("name.first").regex("^Mar.*");
         Query q = Query
-                .select()
+                .select(kDOCID)
                 .from(database(db))
                 .where(w)
                 .orderBy(Ordering.property("name.first").ascending());
@@ -342,7 +352,8 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(int n, Result result) throws Exception {
                 Log.v(TAG, "check() n -> " + n);
-                Document doc = result.getDocument();
+                String docID = result.getString(0);
+                Document doc = db.getDocument(docID);
                 Map<String, Object> name = doc.getDictionary("name").toMap();
                 if (name != null) {
                     String firstName = (String) name.get("first");
@@ -392,13 +403,14 @@ public class QueryTest extends BaseTest {
                 o = Ordering.expression(Expression.property("name.first")).ascending();
             else
                 o = Ordering.expression(Expression.property("name.first")).descending();
-            Query q = Query.select().from(database(db)).orderBy(o);
+            Query q = Query.select(kDOCID).from(database(db)).orderBy(o);
 
             final List<String> firstNames = new ArrayList<String>();
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(int n, Result result) throws Exception {
-                    Document doc = result.getDocument();
+                    String docID = result.getString(0);
+                    Document doc = db.getDocument(docID);
                     Map<String, Object> name = doc.getDictionary("name").toMap();
                     String firstName = (String) name.get("first");
                     firstNames.add(firstName);
@@ -419,23 +431,25 @@ public class QueryTest extends BaseTest {
         }
     }
 
-    //TODO @Test
+    @Test
     public void testSelectDistinct() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1669
         // https://github.com/couchbase/couchbase-lite-core/issues/81
         final Document doc1 = new Document();
-        doc1.setObject("number", 1);
+        doc1.setObject("number", 20);
         save(doc1);
 
         Document doc2 = new Document();
-        doc2.setObject("number", 1);
+        doc2.setObject("number", 20);
         save(doc2);
 
-        Query q = Query.selectDistinct().from(database(db));
+        Expression NUMBER = Expression.property("number");
+        SelectResult S_NUMBER = SelectResult.expression(NUMBER);
+        Query q = Query.selectDistinct(S_NUMBER).from(database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                assertEquals(doc1.getId(), result.getDocumentID());
+                assertEquals(20, result.getInt(0));
             }
         }, true);
         assertEquals(1, numRows);
@@ -455,13 +469,15 @@ public class QueryTest extends BaseTest {
         Expression secondaryExpr = Expression.property("theone").from("secondary");
         Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
         Join join = Join.join(secondaryDS).on(joinExpr);
-        Query q = Query.select().from(mainDS).join(join);
+        SelectResult MAIN_DOC_ID= SelectResult.expression(Expression.meta().getId().from("main"));
+        Query q = Query.select(MAIN_DOC_ID).from(mainDS).join(join);
 
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                Document doc = result.getDocument();
+                String docID = result.getString(0);
+                Document doc = db.getDocument(docID);
                 assertEquals(42, doc.getInt("number1"));
             }
         }, true);
@@ -1319,7 +1335,7 @@ public class QueryTest extends BaseTest {
         loadNumbers(100);
 
         LiveQuery query = Query
-                .select()
+                .select(kDOCID)
                 .from(database(db))
                 .where(Expression.property("number1").lessThan(10))
                 .orderBy(Ordering.property("number1").ascending())
@@ -1341,8 +1357,10 @@ public class QueryTest extends BaseTest {
                     Result result;
                     int count = 0;
                     while ((result = rs.next()) != null) {
-                        if (count == 0)
-                            assertEquals(-1L, result.getDocument().getObject("number1"));
+                        if (count == 0) {
+                            Document doc = db.getDocument(result.getString(0));
+                            assertEquals(-1L, doc.getObject("number1"));
+                        }
                         count++;
                     }
                     assertEquals(10, count);
