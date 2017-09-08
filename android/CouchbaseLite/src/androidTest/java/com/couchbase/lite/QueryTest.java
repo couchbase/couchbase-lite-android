@@ -31,7 +31,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.couchbase.lite.DataSource.database;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -40,8 +39,15 @@ import static org.junit.Assert.assertTrue;
 public class QueryTest extends BaseTest {
     public static final String TAG = QueryTest.class.getSimpleName();
 
-    private static SelectResult kDOCID = SelectResult.expression(Expression.meta().getId());
-    private static SelectResult kSEQUENCE = SelectResult.expression(Expression.meta().getSequence());
+    private static Expression EXPR_DOCID = Expression.meta().getId();
+    private static Expression EXPR_SEQUENCE = Expression.meta().getSequence();
+    private static Expression EXPR_NUMBER1 = Expression.property("number1");
+    private static Expression EXPR_NUMBER2 = Expression.property("number2");
+
+    private static SelectResult SR_DOCID = SelectResult.expression(EXPR_DOCID);
+    private static SelectResult SR_SEQUENCE = SelectResult.expression(EXPR_SEQUENCE);
+    private static SelectResult SR_ALL = SelectResult.all();
+    private static SelectResult SR_NUMBER1 = SelectResult.expression(EXPR_NUMBER1);
 
     private interface QueryResult {
         void check(int n, Result result) throws Exception;
@@ -109,7 +115,7 @@ public class QueryTest extends BaseTest {
             Expression w = (Expression) c[0];
             String[] documentIDs = (String[]) c[1];
             final List<String> docIDList = new ArrayList<String>(Arrays.asList(documentIDs));
-            Query q = Query.select(kDOCID).from(database(db)).where(w);
+            Query q = Query.select(SR_DOCID).from(DataSource.database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(int n, Result result) throws Exception {
@@ -134,7 +140,7 @@ public class QueryTest extends BaseTest {
     @Test
     public void testNoWhereQuery() throws Exception {
         loadJSONResource("names_100.json");
-        Query q = Query.select(kDOCID, kSEQUENCE).from(database(db));
+        Query q = Query.select(SR_DOCID, SR_SEQUENCE).from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -155,18 +161,17 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testWhereComparison() throws Exception {
-        Expression n1 = Expression.property("number1");
         Object[][] cases = {
-                {n1.lessThan(3), $docids(1, 2)},
-                {n1.notLessThan(3), $docids(3, 4, 5, 6, 7, 8, 9, 10)},
-                {n1.lessThanOrEqualTo(3), $docids(1, 2, 3)},
-                {n1.notLessThanOrEqualTo(3), $docids(4, 5, 6, 7, 8, 9, 10)},
-                {n1.greaterThan(6), $docids(7, 8, 9, 10)},
-                {n1.notGreaterThan(6), $docids(1, 2, 3, 4, 5, 6)},
-                {n1.greaterThanOrEqualTo(6), $docids(6, 7, 8, 9, 10)},
-                {n1.notGreaterThanOrEqualTo(6), $docids(1, 2, 3, 4, 5)},
-                {n1.equalTo(7), $docids(7)},
-                {n1.notEqualTo(7), $docids(1, 2, 3, 4, 5, 6, 8, 9, 10)}
+                {EXPR_NUMBER1.lessThan(3), $docids(1, 2)},
+                {EXPR_NUMBER1.notLessThan(3), $docids(3, 4, 5, 6, 7, 8, 9, 10)},
+                {EXPR_NUMBER1.lessThanOrEqualTo(3), $docids(1, 2, 3)},
+                {EXPR_NUMBER1.notLessThanOrEqualTo(3), $docids(4, 5, 6, 7, 8, 9, 10)},
+                {EXPR_NUMBER1.greaterThan(6), $docids(7, 8, 9, 10)},
+                {EXPR_NUMBER1.notGreaterThan(6), $docids(1, 2, 3, 4, 5, 6)},
+                {EXPR_NUMBER1.greaterThanOrEqualTo(6), $docids(6, 7, 8, 9, 10)},
+                {EXPR_NUMBER1.notGreaterThanOrEqualTo(6), $docids(1, 2, 3, 4, 5)},
+                {EXPR_NUMBER1.equalTo(7), $docids(7)},
+                {EXPR_NUMBER1.notEqualTo(7), $docids(1, 2, 3, 4, 5, 6, 8, 9, 10)}
         };
         List<Map<String, Object>> numbers = loadNumbers(10);
         runTestWithNumbers(numbers, cases);
@@ -174,19 +179,17 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testWhereArithmetic() throws Exception {
-        Expression n1 = Expression.property("number1");
-        Expression n2 = Expression.property("number2");
         Object[][] cases = {
-                {n1.multiply(2).greaterThan(3), $docids(2, 3, 4, 5, 6, 7, 8, 9, 10)},
-                {n1.divide(2).greaterThan(3), $docids(8, 9, 10)},
-                {n1.modulo(2).equalTo(0), $docids(2, 4, 6, 8, 10)},
-                {n1.add(5).greaterThan(10), $docids(6, 7, 8, 9, 10)},
-                {n1.subtract(5).greaterThan(0), $docids(6, 7, 8, 9, 10)},
-                {n1.multiply(n2).greaterThan(10), $docids(2, 3, 4, 5, 6, 7, 8)},
-                {n2.divide(n1).greaterThan(3), $docids(1, 2)},
-                {n2.modulo(n1).equalTo(0), $docids(1, 2, 5, 10)},
-                {n1.add(n2).equalTo(10), $docids(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)},
-                {n1.subtract(n2).greaterThan(0), $docids(6, 7, 8, 9, 10)}
+                {EXPR_NUMBER1.multiply(2).greaterThan(3), $docids(2, 3, 4, 5, 6, 7, 8, 9, 10)},
+                {EXPR_NUMBER1.divide(2).greaterThan(3), $docids(8, 9, 10)},
+                {EXPR_NUMBER1.modulo(2).equalTo(0), $docids(2, 4, 6, 8, 10)},
+                {EXPR_NUMBER1.add(5).greaterThan(10), $docids(6, 7, 8, 9, 10)},
+                {EXPR_NUMBER1.subtract(5).greaterThan(0), $docids(6, 7, 8, 9, 10)},
+                {EXPR_NUMBER1.multiply(EXPR_NUMBER2).greaterThan(10), $docids(2, 3, 4, 5, 6, 7, 8)},
+                {EXPR_NUMBER2.divide(EXPR_NUMBER1).greaterThan(3), $docids(1, 2)},
+                {EXPR_NUMBER2.modulo(EXPR_NUMBER1).equalTo(0), $docids(1, 2, 5, 10)},
+                {EXPR_NUMBER1.add(EXPR_NUMBER2).equalTo(10), $docids(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)},
+                {EXPR_NUMBER1.subtract(EXPR_NUMBER2).greaterThan(0), $docids(6, 7, 8, 9, 10)}
         };
         List<Map<String, Object>> numbers = loadNumbers(10);
         runTestWithNumbers(numbers, cases);
@@ -194,11 +197,9 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testWhereAndOr() throws Exception {
-        Expression n1 = Expression.property("number1");
-        Expression n2 = Expression.property("number2");
         Object[][] cases = {
-                {n1.greaterThan(3).and(n2.greaterThan(3)), $docids(4, 5, 6)},
-                {n1.lessThan(3).or(n2.lessThan(3)), $docids(1, 2, 8, 9, 10)}
+                {EXPR_NUMBER1.greaterThan(3).and(EXPR_NUMBER2.greaterThan(3)), $docids(4, 5, 6)},
+                {EXPR_NUMBER1.lessThan(3).or(EXPR_NUMBER2.lessThan(3)), $docids(1, 2, 8, 9, 10)}
         };
         List<Map<String, Object>> numbers = loadNumbers(10);
         runTestWithNumbers(numbers, cases);
@@ -234,13 +235,10 @@ public class QueryTest extends BaseTest {
                 {work.notNullOrMissing(), $docids()},
         };
 
-        Expression exprDocID = Expression.meta().getId();
-        SelectResult srDocID = SelectResult.expression(exprDocID);
-
         for (Object[] c : cases) {
             Expression exp = (Expression) c[0];
             final String[] documentIDs = (String[]) c[1];
-            Query q = Query.select(srDocID).from(database(db)).where(exp);
+            Query q = Query.select(SR_DOCID).from(DataSource.database(db)).where(exp);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(int n, Result result) throws Exception {
@@ -265,8 +263,8 @@ public class QueryTest extends BaseTest {
 
         // Test IS:
         q = Query
-                .select(kDOCID)
-                .from(database(db))
+                .select(SR_DOCID)
+                .from(DataSource.database(db))
                 .where(Expression.property("string").is("string"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -281,8 +279,8 @@ public class QueryTest extends BaseTest {
 
         // Test IS NOT:
         q = Query
-                .select(kDOCID)
-                .from(database(db))
+                .select(SR_DOCID)
+                .from(DataSource.database(db))
                 .where(Expression.property("string").isNot("string1"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -298,12 +296,36 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testBetween() throws Exception {
-        Expression n1 = Expression.property("number1");
         Object[][] cases = {
-                {n1.between(3, 7), $docids(3, 4, 5, 6, 7)}
+                {EXPR_NUMBER1.between(3, 7), $docids(3, 4, 5, 6, 7)}
         };
         List<Map<String, Object>> numbers = loadNumbers(10);
         runTestWithNumbers(numbers, cases);
+    }
+
+    @Test
+    public void testWhereIn() throws Exception {
+        loadJSONResource("names_100.json");
+
+        final String[] expected = {"Marcy", "Margaretta", "Margrett", "Marlen", "Maryjo"};
+
+        DataSource ds = DataSource.database(db);
+        Expression exprFirstName = Expression.property("name.first");
+        SelectResult srFirstName = SelectResult.expression(exprFirstName);
+        Ordering orderByFirstName = Ordering.property("name.first");
+        Query q = Query.select(srFirstName)
+                .from(ds)
+                .where(exprFirstName.in(expected))
+                .orderBy(orderByFirstName);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                String name = result.getString(0);
+                assertEquals(expected[n - 1], name);
+                Log.e(TAG, "n -> %d name -> %s", n, name);
+            }
+        });
+        assertEquals(expected.length, numRows);
     }
 
     @Test
@@ -312,8 +334,8 @@ public class QueryTest extends BaseTest {
 
         Expression w = Expression.property("name.first").like("%Mar%");
         Query q = Query
-                .select(kDOCID)
-                .from(database(db))
+                .select(SR_DOCID)
+                .from(DataSource.database(db))
                 .where(w)
                 .orderBy(Ordering.property("name.first").ascending());
 
@@ -342,8 +364,8 @@ public class QueryTest extends BaseTest {
 
         Expression w = Expression.property("name.first").regex("^Mar.*");
         Query q = Query
-                .select(kDOCID)
-                .from(database(db))
+                .select(SR_DOCID)
+                .from(DataSource.database(db))
                 .where(w)
                 .orderBy(Ordering.property("name.first").ascending());
 
@@ -375,13 +397,12 @@ public class QueryTest extends BaseTest {
         Index index = Index.ftsIndex().on(FTSIndexItem.expression(Expression.property("sentence")));
         db.createIndex("sentence", index);
 
-        SelectResult S_DOCID = SelectResult.expression(Expression.meta().getId());
         Expression SENTENCE = Expression.property("sentence");
         SelectResult S_SENTENCE = SelectResult.expression(SENTENCE);
 
         Expression w = SENTENCE.match("'Dummie woman'");
         Ordering o = Ordering.expression(Function.rank(SENTENCE)).descending();
-        Query q = Query.select(S_DOCID, S_SENTENCE).from(database(db)).where(w).orderBy(o);
+        Query q = Query.select(SR_DOCID, S_SENTENCE).from(DataSource.database(db)).where(w).orderBy(o);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -403,7 +424,8 @@ public class QueryTest extends BaseTest {
                 o = Ordering.expression(Expression.property("name.first")).ascending();
             else
                 o = Ordering.expression(Expression.property("name.first")).descending();
-            Query q = Query.select(kDOCID).from(database(db)).orderBy(o);
+
+            Query q = Query.select(SR_DOCID).from(DataSource.database(db)).orderBy(o);
 
             final List<String> firstNames = new ArrayList<String>();
             int numRows = verifyQuery(q, new QueryResult() {
@@ -445,7 +467,7 @@ public class QueryTest extends BaseTest {
 
         Expression NUMBER = Expression.property("number");
         SelectResult S_NUMBER = SelectResult.expression(NUMBER);
-        Query q = Query.selectDistinct(S_NUMBER).from(database(db));
+        Query q = Query.selectDistinct(S_NUMBER).from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -463,13 +485,16 @@ public class QueryTest extends BaseTest {
         doc1.setObject("theone", 42);
         save(doc1);
 
-        DataSource mainDS = database(this.db).as("main");
-        DataSource secondaryDS = database(this.db).as("secondary");
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
         Expression mainPropExpr = Expression.property("number1").from("main");
         Expression secondaryExpr = Expression.property("theone").from("secondary");
         Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
         Join join = Join.join(secondaryDS).on(joinExpr);
-        SelectResult MAIN_DOC_ID= SelectResult.expression(Expression.meta().getId().from("main"));
+
+        SelectResult MAIN_DOC_ID = SelectResult.expression(Expression.meta().getId().from("main"));
+
         Query q = Query.select(MAIN_DOC_ID).from(mainDS).join(join);
 
         assertNotNull(q);
@@ -492,7 +517,7 @@ public class QueryTest extends BaseTest {
         final List<Integer> expectedCounts = Arrays.asList(1, 6, 1, 1, 3);
         final List<String> expectedMaxZips = Arrays.asList("35243", "94153", "81223", "33612", "50801");
 
-        DataSource ds = database(this.db);
+        DataSource ds = DataSource.database(this.db);
 
         Expression state = Expression.property("contact.address.state");
         Expression count = Function.count(1);
@@ -566,20 +591,18 @@ public class QueryTest extends BaseTest {
     public void testParameters() throws Exception {
         loadNumbers(100);
 
-        DataSource dataSource = database(this.db);
+        DataSource dataSource = DataSource.database(this.db);
 
-        Expression number1 = Expression.property("number1");
+
         Expression paramN1 = Expression.parameter("num1");
         Expression paramN2 = Expression.parameter("num2");
 
-        SelectResult selectResult = SelectResult.expression(number1);
-
-        Ordering ordering = Ordering.expression(number1);
+        Ordering ordering = Ordering.expression(EXPR_NUMBER1);
 
         Query q = Query
-                .select(selectResult)
+                .select(SR_NUMBER1)
                 .from(dataSource)
-                .where(number1.between(paramN1, paramN2))
+                .where(EXPR_NUMBER1.between(paramN1, paramN2))
                 .orderBy(ordering);
 
         q.parameters().setObject("num1", 2).setObject("num2", 5);
@@ -599,20 +622,12 @@ public class QueryTest extends BaseTest {
     public void testMeta() throws Exception {
         loadNumbers(5);
 
-        DataSource dataSource = database(this.db);
-
-        Expression metaDocID = Expression.meta().getId();
-        Expression metaDocSeq = Expression.meta().getSequence();
-        Expression propNumber1 = Expression.property("number1");
-
-        SelectResult srDocID = SelectResult.expression(metaDocID);
-        SelectResult srDocSeq = SelectResult.expression(metaDocSeq);
-        SelectResult srNumber1 = SelectResult.expression(propNumber1);
+        DataSource dataSource = DataSource.database(this.db);
 
         Query q = Query
-                .select(srDocID, srDocSeq, srNumber1)
+                .select(SR_DOCID, SR_SEQUENCE, SR_NUMBER1)
                 .from(dataSource)
-                .orderBy(Ordering.expression(metaDocSeq));
+                .orderBy(Ordering.expression(EXPR_SEQUENCE));
 
         final String[] expectedDocIDs = {"doc1", "doc2", "doc3", "doc4", "doc5"};
         final long[] expectedSeqs = {1, 2, 3, 4, 5};
@@ -637,14 +652,12 @@ public class QueryTest extends BaseTest {
     public void testLimit() throws Exception {
         loadNumbers(10);
 
-        DataSource dataSource = database(this.db);
+        DataSource dataSource = DataSource.database(this.db);
 
-        Expression propNumber1 = Expression.property("number1");
-        SelectResult srNumber1 = SelectResult.expression(propNumber1);
         Query q = Query
-                .select(srNumber1)
+                .select(SR_NUMBER1)
                 .from(dataSource)
-                .orderBy(Ordering.expression(propNumber1))
+                .orderBy(Ordering.expression(EXPR_NUMBER1))
                 .limit(5);
 
         final long[] expectedNumbers = {1, 2, 3, 4, 5};
@@ -659,9 +672,9 @@ public class QueryTest extends BaseTest {
 
         Expression paramExpr = Expression.parameter("LIMIT_NUM");
         q = Query
-                .select(srNumber1)
+                .select(SR_NUMBER1)
                 .from(dataSource)
-                .orderBy(Ordering.expression(propNumber1))
+                .orderBy(Ordering.expression(EXPR_NUMBER1))
                 .limit(paramExpr);
         q.parameters().setObject("LIMIT_NUM", 3);
 
@@ -680,14 +693,12 @@ public class QueryTest extends BaseTest {
     public void testLimitOffset() throws Exception {
         loadNumbers(10);
 
-        DataSource dataSource = database(this.db);
+        DataSource dataSource = DataSource.database(this.db);
 
-        Expression propNumber1 = Expression.property("number1");
-        SelectResult srNumber1 = SelectResult.expression(propNumber1);
         Query q = Query
-                .select(srNumber1)
+                .select(SR_NUMBER1)
                 .from(dataSource)
-                .orderBy(Ordering.expression(propNumber1))
+                .orderBy(Ordering.expression(EXPR_NUMBER1))
                 .limit(5, 3);
 
         final long[] expectedNumbers = {4, 5, 6, 7, 8};
@@ -703,9 +714,9 @@ public class QueryTest extends BaseTest {
         Expression paramLimitExpr = Expression.parameter("LIMIT_NUM");
         Expression paramOffsetExpr = Expression.parameter("OFFSET_NUM");
         q = Query
-                .select(srNumber1)
+                .select(SR_NUMBER1)
                 .from(dataSource)
-                .orderBy(Ordering.expression(propNumber1))
+                .orderBy(Ordering.expression(EXPR_NUMBER1))
                 .limit(paramLimitExpr, paramOffsetExpr);
         q.parameters().setObject("LIMIT_NUM", 3).setObject("OFFSET_NUM", 5);
 
@@ -734,7 +745,7 @@ public class QueryTest extends BaseTest {
         SelectResult RES_GENDER = SelectResult.expression(GENDER);
         SelectResult RES_CITY = SelectResult.expression(CITY);
 
-        DataSource DS = database(db);
+        DataSource DS = DataSource.database(db);
 
         Query q = Query
                 .select(RES_FNAME, RES_LNAME, RES_GENDER, RES_CITY)
@@ -757,15 +768,13 @@ public class QueryTest extends BaseTest {
     public void testQueryProjectingKeys() throws Exception {
         loadNumbers(100);
 
-        DataSource DS = database(db);
+        DataSource DS = DataSource.database(db);
 
-        Expression NUM1 = Expression.property("number1");
-
-        Expression AVG = Function.avg(NUM1);
-        Expression CNT = Function.count(NUM1);
-        Expression MIN = Function.min(NUM1);
-        Expression MAX = Function.max(NUM1);
-        Expression SUM = Function.sum(NUM1);
+        Expression AVG = Function.avg(EXPR_NUMBER1);
+        Expression CNT = Function.count(EXPR_NUMBER1);
+        Expression MIN = Function.min(EXPR_NUMBER1);
+        Expression MAX = Function.max(EXPR_NUMBER1);
+        Expression SUM = Function.sum(EXPR_NUMBER1);
 
         SelectResult RES_AVG = SelectResult.expression(AVG);
         SelectResult RES_CNT = SelectResult.expression(CNT);
@@ -797,14 +806,11 @@ public class QueryTest extends BaseTest {
 
         DataSource ds = DataSource.database(db);
 
-        Expression exprDocID = Expression.meta().getId();
-        SelectResult srDocID = SelectResult.expression(exprDocID);
-
         Expression exprLikes = Expression.property("likes");
         Expression exprVarLike = Expression.variable("LIKE");
 
         // ANY:
-        Query q = Query.select(srDocID).from(ds).where(
+        Query q = Query.select(SR_DOCID).from(ds).where(
                 Expression.any("LIKE").in(exprLikes).satisfies(exprVarLike.equalTo("climbing")));
 
         final AtomicInteger i = new AtomicInteger(0);
@@ -818,7 +824,7 @@ public class QueryTest extends BaseTest {
         assertEquals(expected.length, numRows);
 
         // EVERY:
-        q = Query.select(srDocID).from(ds).where(
+        q = Query.select(SR_DOCID).from(ds).where(
                 Expression.every("LIKE").in(exprLikes).satisfies(exprVarLike.equalTo("taxes")));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -830,7 +836,7 @@ public class QueryTest extends BaseTest {
         assertEquals(42, numRows);
 
         // ANY AND EVERY:
-        q = Query.select(srDocID).from(ds).where(
+        q = Query.select(SR_DOCID).from(ds).where(
                 Expression.anyAndEvery("LIKE").in(exprLikes).satisfies(exprVarLike.equalTo("taxes")));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
@@ -844,14 +850,13 @@ public class QueryTest extends BaseTest {
     public void testAggregateFunctions() throws Exception {
         loadNumbers(100);
 
-        DataSource ds = database(this.db);
-        Expression exprNum1 = Expression.property("number1");
+        DataSource ds = DataSource.database(this.db);
 
-        Function avg = Function.avg(exprNum1);
-        Function cnt = Function.count(exprNum1);
-        Function min = Function.min(exprNum1);
-        Function max = Function.max(exprNum1);
-        Function sum = Function.sum(exprNum1);
+        Function avg = Function.avg(EXPR_NUMBER1);
+        Function cnt = Function.count(EXPR_NUMBER1);
+        Function min = Function.min(EXPR_NUMBER1);
+        Function max = Function.max(EXPR_NUMBER1);
+        Function sum = Function.sum(EXPR_NUMBER1);
 
         SelectResult rsAvg = SelectResult.expression(avg);
         SelectResult rsCnt = SelectResult.expression(cnt);
@@ -883,7 +888,7 @@ public class QueryTest extends BaseTest {
         doc.setObject("array", array);
         save(doc);
 
-        DataSource ds = database(db);
+        DataSource ds = DataSource.database(db);
         Expression exprArray = Expression.property("array");
         Expression exprArrayLength = Function.arrayLength(exprArray);
         SelectResult srArrayLength = SelectResult.expression(exprArrayLength);
@@ -974,7 +979,7 @@ public class QueryTest extends BaseTest {
         for (Function f : functions) {
             Log.v(TAG, "index -> " + index.intValue());
             Query q = Query.select(SelectResult.expression(f))
-                    .from(database(db));
+                    .from(DataSource.database(db));
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
                 public void check(int n, Result result) throws Exception {
@@ -1097,10 +1102,6 @@ public class QueryTest extends BaseTest {
 
         DataSource.As ds = DataSource.database(db);
 
-        Expression exprNum1 = Expression.property("number1");
-        SelectResult srNum1 = SelectResult.expression(exprNum1);
-        SelectResult.From srAll = SelectResult.all();
-
         Expression exprTestDBNum1 = Expression.property("number1").from("testdb");
         SelectResult srTestDBNum1 = SelectResult.expression(exprTestDBNum1);
         SelectResult srTestDBAll = SelectResult.all().from("testdb");
@@ -1109,7 +1110,7 @@ public class QueryTest extends BaseTest {
         int numRows;
 
         // SELECT *
-        q = Query.select(srAll).from(ds);
+        q = Query.select(SR_ALL).from(ds);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -1125,7 +1126,7 @@ public class QueryTest extends BaseTest {
         assertEquals(100, numRows);
 
         // SELECT *, number1
-        q = Query.select(srAll, srNum1).from(ds);
+        q = Query.select(SR_ALL, SR_NUMBER1).from(ds);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -1335,9 +1336,9 @@ public class QueryTest extends BaseTest {
         loadNumbers(100);
 
         LiveQuery query = Query
-                .select(kDOCID)
-                .from(database(db))
-                .where(Expression.property("number1").lessThan(10))
+                .select(SR_DOCID)
+                .from(DataSource.database(db))
+                .where(EXPR_NUMBER1.lessThan(10))
                 .orderBy(Ordering.property("number1").ascending())
                 .toLive();
 
@@ -1408,8 +1409,8 @@ public class QueryTest extends BaseTest {
 
         LiveQuery query = Query
                 .select()
-                .from(database(db))
-                .where(Expression.property("number1").lessThan(10))
+                .from(DataSource.database(db))
+                .where(EXPR_NUMBER1.lessThan(10))
                 .orderBy(Ordering.property("number1").ascending())
                 .toLive();
 
@@ -1455,9 +1456,9 @@ public class QueryTest extends BaseTest {
     public void testCountFunctions() throws Exception {
         loadNumbers(100);
 
-        DataSource ds = database(this.db);
-        Expression exprNum1 = Expression.property("number1");
-        Function cnt = Function.count(exprNum1);
+        DataSource ds = DataSource.database(this.db);
+        Function cnt = Function.count(EXPR_NUMBER1);
+
         SelectResult rsCnt = SelectResult.expression(cnt);
         Query q = Query.select(rsCnt).from(ds);
         assertNotNull(q);
@@ -1509,8 +1510,8 @@ public class QueryTest extends BaseTest {
         db.save(bookmark2);
 
         // Join Query
-        DataSource mainDS = database(this.db).as("main");
-        DataSource secondaryDS = database(this.db).as("secondary");
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
 
         Expression typeExpr = Expression.property("type").from("main");
         Expression hotelsExpr = Expression.property("hotels").from("main");
@@ -1524,5 +1525,71 @@ public class QueryTest extends BaseTest {
         ResultSet rs = q.run();
         for (Result r : rs)
             Log.e(TAG, "RESULT: " + r.toMap());
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1385
+    @Test
+    public void testQueryDeletedDocument() throws CouchbaseLiteException {
+
+        // STEP 1: Insert two documents
+        Document task1 = createTaskDocument("Task 1");
+        Document task2 = createTaskDocument("Task 1");
+        assertEquals(2, db.getCount());
+
+        // STEP 2: query documents before deletion
+        Query q = Query.select(SR_DOCID, SR_ALL).from(DataSource.database(this.db)).where(Expression.property("type").equalTo("task"));
+        ResultSet rs = q.run();
+        Result r;
+
+        // Test: ResultSet.next()
+        int counter = 0;
+        while ((r = rs.next()) != null) {
+            Log.i(TAG, "Round 1: [next] Result -> " + r.toMap());
+            counter++;
+        }
+        assertEquals(2, counter);
+
+        // Test: Iterator
+        counter = 0;
+        for (Result result : rs) {
+            Log.i(TAG, "Round 1: [Iterator] Result -> " + result.toMap());
+            counter++;
+        }
+        assertEquals(2, counter);
+
+        // STEP 3: delete task 1
+        assertFalse(task1.isDeleted());
+        db.delete(task1);
+        assertEquals(1, db.getCount());
+        assertTrue(task1.isDeleted());
+
+        // STEP 4: query documents again after deletion
+        rs = q.run();
+
+        // Test: ResultSet.next()
+        counter = 0;
+        while ((r = rs.next()) != null) {
+            assertEquals(task2.getId(), r.getString(0));
+            Log.i(TAG, "Round 2: [next()] Result -> " + r.toMap());
+            counter++;
+        }
+        assertEquals(1, counter);
+
+        // Test: Iterator
+        counter = 0;
+        for (Result result : rs) {
+            assertEquals(task2.getId(), result.getString(0));
+            Log.i(TAG, "Round 2: [Iterator] Result -> " + result.toMap());
+            counter++;
+        }
+        assertEquals(1, counter);
+    }
+
+    private Document createTaskDocument(String title) throws CouchbaseLiteException {
+        Document doc = createDocument();
+        doc.setString("type", "task");
+        doc.setString("title", title);
+        doc.setBoolean("complete", false);
+        return save(doc);
     }
 }
