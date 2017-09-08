@@ -451,7 +451,7 @@ public abstract class Expression {
         @Override
         protected Object asJSON() {
             List<Object> json = new ArrayList<Object>();
-            json.add(new ArrayList<>());
+            json.add("[]");
             for (Object exp : expressions)
                 json.add(jsonValue(exp));
             return json;
@@ -736,7 +736,7 @@ public abstract class Expression {
             this.variable = variable;
         }
 
-        Satisfies in(Object expression) {
+        public Satisfies in(Object expression) {
             return new Satisfies(type, variable, expression);
         }
     }
@@ -752,7 +752,7 @@ public abstract class Expression {
             this.inExpression = inExpression;
         }
 
-        Expression satisfies(Expression expression) {
+        public Expression satisfies(Expression expression) {
             return new QuantifiedExpression(type, variable, inExpression, expression);
         }
     }
