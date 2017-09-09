@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -135,6 +136,12 @@ public class QueryTest extends BaseTest {
             documentIDs[i] = "doc" + numbers[i];
         }
         return documentIDs;
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        Log.enableLogging(TAG, Log.INFO, false);
     }
 
     @Test
@@ -1532,8 +1539,8 @@ public class QueryTest extends BaseTest {
     public void testQueryDeletedDocument() throws CouchbaseLiteException {
 
         // STEP 1: Insert two documents
-        Document task1 = createTaskDocument("Task 1");
-        Document task2 = createTaskDocument("Task 1");
+        Document task1 = createTaskDocument("Task 1", false);
+        Document task2 = createTaskDocument("Task 2", false);
         assertEquals(2, db.getCount());
 
         // STEP 2: query documents before deletion
@@ -1585,11 +1592,84 @@ public class QueryTest extends BaseTest {
         assertEquals(1, counter);
     }
 
-    private Document createTaskDocument(String title) throws CouchbaseLiteException {
+    private Document createTaskDocument(String title, boolean complete) throws CouchbaseLiteException {
         Document doc = createDocument();
         doc.setString("type", "task");
         doc.setString("title", title);
-        doc.setBoolean("complete", false);
+        doc.setBoolean("complete", complete);
         return save(doc);
+    }
+
+    @Test
+    public void testQueryWhereBooleanExpresion() throws Exception {
+        // STEP 1: Insert two documents
+        Document task1 = createTaskDocument("Task 1", false);
+        Document task2 = createTaskDocument("Task 2", true);
+        Document task3 = createTaskDocument("Task 3", true);
+        assertEquals(3, db.getCount());
+
+        Expression exprType = Expression.property("type");
+        Expression exprComplete = Expression.property("complete");
+        SelectResult srCount = SelectResult.expression(Function.count(1));
+
+        // regular query - true
+        Query q = Query.select(SR_ALL)
+                .from(DataSource.database(db))
+                //.where(exprType.equalTo("task").add(exprComplete.equalTo(true)));
+                .where(exprComplete.equalTo(true));
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                Log.i(TAG, "res -> " + result.toMap());
+                ReadOnlyDictionary dict = result.getDictionary(db.getName());
+                assertTrue(dict.getBoolean("complete"));
+                assertEquals("task", dict.getString("type"));
+                assertTrue(dict.getString("title").startsWith("Task "));
+            }
+        }, false);
+        assertEquals(2, numRows);
+
+        // regular query - false
+        q = Query.select(SR_ALL)
+                .from(DataSource.database(db))
+                .where(exprType.equalTo("task").add(exprComplete.equalTo(false)));
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                Log.i(TAG, "res -> " + result.toMap());
+                ReadOnlyDictionary dict = result.getDictionary(db.getName());
+                assertFalse(dict.getBoolean("complete"));
+                assertEquals("task", dict.getString("type"));
+                assertTrue(dict.getString("title").startsWith("Task "));
+            }
+        }, false);
+        assertEquals(1, numRows);
+
+        // aggregation query - true
+        q = Query.select(srCount)
+                .from(DataSource.database(db))
+                .where(exprType.equalTo("task").add(exprComplete.equalTo(true)));
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                Log.i(TAG, "res -> " + result.toMap());
+                assertEquals(2, result.getInt(0));
+            }
+        }, false);
+        assertEquals(1, numRows);
+
+        // aggregation query - false
+        q = Query.select(srCount)
+                .from(DataSource.database(db))
+                .where(exprType.equalTo("task").add(exprComplete.equalTo(false)));
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                Log.i(TAG, "res -> " + result.toMap());
+                assertEquals(1, result.getInt(0));
+            }
+        }, false);
+        assertEquals(1, numRows);
+
     }
 }
