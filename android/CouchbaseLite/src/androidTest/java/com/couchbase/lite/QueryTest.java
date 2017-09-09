@@ -314,7 +314,7 @@ public class QueryTest extends BaseTest {
     public void testWhereIn() throws Exception {
         loadJSONResource("names_100.json");
 
-        final String[] expected = {"Marcy", "Margaretta", "Margrett", "Marlen", "Maryjo"};
+        final Object[] expected = {"Marcy", "Margaretta", "Margrett", "Marlen", "Maryjo"};
 
         DataSource ds = DataSource.database(db);
         Expression exprFirstName = Expression.property("name.first");
@@ -1600,6 +1600,7 @@ public class QueryTest extends BaseTest {
         return save(doc);
     }
 
+    // https://github.com/couchbase/couchbase-lite-android/issues/1389
     @Test
     public void testQueryWhereBooleanExpresion() throws Exception {
         // STEP 1: Insert two documents
@@ -1615,8 +1616,7 @@ public class QueryTest extends BaseTest {
         // regular query - true
         Query q = Query.select(SR_ALL)
                 .from(DataSource.database(db))
-                //.where(exprType.equalTo("task").add(exprComplete.equalTo(true)));
-                .where(exprComplete.equalTo(true));
+                .where(exprType.equalTo("task").and(exprComplete.equalTo(true)));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -1632,7 +1632,7 @@ public class QueryTest extends BaseTest {
         // regular query - false
         q = Query.select(SR_ALL)
                 .from(DataSource.database(db))
-                .where(exprType.equalTo("task").add(exprComplete.equalTo(false)));
+                .where(exprType.equalTo("task").and(exprComplete.equalTo(false)));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -1648,7 +1648,7 @@ public class QueryTest extends BaseTest {
         // aggregation query - true
         q = Query.select(srCount)
                 .from(DataSource.database(db))
-                .where(exprType.equalTo("task").add(exprComplete.equalTo(true)));
+                .where(exprType.equalTo("task").and(exprComplete.equalTo(true)));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
@@ -1661,7 +1661,7 @@ public class QueryTest extends BaseTest {
         // aggregation query - false
         q = Query.select(srCount)
                 .from(DataSource.database(db))
-                .where(exprType.equalTo("task").add(exprComplete.equalTo(false)));
+                .where(exprType.equalTo("task").and(exprComplete.equalTo(false)));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
