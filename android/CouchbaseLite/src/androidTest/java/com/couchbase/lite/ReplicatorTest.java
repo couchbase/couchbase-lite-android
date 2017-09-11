@@ -267,7 +267,6 @@ public class ReplicatorTest extends BaseTest {
         doc1.setObject("name", "Hobbes");
         save(doc1);
         assertEquals(1, db.getCount());
-        Log.e(TAG, "doc1 -> %s", doc1.getC4doc().getRevID());
 
         Document doc2 = new Document("doc");
         doc2.setObject("species", "Tiger");
@@ -276,7 +275,6 @@ public class ReplicatorTest extends BaseTest {
         doc2.setObject("pattern", "striped");
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
-        Log.e(TAG, "doc2 -> %s", doc2.getC4doc().getRevID());
 
         ReplicatorConfiguration config = makeConfig(false, true, false);
         run(config, 0, null);
