@@ -1,9 +1,8 @@
 package com.couchbase.lite;
 
 import com.couchbase.litecore.C4Document;
-import com.couchbase.litecore.LiteCoreException;
 
-class CBLC4Doc implements CBLFLDataSource{
+class CBLC4Doc implements CBLFLDataSource {
     private C4Document rawDoc;
 
     CBLC4Doc(C4Document rawDoc) {
@@ -20,18 +19,6 @@ class CBLC4Doc implements CBLFLDataSource{
         return rawDoc;
     }
 
-    int getFlags() {
-        return rawDoc.getFlags();
-    }
-
-    long getSequence() {
-        return rawDoc.getSequence();
-    }
-
-    String getRevID() {
-        return rawDoc.getRevID();
-    }
-
     void free() {
         if (rawDoc != null) {
             rawDoc.free();
@@ -42,18 +29,10 @@ class CBLC4Doc implements CBLFLDataSource{
     // --- Following is Java only methods
 
     String getSelectedRevID() {
-        return rawDoc.getSelectedRevID();
-    }
-
-    byte[] getSelectedBody() throws LiteCoreException {
-        return rawDoc.getSelectedBody();
+        return rawDoc != null ? rawDoc.getSelectedRevID() : null;
     }
 
     long getSelectedSequence() {
-        return rawDoc.getSelectedSequence();
-    }
-
-    long getSelectedRevFlags() {
-        return rawDoc.getSelectedFlags();
+        return rawDoc != null ? rawDoc.getSelectedSequence() : 0;
     }
 }

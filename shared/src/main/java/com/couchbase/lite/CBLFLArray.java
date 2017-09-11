@@ -22,10 +22,6 @@ class CBLFLArray {
         return c4doc;
     }
 
-    CBLFLDataSource getFlDataSource() {
-        return flDataSource;
-    }
-
     Database getDatabase() {
         return database;
     }
