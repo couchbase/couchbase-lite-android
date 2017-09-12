@@ -82,7 +82,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
      * @return true if deleted, false otherwise
      */
     public boolean isDeleted() {
-        return c4doc != null ? c4doc.getRawDoc().deleted() : false;
+        return c4doc != null && c4doc.getRawDoc() != null ? c4doc.getRawDoc().deleted() : false;
     }
 
     @Override
@@ -95,8 +95,8 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     //---------------------------------------------
 
     // Sets c4doc and updates my root dictionary
-    protected void setC4Doc(CBLC4Doc c4doc) {
-        free();
+    protected synchronized void setC4Doc(CBLC4Doc c4doc) {
+        // NOTE: don't call free(), both c4doc and this.c4doc point to same C4Document.
 
         this.c4doc = c4doc;
         if (c4doc != null) {
@@ -119,9 +119,9 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     //---------------------------------------------
 
     void free() {
-        if (c4doc != null) {
-            c4doc.free();
-            c4doc = null;
+        if (this.c4doc != null) {
+            this.c4doc.free();
+            this.c4doc = null;
         }
     }
 
@@ -145,7 +145,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
     // Document overrides this
     long generation() {
         // TODO: c4rev_getGeneration
-        return generationFromRevID(getRevID());
+        return generationFromRevID(getSelectedRevID());
     }
 
     /**
@@ -172,6 +172,7 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
 
     // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
     C4Document readC4Doc(boolean mustExist) throws LiteCoreException {
+        if (database == null || database.getC4Database() == null) throw new IllegalStateException();
         return database.getC4Database().get(getId(), mustExist);
     }
 
@@ -186,25 +187,25 @@ public class ReadOnlyDocument extends ReadOnlyDictionary {
             c4doc.getRawDoc().selectNextLeafRevision(false, true);
             setC4Doc(c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
         } catch (LiteCoreException e) {
-            Log.e(TAG, "Failed to selectNextLeaf: doc -> " + c4doc, e);
+            Log.e(TAG, "Failed to selectNextLeaf: doc -> %s", e, c4doc);
             return false;
         }
         return true;
     }
 
     boolean selectCommonAncestor(ReadOnlyDocument doc1, ReadOnlyDocument doc2) {
-        if (!c4doc.getRawDoc().selectCommonAncestorRevision(doc1.getRevID(), doc2.getRevID()))
+        if (!c4doc.getRawDoc().selectCommonAncestorRevision(doc1.getSelectedRevID(), doc2.getSelectedRevID()))
             return false;
         setC4Doc(c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
         return true;
     }
 
-    String getRevID() {
+    String getSelectedRevID() {
         return c4doc != null ? c4doc.getSelectedRevID() : null;
     }
 
     // Document overrides this
     byte[] encode() {
-        return c4doc.getRawDoc().getSelectedBody();
+        return c4doc != null ? c4doc.getRawDoc().getSelectedBody() : null;
     }
 }
