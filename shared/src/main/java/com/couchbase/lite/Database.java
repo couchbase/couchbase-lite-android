@@ -751,9 +751,9 @@ public final class Database implements C4Constants {
                     Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)",
                             docID,
                             resolver != null ? resolver.getClass().getSimpleName() : "null",
-                            doc != null ? doc.getRevID() : "null",
-                            otherDoc != null ? otherDoc.getRevID() : "null",
-                            baseDoc != null ? baseDoc.getRevID() : "null");
+                            doc != null ? doc.getSelectedRevID() : "null",
+                            otherDoc != null ? otherDoc.getSelectedRevID() : "null",
+                            baseDoc != null ? baseDoc.getSelectedRevID() : "null");
                     resolved = resolver.resolve(conflict);
                     if (resolved == null)
                         throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
@@ -764,11 +764,11 @@ public final class Database implements C4Constants {
                 String losingRevID;
                 byte[] mergedBody = null;
                 if (resolved == otherDoc) {
-                    winningRevID = otherDoc.getRevID();
-                    losingRevID = doc.getRevID();
+                    winningRevID = otherDoc.getSelectedRevID();
+                    losingRevID = doc.getSelectedRevID();
                 } else {
-                    winningRevID = doc.getRevID();
-                    losingRevID = otherDoc.getRevID();
+                    winningRevID = doc.getSelectedRevID();
+                    losingRevID = otherDoc.getSelectedRevID();
                     if (resolved != doc) {
                         resolved.setDatabase(this);
                         mergedBody = resolved.encode();
