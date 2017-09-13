@@ -116,6 +116,16 @@ public class CBLWebSocket extends C4Socket {
             closed(handle, WebSocketDomain, code);
         }
 
+        // NOTE: from CBLStatus.mm
+        // {kCFErrorHTTPConnectionLost,                {POSIXDomain, ECONNRESET}},
+        // {kCFURLErrorCannotConnectToHost,            {POSIXDomain, ECONNREFUSED}},
+        // {kCFURLErrorNetworkConnectionLost,          {POSIXDomain, ECONNRESET}},
+
+        // Posix errno values with Android.
+        // from sysroot/usr/include/asm-generic/errno.h
+        final static int ECONNRESET = 104;    // java.net.SocketException
+        final static int ECONNREFUSED = 111;  // java.net.ConnectException
+
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             Log.e(TAG, "WebSocketListener.onFailure() response -> " + response, t);
@@ -137,19 +147,27 @@ public class CBLWebSocket extends C4Socket {
                     closed(handle, POSIXDomain, e != null ? e.errno : 0);
                 }
 
-                // TODO:
-                // java.net.ConnectException -> ECONNREFUSED -> 61? with POSIXDomain
-                // #define	ECONNREFUSED	61		/* Connection refused */
-
                 // TLS Certificate error
                 else if (t.getCause() != null &&
                         t.getCause() instanceof java.security.cert.CertificateException) {
                     closed(handle, NetworkDomain, kC4NetErrTLSCertUntrusted);
                 }
+
                 // SSLPeerUnverifiedException
                 else if (t instanceof javax.net.ssl.SSLPeerUnverifiedException) {
                     closed(handle, NetworkDomain, kC4NetErrTLSCertUntrusted);
-                } else {
+                }
+
+                // ConnectException
+                else if (t instanceof java.net.ConnectException) {
+                    closed(handle, POSIXDomain, ECONNREFUSED);
+                }
+                // SocketException
+                else if (t instanceof java.net.SocketException) {
+                    closed(handle, POSIXDomain, ECONNRESET);
+                }
+                // Unknown
+                else {
                     closed(handle, WebSocketDomain, 0);
                 }
             } else {
