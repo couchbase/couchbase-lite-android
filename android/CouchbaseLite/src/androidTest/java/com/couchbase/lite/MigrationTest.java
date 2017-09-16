@@ -3,7 +3,6 @@ package com.couchbase.lite;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.utils.ZipUtils;
-import com.couchbase.litecore.C4BlobKey;
 
 import org.junit.After;
 import org.junit.Before;
@@ -78,17 +77,7 @@ public class MigrationTest extends BaseTest {
                 assertNotNull(attachments);
                 String key = "attach" + i;
 
-                // NOTE: following is temporary solution as Upgrader does not set @type = blob.
-                Dictionary content = attachments.getDictionary(key);
-                assertNotNull(content);
-                String digest = content.getString("digest");
-                C4BlobKey blobKey = new C4BlobKey(digest);
-                db.getBlobStore().getFilePath(blobKey);
-                Blob blob = new Blob(db, content.toMap());
-
-                // TODO: OR
-                //Blob blob = attachments.getBlob(key);
-
+                Blob blob = attachments.getBlob(key);
                 assertNotNull(blob);
                 byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes();
                 Arrays.equals(attach, blob.getContent());
