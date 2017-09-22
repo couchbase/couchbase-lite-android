@@ -219,6 +219,17 @@ public class DatabaseEncryptionTest extends LiteTestCaseWithDB {
         Assert.assertNotNull(seekrit);
         Assert.assertEquals(1, seekrit.getDocumentCount());
         Assert.assertTrue(seekrit.close());
+
+        // try change key to no password
+        seekrit = openSeekritDatabase("123456");
+        seekrit.changeEncryptionKey(NULL_PASSWORD);
+        Assert.assertTrue(seekrit.close());
+
+        // reopen without the password
+        seekrit = openSeekritDatabase(NULL_PASSWORD);
+        assertNotNull(seekrit);
+        assertEquals(1, seekrit.getDocumentCount());
+        Assert.assertTrue(seekrit.close());
     }
 
     public void testDeleteEcryptedDB() throws Exception {
