@@ -99,7 +99,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
         Assert.assertTrue(changed);
     }
-    
+
     //https://github.com/couchbase/couchbase-lite-android/issues/952
     public void testViewCreationAndRecall() {
         try {
@@ -130,7 +130,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
                     }
                 }
             }, expectedVersion);
-            assertEquals(Status.NOT_MODIFIED,view2.updateIndex().getCode());
+            assertEquals(Status.NOT_MODIFIED, view2.updateIndex().getCode());
             db2.close();
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
@@ -156,7 +156,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
         // NOTE: Forestdb view storage creates view db when constructor is called.
         //       But SQLite view storage does not create view record when constructor is called.
-        if(isUseForestDB())
+        if (isUseForestDB())
             Assert.assertEquals(1, database.getAllViews().size());
         else
             Assert.assertEquals(0, database.getAllViews().size());
@@ -351,11 +351,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.v(TAG, "View dump: " + dumpResult);
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"one\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals(1, ((Number)dumpResult.get(0).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dumpResult.get(0).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals(2, ((Number)dumpResult.get(2).get("seq")).intValue());
+        Assert.assertEquals(2, ((Number) dumpResult.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals(3, ((Number)dumpResult.get(1).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dumpResult.get(1).get("seq")).intValue());
 
         //no-op reindex
         Assert.assertFalse(view.isStale());
@@ -396,11 +396,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.v(TAG, "View dump: " + dumpResult);
         Assert.assertEquals(3, dumpResult.size());
         Assert.assertEquals("\"one\"", dumpResult.get(2).get("key"));
-        Assert.assertEquals(1, ((Number)dumpResult.get(2).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dumpResult.get(2).get("seq")).intValue());
         Assert.assertEquals("\"3hree\"", dumpResult.get(0).get("key"));
-        Assert.assertEquals(6, ((Number)dumpResult.get(0).get("seq")).intValue());
+        Assert.assertEquals(6, ((Number) dumpResult.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dumpResult.get(1).get("key"));
-        Assert.assertEquals(7, ((Number)dumpResult.get(1).get("seq")).intValue());
+        Assert.assertEquals(7, ((Number) dumpResult.get(1).get("seq")).intValue());
 
         // Now do a real query:
         List<QueryRow> rows = view.query(null);
@@ -811,7 +811,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         query.setEndKey(33547239);
         QueryEnumerator rows = query.run();
         assertEquals(1, rows.getCount());
-        assertEquals(33547239, ((Number)rows.getRow(0).getKey()).intValue());
+        assertEquals(33547239, ((Number) rows.getRow(0).getKey()).intValue());
     }
 
     public void testAllDocsQuery() throws CouchbaseLiteException {
@@ -1264,7 +1264,6 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Assert.assertEquals(row2.get("value"), rows.get(1).getValue());
         Assert.assertEquals(row3.get("key"), rows.get(2).getKey());
         Assert.assertEquals(row3.get("value"), rows.get(2).getValue());
-
     }
 
     public void testViewGroupedStrings() throws CouchbaseLiteException {
@@ -1543,11 +1542,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
     }
 
 
-    private static List<Integer> toIntegerList(List<Number> src){
-        if(src == null) return null;
+    private static List<Integer> toIntegerList(List<Number> src) {
+        if (src == null) return null;
 
         List<Integer> dest = new ArrayList<Integer>(src.size());
-        for(Number n : src){
+        for (Number n : src) {
             dest.add(n.intValue());
         }
         return dest;
@@ -2053,7 +2052,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
     /**
      * in View_Tests.m
      * - (void) test06_ViewCustomFilter
-     *
+     * <p>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/303
      */
     public void testViewCustomFilter() throws Exception {
@@ -2134,7 +2133,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
     /**
      * in View_Tests.m
      * - (void) test06_AllDocsCustomFilter
-     *
+     * <p>
      * https://github.com/couchbase/couchbase-lite-java-core/issues/303
      */
     public void testAllDocsCustomFilter() throws Exception {
@@ -2194,15 +2193,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
+        Assert.assertEquals(5, ((Number) dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, ((Number)dump.get(1).get("seq")).intValue());
+        Assert.assertEquals(2, ((Number) dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
+        Assert.assertEquals(4, ((Number) dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dump.get(4).get("seq")).intValue());
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2220,21 +2219,21 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"40ur\"", dump.get(0).get("key"));
-        Assert.assertEquals(6, ((Number)dump.get(0).get("seq")).intValue());
+        Assert.assertEquals(6, ((Number) dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"five\"", dump.get(1).get("key"));
-        Assert.assertEquals(5, ((Number)dump.get(1).get("seq")).intValue());
+        Assert.assertEquals(5, ((Number) dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
+        Assert.assertEquals(4, ((Number) dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dump.get(4).get("seq")).intValue());
     }
 
     /**
      * int ViewInternal_Tests.m
      * - (void) test_ConflictWinner
-     *
+     * <p>
      * https://github.com/couchbase/couchbase-lite-android/issues/494
      */
     public void testConflictLoser() throws CouchbaseLiteException {
@@ -2250,15 +2249,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
+        Assert.assertEquals(5, ((Number) dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, ((Number)dump.get(1).get("seq")).intValue());
+        Assert.assertEquals(2, ((Number) dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
+        Assert.assertEquals(4, ((Number) dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dump.get(4).get("seq")).intValue());
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2276,20 +2275,20 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
+        Assert.assertEquals(5, ((Number) dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, ((Number)dump.get(1).get("seq")).intValue());
+        Assert.assertEquals(2, ((Number) dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
+        Assert.assertEquals(4, ((Number) dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dump.get(4).get("seq")).intValue());
     }
 
     /**
      * https://github.com/couchbase/couchbase-lite-android/issues/494
-     *
+     * <p>
      * in ViewInternal_tests.m
      * - (void) test_IndexingOlderRevision
      */
@@ -2309,15 +2308,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
+        Assert.assertEquals(5, ((Number) dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
-        Assert.assertEquals(2, ((Number)dump.get(1).get("seq")).intValue());
+        Assert.assertEquals(2, ((Number) dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
+        Assert.assertEquals(4, ((Number) dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dump.get(4).get("seq")).intValue());
 
         // Create a conflict, won by the new revision:
         Map<String, Object> props = new HashMap<String, Object>();
@@ -2336,15 +2335,15 @@ public class ViewsTest extends LiteTestCaseWithDB {
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
         Assert.assertEquals("\"40ur\"", dump.get(0).get("key"));
-        Assert.assertEquals(6, ((Number)dump.get(0).get("seq")).intValue());
+        Assert.assertEquals(6, ((Number) dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"five\"", dump.get(1).get("key"));
-        Assert.assertEquals(5, ((Number)dump.get(1).get("seq")).intValue());
+        Assert.assertEquals(5, ((Number) dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
+        Assert.assertEquals(4, ((Number) dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dump.get(4).get("seq")).intValue());
 
         // create new revision with delete
         RevisionInternal leaf3 = new RevisionInternal("44444", null, true);
@@ -2358,17 +2357,17 @@ public class ViewsTest extends LiteTestCaseWithDB {
         dump = view.dump();
         Log.d(TAG, "View dump: " + dump);
         Assert.assertEquals(5, dump.size());
-        long forSeq = (isSQLiteDB()?leaf1.getSequence():leaf3.getSequence());
+        long forSeq = (isSQLiteDB() ? leaf1.getSequence() : leaf3.getSequence());
         Assert.assertEquals("\"five\"", dump.get(0).get("key"));
-        Assert.assertEquals(5, ((Number)dump.get(0).get("seq")).intValue());
+        Assert.assertEquals(5, ((Number) dump.get(0).get("seq")).intValue());
         Assert.assertEquals("\"four\"", dump.get(1).get("key"));
         Assert.assertEquals(forSeq, ((Number) dump.get(1).get("seq")).intValue());
         Assert.assertEquals("\"one\"", dump.get(2).get("key"));
-        Assert.assertEquals(3, ((Number)dump.get(2).get("seq")).intValue());
+        Assert.assertEquals(3, ((Number) dump.get(2).get("seq")).intValue());
         Assert.assertEquals("\"three\"", dump.get(3).get("key"));
-        Assert.assertEquals(4, ((Number)dump.get(3).get("seq")).intValue());
+        Assert.assertEquals(4, ((Number) dump.get(3).get("seq")).intValue());
         Assert.assertEquals("\"two\"", dump.get(4).get("key"));
-        Assert.assertEquals(1, ((Number)dump.get(4).get("seq")).intValue());
+        Assert.assertEquals(1, ((Number) dump.get(4).get("seq")).intValue());
     }
 
     /**
@@ -2396,7 +2395,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
         int expectedKey = 0;
         for (QueryRow row : rows) {
-            assertEquals(((Number)row.getKey()).intValue(), expectedKey++);
+            assertEquals(((Number) row.getKey()).intValue(), expectedKey++);
         }
 
         LiveQuery liveQuery = view.createQuery().toLiveQuery();
@@ -2420,7 +2419,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(5, rows.getCount());
         expectedKey = 0;
         for (QueryRow row : rows) {
-            assertEquals(((Number)row.getKey()).intValue(), expectedKey++);
+            assertEquals(((Number) row.getKey()).intValue(), expectedKey++);
         }
 
         liveQuery.setStartKey(2);
@@ -2434,7 +2433,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(3, rows.getCount());
         expectedKey = 2;
         for (QueryRow row : rows) {
-            assertEquals(((Number)row.getKey()).intValue(), expectedKey++);
+            assertEquals(((Number) row.getKey()).intValue(), expectedKey++);
         }
 
         liveQuery.stop();
@@ -2443,7 +2442,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
     /**
      * Tests that when converting from a Query to a LiveQuery, all properties are preserved.
      * More speficially tests that the Query copy constructor copies all fields.
-     *
+     * <p>
      * Regression test for couchbase/couchbase-lite-java-core#585.
      */
     public void testQueryToLiveQuery() throws Exception {
@@ -2556,7 +2555,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
      * View update skips winning revisions
      * https://github.com/couchbase/couchbase-lite-java-core/issues/709
      */
-    public void testViewUpdateSkipsWinningRevisions() throws CouchbaseLiteException{
+    public void testViewUpdateSkipsWinningRevisions() throws CouchbaseLiteException {
 
         // seq  | doc_id | revid | parent | current | deleted
         // -----+--------+-------+--------+---------+--------
@@ -2743,13 +2742,16 @@ public class ViewsTest extends LiteTestCaseWithDB {
             @Override
             public void storageExitedTransaction(boolean committed) {
             }
+
             @Override
             public void databaseStorageChanged(DocumentChange change) {
             }
+
             @Override
             public String generateRevID(byte[] json, boolean deleted, String prevRevID) {
                 return "3-dddd"; // 3-d is not appropriate revision id for forestdb
             }
+
             @Override
             public boolean runFilter(ReplicationFilter filter, Map<String, Object> filterParams, RevisionInternal rev) {
                 return false;
@@ -2810,30 +2812,30 @@ public class ViewsTest extends LiteTestCaseWithDB {
         View v5 = createView(database, "view5");
 
         View[] v1Groups = sortViews(v1.getViewsInGroup());
-        assertTrue(Arrays.equals(new View[] {v1}, v1Groups));
+        assertTrue(Arrays.equals(new View[]{v1}, v1Groups));
 
         View[] v2Groups = sortViews(v2.getViewsInGroup());
-        assertTrue(Arrays.equals(new View[] {v2, v3, vX}, v2Groups));
+        assertTrue(Arrays.equals(new View[]{v2, v3, vX}, v2Groups));
 
         View[] v3Groups = sortViews(v3.getViewsInGroup());
-        assertTrue(Arrays.equals(new View[] {v2, v3, vX}, v3Groups));
+        assertTrue(Arrays.equals(new View[]{v2, v3, vX}, v3Groups));
 
         View[] vXGroups = sortViews(vX.getViewsInGroup());
-        assertTrue(Arrays.equals(new View[] {v2, v3, vX}, vXGroups));
+        assertTrue(Arrays.equals(new View[]{v2, v3, vX}, vXGroups));
 
         View[] v4Groups = sortViews(v4.getViewsInGroup());
-        assertTrue(Arrays.equals(new View[] {v4}, v4Groups));
+        assertTrue(Arrays.equals(new View[]{v4}, v4Groups));
 
         View[] v5Groups = sortViews(v5.getViewsInGroup());
-        assertTrue(Arrays.equals(new View[] {v5}, v5Groups));
+        assertTrue(Arrays.equals(new View[]{v5}, v5Groups));
 
         final int numDocs = 10;
         for (int i = 0; i < numDocs; i++) {
-            Map <String, Object> props = new HashMap<String, Object>();
+            Map<String, Object> props = new HashMap<String, Object>();
             props.put("key", i);
             putDoc(database, props);
 
-            if (i == numDocs/2) {
+            if (i == numDocs / 2) {
                 Status status = v1.updateIndex();
                 assertEquals(Status.OK, status.getCode());
             }
@@ -2845,11 +2847,11 @@ public class ViewsTest extends LiteTestCaseWithDB {
         status = v2.updateIndex();
         assertEquals(Status.NOT_MODIFIED, status.getCode());
 
-        List<View> views = Arrays.asList(new View[] {v1, v2, v3});
+        List<View> views = Arrays.asList(new View[]{v1, v2, v3});
         status = v3.updateIndexes(views);
         assertEquals(Status.OK, status.getCode());
 
-        for (View view : new View[] {v2, v3}) {
+        for (View view : new View[]{v2, v3}) {
             assertEquals(numDocs, view.getLastSequenceIndexed());
         }
     }
@@ -3028,7 +3030,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         }, "1");
         assertNotNull(view.getMap());
 
-        Map <String, Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("foo", "bar");
         Document doc = createDocWithProperties(properties);
         SavedRevision rev1 = doc.getCurrentRevision();
@@ -3058,7 +3060,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(1, rows.getCount());
         row = rows.getRow(0);
         assertEquals(doc.getId(), row.getKey());
-        List<String> v = (List<String>)row.getValue();
+        List<String> v = (List<String>) row.getValue();
         assertNotNull(v);
 
         String conflictRevID;
@@ -3066,7 +3068,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
             conflictRevID = rev2a.getId();
         else
             conflictRevID = rev2b.getId();
-        assertTrue(Arrays.equals(new String[] {conflictRevID}, v.toArray(new String[v.size()])));
+        assertTrue(Arrays.equals(new String[]{conflictRevID}, v.toArray(new String[v.size()])));
 
         // Create another conflict revision:
         properties = new HashMap<String, Object>(rev1.getProperties());
@@ -3080,7 +3082,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
         assertEquals(1, rows.getCount());
         row = rows.getRow(0);
         assertEquals(doc.getId(), row.getKey());
-        v = (List<String>)row.getValue();
+        v = (List<String>) row.getValue();
         assertNotNull(v);
 
         // _conflicts in the map function are sorted by RevID desc. Therefore
@@ -3251,7 +3253,7 @@ public class ViewsTest extends LiteTestCaseWithDB {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/971
-     *
+     * <p>
      * ForestDB: Query with descending order against empty db
      */
     public void testViewDecendingOrderWithEmptyDB() throws Exception {
@@ -3840,5 +3842,134 @@ public class ViewsTest extends LiteTestCaseWithDB {
             if (lvu2 != null) lvu2.stop();
             if (lvu != null) lvu.stop();
         }
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1368
+    public void testViewGroupedKeyContainsNull() throws CouchbaseLiteException {
+
+        Map<String, Object> docProperties1 = new HashMap<String, Object>();
+        docProperties1.put("_id", "1");
+        docProperties1.put("artist", "Gang Of Four");
+        docProperties1.put("album", "Entertainment!");
+        docProperties1.put("track", "Ether");
+        docProperties1.put("time", 231);
+        putDoc(database, docProperties1);
+
+        Map<String, Object> docProperties2 = new HashMap<String, Object>();
+        docProperties2.put("_id", "2");
+        docProperties2.put("artist", "Gang Of Four");
+        docProperties2.put("album", "Songs Of The Free");
+        docProperties2.put("track", "I Love A Man In Uniform");
+        docProperties2.put("time", 248);
+        putDoc(database, docProperties2);
+
+        Map<String, Object> docProperties3 = new HashMap<String, Object>();
+        docProperties3.put("_id", "3");
+        docProperties3.put("artist", "Gang Of Four");
+        docProperties3.put("album", "Entertainment!");
+        docProperties3.put("track", "Natural's Not In It");
+        docProperties3.put("time", 187);
+        putDoc(database, docProperties3);
+
+        Map<String, Object> docProperties4 = new HashMap<String, Object>();
+        docProperties4.put("_id", "4");
+        docProperties4.put("artist", "PiL");
+        docProperties4.put("album", "Metal Box");
+        docProperties4.put("track", "Memories");
+        docProperties4.put("time", 309);
+        putDoc(database, docProperties4);
+
+        Map<String, Object> docProperties5 = new HashMap<String, Object>();
+        docProperties5.put("_id", "5");
+        docProperties5.put("artist", "Gang Of Four");
+        docProperties5.put("album", "Entertainment!");
+        docProperties5.put("track", "Not Great Men");
+        docProperties5.put("time", 187);
+        putDoc(database, docProperties5);
+
+        Map<String, Object> docProperties6 = new HashMap<String, Object>();
+        docProperties6.put("_id", "6");
+        docProperties6.put("artist", "Gang Of Four");
+        docProperties6.put("album", null);
+        docProperties6.put("track", "Not Great Men");
+        docProperties6.put("time", 100);
+        putDoc(database, docProperties6);
+
+        Map<String, Object> docProperties7 = new HashMap<String, Object>();
+        docProperties6.put("_id", "7");
+        docProperties7.put("artist", "Gang Of Four");
+        docProperties7.put("album", null);
+        docProperties7.put("track", "Memories");
+        docProperties7.put("time", 200);
+        putDoc(database, docProperties7);
+
+        View view = database.getView("grouper");
+        view.setMapReduce(new Mapper() {
+
+                              @Override
+                              public void map(Map<String, Object> document, Emitter emitter) {
+                                  List<Object> key = new ArrayList<Object>();
+                                  key.add(document.get("artist"));
+                                  key.add(document.get("album"));
+                                  key.add(document.get("track"));
+                                  emitter.emit(key, document.get("time"));
+                              }
+                          }, new Reducer() {
+
+                              @Override
+                              public Object reduce(List<Object> keys, List<Object> values,
+                                                   boolean rereduce) {
+                                  return View.totalValues(values);
+                              }
+                          }, "1"
+        );
+        view.updateIndex();
+
+        //group level 2
+        QueryOptions options = new QueryOptions();
+        options.setReduce(true);
+        options.setGroupLevel(2);
+        List<QueryRow> rows = view.query(options);
+
+        Map<String, Object> row0 = new HashMap<String, Object>();
+        List<String> key0 = new ArrayList<String>();
+        key0.add("Gang Of Four");
+        key0.add(null);
+        row0.put("key", key0);
+        row0.put("value", 300.0);
+
+        Map<String, Object> row1 = new HashMap<String, Object>();
+        List<String> key1 = new ArrayList<String>();
+        key1.add("Gang Of Four");
+        key1.add("Entertainment!");
+        row1.put("key", key1);
+        row1.put("value", 605.0);
+
+        Map<String, Object> row2 = new HashMap<String, Object>();
+        List<String> key2 = new ArrayList<String>();
+        key2.add("Gang Of Four");
+        key2.add("Songs Of The Free");
+        row2.put("key", key2);
+        row2.put("value", 248.0);
+
+        Map<String, Object> row3 = new HashMap<String, Object>();
+        List<String> key3 = new ArrayList<String>();
+        key3.add("PiL");
+        key3.add("Metal Box");
+        row3.put("key", key3);
+        row3.put("value", 309.0);
+
+        for (int i = 0; i < rows.size(); i++)
+            Log.e(TAG, "rows.get(%d).getKey() -> %s", i, rows.get(i).getKey());
+
+        Assert.assertEquals(4, rows.size());
+        Assert.assertEquals(row0.get("key"), rows.get(0).getKey());
+        Assert.assertEquals(row0.get("value"), rows.get(0).getValue());
+        Assert.assertEquals(row1.get("key"), rows.get(1).getKey());
+        Assert.assertEquals(row1.get("value"), rows.get(1).getValue());
+        Assert.assertEquals(row2.get("key"), rows.get(2).getKey());
+        Assert.assertEquals(row2.get("value"), rows.get(2).getValue());
+        Assert.assertEquals(row3.get("key"), rows.get(3).getKey());
+        Assert.assertEquals(row3.get("value"), rows.get(3).getValue());
     }
 }
