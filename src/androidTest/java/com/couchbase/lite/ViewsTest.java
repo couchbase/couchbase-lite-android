@@ -42,6 +42,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ViewsTest extends LiteTestCaseWithDB {
@@ -3840,5 +3841,64 @@ public class ViewsTest extends LiteTestCaseWithDB {
             if (lvu2 != null) lvu2.stop();
             if (lvu != null) lvu.stop();
         }
+    }
+
+    public void testLiveQueryAgainsPurgedDocument() throws Exception {
+        _testLiveQueryAgainsDeletedOrPurgedDocument(true);
+    }
+
+    public void testLiveQueryAgainsDeletedDocument() throws Exception {
+        _testLiveQueryAgainsDeletedOrPurgedDocument(false);
+    }
+
+    void _testLiveQueryAgainsDeletedOrPurgedDocument(boolean purge) throws Exception {
+        final Database db = startDatabase();
+        View view = db.getView("view");
+        view.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                emitter.emit(document.get("_id"), null);
+            }
+        }, "1.0");
+
+        Query q = view.createQuery();
+        LiveQuery lq = q.toLiveQuery();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicBoolean nullProperties = new AtomicBoolean(false);
+        lq.addChangeListener(new LiveQuery.ChangeListener() {
+            @Override
+            public void changed(LiveQuery.ChangeEvent event) {
+                Log.e(TAG, "$$$$ changed() event - %d", event.getRows().getCount());
+                for (QueryRow row : event.getRows()) {
+                    Log.e(TAG, "\tKEY: %s ID: %s Rev: %s Properties: %s", row.getKey(), row.getDocumentId(), row.getDocumentRevisionId(), row.getDocument().getProperties());
+                    nullProperties.set(row.getDocument().getProperties() == null);
+                }
+                // detects LiveQuery callback with no-results.
+                if (event.getRows().getCount() == 0)
+                    latch.countDown();
+            }
+        });
+
+        Document doc = db.getDocument("ABC");
+        Map<String, Object> prop = new HashMap<String, Object>();
+        prop.put("text", "Hello World!");
+        doc.putProperties(prop);
+
+        lq.start();
+        try {
+            doc = db.getDocument("ABC");
+            if (purge)
+                doc.purge();
+            else
+                doc.delete();
+
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+        } finally {
+            lq.stop();
+        }
+        assertFalse(nullProperties.get());
+
+        doc = db.getDocument("ABC");
+        Log.e(TAG, "doc -> %s", doc.getProperties());
     }
 }
