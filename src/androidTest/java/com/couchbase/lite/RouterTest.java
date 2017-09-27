@@ -930,8 +930,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             Map<String, Object> replicator1 = getPushReplicationProperties(server.url("/db").url());
             Map<String, Object> result1 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator1, Status.OK, null);
             assertTrue(result1.containsKey("ok"));
-            assertTrue(((Boolean)result1.get("ok")).booleanValue());
-            String sessionId1 = (String)result1.get("session_id");
+            assertTrue(((Boolean) result1.get("ok")).booleanValue());
+            String sessionId1 = (String) result1.get("session_id");
             assertNotNull(sessionId1);
             sessionIds.add(sessionId1);
 
@@ -939,8 +939,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator2.put("continuous", true);
             Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator2, Status.OK, null);
             assertTrue(result2.containsKey("ok"));
-            assertTrue(((Boolean)result2.get("ok")).booleanValue());
-            String sessionId2 = (String)result2.get("session_id");
+            assertTrue(((Boolean) result2.get("ok")).booleanValue());
+            String sessionId2 = (String) result2.get("session_id");
             assertNotNull(sessionId2);
             sessionIds.add(sessionId2);
 
@@ -949,8 +949,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator3.put("doc_ids", Arrays.asList(((String[]) new String[]{"doc1", "doc2"})));
             Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator3, Status.OK, null);
             assertTrue(result3.containsKey("ok"));
-            assertTrue(((Boolean)result3.get("ok")).booleanValue());
-            String sessionId3 = (String)result3.get("session_id");
+            assertTrue(((Boolean) result3.get("ok")).booleanValue());
+            String sessionId3 = (String) result3.get("session_id");
             assertNotNull(sessionId3);
             sessionIds.add(sessionId3);
 
@@ -959,8 +959,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator4.put("filter", "myfilter");
             Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator4, Status.OK, null);
             assertTrue(result4.containsKey("ok"));
-            assertTrue(((Boolean)result4.get("ok")).booleanValue());
-            String sessionId4 = (String)result4.get("session_id");
+            assertTrue(((Boolean) result4.get("ok")).booleanValue());
+            String sessionId4 = (String) result4.get("session_id");
             assertNotNull(sessionId4);
             sessionIds.add(sessionId4);
 
@@ -1015,8 +1015,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             Map<String, Object> replicator1 = getPullReplicationProperties(server.url("/db").url());
             Map<String, Object> result1 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator1, Status.OK, null);
             assertTrue(result1.containsKey("ok"));
-            assertTrue(((Boolean)result1.get("ok")).booleanValue());
-            String sessionId1 = (String)result1.get("session_id");
+            assertTrue(((Boolean) result1.get("ok")).booleanValue());
+            String sessionId1 = (String) result1.get("session_id");
             assertNotNull(sessionId1);
             sessionIds.add(sessionId1);
 
@@ -1024,8 +1024,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator2.put("continuous", true);
             Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator2, Status.OK, null);
             assertTrue(result2.containsKey("ok"));
-            assertTrue(((Boolean)result2.get("ok")).booleanValue());
-            String sessionId2 = (String)result2.get("session_id");
+            assertTrue(((Boolean) result2.get("ok")).booleanValue());
+            String sessionId2 = (String) result2.get("session_id");
             assertNotNull(sessionId1);
             sessionIds.add(sessionId2);
 
@@ -1034,8 +1034,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator3.put("doc_ids", Arrays.asList(((String[]) new String[]{"doc1", "doc2"})));
             Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator3, Status.OK, null);
             assertTrue(result3.containsKey("ok"));
-            assertTrue(((Boolean)result3.get("ok")).booleanValue());
-            String sessionId3 = (String)result3.get("session_id");
+            assertTrue(((Boolean) result3.get("ok")).booleanValue());
+            String sessionId3 = (String) result3.get("session_id");
             assertNotNull(sessionId3);
             sessionIds.add(sessionId3);
 
@@ -1044,8 +1044,8 @@ public class RouterTest extends LiteTestCaseWithDB {
             replicator4.put("filter", "myfilter");
             Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicator4, Status.OK, null);
             assertTrue(result4.containsKey("ok"));
-            assertTrue(((Boolean)result4.get("ok")).booleanValue());
-            String sessionId4 = (String)result4.get("session_id");
+            assertTrue(((Boolean) result4.get("ok")).booleanValue());
+            String sessionId4 = (String) result4.get("session_id");
             assertNotNull(sessionId4);
             sessionIds.add(sessionId4);
 
@@ -1230,7 +1230,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "Call 1st /_replicate");
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result.containsKey("ok"));
-            assertTrue(((Boolean)result.get("ok")).booleanValue());
+            assertTrue(((Boolean) result.get("ok")).booleanValue());
             Log.i(TAG, "result: " + result);
             assertNotNull(result.get("session_id"));
             String sessionId1 = (String) result.get("session_id");
@@ -1246,7 +1246,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "Call 2nd /_replicate");
             Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result2.containsKey("ok"));
-            assertTrue(((Boolean)result2.get("ok")).booleanValue());
+            assertTrue(((Boolean) result2.get("ok")).booleanValue());
             Log.i(TAG, "result2: " + result2);
             assertNotNull(result2.get("session_id"));
             String sessionId2 = (String) result2.get("session_id");
@@ -1262,7 +1262,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "Call 3rd /_replicate");
             Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result3.containsKey("ok"));
-            assertTrue(((Boolean)result3.get("ok")).booleanValue());
+            assertTrue(((Boolean) result3.get("ok")).booleanValue());
             Log.i(TAG, "result3: " + result3);
             assertNotNull(result3.get("session_id"));
             String sessionId3 = (String) result3.get("session_id");
@@ -1302,7 +1302,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "Call 1st /_replicate");
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result.containsKey("ok"));
-            assertTrue(((Boolean)result.get("ok")).booleanValue());
+            assertTrue(((Boolean) result.get("ok")).booleanValue());
             Log.i(TAG, "result: " + result);
             assertNotNull(result.get("session_id"));
             String sessionId1 = (String) result.get("session_id");
@@ -1313,7 +1313,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "Call 2nd /_replicate");
             Map<String, Object> result2 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result2.containsKey("ok"));
-            assertTrue(((Boolean)result2.get("ok")).booleanValue());
+            assertTrue(((Boolean) result2.get("ok")).booleanValue());
             Log.i(TAG, "result2: " + result2);
             assertNotNull(result2.get("session_id"));
             String sessionId2 = (String) result2.get("session_id");
@@ -1337,7 +1337,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "Call 3rd /_replicate");
             Map<String, Object> result3 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result3.containsKey("ok"));
-            assertTrue(((Boolean)result3.get("ok")).booleanValue());
+            assertTrue(((Boolean) result3.get("ok")).booleanValue());
             Log.i(TAG, "result3: " + result3);
             assertNotNull(result3.get("session_id"));
             String sessionId3 = (String) result3.get("session_id");
@@ -1363,7 +1363,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "map: " + replicateJsonMap);
             Map<String, Object> result4 = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result4.containsKey("ok"));
-            assertTrue(((Boolean)result4.get("ok")).booleanValue());
+            assertTrue(((Boolean) result4.get("ok")).booleanValue());
             Log.i(TAG, "result4: " + result4);
 
             // wait for replication to finish
@@ -1395,7 +1395,7 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result.containsKey("ok"));
-            assertTrue(((Boolean)result.get("ok")).booleanValue());
+            assertTrue(((Boolean) result.get("ok")).booleanValue());
             Log.i(TAG, "result: " + result);
             assertNotNull(result.get("session_id"));
 
@@ -1579,7 +1579,7 @@ public class RouterTest extends LiteTestCaseWithDB {
             Log.i(TAG, "map: " + replicateJsonMap);
             Map<String, Object> result = (Map<String, Object>) sendBody("POST", "/_replicate", replicateJsonMap, Status.OK, null);
             assertTrue(result.containsKey("ok"));
-            assertTrue(((Boolean)result.get("ok")).booleanValue());
+            assertTrue(((Boolean) result.get("ok")).booleanValue());
             Log.i(TAG, "result: " + result);
             assertNotNull(result.get("session_id"));
 
@@ -1660,7 +1660,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         revID = (String) result.get("rev");
         assertTrue(revID.startsWith("2-"));
         assertEquals("doc1", (String) result.get("id"));
-        assertTrue((Boolean)result.get("ok"));
+        assertTrue((Boolean) result.get("ok"));
 
         // Query the view and check the result:
         // doc1 should not be in the results
@@ -1691,12 +1691,12 @@ public class RouterTest extends LiteTestCaseWithDB {
 
         URLConnection conn;
 
-        String [] expected = new String[] { "{\"last_seq\":0}" };
+        String[] expected = new String[]{"{\"last_seq\":0}"};
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=0", null, null);
         String[] changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
         assertTrue(Arrays.equals(changes, expected));
 
-        expected = new String[] { "{\"last_seq\":5}" };
+        expected = new String[]{"{\"last_seq\":5}"};
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=5", null, null);
         changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
         assertTrue(compareContinuousFeed(expected, changes));
@@ -1708,22 +1708,22 @@ public class RouterTest extends LiteTestCaseWithDB {
         Map<String, Object> doc2 = (Map<String, Object>)
                 sendBody("PUT", "/db/doc2", properties, Status.CREATED, null);
 
-        expected = new String[] {
+        expected = new String[]{
                 "{\"seq\":1,\"id\":\"doc1\",\"changes\":[{\"rev\":\"" + doc1.get("rev") + "\"}]}",
                 "{\"seq\":2,\"id\":\"doc2\",\"changes\":[{\"rev\":\"" + doc2.get("rev") + "\"}]}",
-                "{\"last_seq\":2}" };
+                "{\"last_seq\":2}"};
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=0", null, null);
         changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
         assertTrue(compareContinuousFeed(expected, changes));
 
-        expected = new String[] {
+        expected = new String[]{
                 "{\"seq\":2,\"id\":\"doc2\",\"changes\":[{\"rev\":\"" + doc2.get("rev") + "\"}]}",
-                "{\"last_seq\":2}" };
+                "{\"last_seq\":2}"};
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=1", null, null);
         changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
         assertTrue(compareContinuousFeed(expected, changes));
 
-        expected = new String[] { "{\"last_seq\":5}" };
+        expected = new String[]{"{\"last_seq\":5}"};
         conn = sendRequest("GET", "/db/_changes?feed=continuous&timeout=2000&since=5", null, null);
         changes = IOUtils.toString(conn.getResponseInputStream()).split("\\n");
         assertTrue(compareContinuousFeed(expected, changes));
@@ -1809,10 +1809,10 @@ public class RouterTest extends LiteTestCaseWithDB {
     /**
      * Router_tests.m
      * - (void) test_deleteDoc
-     *
+     * <p>
      * See: https://github.com/couchbase/couchbase-lite-java-core/issues/1573
      */
-    public void failing_test_deleteDoc(){
+    public void failing_test_deleteDoc() {
         // Create db:
         send("PUT", "/db", Status.CREATED, null);
 
@@ -1836,13 +1836,14 @@ public class RouterTest extends LiteTestCaseWithDB {
         responseBody.put("status", 404);
         send("GET", "/db/doc1", Status.DELETED, responseBody);
     }
+
     /**
      * Router_tests.m
      * - (void) test_purgeDoc
-     *
+     * <p>
      * See: https://github.com/couchbase/couchbase-lite-java-core/issues/1573
      */
-    public void failing_test_purgeDoc(){
+    public void failing_test_purgeDoc() {
         // Create db:
         send("PUT", "/db", Status.CREATED, null);
 
@@ -1858,7 +1859,7 @@ public class RouterTest extends LiteTestCaseWithDB {
         reqBody.put("doc1", Arrays.asList(revID));
         Map<String, Object> expectedResp = new HashMap<String, Object>();
         expectedResp.put("purged", reqBody);
-        sendBody("POST", "/db/_purge", reqBody , Status.OK, expectedResp);
+        sendBody("POST", "/db/_purge", reqBody, Status.OK, expectedResp);
 
         // Get the purged doc:
         Map<String, Object> responseBody = new HashMap<String, Object>();
@@ -1901,10 +1902,10 @@ public class RouterTest extends LiteTestCaseWithDB {
         mapBody1.put("map", "function(doc) { if (doc.type == 'person') { emit(doc.name, null) } }");
         viewBody1.put("view", mapBody1);
         viewsBody1.put("views", viewBody1);
-        resp = (Map<String, Object>)sendBody("PUT", "/db/_design/design", viewsBody1, Status.CREATED, null);
-        String revID1 = (String)resp.get("rev");
+        resp = (Map<String, Object>) sendBody("PUT", "/db/_design/design", viewsBody1, Status.CREATED, null);
+        String revID1 = (String) resp.get("rev");
 
-        resp = (Map<String, Object>)send("GET", "/db/_design/design/_view/view", Status.OK, null);
+        resp = (Map<String, Object>) send("GET", "/db/_design/design/_view/view", Status.OK, null);
         assertEquals(2, resp.get("total_rows"));
 
         View view = db.getView("design/view");
@@ -1917,14 +1918,48 @@ public class RouterTest extends LiteTestCaseWithDB {
         viewBody2.put("view", mapBody2);
         viewsBody2.put("views", viewBody2);
         String urlStr = String.format(Locale.ENGLISH, "/db/_design/design?rev=%s", revID1);
-        resp = (Map<String, Object>)sendBody("PUT", urlStr, viewsBody2, Status.CREATED, null);
-        String revID2 = (String)resp.get("rev");
+        resp = (Map<String, Object>) sendBody("PUT", urlStr, viewsBody2, Status.CREATED, null);
+        String revID2 = (String) resp.get("rev");
 
-        resp = (Map<String, Object>)send("GET", "/db/_design/design/_view/view", Status.OK, null);
+        resp = (Map<String, Object>) send("GET", "/db/_design/design/_view/view", Status.OK, null);
         assertEquals(1, resp.get("total_rows"));
 
         view = db.getView("design/view");
         String mapReduceVersion2 = view.getMapVersion();
         assertFalse(mapReduceVersion1.equals(mapReduceVersion2));
+    }
+
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/1629
+    // Wrong return code for listener causes problems with puller and deleted items
+    public void testDeletedDocs() {
+        // PUT /{db}
+        send("PUT", "/db", Status.CREATED, null);
+
+        // PUT /{db}/{docID}
+        Map<String, Object> doc1 = new HashMap<String, Object>();
+        doc1.put("message", "hello");
+        Map<String, Object> result = (Map<String, Object>) sendBody("PUT", "/db/doc1", doc1, Status.CREATED, null);
+        String revID = (String) result.get("rev");
+        assertTrue(revID.startsWith("1-"));
+
+        // GET /{db}/{docID}
+        doc1.put("_id", "doc1");
+        doc1.put("_rev", revID);
+        send("GET", "/db/doc1", Status.OK, doc1);
+
+        // DELETE  /{db}/{docID}?rev={revID}
+        result = (Map<String, Object>) send("DELETE", String.format(Locale.ENGLISH, "/db/doc1?rev=%s", revID), Status.OK, null);
+        revID = (String) result.get("rev");
+        assertTrue(revID.startsWith("2-"));
+
+        // GET /{db}/{docID}
+        send("GET", "/db/doc1", Status.NOT_FOUND, null);
+
+        // GET /{db}/{docID}?rev={revID}
+        Map<String, Object> expected = new HashMap<String, Object>();
+        expected.put("_id", "doc1");
+        expected.put("_rev", revID);
+        expected.put("_deleted", true);
+        send("GET", String.format(Locale.ENGLISH, "/db/doc1?rev=%s", revID), Status.OK, expected);
     }
 }

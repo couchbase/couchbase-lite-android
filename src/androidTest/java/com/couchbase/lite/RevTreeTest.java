@@ -109,10 +109,12 @@ public class RevTreeTest extends LiteTestCaseWithDB {
 
         // Fetch one of those phantom revisions with no body:
         RevisionInternal rev2 = database.getDocument(rev.getDocID(), "2-2222", true);
-        assertNull(rev2); // NOT FOUND
+        assertNotNull(rev2);
+        assertTrue(rev2.isMissing());
+        assertNull(rev2.getBody());
 
         // Make sure no duplicate rows were inserted for the common revisions:
-        assertEquals(isSQLiteDB()?8:3, database.getLastSequenceNumber());
+        assertEquals(isSQLiteDB() ? 8 : 3, database.getLastSequenceNumber());
 
 
         // Make sure the revision with the higher revID wins the conflict:
@@ -130,12 +132,11 @@ public class RevTreeTest extends LiteTestCaseWithDB {
         options.setIncludeConflicts(true);
         changes = database.changesSince(0, options, null, null);
         expectedChanges = new RevisionList();
-        if(isSQLiteDB()) {
+        if (isSQLiteDB()) {
             expectedChanges.add(rev);
             expectedChanges.add(conflict);
             expectedChanges.add(other);
-        }
-        else{
+        } else {
             expectedChanges.add(conflict);
             expectedChanges.add(rev);
             expectedChanges.add(other);
