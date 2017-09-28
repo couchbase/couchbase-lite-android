@@ -540,7 +540,6 @@ public class DatabaseTest extends LiteTestCaseWithDB {
             final Replication replication = database.createPullReplication(server.url("/db").url());
 
             assertEquals(0, database.getAllReplications().size());
-            assertEquals(0, database.getActiveReplications().size());
 
             final CountDownLatch replicationRunning = new CountDownLatch(1);
             replication.addChangeListener(new ReplicationRunningObserver(replicationRunning));
@@ -551,7 +550,6 @@ public class DatabaseTest extends LiteTestCaseWithDB {
             assertTrue(success);
 
             assertEquals(1, database.getAllReplications().size());
-            assertEquals(1, database.getActiveReplications().size());
 
             final CountDownLatch replicationDoneSignal = new CountDownLatch(1);
             replication.addChangeListener(new ReplicationFinishedObserver(replicationDoneSignal));
@@ -564,8 +562,7 @@ public class DatabaseTest extends LiteTestCaseWithDB {
             // need to pause briefly to let the internal change listener to update activeReplications.
             Thread.sleep(500);
 
-            assertEquals(1, database.getAllReplications().size());
-            assertEquals(0, database.getActiveReplications().size());
+            assertEquals(0, database.getAllReplications().size());
         } finally {
             server.shutdown();
         }
