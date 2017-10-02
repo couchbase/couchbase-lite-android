@@ -63,7 +63,7 @@ public class TenReplicationsTest extends LiteTestCaseWithDB {
         }
 
         // make sure if 10 repls are active
-        assertEquals(NUM_REPLS, database.getActiveReplications().size());
+        assertEquals(NUM_REPLS, database.getAllReplications().size());
 
         // stop all repls by repl.stop()
         for (final Replication repl : repls)

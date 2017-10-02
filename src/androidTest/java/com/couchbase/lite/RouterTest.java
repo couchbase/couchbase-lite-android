@@ -1320,7 +1320,7 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             // WAIT replicator becomes IDLE
             List<CountDownLatch> replicationIdleSignals = new ArrayList<CountDownLatch>();
-            List<Replication> repls = database.getActiveReplications();
+            List<Replication> repls = database.getAllReplications();
             for (Replication repl : repls) {
                 if (repl.getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
                     final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
@@ -1344,7 +1344,7 @@ public class RouterTest extends LiteTestCaseWithDB {
 
             // WAIT replicator becomes IDLE
             replicationIdleSignals = new ArrayList<CountDownLatch>();
-            repls = database.getActiveReplications();
+            repls = database.getAllReplications();
             for (Replication repl : repls) {
                 if (repl.getStatus() == Replication.ReplicationStatus.REPLICATION_ACTIVE) {
                     final CountDownLatch replicationIdleSignal = new CountDownLatch(1);
