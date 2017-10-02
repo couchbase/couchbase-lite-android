@@ -32,7 +32,7 @@ public class LiteTestCaseBase extends AndroidTestCase implements TestContextFact
         return new AndroidTestContext(testDir, getContext());
     }
 
-    private class AndroidTestContext extends AndroidContext {
+    protected class AndroidTestContext extends AndroidContext {
         private File testDir;
 
         public AndroidTestContext(File testDir, android.content.Context wrappedContext) {

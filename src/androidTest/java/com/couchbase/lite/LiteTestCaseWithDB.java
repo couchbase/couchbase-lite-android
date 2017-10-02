@@ -166,6 +166,10 @@ public class LiteTestCaseWithDB extends LiteTestCase {
         return Boolean.parseBoolean(System.getProperty("multithreadsTestsEnabled"));
     }
 
+    protected static boolean memoryTestsEnabled() {
+        return Boolean.parseBoolean(System.getProperty("memoryTestsEnabled"));
+    }
+
     protected static int getSQLiteLibrary() {
         return Integer.parseInt(System.getProperty("sqliteLibrary"));
     }
@@ -263,7 +267,7 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
     protected void stopDatabase() {
         if (database != null) {
-            if(!database.close()){
+            if (!database.close()) {
                 Log.e(TAG, "Error in database.close()");
             }
         }
