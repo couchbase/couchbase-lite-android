@@ -365,7 +365,6 @@ public class DictionaryTest extends BaseTest {
     }
 
     // https://github.com/couchbase/couchbase-lite-core/issues/230
-    // https://github.com/couchbase/couchbase-lite-core/issues/230
     @Test
     public void testLargeLongValue() throws CouchbaseLiteException {
         Document doc = createDocument("test");
@@ -382,5 +381,20 @@ public class DictionaryTest extends BaseTest {
         assertEquals(num1, doc.getLong("num1"));
         assertEquals(num2, doc.getLong("num2"));
         assertEquals(num3, doc.getLong("num3"));
+    }
+
+    //https://forums.couchbase.com/t/long-value-on-document-changed-after-saved-to-db/14259/
+    @Test
+    public void testLargeLongValue2() throws CouchbaseLiteException {
+        Document doc = createDocument("test");
+        long num1 = 11989091L;
+        long num2 = 231548688L;
+        doc.setObject("num1", num1);
+        doc.setObject("num2", num2);
+        doc = save(doc);
+        Log.i(TAG, "num1 long -> " + doc.getLong("num1"));
+        Log.i(TAG, "num2 long -> " + doc.getLong("num2"));
+        assertEquals(num1, doc.getLong("num1"));
+        assertEquals(num2, doc.getLong("num2"));
     }
 }
