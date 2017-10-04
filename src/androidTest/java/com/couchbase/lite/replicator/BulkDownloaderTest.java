@@ -93,7 +93,7 @@ public class BulkDownloaderTest extends LiteTestCaseWithDB {
                         }
                     },
                     new RemoteRequestCompletion() {
-                        public void onCompletion(Response httpResponse, Object result, Throwable e) {
+                        public void onCompletion(RemoteRequest remoteRequest, Response httpResponse, Object result, Throwable e) {
                             Log.d(TAG, "RemoteRequestCompletionBlock called, result: %s e: %s",
                                     result, e);
                             if (e != null) {
