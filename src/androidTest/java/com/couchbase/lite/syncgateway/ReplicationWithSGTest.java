@@ -21,11 +21,10 @@ import com.couchbase.lite.TransactionalTask;
 import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.auth.Authenticator;
 import com.couchbase.lite.auth.AuthenticatorFactory;
-import com.couchbase.lite.auth.Authorizer;
 import com.couchbase.lite.auth.MemTokenStore;
-import com.couchbase.lite.auth.OpenIDConnectAuthorizer;
 import com.couchbase.lite.auth.OIDCLoginCallback;
 import com.couchbase.lite.auth.OIDCLoginContinuation;
+import com.couchbase.lite.auth.OpenIDConnectAuthorizer;
 import com.couchbase.lite.auth.TokenStore;
 import com.couchbase.lite.auth.TokenStoreFactory;
 import com.couchbase.lite.replicator.RemoteFormRequest;
@@ -290,7 +289,7 @@ public class ReplicationWithSGTest extends LiteTestCaseWithDB {
             RemoteRequest rq = new RemoteFormRequest(factory, "POST", formURL, false, formData, null,
                 new RemoteRequestCompletion() {
                     @Override
-                    public void onCompletion(Response httpResponse, Object result, Throwable error) {
+                    public void onCompletion(RemoteRequest remoteRequest, Response httpResponse, Object result, Throwable error) {
                         results.put("response", httpResponse);
                         results.put("result", result);
                         results.put("error", error);
