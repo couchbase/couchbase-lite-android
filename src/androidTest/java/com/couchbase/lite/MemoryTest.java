@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.router.Router;
 import com.couchbase.lite.util.Log;
 
 import java.io.IOException;
@@ -16,6 +15,7 @@ public class MemoryTest extends LiteTestCaseWithDB {
     final static int BATCH_DOC_SIZE = 100;
     final static int NUM_DOCS = 2000 * BATCH_DOC_SIZE;
 
+    // NOTE: This unit test cause OOM error based on number of documents (NUM_DOCS)
     // https://github.com/couchbase/couchbase-lite-java-core/issues/1483
     public void testChangesRestWithManyDocs() throws CouchbaseLiteException, IOException {
         if (!memoryTestsEnabled())
@@ -69,7 +69,6 @@ public class MemoryTest extends LiteTestCaseWithDB {
                 int lastSeq = (Integer) resp.get("last_seq");
                 List<Map<String, Object>> results = (List<Map<String, Object>>) resp.get("results");
                 assertEquals(changesSeq + 1, results.get(0).get("seq"));
-                assertEquals(changesSeq + Router.DEF_CHANGES_LIMIT, results.get(results.size() - 1).get("seq"));
                 Log.e(TAG, "last_seq -> %d", lastSeq);
                 changesSeq = lastSeq;
             }
