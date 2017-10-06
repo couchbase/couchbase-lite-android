@@ -11,11 +11,34 @@
 // either express or implied. See the License for the specific language governing permissions
 // and limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.api;
 
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+
+import com.couchbase.lite.Array;
+import com.couchbase.lite.BaseTest;
+import com.couchbase.lite.Collation;
+import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.DataSource;
+import com.couchbase.lite.Dictionary;
+import com.couchbase.lite.Document;
+import com.couchbase.lite.Expression;
+import com.couchbase.lite.FTSIndexItem;
+import com.couchbase.lite.Function;
+import com.couchbase.lite.Index;
+import com.couchbase.lite.Join;
+import com.couchbase.lite.LiveQuery;
+import com.couchbase.lite.LiveQueryChange;
+import com.couchbase.lite.LiveQueryChangeListener;
+import com.couchbase.lite.Log;
+import com.couchbase.lite.Ordering;
+import com.couchbase.lite.Query;
+import com.couchbase.lite.ReadOnlyDictionary;
+import com.couchbase.lite.Result;
+import com.couchbase.lite.ResultSet;
+import com.couchbase.lite.SelectResult;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -37,8 +60,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class QueryTest extends BaseTest {
-    public static final String TAG = QueryTest.class.getSimpleName();
+public class QueryApiTest extends BaseTest {
+    public static final String TAG = QueryApiTest.class.getSimpleName();
 
     private static Expression EXPR_DOCID = Expression.meta().getId();
     private static Expression EXPR_SEQUENCE = Expression.meta().getSequence();
@@ -141,7 +164,6 @@ public class QueryTest extends BaseTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        Log.enableLogging(TAG, Log.INFO, false);
     }
 
     @Test
@@ -1186,73 +1208,6 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testGenerateJSONCollation() {
-        Collation[] collations = {
-                Collation.ascii().ignoreCase(false),
-                Collation.ascii().ignoreCase(true),
-                Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(false),
-                Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(false),
-                Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(true),
-                Collation.unicode().locale("en").ignoreCase(false).ignoreAccents(false),
-                Collation.unicode().locale("en").ignoreCase(true).ignoreAccents(false),
-                Collation.unicode().locale("en").ignoreCase(true).ignoreAccents(true)
-        };
-
-        List<Map<String, Object>> expected = new ArrayList<>();
-        Map<String, Object> json1 = new HashMap<>();
-        json1.put("UNICODE", false);
-        json1.put("LOCALE", null);
-        json1.put("CASE", true);
-        json1.put("DIAC", true);
-        expected.add(json1);
-        Map<String, Object> json2 = new HashMap<>();
-        json2.put("UNICODE", false);
-        json2.put("LOCALE", null);
-        json2.put("CASE", false);
-        json2.put("DIAC", true);
-        expected.add(json2);
-        Map<String, Object> json3 = new HashMap<>();
-        json3.put("UNICODE", true);
-        json3.put("LOCALE", null);
-        json3.put("CASE", true);
-        json3.put("DIAC", true);
-        expected.add(json3);
-        Map<String, Object> json4 = new HashMap<>();
-        json4.put("UNICODE", true);
-        json4.put("LOCALE", null);
-        json4.put("CASE", false);
-        json4.put("DIAC", true);
-        expected.add(json4);
-        Map<String, Object> json5 = new HashMap<>();
-        json5.put("UNICODE", true);
-        json5.put("LOCALE", null);
-        json5.put("CASE", false);
-        json5.put("DIAC", false);
-        expected.add(json5);
-        Map<String, Object> json6 = new HashMap<>();
-        json6.put("UNICODE", true);
-        json6.put("LOCALE", "en");
-        json6.put("CASE", true);
-        json6.put("DIAC", true);
-        expected.add(json6);
-        Map<String, Object> json7 = new HashMap<>();
-        json7.put("UNICODE", true);
-        json7.put("LOCALE", "en");
-        json7.put("CASE", false);
-        json7.put("DIAC", true);
-        expected.add(json7);
-        Map<String, Object> json8 = new HashMap<>();
-        json8.put("UNICODE", true);
-        json8.put("LOCALE", "en");
-        json8.put("CASE", false);
-        json8.put("DIAC", false);
-        expected.add(json8);
-        for (int i = 0; i < collations.length; i++)
-            assertEquals(expected.get(i), collations[i].asJSON());
-
-    }
-
-    @Test
     public void testUnicodeCollationWithLocale() throws Exception {
         String[] letters = {"B", "A", "Z", "Å"};
         for (String letter : letters) {
@@ -1669,6 +1624,5 @@ public class QueryTest extends BaseTest {
             }
         }, false);
         assertEquals(1, numRows);
-
     }
 }
