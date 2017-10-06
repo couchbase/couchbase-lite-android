@@ -411,7 +411,7 @@ public class Replicator implements NetworkReachabilityListener {
             status = c4repl.getStatus();
             config.getDatabase().getActiveReplications().add(this); // keeps me from being deallocated
         } catch (LiteCoreException e) {
-            status = new C4ReplicatorStatus(kC4Stopped, 0, 0, e.domain, e.code, 0);
+            status = new C4ReplicatorStatus(kC4Stopped, 0, 0, 0, e.domain, e.code, 0);
         }
         updateStateProperties(status);
 
@@ -549,14 +549,15 @@ public class Replicator implements NetworkReachabilityListener {
         // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:
         ActivityLevel level = ActivityLevel.values()[status.getActivityLevel()];
 
-        Progress progress = new Progress((int) status.getProgressCompleted(), (int) status.getProgressTotal());
+        Progress progress = new Progress((int) status.getProgressUnitsCompleted(),
+                (int) status.getProgressUnitsTotal());
         this.status = new Status(level, progress);
 
         Log.e(TAG, "%s is %s, progress %d/%d, error: %s",
                 this,
                 kC4ReplicatorActivityLevelNames[status.getActivityLevel()],
-                status.getProgressCompleted(),
-                status.getProgressTotal(),
+                status.getProgressUnitsCompleted(),
+                status.getProgressUnitsTotal(),
                 error);
     }
 
