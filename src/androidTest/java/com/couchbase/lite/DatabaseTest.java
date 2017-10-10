@@ -281,14 +281,25 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         // Check the possible ancestors:
         AtomicBoolean haveBodies = new AtomicBoolean();
-        List<String> revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind1, 0, haveBodies);
+        List<String> revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind1, 0, haveBodies, false);
         assertEquals(2, revIDs.size());
         assertTrue(revIDs.contains(doc1r2.getRevID()));
         assertTrue(revIDs.contains(doc1r1.getRevID()));
-        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind1, 1, haveBodies);
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind1, 1, haveBodies, false);
         assertEquals(1, revIDs.size());
         assertTrue(revIDs.contains(doc1r2.getRevID()));
-        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind3, 0, haveBodies);
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind3, 0, haveBodies, false);
+        assertNull(revIDs);
+
+        // Check the possible ancestors with withBodiesOnly=true
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind1, 0, haveBodies, true);
+        assertEquals(2, revIDs.size());
+        assertTrue(revIDs.contains(doc1r2.getRevID()));
+        assertTrue(revIDs.contains(doc1r1.getRevID()));
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind1, 1, haveBodies, true);
+        assertEquals(1, revIDs.size());
+        assertTrue(revIDs.contains(doc1r2.getRevID()));
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind3, 0, haveBodies, true);
         assertNull(revIDs);
     }
 
