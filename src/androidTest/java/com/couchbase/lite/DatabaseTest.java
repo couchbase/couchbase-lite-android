@@ -1158,10 +1158,20 @@ public class DatabaseTest extends LiteTestCaseWithDB {
 
         AtomicBoolean outHaveBodies = new AtomicBoolean();
         RevisionInternal revToFind = new RevisionInternal("doc1", r4.getRevID(), false);
+
         List<String> revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind, 0, outHaveBodies, false);
         List<String> expectedRevIDs = Arrays.asList(r3.getRevID(), r2.getRevID(), r1.getRevID());
         assertEquals(expectedRevIDs, revIDs);
+
         revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind, 0, outHaveBodies, true);
+        expectedRevIDs = Arrays.asList(r2.getRevID(), r1.getRevID());
+        assertEquals(expectedRevIDs, revIDs);
+
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind, 0, null, false);
+        expectedRevIDs = Arrays.asList(r3.getRevID(), r2.getRevID(), r1.getRevID());
+        assertEquals(expectedRevIDs, revIDs);
+
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind, 0, null, true);
         expectedRevIDs = Arrays.asList(r2.getRevID(), r1.getRevID());
         assertEquals(expectedRevIDs, revIDs);
     }
