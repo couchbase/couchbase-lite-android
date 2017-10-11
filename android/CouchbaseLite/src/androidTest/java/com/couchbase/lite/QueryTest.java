@@ -1716,4 +1716,46 @@ public class QueryTest extends BaseTest {
         }, true);
         assertEquals(1, numRows);
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1413
+    @Test
+    public void testJoinByDocID() throws Exception {
+        loadNumbers(100);
+
+        final Document doc1 = new Document("joinme");
+        doc1.setObject("theone", 42);
+        doc1.setString("numberID", "doc1"); // document ID of number documents.
+        save(doc1);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
+        Expression mainPropExpr = Expression.meta().getId().from("main");
+        Expression secondaryExpr = Expression.property("numberID").from("secondary");
+        Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
+        Join join = Join.join(secondaryDS).on(joinExpr);
+
+        SelectResult MAIN_DOC_ID = SelectResult.expression(Expression.meta().getId().from("main")).as("mainDocID");
+        SelectResult SECONDARY_DOC_ID = SelectResult.expression(Expression.meta().getId().from("secondary")).as("secondaryDocID");
+        SelectResult SECONDARY_THEONE = SelectResult.expression(Expression.property("theone").from("secondary"));
+
+        Query q = Query.select(MAIN_DOC_ID, SECONDARY_DOC_ID, SECONDARY_THEONE).from(mainDS).join(join);
+
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(1, n);
+                String docID = result.getString("mainDocID");
+                Document doc = db.getDocument(docID);
+                assertEquals(1, doc.getInt("number1"));
+                assertEquals(99, doc.getInt("number2"));
+
+                // data from secondary
+                assertEquals("joinme", result.getString("secondaryDocID"));
+                assertEquals(42, result.getInt("theone"));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
 }
