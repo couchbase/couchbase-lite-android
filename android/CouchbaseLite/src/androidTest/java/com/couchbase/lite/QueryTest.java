@@ -1671,4 +1671,49 @@ public class QueryTest extends BaseTest {
         assertEquals(1, numRows);
 
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1413
+    @Test
+    public void testJoinAll() throws Exception {
+        loadNumbers(100);
+
+        final Document doc1 = new Document("joinme");
+        doc1.setObject("theone", 42);
+        save(doc1);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
+        Expression mainPropExpr = Expression.property("number1").from("main");
+        Expression secondaryExpr = Expression.property("theone").from("secondary");
+        Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
+        Join join = Join.join(secondaryDS).on(joinExpr);
+
+        SelectResult MAIN_ALL = SelectResult.all().from("main");
+        SelectResult SECOND_ALL = SelectResult.all().from("secondary");
+
+        Query q = Query.select(MAIN_ALL, SECOND_ALL).from(mainDS).join(join);
+
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                ReadOnlyDictionary mainAll1 = result.getDictionary(0);
+                ReadOnlyDictionary mainAll2 = result.getDictionary("main");
+                ReadOnlyDictionary secondAll1 = result.getDictionary(1);
+                ReadOnlyDictionary secondAll2 = result.getDictionary("secondary");
+                Log.e(TAG, "mainAll1 -> " + mainAll1.toMap());
+                Log.e(TAG, "mainAll2 -> " + mainAll2.toMap());
+                Log.e(TAG, "secondAll1 -> " + secondAll1.toMap());
+                Log.e(TAG, "secondAll2 -> " + secondAll2.toMap());
+                assertEquals(42, mainAll1.getInt("number1"));
+                assertEquals(42, mainAll2.getInt("number1"));
+                assertEquals(58, mainAll1.getInt("number2"));
+                assertEquals(58, mainAll2.getInt("number2"));
+                assertEquals(42, secondAll1.getInt("theone"));
+                assertEquals(42, secondAll2.getInt("theone"));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
 }
