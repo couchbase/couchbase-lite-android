@@ -1131,6 +1131,41 @@ public class DatabaseTest extends LiteTestCaseWithDB {
         assertEquals(longBranch.getRevID(), longBranch.getRevID());
     }
 
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/1663
+    public void test31_getPossibleAncestorRevIDsWithRemovalRev() throws CouchbaseLiteException {
+        Map<String, Object> props1 = new HashMap<String, Object>();
+        props1.put("_id", "doc1");
+        props1.put("key", "one");
+        RevisionInternal r1 = putDoc(props1);
+
+        Map<String, Object> props2 = new HashMap<String, Object>();
+        props2.put("_id", "doc1");
+        props2.put("_rev", r1.getRevID());
+        props2.put("key", "one+");
+        RevisionInternal r2 = putDoc(props2);
+
+        Map<String, Object> props3 = new HashMap<String, Object>();
+        props3.put("_id", "doc1");
+        props3.put("_rev", r2.getRevID());
+        props3.put("_removed", true);
+        RevisionInternal r3 = putDoc(props3);
+
+        Map<String, Object> props4 = new HashMap<String, Object>();
+        props4.put("_id", "doc1");
+        props4.put("_rev", r3.getRevID());
+        props4.put("key", "one++");
+        RevisionInternal r4 = putDoc(props4);
+
+        AtomicBoolean outHaveBodies = new AtomicBoolean();
+        RevisionInternal revToFind = new RevisionInternal("doc1", r4.getRevID(), false);
+        List<String> revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind, 0, outHaveBodies, false);
+        List<String> expectedRevIDs = Arrays.asList(r3.getRevID(), r2.getRevID(), r1.getRevID());
+        assertEquals(expectedRevIDs, revIDs);
+        revIDs = database.getStore().getPossibleAncestorRevisionIDs(revToFind, 0, outHaveBodies, true);
+        expectedRevIDs = Arrays.asList(r2.getRevID(), r1.getRevID());
+        assertEquals(expectedRevIDs, revIDs);
+    }
+
     /**
      * - (void) test071_PutExistingRevision in Unit-Tests/Database_Tests.m
      */
