@@ -166,6 +166,10 @@ public class CBLWebSocket extends C4Socket {
                 else if (t instanceof java.net.SocketException) {
                     closed(handle, POSIXDomain, ECONNRESET);
                 }
+                // EOFException
+                else if (t instanceof java.io.EOFException) {
+                    closed(handle, POSIXDomain, ECONNRESET);
+                }
                 // Unknown
                 else {
                     closed(handle, WebSocketDomain, 0);
