@@ -170,6 +170,10 @@ public class CBLWebSocket extends C4Socket {
                 else if (t instanceof java.io.EOFException) {
                     closed(handle, POSIXDomain, ECONNRESET);
                 }
+                // UnknownHostException - this is thrown if Airplane mode, offline
+                else if(t instanceof java.net.UnknownHostException){
+                    closed(handle, NetworkDomain, 1);
+                }
                 // Unknown
                 else {
                     closed(handle, WebSocketDomain, 0);
