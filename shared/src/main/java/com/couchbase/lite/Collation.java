@@ -58,4 +58,14 @@ public class Collation {
     public static Unicode unicode() {
         return new Unicode();
     }
+
+    @Override
+    public String toString() {
+        return "Collation{" +
+                "unicode=" + unicode +
+                ", ignoreCase=" + ignoreCase +
+                ", ignoreAccents=" + ignoreAccents +
+                ", locale='" + locale + '\'' +
+                '}';
+    }
 }

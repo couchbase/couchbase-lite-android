@@ -25,10 +25,10 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.HashMap;
 
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBadDocID;
@@ -1976,5 +1976,41 @@ public class DocumentTest extends BaseTest {
         assertTrue(doc.getObject("data") instanceof Blob);
         data = (Blob) doc.getObject("data");
         assertTrue(Arrays.equals(content, data.getContent()));
+    }
+
+    @Test
+    public void testEnumeratingKeys() throws CouchbaseLiteException {
+        Document doc = createDocument("doc1");
+        for (long i = 0; i < 20; i++)
+            doc.setLong(String.format(Locale.ENGLISH, "key%d", i), i);
+        Map<String, Object> content = doc.toMap();
+        Map<String, Object> result = new HashMap<>();
+        int count = 0;
+        for (String key : doc) {
+            result.put(key, doc.getObject(key));
+            count++;
+        }
+        assertEquals(content, result);
+        assertEquals(content.size(), count);
+
+        doc.remove("key2");
+        doc.setLong("key20", 20L);
+        doc.setLong("key21", 21L);
+        final Map<String, Object> content2 = doc.toMap();
+        save(doc, new Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                Map<String, Object> content = doc.toMap();
+                Map<String, Object> result = new HashMap<>();
+                int count = 0;
+                for (String key : doc) {
+                    result.put(key, doc.getObject(key));
+                    count++;
+                }
+                assertEquals(content.size(), count);
+                assertEquals(content, result);
+                assertEquals(content, content2);
+            }
+        });
     }
 }

@@ -213,7 +213,7 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testWhereCheckNull() throws Exception {
+    public void testWhereNullOrMissing() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
         Document doc1 = createDocument("doc1");
         doc1.setObject("name", "Scott");
@@ -302,7 +302,7 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testBetween() throws Exception {
+    public void testWhereBetween() throws Exception {
         Object[][] cases = {
                 {EXPR_NUMBER1.between(3, 7), $docids(3, 4, 5, 6, 7)}
         };
@@ -1104,6 +1104,12 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testQuantifiedOperatorVariableKeyPath()
+    {
+        //TODO
+    }
+
+    @Test
     public void testSelectAll() throws Exception {
         loadNumbers(100);
 
@@ -1331,10 +1337,101 @@ public class QueryTest extends BaseTest {
         }
     }
 
-    //TODO - Implement once LiteCore support ICU for Android
-    // @Test
-    public void testCompareWithUnicodeCollation() {
+    @Test
+    public void testCompareWithUnicodeCollation() throws Exception {
+        Collation bothSensitive = Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(false);
+        Collation accentSensitive = Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(false);
+        Collation caseSensitive = Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(true);
+        Collation noSensitive = Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(true);
 
+        List<List<Object>> testData = new ArrayList<>(
+                Arrays.asList(
+                        // Edge cases: empty and 1-char strings:
+                        Arrays.asList("", "", true, bothSensitive),
+                        Arrays.asList("", "a", false, bothSensitive),
+                        Arrays.asList("a", "a", true, bothSensitive),
+
+                        // Case sensitive: lowercase come first by unicode rules:
+                        Arrays.asList("a", "A", false, bothSensitive),
+                        Arrays.asList("abc", "abc", true, bothSensitive),
+                        Arrays.asList("Aaa", "abc", false, bothSensitive),
+                        Arrays.asList("abc", "abC", false, bothSensitive),
+                        Arrays.asList("AB", "abc", false, bothSensitive),
+
+                        // Case insenstive:
+                        Arrays.asList("ABCDEF", "ZYXWVU", false, accentSensitive),
+                        Arrays.asList("ABCDEF", "Z", false, accentSensitive),
+
+                        Arrays.asList("a", "A", true, accentSensitive),
+                        Arrays.asList("abc", "ABC", true, accentSensitive),
+                        Arrays.asList("ABA", "abc", false, accentSensitive),
+
+                        Arrays.asList("commonprefix1", "commonprefix2", false, accentSensitive),
+                        Arrays.asList("commonPrefix1", "commonprefix2", false, accentSensitive),
+
+                        Arrays.asList("abcdef", "abcdefghijklm", false, accentSensitive),
+                        Arrays.asList("abcdeF", "abcdefghijklm", false, accentSensitive),
+
+                        // Now bring in non-ASCII characters:
+                        Arrays.asList("a", "á", false, accentSensitive),
+                        Arrays.asList("", "á", false, accentSensitive),
+                        Arrays.asList("á", "á", true, accentSensitive),
+                        Arrays.asList("•a", "•A", true, accentSensitive),
+
+                        Arrays.asList("test a", "test á", false, accentSensitive),
+                        Arrays.asList("test á", "test b", false, accentSensitive),
+                        Arrays.asList("test á", "test Á", true, accentSensitive),
+                        Arrays.asList("test á1", "test Á2", false, accentSensitive),
+
+                        // Case sensitive, diacritic sensitive:
+                        Arrays.asList("ABCDEF", "ZYXWVU", false, bothSensitive),
+                        Arrays.asList("ABCDEF", "Z", false, bothSensitive),
+                        Arrays.asList("a", "A", false, bothSensitive),
+                        Arrays.asList("abc", "ABC", false, bothSensitive),
+                        Arrays.asList("•a", "•A", false, bothSensitive),
+                        Arrays.asList("test a", "test á", false, bothSensitive),
+                        Arrays.asList("Ähnlichkeit", "apple", false, bothSensitive), // Because 'h'-vs-'p' beats 'Ä'-vs-'a'
+                        Arrays.asList("ax", "Äz", false, bothSensitive),
+                        Arrays.asList("test a", "test Á", false, bothSensitive),
+                        Arrays.asList("test Á", "test e", false, bothSensitive),
+                        Arrays.asList("test á", "test Á", false, bothSensitive),
+                        Arrays.asList("test á", "test b", false, bothSensitive),
+                        Arrays.asList("test u", "test Ü", false, bothSensitive),
+
+                        // Case sensitive, diacritic insensitive
+                        Arrays.asList("abc", "ABC", false, caseSensitive),
+                        Arrays.asList("test á", "test a", true, caseSensitive),
+                        Arrays.asList("test a", "test á", true, caseSensitive),
+                        Arrays.asList("test á", "test A", false, caseSensitive),
+                        Arrays.asList("test á", "test b", false, caseSensitive),
+                        Arrays.asList("test á", "test Á", false, caseSensitive),
+
+                        // Case and diacritic insensitive
+                        Arrays.asList("test á", "test Á", true, noSensitive)
+                )
+        );
+
+        for (List<Object> data : testData) {
+            Document doc = createDocument();
+            doc.setObject("value", data.get(0));
+            save(doc);
+
+            Expression VALUE = Expression.property("value");
+            Expression comparison = (Boolean) data.get(2) == true ?
+                    VALUE.collate((Collation) data.get(3)).equalTo(data.get(1)) :
+                    VALUE.collate((Collation) data.get(3)).lessThan(data.get(1));
+
+            Query q = Query.select().from(DataSource.database(db)).where(comparison);
+            int numRows = verifyQuery(q, new QueryResult() {
+                @Override
+                public void check(int n, Result result) throws Exception {
+                    assertEquals(1, n);
+                    assertNotNull(result);
+                }
+            }, true);
+            assertEquals(data.toString(), 1, numRows);
+            db.delete(doc);
+        }
     }
 
     @Test
