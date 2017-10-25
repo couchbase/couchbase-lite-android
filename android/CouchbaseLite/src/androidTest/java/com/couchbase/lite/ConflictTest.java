@@ -234,6 +234,31 @@ public class ConflictTest extends BaseTest {
         assertEquals("Scott of the Sahara", doc.getString("name"));
     }
 
+    @Test
+    public void testNoBase() throws CouchbaseLiteException {
+        closeDB();
+
+        openDB(new ConflictResolver() {
+            @Override
+            public ReadOnlyDocument resolve(Conflict conflict) {
+                assertEquals("Tiger", conflict.getMine().getString("name"));
+                assertEquals("Daniel", conflict.getTheirs().getString("name"));
+                assertNull(conflict.getBase());
+                return conflict.getMine();
+            }
+        });
+
+        Document doc1a = new Document("doc1");
+        doc1a.setString("name", "Daniel");
+        save(doc1a);
+
+        Document doc1b = new Document("doc1");
+        doc1b.setString("name", "Tiger");
+        save(doc1b);
+
+        assertEquals("Tiger", doc1b.getString("name"));
+    }
+
     // REF: https://github.com/couchbase/couchbase-lite-android/issues/1293
     @Test
     public void testConflictWithoutCommonAncestor() throws CouchbaseLiteException {
