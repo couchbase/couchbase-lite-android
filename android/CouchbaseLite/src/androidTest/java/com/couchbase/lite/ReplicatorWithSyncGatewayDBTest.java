@@ -22,11 +22,13 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
+        if (!config.replicatorTestsEnabled()) return;
         remote_PUT_db(DB_NAME);
     }
 
     @After
     public void tearDown() throws Exception {
+        if (!config.replicatorTestsEnabled()) return;
         remote_DELETE_db(DB_NAME);
         super.tearDown();
     }
