@@ -67,7 +67,9 @@ public class BaseReplicatorTest extends BaseTest {
         final CountDownLatch latch = new CountDownLatch(1);
         repl.addChangeListener(new ReplicatorChangeListener() {
             @Override
-            public void changed(Replicator replicator, Replicator.Status status, CouchbaseLiteException error) {
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                CouchbaseLiteException error = status.getError();
                 final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
                 Log.e(TAG, "---Status: %s (%d / %d), lastError = %s",
                         kActivityNames[status.getActivityLevel().getValue()],
