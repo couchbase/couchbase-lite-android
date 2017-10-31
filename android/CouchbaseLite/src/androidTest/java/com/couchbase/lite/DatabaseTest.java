@@ -1414,4 +1414,46 @@ public class DatabaseTest extends BaseTest {
         db.deleteIndex("index3");
 
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1416
+    @Test
+    public void testDeleteAndOpenDB() throws CouchbaseLiteException {
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        config.setDirectory(dir);
+
+        // open "application" database
+        final Database database1 = new Database("application", config);
+
+        // delete "application" database
+        database1.delete();
+
+        // open "application" database again
+        final Database database2 = new Database("application", config);
+
+        // inserting documents
+        database2.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                // just create 100 documents
+                for (int i = 0; i < 1000; i++) {
+                    Document doc = new Document();
+
+                    // each doc has 10 items
+                    doc.setInt("index", i);
+                    for (int j = 0; j < 9; j++)
+                        doc.setInt("item_" + j, j);
+
+                    try {
+                        database2.save(doc);
+                    } catch (CouchbaseLiteException e) {
+                        Log.e(TAG, "Failed in storing document " + e.getMessage(), e);
+                        fail();
+                    }
+                }
+            }
+        });
+
+        // close db again
+        database2.close();
+    }
 }
