@@ -158,11 +158,15 @@ public class ReplicatorTest extends BaseReplicatorTest {
     }
 
     // https://github.com/couchbase/couchbase-lite-core/issues/149
-    // @Test
+    @Test
     public void testMissingHost() throws InterruptedException {
         // should timeout after 10sec
         // builder.connectTimeout(10, TimeUnit.SECONDS)
         timeout = 20;
+
+        // NOTE: Following URL causes UnknownHostException which is transient error,
+        //       and replicator status becomes OFFLINE
+
         String uri = String.format(Locale.ENGLISH, "blip://foo.couchbase.com/db");
         ReplicatorConfiguration config = makeConfig(false, true, true, uri);
         run(config, kC4NetErrUnknownHost, "Network");

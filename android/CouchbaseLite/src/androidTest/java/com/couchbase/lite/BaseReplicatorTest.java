@@ -87,6 +87,16 @@ public class BaseReplicatorTest extends BaseTest {
                         }
                         latch.countDown();
                     }
+                    else if(status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE){
+                        if(code != 0){
+                            assertNotNull(error);
+                            assertEquals(code, error.getCode());
+                            assertEquals(domain, error.getDomainString());
+                            latch.countDown();
+                        }else{
+                            // TBD
+                        }
+                    }
                 } else {
                     if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
                         if (code != 0) {
