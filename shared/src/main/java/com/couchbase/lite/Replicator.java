@@ -126,15 +126,17 @@ public class Replicator implements NetworkReachabilityListener {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
-        private ActivityLevel activityLevel;
-        private Progress progress;
+        private final ActivityLevel activityLevel;
+        private final Progress progress;
+        private final CouchbaseLiteException error;
 
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
-        private Status(ActivityLevel activityLevel, Progress progress) {
+        private Status(ActivityLevel activityLevel, Progress progress, CouchbaseLiteException error) {
             this.activityLevel = activityLevel;
             this.progress = progress;
+            this.error = error;
         }
 
         //---------------------------------------------
@@ -155,8 +157,12 @@ public class Replicator implements NetworkReachabilityListener {
             return progress;
         }
 
+        public CouchbaseLiteException getError() {
+            return error;
+        }
+
         Status copy() {
-            return new Status(activityLevel, progress.copy());
+            return new Status(activityLevel, progress.copy(), error);
         }
     }
 
@@ -484,9 +490,10 @@ public class Replicator implements NetworkReachabilityListener {
 
         // Post notification
         synchronized (changeListeners) {
-            for (ReplicatorChangeListener listener : changeListeners) {
-                listener.changed(this, this.status, this.lastError);
-            }
+            // Replicator.getStatus() creates a copy of Status.
+            ReplicatorChange change = new ReplicatorChange(this, this.getStatus());
+            for (ReplicatorChangeListener listener : changeListeners)
+                listener.changed(change);
         }
 
         // If Stopped:
@@ -551,7 +558,7 @@ public class Replicator implements NetworkReachabilityListener {
 
         Progress progress = new Progress((int) status.getProgressUnitsCompleted(),
                 (int) status.getProgressUnitsTotal());
-        this.status = new Status(level, progress);
+        this.status = new Status(level, progress, error);
 
         Log.e(TAG, "%s is %s, progress %d/%d, error: %s",
                 this,
