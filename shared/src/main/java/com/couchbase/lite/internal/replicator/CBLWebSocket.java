@@ -48,6 +48,7 @@ import static com.couchbase.litecore.C4Constants.C4ErrorDomain.NetworkDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.POSIXDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
+import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrUnknownHost;
 
 public class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
@@ -172,7 +173,7 @@ public class CBLWebSocket extends C4Socket {
                 }
                 // UnknownHostException - this is thrown if Airplane mode, offline
                 else if(t instanceof java.net.UnknownHostException){
-                    closed(handle, NetworkDomain, 1);
+                    closed(handle, NetworkDomain, kC4NetErrUnknownHost);
                 }
                 // Unknown
                 else {
