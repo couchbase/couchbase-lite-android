@@ -30,12 +30,11 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
     /**
      * This test assumes an SG is serving SSL at port 4994 with a self-signed cert.
      */
-    //@Test
+    @Test
     public void testSelfSignedSSLFailure() throws InterruptedException {
         if (!config.replicatorTestsEnabled()) return;
 
-        String uri = String.format(Locale.ENGLISH, "blips://%s:%d/beer",
-                this.config.remoteHost(), this.config.remotePort());
+        String uri = String.format(Locale.ENGLISH, "blips://%s:4995/beer", this.config.remoteHost());
         ReplicatorConfiguration config = makeConfig(false, true, false, uri);
         run(config, kC4NetErrTLSCertUntrusted, "Network");
     }
