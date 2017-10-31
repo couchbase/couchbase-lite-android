@@ -39,7 +39,6 @@ public class Result
     private ResultSet rs;
     private C4QueryEnumerator c4enum;
     private FLArrayIterator columns;
-    private String documentID;
 
     //---------------------------------------------
     // constructors
@@ -48,8 +47,6 @@ public class Result
     Result(ResultSet rs, C4QueryEnumerator c4enum) {
         this.rs = rs;
         this.c4enum = c4enum;
-
-        this.documentID = c4enum.getDocID();
         this.columns = c4enum.getColumns();
     }
 
@@ -62,7 +59,6 @@ public class Result
         return "Result{" +
                 "rs=" + rs +
                 ", c4enum=" + c4enum +
-                ", documentID='" + documentID + '\'' +
                 '}';
     }
 
