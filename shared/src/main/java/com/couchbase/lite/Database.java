@@ -76,7 +76,6 @@ public final class Database implements C4Constants {
     private static final int DEFAULT_DATABASE_FLAGS
             = C4DatabaseFlags.kC4DB_Create
             | C4DatabaseFlags.kC4DB_AutoCompact
-            | C4DatabaseFlags.kC4DB_Bundled
             | C4DatabaseFlags.kC4DB_SharedKeys;
 
     //---------------------------------------------
@@ -525,7 +524,7 @@ public final class Database implements C4Constants {
         File path = getDatabasePath(directory, name);
         try {
             Log.i(TAG, "delete(): path=%s", path.toString());
-            C4Database.deleteAtPath(path.getPath(), DEFAULT_DATABASE_FLAGS, null, C4DocumentVersioning.kC4RevisionTrees);
+            C4Database.deleteAtPath(path.getPath());
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
