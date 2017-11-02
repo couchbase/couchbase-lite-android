@@ -258,12 +258,9 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
         }
     }
 
-
     //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
     // FleeceEncodable implementation
+    //---------------------------------------------
     @Override
     public void fleeceEncode(FLEncoder encoder, Database database) {
         SharedKeys.writeValue(encoder, new FLValue(flDict.getHandle()), database.getSharedKeys());

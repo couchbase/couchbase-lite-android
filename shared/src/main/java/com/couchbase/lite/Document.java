@@ -22,7 +22,6 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLSliceResult;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import static com.couchbase.lite.internal.Misc.CreateUUID;
@@ -37,7 +36,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Dictionary dictionary;
 
     //---------------------------------------------
     // Constructors
@@ -61,7 +59,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      * @param id the document ID.
      */
     public Document(String id) {
-        this(null, id != null ? id : CreateUUID(), null, null);
+        super(null, id != null ? id : CreateUUID(), null, null);
     }
 
     /**
@@ -95,11 +93,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         set(dictionary);
     }
 
-    Document(Database database, String documentID, CBLC4Doc c4doc, CBLFLDict data) {
-        super(database, documentID, c4doc, data);
-        this.dictionary = new Dictionary();
-    }
-
     Document(Database database, String documentID, boolean mustExist) {
         super(database, documentID, mustExist);
     }
@@ -123,7 +116,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document set(Map<String, Object> dictionary) {
-        this.dictionary.set(dictionary);
+        ((Dictionary) dict).set(dictionary);
         return this;
     }
 
@@ -138,7 +131,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document setObject(String key, Object value) {
-        dictionary.setObject(key, value);
+        ((Dictionary) dict).setObject(key, value);
         return this;
     }
 
@@ -205,7 +198,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document remove(String key) {
-        dictionary.remove(key);
+        ((Dictionary) dict).remove(key);
         return this;
     }
 
@@ -218,7 +211,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Array getArray(String key) {
-        return dictionary.getArray(key);
+        return ((Dictionary) dict).getArray(key);
     }
 
     /**
@@ -230,180 +223,9 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Dictionary getDictionary(String key) {
-        return dictionary.getDictionary(key);
+        return ((Dictionary) dict).getDictionary(key);
     }
 
-    //---------------------------------------------
-    // API - overridden from ReadOnlyDocument
-    //---------------------------------------------
-
-    /**
-     * Gets a number of the entries in the dictionary.
-     *
-     * @return
-     */
-    @Override
-    public int count() {
-        return dictionary.count();
-    }
-
-    @Override
-    public List<String> getKeys() {
-        return dictionary.getKeys();
-    }
-
-    /**
-     * Gets a property's value as an object. The object types are Blob, Array,
-     * Dictionary, Number, or String based on the underlying data type; or nil if the
-     * property value is null or the property doesn't exist.
-     *
-     * @param key the key.
-     * @return the object value or nil.
-     */
-    @Override
-    public Object getObject(String key) {
-        return dictionary.getObject(key);
-    }
-
-    /**
-     * Gets a property's value as a String.
-     * Returns null if the value doesn't exist, or its value is not a String.
-     *
-     * @param key the key
-     * @return the String or null.
-     */
-    @Override
-    public String getString(String key) {
-        return dictionary.getString(key);
-    }
-
-    /**
-     * Gets a property's value as a Number.
-     * Returns null if the value doesn't exist, or its value is not a Number.
-     *
-     * @param key the key
-     * @return the Number or nil.
-     */
-    @Override
-    public Number getNumber(String key) {
-        return dictionary.getNumber(key);
-    }
-
-    /**
-     * Gets a property's value as an int.
-     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
-     * Returns 0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the int value.
-     */
-    @Override
-    public int getInt(String key) {
-        return dictionary.getInt(key);
-    }
-
-    /**
-     * Gets a property's value as an long.
-     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
-     * Returns 0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the long value.
-     */
-    @Override
-    public long getLong(String key) {
-        return dictionary.getLong(key);
-    }
-
-    /**
-     * Gets a property's value as an float.
-     * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
-     * Returns 0.0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the float value.
-     */
-    @Override
-    public float getFloat(String key) {
-        return dictionary.getFloat(key);
-    }
-
-    /**
-     * Gets a property's value as an double.
-     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
-     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the double value.
-     */
-    @Override
-    public double getDouble(String key) {
-        return dictionary.getDouble(key);
-    }
-
-    /**
-     * Gets a property's value as a boolean. Returns true if the value exists, and is either `true`
-     * or a nonzero number.
-     *
-     * @param key the key
-     * @return the boolean value.
-     */
-    @Override
-    public boolean getBoolean(String key) {
-        return dictionary.getBoolean(key);
-    }
-
-    /**
-     * Gets a property's value as a Blob.
-     * Returns null if the value doesn't exist, or its value is not a Blob.
-     *
-     * @param key the key
-     * @return the Blob value or null.
-     */
-    @Override
-    public Blob getBlob(String key) {
-        return dictionary.getBlob(key);
-    }
-
-    /**
-     * Gets a property's value as a Date.
-     * JSON does not directly support dates, so the actual property value must be a string, which is
-     * then parsed according to the ISO-8601 date format (the default used in JSON.)
-     * Returns null if the value doesn't exist, is not a string, or is not parseable as a date.
-     * NOTE: This is not a generic date parser! It only recognizes the ISO-8601 format, with or
-     * without milliseconds.
-     *
-     * @param key the key
-     * @return the Date value or null.
-     */
-    @Override
-    public Date getDate(String key) {
-        return dictionary.getDate(key);
-    }
-
-    /**
-     * Gets content of the current object as an Map. The values contained in the returned
-     * Map object are all JSON based values.
-     *
-     * @return the Map object representing the content of the current object in the JSON format.
-     */
-    @Override
-    public Map<String, Object> toMap() {
-        return dictionary.toMap();
-    }
-
-    /**
-     * Tests whether a property exists or not.
-     * This can be less expensive than getObject(String),
-     * because it does not have to allocate an Object for the property value.
-     *
-     * @param key the key
-     * @return the boolean value representing whether a property exists or not.
-     */
-    @Override
-    public boolean contains(String key) {
-        return dictionary.contains(key);
-    }
 
     //---------------------------------------------
     // Protected level access
@@ -413,12 +235,16 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     protected void setC4Doc(CBLC4Doc c4doc) {
         super.setC4Doc(c4doc);
         // Update delegate dictionary:
-        this.dictionary = new Dictionary(getData());
+        setDictionaryFromData(getData());
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+    @Override
+    void setDictionaryFromData(CBLFLDict data) {
+        this.dict = new Dictionary(data);
+    }
 
     void save() throws CouchbaseLiteException {
         save(effectiveConflictResolver(), false);
@@ -450,9 +276,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         setC4Doc(null);
     }
 
-    @Override
     boolean isEmpty() {
-        return dictionary.isEmpty();
+        return dict.isEmpty();
     }
 
     @Override
@@ -466,7 +291,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     byte[] encode() {
         FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
         try {
-            dictionary.fleeceEncode(encoder, getDatabase());
+            dict.fleeceEncode(encoder, getDatabase());
             return encoder.finish();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertRuntimeException(e);
@@ -478,7 +303,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     FLSliceResult encode2() {
         FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
         try {
-            dictionary.fleeceEncode(encoder, getDatabase());
+            dict.fleeceEncode(encoder, getDatabase());
             return encoder.finish2();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertRuntimeException(e);
@@ -613,6 +438,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     private boolean isChanged() {
-        return dictionary.isChanged();
+        return ((Dictionary) dict).isChanged();
     }
 }
