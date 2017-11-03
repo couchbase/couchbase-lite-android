@@ -158,7 +158,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
     }
 
     // https://github.com/couchbase/couchbase-lite-core/issues/149
-    @Test
+    // @Test
     public void testMissingHost() throws InterruptedException {
         // should timeout after 10sec
         // builder.connectTimeout(10, TimeUnit.SECONDS)
