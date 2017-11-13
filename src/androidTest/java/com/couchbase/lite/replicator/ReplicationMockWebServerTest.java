@@ -981,9 +981,15 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
 
     /**
      * https://github.com/couchbase/couchbase-lite-java-core/issues/241
+     *
+     * Update: It used to keep retrying with 404 error. However current expectation is
+     *         to stop replicator and change tracker if error is permanent.
+     *         Replicator and ChangeTracker should keep retrying for transient error
+     * https://github.com/couchbase/couchbase-lite-java-core/issues/1126
+     *
      * <p/>
      * - Set the "retry time" to a short number
-     * - Setup mock server to return 404 for all _changes requests
+     * - Setup mock server to return 404 for all _changes requests --> changed to 500 server error
      * - Start continuous replication
      * - Sleep for 5X retry time
      * - Assert that we've received at least two requests to _changes feed
@@ -1010,7 +1016,7 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
                 // mock _changes response
                 for (int i = 0; i < 100; i++) {
                     MockResponse mockChangesFeed = new MockResponse();
-                    MockHelper.set404NotFoundJson(mockChangesFeed);
+                    MockHelper.set500InternalServerErrorJson(mockChangesFeed); // changed 404 -> 500
                     dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed);
                 }
 
@@ -4353,14 +4359,16 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             pullReplication.addChangeListener(new Replication.ChangeListener() {
                 @Override
                 public void changed(Replication.ChangeEvent event) {
-                    if (event.getTransition().getDestination() == ReplicationState.IDLE) {
-                        Log.d(TAG, "Replication is IDLE");
-                        enteredIdleState.countDown();
-                    } else if (event.getTransition().getDestination() == ReplicationState.STOPPED) {
-                        event.getTransition().getDestination();
-                        Log.d(TAG, "Replication is STOPPED");
-                        enteredStoppedState.countDown();
-                    }
+                    //if(event.getTransition() != null) {
+                        if (event.getTransition().getDestination() == ReplicationState.IDLE) {
+                            Log.d(TAG, "Replication is IDLE");
+                            enteredIdleState.countDown();
+                        } else if (event.getTransition().getDestination() == ReplicationState.STOPPED) {
+                            event.getTransition().getDestination();
+                            Log.d(TAG, "Replication is STOPPED");
+                            enteredStoppedState.countDown();
+                        }
+                    //}
                 }
             });
 
@@ -4815,6 +4823,85 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
             assertTrue(doc1.getCurrentRevisionId().equals(mockDoc1.getDocRev()));
             assertNotNull(doc1.getProperties());
             assertEquals(mockDoc1.getJsonMap(), doc1.getUserProperties());
+        } finally {
+            assertTrue(MockHelper.shutdown(server, dispatcher));
+        }
+    }
+
+    // https://github.com/couchbase/couchbase-lite-java-core/issues/1664
+    // How to capture 403 pull replication errors
+    public void test403Error() throws Exception {
+        MockDispatcher dispatcher = new MockDispatcher();
+        MockWebServer server = MockHelper.getMockWebServer(dispatcher);
+        try {
+            dispatcher.setServerType(MockDispatcher.ServerType.SYNC_GW);
+
+            // mock documents to be pulled
+            MockDocumentGet.MockDocument mockDoc1 = new MockDocumentGet.MockDocument("doc1", "1-5e38", 1);
+            mockDoc1.setJsonMap(MockHelper.generateRandomJsonMap());
+
+            // checkpoint GET response w/ 404
+            MockResponse fakeCheckpointResponse = new MockResponse();
+            MockHelper.set404NotFoundJson(fakeCheckpointResponse);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, fakeCheckpointResponse);
+
+            // one time 403 (forbidden) error: Response 403 for first /_changes API
+            MockResponse response403 = new MockResponse();
+            response403.setResponseCode(403);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, response403);
+
+            // _changes response without error: Response OK for second /_changes API.
+            MockChangesFeed mockChangesFeed = new MockChangesFeed();
+            mockChangesFeed.add(new MockChangesFeed.MockChangedDoc(mockDoc1));
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHANGES, mockChangesFeed.generateMockResponse());
+
+            // Empty _all_docs response to pass unit tests
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_ALL_DOCS, new MockDocumentAllDocs());
+
+            // doc1 response
+            MockDocumentGet mockDocumentGet = new MockDocumentGet(mockDoc1);
+            dispatcher.enqueueResponse(mockDoc1.getDocPathRegex(), mockDocumentGet.generateMockResponse());
+
+            // _bulk_get response
+            MockDocumentBulkGet mockBulkGet = new MockDocumentBulkGet();
+            mockBulkGet.addDocument(mockDoc1);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_BULK_GET, mockBulkGet);
+
+            // respond to all PUT Checkpoint requests
+            MockCheckpointPut mockCheckpointPut = new MockCheckpointPut();
+            mockCheckpointPut.setSticky(true);
+            mockCheckpointPut.setDelayMs(500);
+            dispatcher.enqueueResponse(MockHelper.PATH_REGEX_CHECKPOINT, mockCheckpointPut);
+
+            // start mock server
+            server.start();
+
+            // run replicator 1st round
+            Replication repl = database.createPullReplication(server.url("/db").url());
+            repl.setContinuous(true);
+            final CountDownLatch latch403Error = new CountDownLatch(1);
+            repl.addChangeListener(new Replication.ChangeListener() {
+                @Override
+                public void changed(Replication.ChangeEvent event) {
+                    if(event.getError()!=null && event.getError() instanceof RemoteRequestResponseException){
+                        RemoteRequestResponseException e = (RemoteRequestResponseException)event.getError();
+                        if(e.getCode() == Status.FORBIDDEN)
+                            latch403Error.countDown();
+                    }
+                }
+            });
+            runReplication(repl, 120);
+            assertTrue(latch403Error.await(5, TimeUnit.SECONDS)); // additional 5 sec
+            assertNotNull(repl.getLastError());
+            assertTrue(repl.getLastError() instanceof RemoteRequestResponseException);
+            RemoteRequestResponseException e = (RemoteRequestResponseException)repl.getLastError();
+            assertEquals(Status.FORBIDDEN, e.getCode());
+            Log.d(TAG, "pullReplication finished with fail");
+
+            // last error should not be null
+            assertNotNull(repl.getLastError());
+            Log.e(TAG, "lastError", repl.getLastError());
+            assertEquals(0, repl.getChangesCount());
         } finally {
             assertTrue(MockHelper.shutdown(server, dispatcher));
         }

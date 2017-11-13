@@ -84,7 +84,10 @@ public class MockHelper {
         mockResponse.setStatus("HTTP/1.1 404 NOT FOUND")
                 .setHeader("Content-Type", "application/json");
     }
-
+    public static void set500InternalServerErrorJson(MockResponse mockResponse) {
+        mockResponse.setStatus("HTTP/1.1 500 INTERNAL SERVER ERROR")
+                .setHeader("Content-Type", "application/json");
+    }
     public static void addFake404CheckpointResponse(MockWebServer mockWebServer) {
         MockResponse fakeCheckpointResponse = new MockResponse();
         MockHelper.set404NotFoundJson(fakeCheckpointResponse);

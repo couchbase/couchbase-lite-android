@@ -127,14 +127,16 @@ public class MockDispatcher extends Dispatcher {
                     return mockResponse;
                 } else {
                     MockResponse mockResponse = new MockResponse();
-                    mockResponse.setStatus("HTTP/1.1 406 NOT ACCEPTABLE");
+                    // 406 NOT ACCEPTABLE: 406 is permanent error. In case mock server does not provide all request handler, replicator will stop.
+                    mockResponse.setStatus("HTTP/1.1 501 NOT IMPLEMENTED");
                     recordedReponseMap.put(request, mockResponse);
                     return mockResponse; // fail fast
                 }
             }
         }
         MockResponse mockResponse = new MockResponse();
-        mockResponse.setStatus("HTTP/1.1 406 NOT ACCEPTABLE");
+        // 406 NOT ACCEPTABLE: 406 is permanent error. In case mock server does not provide all request handler, replicator will stop.
+        mockResponse.setStatus("HTTP/1.1 501 NOT IMPLEMENTED");
         recordedReponseMap.put(request, mockResponse);
         return mockResponse; // fail fast
     }
