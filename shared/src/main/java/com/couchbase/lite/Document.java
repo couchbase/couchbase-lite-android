@@ -36,6 +36,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    private LiteCoreException encodingError;
 
     //---------------------------------------------
     // Constructors
@@ -93,8 +94,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         set(dictionary);
     }
 
-    Document(Database database, String documentID, boolean mustExist) {
-        super(database, documentID, mustExist);
+    Document(Database database, String id, boolean mustExist) {
+        super(database, id, mustExist);
     }
 
     //---------------------------------------------
@@ -116,7 +117,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document set(Map<String, Object> dictionary) {
-        ((Dictionary) dict).set(dictionary);
+        ((Dictionary) _dict).set(dictionary);
         return this;
     }
 
@@ -131,7 +132,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document setObject(String key, Object value) {
-        ((Dictionary) dict).setObject(key, value);
+        ((Dictionary) _dict).setObject(key, value);
         return this;
     }
 
@@ -198,7 +199,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document remove(String key) {
-        ((Dictionary) dict).remove(key);
+        ((Dictionary) _dict).remove(key);
         return this;
     }
 
@@ -211,7 +212,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Array getArray(String key) {
-        return ((Dictionary) dict).getArray(key);
+        return ((Dictionary) _dict).getArray(key);
     }
 
     /**
@@ -223,27 +224,25 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Dictionary getDictionary(String key) {
-        return ((Dictionary) dict).getDictionary(key);
+        return ((Dictionary) _dict).getDictionary(key);
     }
-
 
     //---------------------------------------------
     // Protected level access
     //---------------------------------------------
-    // Sets c4doc and updates my root dictionary
+
     @Override
-    protected void setC4Doc(CBLC4Doc c4doc) {
-        super.setC4Doc(c4doc);
-        // Update delegate dictionary:
-        setDictionaryFromData(getData());
+    protected void finalize() throws Throwable {
+        super.finalize();
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
     @Override
-    void setDictionaryFromData(CBLFLDict data) {
-        this.dict = new Dictionary(data);
+    boolean isMutable() {
+        return true;
     }
 
     void save() throws CouchbaseLiteException {
@@ -262,8 +261,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         getDatabase().beginTransaction();
         try {
             // revID: null, all revisions are purged.
-            if (getC4doc().getRawDoc().purgeRevision(null) >= 0) {
-                getC4doc().getRawDoc().save(0);
+            if (getC4doc().purgeRevision(null) >= 0) {
+                getC4doc().save(0);
                 commit = true;
             }
         } catch (LiteCoreException e) {
@@ -273,11 +272,11 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         }
 
         // reset
-        setC4Doc(null);
+        setC4Document(null);
     }
 
     boolean isEmpty() {
-        return dict.isEmpty();
+        return _dict.isEmpty();
     }
 
     @Override
@@ -288,28 +287,49 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // #pragma mark - FLEECE ENCODING
 
     @Override
-    byte[] encode() {
+    byte[] encode() throws LiteCoreException {
+        encodingError = null;
         FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
         try {
-            dict.fleeceEncode(encoder, getDatabase());
+            encoder.setExtraInfo(this); // TODO: Need to consider better value
+            _dict.encodeTo(encoder);
+            if (encodingError != null) {
+                LiteCoreException ex = encodingError;
+                encodingError = null;
+                throw ex;
+            }
             return encoder.finish();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertRuntimeException(e);
         } finally {
+            encoder.setExtraInfo(null);
             encoder.free();
         }
     }
 
-    FLSliceResult encode2() {
+    FLSliceResult encode2() throws LiteCoreException {
+        encodingError = null;
         FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
         try {
-            dict.fleeceEncode(encoder, getDatabase());
+            encoder.setExtraInfo(this);
+            _dict.encodeTo(encoder);
+
+            if (encodingError != null) {
+                LiteCoreException ex = encodingError;
+                encodingError = null;
+                throw ex;
+            }
             return encoder.finish2();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertRuntimeException(e);
         } finally {
+            encoder.setExtraInfo(null);
             encoder.free();
         }
+    }
+
+    // Objects being encoded can call this
+    void setEncodingError(LiteCoreException error) {
+        if (encodingError == null)
+            encodingError = error;
     }
 
     //---------------------------------------------
@@ -365,7 +385,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         }
 
         // Update my state and post a notification:
-        setC4Doc(new CBLC4Doc(newDoc));
+        setC4Document(newDoc);
     }
 
     // "Pulls" from the database, merging the latest revision into the in-memory properties,
@@ -375,7 +395,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
 
         ReadOnlyDocument current = new ReadOnlyDocument(getDatabase(), getId(), true);
-        CBLC4Doc curC4doc = current.getC4doc();
+        C4Document curC4doc = current.getC4doc();
 
         // Resolve conflict:
         ReadOnlyDocument resolved;
@@ -385,7 +405,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         } else {
             // Call the custom conflict resolver
             ReadOnlyDocument base = null;
-            CBLC4Doc c4doc = super.getC4doc();
+            C4Document c4doc = super.getC4doc();
             if (c4doc != null)
                 base = new ReadOnlyDocument(
                         getDatabase(), getId(), super.getC4doc(), super.getData());
@@ -402,10 +422,10 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         // depends on its implementation.
         if (!resolved.equals(current)) {
             Map map = resolved.toMap();
-            setC4Doc(curC4doc);
+            setC4Document(curC4doc);
             set(map);
         } else {
-            setC4Doc(curC4doc);
+            setC4Document(curC4doc);
         }
     }
 
@@ -426,7 +446,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             }
 
             // Save to database:
-            C4Document c4Doc = getC4doc() != null ? getC4doc().getRawDoc() : null;
+            C4Document c4Doc = getC4doc() != null ? getC4doc() : null;
             if (c4Doc != null)
                 return c4Doc.update(body, revFlags);
             else
@@ -438,6 +458,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     private boolean isChanged() {
-        return ((Dictionary) dict).isChanged();
+        return ((Dictionary) _dict).isChanged();
     }
 }

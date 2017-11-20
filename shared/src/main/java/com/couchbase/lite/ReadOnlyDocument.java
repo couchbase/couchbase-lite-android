@@ -4,6 +4,7 @@ import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLDict;
+import com.couchbase.litecore.fleece.MRoot;
 
 import java.util.Date;
 import java.util.Iterator;
@@ -20,10 +21,12 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Database database;
-    private String id;
-    private CBLC4Doc c4doc;
-    protected ReadOnlyDictionary dict; // access from Document
+    private Database _database;
+    private String _id;
+    private C4Document _c4doc;
+    private MRoot _root;
+    protected FLDict _data;
+    protected ReadOnlyDictionary _dict; // access from Document
 
     //---------------------------------------------
     // Constructors
@@ -31,20 +34,19 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
 
     ReadOnlyDocument(Database database,
                      String id,
-                     CBLC4Doc c4doc,
-                     CBLFLDict data) {
-        setDictionaryFromData(data);
-        this.database = database;
-        this.id = id;
-        //setC4Doc(c4doc);
-        this.c4doc = c4doc;
+                     C4Document c4doc,
+                     FLDict data) {
+        this._database = database;
+        this._id = id;
+        this._c4doc = c4doc;
+        _data = data;
+        updateDictionary();
     }
 
     ReadOnlyDocument(Database database,
                      String id,
                      boolean mustExist) {
         this(database, id, null, null);
-
         C4Document rawDoc;
         try {
             rawDoc = readC4Doc(mustExist);
@@ -52,8 +54,8 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
             throw LiteCoreBridge.convertRuntimeException(e);
         }
 
-        // NOTE: c4doc should not be null.
-        setC4Doc(new CBLC4Doc(rawDoc));
+        // NOTE: _c4doc should not be null.
+        setC4Document(rawDoc);
     }
 
     //---------------------------------------------
@@ -66,7 +68,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      * @return the document's ID
      */
     public String getId() {
-        return id;
+        return _id;
     }
 
     /**
@@ -79,7 +81,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      * @return the sequence number of the document in the database.
      */
     public long getSequence() {
-        return c4doc != null ? c4doc.getSelectedSequence() : 0;
+        return _c4doc != null ? _c4doc.getSelectedSequence() : 0;
     }
 
     /**
@@ -88,12 +90,12 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      * @return true if deleted, false otherwise
      */
     public boolean isDeleted() {
-        return c4doc != null && c4doc.getRawDoc() != null ? c4doc.getRawDoc().deleted() : false;
+        return _c4doc != null && _c4doc != null ? _c4doc.deleted() : false;
     }
 
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "ReadOnlyDocument[%s]", id);
+        return String.format(Locale.ENGLISH, "ReadOnlyDocument[%s]", _id);
     }
 
     //---------------------------------------------
@@ -107,12 +109,12 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public int count() {
-        return dict.count();
+        return _dict.count();
     }
 
     @Override
     public List<String> getKeys() {
-        return dict.getKeys();
+        return _dict.getKeys();
     }
 
 
@@ -126,7 +128,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public Object getObject(String key) {
-        return dict.getObject(key);
+        return _dict.getObject(key);
     }
 
     /**
@@ -138,7 +140,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public String getString(String key) {
-        return dict.getString(key);
+        return _dict.getString(key);
     }
 
     /**
@@ -150,7 +152,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public Number getNumber(String key) {
-        return dict.getNumber(key);
+        return _dict.getNumber(key);
     }
 
     /**
@@ -163,7 +165,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public int getInt(String key) {
-        return dict.getInt(key);
+        return _dict.getInt(key);
     }
 
     /**
@@ -176,7 +178,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public long getLong(String key) {
-        return dict.getLong(key);
+        return _dict.getLong(key);
     }
 
     /**
@@ -189,7 +191,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public float getFloat(String key) {
-        return dict.getFloat(key);
+        return _dict.getFloat(key);
     }
 
     /**
@@ -202,7 +204,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public double getDouble(String key) {
-        return dict.getDouble(key);
+        return _dict.getDouble(key);
     }
 
     /**
@@ -214,7 +216,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public boolean getBoolean(String key) {
-        return dict.getBoolean(key);
+        return _dict.getBoolean(key);
     }
 
     /**
@@ -226,7 +228,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public Blob getBlob(String key) {
-        return dict.getBlob(key);
+        return _dict.getBlob(key);
     }
 
     /**
@@ -242,17 +244,17 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public Date getDate(String key) {
-        return dict.getDate(key);
+        return _dict.getDate(key);
     }
 
     @Override
     public ReadOnlyArrayInterface getArray(String key) {
-        return dict.getArray(key);
+        return _dict.getArray(key);
     }
 
     @Override
     public ReadOnlyDictionaryInterface getDictionary(String key) {
-        return dict.getDictionary(key);
+        return _dict.getDictionary(key);
     }
 
     /**
@@ -263,7 +265,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public Map<String, Object> toMap() {
-        return dict.toMap();
+        return _dict.toMap();
     }
 
     /**
@@ -276,7 +278,7 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      */
     @Override
     public boolean contains(String key) {
-        return dict.contains(key);
+        return _dict.contains(key);
     }
 
     //---------------------------------------------
@@ -302,37 +304,54 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
     //---------------------------------------------
 
     void free() {
-        if (this.c4doc != null) {
-            this.c4doc.free();
-            this.c4doc = null;
+        //Log.e(Log.DATABASE, "ReadOnlyDocument.free() hashCode = 0x%x", hashCode());
+        if (this._root != null) {
+            this._root.free();
+            this._root = null;
+        }
+        if (this._c4doc != null) {
+            this._c4doc.free();
+            this._c4doc = null;
         }
     }
 
-    // Sets c4doc and updates my root dictionary
-    synchronized void setC4Doc(CBLC4Doc c4doc) {
-        // NOTE: don't call free(), both c4doc and this.c4doc point to same C4Document.
-
-        this.c4doc = c4doc;
+    // Sets _c4doc and updates my root dictionary
+    synchronized void setC4Document(C4Document c4doc) {
+        // NOTE: don't call free(), both _c4doc and this._c4doc point to same C4Document.
+        this._c4doc = c4doc;
+        _data = null;
         if (c4doc != null) {
-            FLDict root = null;
-            if (c4doc.getRawDoc() != null && !c4doc.getRawDoc().deleted())
-                root = c4doc.getRawDoc().getSelectedBody2();
-            setDictionaryFromData(new CBLFLDict(root, c4doc, database));
-        } else
-            this.dict = null;
+            if (c4doc != null && !c4doc.deleted())
+                _data = c4doc.getSelectedBody2();
+        }
+        updateDictionary();
     }
 
-    void setDictionaryFromData(CBLFLDict data) {
+    boolean isMutable(){
         // Document overrides this
-        this.dict = new ReadOnlyDictionary(data);
+        return false;
+    }
+
+    void updateDictionary() {
+        if (_data != null) {
+            if (_root != null)
+                _root.free();
+            _root = new MRoot(new DocContext(_database), _data.toFLValue(), isMutable());
+            _dict = (ReadOnlyDictionary) _root.asNative();
+        } else {
+            if (_root != null)
+                _root.free();
+            _root = null;
+            _dict = isMutable() ? new Dictionary() : new ReadOnlyDictionary();
+        }
     }
 
     Database getDatabase() {
-        return database;
+        return _database;
     }
 
     void setDatabase(Database database) {
-        this.database = database;
+        this._database = database;
     }
 
     /**
@@ -341,17 +360,13 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
      * @return true if exists, false otherwise.
      */
     boolean exists() {
-        return c4doc != null ? c4doc.getRawDoc().exists() : false;
+        return _c4doc != null ? _c4doc.exists() : false;
     }
 
     // Document overrides this
     long generation() {
         // TODO: c4rev_getGeneration
         return generationFromRevID(getSelectedRevID());
-    }
-
-    CBLFLDict getData() {
-        return dict != null ? dict.getData() : null;
     }
 
     /**
@@ -372,14 +387,14 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
         return 0;
     }
 
-    CBLC4Doc getC4doc() {
-        return c4doc;
+    C4Document getC4doc() {
+        return _c4doc;
     }
 
     // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
     C4Document readC4Doc(boolean mustExist) throws LiteCoreException {
-        if (database == null || database.getC4Database() == null) throw new IllegalStateException();
-        return database.getC4Database().get(getId(), mustExist);
+        if (_database == null || _database.getC4Database() == null) throw new IllegalStateException();
+        return _database.getC4Database().get(getId(), mustExist);
     }
 
     ConflictResolver effectiveConflictResolver() {
@@ -390,28 +405,32 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
 
     boolean selectConflictingRevision() {
         try {
-            c4doc.getRawDoc().selectNextLeafRevision(false, true);
-            setC4Doc(c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
+            _c4doc.selectNextLeafRevision(false, true);
+            setC4Document(_c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
         } catch (LiteCoreException e) {
-            Log.e(TAG, "Failed to selectNextLeaf: doc -> %s", e, c4doc);
+            Log.e(TAG, "Failed to selectNextLeaf: doc -> %s", e, _c4doc);
             return false;
         }
         return true;
     }
 
     boolean selectCommonAncestor(ReadOnlyDocument doc1, ReadOnlyDocument doc2) {
-        if (!c4doc.getRawDoc().selectCommonAncestorRevision(doc1.getSelectedRevID(), doc2.getSelectedRevID()))
+        if (!_c4doc.selectCommonAncestorRevision(doc1.getSelectedRevID(), doc2.getSelectedRevID()))
             return false;
-        setC4Doc(c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
+        setC4Document(_c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
         return true;
     }
 
     String getSelectedRevID() {
-        return c4doc != null ? c4doc.getSelectedRevID() : null;
+        return _c4doc != null ? _c4doc.getSelectedRevID() : null;
     }
 
     // Document overrides this
-    byte[] encode() {
-        return c4doc != null ? c4doc.getRawDoc().getSelectedBody() : null;
+    byte[] encode() throws LiteCoreException {
+        return _c4doc != null ? _c4doc.getSelectedBody() : null;
+    }
+
+    protected FLDict getData() {
+        return _data;
     }
 }

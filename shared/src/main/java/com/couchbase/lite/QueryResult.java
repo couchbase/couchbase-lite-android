@@ -19,6 +19,8 @@ import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLArrayIterator;
 import com.couchbase.litecore.fleece.FLValue;
+import com.couchbase.litecore.fleece.MContext;
+import com.couchbase.litecore.fleece.MRoot;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,24 +32,26 @@ import java.util.Map;
 /**
  * Result represents a row of result set returned by a Query.
  */
-public class Result
+public class QueryResult
         implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterface, Iterable<String> {
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private ResultSet rs;
+    private QueryResultSet rs;
     private C4QueryEnumerator c4enum;
     private FLArrayIterator columns;
+    MContext _context;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
-    Result(ResultSet rs, C4QueryEnumerator c4enum) {
+    QueryResult(QueryResultSet rs, C4QueryEnumerator c4enum, MContext context) {
         this.rs = rs;
         this.c4enum = c4enum;
         this.columns = c4enum.getColumns();
+        _context = context;
     }
 
     //---------------------------------------------
@@ -253,7 +257,7 @@ public class Result
     // Protected level access
     //---------------------------------------------
 
-    protected ResultSet getRs() {
+    protected QueryResultSet getRs() {
         return rs;
     }
 
@@ -279,9 +283,8 @@ public class Result
     // - (id) fleeceValueToObjectAtIndex: (NSUInteger)index
     private Object fleeceValueToObject(int index) {
         FLValue value = fleeceValue(index);
-        if (value != null)
-            return CBLData.fleeceValueToObject(value, rs, rs.getQuery().getDatabase());
-        else
-            return null;
+        if (value == null) return null;
+        MRoot root = new MRoot(_context, value, false);
+        return root.asNative();
     }
 }

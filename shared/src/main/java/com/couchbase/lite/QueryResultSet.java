@@ -22,10 +22,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * A result set representing the query result. The result set is an iterator of
+ * A result set representing the _query result. The result set is an iterator of
  * the {@code Result} objects.
  */
-public class ResultSet implements Iterable<Result>, CBLFLDataSource {
+public class QueryResultSet implements Iterable<QueryResult> {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
@@ -34,21 +34,21 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Query query;
-    private C4QueryEnumerator c4enum;
-    private Map<String, Integer> columnNames;
+    private Query _query;
+    private C4QueryEnumerator _c4enum;
+    private Map<String, Integer> _columnNames;
+    private QueryResultContext _context;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
-    ResultSet(Query query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
-        this.query = query;
-        this.c4enum = c4enum;
-        this.columnNames = columnNames;
+    QueryResultSet(Query query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
+        _query = query;
+        _c4enum = c4enum;
+        _columnNames = columnNames;
+        _context = new QueryResultContext(query.getDatabase(), c4enum);
     }
-
-    // TODO: c4enum is better to be free.
 
     //---------------------------------------------
     // API - public methods
@@ -60,10 +60,10 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
      * @return the Result after moving the cursor forward. Returns {@code null} value
      * if there are no more rows.
      */
-    public Result next() {
+    public QueryResult next() {
         try {
-            if (c4enum.next()) {
-                return new Result(this, c4enum);
+            if (_c4enum.next()) {
+                return currentObject();
             } else
                 return null;
         } catch (LiteCoreException e) {
@@ -72,11 +72,15 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
         }
     }
 
+    private QueryResult currentObject(){
+        return new QueryResult(this, _c4enum, _context);
+    }
+
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
 
-    private class ResultSetIterator implements Iterator<Result> {
+    private class ResultSetIterator implements Iterator<QueryResult> {
         private int index;
         private int count;
 
@@ -91,13 +95,13 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
         }
 
         @Override
-        public Result next() {
+        public QueryResult next() {
             return get(index++);
         }
     }
 
     @Override
-    public Iterator<Result> iterator() {
+    public Iterator<QueryResult> iterator() {
         return new ResultSetIterator();
     }
 
@@ -116,18 +120,18 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
     //---------------------------------------------
 
     void release() {
-        if (c4enum != null) {
-            c4enum.close();
-            c4enum.free();
-            c4enum = null;
+        if (_c4enum != null) {
+            _c4enum.close();
+            _c4enum.free();
+            _c4enum = null;
         }
     }
 
-    ResultSet refresh() throws CouchbaseLiteException {
-        if (query == null) return null;
+    QueryResultSet refresh() throws CouchbaseLiteException {
+        if (_query == null) return null;
         try {
-            C4QueryEnumerator newEnum = c4enum.refresh();
-            return newEnum != null ? new ResultSet(query, newEnum, columnNames) : null;
+            C4QueryEnumerator newEnum = _c4enum.refresh();
+            return newEnum != null ? new QueryResultSet(_query, newEnum, _columnNames) : null;
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -135,20 +139,16 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
 
     int getCount() {
         try {
-            return (int) c4enum.getRowCount();
+            return (int) _c4enum.getRowCount();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertRuntimeException(e);
         }
     }
 
-    boolean isValidEnumerator() {
-        return c4enum != null && !c4enum.isClosed();
-    }
-
-    Result get(int index) {
+    QueryResult get(int index) {
         try {
-            if (c4enum.seek(index)) {
-                return new Result(this, c4enum);
+            if (_c4enum.seek(index)) {
+                return currentObject();
             } else
                 return null;
         } catch (LiteCoreException e) {
@@ -157,10 +157,10 @@ public class ResultSet implements Iterable<Result>, CBLFLDataSource {
     }
 
     Map<String, Integer> getColumnNames() {
-        return columnNames;
+        return _columnNames;
     }
 
     Query getQuery() {
-        return query;
+        return _query;
     }
 }

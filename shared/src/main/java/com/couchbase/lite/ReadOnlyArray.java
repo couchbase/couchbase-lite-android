@@ -1,10 +1,12 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.DateUtils;
-import com.couchbase.litecore.SharedKeys;
-import com.couchbase.litecore.fleece.FLArray;
+import com.couchbase.litecore.fleece.Encoder;
+import com.couchbase.litecore.fleece.FLEncodable;
 import com.couchbase.litecore.fleece.FLEncoder;
-import com.couchbase.litecore.fleece.FLValue;
+import com.couchbase.litecore.fleece.MArray;
+import com.couchbase.litecore.fleece.MCollection;
+import com.couchbase.litecore.fleece.MValue;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,20 +16,24 @@ import java.util.List;
 /**
  * ReadOnlyArray provides readonly access to array data.
  */
-public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, Iterable<Object> {
+public class ReadOnlyArray implements ReadOnlyArrayInterface, FLEncodable, Iterable<Object> {
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private CBLFLArray data;
-    private FLArray flArray;
+
+    protected MArray _array = new MArray(); // access from Array
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    ReadOnlyArray(CBLFLArray data) {
-        setData(data);
+    ReadOnlyArray() {
+    }
+
+    ReadOnlyArray(MValue mv, MCollection parent) {
+        super();
+        _array.initInSlot(mv, parent);
     }
 
     //---------------------------------------------
@@ -41,7 +47,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public int count() {
-        return flArray != null ? (int) flArray.count() : 0;
+        return (int) _array.count();
     }
 
     /**
@@ -54,7 +60,8 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public Object getObject(int index) {
-        return fleeceValueToObject(index);
+        rangeCheck(index);
+        return _get(_array, index).asNative(_array);
     }
 
     /**
@@ -65,7 +72,8 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public String getString(int index) {
-        return (String) fleeceValueToObject(index);
+        Object obj = _get(_array, index).asNative(_array);
+        return obj instanceof String ? (String) obj : null;
     }
 
     /**
@@ -76,7 +84,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public Number getNumber(int index) {
-        return (Number) fleeceValueToObject(index);
+        return CBLFleece.getNumber(_get(_array, index).asNative(_array));
     }
 
     /**
@@ -89,7 +97,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public int getInt(int index) {
-        return (int) fleeceValue(index).asInt();
+        return CBLFleece.asInteger(_get(_array, index), _array);
     }
 
     /**
@@ -102,8 +110,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public long getLong(int index) {
-        // asLong
-        return fleeceValue(index).asInt();
+        return CBLFleece.asLong(_get(_array, index), _array);
     }
 
     /**
@@ -116,7 +123,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public float getFloat(int index) {
-        return fleeceValue(index).asFloat();
+        return CBLFleece.asFloat(_get(_array, index), _array);
     }
 
     /**
@@ -129,7 +136,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public double getDouble(int index) {
-        return fleeceValue(index).asDouble();
+        return CBLFleece.asDouble(_get(_array, index), _array);
     }
 
     /**
@@ -140,7 +147,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public boolean getBoolean(int index) {
-        return fleeceValue(index).asBool();
+        return CBLFleece.asBool(_get(_array, index), _array);
     }
 
     /**
@@ -152,7 +159,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public Blob getBlob(int index) {
-        return (Blob) fleeceValueToObject(index);
+        return (Blob) _get(_array, index).asNative(_array);
     }
 
     /**
@@ -179,7 +186,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public ReadOnlyArray getArray(int index) {
-        return (ReadOnlyArray) fleeceValueToObject(index);
+        return (ReadOnlyArray) _get(_array, index).asNative(_array);
     }
 
     /**
@@ -190,7 +197,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public ReadOnlyDictionary getDictionary(int index) {
-        return (ReadOnlyDictionary) fleeceValueToObject(index);
+        return (ReadOnlyDictionary) _get(_array, index).asNative(_array);
     }
 
     /**
@@ -201,12 +208,23 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
      */
     @Override
     public List<Object> toList() {
-        if (flArray != null)
-            return (List<Object>) SharedKeys.valueToObject(new FLValue(flArray), data.getDatabase().getSharedKeys());
-        else
-            return new ArrayList();
+        int count = (int) _array.count();
+        List<Object> result = new ArrayList<>(count);
+        for (int index = 0; index < count; index++)
+            result.add(CBLFleece.toObject(_get(_array, index).asNative(_array)));
+        return result;
     }
 
+    //-------------------------------------------------------------------------
+    // Implementation of FLEncodable
+    //-------------------------------------------------------------------------
+
+    @Override
+    public void encodeTo(FLEncoder enc) {
+        Encoder encoder = new Encoder(enc);
+        _array.encodeTo(encoder);
+        encoder.release();
+    }
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
@@ -235,43 +253,18 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FleeceEncodable, I
     // protected level access
     //---------------------------------------------
 
-    protected CBLFLArray getData() {
-        return data;
+    protected static MValue _get(MArray array, int index) {
+        return array.get(index);
     }
 
-    protected void setData(CBLFLArray data) {
-        this.data = data;
-        this.flArray = null;
-        if (data != null) {
-            this.flArray = data.getFLArray();
-        }
+
+    protected void rangeCheck(int index) {
+        if (index > count() || index < 0)
+            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
     }
 
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
 
-    // FleeceEncodable implementation
-    @Override
-    public void fleeceEncode(FLEncoder encoder, Database database) {
-        SharedKeys.writeValue(encoder, new FLValue(flArray), database.getSharedKeys());
-    }
-
-    //---------------------------------------------
-    // Private (in class only)
-    //---------------------------------------------
-
-    // #pragma mark - FLEECE
-
-    private FLValue fleeceValue(int index) {
-        return flArray.get(index);
-    }
-
-    private Object fleeceValueToObject(int index) {
-        FLValue value = fleeceValue(index);
-        if (value != null)
-            return CBLData.fleeceValueToObject(value, data.getC4doc(), data.getDatabase());
-        else
-            return null;
+    protected String outOfBoundsMsg(int index) {
+        return "Index: " + index + ", Size: " + count();
     }
 }

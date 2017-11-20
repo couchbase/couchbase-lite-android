@@ -770,7 +770,11 @@ public final class Database implements C4Constants {
                     losingRevID = otherDoc.getSelectedRevID();
                     if (resolved != doc) {
                         resolved.setDatabase(this);
-                        mergedBody = resolved.encode();
+                        try {
+                            mergedBody = resolved.encode();
+                        } catch (LiteCoreException e) {
+                            throw LiteCoreBridge.convertException(e);
+                        }
                         if (mergedBody == null)
                             return false;
                     }
@@ -778,7 +782,7 @@ public final class Database implements C4Constants {
 
                 // Tell LiteCore to do the resolution:
                 try {
-                    C4Document rawDoc = doc.getC4doc().getRawDoc();
+                    C4Document rawDoc = doc.getC4doc();
                     rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody);
                     rawDoc.save(0);
                 } catch (LiteCoreException e) {

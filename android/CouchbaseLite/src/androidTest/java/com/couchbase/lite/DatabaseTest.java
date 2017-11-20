@@ -111,6 +111,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(docID, doc.getId());
         assertFalse(doc.isDeleted());
         assertEquals(value, ((Number) doc.getObject("key")).intValue());
+        doc = null;
     }
 
     // helper method to purge doc and verify doc.
@@ -365,13 +366,15 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testGetExistingDocWithIDInBatch() throws CouchbaseLiteException {
+        final int NUM_DOCS = 10;
+
         // Save 10 docs:
-        createDocs(10);
+        createDocs(NUM_DOCS);
 
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                validateDocs(10);
+                validateDocs(NUM_DOCS);
             }
         });
     }
@@ -410,6 +413,8 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     //  Save Document
     //---------------------------------------------
+
+    // base test method
     private void testSaveNewDocWithID(String docID) throws CouchbaseLiteException {
         // store doc
         generateDocument(docID);
@@ -429,6 +434,41 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testSaveNewDocWithSpecialCharactersDocID() throws CouchbaseLiteException {
         testSaveNewDocWithID("`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'");
+    }
+
+    @Test
+    public void testSimpleSaveAndGetDoc() throws CouchbaseLiteException {
+        // store doc
+        String docID = "doc1";
+        Document doc = new Document(docID);
+        doc.setObject("key", 1);
+        save(doc);
+        assertEquals(1, db.getCount());
+        assertEquals(1, doc.getSequence());
+
+        // retrieve doc
+        doc = db.getDocument(docID);
+        assertNotNull(doc);
+        assertEquals(docID, doc.getId());
+        assertFalse(doc.isDeleted());
+        assertTrue(doc.contains("key"));
+        assertNotNull(doc.getObject("key"));
+        assertEquals(1, ((Number) doc.getObject("key")).intValue());
+    }
+
+    @Test
+    public void testSaveAndGetMultipleDocs() throws CouchbaseLiteException {
+        {
+            final int NUM_DOCS = 10;//1000;
+            for (int i = 0; i < NUM_DOCS; i++) {
+                Document doc = createDocument(String.format(Locale.US, "doc_%03d", i));
+                doc.setObject("key", i);
+                save(doc);
+            }
+            assertEquals(NUM_DOCS, db.getCount());
+            validateDocs(NUM_DOCS);
+        }
+        System.gc();
     }
 
     @Test
@@ -513,18 +553,20 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testSaveInBatch() throws CouchbaseLiteException {
+        final int NUM_DOCS = 10;
+
         db.inBatch(new Runnable() {
             @Override
             public void run() {
                 try {
-                    createDocs(10);
+                    createDocs(NUM_DOCS);
                 } catch (CouchbaseLiteException e) {
                     throw new RuntimeException(e);
                 }
             }
         });
-        assertEquals(10, db.getCount());
-        validateDocs(10);
+        assertEquals(NUM_DOCS, db.getCount());
+        validateDocs(NUM_DOCS);
     }
 
     @Test
@@ -664,13 +706,15 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDeleteDocInBatch() throws CouchbaseLiteException {
+        final int NUM_DOCS = 10;
+
         // Save 10 docs:
-        createDocs(10);
+        createDocs(NUM_DOCS);
 
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < NUM_DOCS; i++) {
                     String docID = String.format(Locale.US, "doc_%03d", i);
                     Document doc = db.getDocument(docID);
                     try {
@@ -823,13 +867,14 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testPurgeDocInBatch() throws CouchbaseLiteException {
+        final int NUM_DOCS = 10;
         // Save 10 docs:
-        createDocs(10);
+        createDocs(NUM_DOCS);
 
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < NUM_DOCS; i++) {
                     String docID = String.format(Locale.US, "doc_%03d", i);
                     Document doc = db.getDocument(docID);
                     try {
@@ -1180,14 +1225,16 @@ public class DatabaseTest extends BaseTest {
     // TODO: This test does not pass with Android API16 arm-v7a
     //@Test
     public void testCompact() throws CouchbaseLiteException {
-        final List<Document> docs = createDocs(20);
+        final int NUM_DOCS = 20;
+        final int NUM_UPDATES = 25;
+        final List<Document> docs = createDocs(NUM_DOCS);
 
         // Update each doc 25 times:
         db.inBatch(new Runnable() {
             @Override
             public void run() {
                 for (Document doc : docs) {
-                    for (int i = 0; i < 25; i++) {
+                    for (int i = 0; i < NUM_UPDATES; i++) {
                         doc.setObject("number", i);
                         try {
                             save(doc);
@@ -1205,13 +1252,13 @@ public class DatabaseTest extends BaseTest {
             save(doc);
         }
 
-        assertEquals(20, db.getCount());
+        assertEquals(NUM_DOCS, db.getCount());
 
         File attsDir = new File(db.getPath(), "Attachments");
         assertTrue(attsDir.exists());
         assertTrue(attsDir.isDirectory());
         File[] atts = attsDir.listFiles();
-        assertEquals(20, atts.length);
+        assertEquals(NUM_DOCS, atts.length);
 
         // Compact:
         db.compact();
@@ -1244,7 +1291,9 @@ public class DatabaseTest extends BaseTest {
 
         // NOTE: Both doc1 and doc2 are generation 1. So mine (doc2) should win.
         assertEquals(1, db.getCount());
-        assertEquals("newVar", db.getDocument("abc").getString("someKey"));
+        Document doc = db.getDocument("abc");
+        assertNotNull(doc);
+        assertEquals("newVar", doc.getString("someKey"));
     }
 
     @Test
@@ -1259,7 +1308,10 @@ public class DatabaseTest extends BaseTest {
             return;
         }
 
-        for (int i = 0; i < 10; i++) {
+        // TODO: crash with 2048
+        final int NUM_DOCS = 10;
+
+        for (int i = 0; i < NUM_DOCS; i++) {
             String docID = String.format(Locale.US, "doc_%03d", i);
             Document doc = createDocument(docID);
             doc.setObject("name", docID);
@@ -1285,13 +1337,13 @@ public class DatabaseTest extends BaseTest {
 
         Database nudb = new Database(dbName, config);
         assertNotNull(nudb);
-        assertEquals(10, nudb.getCount());
+        assertEquals(NUM_DOCS, nudb.getCount());
 
         Expression DOCID = Expression.meta().getId();
         SelectResult S_DOCID = SelectResult.expression(DOCID);
         Query query = Query.select(S_DOCID).from(DataSource.database(nudb));
-        ResultSet rs = query.run();
-        for (Result r : rs) {
+        QueryResultSet rs = query.run();
+        for (QueryResult r : rs) {
             String docID = r.getString(0);
             assertNotNull(docID);
 

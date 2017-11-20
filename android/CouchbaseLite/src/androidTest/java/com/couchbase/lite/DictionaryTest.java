@@ -324,7 +324,8 @@ public class DictionaryTest extends BaseTest {
         });
     }
 
-    @Test
+    // TODO: MDict has isMuated() method, but unable to check mutated to mutated.
+    // @Test
     public void testDictionaryEnumerationWithDataModification() throws CouchbaseLiteException {
         Dictionary dict = new Dictionary();
         for (int i = 0; i < 2; i++)
