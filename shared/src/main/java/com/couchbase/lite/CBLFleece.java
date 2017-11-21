@@ -42,12 +42,6 @@ public class CBLFleece implements FLConstants.FLValueType {
         return MValue_toDictionary(new MValue(mv, true), new MCollection(parent, true));
     }
 
-    // to call from native
-    // static Object MValue_toDictionary(MValue mv, MCollection parent)
-    static Object MValue_toDictionary(Object mv, Object parent) {
-        return MValue_toDictionary((MValue) mv, (MCollection) parent);
-    }
-
     static Object MValue_toDictionary(MValue mv, MCollection parent) {
         FLValue value = mv.value();
         FLDict flDict = value.asFLDict();
@@ -72,16 +66,14 @@ public class CBLFleece implements FLConstants.FLValueType {
         return MValue_toArray(new MValue(mv, true), new MCollection(parent, true));
     }
 
-    // to call from native
-    // static Object MValue_toDictionary(MValue mv, MCollection parent)
-    static Object MValue_toArray(Object mv, Object parent) {
-        return MValue_toArray((MValue) mv, (MCollection) parent);
-    }
-
     static Object MValue_toArray(MValue mv, MCollection parent) {
         return new Array(mv, parent);
     }
 
+    // to call from native
+    static Object toObject(long h) {
+        return FLValue.toObject(new FLValue(h));
+    }
 
     static boolean valueWouldChange(Object newValue, MValue oldValue, MCollection container) {
         // As a simplification we assume that array and dict values are always different, to avoid
