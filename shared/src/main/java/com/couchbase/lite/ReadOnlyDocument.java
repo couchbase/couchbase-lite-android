@@ -304,7 +304,6 @@ public class ReadOnlyDocument implements ReadOnlyDictionaryInterface, Iterable<S
     //---------------------------------------------
 
     void free() {
-        //Log.e(Log.DATABASE, "ReadOnlyDocument.free() hashCode = 0x%x", hashCode());
         if (this._root != null) {
             this._root.free();
             this._root = null;

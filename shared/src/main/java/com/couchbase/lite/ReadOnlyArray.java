@@ -84,7 +84,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FLEncodable, Itera
      */
     @Override
     public Number getNumber(int index) {
-        return CBLFleece.getNumber(_get(_array, index).asNative(_array));
+        return CBLConverter.getNumber(_get(_array, index).asNative(_array));
     }
 
     /**
@@ -97,7 +97,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FLEncodable, Itera
      */
     @Override
     public int getInt(int index) {
-        return CBLFleece.asInteger(_get(_array, index), _array);
+        return CBLConverter.asInteger(_get(_array, index), _array);
     }
 
     /**
@@ -110,7 +110,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FLEncodable, Itera
      */
     @Override
     public long getLong(int index) {
-        return CBLFleece.asLong(_get(_array, index), _array);
+        return CBLConverter.asLong(_get(_array, index), _array);
     }
 
     /**
@@ -123,7 +123,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FLEncodable, Itera
      */
     @Override
     public float getFloat(int index) {
-        return CBLFleece.asFloat(_get(_array, index), _array);
+        return CBLConverter.asFloat(_get(_array, index), _array);
     }
 
     /**
@@ -136,7 +136,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FLEncodable, Itera
      */
     @Override
     public double getDouble(int index) {
-        return CBLFleece.asDouble(_get(_array, index), _array);
+        return CBLConverter.asDouble(_get(_array, index), _array);
     }
 
     /**
@@ -147,7 +147,7 @@ public class ReadOnlyArray implements ReadOnlyArrayInterface, FLEncodable, Itera
      */
     @Override
     public boolean getBoolean(int index) {
-        return CBLFleece.asBool(_get(_array, index), _array);
+        return CBLConverter.asBool(_get(_array, index), _array);
     }
 
     /**

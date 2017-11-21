@@ -36,18 +36,24 @@ public class ConflictTest extends BaseTest {
             Document resolved = new Document();
             Set<String> changed = new HashSet<>();
 
-            for (String key : conflict.getBase()) {
-                resolved.setObject(key, conflict.getBase().getObject(key));
+            if (conflict.getBase() != null) {
+                for (String key : conflict.getBase()) {
+                    resolved.setObject(key, conflict.getBase().getObject(key));
+                }
             }
 
-            for (String key : conflict.getTheirs()) {
-                resolved.setObject(key, conflict.getTheirs().getObject(key));
-                changed.add(key);
+            if (conflict.getTheirs() != null) {
+                for (String key : conflict.getTheirs()) {
+                    resolved.setObject(key, conflict.getTheirs().getObject(key));
+                    changed.add(key);
+                }
             }
 
-            for (String key : conflict.getMine()) {
-                if (!changed.contains(key))
-                    resolved.setObject(key, conflict.getMine().getObject(key));
+            if (conflict.getMine() != null) {
+                for (String key : conflict.getMine()) {
+                    if (!changed.contains(key))
+                        resolved.setObject(key, conflict.getMine().getObject(key));
+                }
             }
 
             return resolved;

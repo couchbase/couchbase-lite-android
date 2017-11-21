@@ -114,7 +114,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FLEncoda
      */
     @Override
     public Number getNumber(String key) {
-        return CBLFleece.getNumber(_get(_dict, key).asNative(_dict));
+        return CBLConverter.getNumber(_get(_dict, key).asNative(_dict));
     }
 
     /**
@@ -127,7 +127,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FLEncoda
      */
     @Override
     public int getInt(String key) {
-        return CBLFleece.asInteger(_get(_dict, key), _dict);
+        return CBLConverter.asInteger(_get(_dict, key), _dict);
     }
 
     /**
@@ -140,7 +140,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FLEncoda
      */
     @Override
     public long getLong(String key) {
-        return CBLFleece.asLong(_get(_dict, key), _dict);
+        return CBLConverter.asLong(_get(_dict, key), _dict);
     }
 
     /**
@@ -153,7 +153,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FLEncoda
      */
     @Override
     public float getFloat(String key) {
-        return CBLFleece.asFloat(_get(_dict, key), _dict);
+        return CBLConverter.asFloat(_get(_dict, key), _dict);
     }
 
     /**
@@ -166,7 +166,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FLEncoda
      */
     @Override
     public double getDouble(String key) {
-        return CBLFleece.asDouble(_get(_dict, key), _dict);
+        return CBLConverter.asDouble(_get(_dict, key), _dict);
     }
 
     /**
@@ -178,7 +178,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FLEncoda
      */
     @Override
     public boolean getBoolean(String key) {
-        return CBLFleece.asBool(_get(_dict, key), _dict);
+        return CBLConverter.asBool(_get(_dict, key), _dict);
     }
 
     /**
