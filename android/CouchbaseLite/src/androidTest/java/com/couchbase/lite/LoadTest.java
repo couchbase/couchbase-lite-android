@@ -83,7 +83,7 @@ public class LoadTest extends BaseTest {
     }
 
     interface VerifyBlock {
-        void verify(int n, Result result);
+        void verify(int n, QueryResult result);
     }
 
     void verifyByTagName(String tag, VerifyBlock block) throws CouchbaseLiteException {
@@ -92,8 +92,8 @@ public class LoadTest extends BaseTest {
         DataSource ds = DataSource.database(db);
         Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(tag));
         Log.v(TAG, "query - > %s", q.explain());
-        ResultSet rs = q.run();
-        Result row;
+        QueryResultSet rs = q.run();
+        QueryResult row;
         int n = 0;
         while ((row = rs.next()) != null) {
             block.verify(++n, row);
@@ -104,7 +104,7 @@ public class LoadTest extends BaseTest {
         final AtomicInteger count = new AtomicInteger(0);
         verifyByTagName(tag, new VerifyBlock() {
             @Override
-            public void verify(int n, Result result) {
+            public void verify(int n, QueryResult result) {
                 count.incrementAndGet();
             }
         });

@@ -40,10 +40,12 @@ public class ArrayTest extends BaseTest {
         list.add(DateUtils.fromJson(kArrayTestDate));
         list.add(null);
 
+        // Dictionary
         Dictionary subdict = new Dictionary();
         subdict.setObject("name", "Scott Tiger");
         list.add(subdict);
 
+        // Array
         Array subarray = new Array();
         subarray.addObject("a");
         subarray.addObject("b");
@@ -143,6 +145,21 @@ public class ArrayTest extends BaseTest {
         assertEquals(data.size(), array.count());
         assertEquals(data, array.toList());
     }
+
+    @Test
+    public void testNull() throws CouchbaseLiteException {
+        Array array = new Array();
+        array.addObject(null);
+        Document doc = createDocument("doc1");
+        save(doc, "array", array, new Validator<Array>() {
+            @Override
+            public void validate(Array a) {
+                assertEquals(1, a.count());
+                assertEquals(null, a.getObject(0));
+            }
+        });
+    }
+
 
     @Test
     public void testAddObjects() throws CouchbaseLiteException {
@@ -991,7 +1008,8 @@ public class ArrayTest extends BaseTest {
         });
     }
 
-    @Test
+    // TODO: MArray has isMuated() method, but unable to check mutated to mutated.
+    // @Test
     public void testArrayEnumerationWithDataModification() throws CouchbaseLiteException {
         Array array = new Array();
         for (int i = 0; i < 2; i++)

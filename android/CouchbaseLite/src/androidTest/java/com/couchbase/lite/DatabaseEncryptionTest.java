@@ -313,11 +313,11 @@ public class DatabaseEncryptionTest extends BaseTest {
                 .from(DataSource.database(seekrit))
                 .where(SEQ.notNullOrMissing())
                 .orderBy(Ordering.expression(SEQ));
-        ResultSet rs = query.run();
+        QueryResultSet rs = query.run();
         assertNotNull(rs);
         assertEquals(100, rs.getCount());
         int i = 0;
-        for (Result r : rs) {
+        for (QueryResult r : rs) {
             assertEquals(i, r.getInt(0));
             i++;
         }

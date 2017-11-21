@@ -22,7 +22,6 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLSliceResult;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import static com.couchbase.lite.internal.Misc.CreateUUID;
@@ -37,7 +36,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Dictionary dictionary;
+    private LiteCoreException encodingError;
 
     //---------------------------------------------
     // Constructors
@@ -61,7 +60,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      * @param id the document ID.
      */
     public Document(String id) {
-        this(null, id != null ? id : CreateUUID(), null, null);
+        super(null, id != null ? id : CreateUUID(), null, null);
     }
 
     /**
@@ -95,13 +94,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         set(dictionary);
     }
 
-    Document(Database database, String documentID, CBLC4Doc c4doc, CBLFLDict data) {
-        super(database, documentID, c4doc, data);
-        this.dictionary = new Dictionary();
-    }
-
-    Document(Database database, String documentID, boolean mustExist) {
-        super(database, documentID, mustExist);
+    Document(Database database, String id, boolean mustExist) {
+        super(database, id, mustExist);
     }
 
     //---------------------------------------------
@@ -123,7 +117,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document set(Map<String, Object> dictionary) {
-        this.dictionary.set(dictionary);
+        ((Dictionary) _dict).set(dictionary);
         return this;
     }
 
@@ -138,7 +132,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document setObject(String key, Object value) {
-        dictionary.setObject(key, value);
+        ((Dictionary) _dict).setObject(key, value);
         return this;
     }
 
@@ -205,7 +199,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Document remove(String key) {
-        dictionary.remove(key);
+        ((Dictionary) _dict).remove(key);
         return this;
     }
 
@@ -218,7 +212,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Array getArray(String key) {
-        return dictionary.getArray(key);
+        return ((Dictionary) _dict).getArray(key);
     }
 
     /**
@@ -230,195 +224,26 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
      */
     @Override
     public Dictionary getDictionary(String key) {
-        return dictionary.getDictionary(key);
-    }
-
-    //---------------------------------------------
-    // API - overridden from ReadOnlyDocument
-    //---------------------------------------------
-
-    /**
-     * Gets a number of the entries in the dictionary.
-     *
-     * @return
-     */
-    @Override
-    public int count() {
-        return dictionary.count();
-    }
-
-    @Override
-    public List<String> getKeys() {
-        return dictionary.getKeys();
-    }
-
-    /**
-     * Gets a property's value as an object. The object types are Blob, Array,
-     * Dictionary, Number, or String based on the underlying data type; or nil if the
-     * property value is null or the property doesn't exist.
-     *
-     * @param key the key.
-     * @return the object value or nil.
-     */
-    @Override
-    public Object getObject(String key) {
-        return dictionary.getObject(key);
-    }
-
-    /**
-     * Gets a property's value as a String.
-     * Returns null if the value doesn't exist, or its value is not a String.
-     *
-     * @param key the key
-     * @return the String or null.
-     */
-    @Override
-    public String getString(String key) {
-        return dictionary.getString(key);
-    }
-
-    /**
-     * Gets a property's value as a Number.
-     * Returns null if the value doesn't exist, or its value is not a Number.
-     *
-     * @param key the key
-     * @return the Number or nil.
-     */
-    @Override
-    public Number getNumber(String key) {
-        return dictionary.getNumber(key);
-    }
-
-    /**
-     * Gets a property's value as an int.
-     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
-     * Returns 0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the int value.
-     */
-    @Override
-    public int getInt(String key) {
-        return dictionary.getInt(key);
-    }
-
-    /**
-     * Gets a property's value as an long.
-     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
-     * Returns 0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the long value.
-     */
-    @Override
-    public long getLong(String key) {
-        return dictionary.getLong(key);
-    }
-
-    /**
-     * Gets a property's value as an float.
-     * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
-     * Returns 0.0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the float value.
-     */
-    @Override
-    public float getFloat(String key) {
-        return dictionary.getFloat(key);
-    }
-
-    /**
-     * Gets a property's value as an double.
-     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
-     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the double value.
-     */
-    @Override
-    public double getDouble(String key) {
-        return dictionary.getDouble(key);
-    }
-
-    /**
-     * Gets a property's value as a boolean. Returns true if the value exists, and is either `true`
-     * or a nonzero number.
-     *
-     * @param key the key
-     * @return the boolean value.
-     */
-    @Override
-    public boolean getBoolean(String key) {
-        return dictionary.getBoolean(key);
-    }
-
-    /**
-     * Gets a property's value as a Blob.
-     * Returns null if the value doesn't exist, or its value is not a Blob.
-     *
-     * @param key the key
-     * @return the Blob value or null.
-     */
-    @Override
-    public Blob getBlob(String key) {
-        return dictionary.getBlob(key);
-    }
-
-    /**
-     * Gets a property's value as a Date.
-     * JSON does not directly support dates, so the actual property value must be a string, which is
-     * then parsed according to the ISO-8601 date format (the default used in JSON.)
-     * Returns null if the value doesn't exist, is not a string, or is not parseable as a date.
-     * NOTE: This is not a generic date parser! It only recognizes the ISO-8601 format, with or
-     * without milliseconds.
-     *
-     * @param key the key
-     * @return the Date value or null.
-     */
-    @Override
-    public Date getDate(String key) {
-        return dictionary.getDate(key);
-    }
-
-    /**
-     * Gets content of the current object as an Map. The values contained in the returned
-     * Map object are all JSON based values.
-     *
-     * @return the Map object representing the content of the current object in the JSON format.
-     */
-    @Override
-    public Map<String, Object> toMap() {
-        return dictionary.toMap();
-    }
-
-    /**
-     * Tests whether a property exists or not.
-     * This can be less expensive than getObject(String),
-     * because it does not have to allocate an Object for the property value.
-     *
-     * @param key the key
-     * @return the boolean value representing whether a property exists or not.
-     */
-    @Override
-    public boolean contains(String key) {
-        return dictionary.contains(key);
+        return ((Dictionary) _dict).getDictionary(key);
     }
 
     //---------------------------------------------
     // Protected level access
     //---------------------------------------------
-    // Sets c4doc and updates my root dictionary
+
     @Override
-    protected void setC4Doc(CBLC4Doc c4doc) {
-        super.setC4Doc(c4doc);
-        // Update delegate dictionary:
-        this.dictionary = new Dictionary(getData());
+    protected void finalize() throws Throwable {
+        super.finalize();
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    @Override
+    boolean isMutable() {
+        return true;
+    }
 
     void save() throws CouchbaseLiteException {
         save(effectiveConflictResolver(), false);
@@ -436,8 +261,8 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         getDatabase().beginTransaction();
         try {
             // revID: null, all revisions are purged.
-            if (getC4doc().getRawDoc().purgeRevision(null) >= 0) {
-                getC4doc().getRawDoc().save(0);
+            if (getC4doc().purgeRevision(null) >= 0) {
+                getC4doc().save(0);
                 commit = true;
             }
         } catch (LiteCoreException e) {
@@ -447,12 +272,11 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         }
 
         // reset
-        setC4Doc(null);
+        setC4Document(null);
     }
 
-    @Override
     boolean isEmpty() {
-        return dictionary.isEmpty();
+        return _dict.isEmpty();
     }
 
     @Override
@@ -463,28 +287,49 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     // #pragma mark - FLEECE ENCODING
 
     @Override
-    byte[] encode() {
+    byte[] encode() throws LiteCoreException {
+        encodingError = null;
         FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
         try {
-            dictionary.fleeceEncode(encoder, getDatabase());
+            encoder.setExtraInfo(this); // TODO: Need to consider better value
+            _dict.encodeTo(encoder);
+            if (encodingError != null) {
+                LiteCoreException ex = encodingError;
+                encodingError = null;
+                throw ex;
+            }
             return encoder.finish();
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertRuntimeException(e);
         } finally {
+            encoder.setExtraInfo(null);
             encoder.free();
         }
     }
 
-    FLSliceResult encode2() {
+    FLSliceResult encode2() throws LiteCoreException {
+        encodingError = null;
         FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
         try {
-            dictionary.fleeceEncode(encoder, getDatabase());
+            encoder.setExtraInfo(this);
+            _dict.encodeTo(encoder);
+
+            if (encodingError != null) {
+                LiteCoreException ex = encodingError;
+                encodingError = null;
+                throw ex;
+            }
             return encoder.finish2();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertRuntimeException(e);
         } finally {
+            encoder.setExtraInfo(null);
             encoder.free();
         }
+    }
+
+    // Objects being encoded can call this
+    void setEncodingError(LiteCoreException error) {
+        if (encodingError == null)
+            encodingError = error;
     }
 
     //---------------------------------------------
@@ -540,7 +385,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         }
 
         // Update my state and post a notification:
-        setC4Doc(new CBLC4Doc(newDoc));
+        setC4Document(newDoc);
     }
 
     // "Pulls" from the database, merging the latest revision into the in-memory properties,
@@ -550,7 +395,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
 
         ReadOnlyDocument current = new ReadOnlyDocument(getDatabase(), getId(), true);
-        CBLC4Doc curC4doc = current.getC4doc();
+        C4Document curC4doc = current.getC4doc();
 
         // Resolve conflict:
         ReadOnlyDocument resolved;
@@ -560,7 +405,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         } else {
             // Call the custom conflict resolver
             ReadOnlyDocument base = null;
-            CBLC4Doc c4doc = super.getC4doc();
+            C4Document c4doc = super.getC4doc();
             if (c4doc != null)
                 base = new ReadOnlyDocument(
                         getDatabase(), getId(), super.getC4doc(), super.getData());
@@ -577,10 +422,10 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
         // depends on its implementation.
         if (!resolved.equals(current)) {
             Map map = resolved.toMap();
-            setC4Doc(curC4doc);
+            setC4Document(curC4doc);
             set(map);
         } else {
-            setC4Doc(curC4doc);
+            setC4Document(curC4doc);
         }
     }
 
@@ -601,7 +446,7 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
             }
 
             // Save to database:
-            C4Document c4Doc = getC4doc() != null ? getC4doc().getRawDoc() : null;
+            C4Document c4Doc = getC4doc() != null ? getC4doc() : null;
             if (c4Doc != null)
                 return c4Doc.update(body, revFlags);
             else
@@ -613,6 +458,6 @@ public final class Document extends ReadOnlyDocument implements DictionaryInterf
     }
 
     private boolean isChanged() {
-        return dictionary.isChanged();
+        return ((Dictionary) _dict).isChanged();
     }
 }

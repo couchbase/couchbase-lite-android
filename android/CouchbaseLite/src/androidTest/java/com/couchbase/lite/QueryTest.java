@@ -51,13 +51,13 @@ public class QueryTest extends BaseTest {
     private static SelectResult SR_NUMBER1 = SelectResult.expression(EXPR_NUMBER1);
 
     private interface QueryResult {
-        void check(int n, Result result) throws Exception;
+        void check(int n, com.couchbase.lite.QueryResult result) throws Exception;
     }
 
     private int verifyQuery(Query query, QueryResult queryResult) throws Exception {
         int n = 0;
-        Result result;
-        ResultSet rs = query.run();
+        com.couchbase.lite.QueryResult result;
+        QueryResultSet rs = query.run();
         while ((result = rs.next()) != null) {
             n += 1;
             queryResult.check(n, result);
@@ -67,7 +67,7 @@ public class QueryTest extends BaseTest {
 
     private int verifyQueryWithIterable(Query query, QueryResult queryResult) throws Exception {
         int n = 0;
-        for (Result result : query.run()) {
+        for (com.couchbase.lite.QueryResult result : query.run()) {
             n += 1;
             queryResult.check(n, result);
         }
@@ -119,7 +119,7 @@ public class QueryTest extends BaseTest {
             Query q = Query.select(SR_DOCID).from(DataSource.database(db)).where(w);
             int rows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, Result result) throws Exception {
+                public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                     String docID = result.getString(0);
                     if (docIDList.contains(docID))
                         docIDList.remove(docID);
@@ -150,7 +150,7 @@ public class QueryTest extends BaseTest {
         Query q = Query.select(SR_DOCID, SR_SEQUENCE).from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String docID = result.getString(0);
                 String expectedID = String.format(Locale.ENGLISH, "doc-%03d", n);
                 assertEquals(expectedID, docID);
@@ -248,7 +248,7 @@ public class QueryTest extends BaseTest {
             Query q = Query.select(SR_DOCID).from(DataSource.database(db)).where(exp);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, Result result) throws Exception {
+                public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                     if (n < documentIDs.length) {
                         String docID = documentIDs[(int) n - 1];
                         assertEquals(docID, result.getString(0));
@@ -275,7 +275,7 @@ public class QueryTest extends BaseTest {
                 .where(Expression.property("string").is("string"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String docID = result.getString(0);
                 assertEquals(doc1.getId(), docID);
                 Document doc = db.getDocument(docID);
@@ -291,7 +291,7 @@ public class QueryTest extends BaseTest {
                 .where(Expression.property("string").isNot("string1"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String docID = result.getString(0);
                 assertEquals(doc1.getId(), docID);
                 Document doc = db.getDocument(docID);
@@ -326,7 +326,7 @@ public class QueryTest extends BaseTest {
                 .orderBy(orderByFirstName);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String name = result.getString(0);
                 assertEquals(expected[n - 1], name);
                 Log.e(TAG, "n -> %d name -> %s", n, name);
@@ -349,7 +349,7 @@ public class QueryTest extends BaseTest {
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String docID = result.getString(0);
                 Document doc = db.getDocument(docID);
                 Map<String, Object> name = doc.getDictionary("name").toMap();
@@ -379,7 +379,7 @@ public class QueryTest extends BaseTest {
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 Log.v(TAG, "check() n -> " + n);
                 String docID = result.getString(0);
                 Document doc = db.getDocument(docID);
@@ -412,7 +412,7 @@ public class QueryTest extends BaseTest {
         Query q = Query.select(SR_DOCID, S_SENTENCE).from(DataSource.database(db)).where(w).orderBy(o);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 //assertNotNull(result.getString(0));
                 //assertNotNull(result.getString(1));
             }
@@ -437,7 +437,7 @@ public class QueryTest extends BaseTest {
             final List<String> firstNames = new ArrayList<String>();
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, Result result) throws Exception {
+                public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                     String docID = result.getString(0);
                     Document doc = db.getDocument(docID);
                     Map<String, Object> name = doc.getDictionary("name").toMap();
@@ -477,7 +477,7 @@ public class QueryTest extends BaseTest {
         Query q = Query.selectDistinct(S_NUMBER).from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(20, result.getInt(0));
             }
         }, true);
@@ -507,7 +507,7 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String docID = result.getString(0);
                 Document doc = db.getDocument(docID);
                 assertEquals(42, doc.getInt("number1"));
@@ -549,7 +549,7 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String state = (String) result.getObject(0);
                 long count = (long) result.getObject(1);
                 String maxZip = (String) result.getObject(2);
@@ -580,7 +580,7 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String state = (String) result.getObject(0);
                 long count = (long) result.getObject(1);
                 String maxZip = (String) result.getObject(2);
@@ -617,7 +617,7 @@ public class QueryTest extends BaseTest {
         final long[] expectedNumbers = {2, 3, 4, 5};
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers[n - 1], number);
             }
@@ -642,7 +642,7 @@ public class QueryTest extends BaseTest {
 
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 String docID = (String) result.getObject(0);
                 long seq = (long) result.getObject(1);
                 long number = (long) result.getObject(2);
@@ -670,7 +670,7 @@ public class QueryTest extends BaseTest {
         final long[] expectedNumbers = {1, 2, 3, 4, 5};
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers[n - 1], number);
             }
@@ -688,7 +688,7 @@ public class QueryTest extends BaseTest {
         final long[] expectedNumbers2 = {1, 2, 3};
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers2[n - 1], number);
             }
@@ -711,7 +711,7 @@ public class QueryTest extends BaseTest {
         final long[] expectedNumbers = {4, 5, 6, 7, 8};
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers[n - 1], number);
             }
@@ -730,7 +730,7 @@ public class QueryTest extends BaseTest {
         final long[] expectedNumbers2 = {6, 7, 8};
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 long number = (long) result.getObject(0);
                 assertEquals(expectedNumbers2[n - 1], number);
             }
@@ -760,7 +760,7 @@ public class QueryTest extends BaseTest {
 
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(4, result.count());
                 assertEquals(result.getObject(0), result.getObject("firstname"));
                 assertEquals(result.getObject(1), result.getObject("lastname"));
@@ -795,7 +795,7 @@ public class QueryTest extends BaseTest {
 
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(5, result.count());
                 assertEquals(result.getObject(0), result.getObject("$1"));
                 assertEquals(result.getObject(1), result.getObject("$2"));
@@ -824,7 +824,7 @@ public class QueryTest extends BaseTest {
         final String[] expected = {"doc-017", "doc-021", "doc-023", "doc-045", "doc-060"};
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(expected[i.getAndIncrement()], result.getString(0));
             }
         }, false);
@@ -835,7 +835,7 @@ public class QueryTest extends BaseTest {
                 Expression.every("LIKE").in(exprLikes).satisfies(exprVarLike.equalTo("taxes")));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 if (n == 1)
                     assertEquals("doc-007", result.getString(0));
             }
@@ -847,7 +847,7 @@ public class QueryTest extends BaseTest {
                 Expression.anyAndEvery("LIKE").in(exprLikes).satisfies(exprVarLike.equalTo("taxes")));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
             }
         }, false);
         assertEquals(0, numRows);
@@ -875,7 +875,7 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(50.5F, (float) result.getObject(0), 0.0F);
                 assertEquals(100L, (long) result.getObject(1));
                 assertEquals(1L, (long) result.getObject(2));
@@ -902,7 +902,7 @@ public class QueryTest extends BaseTest {
         Query q = Query.select(srArrayLength).from(ds);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(2, result.getInt(0));
             }
         }, true);
@@ -916,7 +916,7 @@ public class QueryTest extends BaseTest {
         q = Query.select(srArrayContains1, srArrayContains2).from(ds);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(true, result.getBoolean(0));
                 assertEquals(false, result.getBoolean(1));
             }
@@ -989,7 +989,7 @@ public class QueryTest extends BaseTest {
                     .from(DataSource.database(db));
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, Result result) throws Exception {
+                public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                     double expected = expectedValues[index.intValue()];
                     assertEquals(expected, result.getDouble(0), 0.0);
                 }
@@ -1019,7 +1019,7 @@ public class QueryTest extends BaseTest {
         Query q = Query.select(srFnContains1, srFnContains2).from(ds);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertTrue(result.getBoolean(0));
                 assertFalse(result.getBoolean(1));
             }
@@ -1031,7 +1031,7 @@ public class QueryTest extends BaseTest {
         q = Query.select(SelectResult.expression(fnLength)).from(ds);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(str.length(), result.getInt(0));
             }
         }, true);
@@ -1053,7 +1053,7 @@ public class QueryTest extends BaseTest {
                 .from(ds);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(str.toLowerCase(Locale.ENGLISH), result.getString(0));
                 assertEquals(str.replaceAll("^\\s+", ""), result.getString(1));
                 assertEquals(str.replaceAll("\\s+$", ""), result.getString(2));
@@ -1093,7 +1093,7 @@ public class QueryTest extends BaseTest {
                 .from(DataSource.database(db));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertTrue(result.getBoolean(0));
                 assertTrue(result.getBoolean(1));
                 assertTrue(result.getBoolean(2));
@@ -1126,7 +1126,7 @@ public class QueryTest extends BaseTest {
         q = Query.select(SR_ALL).from(ds);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(1, result.count());
                 ReadOnlyDictionary a1 = result.getDictionary(0);
                 ReadOnlyDictionary a2 = result.getDictionary(db.getName());
@@ -1142,7 +1142,7 @@ public class QueryTest extends BaseTest {
         q = Query.select(SR_ALL, SR_NUMBER1).from(ds);
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(2, result.count());
                 ReadOnlyDictionary a1 = result.getDictionary(0);
                 ReadOnlyDictionary a2 = result.getDictionary(db.getName());
@@ -1160,7 +1160,7 @@ public class QueryTest extends BaseTest {
         q = Query.select(srTestDBAll).from(ds.as("testdb"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(1, result.count());
                 ReadOnlyDictionary a1 = result.getDictionary(0);
                 ReadOnlyDictionary a2 = result.getDictionary("testdb");
@@ -1176,7 +1176,7 @@ public class QueryTest extends BaseTest {
         q = Query.select(srTestDBAll, srTestDBNum1).from(ds.as("testdb"));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(2, result.count());
                 ReadOnlyDictionary a1 = result.getDictionary(0);
                 ReadOnlyDictionary a2 = result.getDictionary("testdb");
@@ -1284,7 +1284,7 @@ public class QueryTest extends BaseTest {
         final String[] expected = {"A", "Å", "B", "Z"};
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(expected[n - 1], result.getString(0));
             }
         }, true);
@@ -1306,7 +1306,7 @@ public class QueryTest extends BaseTest {
             final String[] expected2 = {"A", "Å", "B", "Z"};
             numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, Result result) throws Exception {
+                public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                     assertEquals(expected2[n - 1], result.getString(0));
                 }
             }, true);
@@ -1329,7 +1329,7 @@ public class QueryTest extends BaseTest {
             final String[] expected2 = {"A", "B", "Z", "Å"};
             numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, Result result) throws Exception {
+                public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                     assertEquals(expected2[n - 1], result.getString(0));
                 }
             }, true);
@@ -1424,7 +1424,7 @@ public class QueryTest extends BaseTest {
             Query q = Query.select().from(DataSource.database(db)).where(comparison);
             int numRows = verifyQuery(q, new QueryResult() {
                 @Override
-                public void check(int n, Result result) throws Exception {
+                public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                     assertEquals(1, n);
                     assertNotNull(result);
                 }
@@ -1450,7 +1450,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void changed(LiveQueryChange change) {
                 assertNotNull(change);
-                ResultSet rs = change.getRows();
+                QueryResultSet rs = change.getRows();
                 assertNotNull(rs);
                 if (latch.getCount() == 2) {
                     int count = 0;
@@ -1458,7 +1458,7 @@ public class QueryTest extends BaseTest {
                         count++;
                     assertEquals(9, count);
                 } else if (latch.getCount() == 1) {
-                    Result result;
+                    com.couchbase.lite.QueryResult result;
                     int count = 0;
                     while ((result = rs.next()) != null) {
                         if (count == 0) {
@@ -1522,7 +1522,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void changed(LiveQueryChange change) {
                 if (consumeAll) {
-                    ResultSet rs = change.getRows();
+                    QueryResultSet rs = change.getRows();
                     while (rs.next() != null) ;
                 }
                 latch.countDown();
@@ -1567,7 +1567,7 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(100L, (long) result.getObject(0));
             }
         }, true);
@@ -1625,8 +1625,8 @@ public class QueryTest extends BaseTest {
         SelectResult srMainAll = SelectResult.all().from("main");
         SelectResult srSecondaryAll = SelectResult.all().from("secondary");
         Query q = Query.select(srMainAll, srSecondaryAll).from(mainDS).join(join).where(typeExpr.equalTo("bookmark"));
-        ResultSet rs = q.run();
-        for (Result r : rs)
+        QueryResultSet rs = q.run();
+        for (com.couchbase.lite.QueryResult r : rs)
             Log.e(TAG, "RESULT: " + r.toMap());
     }
 
@@ -1641,8 +1641,8 @@ public class QueryTest extends BaseTest {
 
         // STEP 2: query documents before deletion
         Query q = Query.select(SR_DOCID, SR_ALL).from(DataSource.database(this.db)).where(Expression.property("type").equalTo("task"));
-        ResultSet rs = q.run();
-        Result r;
+        QueryResultSet rs = q.run();
+        com.couchbase.lite.QueryResult r;
 
         // Test: ResultSet.next()
         int counter = 0;
@@ -1654,7 +1654,7 @@ public class QueryTest extends BaseTest {
 
         // Test: Iterator
         counter = 0;
-        for (Result result : rs) {
+        for (com.couchbase.lite.QueryResult result : rs) {
             Log.i(TAG, "Round 1: [Iterator] Result -> " + result.toMap());
             counter++;
         }
@@ -1680,7 +1680,7 @@ public class QueryTest extends BaseTest {
 
         // Test: Iterator
         counter = 0;
-        for (Result result : rs) {
+        for (com.couchbase.lite.QueryResult result : rs) {
             assertEquals(task2.getId(), result.getString(0));
             Log.i(TAG, "Round 2: [Iterator] Result -> " + result.toMap());
             counter++;
@@ -1715,7 +1715,7 @@ public class QueryTest extends BaseTest {
                 .where(exprType.equalTo("task").and(exprComplete.equalTo(true)));
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 Log.i(TAG, "res -> " + result.toMap());
                 ReadOnlyDictionary dict = result.getDictionary(db.getName());
                 assertTrue(dict.getBoolean("complete"));
@@ -1731,7 +1731,7 @@ public class QueryTest extends BaseTest {
                 .where(exprType.equalTo("task").and(exprComplete.equalTo(false)));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 Log.i(TAG, "res -> " + result.toMap());
                 ReadOnlyDictionary dict = result.getDictionary(db.getName());
                 assertFalse(dict.getBoolean("complete"));
@@ -1747,7 +1747,7 @@ public class QueryTest extends BaseTest {
                 .where(exprType.equalTo("task").and(exprComplete.equalTo(true)));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 Log.i(TAG, "res -> " + result.toMap());
                 assertEquals(2, result.getInt(0));
             }
@@ -1760,7 +1760,7 @@ public class QueryTest extends BaseTest {
                 .where(exprType.equalTo("task").and(exprComplete.equalTo(false)));
         numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 Log.i(TAG, "res -> " + result.toMap());
                 assertEquals(1, result.getInt(0));
             }
@@ -1794,7 +1794,7 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 ReadOnlyDictionary mainAll1 = result.getDictionary(0);
                 ReadOnlyDictionary mainAll2 = result.getDictionary("main");
                 ReadOnlyDictionary secondAll1 = result.getDictionary(1);
@@ -1841,7 +1841,7 @@ public class QueryTest extends BaseTest {
         assertNotNull(q);
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
-            public void check(int n, Result result) throws Exception {
+            public void check(int n, com.couchbase.lite.QueryResult result) throws Exception {
                 assertEquals(1, n);
                 String docID = result.getString("mainDocID");
                 Document doc = db.getDocument(docID);

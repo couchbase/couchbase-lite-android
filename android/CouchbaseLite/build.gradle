@@ -7,10 +7,11 @@ apply plugin: 'maven-publish'
 // NOTE: moved from project build.gradle to make CBL compilable as sub-module of application
 buildscript {
     repositories {
+        google()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
     }
 }
@@ -43,7 +44,6 @@ def getGitHash = { ->
  */
 android {
     compileSdkVersion 26
-    buildToolsVersion '26.0.1'
 
     defaultConfig {
         minSdkVersion 16

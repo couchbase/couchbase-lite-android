@@ -2,11 +2,13 @@ package com.couchbase.lite;
 
 
 import com.couchbase.lite.internal.support.DateUtils;
-import com.couchbase.litecore.SharedKeys;
-import com.couchbase.litecore.fleece.FLDict;
-import com.couchbase.litecore.fleece.FLDictIterator;
+import com.couchbase.litecore.fleece.Encoder;
+import com.couchbase.litecore.fleece.FLEncodable;
 import com.couchbase.litecore.fleece.FLEncoder;
-import com.couchbase.litecore.fleece.FLValue;
+import com.couchbase.litecore.fleece.MCollection;
+import com.couchbase.litecore.fleece.MDict;
+import com.couchbase.litecore.fleece.MDictIterator;
+import com.couchbase.litecore.fleece.MValue;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,21 +20,25 @@ import java.util.Map;
 /**
  * ReadOnlyDictionary provides readonly access to dictionary data.
  */
-public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEncodable, Iterable<String> {
+public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FLEncodable, Iterable<String> {
 
     //-------------------------------------------------------------------------
     // member variables
     //-------------------------------------------------------------------------
-    private CBLFLDict data;
-    private FLDict flDict;
-    private List<String> keys = null; // dictionary key cache
+
+    MDict _dict = new MDict(); // pointer to MDict<JNIRef> in native
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
-    ReadOnlyDictionary(CBLFLDict data) {
-        setData(data);
+    ReadOnlyDictionary() {
+        super();
+    }
+
+    ReadOnlyDictionary(MValue mv, MCollection parent) {
+        super();
+        _dict.initInSlot(mv, parent);
     }
 
     //-------------------------------------------------------------------------
@@ -50,12 +56,29 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public int count() {
-        return flDict != null ? (int) flDict.count() : 0;
+        return (int)_dict.count();
     }
 
     @Override
     public List<String> getKeys() {
-        return new ArrayList(fleeceKeys());
+        List<String> keys = new ArrayList<>(count());
+        MDictIterator itr = new MDictIterator(_dict);
+        String key;
+        while ((key = itr.key()) != null) {
+            keys.add(key);
+            if (!itr.next())
+                break;
+        }
+        return keys;
+    }
+
+    /**
+     * @param dict
+     * @param key
+     * @return pointer to MValue
+     */
+    static MValue _get(MDict dict, String key) {
+        return dict.get(key);
     }
 
     /**
@@ -68,7 +91,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public Object getObject(String key) {
-        return fleeceValueToObject(key);
+        return _get(_dict, key).asNative(_dict);
     }
 
     /**
@@ -79,7 +102,8 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public String getString(String key) {
-        return (String) fleeceValueToObject(key);
+        Object obj = _get(_dict, key).asNative(_dict);
+        return obj instanceof String ? (String) obj : null;
     }
 
     /**
@@ -90,7 +114,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public Number getNumber(String key) {
-        return (Number) fleeceValueToObject(key);
+        return CBLConverter.getNumber(_get(_dict, key).asNative(_dict));
     }
 
     /**
@@ -103,8 +127,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public int getInt(String key) {
-        FLValue value = fleeceValue(key);
-        return value != null ? (int) value.asInt() : 0;
+        return CBLConverter.asInteger(_get(_dict, key), _dict);
     }
 
     /**
@@ -117,9 +140,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public long getLong(String key) {
-        // TODO asLong()?
-        FLValue value = fleeceValue(key);
-        return value != null ? value.asInt() : 0;
+        return CBLConverter.asLong(_get(_dict, key), _dict);
     }
 
     /**
@@ -132,8 +153,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public float getFloat(String key) {
-        FLValue value = fleeceValue(key);
-        return value != null ? value.asFloat() : 0.0f;
+        return CBLConverter.asFloat(_get(_dict, key), _dict);
     }
 
     /**
@@ -146,8 +166,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public double getDouble(String key) {
-        FLValue value = fleeceValue(key);
-        return value != null ? value.asDouble() : 0.0;
+        return CBLConverter.asDouble(_get(_dict, key), _dict);
     }
 
     /**
@@ -159,8 +178,7 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public boolean getBoolean(String key) {
-        FLValue value = fleeceValue(key);
-        return value != null ? value.asBool() : false;
+        return CBLConverter.asBool(_get(_dict, key), _dict);
     }
 
     /**
@@ -172,7 +190,8 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public Blob getBlob(String key) {
-        return (Blob) fleeceValueToObject(key);
+        Object obj = _get(_dict, key).asNative(_dict);
+        return obj instanceof Blob ? (Blob) obj : null;
     }
 
     /**
@@ -200,7 +219,8 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public ReadOnlyArray getArray(String key) {
-        return (ReadOnlyArray) fleeceValueToObject(key);
+        Object obj = _get(_dict, key).asNative(_dict);
+        return obj instanceof ReadOnlyArray ? (ReadOnlyArray) obj : null;
     }
 
     /**
@@ -212,7 +232,8 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public ReadOnlyDictionary getDictionary(String key) {
-        return (ReadOnlyDictionary) fleeceValueToObject(key);
+        Object obj = _get(_dict, key).asNative(_dict);
+        return obj instanceof ReadOnlyDictionary ? (ReadOnlyDictionary) obj : null;
     }
 
     /**
@@ -223,10 +244,15 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public Map<String, Object> toMap() {
-        if (flDict != null) {
-            return flDict.toObject(data.getDatabase().getSharedKeys());
-        } else
-            return new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
+        MDictIterator itr = new MDictIterator(_dict);
+        String key;
+        while ((key = itr.key()) != null) {
+            result.put(key,  CBLFleece.toObject(_get(_dict, key).asNative(_dict)));
+            if (!itr.next())
+                break;
+        }
+        return result;
     }
 
     /**
@@ -238,35 +264,27 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
      */
     @Override
     public boolean contains(String key) {
-        // TODO: Need to review!
-        return fleeceValue(key) != null;
+        return !_get(_dict, key).isEmpty();
+    }
+
+    //-------------------------------------------------------------------------
+    // Implementation of FLEncodable
+    //-------------------------------------------------------------------------
+
+    @Override
+    public void encodeTo(FLEncoder enc) {
+        Encoder encoder = new Encoder(enc);
+        _dict.encodeTo(encoder);
+        encoder.release();
     }
 
     //---------------------------------------------
     // protected level access
     //---------------------------------------------
 
-    protected CBLFLDict getData() {
-        return data;
-    }
-
-    protected void setData(CBLFLDict data) {
-        this.data = data;
-        this.flDict = null;
-        if (data != null) {
-            this.flDict = data.getFlDict();
-        }
-    }
-
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
-    // FleeceEncodable implementation
     @Override
-    public void fleeceEncode(FLEncoder encoder, Database database) {
-        SharedKeys.writeValue(encoder, new FLValue(flDict.getHandle()), database.getSharedKeys());
+    protected void finalize() throws Throwable {
+        super.finalize();
     }
 
     //---------------------------------------------
@@ -282,44 +300,5 @@ public class ReadOnlyDictionary implements ReadOnlyDictionaryInterface, FleeceEn
     //---------------------------------------------
     boolean isEmpty() {
         return count() == 0;
-    }
-    //---------------------------------------------
-    // Private (in class only)
-    //---------------------------------------------
-
-    // #pragma mark - FLEECE
-
-    private FLValue fleeceValue(String key) {
-        if (data == null) return null;
-        return SharedKeys.getValue(flDict, key, data.getDatabase().getSharedKeys());
-    }
-
-    private Object fleeceValueToObject(String key) {
-        FLValue value = fleeceValue(key);
-        if (value != null)
-            return CBLData.fleeceValueToObject(value, data.getFlDataSource(), data.getDatabase());
-        else
-            return null;
-    }
-
-    private List<String> fleeceKeys() {
-        if (keys == null) {
-            List<String> results = new ArrayList<>();
-            if (flDict != null) {
-                FLDictIterator itr = new FLDictIterator();
-                try {
-                    itr.begin(flDict);
-                    String key;
-                    while ((key = SharedKeys.getKey(itr, data.getDatabase().getSharedKeys())) != null) {
-                        results.add(key);
-                        itr.next();
-                    }
-                } finally {
-                    itr.free();
-                }
-            }
-            keys = results;
-        }
-        return keys;
     }
 }

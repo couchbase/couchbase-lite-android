@@ -111,8 +111,8 @@ public class ConcurrentDatabaseTest extends BaseTest {
         DataSource ds = DataSource.database(db);
         Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(tag));
         Log.e(TAG, "query - > %s", q.explain());
-        ResultSet rs = q.run();
-        Result result;
+        QueryResultSet rs = q.run();
+        QueryResult result;
         int n = 0;
         while ((result = rs.next()) != null)
             block.verify(++n, result);
@@ -120,9 +120,9 @@ public class ConcurrentDatabaseTest extends BaseTest {
 
     void verifyByTagName(String tag, int nRows) throws CouchbaseLiteException {
         final AtomicInteger count = new AtomicInteger(0);
-        verifyByTagName(tag, new VerifyBlock<Result>() {
+        verifyByTagName(tag, new VerifyBlock<QueryResult>() {
             @Override
-            public void verify(int n, Result result) {
+            public void verify(int n, QueryResult result) {
                 count.incrementAndGet();
             }
         });
@@ -257,9 +257,9 @@ public class ConcurrentDatabaseTest extends BaseTest {
 
         final AtomicInteger count = new AtomicInteger(0);
         for (int i = 0; i < kNThreads; i++) {
-            verifyByTagName("tag-" + i, new VerifyBlock<Result>() {
+            verifyByTagName("tag-" + i, new VerifyBlock<QueryResult>() {
                 @Override
-                public void verify(int n, Result result) {
+                public void verify(int n, QueryResult result) {
                     count.incrementAndGet();
                 }
             });

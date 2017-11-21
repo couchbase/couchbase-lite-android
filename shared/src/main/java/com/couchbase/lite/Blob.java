@@ -19,7 +19,7 @@ import com.couchbase.litecore.C4BlobKey;
 import com.couchbase.litecore.C4BlobStore;
 import com.couchbase.litecore.C4BlobWriteStream;
 import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.SharedKeys;
+import com.couchbase.litecore.fleece.FLEncodable;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLSliceResult;
 
@@ -41,7 +41,7 @@ import java.util.Map;
  * JSON form only contains the Blob's metadata (type, length and digest of the data) in small
  * object. The data itself is stored externally to the document, keyed by the digest.)
  */
-public final class Blob implements FleeceEncodable {
+public final class Blob implements FLEncodable {
     //---------------------------------------------
     // static constant variables
     //---------------------------------------------
@@ -367,15 +367,21 @@ public final class Blob implements FleeceEncodable {
         }
     }
 
-    // FleeceEncodable implementation
+    //FLEncodable
     @Override
-    public void fleeceEncode(FLEncoder encoder, Database database) {
-        installInDatabase(database);
+    public void encodeTo(FLEncoder encoder) {
+        // TODO: error handling??
+        Object obj = encoder.getExtraInfo();
+        if (obj != null) {
+            Document doc = (Document) obj;
+            Database db = doc.getDatabase();
+            installInDatabase(db);
+        }
 
         Map<String, Object> dict = jsonRepresentation();
         encoder.beginDict(dict.size());
         for (Map.Entry<String, Object> entry : dict.entrySet()) {
-            SharedKeys.writeKey(encoder, entry.getKey(), database.getSharedKeys());
+            encoder.writeKey(entry.getKey());
             encoder.writeValue(entry.getValue());
         }
         encoder.endDict();
