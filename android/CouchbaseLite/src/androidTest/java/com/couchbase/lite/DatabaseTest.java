@@ -1487,12 +1487,12 @@ public class DatabaseTest extends BaseTest {
             @Override
             public void run() {
                 // just create 100 documents
-                for (int i = 0; i < 1000; i++) {
+                for (int i = 0; i < 100; i++) {
                     Document doc = new Document();
 
                     // each doc has 10 items
                     doc.setInt("index", i);
-                    for (int j = 0; j < 9; j++)
+                    for (int j = 0; j < 10; j++)
                         doc.setInt("item_" + j, j);
 
                     try {
