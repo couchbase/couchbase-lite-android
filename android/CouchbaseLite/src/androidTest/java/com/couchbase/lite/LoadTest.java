@@ -113,6 +113,9 @@ public class LoadTest extends BaseTest {
 
     @Test
     public void testCreate() throws InterruptedException, CouchbaseLiteException {
+        if (!config.loadTestsEnabled())
+            return;
+
         final int n = 2000;
         final String tag = "Create";
         createDocumentNSave(tag, n);
@@ -122,6 +125,9 @@ public class LoadTest extends BaseTest {
 
     @Test
     public void testUpdate() throws CouchbaseLiteException {
+        if (!config.loadTestsEnabled())
+            return;
+
         final int n = 2000;
         final String docID = "doc1";
         String tag = "Create";
@@ -147,6 +153,9 @@ public class LoadTest extends BaseTest {
 
     @Test
     public void testRead() throws CouchbaseLiteException {
+        if (!config.loadTestsEnabled())
+            return;
+
         final int n = 2000;
         final String docID = "doc1";
         final String tag = "Read";
@@ -165,6 +174,9 @@ public class LoadTest extends BaseTest {
 
     @Test
     public void testDelete() throws CouchbaseLiteException {
+        if (!config.loadTestsEnabled())
+            return;
+
         final int n = 2000;
         final String tag = "Delete";
 

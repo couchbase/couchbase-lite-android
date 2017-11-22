@@ -23,6 +23,10 @@ public class Config extends java.util.Properties {
         return Boolean.parseBoolean(getProperty("concurrentTestsEnabled"));
     }
 
+    public boolean loadTestsEnabled() {
+        return Boolean.parseBoolean(getProperty("loadTestsEnabled"));
+    }
+
     public String remoteHost() {
         return getProperty("remoteHost");
     }
