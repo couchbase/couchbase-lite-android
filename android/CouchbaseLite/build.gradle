@@ -7,7 +7,7 @@ apply plugin: 'maven-publish'
 // NOTE: moved from project build.gradle to make CBL compilable as sub-module of application
 buildscript {
     repositories {
-        google()
+        //google()
         jcenter()
     }
     dependencies {
