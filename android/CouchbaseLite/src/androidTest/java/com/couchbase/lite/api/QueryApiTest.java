@@ -418,7 +418,7 @@ public class QueryApiTest extends BaseTest {
         assertEquals(5, firstNames.size());
     }
 
-    @Test
+    // @Test
     public void testWhereMatch() throws Exception {
         loadJSONResource("sentences.json");
 
