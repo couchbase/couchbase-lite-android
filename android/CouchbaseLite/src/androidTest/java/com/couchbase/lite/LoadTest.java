@@ -13,6 +13,10 @@ import static org.junit.Assert.assertNotNull;
 public class LoadTest extends BaseTest {
     private static final String TAG = LoadTest.class.getSimpleName();
 
+    protected void logPerformanceStats(String name, long time) {
+        Log.e(TAG, "PerformanceStats: " + name + " -> " + time + " ms");
+    }
+
     Document createDocumentWithTag(String id, String tag) {
 
         Document doc;
@@ -116,17 +120,22 @@ public class LoadTest extends BaseTest {
         if (!config.loadTestsEnabled())
             return;
 
+        long start = System.currentTimeMillis();
+
         final int n = 2000;
         final String tag = "Create";
         createDocumentNSave(tag, n);
         verifyByTagName(tag, n);
         assertEquals(n, db.getCount());
+
+        logPerformanceStats("testCreate()",(System.currentTimeMillis() - start));
     }
 
     @Test
     public void testUpdate() throws CouchbaseLiteException {
         if (!config.loadTestsEnabled())
             return;
+        long start = System.currentTimeMillis();
 
         final int n = 2000;
         final String docID = "doc1";
@@ -149,12 +158,16 @@ public class LoadTest extends BaseTest {
         assertEquals(docID, doc.getId());
         assertEquals(tag, doc.getString("tag"));
         assertEquals(n, doc.getInt("update"));
+
+        logPerformanceStats("testUpdate()",(System.currentTimeMillis() - start));
     }
 
     @Test
     public void testRead() throws CouchbaseLiteException {
         if (!config.loadTestsEnabled())
             return;
+
+        long start = System.currentTimeMillis();
 
         final int n = 2000;
         final String docID = "doc1";
@@ -170,12 +183,16 @@ public class LoadTest extends BaseTest {
             assertEquals(docID, doc.getId());
             assertEquals(tag, doc.getString("tag"));
         }
+
+        logPerformanceStats("testRead()",(System.currentTimeMillis() - start));
     }
 
     @Test
     public void testDelete() throws CouchbaseLiteException {
         if (!config.loadTestsEnabled())
             return;
+
+        long start = System.currentTimeMillis();
 
         final int n = 2000;
         final String tag = "Delete";
@@ -191,5 +208,7 @@ public class LoadTest extends BaseTest {
             doc.delete();
             assertEquals(0, db.getCount());
         }
+
+        logPerformanceStats("testDelete()",(System.currentTimeMillis() - start));
     }
 }
