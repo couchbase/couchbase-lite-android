@@ -128,7 +128,7 @@ public class LoadTest extends BaseTest {
         verifyByTagName(tag, n);
         assertEquals(n, db.getCount());
 
-        logPerformanceStats("testCreate()",(System.currentTimeMillis() - start));
+        logPerformanceStats("testCreate()", (System.currentTimeMillis() - start));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class LoadTest extends BaseTest {
         assertEquals(tag, doc.getString("tag"));
         assertEquals(n, doc.getInt("update"));
 
-        logPerformanceStats("testUpdate()",(System.currentTimeMillis() - start));
+        logPerformanceStats("testUpdate()", (System.currentTimeMillis() - start));
     }
 
     @Test
@@ -184,7 +184,7 @@ public class LoadTest extends BaseTest {
             assertEquals(tag, doc.getString("tag"));
         }
 
-        logPerformanceStats("testRead()",(System.currentTimeMillis() - start));
+        logPerformanceStats("testRead()", (System.currentTimeMillis() - start));
     }
 
     @Test
@@ -209,6 +209,35 @@ public class LoadTest extends BaseTest {
             assertEquals(0, db.getCount());
         }
 
-        logPerformanceStats("testDelete()",(System.currentTimeMillis() - start));
+        logPerformanceStats("testDelete()", (System.currentTimeMillis() - start));
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1447
+    // @Test
+    public void testGlobalReferenceExcceded() throws InterruptedException, CouchbaseLiteException {
+        if (!config.loadTestsEnabled())
+            return;
+
+        long start = System.currentTimeMillis();
+
+        final int n = 20000; // num of docs;
+        final int m = 100; // num of fields
+
+        // Without Batch
+        for (int i = 0; i < n; i++) {
+            Document doc = new Document(String.format(Locale.ENGLISH, "doc-%05d", i));
+            for (int j = 0; j < m; j++) {
+                doc.setInt(String.valueOf(j), j);
+            }
+            try {
+                db.save(doc);
+            } catch (CouchbaseLiteException e) {
+                Log.e(TAG, "Failed to save: %s", e, doc.getId());
+            }
+        }
+
+        assertEquals(n, db.getCount());
+
+        logPerformanceStats("testGlobalReferenceExcceded()", (System.currentTimeMillis() - start));
     }
 }
