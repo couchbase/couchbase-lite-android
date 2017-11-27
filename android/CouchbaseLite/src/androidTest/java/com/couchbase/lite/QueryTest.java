@@ -397,7 +397,7 @@ public class QueryTest extends BaseTest {
         assertEquals(5, firstNames.size());
     }
 
-    // TODO - https://github.com/couchbase/couchbase-lite-android/issues/1445
+    // TODO: To make this test pass, it requires API changes
     // @Test
     public void testWhereMatch() throws Exception {
         loadJSONResource("sentences.json");
