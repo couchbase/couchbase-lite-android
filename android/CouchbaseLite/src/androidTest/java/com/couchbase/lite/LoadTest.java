@@ -135,6 +135,7 @@ public class LoadTest extends BaseTest {
     public void testUpdate() throws CouchbaseLiteException {
         if (!config.loadTestsEnabled())
             return;
+
         long start = System.currentTimeMillis();
 
         final int n = 2000;
