@@ -17,42 +17,41 @@ public class LoadTest extends BaseTest {
         Log.e(TAG, "PerformanceStats: " + name + " -> " + time + " ms");
     }
 
-    Document createDocumentWithTag(String id, String tag) {
-
-        Document doc;
+    MutableDocument createDocumentWithTag(String id, String tag) {
+        MutableDocument doc;
         if (id == null)
-            doc = new Document();
+            doc = new MutableDocument();
         else
-            doc = new Document(id);
+            doc = new MutableDocument(id);
 
         // Tag
-        doc.setObject("tag", tag);
+        doc.setValue("tag", tag);
 
         // String
-        doc.setObject("firstName", "Daniel");
-        doc.setObject("lastName", "Tiger");
+        doc.setValue("firstName", "Daniel");
+        doc.setValue("lastName", "Tiger");
 
         // Dictionary:
-        Dictionary address = new Dictionary();
-        address.setObject("street", "1 Main street");
-        address.setObject("city", "Mountain View");
-        address.setObject("state", "CA");
-        doc.setObject("address", address);
+        MutableDictionary address = new MutableDictionary();
+        address.setValue("street", "1 Main street");
+        address.setValue("city", "Mountain View");
+        address.setValue("state", "CA");
+        doc.setValue("address", address);
 
         // Array:
-        Array phones = new Array();
-        phones.addObject("650-123-0001");
-        phones.addObject("650-123-0002");
-        doc.setObject("phones", phones);
+        MutableArray phones = new MutableArray();
+        phones.addValue("650-123-0001");
+        phones.addValue("650-123-0002");
+        doc.setValue("phones", phones);
 
         // Date:
-        doc.setObject("updated", new Date());
+        doc.setValue("updated", new Date());
 
         return doc;
     }
 
     void createDocumentNSave(String id, String tag) throws CouchbaseLiteException {
-        Document doc = createDocumentWithTag(id, tag);
+        MutableDocument doc = createDocumentWithTag(id, tag);
         db.save(doc);
     }
 
@@ -63,31 +62,31 @@ public class LoadTest extends BaseTest {
         }
     }
 
-    void updateDoc(Document doc, int rounds, String tag) throws CouchbaseLiteException {
+    void updateDoc(MutableDocument doc, int rounds, String tag) throws CouchbaseLiteException {
         for (int i = 1; i <= rounds; i++) {
-            doc.setObject("update", i);
+            doc.setValue("update", i);
 
-            doc.setObject("tag", tag);
+            doc.setValue("tag", tag);
 
-            Dictionary address = doc.getDictionary("address");
+            MutableDictionary address = doc.getDictionary("address");
             assertNotNull(address);
             String street = String.format(Locale.ENGLISH, "%d street.", i);
-            address.setObject("street", street);
+            address.setValue("street", street);
 
-            Array phones = doc.getArray("phones");
+            MutableArray phones = doc.getArray("phones");
             assertNotNull(phones);
             assertEquals(2, phones.count());
             String phone = String.format(Locale.ENGLISH, "650-000-%04d", i);
-            phones.setObject(0, phone);
+            phones.setValue(0, phone);
 
-            doc.setObject("updated", new Date());
+            doc.setValue("updated", new Date());
 
             db.save(doc);
         }
     }
 
     interface VerifyBlock {
-        void verify(int n, QueryResult result);
+        void verify(int n, Result result);
     }
 
     void verifyByTagName(String tag, VerifyBlock block) throws CouchbaseLiteException {
@@ -96,8 +95,8 @@ public class LoadTest extends BaseTest {
         DataSource ds = DataSource.database(db);
         Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(tag));
         Log.v(TAG, "query - > %s", q.explain());
-        QueryResultSet rs = q.run();
-        QueryResult row;
+        ResultSet rs = q.run();
+        Result row;
         int n = 0;
         while ((row = rs.next()) != null) {
             block.verify(++n, row);
@@ -108,7 +107,7 @@ public class LoadTest extends BaseTest {
         final AtomicInteger count = new AtomicInteger(0);
         verifyByTagName(tag, new VerifyBlock() {
             @Override
-            public void verify(int n, QueryResult result) {
+            public void verify(int n, Result result) {
                 count.incrementAndGet();
             }
         });
@@ -150,7 +149,7 @@ public class LoadTest extends BaseTest {
 
         // update doc n times
         tag = "Update";
-        updateDoc(doc, n, tag);
+        updateDoc(doc.toMutable(), n, tag);
 
         // check document
         doc = db.getDocument(docID);
@@ -205,7 +204,7 @@ public class LoadTest extends BaseTest {
             Document doc = db.getDocument(docID);
             assertNotNull(doc);
             assertEquals(tag, doc.getString("tag"));
-            doc.delete();
+            db.delete(doc);
             assertEquals(0, db.getCount());
         }
 
@@ -225,7 +224,7 @@ public class LoadTest extends BaseTest {
 
         // Without Batch
         for (int i = 0; i < n; i++) {
-            Document doc = new Document(String.format(Locale.ENGLISH, "doc-%05d", i));
+            MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%05d", i));
             for (int j = 0; j < m; j++) {
                 doc.setInt(String.valueOf(j), j);
             }

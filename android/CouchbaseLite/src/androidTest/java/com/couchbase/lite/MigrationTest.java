@@ -42,11 +42,11 @@ public class MigrationTest extends BaseTest {
         Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
         try {
             for (int i = 1; i <= 2; i++) {
-                Document doc = new Document("doc" + i);
-                doc.setObject("key", String.valueOf(i));
+                MutableDocument doc = new MutableDocument("doc" + i);
+                doc.setValue("key", String.valueOf(i));
                 byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes();
                 Blob blob = new Blob("text/plain", attach);
-                doc.setObject("attach" + i, blob);
+                doc.setValue("attach" + i, blob);
                 db.save(doc);
             }
         } finally {

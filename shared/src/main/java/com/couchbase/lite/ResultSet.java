@@ -25,7 +25,7 @@ import java.util.Map;
  * A result set representing the _query result. The result set is an iterator of
  * the {@code Result} objects.
  */
-public class QueryResultSet implements Iterable<QueryResult> {
+public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
@@ -37,17 +37,17 @@ public class QueryResultSet implements Iterable<QueryResult> {
     private Query _query;
     private C4QueryEnumerator _c4enum;
     private Map<String, Integer> _columnNames;
-    private QueryResultContext _context;
+    private ResultContext _context;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
-    QueryResultSet(Query query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
+    ResultSet(Query query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
         _query = query;
         _c4enum = c4enum;
         _columnNames = columnNames;
-        _context = new QueryResultContext(query.getDatabase(), c4enum);
+        _context = new ResultContext(query.getDatabase(), c4enum);
     }
 
     //---------------------------------------------
@@ -60,7 +60,7 @@ public class QueryResultSet implements Iterable<QueryResult> {
      * @return the Result after moving the cursor forward. Returns {@code null} value
      * if there are no more rows.
      */
-    public QueryResult next() {
+    public Result next() {
         try {
             if (_c4enum.next()) {
                 return currentObject();
@@ -72,15 +72,15 @@ public class QueryResultSet implements Iterable<QueryResult> {
         }
     }
 
-    private QueryResult currentObject(){
-        return new QueryResult(this, _c4enum, _context);
+    private Result currentObject() {
+        return new Result(this, _c4enum, _context);
     }
 
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
 
-    private class ResultSetIterator implements Iterator<QueryResult> {
+    private class ResultSetIterator implements Iterator<Result> {
         private int index;
         private int count;
 
@@ -95,13 +95,13 @@ public class QueryResultSet implements Iterable<QueryResult> {
         }
 
         @Override
-        public QueryResult next() {
+        public Result next() {
             return get(index++);
         }
     }
 
     @Override
-    public Iterator<QueryResult> iterator() {
+    public Iterator<Result> iterator() {
         return new ResultSetIterator();
     }
 
@@ -127,11 +127,11 @@ public class QueryResultSet implements Iterable<QueryResult> {
         }
     }
 
-    QueryResultSet refresh() throws CouchbaseLiteException {
+    ResultSet refresh() throws CouchbaseLiteException {
         if (_query == null) return null;
         try {
             C4QueryEnumerator newEnum = _c4enum.refresh();
-            return newEnum != null ? new QueryResultSet(_query, newEnum, _columnNames) : null;
+            return newEnum != null ? new ResultSet(_query, newEnum, _columnNames) : null;
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
@@ -145,7 +145,7 @@ public class QueryResultSet implements Iterable<QueryResult> {
         }
     }
 
-    QueryResult get(int index) {
+    Result get(int index) {
         try {
             if (_c4enum.seek(index)) {
                 return currentObject();

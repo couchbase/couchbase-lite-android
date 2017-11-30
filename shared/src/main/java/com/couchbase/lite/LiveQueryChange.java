@@ -5,14 +5,14 @@ public class LiveQueryChange {
     // member variables
     //---------------------------------------------
     private LiveQuery query;
-    private QueryResultSet rows;
+    private ResultSet rows;
     private Throwable error; // TODO: CouchbaseLiteException????
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
-    LiveQueryChange(LiveQuery query, QueryResultSet rows, Throwable error) {
+    LiveQueryChange(LiveQuery query, ResultSet rows, Throwable error) {
         this.query = query;
         this.rows = rows;
         this.error = error;
@@ -26,7 +26,7 @@ public class LiveQueryChange {
         return query;
     }
 
-    public QueryResultSet getRows() {
+    public ResultSet getRows() {
         return rows;
     }
 

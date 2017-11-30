@@ -32,6 +32,7 @@ import com.couchbase.litecore.C4DocumentObserverListener;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.NativeLibraryLoader;
 import com.couchbase.litecore.SharedKeys;
+import com.couchbase.litecore.fleece.FLSliceResult;
 
 import org.json.JSONException;
 
@@ -49,8 +50,8 @@ import java.util.Set;
 import static com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm.kC4EncryptionAES256;
 import static com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm.kC4EncryptionNone;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevHasAttachments;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotFound;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotOpen;
 import static java.util.Collections.synchronizedSet;
 
@@ -215,13 +216,18 @@ public final class Database implements C4Constants {
             throw new IllegalArgumentException("a documentID parameter is null");
 
         synchronized (lock) {
-            return getDocument(documentID, true);
+            try {
+                return getDocument(documentID, true);
+            } catch (CouchbaseLiteException ex) {
+                // only 404 - Not Found error throws CouchbaseLiteException
+                return null;
+            }
         }
     }
 
     // CHECK DOCUMENT EXISTS
     public boolean contains(String documentID) {
-        return getDocument(documentID, true) != null;
+        return getDocument(documentID) != null;
     }
 
     // SUBSCRIPTION
@@ -236,13 +242,13 @@ public final class Database implements C4Constants {
      *
      * @param document
      */
-    public void save(Document document) throws CouchbaseLiteException {
+    public Document save(MutableDocument document) throws CouchbaseLiteException {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
 
         synchronized (lock) {
             prepareDocument(document);
-            document.save();
+            return save(document, false);
         }
     }
 
@@ -262,7 +268,7 @@ public final class Database implements C4Constants {
 
         synchronized (lock) {
             prepareDocument(document);
-            document.delete();
+            save(document, true);
         }
     }
 
@@ -278,7 +284,23 @@ public final class Database implements C4Constants {
 
         synchronized (lock) {
             prepareDocument(document);
-            document.purge();
+
+            if (!document.exists())
+                throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+
+            boolean commit = false;
+            beginTransaction();
+            try {
+                // revID: null, all revisions are purged.
+                if (document.getC4doc().purgeRevision(null) >= 0) {
+                    document.getC4doc().save(0);
+                    commit = true;
+                }
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            } finally {
+                endTransaction(commit);
+            }
         }
     }
 
@@ -723,36 +745,36 @@ public final class Database implements C4Constants {
             boolean commit = false;
             beginTransaction();
             try {
-                ReadOnlyDocument doc = new ReadOnlyDocument(this, docID, true);
+                Document doc = new Document(this, docID, true, true);
                 if (doc == null)
                     return false;
 
                 // Read the conflicting remote revision:
-                ReadOnlyDocument otherDoc = new ReadOnlyDocument(this, docID, true);
+                Document otherDoc = new Document(this, docID, true, true);
                 if (otherDoc == null || !otherDoc.selectConflictingRevision())
                     return false;
 
                 // Read the common ancestor revision (if it's available):
-                ReadOnlyDocument baseDoc = new ReadOnlyDocument(this, docID, true);
+                Document baseDoc = new Document(this, docID, true, true);
                 if (!baseDoc.selectCommonAncestor(doc, otherDoc) || baseDoc.getData() == null)
                     baseDoc = null;
 
                 // Call the conflict resolver:
-                ReadOnlyDocument resolved;
+                Document resolved;
                 if (otherDoc.isDeleted()) {
                     resolved = doc;
                 } else if (doc.isDeleted()) {
                     resolved = otherDoc;
                 } else {
                     if (resolver == null)
-                        resolver = doc.effectiveConflictResolver();
+                        resolver = effectiveConflictResolver();
                     Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
                     Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)",
                             docID,
                             resolver != null ? resolver.getClass().getSimpleName() : "null",
-                            doc != null ? doc.getSelectedRevID() : "null",
-                            otherDoc != null ? otherDoc.getSelectedRevID() : "null",
-                            baseDoc != null ? baseDoc.getSelectedRevID() : "null");
+                            doc != null ? doc.getRevID() : "null",
+                            otherDoc != null ? otherDoc.getRevID() : "null",
+                            baseDoc != null ? baseDoc.getRevID() : "null");
                     resolved = resolver.resolve(conflict);
                     if (resolved == null)
                         throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
@@ -763,11 +785,11 @@ public final class Database implements C4Constants {
                 String losingRevID;
                 byte[] mergedBody = null;
                 if (resolved == otherDoc) {
-                    winningRevID = otherDoc.getSelectedRevID();
-                    losingRevID = doc.getSelectedRevID();
+                    winningRevID = otherDoc.getRevID();
+                    losingRevID = doc.getRevID();
                 } else {
-                    winningRevID = doc.getSelectedRevID();
-                    losingRevID = otherDoc.getSelectedRevID();
+                    winningRevID = doc.getRevID();
+                    losingRevID = otherDoc.getRevID();
                     if (resolved != doc) {
                         resolved.setDatabase(this);
                         try {
@@ -867,17 +889,9 @@ public final class Database implements C4Constants {
 
     //////// DOCUMENTS:
 
-    private Document getDocument(String documentID, boolean mustExist) {
+    private Document getDocument(String documentID, boolean mustExist) throws CouchbaseLiteException {
         mustBeOpen();
-
-        try {
-            return new Document(this, documentID, mustExist);
-        } catch (CouchbaseLiteRuntimeException e) {
-            if (e.getDomain() == LiteCoreDomain && e.getCode() == kC4ErrorNotFound)
-                return null;
-            else
-                throw e;
-        }
+        return new Document(this, documentID, mustExist, false);
     }
 
 
@@ -1078,5 +1092,126 @@ public final class Database implements C4Constants {
             document.setDatabase(this);
         else if (document.getDatabase() != this)
             throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.Forbidden);
+    }
+
+    // The main save method.
+    private Document save(Document document, boolean deletion) throws CouchbaseLiteException {
+        if (deletion && !document.exists())
+            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+
+        C4Document newDoc = null;
+
+        // Begin a database transaction:
+        boolean commit = false;
+        beginTransaction();
+        try {
+            // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
+            try {
+                newDoc = save(document, null, deletion);
+            } catch (LiteCoreException e) {
+                // conflict is not an error, here
+                if (!(e.domain == LiteCoreDomain && e.code == kC4ErrorConflict))
+                    throw LiteCoreBridge.convertException(e);
+            }
+
+            if (newDoc == null) {
+                Document[] docs = merge(document);
+                if (docs == null || docs[0] == null)
+                    return null;
+                Document resolved = docs[0];
+                Document current = docs[1];
+                if (resolved == current)
+                    return resolved;
+
+                if (resolved.getDatabase() == null)// A newly created document
+                    resolved.setDatabase(this);
+
+                // Now save the merged properties:
+                try {
+                    newDoc = save(resolved, current.getC4doc(), deletion);
+                } catch (LiteCoreException e) {
+                    throw LiteCoreBridge.convertException(e);
+                }
+            }
+
+            commit = true;
+        } finally {
+            // Save succeeded; now commit the transaction: Otherwise; abort the transaction
+            try {
+                endTransaction(commit);
+            } catch (CouchbaseLiteException e) {
+                // NOTE: newDoc could be null if initial save() throws Exception.
+                if (newDoc != null)
+                    newDoc.free();
+                throw e;
+            }
+        }
+
+        return new Document(this, document.getId(), C4Document.document(newDoc));
+    }
+
+    // Lower-level save method. On conflict, returns YES but sets *outDoc to NULL.
+    private C4Document save(Document document, C4Document base, boolean deletion) throws LiteCoreException {
+        FLSliceResult body = null;
+        try {
+            int revFlags = 0;
+            if (deletion)
+                revFlags = C4RevisionFlags.kRevDeleted;
+            if (!deletion && !document.isEmpty()) {
+                // Encode properties to Fleece data:
+                body = document.encode2();
+                if (body == null)
+                    return null;
+                if (SharedKeys.dictContainsBlobs(body, getSharedKeys()))
+                    revFlags |= kRevHasAttachments;
+            }
+
+            // Save to database:
+            C4Document c4Doc = base != null ? base : document.getC4doc();
+            if (c4Doc != null)
+                return c4Doc.update(body, revFlags);
+            else
+                return getC4Database().create(document.getId(), body, revFlags);
+        } finally {
+            if (body != null)
+                body.free();
+        }
+    }
+
+    /**
+     * "Pulls" from the database, merging the latest revision into the in-memory properties, without saving.
+     *
+     * @return Document[] 0 -> resolved, 1 -> current
+     */
+    private Document[] merge(Document document) throws CouchbaseLiteException {
+        // Read the current revision from the database:
+        Document current;
+        try {
+            current = new Document(this, document.getId(), true, true);
+        } catch (CouchbaseLiteException ex) {
+            if (ex.getCode() == Status.NotFound)
+                return null;
+            throw ex;
+        }
+
+        // Resolve conflict:
+        Document base = null;
+        if (document.getC4doc() != null)
+            base = new Document(this, document.getId(), document.getC4doc());
+
+        ConflictResolver resolver = effectiveConflictResolver();
+        Conflict conflict = new Conflict(document, current, base);
+
+        Document resolved = resolver.resolve(conflict);
+        if (resolved == null)
+            throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
+
+        return new Document[]{resolved, current};
+    }
+
+    private ConflictResolver effectiveConflictResolver() {
+        return getConflictResolver() != null ?
+                getConflictResolver() :
+                new DefaultConflictResolver();
     }
 }

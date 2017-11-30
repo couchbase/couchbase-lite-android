@@ -373,7 +373,7 @@ public final class Blob implements FLEncodable {
         // TODO: error handling??
         Object obj = encoder.getExtraInfo();
         if (obj != null) {
-            Document doc = (Document) obj;
+            MutableDocument doc = (MutableDocument) obj;
             Database db = doc.getDatabase();
             installInDatabase(db);
         }

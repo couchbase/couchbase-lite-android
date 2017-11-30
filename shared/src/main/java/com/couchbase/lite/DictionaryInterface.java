@@ -1,38 +1,41 @@
 package com.couchbase.lite;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
-interface DictionaryInterface extends ReadOnlyDictionaryInterface {
-    DictionaryInterface setObject(String key, Object value);
+interface DictionaryInterface {
+    int count();
 
-    DictionaryInterface setString(String key, String value);
+    // Return a COPY of all keys
+    List<String> getKeys();
 
-    DictionaryInterface setNumber(String key, Number value);
+    // Array, Blob, Boolean, Dictionary, Number, String
+    Object getValue(String key);
 
-    DictionaryInterface setInt(String key, int value);
+    String getString(String key);
 
-    DictionaryInterface setLong(String key, long value);
+    Number getNumber(String key);
 
-    DictionaryInterface setFloat(String key, float value);
+    int getInt(String key);
 
-    DictionaryInterface setDouble(String key, double value);
+    long getLong(String key);
 
-    DictionaryInterface setBoolean(String key, boolean value);
+    float getFloat(String key);
 
-    DictionaryInterface setBlob(String key, Blob value);
+    double getDouble(String key);
 
-    DictionaryInterface setDate(String key, Date value);
+    boolean getBoolean(String key);
 
-    DictionaryInterface setArray(String key, Array value);
+    Blob getBlob(String key);
 
-    DictionaryInterface setDictionary(String key, Dictionary value);
-
-    DictionaryInterface remove(String key);
-
-    DictionaryInterface set(Map<String, Object> dictionary);
+    Date getDate(String key);
 
     ArrayInterface getArray(String key);
 
     DictionaryInterface getDictionary(String key);
+
+    Map<String, Object> toMap();
+
+    boolean contains(String key);
 }

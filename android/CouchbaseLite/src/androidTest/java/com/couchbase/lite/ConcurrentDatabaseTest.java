@@ -21,31 +21,31 @@ import static org.junit.Assert.fail;
 public class ConcurrentDatabaseTest extends BaseTest {
     private static final String TAG = ConcurrentDatabaseTest.class.getSimpleName();
 
-    Document createDocumentWithTag(String tag) {
-        Document doc = new Document();
+    MutableDocument createDocumentWithTag(String tag) {
+        MutableDocument doc = new MutableDocument();
 
         // Tag
-        doc.setObject("tag", tag);
+        doc.setValue("tag", tag);
 
         // String
-        doc.setObject("firstName", "Daniel");
-        doc.setObject("lastName", "Tiger");
+        doc.setValue("firstName", "Daniel");
+        doc.setValue("lastName", "Tiger");
 
         // Dictionary:
-        Dictionary address = new Dictionary();
-        address.setObject("street", "1 Main street");
-        address.setObject("city", "Mountain View");
-        address.setObject("state", "CA");
-        doc.setObject("address", address);
+        MutableDictionary address = new MutableDictionary();
+        address.setValue("street", "1 Main street");
+        address.setValue("city", "Mountain View");
+        address.setValue("state", "CA");
+        doc.setValue("address", address);
 
         // Array:
-        Array phones = new Array();
-        phones.addObject("650-123-0001");
-        phones.addObject("650-123-0002");
-        doc.setObject("phones", phones);
+        MutableArray phones = new MutableArray();
+        phones.addValue("650-123-0001");
+        phones.addValue("650-123-0002");
+        doc.setValue("phones", phones);
 
         // Date:
-        doc.setObject("updated", new Date());
+        doc.setValue("updated", new Date());
 
         return doc;
     }
@@ -53,7 +53,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
     List<String> createDocs(int nDocs, String tag) throws CouchbaseLiteException {
         List<String> docs = Collections.synchronizedList(new ArrayList<String>(nDocs));
         for (int i = 0; i < nDocs; i++) {
-            Document doc = createDocumentWithTag(tag);
+            MutableDocument doc = createDocumentWithTag(tag);
             db.save(doc);
             docs.add(doc.getId());
         }
@@ -63,21 +63,21 @@ public class ConcurrentDatabaseTest extends BaseTest {
     boolean updateDocs(List<String> docIds, int rounds, String tag) {
         for (int i = 1; i <= rounds; i++) {
             for (String docId : docIds) {
-                Document doc = db.getDocument(docId);
-                doc.setObject("tag", tag);
+                MutableDocument doc = db.getDocument(docId).toMutable();
+                doc.setValue("tag", tag);
 
-                Dictionary address = doc.getDictionary("address");
+                MutableDictionary address = doc.getDictionary("address");
                 assertNotNull(address);
                 String street = String.format(Locale.ENGLISH, "%d street.", i);
-                address.setObject("street", street);
+                address.setValue("street", street);
 
-                Array phones = doc.getArray("phones");
+                MutableArray phones = doc.getArray("phones");
                 assertNotNull(phones);
                 assertEquals(2, phones.count());
                 String phone = String.format(Locale.ENGLISH, "650-000-%04d", i);
-                phones.setObject(0, phone);
+                phones.setValue(0, phone);
 
-                doc.setObject("updated", new Date());
+                doc.setValue("updated", new Date());
 
                 Log.i(TAG, "[%s] rounds: %d updating %s", tag, i, doc.getId());
                 try {
@@ -111,8 +111,8 @@ public class ConcurrentDatabaseTest extends BaseTest {
         DataSource ds = DataSource.database(db);
         Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(tag));
         Log.e(TAG, "query - > %s", q.explain());
-        QueryResultSet rs = q.run();
-        QueryResult result;
+        ResultSet rs = q.run();
+        Result result;
         int n = 0;
         while ((result = rs.next()) != null)
             block.verify(++n, result);
@@ -120,9 +120,9 @@ public class ConcurrentDatabaseTest extends BaseTest {
 
     void verifyByTagName(String tag, int nRows) throws CouchbaseLiteException {
         final AtomicInteger count = new AtomicInteger(0);
-        verifyByTagName(tag, new VerifyBlock<QueryResult>() {
+        verifyByTagName(tag, new VerifyBlock<Result>() {
             @Override
-            public void verify(int n, QueryResult result) {
+            public void verify(int n, Result result) {
                 count.incrementAndGet();
             }
         });
@@ -257,9 +257,9 @@ public class ConcurrentDatabaseTest extends BaseTest {
 
         final AtomicInteger count = new AtomicInteger(0);
         for (int i = 0; i < kNThreads; i++) {
-            verifyByTagName("tag-" + i, new VerifyBlock<QueryResult>() {
+            verifyByTagName("tag-" + i, new VerifyBlock<Result>() {
                 @Override
-                public void verify(int n, QueryResult result) {
+                public void verify(int n, Result result) {
                     count.incrementAndGet();
                 }
             });
@@ -678,7 +678,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
             @Override
             public void run() {
                 try {
-                    db.save(new Document("doc1"));
+                    db.save(new MutableDocument("doc1"));
                 } catch (CouchbaseLiteException e) {
                     fail();
                 }
@@ -709,7 +709,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
             @Override
             public void run() {
                 try {
-                    db.save(new Document("doc1"));
+                    db.save(new MutableDocument("doc1"));
                 } catch (CouchbaseLiteException e) {
                     Log.e(TAG, "Error in save()", e);
                     fail();

@@ -4,14 +4,22 @@ class DefaultConflictResolver implements ConflictResolver {
     private static final String TAG = Log.DATABASE;
 
     /**
-     * Default resolution algorithm is "most active wins", i.e. higher generation number.
-     * If they are same generation, mine should win.
+     * Default resolution algorithm:
+     * 1. DELETE always wins.
+     * 2. Most active wins (Higher generation number).
+     * 3. Higher RevID wins.
      */
     @Override
-    public ReadOnlyDocument resolve(Conflict conflict) {
-        ReadOnlyDocument mine = conflict.getMine();
-        ReadOnlyDocument theirs = conflict.getTheirs();
-        if (mine.generation() >= theirs.generation())
+    public Document resolve(Conflict conflict) {
+        Document mine = conflict.getMine();
+        Document theirs = conflict.getTheirs();
+        if (theirs.isDeleted())
+            return theirs;
+        else if (mine.isDeleted())
+            return mine;
+        else if (mine.generation() >= theirs.generation())
+            return mine;
+        else if (mine.getRevID() != null && mine.getRevID().compareTo(theirs.getRevID()) > 0)
             return mine;
         else
             return theirs;

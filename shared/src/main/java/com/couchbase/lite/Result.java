@@ -32,13 +32,13 @@ import java.util.Map;
 /**
  * Result represents a row of result set returned by a Query.
  */
-public class QueryResult
-        implements ReadOnlyArrayInterface, ReadOnlyDictionaryInterface, Iterable<String> {
+public class Result
+        implements ArrayInterface, DictionaryInterface, Iterable<String> {
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private QueryResultSet rs;
+    private ResultSet rs;
     private C4QueryEnumerator c4enum;
     private FLArrayIterator columns;
     MContext _context;
@@ -47,7 +47,7 @@ public class QueryResult
     // constructors
     //---------------------------------------------
 
-    QueryResult(QueryResultSet rs, C4QueryEnumerator c4enum, MContext context) {
+    Result(ResultSet rs, C4QueryEnumerator c4enum, MContext context) {
         this.rs = rs;
         this.c4enum = c4enum;
         this.columns = c4enum.getColumns();
@@ -80,7 +80,7 @@ public class QueryResult
     //---------------------------------------------
 
     @Override
-    public Object getObject(int index) {
+    public Object getValue(int index) {
         return fleeceValueToObject(index);
     }
 
@@ -130,13 +130,13 @@ public class QueryResult
     }
 
     @Override
-    public ReadOnlyArray getArray(int index) {
-        return (ReadOnlyArray) fleeceValueToObject(index);
+    public Array getArray(int index) {
+        return (Array) fleeceValueToObject(index);
     }
 
     @Override
-    public ReadOnlyDictionary getDictionary(int index) {
-        return (ReadOnlyDictionary) fleeceValueToObject(index);
+    public Dictionary getDictionary(int index) {
+        return (Dictionary) fleeceValueToObject(index);
     }
 
     @Override
@@ -158,9 +158,9 @@ public class QueryResult
     }
 
     @Override
-    public Object getObject(String key) {
+    public Object getValue(String key) {
         int index = indexForColumnName(key);
-        return index >= 0 ? getObject(index) : null;
+        return index >= 0 ? getValue(index) : null;
     }
 
     @Override
@@ -218,13 +218,13 @@ public class QueryResult
     }
 
     @Override
-    public ReadOnlyArray getArray(String key) {
+    public Array getArray(String key) {
         int index = indexForColumnName(key);
         return index >= 0 ? getArray(index) : null;
     }
 
     @Override
-    public ReadOnlyDictionary getDictionary(String key) {
+    public Dictionary getDictionary(String key) {
         int index = indexForColumnName(key);
         return index >= 0 ? getDictionary(index) : null;
     }
@@ -257,7 +257,7 @@ public class QueryResult
     // Protected level access
     //---------------------------------------------
 
-    protected QueryResultSet getRs() {
+    protected ResultSet getRs() {
         return rs;
     }
 

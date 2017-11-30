@@ -46,7 +46,7 @@ public class DatabaseTest extends BaseTest {
 
     static class DummyResolver implements ConflictResolver {
         @Override
-        public ReadOnlyDocument resolve(Conflict conflict) {
+        public Document resolve(Conflict conflict) {
             return null;
         }
     }
@@ -81,12 +81,12 @@ public class DatabaseTest extends BaseTest {
 
     // helper method to save document
     Document generateDocument(String docID) throws CouchbaseLiteException {
-        Document doc = createDocument(docID);
-        doc.setObject("key", 1);
-        save(doc);
+        MutableDocument doc = createDocument(docID);
+        doc.setValue("key", 1);
+        Document savedDoc = save(doc);
         assertEquals(1, db.getCount());
-        assertEquals(1, doc.getSequence());
-        return doc;
+        assertEquals(1, savedDoc.getSequence());
+        return savedDoc;
     }
 
     // helper methods to verify getDoc
@@ -110,7 +110,7 @@ public class DatabaseTest extends BaseTest {
         assertNotNull(doc);
         assertEquals(docID, doc.getId());
         assertFalse(doc.isDeleted());
-        assertEquals(value, ((Number) doc.getObject("key")).intValue());
+        assertEquals(value, ((Number) doc.getValue("key")).intValue());
         doc = null;
     }
 
@@ -118,18 +118,15 @@ public class DatabaseTest extends BaseTest {
     void purgeDocAndVerify(Document doc) throws CouchbaseLiteException {
         String docID = doc.getId();
         db.purge(doc);
-        assertEquals(docID, doc.getId());         // docID should be same
-        assertEquals(0, doc.getSequence());       // sequence should be reset to 0
-        assertFalse(doc.isDeleted());             // delete flag should be reset to true
-        assertEquals(null, doc.getObject("key")); // content should be empty
+        assertNull(db.getDocument(docID));
     }
 
     // helper method to save n number of docs
-    List<Document> createDocs(int n) throws CouchbaseLiteException {
-        List<Document> docs = new ArrayList<>();
+    List<MutableDocument> createDocs(int n) throws CouchbaseLiteException {
+        List<MutableDocument> docs = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            Document doc = createDocument(String.format(Locale.US, "doc_%03d", i));
-            doc.setObject("key", i);
+            MutableDocument doc = createDocument(String.format(Locale.US, "doc_%03d", i));
+            doc.setValue("key", i);
             save(doc);
             docs.add(doc);
         }
@@ -440,20 +437,21 @@ public class DatabaseTest extends BaseTest {
     public void testSimpleSaveAndGetDoc() throws CouchbaseLiteException {
         // store doc
         String docID = "doc1";
-        Document doc = new Document(docID);
-        doc.setObject("key", 1);
-        save(doc);
+        MutableDocument mDoc = new MutableDocument(docID);
+        mDoc.setValue("key", 1);
+        Document doc = save(mDoc);
         assertEquals(1, db.getCount());
         assertEquals(1, doc.getSequence());
 
+        //doc = db.getDocument(docID);
+
         // retrieve doc
-        doc = db.getDocument(docID);
         assertNotNull(doc);
         assertEquals(docID, doc.getId());
         assertFalse(doc.isDeleted());
         assertTrue(doc.contains("key"));
-        assertNotNull(doc.getObject("key"));
-        assertEquals(1, ((Number) doc.getObject("key")).intValue());
+        assertNotNull(doc.getValue("key"));
+        assertEquals(1, ((Number) doc.getValue("key")).intValue());
     }
 
     @Test
@@ -461,8 +459,8 @@ public class DatabaseTest extends BaseTest {
         {
             final int NUM_DOCS = 10;//1000;
             for (int i = 0; i < NUM_DOCS; i++) {
-                Document doc = createDocument(String.format(Locale.US, "doc_%03d", i));
-                doc.setObject("key", i);
+                MutableDocument doc = createDocument(String.format(Locale.US, "doc_%03d", i));
+                doc.setValue("key", i);
                 save(doc);
             }
             assertEquals(NUM_DOCS, db.getCount());
@@ -475,10 +473,10 @@ public class DatabaseTest extends BaseTest {
     public void testSaveDoc() throws CouchbaseLiteException {
         // store doc
         String docID = "doc1";
-        Document doc = generateDocument(docID);
+        MutableDocument doc = generateDocument(docID).toMutable();
 
         // update doc
-        doc.setObject("key", 2);
+        doc.setValue("key", 2);
         save(doc);
 
         assertEquals(1, db.getCount());
@@ -492,7 +490,7 @@ public class DatabaseTest extends BaseTest {
     public void testSaveDocInDifferentDBInstance() throws CouchbaseLiteException {
         // Store doc
         String docID = "doc1";
-        Document doc = generateDocument(docID);
+        MutableDocument doc = generateDocument(docID).toMutable();
 
         // Create db with default
         Database otherDB = openDatabase(db.getName(), false);
@@ -501,7 +499,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(1, otherDB.getCount());
 
         // Update doc & store it into different instance
-        doc.setObject("key", 2);
+        doc.setValue("key", 2);
         CouchbaseLiteException exception = null;
         try {
             otherDB.save(doc);
@@ -519,7 +517,7 @@ public class DatabaseTest extends BaseTest {
     public void testSaveDocInDifferentDB() throws CouchbaseLiteException {
         // Store doc
         String docID = "doc1";
-        Document doc = generateDocument(docID);
+        MutableDocument doc = generateDocument(docID).toMutable();
 
         // Create db with default
         Database otherDB = openDatabase("otherDB");
@@ -528,7 +526,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(0, otherDB.getCount());
 
         // Update doc & store it into different instance
-        doc.setObject("key", 2);
+        doc.setValue("key", 2);
         CouchbaseLiteException exception = null;
         try {
             otherDB.save(doc);
@@ -545,7 +543,7 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testSaveSameDocTwice() throws CouchbaseLiteException {
         String docID = "doc1";
-        Document doc = generateDocument(docID);
+        MutableDocument doc = generateDocument(docID).toMutable();
         save(doc);
         assertEquals(docID, doc.getId());
         assertEquals(1, db.getCount());
@@ -573,8 +571,8 @@ public class DatabaseTest extends BaseTest {
     public void testSaveDocToClosedDB() throws CouchbaseLiteException {
         db.close();
 
-        Document doc = createDocument("doc1");
-        doc.setObject("key", 1);
+        MutableDocument doc = createDocument("doc1");
+        doc.setValue("key", 1);
 
         try {
             save(doc);
@@ -589,8 +587,8 @@ public class DatabaseTest extends BaseTest {
         // Delete db:
         deleteDatabase(db);
 
-        Document doc = createDocument("doc1");
-        doc.setObject("key", 1);
+        MutableDocument doc = createDocument("doc1");
+        doc.setValue("key", 1);
 
         try {
             save(doc);
@@ -605,8 +603,8 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     @Test
     public void testDeletePreSaveDoc() {
-        Document doc = createDocument("doc1");
-        doc.setObject("key", 1);
+        MutableDocument doc = createDocument("doc1");
+        doc.setValue("key", 1);
         try {
             db.delete(doc);
             fail();
@@ -620,14 +618,9 @@ public class DatabaseTest extends BaseTest {
     public void testDeleteDoc() throws CouchbaseLiteException {
         String docID = "doc1";
         Document doc = generateDocument(docID);
-
         db.delete(doc);
         assertEquals(0, db.getCount());
-
-        assertEquals(docID, doc.getId());
-        assertTrue(doc.isDeleted());
-        assertEquals(2, doc.getSequence());
-        assertTrue(doc.getObject("key") == null);
+        assertNull(db.getDocument(docID));
     }
 
     @Test
@@ -692,16 +685,14 @@ public class DatabaseTest extends BaseTest {
         // First time deletion:
         db.delete(doc);
         assertEquals(0, db.getCount());
-        assertNull(doc.getObject("key"));
-        assertEquals(2, doc.getSequence());
-        assertTrue(doc.isDeleted());
+
+        assertNull(db.getDocument(docID));
 
         // Second time deletion:
+        // NOTE: doc is pointing to old revision. this cause conflict but this generate same revision
         db.delete(doc);
-        assertEquals(0, db.getCount());
-        assertNull(doc.getObject("key"));
-        assertEquals(3, doc.getSequence());
-        assertTrue(doc.isDeleted());
+
+        assertNull(db.getDocument(docID));
     }
 
     @Test
@@ -722,8 +713,7 @@ public class DatabaseTest extends BaseTest {
                     } catch (CouchbaseLiteException e) {
                         throw new RuntimeException(e);
                     }
-                    assertNull(doc.getObject("key"));
-                    assertTrue(doc.isDeleted());
+                    assertNull(db.getDocument(docID));
                     assertEquals((9 - i), db.getCount());
                 }
             }
@@ -771,7 +761,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     @Test
     public void testPurgePreSaveDoc() {
-        Document doc = createDocument("doc1");
+        MutableDocument doc = createDocument("doc1");
         try {
             db.purge(doc);
             fail();
@@ -790,9 +780,6 @@ public class DatabaseTest extends BaseTest {
         // Purge Doc
         purgeDocAndVerify(doc);
         assertEquals(0, db.getCount());
-
-        save(doc);
-        assertEquals(2, doc.getSequence());
     }
 
     @Test
@@ -949,26 +936,28 @@ public class DatabaseTest extends BaseTest {
 
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
-        assertEquals(1, ((Number) doc.getObject("key")).intValue());
-        doc.setObject("key", 2);
-        doc.setObject("key1", "value");
+        assertEquals(1, ((Number) doc.getValue("key")).intValue());
+        MutableDocument updateDoc = doc.toMutable();
+        updateDoc.setValue("key", 2);
+        updateDoc.setValue("key1", "value");
     }
 
     @Test
     public void testCloseThenAccessBlob() throws CouchbaseLiteException {
         // Store doc with blob:
-        Document doc = generateDocument("doc1");
-        doc.setObject("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
+        MutableDocument doc = generateDocument("doc1").toMutable();
+        doc.setValue("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
         save(doc);
 
         // Close db:
         db.close();
 
         // content should be accessible & modifiable without error
-        assertTrue(doc.getObject("blob") instanceof Blob);
+        assertTrue(doc.getValue("blob") instanceof Blob);
         Blob blob = doc.getBlob("blob");
         assertEquals(8, blob.length());
-        assertNull(blob.getContent());
+        // NOTE: content is still in memory for this
+        assertNotNull(blob.getContent());
     }
 
     @Test
@@ -1040,33 +1029,37 @@ public class DatabaseTest extends BaseTest {
     public void testDeleteThenAccessDoc() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
-        Document doc = generateDocument(docID);
+        MutableDocument doc = generateDocument(docID).toMutable();
 
         // Delete db:
         deleteDatabase(db);
 
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
-        assertEquals(1, ((Number) doc.getObject("key")).intValue());
-        doc.setObject("key", 2);
-        doc.setObject("key1", "value");
+        assertEquals(1, ((Number) doc.getValue("key")).intValue());
+        doc.setValue("key", 2);
+        doc.setValue("key1", "value");
     }
 
     @Test
     public void testDeleteThenAccessBlob() throws CouchbaseLiteException {
         // Store doc with blob:
-        Document doc = generateDocument("doc1");
-        doc.setObject("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
+        String docID = "doc1";
+        MutableDocument doc = generateDocument(docID).toMutable();
+        doc.setValue("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
         save(doc);
 
         // Delete db:
         deleteDatabase(db);
 
         // content should be accessible & modifiable without error
-        assertTrue(doc.getObject("blob") instanceof Blob);
-        Blob blob = doc.getBlob("blob");
+        Object obj = doc.getValue("blob");
+        assertNotNull(obj);
+        assertTrue(obj instanceof Blob);
+        Blob blob = (Blob) obj;
         assertEquals(8, blob.length());
-        assertNull(blob.getContent());
+        // NOTE content still exists in memory for this case.
+        assertNotNull(blob.getContent());
     }
 
     @Test
@@ -1227,15 +1220,15 @@ public class DatabaseTest extends BaseTest {
     public void testCompact() throws CouchbaseLiteException {
         final int NUM_DOCS = 20;
         final int NUM_UPDATES = 25;
-        final List<Document> docs = createDocs(NUM_DOCS);
+        final List<MutableDocument> docs = createDocs(NUM_DOCS);
 
         // Update each doc 25 times:
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                for (Document doc : docs) {
+                for (MutableDocument doc : docs) {
                     for (int i = 0; i < NUM_UPDATES; i++) {
-                        doc.setObject("number", i);
+                        doc.setValue("number", i);
                         try {
                             save(doc);
                         } catch (CouchbaseLiteException e) {
@@ -1247,8 +1240,8 @@ public class DatabaseTest extends BaseTest {
         });
 
         // Add each doc with a blob object:
-        for (Document doc : docs) {
-            doc.setObject("blob", new Blob("text/plain", doc.getId().getBytes()));
+        for (MutableDocument doc : docs) {
+            doc.setValue("blob", new Blob("text/plain", doc.getId().getBytes()));
             save(doc);
         }
 
@@ -1264,7 +1257,7 @@ public class DatabaseTest extends BaseTest {
         db.compact();
 
         // Delete all docs:
-        for (Document doc : docs) {
+        for (MutableDocument doc : docs) {
             db.delete(doc);
             assertTrue(doc.isDeleted());
         }
@@ -1280,20 +1273,23 @@ public class DatabaseTest extends BaseTest {
     public void testOverwriteDocWithNewDocInstgance() throws CouchbaseLiteException {
         // REF: https://github.com/couchbase/couchbase-lite-android/issues/1231
 
-        Document doc1 = new Document("abc");
-        doc1.setObject("someKey", "someVar");
-        db.save(doc1);
+        MutableDocument mDoc1 = new MutableDocument("abc");
+        mDoc1.setValue("someKey", "someVar");
+        Document doc1 = db.save(mDoc1);
 
         // This cause conflict, DefaultConflictResolver should be applied.
-        Document doc2 = new Document("abc");
-        doc2.setObject("someKey", "newVar");
-        db.save(doc2);
+        MutableDocument mDoc2 = new MutableDocument("abc");
+        mDoc2.setValue("someKey", "newVar");
+        Document doc2 = db.save(mDoc2);
 
-        // NOTE: Both doc1 and doc2 are generation 1. So mine (doc2) should win.
+        // NOTE: Both doc1 and doc2 are generation 1. Higher revision one should win
         assertEquals(1, db.getCount());
         Document doc = db.getDocument("abc");
         assertNotNull(doc);
-        assertEquals("newVar", doc.getString("someKey"));
+        if (doc1.getRevID().compareTo(doc2.getId()) > 0)
+            assertEquals("someVar", doc.getString("someKey"));
+        else
+            assertEquals("newVar", doc.getString("someKey"));
     }
 
     @Test
@@ -1313,11 +1309,11 @@ public class DatabaseTest extends BaseTest {
 
         for (int i = 0; i < NUM_DOCS; i++) {
             String docID = String.format(Locale.US, "doc_%03d", i);
-            Document doc = createDocument(docID);
-            doc.setObject("name", docID);
+            MutableDocument doc = createDocument(docID);
+            doc.setValue("name", docID);
             byte[] data = docID.getBytes();
             Blob blob = new Blob("text/plain", data);
-            doc.setObject("data", blob);
+            doc.setValue("data", blob);
             save(doc);
         }
 
@@ -1342,8 +1338,8 @@ public class DatabaseTest extends BaseTest {
         Expression DOCID = Expression.meta().getId();
         SelectResult S_DOCID = SelectResult.expression(DOCID);
         Query query = Query.select(S_DOCID).from(DataSource.database(nudb));
-        QueryResultSet rs = query.run();
-        for (QueryResult r : rs) {
+        ResultSet rs = query.run();
+        for (Result r : rs) {
             String docID = r.getString(0);
             assertNotNull(docID);
 
@@ -1488,7 +1484,7 @@ public class DatabaseTest extends BaseTest {
             public void run() {
                 // just create 100 documents
                 for (int i = 0; i < 100; i++) {
-                    Document doc = new Document();
+                    MutableDocument doc = new MutableDocument();
 
                     // each doc has 10 items
                     doc.setInt("index", i);

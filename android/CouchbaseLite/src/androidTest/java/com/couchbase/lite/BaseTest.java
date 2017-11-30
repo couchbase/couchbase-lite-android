@@ -141,38 +141,37 @@ public class BaseTest implements C4Constants {
             JSONObject json = new JSONObject(line);
             Map<String, Object> props = JsonUtils.fromJson(json);
             String docId = String.format(Locale.ENGLISH, "doc-%03d", n);
-            Document doc = createDocument(docId);
+            MutableDocument doc = createDocument(docId);
             doc.set(props);
             save(doc);
         }
     }
 
-    protected Document createDocument() {
-        return new Document();
+    protected MutableDocument createDocument() {
+        return new MutableDocument();
     }
 
-    protected Document createDocument(String id) {
-        return new Document(id);
+    protected MutableDocument createDocument(String id) {
+        return new MutableDocument(id);
     }
 
-    protected Document createDocument(String id, Map<String, Object> map) {
-        return new Document(id, map);
+    protected MutableDocument createDocument(String id, Map<String, Object> map) {
+        return new MutableDocument(id, map);
     }
 
-    protected Document save(Document doc) throws CouchbaseLiteException {
-        db.save(doc);
-        return db.getDocument(doc.getId());
+    protected Document save(MutableDocument doc) throws CouchbaseLiteException {
+        Document newDoc = db.save(doc);
+        assertNotNull(newDoc);
+        return newDoc;
     }
 
     interface Validator<T> {
         void validate(final T doc);
     }
 
-    protected Document save(Document doc, Validator<Document> validator)
-            throws CouchbaseLiteException {
-        validator.validate(doc);
-        db.save(doc);
-        doc = db.getDocument(doc.getId());
+    protected Document save(MutableDocument mDoc, Validator<Document> validator) throws CouchbaseLiteException {
+        validator.validate(mDoc);
+        Document doc = db.save(mDoc);
         validator.validate(doc);
         return doc;
     }
