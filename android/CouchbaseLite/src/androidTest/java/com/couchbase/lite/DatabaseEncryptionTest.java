@@ -81,7 +81,7 @@ public class DatabaseEncryptionTest extends BaseTest {
 
         Map<String, Object> map = new HashMap<>();
         map.put("answer", 42);
-        Document doc = createDocument(null, map);
+        MutableDocument doc = createDocument(null, map);
         seekrit.save(doc);
         seekrit.close();
         seekrit = null;
@@ -109,7 +109,7 @@ public class DatabaseEncryptionTest extends BaseTest {
 
         Map<String, Object> map = new HashMap<>();
         map.put("answer", 42);
-        Document doc = createDocument(null, map);
+        MutableDocument doc = createDocument(null, map);
         seekrit.save(doc);
         seekrit.close();
         seekrit = null;
@@ -180,16 +180,16 @@ public class DatabaseEncryptionTest extends BaseTest {
         // Create a doc and then update it:
         Map<String, Object> map = new HashMap<>();
         map.put("answer", 42);
-        Document doc = createDocument(null, map);
+        MutableDocument doc = createDocument(null, map);
         seekrit.save(doc);
-        doc.setObject("answer", 84);
+        doc.setValue("answer", 84);
         seekrit.save(doc);
 
         // Compact:
         seekrit.compact();
 
         // Update the document again:
-        doc.setObject("answer", 85);
+        doc.setValue("answer", 85);
         seekrit.save(doc);
 
         // Close and re-open:
@@ -211,13 +211,12 @@ public class DatabaseEncryptionTest extends BaseTest {
 
         // Save a doc with a blob:
         byte[] body = "This is a blob!".getBytes();
-        Document doc = createDocument("att");
+        MutableDocument mDoc = createDocument("att");
         Blob blob = new Blob("text/plain", body);
-        doc.setBlob("blob", blob);
-        seekrit.save(doc);
+        mDoc.setBlob("blob", blob);
+        Document doc = seekrit.save(mDoc);
 
         // Read content from the raw blob file:
-        doc = seekrit.getDocument("att");
         blob = doc.getBlob("blob");
         assertNotNull(blob.digest());
         assertTrue(Arrays.equals(body, blob.getContent()));
@@ -276,7 +275,7 @@ public class DatabaseEncryptionTest extends BaseTest {
                 for (int i = 0; i < 100; i++) {
                     Map<String, Object> map = new HashMap<>();
                     map.put("seq", i);
-                    Document doc = createDocument(null, map);
+                    MutableDocument doc = createDocument(null, map);
                     try {
                         seekrit.save(doc);
                     } catch (CouchbaseLiteException e) {
@@ -313,11 +312,11 @@ public class DatabaseEncryptionTest extends BaseTest {
                 .from(DataSource.database(seekrit))
                 .where(SEQ.notNullOrMissing())
                 .orderBy(Ordering.expression(SEQ));
-        QueryResultSet rs = query.run();
+        ResultSet rs = query.run();
         assertNotNull(rs);
         assertEquals(100, rs.getCount());
         int i = 0;
-        for (QueryResult r : rs) {
+        for (Result r : rs) {
             assertEquals(i, r.getInt(0));
             i++;
         }

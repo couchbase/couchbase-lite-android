@@ -25,7 +25,7 @@ public class LiveQuery implements DatabaseChangeListener {
 
     private Set<LiveQueryChangeListener> queryChangeListener;
     private Query query;
-    private QueryResultSet resultSet;
+    private ResultSet resultSet;
     private boolean observing;
     private boolean willUpdate;
     private long lastUpdatedAt;
@@ -157,8 +157,8 @@ public class LiveQuery implements DatabaseChangeListener {
 
         try {
             Log.i(TAG, "%s: Querying...", this);
-            QueryResultSet oldResultSet = resultSet;
-            QueryResultSet newResultSet;
+            ResultSet oldResultSet = resultSet;
+            ResultSet newResultSet;
             if (oldResultSet == null)
                 newResultSet = query.run();
             else

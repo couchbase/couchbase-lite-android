@@ -19,5 +19,5 @@ package com.couchbase.lite;
  * and also when the replicator pulls a remote revision that conflicts with a locally-saved revision.
  */
 public interface ConflictResolver {
-    ReadOnlyDocument resolve(Conflict conflict);
+    Document resolve(Conflict conflict);
 }

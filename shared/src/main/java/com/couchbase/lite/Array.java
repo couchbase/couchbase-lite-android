@@ -1,282 +1,193 @@
 package com.couchbase.lite;
 
-
+import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.litecore.fleece.Encoder;
+import com.couchbase.litecore.fleece.FLEncodable;
+import com.couchbase.litecore.fleece.FLEncoder;
+import com.couchbase.litecore.fleece.MArray;
 import com.couchbase.litecore.fleece.MCollection;
 import com.couchbase.litecore.fleece.MValue;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 /**
- * Array provides access to array data.
+ * ReadOnlyArray provides readonly access to array data.
  */
-public class Array extends ReadOnlyArray implements ArrayInterface {
+public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
+
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+
+    protected MArray _array; // pointer to MArray<JNIRef> in native
+
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    /**
-     * Constructs a new empty Array object.
-     */
-    public Array() {
+    Array() {
+        _array = new MArray();
     }
 
-    /**
-     * Constructs a new Array object with an array content. Allowed value types are List, Date,
-     * Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
-     * only the above types.
-     *
-     * @param array the array object.
-     */
-    public Array(List<Object> array) {
-        this();
-        set(array);
-    }
-
-    // Call from native method
     Array(MValue mv, MCollection parent) {
-        super(mv, parent);
+        this();
+        _array.initInSlot(mv, parent);
     }
 
+    // to crete mutable copy
+    Array(MArray mArray, boolean isMutable) {
+        this();
+        _array.initAsCopyOf(mArray, isMutable);
+    }
 
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
 
     /**
-     * Set an array as a content. Allowed value types are List, Date,
-     * Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
-     * only the above types. Setting the new array content will replcace the current data
-     * including the existing Array and Dictionary objects.
+     * Gets a number of the items in the array.
      *
-     * @param array the array
-     * @return this Array instance
+     * @return
      */
     @Override
-    public Array set(List<Object> array) {
-        _array.clear();
-        for (Object obj : array)
-            _array.append(CBLFleece.toCBLObject(obj));
-        return this;
+    public int count() {
+        return (int) _array.count();
     }
 
     /**
-     * Set an object at the given index.
+     * Gets value at the given index as an object. The object types are Blob,
+     * Array, Dictionary, Number, or String based on the underlying
+     * data type; or nil if the value is nil.
      *
      * @param index the index. This value must not exceed the bounds of the array.
-     * @param value the object
-     * @return this Array instance
+     * @return the Object or null.
      */
     @Override
-    public Array setObject(int index, Object value) {
+    public Object getValue(int index) {
         rangeCheck(index);
-        if (CBLFleece.valueWouldChange(value, _array.get(index), _array))
-            _array.set(index, CBLFleece.toCBLObject(value));
-        return this;
-    }
-
-    @Override
-    public Array setString(int index, String value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setNumber(int index, Number value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setInt(int index, int value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setLong(int index, long value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setFloat(int index, float value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setDouble(int index, double value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setBoolean(int index, boolean value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setBlob(int index, Blob value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setDate(int index, Date value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setArray(int index, Array value) {
-        return setObject(index, value);
-    }
-
-    @Override
-    public Array setDictionary(int index, Dictionary value) {
-        return setObject(index, value);
+        return _get(_array, index).asNative(_array);
     }
 
     /**
-     * Adds an object to the end of the array.
-     *
-     * @param value the object
-     * @return this Array instance
-     */
-    @Override
-    public Array addObject(Object value) {
-        _array.append(CBLFleece.toCBLObject(value));
-        return this;
-    }
-
-    @Override
-    public Array addString(String value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addNumber(Number value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addInt(int value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addLong(long value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addFloat(float value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addDouble(double value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addBoolean(boolean value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addBlob(Blob value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addDate(Date value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addArray(Array value) {
-        return addObject(value);
-    }
-
-    @Override
-    public Array addDictionary(Dictionary value) {
-        return addObject(value);
-    }
-
-    /**
-     * Inserts an object at the given index.
+     * Gets value at the given index as a String. Returns null if the value doesn't exist, or its value is not a String.
      *
      * @param index the index. This value must not exceed the bounds of the array.
-     * @param value the object
-     * @return this Array instance
+     * @return the String or null.
      */
     @Override
-    public Array insertObject(int index, Object value) {
-        rangeCheck(index);
-        _array.insert(index, CBLFleece.toCBLObject(value));
-        return this;
-    }
-
-    @Override
-    public Array insertString(int index, String value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertNumber(int index, Number value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertInt(int index, int value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertLong(int index, long value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertFloat(int index, float value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertDouble(int index, double value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertBoolean(int index, boolean value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertBlob(int index, Blob value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertDate(int index, Date value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertArray(int index, Array value) {
-        return insertObject(index, value);
-    }
-
-    @Override
-    public Array insertDictionary(int index, Dictionary value) {
-        return insertObject(index, value);
+    public String getString(int index) {
+        Object obj = _get(_array, index).asNative(_array);
+        return obj instanceof String ? (String) obj : null;
     }
 
     /**
-     * Removes the object at the given index.
+     * Gets value at the given index as a Number. Returns null if the value doesn't exist, or its value is not a Number.
      *
      * @param index the index. This value must not exceed the bounds of the array.
-     * @return this Array instance
+     * @return the Number or nil.
      */
     @Override
-    public Array remove(int index) {
-        rangeCheck(index);
-        _array.remove(index);
-        return this;
+    public Number getNumber(int index) {
+        return CBLConverter.getNumber(_get(_array, index).asNative(_array));
+    }
+
+    /**
+     * Gets value at the given index as an int.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the int value.
+     */
+    @Override
+    public int getInt(int index) {
+        return CBLConverter.asInteger(_get(_array, index), _array);
+    }
+
+    /**
+     * Gets value at the given index as an long.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the long value.
+     */
+    @Override
+    public long getLong(int index) {
+        return CBLConverter.asLong(_get(_array, index), _array);
+    }
+
+    /**
+     * Gets value at the given index as an float.
+     * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the float value.
+     */
+    @Override
+    public float getFloat(int index) {
+        return CBLConverter.asFloat(_get(_array, index), _array);
+    }
+
+    /**
+     * Gets value at the given index as an double.
+     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the double value.
+     */
+    @Override
+    public double getDouble(int index) {
+        return CBLConverter.asDouble(_get(_array, index), _array);
+    }
+
+    /**
+     * Gets value at the given index as a boolean.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the boolean value.
+     */
+    @Override
+    public boolean getBoolean(int index) {
+        //return CBLConverter.asBool(_get(_array, index), _array);
+        Object value = _get(_array, index).asNative(_array);
+        if (value == null) return false;
+        else if (value instanceof Boolean) return ((Boolean) value).booleanValue();
+        else if (value instanceof Number) return ((Number) value).intValue() != 0;
+        else return true;
+    }
+
+    /**
+     * Gets value at the given index as a Blob.
+     * Returns null if the value doesn't exist, or its value is not a Blob.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the Blob value or null.
+     */
+    @Override
+    public Blob getBlob(int index) {
+        return (Blob) _get(_array, index).asNative(_array);
+    }
+
+    /**
+     * Gets value at the given index as a Date.
+     * JSON does not directly support dates, so the actual property value must be a string, which is
+     * then parsed according to the ISO-8601 date format (the default used in JSON.)
+     * Returns null if the value doesn't exist, is not a string, or is not parseable as a date.
+     * NOTE: This is not a generic date parser! It only recognizes the ISO-8601 format, with or
+     * without milliseconds.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the Date value or null.
+     */
+    @Override
+    public Date getDate(int index) {
+        return DateUtils.fromJson(getString(index));
     }
 
     /**
@@ -287,9 +198,7 @@ public class Array extends ReadOnlyArray implements ArrayInterface {
      */
     @Override
     public Array getArray(int index) {
-        rangeCheck(index);
-        Object obj = _get(_array, index).asNative(_array);
-        return obj instanceof Array ? (Array) obj : null;
+        return (Array) _get(_array, index).asNative(_array);
     }
 
     /**
@@ -300,8 +209,83 @@ public class Array extends ReadOnlyArray implements ArrayInterface {
      */
     @Override
     public Dictionary getDictionary(int index) {
-        rangeCheck(index);
-        Object obj = _get(_array, index).asNative(_array);
-        return obj instanceof Dictionary ? (Dictionary) obj : null;
+        return (Dictionary) _get(_array, index).asNative(_array);
+    }
+
+    /**
+     * Gets content of the current object as an List. The values contained in the returned
+     * List object are all JSON based values.
+     *
+     * @return the List object representing the content of the current object in the JSON format.
+     */
+    @Override
+    public List<Object> toList() {
+        int count = (int) _array.count();
+        List<Object> result = new ArrayList<>(count);
+        for (int index = 0; index < count; index++)
+            result.add(CBLFleece.toObject(_get(_array, index).asNative(_array)));
+        return result;
+    }
+
+    /**
+     * Return a mutable copy of the array
+     *
+     * @return the MutableArray instance
+     */
+    public MutableArray toMutable() {
+        return new MutableArray(_array, true);
+    }
+
+    //-------------------------------------------------------------------------
+    // Implementation of FLEncodable
+    //-------------------------------------------------------------------------
+
+    @Override
+    public void encodeTo(FLEncoder enc) {
+        Encoder encoder = new Encoder(enc);
+        _array.encodeTo(encoder);
+        encoder.release();
+    }
+    //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
+
+    private class ArrayIterator implements Iterator<Object> {
+        private int index = 0;
+        private int count = count();
+
+        @Override
+        public boolean hasNext() {
+            return index < count;
+        }
+
+        @Override
+        public Object next() {
+            return getValue(index++);
+        }
+    }
+
+    @Override
+    public Iterator<Object> iterator() {
+        return new ArrayIterator();
+    }
+
+    //---------------------------------------------
+    // protected level access
+    //---------------------------------------------
+
+    protected static MValue _get(MArray array, int index) {
+        return array.get(index);
+    }
+
+
+    protected void rangeCheck(int index) {
+        if (index > count() || index < 0)
+            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+    }
+
+
+    protected String outOfBoundsMsg(int index) {
+        return "Index: " + index + ", Size: " + count();
     }
 }

@@ -4,25 +4,25 @@ package com.couchbase.lite;
  * Provides details about a Conflict.
  */
 public class Conflict {
-    private ReadOnlyDocument mine;
-    private ReadOnlyDocument theirs;
-    private ReadOnlyDocument base;
+    private Document mine;
+    private Document theirs;
+    private Document base;
 
-    Conflict(ReadOnlyDocument mine, ReadOnlyDocument theirs, ReadOnlyDocument base) {
+    Conflict(Document mine, Document theirs, Document base) {
         this.mine = mine;
         this.theirs = theirs;
         this.base = base;
     }
 
-    public ReadOnlyDocument getMine() {
+    public Document getMine() {
         return mine;
     }
 
-    public ReadOnlyDocument getTheirs() {
+    public Document getTheirs() {
         return theirs;
     }
 
-    public ReadOnlyDocument getBase() {
+    public Document getBase() {
         return base;
     }
 }

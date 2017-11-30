@@ -1,151 +1,221 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.litecore.fleece.Encoder;
+import com.couchbase.litecore.fleece.FLEncodable;
+import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.MCollection;
+import com.couchbase.litecore.fleece.MDict;
+import com.couchbase.litecore.fleece.MDictIterator;
 import com.couchbase.litecore.fleece.MValue;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Dictionary provides access to dictionary data.
+ * ReadOnlyDictionary provides readonly access to dictionary data.
  */
-public class Dictionary extends ReadOnlyDictionary implements DictionaryInterface {
-    //---------------------------------------------
+public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<String> {
+
+    //-------------------------------------------------------------------------
+    // member variables
+    //-------------------------------------------------------------------------
+
+    MDict _dict; // pointer to MDict<JNIRef> in native
+
+    //-------------------------------------------------------------------------
     // Constructors
-    //---------------------------------------------
+    //-------------------------------------------------------------------------
 
-    /**
-     * Initialize a new empty Dictionary object.
-     */
-    public Dictionary() {
-        super();
-    }
-
-    /**
-     * Initializes a new CBLDictionary object with dictionary content. Allowed value types are List,
-     * Date, Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
-     * only the above types.
-     *
-     * @param dictionary the dictionary object.
-     */
-    public Dictionary(Map<String, Object> dictionary) {
-        super();
-        set(dictionary);
+    Dictionary() {
+        _dict = new MDict(); // pointer to MDict<JNIRef> in native
     }
 
     Dictionary(MValue mv, MCollection parent) {
-        super(mv, parent);
+        this();
+        _dict.initInSlot(mv, parent);
     }
 
-    //---------------------------------------------
+    Dictionary(MDict mDict, boolean isMutable) {
+        this();
+        _dict.initAsCopyOf(mDict, isMutable);
+    }
+    //-------------------------------------------------------------------------
     // API - public methods
-    //---------------------------------------------
+    //-------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
+    // Implementation of ReadOnlyDictionaryInterface
+    //-------------------------------------------------------------------------
 
     /**
-     * Set a dictionary as a content. Allowed value types are List, Date, Map, Number, null, String,
-     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
-     * Setting the new dictionary content will replace the current data including the existing Array
-     * and Dictionary objects.
+     * Gets a number of the entries in the dictionary.
      *
-     * @param dictionary the dictionary object.
-     * @return this Dictionary instance
+     * @return
      */
     @Override
-    public Dictionary set(Map<String, Object> dictionary) {
-        _dict.clear();
-        for (Map.Entry<String, Object> entry : dictionary.entrySet())
-            _dict.set(entry.getKey(), new MValue(CBLFleece.toCBLObject(entry.getValue())));
-        return this;
+    public int count() {
+        return (int) _dict.count();
     }
 
-    /**
-     * Set an object value by key. Allowed value types are List, Date, Map, Number, null, String,
-     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
-     * An Date object will be converted to an ISO-8601 format string.
-     *
-     * @param key   the key.
-     * @param value the object value.
-     * @return this Dictionary instance
-     */
     @Override
-    public Dictionary setObject(String key, Object value) {
-        MValue oldValue = _dict.get(key);
-        if (value != null) {
-            value = CBLFleece.toCBLObject(value);
-            if (CBLFleece.valueWouldChange(value, oldValue, _dict))
-                _dict.set(key, new MValue(value));
-        } else {
-            if (!oldValue.isEmpty())
-                _dict.remove(key);
+    public List<String> getKeys() {
+        List<String> keys = new ArrayList<>(count());
+        MDictIterator itr = new MDictIterator(_dict);
+        String key;
+        while ((key = itr.key()) != null) {
+            keys.add(key);
+            if (!itr.next())
+                break;
         }
-        return this;
-    }
-
-    @Override
-    public Dictionary setString(String key, String value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setNumber(String key, Number value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setInt(String key, int value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setLong(String key, long value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setFloat(String key, float value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setDouble(String key, double value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setBoolean(String key, boolean value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setBlob(String key, Blob value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setDate(String key, Date value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setArray(String key, Array value) {
-        return setObject(key, value);
-    }
-
-    @Override
-    public Dictionary setDictionary(String key, Dictionary value) {
-        return setObject(key, value);
+        return keys;
     }
 
     /**
-     * Removes the mapping for a key from this Dictionary
+     * @param dict
+     * @param key
+     * @return pointer to MValue
+     */
+    static MValue _get(MDict dict, String key) {
+        return dict.get(key);
+    }
+
+    /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
      *
      * @param key the key.
-     * @return this Dictionary instance
+     * @return the object value or nil.
      */
     @Override
-    public Dictionary remove(String key) {
-        _dict.remove(key);
-        return this;
+    public Object getValue(String key) {
+        return _get(_dict, key).asNative(_dict);
+    }
+
+    /**
+     * Gets a property's value as a String. Returns null if the value doesn't exist, or its value is not a String.
+     *
+     * @param key the key
+     * @return the String or null.
+     */
+    @Override
+    public String getString(String key) {
+        Object obj = _get(_dict, key).asNative(_dict);
+        return obj instanceof String ? (String) obj : null;
+    }
+
+    /**
+     * Gets a property's value as a Number. Returns null if the value doesn't exist, or its value is not a Number.
+     *
+     * @param key the key
+     * @return the Number or nil.
+     */
+    @Override
+    public Number getNumber(String key) {
+        return CBLConverter.getNumber(_get(_dict, key).asNative(_dict));
+    }
+
+    /**
+     * Gets a property's value as an int.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the int value.
+     */
+    @Override
+    public int getInt(String key) {
+        return CBLConverter.asInteger(_get(_dict, key), _dict);
+    }
+
+    /**
+     * Gets a property's value as an long.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the long value.
+     */
+    @Override
+    public long getLong(String key) {
+        return CBLConverter.asLong(_get(_dict, key), _dict);
+    }
+
+    /**
+     * Gets a property's value as an float.
+     * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the float value.
+     */
+    @Override
+    public float getFloat(String key) {
+        return CBLConverter.asFloat(_get(_dict, key), _dict);
+    }
+
+    /**
+     * Gets a property's value as an double.
+     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the double value.
+     */
+    @Override
+    public double getDouble(String key) {
+        return CBLConverter.asDouble(_get(_dict, key), _dict);
+    }
+
+    /**
+     * Gets a property's value as a boolean. Returns true if the value exists, and is either `true`
+     * or a nonzero number.
+     *
+     * @param key the key
+     * @return the boolean value.
+     */
+    @Override
+    public boolean getBoolean(String key) {
+        //return CBLConverter.asBool(_get(_dict, key), _dict);
+        Object value = _get(_dict, key).asNative(_dict);
+        if (value == null) return false;
+        else if (value instanceof Boolean) return ((Boolean) value).booleanValue();
+        else if (value instanceof Number) return ((Number) value).intValue() != 0;
+        else return true;
+    }
+
+    /**
+     * Gets a property's value as a Blob.
+     * Returns null if the value doesn't exist, or its value is not a Blob.
+     *
+     * @param key the key
+     * @return the Blob value or null.
+     */
+    @Override
+    public Blob getBlob(String key) {
+        Object obj = _get(_dict, key).asNative(_dict);
+        return obj instanceof Blob ? (Blob) obj : null;
+    }
+
+    /**
+     * Gets a property's value as a Date.
+     * JSON does not directly support dates, so the actual property value must be a string, which is
+     * then parsed according to the ISO-8601 date format (the default used in JSON.)
+     * Returns null if the value doesn't exist, is not a string, or is not parseable as a date.
+     * NOTE: This is not a generic date parser! It only recognizes the ISO-8601 format, with or
+     * without milliseconds.
+     *
+     * @param key the key
+     * @return the Date value or null.
+     */
+    @Override
+    public Date getDate(String key) {
+        return DateUtils.fromJson(getString(key));
     }
 
     /**
@@ -174,13 +244,78 @@ public class Dictionary extends ReadOnlyDictionary implements DictionaryInterfac
         return obj instanceof Dictionary ? (Dictionary) obj : null;
     }
 
-
-    protected boolean isChanged() {
-        return _dict.isMutated();
+    /**
+     * Gets content of the current object as an Map. The values contained in the returned
+     * Map object are all JSON based values.
+     *
+     * @return the Map object representing the content of the current object in the JSON format.
+     */
+    @Override
+    public Map<String, Object> toMap() {
+        Map<String, Object> result = new HashMap<>();
+        MDictIterator itr = new MDictIterator(_dict);
+        String key;
+        while ((key = itr.key()) != null) {
+            result.put(key, CBLFleece.toObject(_get(_dict, key).asNative(_dict)));
+            if (!itr.next())
+                break;
+        }
+        return result;
     }
+
+    /**
+     * Tests whether a property exists or not.
+     * This can be less expensive than getValue(String), because it does not have to allocate an Object for the property value.
+     *
+     * @param key the key
+     * @return the boolean value representing whether a property exists or not.
+     */
+    @Override
+    public boolean contains(String key) {
+        return !_get(_dict, key).isEmpty();
+    }
+
+    /**
+     * Return a mutable copy of the dictionary
+     *
+     * @return the MutableDictionary instance
+     */
+    public MutableDictionary toMutable() {
+        return new MutableDictionary(_dict, true);
+    }
+
+    //-------------------------------------------------------------------------
+    // Implementation of FLEncodable
+    //-------------------------------------------------------------------------
+
+    @Override
+    public void encodeTo(FLEncoder enc) {
+        Encoder encoder = new Encoder(enc);
+        _dict.encodeTo(encoder);
+        encoder.release();
+    }
+
+    //---------------------------------------------
+    // protected level access
+    //---------------------------------------------
 
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
+    }
+
+    //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
+    @Override
+    public Iterator<String> iterator() {
+        return getKeys().iterator();
+    }
+
+    //---------------------------------------------
+    // Package
+    //---------------------------------------------
+    boolean isEmpty() {
+        return count() == 0;
     }
 }

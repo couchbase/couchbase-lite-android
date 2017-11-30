@@ -57,7 +57,7 @@ public class CBLFleece implements FLConstants.FLValueType {
             if (isOldAttachment(flDict, sk))
                 return createBlob(flDict, context);
         }
-        return new Dictionary(mv, parent);
+        return new MutableDictionary(mv, parent);
     }
 
     // to call from native
@@ -67,7 +67,7 @@ public class CBLFleece implements FLConstants.FLValueType {
     }
 
     static Object MValue_toArray(MValue mv, MCollection parent) {
-        return new Array(mv, parent);
+        return new MutableArray(mv, parent);
     }
 
     // to call from native
@@ -83,7 +83,7 @@ public class CBLFleece implements FLConstants.FLValueType {
             return true;
 
 
-        if (newValue instanceof ReadOnlyArray || newValue instanceof ReadOnlyDictionary)
+        if (newValue instanceof Array || newValue instanceof Dictionary)
             return true;
         else {
             Object oldVal = oldValue.asNative(container);
@@ -92,15 +92,15 @@ public class CBLFleece implements FLConstants.FLValueType {
     }
 
     static Object toCBLObject(Object value) {
-        if (value instanceof Dictionary) {
+        if (value instanceof MutableDictionary) {
             return value;
-        } else if (value instanceof Array) {
+        } else if (value instanceof MutableArray) {
             return value;
         } else if (value instanceof Map) {
-            Dictionary dict = new Dictionary((Map) value);
+            MutableDictionary dict = new MutableDictionary((Map) value);
             return dict;
         } else if (value instanceof List) {
-            Array array = new Array((List) value);
+            MutableArray array = new MutableArray((List) value);
             return array;
         } else if (value instanceof Date) {
             return DateUtils.toJson((Date) value);
@@ -119,10 +119,10 @@ public class CBLFleece implements FLConstants.FLValueType {
     static Object toObject(Object value) {
         if (value == null)
             return null;
-        else if (value instanceof ReadOnlyDictionary)
-            return ((ReadOnlyDictionary) value).toMap();
-        else if (value instanceof ReadOnlyArray)
-            return ((ReadOnlyArray) value).toList();
+        else if (value instanceof Dictionary)
+            return ((Dictionary) value).toMap();
+        else if (value instanceof Array)
+            return ((Array) value).toList();
         else
             return value;
     }

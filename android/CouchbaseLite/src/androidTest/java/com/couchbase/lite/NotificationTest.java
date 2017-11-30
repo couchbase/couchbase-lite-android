@@ -44,8 +44,8 @@ public class NotificationTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 0; i < 10; i++) {
-                    Document doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
-                    doc.setObject("type", "demo");
+                    MutableDocument doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                    doc.setValue("type", "demo");
                     try {
                         save(doc);
                     } catch (CouchbaseLiteException e) {
@@ -60,8 +60,8 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testDocumentNotification()
             throws InterruptedException, CouchbaseLiteException {
-        Document docA = createDocument("A");
-        Document docB = createDocument("B");
+        MutableDocument mDocA = createDocument("A");
+        MutableDocument mDocB = createDocument("B");
 
         // save doc
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -75,10 +75,10 @@ public class NotificationTest extends BaseTest {
             }
         };
         db.addChangeListener("A", listener1);
-        docB.setObject("thewronganswer", 18);
-        save(docB);
-        docA.setObject("theanswer", 18);
-        save(docA);
+        mDocB.setValue("thewronganswer", 18);
+        Document docB = save(mDocB);
+        mDocA.setValue("theanswer", 18);
+        Document docA = save(mDocA);
         assertTrue(latch1.await(10, TimeUnit.SECONDS));
         db.removeChangeListener("A", listener1);
 
@@ -94,8 +94,9 @@ public class NotificationTest extends BaseTest {
             }
         };
         db.addChangeListener("A", listener2);
-        docA.setObject("thewronganswer", 18);
-        save(docA);
+        mDocA = docA.toMutable();
+        mDocA.setValue("thewronganswer", 18);
+        docA = save(mDocA);
         assertTrue(latch2.await(5, TimeUnit.SECONDS));
         db.removeChangeListener("A", listener2);
 
@@ -151,8 +152,8 @@ public class NotificationTest extends BaseTest {
                 @Override
                 public void run() {
                     for (int i = 0; i < 10; i++) {
-                        Document doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
-                        doc.setObject("type", "demo");
+                        MutableDocument doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                        doc.setValue("type", "demo");
                         try {
                             save(doc);
                         } catch (CouchbaseLiteException e) {
@@ -172,8 +173,8 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testAddSameChangeListeners()
             throws InterruptedException, CouchbaseLiteException {
-        Document doc1 = createDocument("doc1");
-        doc1.setObject("name", "Scott");
+        MutableDocument doc1 = createDocument("doc1");
+        doc1.setValue("name", "Scott");
         save(doc1);
 
         final CountDownLatch latch = new CountDownLatch(5);
@@ -192,7 +193,7 @@ public class NotificationTest extends BaseTest {
         db.addChangeListener("doc1", listener);
 
         // Update doc1:
-        doc1.setObject("name", "Scott Tiger");
+        doc1.setValue("name", "Scott Tiger");
         save(doc1);
 
         // Let's wait for 0.5 seconds:
@@ -203,8 +204,8 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testRemoveDocumentChangeListener()
             throws InterruptedException, CouchbaseLiteException {
-        Document doc1 = createDocument("doc1");
-        doc1.setObject("name", "Scott");
+        MutableDocument doc1 = createDocument("doc1");
+        doc1.setValue("name", "Scott");
         save(doc1);
 
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -222,7 +223,7 @@ public class NotificationTest extends BaseTest {
         db.addChangeListener("doc1", listener);
 
         // Update doc1:
-        doc1.setObject("name", "Scott Tiger");
+        doc1.setValue("name", "Scott Tiger");
         save(doc1);
 
         // Let's wait for 0.5 seconds:
@@ -232,7 +233,7 @@ public class NotificationTest extends BaseTest {
         db.removeChangeListener("doc1", listener);
 
         // Update doc1:
-        doc1.setObject("name", "Scotty");
+        doc1.setValue("name", "Scotty");
         save(doc1);
 
         // Let's wait for 0.5 seconds:

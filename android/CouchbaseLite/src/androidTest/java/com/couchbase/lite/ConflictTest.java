@@ -16,7 +16,6 @@ import java.util.Set;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -25,26 +24,26 @@ public class ConflictTest extends BaseTest {
 
     static class TheirsWins implements ConflictResolver {
         @Override
-        public ReadOnlyDocument resolve(Conflict conflict) {
+        public Document resolve(Conflict conflict) {
             return conflict.getTheirs();
         }
     }
 
     static class MergeThenTheirsWins implements ConflictResolver {
         @Override
-        public ReadOnlyDocument resolve(Conflict conflict) {
-            Document resolved = new Document();
+        public Document resolve(Conflict conflict) {
+            MutableDocument resolved = new MutableDocument();
             Set<String> changed = new HashSet<>();
 
             if (conflict.getBase() != null) {
                 for (String key : conflict.getBase()) {
-                    resolved.setObject(key, conflict.getBase().getObject(key));
+                    resolved.setValue(key, conflict.getBase().getValue(key));
                 }
             }
 
             if (conflict.getTheirs() != null) {
                 for (String key : conflict.getTheirs()) {
-                    resolved.setObject(key, conflict.getTheirs().getObject(key));
+                    resolved.setValue(key, conflict.getTheirs().getValue(key));
                     changed.add(key);
                 }
             }
@@ -52,7 +51,7 @@ public class ConflictTest extends BaseTest {
             if (conflict.getMine() != null) {
                 for (String key : conflict.getMine()) {
                     if (!changed.contains(key))
-                        resolved.setObject(key, conflict.getMine().getObject(key));
+                        resolved.setValue(key, conflict.getMine().getValue(key));
                 }
             }
 
@@ -62,25 +61,25 @@ public class ConflictTest extends BaseTest {
 
     static class GiveUp implements ConflictResolver {
         @Override
-        public ReadOnlyDocument resolve(Conflict conflict) {
+        public Document resolve(Conflict conflict) {
             return null;
         }
     }
 
     static class DoNotResolve implements ConflictResolver {
         @Override
-        public ReadOnlyDocument resolve(Conflict conflict) {
+        public Document resolve(Conflict conflict) {
             fail("Resolver should not have been called!");
             return null;
         }
     }
 
-    private Document setupConflict() throws CouchbaseLiteException {
+    private MutableDocument setupConflict() throws CouchbaseLiteException {
         // Setup a default database conflict resolver
-        Document doc = createDocument("doc1");
-        doc.setObject("type", "profile");
-        doc.setObject("name", "Scott");
-        save(doc);
+        MutableDocument mDoc = createDocument("doc1");
+        mDoc.setValue("type", "profile");
+        mDoc.setValue("name", "Scott");
+        Document doc = save(mDoc);
 
         // Force a conflict
         Map<String, Object> properties = doc.toMap();
@@ -88,9 +87,10 @@ public class ConflictTest extends BaseTest {
         save(properties, doc.getId());
 
         // Change document in memory, so save will trigger a conflict
-        doc.setObject("name", "Scott Pilgrim");
+        mDoc = doc.toMutable();
+        mDoc.setValue("name", "Scott Pilgrim");
 
-        return doc;
+        return mDoc;
     }
 
     private void save(final Map<String, Object> props, final String docID)
@@ -157,19 +157,20 @@ public class ConflictTest extends BaseTest {
         closeDB();
         openDB(new TheirsWins());
 
-        Document doc1 = setupConflict();
-        save(doc1);
-        assertEquals("Scotty", doc1.getObject("name"));
+        MutableDocument mDoc1 = setupConflict();
+        Document doc1 = save(mDoc1);
+        assertNotNull(doc1);
+        assertEquals("Scotty", doc1.getValue("name"));
 
         // Get a new document with its own conflict resolver
-
         closeDB();
         openDB(new MergeThenTheirsWins());
 
-        Document doc2 = createDocument("doc2");
-        doc2.setObject("type", "profile");
-        doc2.setObject("name", "Scott");
-        save(doc2);
+        MutableDocument mDoc2 = createDocument("doc2");
+        mDoc2.setValue("type", "profile");
+        mDoc2.setValue("name", "Scott");
+        Document doc2 = save(mDoc2);
+        assertNotNull(doc2);
 
         // Force a conflict again
         Map<String, Object> properties = doc2.toMap();
@@ -178,14 +179,16 @@ public class ConflictTest extends BaseTest {
         save(properties, doc2.getId());
 
         // Save and make sure that the correct conflict resolver won
-        doc2.setObject("type", "biography");
-        doc2.setObject("age", 31);
-        save(doc2);
+        mDoc2 = doc2.toMutable();
+        mDoc2.setValue("type", "biography");
+        mDoc2.setValue("age", 31);
+        doc2 = save(mDoc2);
+        assertNotNull(doc2);
 
-        assertEquals(31L, doc2.getObject("age"));
-        assertEquals("bio", doc2.getObject("type"));
-        assertEquals("male", doc2.getObject("gender"));
-        assertEquals("Scott", doc2.getObject("name"));
+        assertEquals(31L, doc2.getValue("age"));
+        assertEquals("bio", doc2.getValue("type"));
+        assertEquals("male", doc2.getValue("gender"));
+        assertEquals("Scott", doc2.getValue("name"));
     }
 
     @Test
@@ -193,7 +196,7 @@ public class ConflictTest extends BaseTest {
         closeDB();
         openDB(new GiveUp());
 
-        Document doc = setupConflict();
+        MutableDocument doc = setupConflict();
         try {
             save(doc);
             fail();
@@ -206,12 +209,11 @@ public class ConflictTest extends BaseTest {
     @Test
     public void testDeletionConflict() throws CouchbaseLiteException {
         closeDB();
-        openDB(new DoNotResolve());
+        openDB(null); // set null to conflict resolver, should use default one
 
-        Document doc = setupConflict();
-        db.delete(doc);
-        assertFalse(doc.isDeleted());
-        assertEquals("Scotty", doc.getString("name"));
+        MutableDocument mDoc = setupConflict();
+        db.delete(mDoc);
+        assertNull(db.getDocument(mDoc.getId()));
     }
 
     @Test
@@ -219,7 +221,7 @@ public class ConflictTest extends BaseTest {
         closeDB();
         openDB(null);
 
-        Document doc = setupConflict();
+        MutableDocument doc = setupConflict();
         save(doc);
         assertEquals("Scott Pilgrim", doc.getString("name"));
     }
@@ -229,14 +231,14 @@ public class ConflictTest extends BaseTest {
         closeDB();
         openDB(null);
 
-        Document doc = setupConflict();
+        MutableDocument mDoc = setupConflict();
 
         // Add another revision to the conflict, so it'll have a higher generation:
-        Map<String, Object> properties = doc.toMap();
+        Map<String, Object> properties = mDoc.toMap();
         properties.put("name", "Scott of the Sahara");
-        save(properties, doc.getId());
+        save(properties, mDoc.getId());
 
-        save(doc);
+        Document doc = save(mDoc);
         assertEquals("Scott of the Sahara", doc.getString("name"));
     }
 
@@ -246,7 +248,7 @@ public class ConflictTest extends BaseTest {
 
         openDB(new ConflictResolver() {
             @Override
-            public ReadOnlyDocument resolve(Conflict conflict) {
+            public Document resolve(Conflict conflict) {
                 assertEquals("Tiger", conflict.getMine().getString("name"));
                 assertEquals("Daniel", conflict.getTheirs().getString("name"));
                 assertNull(conflict.getBase());
@@ -254,11 +256,11 @@ public class ConflictTest extends BaseTest {
             }
         });
 
-        Document doc1a = new Document("doc1");
+        MutableDocument doc1a = new MutableDocument("doc1");
         doc1a.setString("name", "Daniel");
         save(doc1a);
 
-        Document doc1b = new Document("doc1");
+        MutableDocument doc1b = new MutableDocument("doc1");
         doc1b.setString("name", "Tiger");
         save(doc1b);
 
@@ -273,7 +275,7 @@ public class ConflictTest extends BaseTest {
         // open db with special conflict resolver
         openDB(new ConflictResolver() {
             @Override
-            public ReadOnlyDocument resolve(Conflict conflict) {
+            public Document resolve(Conflict conflict) {
                 assertNotNull(conflict);
                 assertNull(conflict.getBase()); // make sure base is null
                 return conflict.getBase();      // null -> cause 409
@@ -285,17 +287,16 @@ public class ConflictTest extends BaseTest {
         props.put("hello", "world");
 
         //STEP 1: Created a new document with id = "doc1"
-        Document doc = new Document(docID, props);
-        db.save(doc);
+        MutableDocument doc = new MutableDocument(docID, props);
+        doc = db.save(doc).toMutable();
 
         //STEP 2: Added a revision to the document
-        doc = db.getDocument(docID);
-        doc.setObject("university", 1);
+        doc.setValue("university", 1);
         db.save(doc);
 
         // STEP3: Create Conflict as follows
-        doc = new Document(docID, props);
-        doc.setObject("university", 2);
+        doc = new MutableDocument(docID, props);
+        doc.setValue("university", 2);
         try {
             db.save(doc);
             fail();

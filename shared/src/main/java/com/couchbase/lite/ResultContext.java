@@ -2,11 +2,11 @@ package com.couchbase.lite;
 
 import com.couchbase.litecore.C4QueryEnumerator;
 
-public class QueryResultContext extends DocContext {
+public class ResultContext extends DocContext {
 
     private C4QueryEnumerator _enumerator;
 
-    public QueryResultContext(Database db, C4QueryEnumerator enumerator) {
+    public ResultContext(Database db, C4QueryEnumerator enumerator) {
         super(db);
         _enumerator = enumerator;
     }

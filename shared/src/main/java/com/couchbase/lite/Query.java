@@ -123,7 +123,7 @@ public class Query {
      * @return the ResultSet for the query result.
      * @throws CouchbaseLiteException if there is an error when running the query.
      */
-    public QueryResultSet run() throws CouchbaseLiteException {
+    public ResultSet run() throws CouchbaseLiteException {
         if (c4query == null)
             check();
 
@@ -131,7 +131,7 @@ public class Query {
             C4QueryOptions options = new C4QueryOptions();
             String paramJSON = parameters.encodeAsJSON();
             C4QueryEnumerator c4enum = c4query.run(options, paramJSON);
-            return new QueryResultSet(this, c4enum, columnNames);
+            return new ResultSet(this, c4enum, columnNames);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
         }
