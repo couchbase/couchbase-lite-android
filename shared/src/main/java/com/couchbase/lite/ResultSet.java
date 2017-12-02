@@ -106,20 +106,10 @@ public class ResultSet implements Iterable<Result> {
     }
 
     //---------------------------------------------
-    // protected methods
+    // public but not public API method.
     //---------------------------------------------
 
-    @Override
-    protected void finalize() throws Throwable {
-        release();
-        super.finalize();
-    }
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
-    void release() {
+    public void free() {
         if (_c4enum != null) {
             _c4enum.close();
             _c4enum.free();
@@ -127,7 +117,7 @@ public class ResultSet implements Iterable<Result> {
         }
     }
 
-    ResultSet refresh() throws CouchbaseLiteException {
+    public ResultSet refresh() throws CouchbaseLiteException {
         if (_query == null) return null;
         try {
             C4QueryEnumerator newEnum = _c4enum.refresh();
@@ -136,6 +126,22 @@ public class ResultSet implements Iterable<Result> {
             throw LiteCoreBridge.convertException(e);
         }
     }
+
+    //---------------------------------------------
+    // protected methods
+    //---------------------------------------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
+
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
+
+
 
     int getCount() {
         try {

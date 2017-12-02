@@ -91,11 +91,11 @@ public class LoadTest extends BaseTest {
 
     void verifyByTagName(String tag, VerifyBlock block) throws CouchbaseLiteException {
         Expression TAG_EXPR = Expression.property("tag");
-        SelectResult DOCID = SelectResult.expression(Expression.meta().getId());
+        SelectResult DOCID = SelectResult.expression(Meta.id);
         DataSource ds = DataSource.database(db);
         Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(tag));
         Log.v(TAG, "query - > %s", q.explain());
-        ResultSet rs = q.run();
+        ResultSet rs = q.execute();
         Result row;
         int n = 0;
         while ((row = rs.next()) != null) {

@@ -1335,10 +1335,9 @@ public class DatabaseTest extends BaseTest {
         assertNotNull(nudb);
         assertEquals(NUM_DOCS, nudb.getCount());
 
-        Expression DOCID = Expression.meta().getId();
-        SelectResult S_DOCID = SelectResult.expression(DOCID);
+        SelectResult S_DOCID = SelectResult.expression(Meta.id);
         Query query = Query.select(S_DOCID).from(DataSource.database(nudb));
-        ResultSet rs = query.run();
+        ResultSet rs = query.execute();
         for (Result r : rs) {
             String docID = r.getString(0);
             assertNotNull(docID);
@@ -1364,26 +1363,21 @@ public class DatabaseTest extends BaseTest {
         assertEquals(0, db.getIndexes().size());
 
         // Create value index:
-        Expression fName = Expression.property("firstName");
-        Expression lName = Expression.property("lastName");
+       ValueIndexItem fNameItem = ValueIndexItem.property("firstName");
+        ValueIndexItem lNameItem = ValueIndexItem.property("lastName");
 
-        ValueIndexItem fNameItem = ValueIndexItem.expression(fName);
-        ValueIndexItem lNameItem = ValueIndexItem.expression(lName);
-
-        Index index1 = Index.valueIndex().on(fNameItem, lNameItem);
+        Index index1 = Index.valueIndex(fNameItem, lNameItem);
         db.createIndex("index1", index1);
         assertEquals(1, db.getIndexes().size());
 
         // Create FTS index:
-        Expression detail = Expression.property("detail");
-        FTSIndexItem detailItem = FTSIndexItem.expression(detail);
-        Index index2 = Index.ftsIndex().on(detailItem);
+        FullTextIndexItem detailItem = FullTextIndexItem.property("detail");
+        Index index2 = Index.fullTextIndex(detailItem);
         db.createIndex("index2", index2);
         assertEquals(2, db.getIndexes().size());
 
-        Expression detail2 = Expression.property("es-detail");
-        FTSIndexItem detailItem2 = FTSIndexItem.expression(detail2);
-        Index index3 = Index.ftsIndex().on(detailItem2).ignoreAccents(true).setLocale("es");
+        FullTextIndexItem detailItem2 = FullTextIndexItem.property("es-detail");
+        Index index3 = Index.fullTextIndex(detailItem2).ignoreAccents(true).setLocale("es");
         db.createIndex("index3", index3);
         assertEquals(3, db.getIndexes().size());
         assertEquals(Arrays.asList("index1", "index2", "index3"), db.getIndexes());
@@ -1394,8 +1388,8 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCreateSameIndexTwice() throws CouchbaseLiteException {
         // Create index with first name:
-        ValueIndexItem indexItem = ValueIndexItem.expression(Expression.property("firstName"));
-        Index index = Index.valueIndex().on(indexItem);
+        ValueIndexItem indexItem = ValueIndexItem.property("firstName");
+        Index index = Index.valueIndex(indexItem);
         db.createIndex("myindex", index);
 
         // Call create index again:
@@ -1407,20 +1401,16 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testCreateSameNameIndexes() throws CouchbaseLiteException {
-        Expression fName = Expression.property("firstName");
-        Expression lName = Expression.property("lastName");
-        Expression detail = Expression.property("detail");
-
-        ValueIndexItem fNameItem = ValueIndexItem.expression(fName);
-        ValueIndexItem lNameItem = ValueIndexItem.expression(lName);
-        FTSIndexItem detailItem = FTSIndexItem.expression(detail);
+        ValueIndexItem fNameItem = ValueIndexItem.property("firstName");
+        ValueIndexItem lNameItem = ValueIndexItem.property("lastName");
+        FullTextIndexItem detailItem = FullTextIndexItem.property("detail");
 
         // Create value index with first name:
-        Index fNameindex = Index.valueIndex().on(fNameItem);
+        Index fNameindex = Index.valueIndex(fNameItem);
         db.createIndex("myindex", fNameindex);
 
         // Create value index with last name:
-        Index lNameindex = Index.valueIndex().on(lNameItem);
+        Index lNameindex = Index.valueIndex(lNameItem);
         db.createIndex("myindex", lNameindex);
 
         // Check:
@@ -1428,7 +1418,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(Arrays.asList("myindex"), db.getIndexes());
 
         // Create FTS index:
-        Index detailIndex = Index.ftsIndex().on(detailItem);
+        Index detailIndex = Index.fullTextIndex(detailItem);
         db.createIndex("myindex", lNameindex);
 
         // Check:

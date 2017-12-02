@@ -14,7 +14,9 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.lite.internal.query.LiveQuery;
 import com.couchbase.lite.internal.support.JsonUtils;
+import com.couchbase.lite.query.QueryChangeListener;
 import com.couchbase.litecore.C4Query;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.C4QueryOptions;
@@ -28,9 +30,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.couchbase.lite.Expression.PropertyExpression.kCBLAllPropertiesName;
 import static com.couchbase.lite.Status.CBLErrorDomain;
 import static com.couchbase.lite.Status.InvalidQuery;
+import static com.couchbase.lite.internal.query.expression.PropertyExpression.kCBLAllPropertiesName;
 
 /**
  * A database query used for querying data from the database. The query statement of the Query
@@ -72,6 +74,9 @@ public class Query {
     // column names
     private Map<String, Integer> columnNames = null;
 
+    // Live Query!!
+    private LiveQuery liveQuery = null;
+
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
@@ -107,12 +112,26 @@ public class Query {
         return new Select(true, results);
     }
 
-    public Parameters parameters() {
-        return parameters;
+    /**
+     * Returns a copies of the current parameters.
+     */
+    public Parameters getParameters() {
+        return parameters.copy();
     }
 
     /**
-     * Runs the query. The returning a result set that enumerates result rows one at a time.
+     * Set parameters should copy the given parameters. Set a new parameter will
+     * also re-execute the query if there is at least one listener listening for
+     * changes.
+     */
+    public void setParameters(Parameters parameters){
+        this.parameters = parameters.copy();
+        if(liveQuery!=null)
+            liveQuery.start();
+    }
+
+    /**
+     * Executes the query. The returning a result set that enumerates result rows one at a time.
      * You can run the query any number of times, and you can even have multiple ResultSet active at
      * once.
      * <p>
@@ -123,7 +142,7 @@ public class Query {
      * @return the ResultSet for the query result.
      * @throws CouchbaseLiteException if there is an error when running the query.
      */
-    public ResultSet run() throws CouchbaseLiteException {
+    public ResultSet execute() throws CouchbaseLiteException {
         if (c4query == null)
             check();
 
@@ -157,18 +176,30 @@ public class Query {
         return c4query.explain();
     }
 
-    public String profile() {
-        // TODO:
-        throw new UnsupportedOperationException("Not implemented yet.");
+//    public LiveQuery toLive() {
+//        return new LiveQuery(new Query(this));
+//    }
+
+    public void addChangeListener(QueryChangeListener listener){
+        liveQuery().addChangeListener(listener);
     }
 
-    public LiveQuery toLive() {
-        return new LiveQuery(new Query(this));
+    public void removeChangeListener(QueryChangeListener listener){
+        liveQuery().removeChangeListener(listener);
     }
 
     @Override
     public String toString() {
         return String.format(Locale.ENGLISH, "%s[json=%s]", this.getClass().getSimpleName(), asJSON());
+    }
+
+    //---------------------------------------------
+    // public but not public API method.
+    //---------------------------------------------
+    public Database getDatabase() {
+        if (database == null)
+            database = (Database) from.getSource();
+        return database;
     }
 
     //---------------------------------------------
@@ -224,11 +255,7 @@ public class Query {
         this.parameters = query.parameters.copy();
     }
 
-    Database getDatabase() {
-        if (database == null)
-            database = (Database) from.getSource();
-        return database;
-    }
+
 
     C4Query getC4Query() {
         return c4query;
@@ -333,5 +360,11 @@ public class Query {
                 json.put("OFFSET", list.get(1));
         }
         return json;
+    }
+
+    private LiveQuery liveQuery() {
+        if (liveQuery == null)
+            liveQuery = new LiveQuery(this);
+        return liveQuery;
     }
 }
