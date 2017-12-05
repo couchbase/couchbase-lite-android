@@ -698,7 +698,7 @@ public class ConcurrentDatabaseTest extends BaseTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
-        db.addChangeListener("doc1", new DocumentChangeListener() {
+        db.addDocumentChangeListener("doc1", new DocumentChangeListener() {
             @Override
             public void changed(DocumentChange change) {
                 latch2.countDown();

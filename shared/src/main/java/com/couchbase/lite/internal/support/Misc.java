@@ -11,7 +11,7 @@
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.couchbase.lite.internal;
+package com.couchbase.lite.internal.support;
 
 import java.util.Locale;
 import java.util.UUID;

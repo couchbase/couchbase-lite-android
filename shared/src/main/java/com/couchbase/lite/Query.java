@@ -15,6 +15,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.lite.internal.query.LiveQuery;
+import com.couchbase.lite.internal.query.QueryChangeListenerToken;
 import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.lite.query.QueryChangeListener;
 import com.couchbase.litecore.C4Query;
@@ -124,9 +125,9 @@ public class Query {
      * also re-execute the query if there is at least one listener listening for
      * changes.
      */
-    public void setParameters(Parameters parameters){
+    public void setParameters(Parameters parameters) {
         this.parameters = parameters.copy();
-        if(liveQuery!=null)
+        if (liveQuery != null)
             liveQuery.start();
     }
 
@@ -176,16 +177,14 @@ public class Query {
         return c4query.explain();
     }
 
-//    public LiveQuery toLive() {
-//        return new LiveQuery(new Query(this));
-//    }
-
-    public void addChangeListener(QueryChangeListener listener){
-        liveQuery().addChangeListener(listener);
+    public ListenerToken addChangeListener(QueryChangeListener listener) {
+        return liveQuery().addChangeListener(listener);
     }
 
-    public void removeChangeListener(QueryChangeListener listener){
-        liveQuery().removeChangeListener(listener);
+    public void removeChangeListener(ListenerToken token) {
+        if (token == null || !(token instanceof QueryChangeListenerToken))
+            throw new IllegalArgumentException("Invalid ListenerToken is given");
+        liveQuery().removeChangeListener((QueryChangeListenerToken) token);
     }
 
     @Override
@@ -254,8 +253,6 @@ public class Query {
 
         this.parameters = query.parameters.copy();
     }
-
-
 
     C4Query getC4Query() {
         return c4query;

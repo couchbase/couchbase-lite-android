@@ -74,13 +74,13 @@ public class NotificationTest extends BaseTest {
                 latch1.countDown();
             }
         };
-        db.addChangeListener("A", listener1);
+        ListenerToken token = db.addDocumentChangeListener("A", listener1);
         mDocB.setValue("thewronganswer", 18);
         Document docB = save(mDocB);
         mDocA.setValue("theanswer", 18);
         Document docA = save(mDocA);
         assertTrue(latch1.await(10, TimeUnit.SECONDS));
-        db.removeChangeListener("A", listener1);
+        db.removeChangeListener(token);
 
         // update doc
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -93,12 +93,12 @@ public class NotificationTest extends BaseTest {
                 latch2.countDown();
             }
         };
-        db.addChangeListener("A", listener2);
+        token = db.addDocumentChangeListener("A", listener2);
         mDocA = docA.toMutable();
         mDocA.setValue("thewronganswer", 18);
         docA = save(mDocA);
         assertTrue(latch2.await(5, TimeUnit.SECONDS));
-        db.removeChangeListener("A", listener2);
+        db.removeChangeListener(token);
 
         // delete doc
         final CountDownLatch latch3 = new CountDownLatch(1);
@@ -111,10 +111,10 @@ public class NotificationTest extends BaseTest {
                 latch3.countDown();
             }
         };
-        db.addChangeListener("A", listener3);
+        token = db.addDocumentChangeListener("A", listener3);
         db.delete(docA);
         assertTrue(latch3.await(5, TimeUnit.SECONDS));
-        db.removeChangeListener("A", listener3);
+        db.removeChangeListener(token);
 
     }
 
@@ -136,7 +136,7 @@ public class NotificationTest extends BaseTest {
             });
 
             final CountDownLatch latchDoc = new CountDownLatch(1);
-            db2.addChangeListener("doc-6", new DocumentChangeListener() {
+            db2.addDocumentChangeListener("doc-6", new DocumentChangeListener() {
                 @Override
                 public void changed(DocumentChange change) {
                     assertNotNull(change);
@@ -186,19 +186,26 @@ public class NotificationTest extends BaseTest {
                     latch.countDown();
             }
         };
-        db.addChangeListener("doc1", listener);
-        db.addChangeListener("doc1", listener);
-        db.addChangeListener("doc1", listener);
-        db.addChangeListener("doc1", listener);
-        db.addChangeListener("doc1", listener);
+        ListenerToken token1 = db.addDocumentChangeListener("doc1", listener);
+        ListenerToken token2 = db.addDocumentChangeListener("doc1", listener);
+        ListenerToken token3 = db.addDocumentChangeListener("doc1", listener);
+        ListenerToken token4 = db.addDocumentChangeListener("doc1", listener);
+        ListenerToken token5 = db.addDocumentChangeListener("doc1", listener);
 
-        // Update doc1:
-        doc1.setValue("name", "Scott Tiger");
-        save(doc1);
+        try {
+            // Update doc1:
+            doc1.setValue("name", "Scott Tiger");
+            save(doc1);
 
-        // Let's wait for 0.5 seconds:
-        assertFalse(latch.await(500, TimeUnit.MILLISECONDS));
-        assertEquals(4, latch.getCount());
+            // Let's wait for 0.5 seconds:
+            assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
+        } finally {
+            db.removeChangeListener(token1);
+            db.removeChangeListener(token2);
+            db.removeChangeListener(token3);
+            db.removeChangeListener(token4);
+            db.removeChangeListener(token5);
+        }
     }
 
     @Test
@@ -220,7 +227,7 @@ public class NotificationTest extends BaseTest {
                 }
             }
         };
-        db.addChangeListener("doc1", listener);
+        ListenerToken token = db.addDocumentChangeListener("doc1", listener);
 
         // Update doc1:
         doc1.setValue("name", "Scott Tiger");
@@ -230,7 +237,7 @@ public class NotificationTest extends BaseTest {
         assertTrue(latch1.await(500, TimeUnit.MILLISECONDS));
 
         // Remove change listener:
-        db.removeChangeListener("doc1", listener);
+        db.removeChangeListener(token);
 
         // Update doc1:
         doc1.setValue("name", "Scotty");
@@ -241,9 +248,6 @@ public class NotificationTest extends BaseTest {
         assertEquals(1, latch2.getCount());
 
         // Remove again:
-        db.removeChangeListener("doc1", listener);
-
-        // Remove before add:
-        db.removeChangeListener("doc2", listener);
+        db.removeChangeListener(token);
     }
 }

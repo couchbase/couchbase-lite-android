@@ -1470,7 +1470,7 @@ public class QueryTest extends BaseTest {
                 latch.countDown();
             }
         };
-        query.addChangeListener(listener);
+        ListenerToken token = query.addChangeListener(listener);
         try {
             // create one doc
             new Handler(Looper.getMainLooper())
@@ -1488,7 +1488,7 @@ public class QueryTest extends BaseTest {
             // wait till listener is called
             assertTrue(latch.await(2, TimeUnit.SECONDS));
         } finally {
-            query.removeChangeListener(listener);
+            query.removeChangeListener(token);
         }
     }
 
@@ -1523,7 +1523,7 @@ public class QueryTest extends BaseTest {
                 // should come only once!
             }
         };
-        query.addChangeListener(listener);
+        ListenerToken token = query.addChangeListener(listener);
         try {
             // create one doc
             new Handler(Looper.getMainLooper())
@@ -1541,7 +1541,7 @@ public class QueryTest extends BaseTest {
             assertFalse(latch.await(5, TimeUnit.SECONDS));
             assertEquals(1, latch.getCount());
         } finally {
-            query.removeChangeListener(listener);
+            query.removeChangeListener(token);
         }
     }
 

@@ -7,6 +7,7 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.CouchbaseLiteRuntimeException;
 import com.couchbase.lite.DatabaseChange;
 import com.couchbase.lite.DatabaseChangeListener;
+import com.couchbase.lite.ListenerToken;
 import com.couchbase.lite.Log;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.ResultSet;
@@ -17,6 +18,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 /**
  * A Query subclass that automatically refreshes the result rows every time the database changes.
@@ -32,12 +34,13 @@ public class LiveQuery implements DatabaseChangeListener {
     // member variables
     //---------------------------------------------
 
-    private Set<QueryChangeListener> queryChangeListener;
+    private Set<QueryChangeListenerToken> queryChangeListenerTokens;
     private Query query;
     private ResultSet resultSet;
     private boolean observing;
     private boolean willUpdate;
     private long lastUpdatedAt;
+    private ListenerToken dbListenerToken;
 
     //---------------------------------------------
     // Constructors
@@ -48,7 +51,7 @@ public class LiveQuery implements DatabaseChangeListener {
             throw new IllegalArgumentException("query should not be null.");
 
         this.query = query;
-        this.queryChangeListener = Collections.synchronizedSet(new HashSet<QueryChangeListener>());
+        this.queryChangeListenerTokens = Collections.synchronizedSet(new HashSet<QueryChangeListenerToken>());
         this.resultSet = null;
         this.observing = false;
         this.willUpdate = false;
@@ -70,7 +73,7 @@ public class LiveQuery implements DatabaseChangeListener {
 
         observing = true;
         releaseResultSet();
-        query.getDatabase().addChangeListener(this);
+        dbListenerToken = query.getDatabase().addChangeListener(this);
         update();
     }
 
@@ -80,24 +83,30 @@ public class LiveQuery implements DatabaseChangeListener {
     public void stop() {
         observing = false;
         willUpdate = false; // cancels the delayed update started by -databaseChanged
-        query.getDatabase().removeChangeListener(this);
+        query.getDatabase().removeChangeListener(dbListenerToken);
         releaseResultSet();
+    }
+
+    public QueryChangeListenerToken addChangeListener(QueryChangeListener listener) {
+        return addChangeListener(null, listener);
     }
 
     /**
      * Adds a change listener.
      */
-    public void addChangeListener(QueryChangeListener listener) {
-        queryChangeListener.add(listener);
+    public QueryChangeListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
+        QueryChangeListenerToken token = new QueryChangeListenerToken(executor, listener);
+        queryChangeListenerTokens.add(token);
         if (!observing)
             start();
+        return token;
     }
 
     /**
      * Removes a change listener
      */
-    public void removeChangeListener(QueryChangeListener listener) {
-        queryChangeListener.remove(listener);
+    public void removeChangeListener(QueryChangeListenerToken token) {
+        queryChangeListenerTokens.remove(token);
     }
 
     @Override
@@ -192,9 +201,9 @@ public class LiveQuery implements DatabaseChangeListener {
     }
 
     private void sendNotification(QueryChange change) {
-        synchronized (queryChangeListener) {
-            for (QueryChangeListener listener : queryChangeListener) {
-                listener.changed(change);
+        synchronized (queryChangeListenerTokens) {
+            for (QueryChangeListenerToken token : queryChangeListenerTokens) {
+                token.notify(change);
             }
         }
     }
