@@ -2022,4 +2022,28 @@ public class DocumentTest extends BaseTest {
             }
         });
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1449
+    @Test
+    public void testDeleteDocAndGetDoc() throws CouchbaseLiteException {
+        String docID = "doc-1";
+
+        Document doc = db.getDocument(docID);
+        assertNull(doc);
+
+        MutableDocument mDoc = new MutableDocument(docID);
+        mDoc.setValue("key", "value");
+         doc = db.save(mDoc);
+        assertNotNull(doc);
+        assertEquals(1, db.getCount());
+
+        doc = db.getDocument(docID);
+        assertNotNull(doc);
+        assertEquals("value", doc.getString("key"));
+
+        db.delete(doc);
+        assertEquals(0, db.getCount());
+        doc = db.getDocument(docID);
+        assertNull(doc);
+    }
 }
