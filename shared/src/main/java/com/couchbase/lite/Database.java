@@ -19,6 +19,7 @@ import android.os.Looper;
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.lite.internal.database.DatabaseChangeListenerToken;
 import com.couchbase.lite.internal.database.DocumentChangeListenerToken;
+import com.couchbase.lite.internal.query.LiveQuery;
 import com.couchbase.lite.internal.support.FileUtils;
 import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.litecore.C4;
@@ -39,7 +40,6 @@ import com.couchbase.litecore.fleece.FLSliceResult;
 import org.json.JSONException;
 
 import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,8 +123,8 @@ public final class Database implements C4Constants {
 
     private final SharedKeys sharedKeys;
 
-    private Map<URI, Replicator> replications;
     private Set<Replicator> activeReplications;
+    private Set<LiveQuery> activeLiveQueries;
 
     private final Object lock = new Object(); // lock for thread-safety
 
@@ -154,8 +154,8 @@ public final class Database implements C4Constants {
         open();
         this.sharedKeys = new SharedKeys(c4db);
 
-        this.replications = new HashMap<>();
         this.activeReplications = new HashSet<>();
+        this.activeLiveQueries = new HashSet<>();
     }
 
     //---------------------------------------------
@@ -437,6 +437,14 @@ public final class Database implements C4Constants {
 
         synchronized (lock) {
             Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
+
+            // stop replicator
+            for (Replicator repl : activeReplications)
+                repl.stop();
+
+            // stop live query
+            for (LiveQuery liveQuery : activeLiveQueries)
+                liveQuery.stop();
 
             // close db
             closeC4DB();
@@ -726,12 +734,14 @@ public final class Database implements C4Constants {
         }
     }
 
-    Map<URI, Replicator> getReplications() {
-        return replications;
-    }
-
     Set<Replicator> getActiveReplications() {
         return activeReplications;
+    }
+
+
+    // TODO: access level
+    public Set<LiveQuery> getActiveLiveQueries() {
+        return activeLiveQueries;
     }
 
     //////// RESOLVING REPLICATED CONFLICTS:
