@@ -73,6 +73,7 @@ public class LiveQuery implements DatabaseChangeListener {
 
         observing = true;
         releaseResultSet();
+        query.getDatabase().getActiveLiveQueries().add(this);
         dbListenerToken = query.getDatabase().addChangeListener(this);
         update();
     }
@@ -84,6 +85,7 @@ public class LiveQuery implements DatabaseChangeListener {
         observing = false;
         willUpdate = false; // cancels the delayed update started by -databaseChanged
         query.getDatabase().removeChangeListener(dbListenerToken);
+        query.getDatabase().getActiveLiveQueries().remove(this);
         releaseResultSet();
     }
 
