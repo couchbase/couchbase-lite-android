@@ -30,7 +30,8 @@ class ValueIndex extends Index {
     List<Object> items() {
         List<Object> items = new ArrayList<Object>();
         for (ValueIndexItem item : indexItems)
-            items.add(item.getExpression().asJSON());
+
+            items.add(item.expression.asJSON());
         return items;
     }
 }

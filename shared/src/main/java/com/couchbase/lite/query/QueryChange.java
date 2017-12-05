@@ -1,18 +1,20 @@
-package com.couchbase.lite;
+package com.couchbase.lite.query;
 
-public class LiveQueryChange {
+import com.couchbase.lite.Query;
+import com.couchbase.lite.ResultSet;
+
+public class QueryChange {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private LiveQuery query;
+    private Query query;
     private ResultSet rows;
     private Throwable error; // TODO: CouchbaseLiteException????
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
-
-    LiveQueryChange(LiveQuery query, ResultSet rows, Throwable error) {
+    public QueryChange(Query query, ResultSet rows, Throwable error) {
         this.query = query;
         this.rows = rows;
         this.error = error;
@@ -22,7 +24,7 @@ public class LiveQueryChange {
     // API - public methods
     //---------------------------------------------
 
-    public LiveQuery getQuery() {
+    public Query getQuery() {
         return query;
     }
 

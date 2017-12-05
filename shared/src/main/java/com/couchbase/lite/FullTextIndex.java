@@ -1,25 +1,26 @@
 package com.couchbase.lite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-class FTSIndex extends Index {
+class FullTextIndex extends Index {
 
-    FTSIndexItem indexItem;
+    private List<FullTextIndexItem> indexItems;
     String locale = null;
     boolean ignoreAccents = false;
 
-    FTSIndex(FTSIndexItem indexItem) {
-        this.indexItem = indexItem;
+    FullTextIndex(FullTextIndexItem... indexItems) {
+        this.indexItems = Arrays.asList(indexItems);
     }
 
-    public FTSIndex setLocale(String locale) {
+    public FullTextIndex setLocale(String locale) {
         this.locale = locale;
         return this;
     }
 
-    public FTSIndex ignoreAccents(boolean ignoreAccents) {
+    public FullTextIndex ignoreAccents(boolean ignoreAccents) {
         this.ignoreAccents = ignoreAccents;
         return this;
     }
@@ -47,9 +48,9 @@ class FTSIndex extends Index {
 
     @Override
     List<Object> items() {
-        List<Object> indexItems = new ArrayList<>();
-        if (indexItem != null)
-            indexItems.add(indexItem.getExpression().asJSON());
-        return indexItems;
+        List<Object> items = new ArrayList<>();
+        for (FullTextIndexItem item : indexItems)
+            items.add(item.expression.asJSON());
+        return items;
     }
 }

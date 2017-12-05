@@ -18,7 +18,7 @@ import com.couchbase.litecore.C4Constants;
 import java.util.Date;
 import java.util.Map;
 
-import static com.couchbase.lite.internal.Misc.CreateUUID;
+import static com.couchbase.lite.internal.support.Misc.CreateUUID;
 
 /**
  * A Couchbase Lite Document. A document has key/value properties like a Map.

@@ -21,7 +21,7 @@ public class Parameters {
         this.params = new HashMap<>(params);
     }
 
-    public Parameters setObject(String name, Object value) {
+    public Parameters setValue(String name, Object value) {
         params.put(name, value);
         return this;
     }

@@ -14,6 +14,8 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.query.expression.PropertyExpression;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,10 +37,6 @@ public abstract class Expression {
 
     public static Expression parameter(String name) {
         return new ParameterExpression(name);
-    }
-
-    public static Meta meta() {
-        return new Meta();
     }
 
     /**
@@ -133,17 +131,6 @@ public abstract class Expression {
     }
 
     /**
-     * Create a NOT less than expression that evaluates whether or not the current expression
-     * is not less than the given expression.
-     *
-     * @param expression the expression to compare with the current expression.
-     * @return a NOT less than expression.
-     */
-    public Expression notLessThan(Object expression) {
-        return greaterThanOrEqualTo(expression);
-    }
-
-    /**
      * Create a less than or equal to expression that evaluates whether or not the current
      * expression is less than or equal to the given expression.
      *
@@ -152,17 +139,6 @@ public abstract class Expression {
      */
     public Expression lessThanOrEqualTo(Object expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.LessThanOrEqualTo);
-    }
-
-    /**
-     * Create a NOT less than or equal to expression that evaluates whether or not the current
-     * expression is not less than or equal to the given expression.
-     *
-     * @param expression the expression to compare with the current expression.
-     * @return a NOT less than or equal to expression.
-     */
-    public Expression notLessThanOrEqualTo(Object expression) {
-        return greaterThan(expression);
     }
 
     /**
@@ -177,17 +153,6 @@ public abstract class Expression {
     }
 
     /**
-     * Create a NOT greater than expression that evaluates whether or not the current expression
-     * is not greater than the given expression.
-     *
-     * @param expression the expression to compare with the current expression.
-     * @return a NOT greater than expression.
-     */
-    public Expression notGreaterThan(Object expression) {
-        return lessThanOrEqualTo(expression);
-    }
-
-    /**
      * Create a greater than or equal to expression that evaluates whether or not the current
      * expression is greater than or equal to the given expression.
      *
@@ -196,17 +161,6 @@ public abstract class Expression {
      */
     public Expression greaterThanOrEqualTo(Object expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.GreaterThanOrEqualTo);
-    }
-
-    /**
-     * Create a NOT greater than or equal to expression that evaluates whether or not the current
-     * expression is not greater than or equal to the given expression.
-     *
-     * @param expression the expression to compare with the current expression.
-     * @return a NOT greater than or equal to expression.
-     */
-    public Expression notGreaterThanOrEqualTo(Object expression) {
-        return lessThan(expression);
     }
 
     /**
@@ -265,17 +219,6 @@ public abstract class Expression {
     }
 
     /**
-     * Create a NOT Like expression that evaluates whether or not the current expression is NOT LIKE
-     * the given expression.
-     *
-     * @param expression the expression to compare with the current expression.
-     * @return a NOT Like expression.
-     */
-    public Expression notLike(Object expression) {
-        return Expression.negated(like(expression));
-    }
-
-    /**
      * Create a regex match expression that evaluates whether or not the current expression
      * regex matches the given expression.
      *
@@ -284,39 +227,6 @@ public abstract class Expression {
      */
     public Expression regex(Object expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.RegexLike);
-    }
-
-    /**
-     * Create a NOT regex match expression that evaluates whether or not the current expression
-     * not regex matches the given expression.
-     *
-     * @param expression the expression to compare with the current expression.
-     * @return a NOT regex match expression.
-     */
-    public Expression notRegex(Object expression) {
-        return Expression.negated(regex(expression));
-    }
-
-    /**
-     * Create a full text match expression that evaluates whether or not the current expression
-     * full text matches the given expression.
-     *
-     * @param expression the expression to compare with the current expression.
-     * @return a full text match expression.
-     */
-    public Expression match(Object expression) {
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.Matches);
-    }
-
-    /**
-     * Create a full text NOT match expression that evaluates whether or not the current expression
-     * doesn't full text match the given expression.
-     *
-     * @param expression the expression to compare with the current expression.
-     * @return a full text NOT match expression.
-     */
-    public Expression notMatch(Object expression) {
-        return Expression.negated(match(expression));
     }
 
     /**
@@ -354,18 +264,6 @@ public abstract class Expression {
         return new BinaryExpression(this, aggr, BinaryExpression.OpType.Between);
     }
 
-    /**
-     * Create a NOT between expression that evaluates whether or not the current expression is
-     * not between the given expressions.
-     *
-     * @param expression1 the lower bound expression.
-     * @param expression2 the upper bound expression.
-     * @return a NOT between expression.
-     */
-    public Expression notBetween(Object expression1, Object expression2) {
-        return Expression.negated(between(expression1, expression2));
-    }
-
     // Null or Missing:
 
     public Expression isNullOrMissing() {
@@ -394,33 +292,9 @@ public abstract class Expression {
         return new BinaryExpression(this, aggr, BinaryExpression.OpType.In);
     }
 
-    /**
-     * Create a NOT IN expression that evaluates whether or not the current expression is not
-     * in the given expressions.
-     *
-     * @param expressions the expression array to evaluate with.
-     * @return a NOT IN expression.
-     */
-    public Expression notIn(Object... expressions) {
-        return Expression.negated(in(expressions));
-    }
-
-
     // Quantified operators:
     public static Expression variable(String name) {
         return new VariableExpression(name);
-    }
-
-    public static Expression.In any(String variable) {
-        return new Expression.In(QuantifiesType.ANY, variable);
-    }
-
-    public static Expression.In every(String variable) {
-        return new Expression.In(QuantifiesType.EVERY, variable);
-    }
-
-    public static Expression.In anyAndEvery(String variable) {
-        return new Expression.In(QuantifiesType.ANY_AND_EVERY, variable);
     }
 
     @Override
@@ -428,7 +302,7 @@ public abstract class Expression {
         return String.format(Locale.ENGLISH, "%s[json=%s]", getClass().getSimpleName(), asJSON());
     }
 
-    protected abstract Object asJSON();
+    public abstract Object asJSON();
 
     protected Object jsonValue(Object value) {
         if (value instanceof Expression)
@@ -449,7 +323,7 @@ public abstract class Expression {
         }
 
         @Override
-        protected Object asJSON() {
+        public Object asJSON() {
             List<Object> json = new ArrayList<Object>();
             json.add("[]");
             for (Object exp : expressions)
@@ -461,7 +335,7 @@ public abstract class Expression {
     static class BinaryExpression extends Expression {
         enum OpType {
             Add, Between, Divide, EqualTo, GreaterThan, GreaterThanOrEqualTo,
-            In, Is, IsNot, LessThan, LessThanOrEqualTo, Like, Matches,
+            In, Is, IsNot, LessThan, LessThanOrEqualTo, Like, /*Matches,*/
             Modulus, Multiply, NotEqualTo, Subtract, RegexLike,
         }
 
@@ -476,7 +350,7 @@ public abstract class Expression {
         }
 
         @Override
-        protected Object asJSON() {
+        public Object asJSON() {
             List<Object> json = new ArrayList<Object>();
             switch (type) {
                 case Add:
@@ -515,9 +389,9 @@ public abstract class Expression {
                 case Like:
                     json.add("LIKE");
                     break;
-                case Matches:
-                    json.add("MATCH");
-                    break;
+//                case Matches:
+//                    json.add("MATCH");
+//                    break;
                 case Modulus:
                     json.add("%");
                     break;
@@ -568,7 +442,7 @@ public abstract class Expression {
         }
 
         @Override
-        protected Object asJSON() {
+        public Object asJSON() {
             List<Object> json = new ArrayList<Object>();
             switch (type) {
                 case And:
@@ -591,71 +465,6 @@ public abstract class Expression {
         }
     }
 
-    public static class PropertyExpression extends Expression {
-        final static String kCBLAllPropertiesName = "";
-
-
-        private final String keyPath;
-        private String columnName;
-        private final String from; // Data Source Alias
-
-        PropertyExpression(String keyPath) {
-            this.keyPath = keyPath;
-            this.from = null;
-        }
-
-        private PropertyExpression(String keyPath, String from) {
-            this.keyPath = keyPath;
-            this.from = from;
-        }
-
-        private PropertyExpression(String keyPath, String columnName, String from) {
-            this.keyPath = keyPath;
-            this.columnName = columnName;
-            this.from = from;
-        }
-
-        public Expression from(String alias) {
-            return new PropertyExpression(this.keyPath, alias);
-        }
-
-        static PropertyExpression allFrom(String from) {
-            // Use data source alias name as the column name if specified:
-            String colName = from != null ? from : kCBLAllPropertiesName;
-            return new PropertyExpression(kCBLAllPropertiesName, colName, from);
-        }
-
-        @Override
-        protected Object asJSON() {
-            List<Object> json = new ArrayList<Object>();
-            if (keyPath.startsWith("rank(")) {
-                json.add("rank()");
-                List<String> params = new ArrayList<>();
-                params.add(".");
-                params.add(keyPath.substring(5, keyPath.length() - 1));
-                json.add(params);
-            } else {
-                if (from != null)
-                    json.add("." + from + "." + keyPath);
-                else
-                    json.add("." + keyPath);
-            }
-            return json;
-        }
-
-        String getKeyPath() {
-            return keyPath;
-        }
-
-        String getColumnName() {
-            if (columnName == null) {
-                String[] pathes = keyPath.split("\\.");
-                columnName = pathes[pathes.length - 1];
-            }
-            return columnName;
-        }
-    }
-
     static final class UnaryExpression extends Expression {
         enum OpType {
             Missing,
@@ -675,7 +484,7 @@ public abstract class Expression {
         }
 
         @Override
-        protected Object asJSON() {
+        public Object asJSON() {
             Object opd;
             if (operand instanceof Expression)
                 opd = ((Expression) operand).asJSON();
@@ -714,91 +523,9 @@ public abstract class Expression {
         }
 
         @Override
-        protected Object asJSON() {
+        public Object asJSON() {
             List<Object> json = new ArrayList<>();
             json.add("$" + name);
-            return json;
-        }
-    }
-
-    enum QuantifiesType {
-        ANY,
-        ANY_AND_EVERY,
-        EVERY
-    }
-
-    public static final class In {
-        QuantifiesType type;
-        String variable;
-
-        In(QuantifiesType type, String variable) {
-            this.type = type;
-            this.variable = variable;
-        }
-
-        public Satisfies in(Object expression) {
-            return new Satisfies(type, variable, expression);
-        }
-    }
-
-    public static final class Satisfies {
-        QuantifiesType type;
-        String variable;
-        Object inExpression;
-
-        Satisfies(QuantifiesType type, String variable, Object inExpression) {
-            this.type = type;
-            this.variable = variable;
-            this.inExpression = inExpression;
-        }
-
-        public Expression satisfies(Expression expression) {
-            return new QuantifiedExpression(type, variable, inExpression, expression);
-        }
-    }
-
-    static final class QuantifiedExpression extends Expression {
-        QuantifiesType type;
-        String variable;
-        Object inExpression;
-        Expression satisfiedExpression;
-
-        QuantifiedExpression(QuantifiesType type, String variable, Object inExpression, Expression satisfiesExpression) {
-            this.type = type;
-            this.variable = variable;
-            this.inExpression = inExpression;
-            this.satisfiedExpression = satisfiesExpression;
-        }
-
-        @Override
-        protected Object asJSON() {
-            List<Object> json = new ArrayList<>(4);
-
-            // type
-            switch (type) {
-                case ANY:
-                    json.add("ANY");
-                    break;
-                case ANY_AND_EVERY:
-                    json.add("ANY AND EVERY");
-                    break;
-                case EVERY:
-                    json.add("EVERY");
-                    break;
-            }
-
-            // variable
-            json.add(variable);
-
-            // in Expression
-            if (inExpression instanceof Expression)
-                json.add(((Expression) inExpression).asJSON());
-            else
-                json.add(inExpression);
-
-            // satisfies Expression
-            json.add(satisfiedExpression.asJSON());
-
             return json;
         }
     }
@@ -811,7 +538,7 @@ public abstract class Expression {
         }
 
         @Override
-        protected Object asJSON() {
+        public Object asJSON() {
             List<Object> json = new ArrayList<>();
             json.add("?" + name);
             return json;
@@ -828,7 +555,7 @@ public abstract class Expression {
         }
 
         @Override
-        protected Object asJSON() {
+        public Object asJSON() {
             List<Object> json = new ArrayList<>(3);
             json.add("COLLATE");
             json.add(collation.asJSON());

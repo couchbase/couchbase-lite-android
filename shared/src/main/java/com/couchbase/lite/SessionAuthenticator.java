@@ -26,12 +26,17 @@ public class SessionAuthenticator extends Authenticator {
     // Constructor
     //---------------------------------------------
 
-    public SessionAuthenticator(String sessionID, Object expires, String cookieName) {
+    public SessionAuthenticator(String sessionID, Date expires, String cookieName) {
         this.sessionID = sessionID;
-        this.expires = convert(expires);
+        this.expires = expires;
         this.cookieName = cookieName;
     }
 
+    public SessionAuthenticator(String sessionID, String expires, String cookieName) {
+        this.sessionID = sessionID;
+        this.expires = DateUtils.fromJson(expires);
+        this.cookieName = cookieName;
+    }
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -62,17 +67,5 @@ public class SessionAuthenticator extends Authenticator {
         cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, sessionID));
 
         options.put(kC4ReplicatorOptionCookies, cookieStr.toString());
-    }
-
-    private Date convert(Object expires) {
-        if (expires == null) return null;
-
-        if (expires instanceof Date)
-            return (Date) expires;
-
-        if (expires instanceof String)
-            return DateUtils.fromJson((String) expires);
-
-        return null;
     }
 }

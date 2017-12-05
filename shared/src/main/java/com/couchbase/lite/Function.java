@@ -1,76 +1,50 @@
 package com.couchbase.lite;
 
-import java.util.ArrayList;
+import com.couchbase.lite.internal.query.expression.FunctionExpresson;
+
 import java.util.Arrays;
-import java.util.List;
 
-public class Function extends Expression {
-
-    //---------------------------------------------
-    // member variables
-    //---------------------------------------------
-    private String func = null;
-    private List<Object> params = null;
-
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-    private Function(String func, List<Object> params) {
-        this.func = func;
-        this.params = params;
-    }
-
+public class Function {
     //---------------------------------------------
     // Aggregation
     //---------------------------------------------
-    public static Function avg(Object expression) {
-        return new Function("AVG()", Arrays.asList(expression));
+    public static Expression avg(Object expression) {
+        return new FunctionExpresson("AVG()", Arrays.asList(expression));
     }
 
-    public static Function count(Object expression) {
-        return new Function("COUNT()", Arrays.asList(expression));
+    public static Expression count(Object expression) {
+        return new FunctionExpresson("COUNT()", Arrays.asList(expression));
     } // null expression -> count *
 
-    public static Function min(Object expression) {
-        return new Function("MIN()", Arrays.asList(expression));
+    public static Expression min(Object expression) {
+        return new FunctionExpresson("MIN()", Arrays.asList(expression));
     }
 
-    public static Function max(Object expression) {
-        return new Function("MAX()", Arrays.asList(expression));
+    public static Expression max(Object expression) {
+        return new FunctionExpresson("MAX()", Arrays.asList(expression));
     }
 
-    public static Function sum(Object expression) {
-        return new Function("SUM()", Arrays.asList(expression));
-    }
-
-    //---------------------------------------------
-    // Array
-    //---------------------------------------------
-    public static Function arrayContains(Object expression, Object value) {
-        return new Function("ARRAY_CONTAINS()", Arrays.asList(expression, value));
-    }
-
-    public static Function arrayLength(Object expression) {
-        return new Function("ARRAY_LENGTH()", Arrays.asList(expression));
+    public static Expression sum(Object expression) {
+        return new FunctionExpresson("SUM()", Arrays.asList(expression));
     }
 
     //---------------------------------------------
     // Math
     //---------------------------------------------
-    public static Function abs(Object expression) {
-        return new Function("ABS()", Arrays.asList(expression));
+    public static Expression abs(Object expression) {
+        return new FunctionExpresson("ABS()", Arrays.asList(expression));
     }
 
-    public static Function acos(Object expression) {
-        return new Function("ACOS()", Arrays.asList(expression));
+    public static Expression acos(Object expression) {
+        return new FunctionExpresson("ACOS()", Arrays.asList(expression));
     }
 
-    public static Function asin(Object expression) {
-        return new Function("ASIN()", Arrays.asList(expression));
+    public static Expression asin(Object expression) {
+        return new FunctionExpresson("ASIN()", Arrays.asList(expression));
     }
 
-    public static Function atan(Object expression) {
-        return new Function("ATAN()", Arrays.asList(expression));
+    public static Expression atan(Object expression) {
+        return new FunctionExpresson("ATAN()", Arrays.asList(expression));
     }
 
     /**
@@ -82,165 +56,133 @@ public class Function extends Expression {
      * @return the theta component of the point (r, theta) in polar coordinates that corresponds
      * to the point (x, y) in Cartesian coordinates.
      */
-    public static Function atan2(Object y, Object x) {
-        return new Function("ATAN2()", Arrays.asList(x, y));
+    public static Expression atan2(Object y, Object x) {
+        return new FunctionExpresson("ATAN2()", Arrays.asList(x, y));
     }
 
-    public static Function ceil(Object expression) {
-        return new Function("CEIL()", Arrays.asList(expression));
+    public static Expression ceil(Object expression) {
+        return new FunctionExpresson("CEIL()", Arrays.asList(expression));
     }
 
-    public static Function cos(Object expression) {
-        return new Function("COS()", Arrays.asList(expression));
+    public static Expression cos(Object expression) {
+        return new FunctionExpresson("COS()", Arrays.asList(expression));
     }
 
-    public static Function degrees(Object expression) {
-        return new Function("DEGREES()", Arrays.asList(expression));
+    public static Expression degrees(Object expression) {
+        return new FunctionExpresson("DEGREES()", Arrays.asList(expression));
     }
 
-    public static Function e() {
-        return new Function("E()", Arrays.asList((Object) null));
+    public static Expression e() {
+        return new FunctionExpresson("E()", Arrays.asList((Object) null));
     }
 
-    public static Function exp(Object expression) {
-        return new Function("EXP()", Arrays.asList(expression));
+    public static Expression exp(Object expression) {
+        return new FunctionExpresson("EXP()", Arrays.asList(expression));
     }
 
-    public static Function floor(Object expression) {
-        return new Function("FLOOR()", Arrays.asList(expression));
+    public static Expression floor(Object expression) {
+        return new FunctionExpresson("FLOOR()", Arrays.asList(expression));
     }
 
-    public static Function ln(Object expression) {
-        return new Function("LN()", Arrays.asList(expression));
+    public static Expression ln(Object expression) {
+        return new FunctionExpresson("LN()", Arrays.asList(expression));
     }
 
-    public static Function log(Object expression) {
-        return new Function("LOG()", Arrays.asList(expression));
+    public static Expression log(Object expression) {
+        return new FunctionExpresson("LOG()", Arrays.asList(expression));
     }
 
-    public static Function pi() {
-        return new Function("PI()", Arrays.asList((Object) null));
+    public static Expression pi() {
+        return new FunctionExpresson("PI()", Arrays.asList((Object) null));
     }
 
-    public static Function power(Object base, Object exponent) {
-        return new Function("POWER()", Arrays.asList(base, exponent));
+    public static Expression power(Object base, Object exponent) {
+        return new FunctionExpresson("POWER()", Arrays.asList(base, exponent));
     }
 
-    public static Function radians(Object expression) {
-        return new Function("RADIANS()", Arrays.asList(expression));
+    public static Expression radians(Object expression) {
+        return new FunctionExpresson("RADIANS()", Arrays.asList(expression));
     }
 
-    public static Function round(Object expression) {
-        return new Function("ROUND()", Arrays.asList(expression));
+    public static Expression round(Object expression) {
+        return new FunctionExpresson("ROUND()", Arrays.asList(expression));
     }
 
-    public static Function round(Object expression, int digits) {
-        return new Function("ROUND()", Arrays.asList(expression, digits));
+    public static Expression round(Object expression, int digits) {
+        return new FunctionExpresson("ROUND()", Arrays.asList(expression, digits));
     }
 
-    public static Function sign(Object expression) {
-        return new Function("SIGN()", Arrays.asList(expression));
+    public static Expression sign(Object expression) {
+        return new FunctionExpresson("SIGN()", Arrays.asList(expression));
     }
 
-    public static Function sin(Object expression) {
-        return new Function("SIN()", Arrays.asList(expression));
+    public static Expression sin(Object expression) {
+        return new FunctionExpresson("SIN()", Arrays.asList(expression));
     }
 
-    public static Function sqrt(Object expression) {
-        return new Function("SQRT()", Arrays.asList(expression));
+    public static Expression sqrt(Object expression) {
+        return new FunctionExpresson("SQRT()", Arrays.asList(expression));
     }
 
-    public static Function tan(Object expression) {
-        return new Function("TAN()", Arrays.asList(expression));
+    public static Expression tan(Object expression) {
+        return new FunctionExpresson("TAN()", Arrays.asList(expression));
     }
 
-    public static Function trunc(Object expression) {
-        return new Function("TRUNC()", Arrays.asList(expression));
+    public static Expression trunc(Object expression) {
+        return new FunctionExpresson("TRUNC()", Arrays.asList(expression));
     }
 
-    public static Function trunc(Object expression, int digits) {
-        return new Function("TRUNC()", Arrays.asList(expression, digits));
+    public static Expression trunc(Object expression, int digits) {
+        return new FunctionExpresson("TRUNC()", Arrays.asList(expression, digits));
     }
 
     //---------------------------------------------
     // String
     //---------------------------------------------
-    public static Function contains(Object expression, Object substring) {
-        return new Function("CONTAINS()", Arrays.asList(expression, substring));
+    public static Expression contains(Object expression, Object substring) {
+        return new FunctionExpresson("CONTAINS()", Arrays.asList(expression, substring));
     }
 
-    public static Function length(Object expression) {
-        return new Function("LENGTH()", Arrays.asList(expression));
+    public static Expression length(Object expression) {
+        return new FunctionExpresson("LENGTH()", Arrays.asList(expression));
     }
 
-    public static Function lower(Object expression) {
-        return new Function("LOWER()", Arrays.asList(expression));
+    public static Expression lower(Object expression) {
+        return new FunctionExpresson("LOWER()", Arrays.asList(expression));
     }
 
-    public static Function ltrim(Object expression) {
-        return new Function("LTRIM()", Arrays.asList(expression));
+    public static Expression ltrim(Object expression) {
+        return new FunctionExpresson("LTRIM()", Arrays.asList(expression));
     }
 
-    public static Function rtrim(Object expression) {
-        return new Function("RTRIM()", Arrays.asList(expression));
+    public static Expression rtrim(Object expression) {
+        return new FunctionExpresson("RTRIM()", Arrays.asList(expression));
     }
 
-    public static Function trim(Object expression) {
-        return new Function("TRIM()", Arrays.asList(expression));
+    public static Expression trim(Object expression) {
+        return new FunctionExpresson("TRIM()", Arrays.asList(expression));
     }
 
-    public static Function upper(Object expression) {
-        return new Function("UPPER()", Arrays.asList(expression));
+    public static Expression upper(Object expression) {
+        return new FunctionExpresson("UPPER()", Arrays.asList(expression));
     }
 
     //---------------------------------------------
     // Type
     //---------------------------------------------
-    public static Function isArray(Object expression) {
-        return new Function("ISARRAY()", Arrays.asList(expression));
+    public static Expression isArray(Object expression) {
+        return new FunctionExpresson("ISARRAY()", Arrays.asList(expression));
     }
 
-    public static Function isNumber(Object expression) {
-        return new Function("ISNUMBER()", Arrays.asList(expression));
+    public static Expression isNumber(Object expression) {
+        return new FunctionExpresson("ISNUMBER()", Arrays.asList(expression));
     }
 
-    public static Function isDictionary(Object expression) {
-        return new Function("ISOBJECT()", Arrays.asList(expression));
+    public static Expression isDictionary(Object expression) {
+        return new FunctionExpresson("ISOBJECT()", Arrays.asList(expression));
     }
 
-    public static Function isString(Object expression) {
-        return new Function("ISSTRING()", Arrays.asList(expression));
-    }
-
-    // NOTE: Not in supported API list.
-    // https://github.com/couchbaselabs/couchbase-lite-apiv2/blob/master/query/java/couchbase/lite/query/Function.java#L57
-    /*
-    public static Function isBoolean(Object expression) {
-        return new Function("ISBOOLEAN()", Arrays.asList(expression));
-    }
-    */
-
-    //---------------------------------------------
-    // FTS
-    //---------------------------------------------
-
-    public static Function rank(Expression property) {
-        return new Function("RANK()", Arrays.asList((Object) property));
-    }
-
-    //---------------------------------------------
-    // Protected level access
-    //---------------------------------------------
-    @Override
-    protected Object asJSON() {
-        List<Object> json = new ArrayList<>();
-        json.add(func);
-        for (Object param : params) {
-            if (param != null && param instanceof Expression)
-                json.add(((Expression) param).asJSON());
-            else
-                json.add(param);
-        }
-        return json;
+    public static Expression isString(Object expression) {
+        return new FunctionExpresson("ISSTRING()", Arrays.asList(expression));
     }
 }

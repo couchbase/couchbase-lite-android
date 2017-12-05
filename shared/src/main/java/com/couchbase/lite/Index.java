@@ -11,23 +11,12 @@ public abstract class Index {
 
     abstract List<Object> items();
 
-    public static ValueIndexOn valueIndex() {
-        return new ValueIndexOn();
+    public static ValueIndex valueIndex(ValueIndexItem... items) {
+        return new ValueIndex(items);
     }
 
-    public static FTSIndexOn ftsIndex() {
-        return new FTSIndexOn();
+    public static FullTextIndex fullTextIndex(FullTextIndexItem... items) {
+        return new FullTextIndex(items);
     }
 
-    public static class ValueIndexOn {
-        public ValueIndex on(ValueIndexItem... items) {
-            return new ValueIndex(items);
-        }
-    }
-
-    public static class FTSIndexOn {
-        public FTSIndex on(FTSIndexItem item) {
-            return new FTSIndex(item);
-        }
-    }
 }

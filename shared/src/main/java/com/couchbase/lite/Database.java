@@ -17,6 +17,8 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.lite.internal.database.DatabaseChangeListenerToken;
+import com.couchbase.lite.internal.database.DocumentChangeListenerToken;
 import com.couchbase.lite.internal.support.FileUtils;
 import com.couchbase.lite.internal.support.JsonUtils;
 import com.couchbase.litecore.C4;
@@ -46,6 +48,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 import static com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm.kC4EncryptionAES256;
 import static com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm.kC4EncryptionNone;
@@ -113,9 +116,9 @@ public final class Database implements C4Constants {
     private DatabaseConfiguration config;
     private C4Database c4db;
 
-    private Set<DatabaseChangeListener> dbChangeListeners;
+    private Set<DatabaseChangeListenerToken> dbListenerTokens;
     private C4DatabaseObserver c4DBObserver;
-    private Map<String, Set<DocumentChangeListener>> docChangeListeners;
+    private Map<String, Set<DocumentChangeListenerToken>> docListenerTokens;
     private Map<String, C4DocumentObserver> c4DocObservers;
 
     private final SharedKeys sharedKeys;
@@ -370,28 +373,35 @@ public final class Database implements C4Constants {
      *
      * @param listener
      */
-    public void addChangeListener(DatabaseChangeListener listener) {
+    public ListenerToken addChangeListener(DatabaseChangeListener listener) {
+        return addChangeListener(null, listener);
+    }
+
+    public ListenerToken addChangeListener(Executor executor, DatabaseChangeListener listener) {
         if (listener == null)
             throw new IllegalArgumentException("a listener parameter is null");
 
         synchronized (lock) {
             mustBeOpen();
-            addDatabaseChangeListener(listener);
+            return addDatabaseChangeListener(executor, listener);
         }
     }
 
     /**
      * Remove the given DatabaseChangeListener from the this database.
      *
-     * @param listener
+     * @param token
      */
-    public void removeChangeListener(DatabaseChangeListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException("a listener parameter is null");
+    public void removeChangeListener(ListenerToken token) {
+        if (token == null)
+            throw new IllegalArgumentException("a token parameter is null");
 
         synchronized (lock) {
             mustBeOpen();
-            removeDatabaseChangeListener(listener);
+            if (token instanceof DocumentChangeListenerToken)
+                removeDocumentChangeListener((DocumentChangeListenerToken) token);
+            else
+                removeDatabaseChangeListener((DatabaseChangeListenerToken) token);
         }
     }
 
@@ -399,31 +409,18 @@ public final class Database implements C4Constants {
 
     /**
      * Add the given DocumentChangeListener to the specified document.
-     *
-     * @param listener
      */
-    public void addChangeListener(String docID, DocumentChangeListener listener) {
-        if (docID == null || listener == null)
-            throw new IllegalArgumentException("a listener parameter and/or a listener parameter are null");
-
-        synchronized (lock) {
-            mustBeOpen();
-            addDocumentChangeListener(docID, listener);
-        }
+    public ListenerToken addDocumentChangeListener(String docID, DocumentChangeListener listener) {
+        return addDocumentChangeListener(docID, null, listener);
     }
 
-    /**
-     * Remove the given DocumentChangeListener from the specified document.
-     *
-     * @param listener
-     */
-    public void removeChangeListener(String docID, DocumentChangeListener listener) {
+    public ListenerToken addDocumentChangeListener(String docID, Executor executor, DocumentChangeListener listener) {
         if (docID == null || listener == null)
             throw new IllegalArgumentException("a listener parameter and/or a listener parameter are null");
 
         synchronized (lock) {
             mustBeOpen();
-            removeDocumentChangeListener(docID, listener);
+            return addDocumentChangeListener(executor, listener, docID);
         }
     }
 
@@ -856,8 +853,8 @@ public final class Database implements C4Constants {
         }
 
         c4DBObserver = null;
-        dbChangeListeners = synchronizedSet(new HashSet<DatabaseChangeListener>());
-        docChangeListeners = Collections.synchronizedMap(new HashMap<String, Set<DocumentChangeListener>>());
+        dbListenerTokens = synchronizedSet(new HashSet<DatabaseChangeListenerToken>());
+        docListenerTokens = Collections.synchronizedMap(new HashMap<String, Set<DocumentChangeListenerToken>>());
         c4DocObservers = Collections.synchronizedMap(new HashMap<String, C4DocumentObserver>());
     }
 
@@ -922,36 +919,39 @@ public final class Database implements C4Constants {
     // --- Notification: - C4DatabaseObserver/C4DocumentObserver
 
     // Database changes:
-    private void addDatabaseChangeListener(DatabaseChangeListener listener) {
-        if (dbChangeListeners.isEmpty())
+    private DatabaseChangeListenerToken addDatabaseChangeListener(Executor executor, DatabaseChangeListener listener) {
+        if (dbListenerTokens.isEmpty())
             registerC4DBObserver();
-        dbChangeListeners.add(listener);
+        DatabaseChangeListenerToken token = new DatabaseChangeListenerToken(executor, listener);
+        dbListenerTokens.add(token);
+        return token;
     }
 
-    private void removeDatabaseChangeListener(DatabaseChangeListener listener) {
-        dbChangeListeners.remove(listener);
-        if (dbChangeListeners.isEmpty())
+    private void removeDatabaseChangeListener(DatabaseChangeListenerToken token) {
+        dbListenerTokens.remove(token);
+        if (dbListenerTokens.isEmpty())
             freeC4DBObserver();
     }
 
     // Document changes:
-    private void addDocumentChangeListener(String docID, DocumentChangeListener listener) {
-        if (docChangeListeners.containsKey(docID)) {
-            docChangeListeners.get(docID).add(listener);
-        } else {
-            Set<DocumentChangeListener> listeners = Collections.synchronizedSet(new HashSet<DocumentChangeListener>());
-            listeners.add(listener);
-            docChangeListeners.put(docID, listeners);
+    private DocumentChangeListenerToken addDocumentChangeListener(Executor executor, DocumentChangeListener listener, String docID) {
+        if (!docListenerTokens.containsKey(docID)) {
+            Set<DocumentChangeListenerToken> listeners = Collections.synchronizedSet(new HashSet<DocumentChangeListenerToken>());
+            docListenerTokens.put(docID, listeners);
             registerC4DocObserver(docID);
         }
+        DocumentChangeListenerToken token = new DocumentChangeListenerToken(executor, listener, docID);
+        docListenerTokens.get(docID).add(token);
+        return token;
     }
 
-    private void removeDocumentChangeListener(String docID, DocumentChangeListener listener) {
-        if (docChangeListeners.containsKey(docID)) {
-            Set<DocumentChangeListener> listeners = docChangeListeners.get(docID);
-            if (listeners.remove(listener)) {
-                if (listeners.isEmpty()) {
-                    docChangeListeners.remove(docID);
+    private void removeDocumentChangeListener(DocumentChangeListenerToken token) {
+        String docID = token.getDocID();
+        if (docListenerTokens.containsKey(docID)) {
+            Set<DocumentChangeListenerToken> tokens = docListenerTokens.get(docID);
+            if (tokens.remove(token)) {
+                if (tokens.isEmpty()) {
+                    docListenerTokens.remove(docID);
                     removeC4DocObserver(docID);
                 }
             }
@@ -1018,9 +1018,9 @@ public final class Database implements C4Constants {
             c4DocObservers.clear();
             c4DocObservers = null;
         }
-        if (docChangeListeners != null) {
-            docChangeListeners.clear();
-            docChangeListeners = null;
+        if (docListenerTokens != null) {
+            docListenerTokens.clear();
+            docListenerTokens = null;
         }
     }
 
@@ -1059,9 +1059,9 @@ public final class Database implements C4Constants {
         // NOTE: dbChangeListeners is synchronized collections. And, DatabaseChange is immutable.
         for (DatabaseChange change : allChanges) {
             // not allow to add/remove middle of iteration
-            synchronized (dbChangeListeners) {
-                for (DatabaseChangeListener listener : dbChangeListeners)
-                    listener.changed(change);
+            synchronized (dbListenerTokens) {
+                for (DatabaseChangeListenerToken token : dbListenerTokens)
+                    token.notify(change);
             }
         }
     }
@@ -1074,13 +1074,12 @@ public final class Database implements C4Constants {
 
         // NOTE: docChangeListeners and its Set value are synchronized collections.
         //       And DocumentChange is immutable
-        Set<DocumentChangeListener> listeners = docChangeListeners.get(documentID);
-        if (listeners != null) {
-            synchronized (listeners) {
+        Set<DocumentChangeListenerToken> tokens = docListenerTokens.get(documentID);
+        if (tokens != null) {
+            synchronized (tokens) {
                 DocumentChange change = new DocumentChange(documentID);
-                for (DocumentChangeListener listener : listeners) {
-                    listener.changed(change);
-                }
+                for (DocumentChangeListenerToken token : tokens)
+                    token.notify(change);
             }
         }
     }

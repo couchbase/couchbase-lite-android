@@ -312,6 +312,40 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     //---------------------------------------------
+    // Override
+    //---------------------------------------------
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Document)) return false;
+
+        Document doc = (Document) o;
+
+        // Step 1: Check Database
+        if (_database != null ? !_database.equals(doc._database) : doc._database != null)
+            return false;
+
+        // Step 2: Check document ID
+        if (!(_id != null ? _id.equals(doc._id) : doc._id == null))
+            return false;
+
+        // Step 3: Check content
+        if (_dict != null ? _dict.equals(doc._dict) : doc._dict == null)
+            return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = _database != null ? _database.hashCode() : 0;
+        result = 31 * result + (_id != null ? _id.hashCode() : 0);
+        result = 31 * result + (_dict != null ? _dict.hashCode() : 0);
+        return result;
+    }
+
+    //---------------------------------------------
     // protected level access
     //---------------------------------------------
 
@@ -415,7 +449,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
     C4Document getC4doc() {
         return _c4doc;
     }
-
 
     boolean selectConflictingRevision() {
         try {

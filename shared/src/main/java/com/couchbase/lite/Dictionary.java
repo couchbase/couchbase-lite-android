@@ -296,15 +296,6 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     }
 
     //---------------------------------------------
-    // protected level access
-    //---------------------------------------------
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-    }
-
-    //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
     @Override
@@ -313,9 +304,62 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     }
 
     //---------------------------------------------
-    // Package
+    // Override
     //---------------------------------------------
-    boolean isEmpty() {
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Dictionary)) return false;
+
+        Dictionary m = (Dictionary) o;
+
+        if (m.count() != count()) return false;
+        Iterator<String> i = iterator();
+        while (i.hasNext()) {
+            String key = i.next();
+            Object value = getValue(key);
+            if (value == null) {
+                if (!(m.getValue(key) == null && m.contains(key)))
+                    return false;
+            } else {
+                if (!value.equals(m.getValue(key)))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = 0;
+        Iterator<String> i = iterator();
+        while (i.hasNext()) {
+            String key = i.next();
+            h += hashCode(key, getValue(key));
+        }
+        return h;
+    }
+
+    //---------------------------------------------
+    // protected level access
+    //---------------------------------------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+    }
+
+    protected boolean isEmpty() {
         return count() == 0;
+    }
+
+    //---------------------------------------------
+    // private
+    //---------------------------------------------
+
+    // hashCode for pair of key and value
+    private int hashCode(String key, Object value) {
+        return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
     }
 }

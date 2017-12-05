@@ -246,6 +246,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         _array.encodeTo(encoder);
         encoder.release();
     }
+
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
@@ -269,6 +270,36 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     public Iterator<Object> iterator() {
         return new ArrayIterator();
     }
+
+    //---------------------------------------------
+    // Override
+    //---------------------------------------------
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Array)) return false;
+
+        Array a = (Array) o;
+        Iterator<Object> itr1 = iterator();
+        Iterator<Object> itr2 = a.iterator();
+        while (itr1.hasNext() && itr2.hasNext()) {
+            Object o1 = itr1.next();
+            Object o2 = itr2.next();
+            if (!(o1 == null ? o2 == null : o1.equals(o2)))
+                return false;
+        }
+        return !(itr1.hasNext() || itr2.hasNext());
+    }
+
+    @Override
+    public int hashCode() {
+        int h = 1;
+        for (Object o : this)
+            h = 31 * h + (o == null ? 0 : o.hashCode());
+        return h;
+    }
+
 
     //---------------------------------------------
     // protected level access

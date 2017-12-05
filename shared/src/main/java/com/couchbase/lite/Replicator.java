@@ -5,6 +5,7 @@ import android.os.Looper;
 import android.util.Base64;
 
 import com.couchbase.lite.internal.replicator.CBLWebSocket;
+import com.couchbase.lite.internal.replicator.ReplicatorChangeListenerToken;
 import com.couchbase.lite.internal.support.StringUtils;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;
@@ -21,6 +22,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
@@ -190,7 +192,7 @@ public class Replicator implements NetworkReachabilityListener {
     private ReplicatorConfiguration config;
     private Status status;
 
-    private Set<ReplicatorChangeListener> changeListeners;
+    private Set<ReplicatorChangeListenerToken> changeListenerTokens;
     C4Replicator c4repl;
     C4ReplicatorStatus c4ReplStatus;
     C4ReplicatorListener c4ReplListener;
@@ -212,7 +214,7 @@ public class Replicator implements NetworkReachabilityListener {
      */
     public Replicator(ReplicatorConfiguration config) {
         this.config = config.copy();
-        this.changeListeners = synchronizedSet(new HashSet<ReplicatorChangeListener>());
+        this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
         this.handler = new Handler(Looper.getMainLooper());
     }
 
@@ -266,26 +268,29 @@ public class Replicator implements NetworkReachabilityListener {
         return status.copy();
     }
 
+    public ListenerToken addChangeListener(ReplicatorChangeListener listener) {
+        return addChangeListener(null, listener);
+    }
     /**
      * Set the given ReplicatorChangeListener to the this replicator.
      *
      * @param listener
      */
-    public void addChangeListener(ReplicatorChangeListener listener) {
+    public ListenerToken addChangeListener(Executor executor, ReplicatorChangeListener listener) {
         if (listener == null)
             throw new IllegalArgumentException();
-        changeListeners.add(listener);
+        ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
+        changeListenerTokens.add(token);
+        return token;
     }
 
     /**
      * Remove the given ReplicatorChangeListener from the this replicator.
-     *
-     * @param listener
      */
-    public void removeChangeListener(ReplicatorChangeListener listener) {
-        if (listener == null)
+    public void removeChangeListener(ListenerToken token) {
+        if (token == null|| !(token instanceof ReplicatorChangeListenerToken))
             throw new IllegalArgumentException();
-        changeListeners.remove(listener);
+        changeListenerTokens.remove(token);
     }
 
     @Override
@@ -489,11 +494,11 @@ public class Replicator implements NetworkReachabilityListener {
         updateStateProperties(c4Status);
 
         // Post notification
-        synchronized (changeListeners) {
+        synchronized (changeListenerTokens) {
             // Replicator.getStatus() creates a copy of Status.
             ReplicatorChange change = new ReplicatorChange(this, this.getStatus());
-            for (ReplicatorChangeListener listener : changeListeners)
-                listener.changed(change);
+            for (ReplicatorChangeListenerToken token : changeListenerTokens)
+                token.notify(change);
         }
 
         // If Stopped:
