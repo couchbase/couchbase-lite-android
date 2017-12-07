@@ -6,7 +6,7 @@ import com.couchbase.lite.Expression;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FunctionExpresson extends Expression{
+public class FunctionExpresson extends Expression {
     //---------------------------------------------
     // member variables
     //---------------------------------------------

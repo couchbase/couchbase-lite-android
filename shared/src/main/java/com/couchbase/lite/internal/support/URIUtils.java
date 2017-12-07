@@ -4,6 +4,9 @@ package com.couchbase.lite.internal.support;
 import java.net.URI;
 
 public class URIUtils {
+    private URIUtils() {
+
+    }
 
     public static String getUsername(URI uri) {
         if (uri == null ||

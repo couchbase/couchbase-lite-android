@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 public class JsonUtils {
+    private JsonUtils() {
+    }
+
     public static JSONObject toJson(Map<String, Object> map) throws JSONException {
         if (map == null)
             return null;

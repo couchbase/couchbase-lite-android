@@ -54,11 +54,11 @@ public class QueryTest extends BaseTest {
     private static SelectResult SR_ALL = SelectResult.all();
     private static SelectResult SR_NUMBER1 = SelectResult.property("number1");
 
-    private interface QueryResult {
+    public interface QueryResult {
         void check(int n, Result result) throws Exception;
     }
 
-    private int verifyQuery(Query query, QueryResult queryResult) throws Exception {
+    public static int verifyQuery(Query query, QueryResult queryResult) throws Exception {
         int n = 0;
         Result result;
         ResultSet rs = query.execute();
@@ -69,7 +69,7 @@ public class QueryTest extends BaseTest {
         return n;
     }
 
-    private int verifyQueryWithIterable(Query query, QueryResult queryResult) throws Exception {
+    public static int verifyQueryWithIterable(Query query, QueryResult queryResult) throws Exception {
         int n = 0;
         for (Result result : query.execute()) {
             n += 1;
@@ -78,7 +78,7 @@ public class QueryTest extends BaseTest {
         return n;
     }
 
-    private int verifyQuery(Query query, QueryResult result, boolean runBoth) throws Exception {
+    public static int verifyQuery(Query query, QueryResult result, boolean runBoth) throws Exception {
         int counter1 = verifyQuery(query, result);
         if (runBoth) {
             int counter2 = verifyQueryWithIterable(query, result);

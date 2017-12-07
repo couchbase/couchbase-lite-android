@@ -45,7 +45,8 @@ public class DocumentTest extends BaseTest {
     final static String kDocumentTestDate = "2017-01-01T00:00:00.000Z";
     final static String kDocumentTestBlob = "i'm blob";
 
-    private void populateData(MutableDocument doc) {
+    // used from other package's tests
+    public static void populateData(MutableDocument doc) {
         doc.setValue("true", true);
         doc.setValue("false", false);
         doc.setValue("string", "string");
@@ -75,7 +76,8 @@ public class DocumentTest extends BaseTest {
         doc.setValue("blob", blob);
     }
 
-    private void populateDataByTypedSetter(MutableDocument doc) {
+    // used from other package's tests
+    public static void populateDataByTypedSetter(MutableDocument doc) {
         doc.setBoolean("true", true);
         doc.setBoolean("false", false);
         doc.setString("string", "string");
@@ -1148,6 +1150,7 @@ public class DocumentTest extends BaseTest {
                     dict.put("state", "CA");
                     assertEquals(dict, d.getDictionary("dict").toMap());
                     assertNull(d.getDictionary("array"));
+                    assertNull(d.getDictionary("blob"));
                     assertNull(d.getDictionary("non_existing_key"));
                 }
             });
@@ -1213,6 +1216,7 @@ public class DocumentTest extends BaseTest {
                     assertNotNull(d.getArray("array"));
                     List<Object> list = Arrays.asList((Object) "650-123-0001", (Object) "650-123-0002");
                     assertEquals(list, d.getArray("array").toList());
+                    assertNull(d.getArray("blob"));
                     assertNull(d.getArray("non_existing_key"));
                 }
             });
@@ -2033,7 +2037,7 @@ public class DocumentTest extends BaseTest {
 
         MutableDocument mDoc = new MutableDocument(docID);
         mDoc.setValue("key", "value");
-         doc = db.save(mDoc);
+        doc = db.save(mDoc);
         assertNotNull(doc);
         assertEquals(1, db.getCount());
 

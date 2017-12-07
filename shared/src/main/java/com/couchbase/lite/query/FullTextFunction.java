@@ -8,6 +8,12 @@ import java.util.Arrays;
 
 public class FullTextFunction {
     //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    private FullTextFunction() {
+    }
+
+    //---------------------------------------------
     // FTS
     //---------------------------------------------
     public static Expression rank(String indexName) {

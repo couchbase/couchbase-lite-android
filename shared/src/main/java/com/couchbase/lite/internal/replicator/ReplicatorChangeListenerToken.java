@@ -28,7 +28,7 @@ public class ReplicatorChangeListenerToken implements ListenerToken {
         });
     }
 
-    private Executor getExecutor() {
+    Executor getExecutor() {
         return executor != null ? executor : DefaultExecutor.instance();
     }
 }
