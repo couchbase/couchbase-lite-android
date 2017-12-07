@@ -17,6 +17,10 @@ import java.util.Locale;
 import java.util.UUID;
 
 public class Misc {
+    private Misc() {
+
+    }
+
     public static String CreateUUID() {
         return UUID.randomUUID().toString().toLowerCase(Locale.ENGLISH);
     }

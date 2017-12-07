@@ -44,24 +44,12 @@ public class PropertyExpression extends Expression {
 
     @Override
     public Object asJSON() {
-        List<Object> json = new ArrayList<Object>();
-        if (keyPath.startsWith("rank(")) {
-            json.add("rank()");
-            List<String> params = new ArrayList<>();
-            params.add(".");
-            params.add(keyPath.substring(5, keyPath.length() - 1));
-            json.add(params);
-        } else {
-            if (from != null)
-                json.add("." + from + "." + keyPath);
-            else
-                json.add("." + keyPath);
-        }
+        List<Object> json = new ArrayList<>();
+        if (from != null)
+            json.add("." + from + "." + keyPath);
+        else
+            json.add("." + keyPath);
         return json;
-    }
-
-    String getKeyPath() {
-        return keyPath;
     }
 
     public String getColumnName() {

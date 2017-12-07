@@ -18,6 +18,9 @@ import com.couchbase.lite.CouchbaseLiteRuntimeException;
 import com.couchbase.litecore.LiteCoreException;
 
 public class LiteCoreBridge {
+    private LiteCoreBridge() {
+    }
+
     public static CouchbaseLiteException convertException(LiteCoreException orgEx) {
         return new CouchbaseLiteException(orgEx.getMessage(), orgEx, orgEx.domain, orgEx.code);
     }

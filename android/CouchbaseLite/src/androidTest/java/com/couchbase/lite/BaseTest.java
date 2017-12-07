@@ -78,11 +78,19 @@ public class BaseTest implements C4Constants {
         }
 
         // database exist, delete it
-        if (Database.exists(kDatabaseName, dir)) {
+        deleteDatabase(kDatabaseName);
+
+        // clean dir
+        FileUtils.cleanDirectory(dir);
+    }
+
+    protected void deleteDatabase(String dbName) throws CouchbaseLiteException {
+        // database exist, delete it
+        if (Database.exists(dbName, dir)) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec
             for (int i = 0; i < 10; i++) {
                 try {
-                    Database.delete(kDatabaseName, dir);
+                    Database.delete(dbName, dir);
                     break;
                 } catch (CouchbaseLiteException ex) {
                     if (ex.getCode() == kC4ErrorBusy) {
@@ -96,8 +104,6 @@ public class BaseTest implements C4Constants {
                 }
             }
         }
-
-        FileUtils.cleanDirectory(dir);
     }
 
     protected Database open(String name) throws CouchbaseLiteException {

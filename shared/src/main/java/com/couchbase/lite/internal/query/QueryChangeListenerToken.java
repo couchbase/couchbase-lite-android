@@ -27,7 +27,7 @@ public class QueryChangeListenerToken implements ListenerToken {
         });
     }
 
-    private Executor getExecutor() {
+    Executor getExecutor() {
         return executor != null ? executor : DefaultExecutor.instance();
     }
 }

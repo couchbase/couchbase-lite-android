@@ -31,6 +31,9 @@ public class DateUtils {
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 
+    private DateUtils() {
+    }
+
     public static String toJson(Date date) {
         return sdf.format(date);
     }

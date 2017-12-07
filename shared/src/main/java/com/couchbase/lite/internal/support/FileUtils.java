@@ -16,10 +16,7 @@ package com.couchbase.lite.internal.support;
 import java.io.File;
 
 public class FileUtils {
-
-    public static boolean removeItemIfExists(String path) {
-        File f = new File(path);
-        return f.delete() || !f.exists();
+    private FileUtils() {
     }
 
     public static boolean deleteRecursive(String fileOrDirectory) {
@@ -33,25 +30,5 @@ public class FileUtils {
             }
         }
         return fileOrDirectory.delete() || !fileOrDirectory.exists();
-    }
-
-    public static boolean cleanDirectory(File dir) {
-        if (!dir.isDirectory())
-            return false;
-
-        for (File file : dir.listFiles()) {
-            if (!deleteRecursive(file))
-                return false;
-        }
-        dir.delete();
-        return true;
-    }
-
-    public static boolean setPermissionRecursive(File fileOrDirectory, boolean readable, boolean writable) {
-        if (fileOrDirectory.isDirectory()) {
-            for (File child : fileOrDirectory.listFiles())
-                setPermissionRecursive(child, readable, writable);
-        }
-        return fileOrDirectory.setReadable(readable) && fileOrDirectory.setWritable(writable);
     }
 }

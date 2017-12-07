@@ -1,6 +1,9 @@
 package com.couchbase.lite.internal.support;
 
 public class StringUtils {
+    private StringUtils() {
+    }
+
     // NSString - stringByDeletingLastPathComponent
     // https://developer.apple.com/reference/foundation/nsstring/1411141-stringbydeletinglastpathcomponen
     public static String stringByDeletingLastPathComponent(final String str) {

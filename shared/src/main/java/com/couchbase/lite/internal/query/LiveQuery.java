@@ -35,7 +35,7 @@ public class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
 
     private Set<QueryChangeListenerToken> queryChangeListenerTokens;
-    private Query query;
+    private final Query query;
     private ResultSet resultSet;
     private boolean observing;
     private boolean willUpdate;
@@ -66,8 +66,6 @@ public class LiveQuery implements DatabaseChangeListener {
      * Starts observing database changes and reports changes in the query result.
      */
     public void start() {
-        if (query == null)
-            throw new IllegalArgumentException("query should not be null.");
         if (query.getDatabase() == null)
             throw new IllegalArgumentException("associated database should not be null.");
 

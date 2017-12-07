@@ -58,14 +58,6 @@ public class Result
     // API - public methods
     //---------------------------------------------
 
-    @Override
-    public String toString() {
-        return "Result{" +
-                "rs=" + rs +
-                ", c4enum=" + c4enum +
-                '}';
-    }
-
     //---------------------------------------------
     // implementation of common betwen ReadOnlyArrayInterface and ReadOnlyDictionaryInterface
     //--------------------------------------------
@@ -86,42 +78,49 @@ public class Result
 
     @Override
     public String getString(int index) {
-        return (String) fleeceValueToObject(index);
+        Object obj = fleeceValueToObject(index);
+        return obj instanceof String ? (String) obj : null;
     }
 
     @Override
     public Number getNumber(int index) {
-        return (Number) fleeceValueToObject(index);
+        return CBLConverter.getNumber(fleeceValueToObject(index));
     }
 
     @Override
     public int getInt(int index) {
-        return (int) fleeceValue(index).asInt();
+        FLValue flValue = fleeceValue(index);
+        return flValue != null ? (int) flValue.asInt() : 0;
     }
 
     @Override
     public long getLong(int index) {
-        return fleeceValue(index).asInt();
+        FLValue flValue = fleeceValue(index);
+        return flValue != null ? flValue.asInt() : 0L;
     }
 
     @Override
     public float getFloat(int index) {
-        return fleeceValue(index).asFloat();
+        FLValue flValue = fleeceValue(index);
+        return flValue != null ? flValue.asFloat() : 0.0F;
     }
 
     @Override
     public double getDouble(int index) {
-        return fleeceValue(index).asDouble();
+        FLValue flValue = fleeceValue(index);
+        return flValue != null ? flValue.asDouble() : 0.0;
     }
 
     @Override
     public boolean getBoolean(int index) {
-        return fleeceValue(index).asBool();
+        FLValue flValue = fleeceValue(index);
+        return flValue != null ? flValue.asBool() : false;
     }
 
     @Override
     public Blob getBlob(int index) {
-        return (Blob) fleeceValueToObject(index);
+        Object obj = fleeceValueToObject(index);
+        return obj instanceof Blob ? (Blob) obj : null;
     }
 
     @Override
@@ -131,12 +130,14 @@ public class Result
 
     @Override
     public Array getArray(int index) {
-        return (Array) fleeceValueToObject(index);
+        Object obj = fleeceValueToObject(index);
+        return obj instanceof Array ? (Array) obj : null;
     }
 
     @Override
     public Dictionary getDictionary(int index) {
-        return (Dictionary) fleeceValueToObject(index);
+        Object obj = fleeceValueToObject(index);
+        return obj instanceof Dictionary ? (Dictionary) obj : null;
     }
 
     @Override
@@ -250,19 +251,8 @@ public class Result
     //---------------------------------------------
     @Override
     public Iterator<String> iterator() {
+        // TODO !!!
         return null;
-    }
-
-    //---------------------------------------------
-    // Protected level access
-    //---------------------------------------------
-
-    protected ResultSet getRs() {
-        return rs;
-    }
-
-    protected C4QueryEnumerator getC4enum() {
-        return c4enum;
     }
 
     //---------------------------------------------
