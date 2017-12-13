@@ -5,7 +5,7 @@ import java.util.Map;
 
 interface MutableDictionaryInterface extends DictionaryInterface {
     // Set JSON or platform dictionary as a content.
-    MutableDictionaryInterface set(Map<String, Object> dictionary);
+    MutableDictionaryInterface setData(Map<String, Object> data);
 
     // set
     MutableDictionaryInterface setValue(String key, Object value);

@@ -256,7 +256,7 @@ public class DocumentTest extends BaseTest {
         dict.put("phones", Arrays.asList("650-123-0001", "650-123-0002"));
 
         MutableDocument doc = createDocument("doc1");
-        doc.set(dict);
+        doc.setData(dict);
         assertEquals(dict, doc.toMap());
 
         Document savedDoc = save(doc);
@@ -276,7 +276,7 @@ public class DocumentTest extends BaseTest {
         nuDict.put("phones", Arrays.asList("650-234-0001", "650-234-0002"));
 
         doc = savedDoc.toMutable();
-        doc.set(nuDict);
+        doc.setData(nuDict);
         assertEquals(nuDict, doc.toMap());
 
         savedDoc = save(doc);
@@ -1632,7 +1632,7 @@ public class DocumentTest extends BaseTest {
         profile.put("active", true);
         profile.put("age", 30);
         profile.put("address", mapAddress);
-        doc.set(profile);
+        doc.setData(profile);
 
         save(doc);
 
@@ -1681,7 +1681,7 @@ public class DocumentTest extends BaseTest {
         profile.put("name", "Jason");
         profile.put("age", 30);
         profile.put("address", mapAddress);
-        doc.set(profile);
+        doc.setData(profile);
 
         assertTrue(doc.contains("type"));
         assertTrue(doc.contains("name"));

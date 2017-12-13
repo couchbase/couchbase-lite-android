@@ -148,7 +148,7 @@ public class BaseTest implements C4Constants {
             Map<String, Object> props = JsonUtils.fromJson(json);
             String docId = String.format(Locale.ENGLISH, "doc-%03d", n);
             MutableDocument doc = createDocument(docId);
-            doc.set(props);
+            doc.setData(props);
             save(doc);
         }
     }

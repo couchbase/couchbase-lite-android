@@ -27,11 +27,11 @@ public class MutableDictionary extends Dictionary implements MutableDictionaryIn
      * Date, Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
      * only the above types.
      *
-     * @param dictionary the dictionary object.
+     * @param data the dictionary object.
      */
-    public MutableDictionary(Map<String, Object> dictionary) {
+    public MutableDictionary(Map<String, Object> data) {
         super();
-        set(dictionary);
+        setData(data);
     }
 
     // to create copy of dictionary
@@ -53,13 +53,13 @@ public class MutableDictionary extends Dictionary implements MutableDictionaryIn
      * Setting the new dictionary content will replace the current data including the existing Array
      * and Dictionary objects.
      *
-     * @param dictionary the dictionary object.
+     * @param data the dictionary object.
      * @return this Dictionary instance
      */
     @Override
-    public MutableDictionary set(Map<String, Object> dictionary) {
+    public MutableDictionary setData(Map<String, Object> data) {
         _dict.clear();
-        for (Map.Entry<String, Object> entry : dictionary.entrySet())
+        for (Map.Entry<String, Object> entry : data.entrySet())
             _dict.set(entry.getKey(), new MValue(CBLFleece.toCBLObject(entry.getValue())));
         return this;
     }
