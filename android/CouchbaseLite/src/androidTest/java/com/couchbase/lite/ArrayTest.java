@@ -9,12 +9,15 @@ import org.junit.rules.ExpectedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -64,6 +67,36 @@ public class ArrayTest extends BaseTest {
         List<Object> data = arrayOfAllTypes();
         for (Object o : data) {
             array.addValue(o);
+        }
+    }
+
+    private void populateDataByType(MutableArray array) {
+        List<Object> data = arrayOfAllTypes();
+        for (Object o : data) {
+            if (o instanceof Integer)
+                array.addInt(((Integer) o).intValue());
+            else if (o instanceof Long)
+                array.addLong(((Long) o).longValue());
+            else if (o instanceof Float)
+                array.addFloat(((Float) o).floatValue());
+            else if (o instanceof Double)
+                array.addDouble(((Double) o).doubleValue());
+            else if (o instanceof Number)
+                array.addNumber((Number) o);
+            else if (o instanceof String)
+                array.addString((String) o);
+            else if (o instanceof Boolean)
+                array.addBoolean(((Boolean) o).booleanValue());
+            else if (o instanceof Date)
+                array.addDate((Date) o);
+            else if (o instanceof Blob)
+                array.addBlob((Blob) o);
+            else if (o instanceof MutableDictionary)
+                array.addDictionary((MutableDictionary) o);
+            else if (o instanceof MutableArray)
+                array.addArray((MutableArray) o);
+            else
+                array.addValue(o);
         }
     }
 
@@ -158,106 +191,119 @@ public class ArrayTest extends BaseTest {
         });
     }
 
-
     @Test
     public void testAddObjects() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
 
-        // Add objects of all types:
-        populateData(array);
+            // Add objects of all types:
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(12, a.count());
+            MutableDocument doc = createDocument("doc1");
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(12, a.count());
 
-                assertEquals(true, a.getValue(0));
-                assertEquals(false, a.getValue(1));
-                assertEquals("string", a.getValue(2));
-                assertEquals(0, ((Number) a.getValue(3)).intValue());
-                assertEquals(1, ((Number) a.getValue(4)).intValue());
-                assertEquals(-1, ((Number) a.getValue(5)).intValue());
-                assertEquals(1.1, a.getValue(6));
-                assertEquals(kArrayTestDate, a.getValue(7));
-                assertEquals(null, a.getValue(8));
+                    assertEquals(true, a.getValue(0));
+                    assertEquals(false, a.getValue(1));
+                    assertEquals("string", a.getValue(2));
+                    assertEquals(0, ((Number) a.getValue(3)).intValue());
+                    assertEquals(1, ((Number) a.getValue(4)).intValue());
+                    assertEquals(-1, ((Number) a.getValue(5)).intValue());
+                    assertEquals(1.1, a.getValue(6));
+                    assertEquals(kArrayTestDate, a.getValue(7));
+                    assertEquals(null, a.getValue(8));
 
-                // dictionary
-                MutableDictionary subdict = (MutableDictionary) a.getValue(9);
-                Map<String, Object> expectedMap = new HashMap<>();
-                expectedMap.put("name", "Scott Tiger");
-                assertEquals(expectedMap, subdict.toMap());
+                    // dictionary
+                    MutableDictionary subdict = (MutableDictionary) a.getValue(9);
+                    Map<String, Object> expectedMap = new HashMap<>();
+                    expectedMap.put("name", "Scott Tiger");
+                    assertEquals(expectedMap, subdict.toMap());
 
-                // array
-                MutableArray subarray = (MutableArray) a.getValue(10);
-                List<Object> expected = new ArrayList<>();
-                expected.add("a");
-                expected.add("b");
-                expected.add("c");
-                assertEquals(expected, subarray.toList());
+                    // array
+                    MutableArray subarray = (MutableArray) a.getValue(10);
+                    List<Object> expected = new ArrayList<>();
+                    expected.add("a");
+                    expected.add("b");
+                    expected.add("c");
+                    assertEquals(expected, subarray.toList());
 
-                // blob
-                Blob blob = (Blob) a.getValue(11);
-                assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
-                assertEquals(kArrayTestBlob, new String(blob.getContent()));
-            }
-        });
+                    // blob
+                    Blob blob = (Blob) a.getValue(11);
+                    assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
+                    assertEquals(kArrayTestBlob, new String(blob.getContent()));
+                }
+            });
+        }
     }
 
     @Test
     public void testAddObjectsToExistingArray() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
 
-        // Save
-        MutableDocument doc = createDocument("doc1");
-        doc.setValue("array", array);
-        doc = save(doc).toMutable();
+            // Save
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            doc.setValue("array", array);
+            doc = save(doc).toMutable();
 
-        // Get an existing array:
-        array = doc.getArray("array");
-        assertNotNull(array);
-        assertEquals(12, array.count());
+            // Get an existing array:
+            array = doc.getArray("array");
+            assertNotNull(array);
+            assertEquals(12, array.count());
 
-        // Update:
-        populateData(array);
-        assertEquals(24, array.count());
+            // Update:
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(24, array.count());
 
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(24, a.count());
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(24, a.count());
 
-                assertEquals(true, a.getValue(12 + 0));
-                assertEquals(false, a.getValue(12 + 1));
-                assertEquals("string", a.getValue(12 + 2));
-                assertEquals(0, ((Number) a.getValue(12 + 3)).intValue());
-                assertEquals(1, ((Number) a.getValue(12 + 4)).intValue());
-                assertEquals(-1, ((Number) a.getValue(12 + 5)).intValue());
-                assertEquals(1.1, a.getValue(12 + 6));
-                assertEquals(kArrayTestDate, a.getValue(12 + 7));
-                assertEquals(null, a.getValue(12 + 8));
+                    assertEquals(true, a.getValue(12 + 0));
+                    assertEquals(false, a.getValue(12 + 1));
+                    assertEquals("string", a.getValue(12 + 2));
+                    assertEquals(0, ((Number) a.getValue(12 + 3)).intValue());
+                    assertEquals(1, ((Number) a.getValue(12 + 4)).intValue());
+                    assertEquals(-1, ((Number) a.getValue(12 + 5)).intValue());
+                    assertEquals(1.1, a.getValue(12 + 6));
+                    assertEquals(kArrayTestDate, a.getValue(12 + 7));
+                    assertEquals(null, a.getValue(12 + 8));
 
-                // dictionary
-                MutableDictionary subdict = (MutableDictionary) a.getValue(12 + 9);
-                Map<String, Object> expectedMap = new HashMap<>();
-                expectedMap.put("name", "Scott Tiger");
-                assertEquals(expectedMap, subdict.toMap());
+                    // dictionary
+                    MutableDictionary subdict = (MutableDictionary) a.getValue(12 + 9);
+                    Map<String, Object> expectedMap = new HashMap<>();
+                    expectedMap.put("name", "Scott Tiger");
+                    assertEquals(expectedMap, subdict.toMap());
 
-                // array
-                MutableArray subarray = (MutableArray) a.getValue(12 + 10);
-                List<Object> expected = new ArrayList<>();
-                expected.add("a");
-                expected.add("b");
-                expected.add("c");
-                assertEquals(expected, subarray.toList());
+                    // array
+                    MutableArray subarray = (MutableArray) a.getValue(12 + 10);
+                    List<Object> expected = new ArrayList<>();
+                    expected.add("a");
+                    expected.add("b");
+                    expected.add("c");
+                    assertEquals(expected, subarray.toList());
 
-                // blob
-                Blob blob = (Blob) a.getValue(12 + 11);
-                assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
-                assertEquals(kArrayTestBlob, new String(blob.getContent()));
-            }
-        });
+                    // blob
+                    Blob blob = (Blob) a.getValue(12 + 11);
+                    assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
+                    assertEquals(kArrayTestBlob, new String(blob.getContent()));
+                }
+            });
+        }
     }
 
     @Test
@@ -449,44 +495,56 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testRemove() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
 
-        for (int i = array.count() - 1; i >= 0; i--) {
-            array.remove(i);
-        }
-
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(0, a.count());
-                assertEquals(new ArrayList<Object>(), a.toList());
+            for (int j = array.count() - 1; j >= 0; j--) {
+                array.remove(j);
             }
-        });
+
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(0, a.count());
+                    assertEquals(new ArrayList<Object>(), a.toList());
+                }
+            });
+        }
     }
 
     @Test
     public void testRemoveExistingArray() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
 
-        MutableDocument doc = createDocument("doc1");
-        doc.setValue("array", array);
-        doc = save(doc).toMutable();
-        array = doc.getArray("array");
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            doc.setValue("array", array);
+            doc = save(doc).toMutable();
+            array = doc.getArray("array");
 
-        for (int i = array.count() - 1; i >= 0; i--) {
-            array.remove(i);
-        }
-
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(0, a.count());
-                assertEquals(new ArrayList<Object>(), a.toList());
+            for (int j = array.count() - 1; j >= 0; j--) {
+                array.remove(j);
             }
-        });
+
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(0, a.count());
+                    assertEquals(new ArrayList<Object>(), a.toList());
+                }
+            });
+        }
     }
 
     @Test
@@ -503,172 +561,214 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testCount() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(12, a.count());
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(12, a.count());
+                }
+            });
+        }
     }
 
     @Test
     public void testGetString() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertNull(a.getString(0));
-                assertNull(a.getString(1));
-                assertEquals("string", a.getString(2));
-                assertNull(a.getString(3));
-                assertNull(a.getString(4));
-                assertNull(a.getString(5));
-                assertNull(a.getString(6));
-                assertEquals(kArrayTestDate, a.getString(7));
-                assertNull(a.getString(8));
-                assertNull(a.getString(9));
-                assertNull(a.getString(10));
-                assertNull(a.getString(11));
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertNull(a.getString(0));
+                    assertNull(a.getString(1));
+                    assertEquals("string", a.getString(2));
+                    assertNull(a.getString(3));
+                    assertNull(a.getString(4));
+                    assertNull(a.getString(5));
+                    assertNull(a.getString(6));
+                    assertEquals(kArrayTestDate, a.getString(7));
+                    assertNull(a.getString(8));
+                    assertNull(a.getString(9));
+                    assertNull(a.getString(10));
+                    assertNull(a.getString(11));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetNumber() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(1, a.getNumber(0).intValue());
-                assertEquals(0, a.getNumber(1).intValue());
-                assertNull(a.getNumber(2));
-                assertEquals(0, a.getNumber(3).intValue());
-                assertEquals(1, a.getNumber(4).intValue());
-                assertEquals(-1, a.getNumber(5).intValue());
-                assertEquals(1.1, a.getNumber(6));
-                assertNull(a.getNumber(7));
-                assertNull(a.getNumber(8));
-                assertNull(a.getNumber(9));
-                assertNull(a.getNumber(10));
-                assertNull(a.getNumber(11));
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(1, a.getNumber(0).intValue());
+                    assertEquals(0, a.getNumber(1).intValue());
+                    assertNull(a.getNumber(2));
+                    assertEquals(0, a.getNumber(3).intValue());
+                    assertEquals(1, a.getNumber(4).intValue());
+                    assertEquals(-1, a.getNumber(5).intValue());
+                    assertEquals(1.1, a.getNumber(6));
+                    assertNull(a.getNumber(7));
+                    assertNull(a.getNumber(8));
+                    assertNull(a.getNumber(9));
+                    assertNull(a.getNumber(10));
+                    assertNull(a.getNumber(11));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetInteger() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(1, a.getInt(0));
-                assertEquals(0, a.getInt(1));
-                assertEquals(0, a.getInt(2));
-                assertEquals(0, a.getInt(3));
-                assertEquals(1, a.getInt(4));
-                assertEquals(-1, a.getInt(5));
-                assertEquals(1, a.getInt(6));
-                assertEquals(0, a.getInt(7));
-                assertEquals(0, a.getInt(8));
-                assertEquals(0, a.getInt(9));
-                assertEquals(0, a.getInt(10));
-                assertEquals(0, a.getInt(11));
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(1, a.getInt(0));
+                    assertEquals(0, a.getInt(1));
+                    assertEquals(0, a.getInt(2));
+                    assertEquals(0, a.getInt(3));
+                    assertEquals(1, a.getInt(4));
+                    assertEquals(-1, a.getInt(5));
+                    assertEquals(1, a.getInt(6));
+                    assertEquals(0, a.getInt(7));
+                    assertEquals(0, a.getInt(8));
+                    assertEquals(0, a.getInt(9));
+                    assertEquals(0, a.getInt(10));
+                    assertEquals(0, a.getInt(11));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetLong() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(1, a.getLong(0));
-                assertEquals(0, a.getLong(1));
-                assertEquals(0, a.getLong(2));
-                assertEquals(0, a.getLong(3));
-                assertEquals(1, a.getLong(4));
-                assertEquals(-1, a.getLong(5));
-                assertEquals(1, a.getLong(6));
-                assertEquals(0, a.getLong(7));
-                assertEquals(0, a.getLong(8));
-                assertEquals(0, a.getLong(9));
-                assertEquals(0, a.getLong(10));
-                assertEquals(0, a.getLong(11));
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(1, a.getLong(0));
+                    assertEquals(0, a.getLong(1));
+                    assertEquals(0, a.getLong(2));
+                    assertEquals(0, a.getLong(3));
+                    assertEquals(1, a.getLong(4));
+                    assertEquals(-1, a.getLong(5));
+                    assertEquals(1, a.getLong(6));
+                    assertEquals(0, a.getLong(7));
+                    assertEquals(0, a.getLong(8));
+                    assertEquals(0, a.getLong(9));
+                    assertEquals(0, a.getLong(10));
+                    assertEquals(0, a.getLong(11));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetFloat() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(1.0f, a.getFloat(0), 0.0f);
-                assertEquals(0.0f, a.getFloat(1), 0.0f);
-                assertEquals(0.0f, a.getFloat(2), 0.0f);
-                assertEquals(0.0f, a.getFloat(3), 0.0f);
-                assertEquals(1.0f, a.getFloat(4), 0.0f);
-                assertEquals(-1.0f, a.getFloat(5), 0.0f);
-                assertEquals(1.1f, a.getFloat(6), 0.0f);
-                assertEquals(0.0f, a.getFloat(7), 0.0f);
-                assertEquals(0.0f, a.getFloat(8), 0.0f);
-                assertEquals(0.0f, a.getFloat(9), 0.0f);
-                assertEquals(0.0f, a.getFloat(10), 0.0f);
-                assertEquals(0.0f, a.getFloat(11), 0.0f);
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(1.0f, a.getFloat(0), 0.0f);
+                    assertEquals(0.0f, a.getFloat(1), 0.0f);
+                    assertEquals(0.0f, a.getFloat(2), 0.0f);
+                    assertEquals(0.0f, a.getFloat(3), 0.0f);
+                    assertEquals(1.0f, a.getFloat(4), 0.0f);
+                    assertEquals(-1.0f, a.getFloat(5), 0.0f);
+                    assertEquals(1.1f, a.getFloat(6), 0.0f);
+                    assertEquals(0.0f, a.getFloat(7), 0.0f);
+                    assertEquals(0.0f, a.getFloat(8), 0.0f);
+                    assertEquals(0.0f, a.getFloat(9), 0.0f);
+                    assertEquals(0.0f, a.getFloat(10), 0.0f);
+                    assertEquals(0.0f, a.getFloat(11), 0.0f);
+                }
+            });
+        }
     }
 
     @Test
     public void testGetDouble() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(1.0, a.getDouble(0), 0.0);
-                assertEquals(0.0, a.getDouble(1), 0.0);
-                assertEquals(0.0, a.getDouble(2), 0.0);
-                assertEquals(0.0, a.getDouble(3), 0.0);
-                assertEquals(1.0, a.getDouble(4), 0.0);
-                assertEquals(-1.0, a.getDouble(5), 0.0);
-                assertEquals(1.1, a.getDouble(6), 0.0);
-                assertEquals(0.0, a.getDouble(7), 0.0);
-                assertEquals(0.0, a.getDouble(8), 0.0);
-                assertEquals(0.0, a.getDouble(9), 0.0);
-                assertEquals(0.0, a.getDouble(10), 0.0);
-                assertEquals(0.0, a.getDouble(11), 0.0);
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(1.0, a.getDouble(0), 0.0);
+                    assertEquals(0.0, a.getDouble(1), 0.0);
+                    assertEquals(0.0, a.getDouble(2), 0.0);
+                    assertEquals(0.0, a.getDouble(3), 0.0);
+                    assertEquals(1.0, a.getDouble(4), 0.0);
+                    assertEquals(-1.0, a.getDouble(5), 0.0);
+                    assertEquals(1.1, a.getDouble(6), 0.0);
+                    assertEquals(0.0, a.getDouble(7), 0.0);
+                    assertEquals(0.0, a.getDouble(8), 0.0);
+                    assertEquals(0.0, a.getDouble(9), 0.0);
+                    assertEquals(0.0, a.getDouble(10), 0.0);
+                    assertEquals(0.0, a.getDouble(11), 0.0);
+                }
+            });
+        }
     }
 
     @Test
@@ -774,107 +874,131 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testGetBoolean() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertEquals(true, a.getBoolean(0));
-                assertEquals(false, a.getBoolean(1));
-                assertEquals(true, a.getBoolean(2));
-                assertEquals(false, a.getBoolean(3));
-                assertEquals(true, a.getBoolean(4));
-                assertEquals(true, a.getBoolean(5));
-                assertEquals(true, a.getBoolean(6));
-                assertEquals(true, a.getBoolean(7));
-                assertEquals(false, a.getBoolean(8));
-                assertEquals(true, a.getBoolean(9));
-                assertEquals(true, a.getBoolean(10));
-                assertEquals(true, a.getBoolean(11));
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(true, a.getBoolean(0));
+                    assertEquals(false, a.getBoolean(1));
+                    assertEquals(true, a.getBoolean(2));
+                    assertEquals(false, a.getBoolean(3));
+                    assertEquals(true, a.getBoolean(4));
+                    assertEquals(true, a.getBoolean(5));
+                    assertEquals(true, a.getBoolean(6));
+                    assertEquals(true, a.getBoolean(7));
+                    assertEquals(false, a.getBoolean(8));
+                    assertEquals(true, a.getBoolean(9));
+                    assertEquals(true, a.getBoolean(10));
+                    assertEquals(true, a.getBoolean(11));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetDate() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertNull(a.getDate(0));
-                assertNull(a.getDate(1));
-                assertNull(a.getDate(2));
-                assertNull(a.getDate(3));
-                assertNull(a.getDate(4));
-                assertNull(a.getDate(5));
-                assertNull(a.getDate(6));
-                assertEquals(kArrayTestDate, DateUtils.toJson(a.getDate(7)));
-                assertNull(a.getDate(8));
-                assertNull(a.getDate(9));
-                assertNull(a.getDate(10));
-                assertNull(a.getDate(11));
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertNull(a.getDate(0));
+                    assertNull(a.getDate(1));
+                    assertNull(a.getDate(2));
+                    assertNull(a.getDate(3));
+                    assertNull(a.getDate(4));
+                    assertNull(a.getDate(5));
+                    assertNull(a.getDate(6));
+                    assertEquals(kArrayTestDate, DateUtils.toJson(a.getDate(7)));
+                    assertNull(a.getDate(8));
+                    assertNull(a.getDate(9));
+                    assertNull(a.getDate(10));
+                    assertNull(a.getDate(11));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetMap() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertNull(a.getDictionary(0));
-                assertNull(a.getDictionary(1));
-                assertNull(a.getDictionary(2));
-                assertNull(a.getDictionary(3));
-                assertNull(a.getDictionary(4));
-                assertNull(a.getDictionary(5));
-                assertNull(a.getDictionary(6));
-                assertNull(a.getDictionary(7));
-                assertNull(a.getDictionary(8));
-                Map<String, Object> map = new HashMap<>();
-                map.put("name", "Scott Tiger");
-                assertEquals(map, a.getDictionary(9).toMap());
-                assertNull(a.getDictionary(10));
-                assertNull(a.getDictionary(11));
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertNull(a.getDictionary(0));
+                    assertNull(a.getDictionary(1));
+                    assertNull(a.getDictionary(2));
+                    assertNull(a.getDictionary(3));
+                    assertNull(a.getDictionary(4));
+                    assertNull(a.getDictionary(5));
+                    assertNull(a.getDictionary(6));
+                    assertNull(a.getDictionary(7));
+                    assertNull(a.getDictionary(8));
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", "Scott Tiger");
+                    assertEquals(map, a.getDictionary(9).toMap());
+                    assertNull(a.getDictionary(10));
+                    assertNull(a.getDictionary(11));
+                }
+            });
+        }
     }
 
     @Test
     public void testGetArray() throws CouchbaseLiteException {
-        MutableArray array = new MutableArray();
-        populateData(array);
-        assertEquals(12, array.count());
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+            assertEquals(12, array.count());
 
-        MutableDocument doc = createDocument("doc1");
-        save(doc, "array", array, new Validator<Array>() {
-            @Override
-            public void validate(Array a) {
-                assertNull(a.getArray(0));
-                assertNull(a.getArray(1));
-                assertNull(a.getArray(2));
-                assertNull(a.getArray(3));
-                assertNull(a.getArray(4));
-                assertNull(a.getArray(5));
-                assertNull(a.getArray(6));
-                assertNull(a.getArray(7));
-                assertNull(a.getArray(9));
-                assertEquals(Arrays.asList("a", "b", "c"), a.getArray(10).toList());
-                assertNull(a.getDictionary(11));
-            }
-        });
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            save(doc, "array", array, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertNull(a.getArray(0));
+                    assertNull(a.getArray(1));
+                    assertNull(a.getArray(2));
+                    assertNull(a.getArray(3));
+                    assertNull(a.getArray(4));
+                    assertNull(a.getArray(5));
+                    assertNull(a.getArray(6));
+                    assertNull(a.getArray(7));
+                    assertNull(a.getArray(9));
+                    assertEquals(Arrays.asList("a", "b", "c"), a.getArray(10).toList());
+                    assertNull(a.getDictionary(11));
+                }
+            });
+        }
     }
 
     @Test
@@ -1086,6 +1210,880 @@ public class ArrayTest extends BaseTest {
                 assertNull(array.getValue(3));
                 assertNull(array.getValue(4));
                 assertNull(array.getValue(5));
+            }
+        });
+    }
+
+    @Test
+    public void testEquals() throws CouchbaseLiteException {
+
+        // mArray1 and mArray2 have exactly same data
+        // mArray3 is different
+        // mArray4 is different
+        // mArray5 is different
+
+        MutableArray mArray1 = new MutableArray();
+        mArray1.addValue(1L);
+        mArray1.addValue("Hello");
+        mArray1.addValue(null);
+
+        MutableArray mArray2 = new MutableArray();
+        mArray2.addValue(1L);
+        mArray2.addValue("Hello");
+        mArray2.addValue(null);
+
+        MutableArray mArray3 = new MutableArray();
+        mArray3.addValue(100L);
+        mArray3.addValue(true);
+
+        MutableArray mArray4 = new MutableArray();
+        mArray4.addValue(100L);
+
+        MutableArray mArray5 = new MutableArray();
+        mArray4.addValue(100L);
+        mArray3.addValue(false);
+
+        MutableDocument mDoc = createDocument("test");
+        mDoc.setArray("array1", mArray1);
+        mDoc.setArray("array2", mArray2);
+        mDoc.setArray("array3", mArray3);
+        mDoc.setArray("array4", mArray4);
+        mDoc.setArray("array5", mArray5);
+
+        Document doc = save(mDoc);
+        Array array1 = doc.getArray("array1");
+        Array array2 = doc.getArray("array2");
+        Array array3 = doc.getArray("array3");
+        Array array4 = doc.getArray("array4");
+        Array array5 = doc.getArray("array5");
+
+        // compare array1, array2, marray1, and marray2
+        assertTrue(array1.equals(array1));
+        assertTrue(array2.equals(array2));
+        assertTrue(array1.equals(array2));
+        assertTrue(array2.equals(array1));
+        assertTrue(array1.equals(array1.toMutable()));
+        assertTrue(array1.equals(array2.toMutable()));
+        assertTrue(array1.toMutable().equals(array1));
+        assertTrue(array2.toMutable().equals(array1));
+        assertTrue(array1.equals(mArray1));
+        assertTrue(array1.equals(mArray2));
+        assertTrue(array2.equals(mArray1));
+        assertTrue(array2.equals(mArray2));
+        assertTrue(mArray1.equals(array1));
+        assertTrue(mArray2.equals(array1));
+        assertTrue(mArray1.equals(array2));
+        assertTrue(mArray2.equals(array2));
+        assertTrue(mArray1.equals(mArray1));
+        assertTrue(mArray2.equals(mArray2));
+        assertTrue(mArray1.equals(mArray1));
+        assertTrue(mArray2.equals(mArray2));
+
+        // compare array1, array3, marray1, and marray3
+        assertTrue(array3.equals(array3));
+        assertFalse(array1.equals(array3));
+        assertFalse(array3.equals(array1));
+        assertFalse(array1.equals(array3.toMutable()));
+        assertFalse(array3.toMutable().equals(array1));
+        assertFalse(array1.equals(mArray3));
+        assertFalse(array3.equals(mArray1));
+        assertTrue(array3.equals(mArray3));
+        assertFalse(mArray3.equals(array1));
+        assertFalse(mArray1.equals(array3));
+        assertTrue(mArray3.equals(array3));
+        assertTrue(mArray3.equals(mArray3));
+        assertTrue(mArray3.equals(mArray3));
+
+        // compare array1, array4, marray1, and marray4
+        assertTrue(array4.equals(array4));
+        assertFalse(array1.equals(array4));
+        assertFalse(array4.equals(array1));
+        assertFalse(array1.equals(array4.toMutable()));
+        assertFalse(array4.toMutable().equals(array1));
+        assertFalse(array1.equals(mArray4));
+        assertFalse(array4.equals(mArray1));
+        assertTrue(array4.equals(mArray4));
+        assertFalse(mArray4.equals(array1));
+        assertFalse(mArray1.equals(array4));
+        assertTrue(mArray4.equals(array4));
+        assertTrue(mArray4.equals(mArray4));
+        assertTrue(mArray4.equals(mArray4));
+
+        // compare array3, array4, marray3, and marray4
+        assertFalse(array3.equals(array4));
+        assertFalse(array4.equals(array3));
+        assertFalse(array3.equals(array4.toMutable()));
+        assertFalse(array4.toMutable().equals(array3));
+        assertFalse(array3.equals(mArray4));
+        assertFalse(array4.equals(mArray3));
+        assertFalse(mArray4.equals(array3));
+        assertFalse(mArray3.equals(array4));
+
+        // compare array3, array5, marray3, and marray5
+        assertFalse(array3.equals(array5));
+        assertFalse(array5.equals(array3));
+        assertFalse(array3.equals(array5.toMutable()));
+        assertFalse(array5.toMutable().equals(array3));
+        assertFalse(array3.equals(mArray5));
+        assertFalse(array5.equals(mArray3));
+        assertFalse(mArray5.equals(array3));
+        assertFalse(mArray3.equals(array5));
+
+        // compare array5, array4, mArray5, and marray4
+        assertFalse(array5.equals(array4));
+        assertFalse(array4.equals(array5));
+        assertFalse(array5.equals(array4.toMutable()));
+        assertFalse(array4.toMutable().equals(array5));
+        assertFalse(array5.equals(mArray4));
+        assertFalse(array4.equals(mArray5));
+        assertFalse(mArray4.equals(array5));
+        assertFalse(mArray5.equals(array4));
+
+        // against other type
+        assertFalse(array3.equals(null));
+        assertFalse(array3.equals(new Object()));
+        assertFalse(array3.equals(1));
+        assertFalse(array3.equals(new HashMap<>()));
+        assertFalse(array3.equals(new MutableDictionary()));
+        assertFalse(array3.equals(new MutableArray()));
+        assertFalse(array3.equals(doc));
+        assertFalse(array3.equals(mDoc));
+    }
+
+    @Test
+    public void testHashCode() throws CouchbaseLiteException {
+
+        // mArray1 and mArray2 have exactly same data
+        // mArray3 is different
+        // mArray4 is different
+        // mArray5 is different
+
+        MutableArray mArray1 = new MutableArray();
+        mArray1.addValue(1L);
+        mArray1.addValue("Hello");
+        mArray1.addValue(null);
+
+        MutableArray mArray2 = new MutableArray();
+        mArray2.addValue(1L);
+        mArray2.addValue("Hello");
+        mArray2.addValue(null);
+
+        MutableArray mArray3 = new MutableArray();
+        mArray3.addValue(100L);
+        mArray3.addValue(true);
+
+        MutableArray mArray4 = new MutableArray();
+        mArray4.addValue(100L);
+
+        MutableArray mArray5 = new MutableArray();
+        mArray4.addValue(100L);
+        mArray3.addValue(false);
+
+        MutableDocument mDoc = createDocument("test");
+        mDoc.setArray("array1", mArray1);
+        mDoc.setArray("array2", mArray2);
+        mDoc.setArray("array3", mArray3);
+        mDoc.setArray("array4", mArray4);
+        mDoc.setArray("array5", mArray5);
+
+        Document doc = save(mDoc);
+        Array array1 = doc.getArray("array1");
+        Array array2 = doc.getArray("array2");
+        Array array3 = doc.getArray("array3");
+        Array array4 = doc.getArray("array4");
+        Array array5 = doc.getArray("array5");
+
+        assertEquals(array1.hashCode(), array1.hashCode());
+        assertEquals(array1.hashCode(), array2.hashCode());
+        assertEquals(array2.hashCode(), array1.hashCode());
+        assertEquals(array1.hashCode(), array1.toMutable().hashCode());
+        assertEquals(array1.hashCode(), array2.toMutable().hashCode());
+        assertEquals(array1.hashCode(), mArray1.hashCode());
+        assertEquals(array1.hashCode(), mArray2.hashCode());
+        assertEquals(array2.hashCode(), mArray1.hashCode());
+        assertEquals(array2.hashCode(), mArray2.hashCode());
+
+        assertFalse(array3.hashCode() == array1.hashCode());
+        assertFalse(array3.hashCode() == array2.hashCode());
+        assertFalse(array3.hashCode() == array1.toMutable().hashCode());
+        assertFalse(array3.hashCode() == array2.toMutable().hashCode());
+        assertFalse(array3.hashCode() == mArray1.hashCode());
+        assertFalse(array3.hashCode() == mArray2.hashCode());
+        assertFalse(mArray3.hashCode() == array1.hashCode());
+        assertFalse(mArray3.hashCode() == array2.hashCode());
+        assertFalse(mArray3.hashCode() == array1.toMutable().hashCode());
+        assertFalse(mArray3.hashCode() == array2.toMutable().hashCode());
+        assertFalse(mArray3.hashCode() == mArray1.hashCode());
+        assertFalse(mArray3.hashCode() == mArray2.hashCode());
+
+        assertFalse(array1.hashCode() == array4.hashCode());
+        assertFalse(array1.hashCode() == array5.hashCode());
+        assertFalse(array2.hashCode() == array4.hashCode());
+        assertFalse(array2.hashCode() == array5.hashCode());
+        assertFalse(array3.hashCode() == array4.hashCode());
+        assertFalse(array3.hashCode() == array5.hashCode());
+
+        assertFalse(array3.hashCode() == 0);
+        assertFalse(array3.hashCode() == new Object().hashCode());
+        assertFalse(array3.hashCode() == new Integer(1).hashCode());
+        assertFalse(array3.hashCode() == new HashMap<>().hashCode());
+        assertFalse(array3.hashCode() == new MutableDictionary().hashCode());
+        assertFalse(array3.hashCode() == new MutableArray().hashCode());
+        assertFalse(mArray3.hashCode() == doc.hashCode());
+        assertFalse(mArray3.hashCode() == mDoc.hashCode());
+        assertFalse(mArray3.hashCode() == array1.toMutable().hashCode());
+        assertFalse(mArray3.hashCode() == array2.toMutable().hashCode());
+        assertFalse(mArray3.hashCode() == mArray1.hashCode());
+        assertFalse(mArray3.hashCode() == mArray2.hashCode());
+    }
+
+
+    @Test
+    public void testGetDictionary() throws CouchbaseLiteException {
+        MutableDictionary mNestedDict = new MutableDictionary();
+        mNestedDict.setValue("key1", 1L);
+        mNestedDict.setValue("key2", "Hello");
+        mNestedDict.setValue("key3", null);
+
+        MutableArray mArray = new MutableArray();
+        mArray.addValue(1L);
+        mArray.addValue("Hello");
+        mArray.addValue(null);
+        mArray.addValue(mNestedDict);
+
+        MutableDocument mDoc = createDocument("test");
+        mDoc.setArray("array", mArray);
+
+        Document doc = save(mDoc);
+        Array array = doc.getArray("array");
+
+        assertNotNull(array);
+        assertNull(array.getDictionary(0));
+        assertNull(array.getDictionary(1));
+        assertNull(array.getDictionary(2));
+        assertNotNull(array.getDictionary(3));
+        assertNull(array.getDictionary(4));
+
+        Dictionary nestedDict = array.getDictionary(3);
+        assertTrue(nestedDict.equals(mNestedDict));
+        assertTrue(array.equals(mArray));
+    }
+
+    @Test
+    public void testGetArray2() throws CouchbaseLiteException {
+        MutableArray mNestedArray = new MutableArray();
+        mNestedArray.addValue(1L);
+        mNestedArray.addValue("Hello");
+        mNestedArray.addValue(null);
+
+        MutableArray mArray = new MutableArray();
+        mArray.addValue(1L);
+        mArray.addValue("Hello");
+        mArray.addValue(null);
+        mArray.addValue(mNestedArray);
+
+        MutableDocument mDoc = createDocument("test");
+        mDoc.setValue("array", mArray);
+
+        Document doc = save(mDoc);
+        Array array = doc.getArray("array");
+
+        assertNotNull(array);
+        assertNull(array.getArray(0));
+        assertNull(array.getArray(1));
+        assertNull(array.getArray(2));
+        assertNotNull(array.getArray(3));
+        assertNull(array.getArray(4));
+
+        Array nestedArray = array.getArray(3);
+        assertTrue(nestedArray.equals(mNestedArray));
+        assertTrue(array.equals(mArray));
+    }
+
+    static class CustomClass {
+        public String text = "custom";
+    }
+
+    @Test
+    public void testAddValueUnExpectedObject() {
+        MutableArray mArray = new MutableArray();
+        try {
+            mArray.addValue(new CustomClass());
+            fail();
+        } catch (IllegalArgumentException ex) {
+            // ok!!
+        }
+    }
+
+    @Test
+    public void testSetValueUnExpectedObject() {
+        MutableArray mArray = new MutableArray();
+        mArray.addValue(0);
+        try {
+            mArray.setValue(0, new CustomClass());
+            fail();
+        } catch (IllegalArgumentException ex) {
+            // ok!!
+        }
+    }
+
+    @Test
+    public void testAddInt() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+        mArray.addInt(0);
+        mArray.addInt(Integer.MAX_VALUE);
+        mArray.addInt(Integer.MIN_VALUE);
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+                assertEquals(0, array.getInt(0));
+                assertEquals(Integer.MAX_VALUE, array.getInt(1));
+                assertEquals(Integer.MIN_VALUE, array.getInt(2));
+            }
+        });
+    }
+
+    @Test
+    public void testSetInt() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addInt(0);
+        mArray.addInt(Integer.MAX_VALUE);
+        mArray.addInt(Integer.MIN_VALUE);
+
+        mArray.setInt(0, Integer.MAX_VALUE);
+        mArray.setInt(1, Integer.MIN_VALUE);
+        mArray.setInt(2, 0);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+                assertEquals(0, array.getInt(2));
+                assertEquals(Integer.MAX_VALUE, array.getInt(0));
+                assertEquals(Integer.MIN_VALUE, array.getInt(1));
+            }
+        });
+    }
+
+    @Test
+    public void testInsertInt() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addInt(10); // will be pushed 3 times.
+        mArray.insertInt(0, 0);
+        mArray.insertInt(1, Integer.MAX_VALUE);
+        mArray.insertInt(2, Integer.MIN_VALUE);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(4, array.count());
+                assertEquals(0, array.getInt(0));
+                assertEquals(Integer.MAX_VALUE, array.getInt(1));
+                assertEquals(Integer.MIN_VALUE, array.getInt(2));
+                assertEquals(10, array.getInt(3));
+            }
+        });
+    }
+
+    @Test
+    public void testAddLong() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+        mArray.addLong(0);
+        mArray.addLong(Long.MAX_VALUE);
+        mArray.addLong(Long.MIN_VALUE);
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+                assertEquals(0, array.getLong(0));
+                assertEquals(Long.MAX_VALUE, array.getLong(1));
+                assertEquals(Long.MIN_VALUE, array.getLong(2));
+            }
+        });
+    }
+
+    @Test
+    public void testSetLong() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+        mArray.addLong(0);
+        mArray.addLong(Long.MAX_VALUE);
+        mArray.addLong(Long.MIN_VALUE);
+        mArray.setLong(0, Long.MAX_VALUE);
+        mArray.setLong(1, Long.MIN_VALUE);
+        mArray.setLong(2, 0);
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+                assertEquals(0, array.getLong(2));
+                assertEquals(Long.MAX_VALUE, array.getLong(0));
+                assertEquals(Long.MIN_VALUE, array.getLong(1));
+            }
+        });
+    }
+
+    @Test
+    public void testInsertLong() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addLong(10); // will be pushed 3 times.
+        mArray.insertLong(0, 0);
+        mArray.insertLong(1, Long.MAX_VALUE);
+        mArray.insertLong(2, Long.MIN_VALUE);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(4, array.count());
+                assertEquals(0, array.getLong(0));
+                assertEquals(Long.MAX_VALUE, array.getLong(1));
+                assertEquals(Long.MIN_VALUE, array.getLong(2));
+                assertEquals(10, array.getLong(3));
+            }
+        });
+    }
+
+    @Test
+    public void testAddFloat() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+        mArray.addFloat(0.0F);
+        mArray.addFloat(Float.MAX_VALUE);
+        mArray.addFloat(Float.MIN_VALUE);
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+                assertEquals(0.0F, array.getFloat(0), 0.0F);
+                assertEquals(Float.MAX_VALUE, array.getFloat(1), 0.0F);
+                assertEquals(Float.MIN_VALUE, array.getFloat(2), 0.0F);
+            }
+        });
+    }
+
+    @Test
+    public void testSetFloat() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addFloat(0);
+        mArray.addFloat(Float.MAX_VALUE);
+        mArray.addFloat(Float.MIN_VALUE);
+
+        mArray.setFloat(0, Float.MAX_VALUE);
+        mArray.setFloat(1, Float.MIN_VALUE);
+        mArray.setFloat(2, 0);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+
+                assertEquals(0.0F, array.getLong(2), 0.0F);
+                assertEquals(Float.MAX_VALUE, array.getFloat(0), 0.0F);
+                assertEquals(Float.MIN_VALUE, array.getFloat(1), 0.0f);
+            }
+        });
+    }
+
+    @Test
+    public void testInsertFloat() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addFloat(10F); // will be pushed 3 times.
+        mArray.insertFloat(0, 0F);
+        mArray.insertFloat(1, Float.MAX_VALUE);
+        mArray.insertFloat(2, Float.MIN_VALUE);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(4, array.count());
+                assertEquals(0F, array.getFloat(0), 0F);
+                assertEquals(Float.MAX_VALUE, array.getFloat(1), 0F);
+                assertEquals(Float.MIN_VALUE, array.getFloat(2), 0F);
+                assertEquals(10F, array.getFloat(3), 0F);
+            }
+        });
+    }
+
+    @Test
+    public void testAddDouble() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addDouble(0.0);
+        mArray.addDouble(Double.MAX_VALUE);
+        mArray.addDouble(Double.MIN_VALUE);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+                assertEquals(0.0, array.getDouble(0), 0.0);
+                assertEquals(Double.MAX_VALUE, array.getDouble(1), 0.0);
+                assertEquals(Double.MIN_VALUE, array.getDouble(2), 0.0);
+            }
+        });
+    }
+
+    @Test
+    public void testSetDouble() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addDouble(0);
+        mArray.addDouble(Double.MAX_VALUE);
+        mArray.addDouble(Double.MIN_VALUE);
+
+        mArray.setDouble(0, Double.MAX_VALUE);
+        mArray.setDouble(1, Double.MIN_VALUE);
+        mArray.setDouble(2, 0.0);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+
+                assertEquals(0.0, array.getDouble(2), 0.0);
+                assertEquals(Double.MAX_VALUE, array.getDouble(0), 0.0);
+                assertEquals(Double.MIN_VALUE, array.getDouble(1), 0.0);
+            }
+        });
+    }
+
+    @Test
+    public void testInsertDouble() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addDouble(10.0); // will be pushed 3 times.
+        mArray.insertDouble(0, 0.0);
+        mArray.insertDouble(1, Double.MAX_VALUE);
+        mArray.insertDouble(2, Double.MIN_VALUE);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(4, array.count());
+                assertEquals(0.0, array.getDouble(0), 0.0);
+                assertEquals(Double.MAX_VALUE, array.getDouble(1), 0.0);
+                assertEquals(Double.MIN_VALUE, array.getDouble(2), 0.0);
+                assertEquals(10.0, array.getDouble(3), 0.0);
+            }
+        });
+    }
+
+    @Test
+    public void testAddNumber() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addNumber(Integer.MAX_VALUE);
+        mArray.addNumber(Long.MAX_VALUE);
+        mArray.addNumber(Double.MAX_VALUE);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+
+                assertEquals(Integer.MAX_VALUE, array.getNumber(0).intValue());
+                assertEquals(Long.MAX_VALUE, array.getNumber(1).longValue());
+                assertEquals(Double.MAX_VALUE, array.getNumber(2).doubleValue(), 0.0);
+            }
+        });
+    }
+
+    @Test
+    public void testSetNumber() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addNumber(Integer.MAX_VALUE);
+        mArray.addNumber(Long.MAX_VALUE);
+        mArray.addNumber(Double.MAX_VALUE);
+
+        mArray.setNumber(0, Long.MAX_VALUE);
+        mArray.setNumber(1, Double.MAX_VALUE);
+        mArray.setNumber(2, Integer.MAX_VALUE);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+
+                assertEquals(Integer.MAX_VALUE, array.getNumber(2).intValue());
+                assertEquals(Long.MAX_VALUE, array.getNumber(0).longValue());
+                assertEquals(Double.MAX_VALUE, array.getNumber(1).doubleValue(), 0.0);
+            }
+        });
+    }
+
+    @Test
+    public void testInsertNumber() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addNumber(10L); // will be pushed 3 times.
+        mArray.insertNumber(0, Integer.MAX_VALUE);
+        mArray.insertNumber(1, Long.MAX_VALUE);
+        mArray.insertNumber(2, Double.MAX_VALUE);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(4, array.count());
+                assertEquals(Integer.MAX_VALUE, array.getInt(0));
+                assertEquals(Long.MAX_VALUE, array.getLong(1));
+                assertEquals(Double.MAX_VALUE, array.getDouble(2), 0.0);
+                assertEquals(10L, array.getNumber(3).longValue());
+            }
+        });
+    }
+
+    @Test
+    public void testAddString() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addString("");
+        mArray.addString("Hello");
+        mArray.addString("World");
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+
+                assertEquals("", array.getString(0));
+                assertEquals("Hello", array.getString(1));
+                assertEquals("World", array.getString(2));
+            }
+        });
+    }
+
+    @Test
+    public void testSetString() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addString("");
+        mArray.addString("Hello");
+        mArray.addString("World");
+
+        mArray.setString(0, "Hello");
+        mArray.setString(1, "World");
+        mArray.setString(2, "");
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(3, array.count());
+
+                assertEquals("", array.getString(2));
+                assertEquals("Hello", array.getString(0));
+                assertEquals("World", array.getString(1));
+            }
+        });
+    }
+
+    @Test
+    public void testInsertString() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addString(""); // will be pushed 3 times.
+        mArray.insertString(0, "Hello");
+        mArray.insertString(1, "World");
+        mArray.insertString(2, "!");
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(4, array.count());
+                assertEquals("Hello", array.getString(0));
+                assertEquals("World", array.getString(1));
+                assertEquals("!", array.getString(2));
+                assertEquals("", array.getString(3));
+            }
+        });
+    }
+
+    @Test
+    public void testAddBoolean() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addBoolean(true);
+        mArray.addBoolean(false);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(2, array.count());
+
+                assertEquals(true, array.getBoolean(0));
+                assertEquals(false, array.getBoolean(1));
+            }
+        });
+    }
+
+    @Test
+    public void testSetBoolean() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addBoolean(true);
+        mArray.addBoolean(false);
+
+        mArray.setBoolean(0, false);
+        mArray.setBoolean(1, true);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(2, array.count());
+
+                assertEquals(true, array.getBoolean(1));
+                assertEquals(false, array.getBoolean(0));
+            }
+        });
+    }
+
+    @Test
+    public void testInsertBoolean() throws CouchbaseLiteException {
+        MutableDocument mDoc = createDocument("test");
+        MutableArray mArray = new MutableArray();
+
+        mArray.addBoolean(false); // will be pushed 2 times
+        mArray.addBoolean(true); // will be pushed 2 times.
+        mArray.insertBoolean(0, true);
+        mArray.insertBoolean(1, false);
+
+        mDoc.setArray("array", mArray);
+        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+            @Override
+            public void validate(Document doc) {
+                assertEquals(1, doc.count());
+                assertTrue(doc.contains("array"));
+                Array array = doc.getArray("array");
+                assertNotNull(array);
+                assertEquals(4, array.count());
+                assertEquals(true, array.getBoolean(0));
+                assertEquals(false, array.getBoolean(1));
+                assertEquals(false, array.getBoolean(2));
+                assertEquals(true, array.getBoolean(3));
             }
         });
     }

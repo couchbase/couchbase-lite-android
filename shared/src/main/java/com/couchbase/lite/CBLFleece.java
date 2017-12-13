@@ -57,6 +57,7 @@ public class CBLFleece implements FLConstants.FLValueType {
             if (isOldAttachment(flDict, sk))
                 return createBlob(flDict, context);
         }
+        //TODO: return new Dictionary(mv, parent);
         return new MutableDictionary(mv, parent);
     }
 
@@ -67,6 +68,7 @@ public class CBLFleece implements FLConstants.FLValueType {
     }
 
     static Object MValue_toArray(MValue mv, MCollection parent) {
+        //TODO: return new Array(mv, parent);
         return new MutableArray(mv, parent);
     }
 

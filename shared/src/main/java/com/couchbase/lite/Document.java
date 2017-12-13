@@ -11,7 +11,6 @@ import com.couchbase.litecore.fleece.MRoot;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static com.couchbase.litecore.C4Constants.C4DocumentFlags.kDocDeleted;
@@ -113,11 +112,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     public MutableDocument toMutable() {
         return new MutableDocument(this, null);
-    }
-
-    @Override
-    public String toString() {
-        return String.format(Locale.ENGLISH, "ReadOnlyDocument[%s]", _id);
     }
 
     //---------------------------------------------
@@ -327,11 +321,13 @@ public class Document implements DictionaryInterface, Iterable<String> {
             return false;
 
         // Step 2: Check document ID
-        if (!(_id != null ? _id.equals(doc._id) : doc._id == null))
+        // NOTE _id never null?
+        if (!_id.equals(doc._id))
             return false;
 
         // Step 3: Check content
-        if (_dict != null ? _dict.equals(doc._dict) : doc._dict == null)
+        // NOTE: _dict never null??
+        if (!_dict.equals(doc._dict))
             return false;
 
         return true;
@@ -339,9 +335,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     @Override
     public int hashCode() {
+        // NOTE _id and _dict never null
         int result = _database != null ? _database.hashCode() : 0;
-        result = 31 * result + (_id != null ? _id.hashCode() : 0);
-        result = 31 * result + (_dict != null ? _dict.hashCode() : 0);
+        result = 31 * result + _id.hashCode();
+        result = 31 * result + _dict.hashCode();
         return result;
     }
 

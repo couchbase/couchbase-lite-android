@@ -85,10 +85,6 @@ public class Query {
         parameters = new Parameters();
     }
 
-    Query(Query query) {
-        copy(query);
-    }
-
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------

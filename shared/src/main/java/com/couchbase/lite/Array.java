@@ -198,7 +198,11 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Array getArray(int index) {
-        return (Array) _get(_array, index).asNative(_array);
+        //return (Array) _get(_array, index).asNative(_array);
+
+        rangeCheck(index);
+        Object obj = _get(_array, index).asNative(_array);
+        return obj instanceof Array ? (Array) obj : null;
     }
 
     /**
@@ -209,7 +213,11 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Dictionary getDictionary(int index) {
-        return (Dictionary) _get(_array, index).asNative(_array);
+        //return (Dictionary) _get(_array, index).asNative(_array);
+
+        rangeCheck(index);
+        Object obj = _get(_array, index).asNative(_array);
+        return obj instanceof Dictionary ? (Dictionary) obj : null;
     }
 
     /**
