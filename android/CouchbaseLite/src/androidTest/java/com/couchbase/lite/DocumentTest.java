@@ -2050,4 +2050,306 @@ public class DocumentTest extends BaseTest {
         doc = db.getDocument(docID);
         assertNull(doc);
     }
+
+    @Test
+    public void testEquals() throws CouchbaseLiteException {
+
+        // mDoc1 and mDoc2 have exactly same data
+        // mDoc3 is different
+        // mDoc4 is different
+
+        MutableDocument mDoc1 = new MutableDocument();
+        mDoc1.setValue("key1", 1L);
+        mDoc1.setValue("key2", "Hello");
+        mDoc1.setValue("key3", null);
+
+        MutableDocument mDoc2 = new MutableDocument();
+        mDoc2.setValue("key1", 1L);
+        mDoc2.setValue("key2", "Hello");
+        mDoc2.setValue("key3", null);
+
+        MutableDocument mDoc3 = new MutableDocument();
+        mDoc3.setValue("key1", 100L);
+        mDoc3.setValue("key3", true);
+
+        MutableDocument mDoc4 = new MutableDocument();
+        mDoc4.setValue("key1", 100L);
+
+        MutableDocument mDoc5 = new MutableDocument();
+        mDoc4.setValue("key1", 100L);
+        mDoc3.setValue("key3", false);
+
+        MutableDocument mDoc6 = new MutableDocument();
+        mDoc6.setValue("key1", 100L);
+
+        MutableDocument mDoc7 = new MutableDocument();
+        mDoc7.setValue("key1", 100L);
+        mDoc7.setValue("key3", false);
+
+        MutableDocument mDoc8 = new MutableDocument("sameDocID");
+        mDoc8.setValue("key1", 100L);
+
+        MutableDocument mDoc9 = new MutableDocument("sameDocID");
+        mDoc9.setValue("key1", 100L);
+        mDoc9.setValue("key3", false);
+
+        Document doc1 = save(mDoc1);
+        Document doc2 = save(mDoc2);
+        Document doc3 = save(mDoc3);
+        Document doc4 = save(mDoc4);
+        Document doc5 = save(mDoc5);
+
+        // compare doc1, doc2, mdoc1, and mdoc2
+        assertTrue(doc1.equals(doc1));
+        assertTrue(doc2.equals(doc2));
+        assertFalse(doc1.equals(doc2));
+        assertFalse(doc2.equals(doc1));
+        assertTrue(doc1.equals(doc1.toMutable()));
+        assertFalse(doc1.equals(doc2.toMutable()));
+        assertTrue(doc1.toMutable().equals(doc1));
+        assertFalse(doc2.toMutable().equals(doc1));
+        assertTrue(doc1.equals(mDoc1)); // mDoc's ID is updated
+        assertFalse(doc1.equals(mDoc2));
+        assertFalse(doc2.equals(mDoc1));
+        assertTrue(doc2.equals(mDoc2));
+        assertTrue(mDoc1.equals(doc1));
+        assertFalse(mDoc2.equals(doc1));
+        assertFalse(mDoc1.equals(doc2));
+        assertTrue(mDoc2.equals(doc2));
+        assertTrue(mDoc1.equals(mDoc1));
+        assertTrue(mDoc2.equals(mDoc2));
+        assertTrue(mDoc1.equals(mDoc1));
+        assertTrue(mDoc2.equals(mDoc2));
+
+        // compare doc1, doc3, mdoc1, and mdoc3
+        assertTrue(doc3.equals(doc3));
+        assertFalse(doc1.equals(doc3));
+        assertFalse(doc3.equals(doc1));
+        assertFalse(doc1.equals(doc3.toMutable()));
+        assertFalse(doc3.toMutable().equals(doc1));
+        assertFalse(doc1.equals(mDoc3));
+        assertFalse(doc3.equals(mDoc1));
+        assertTrue(doc3.equals(mDoc3));
+        assertFalse(mDoc3.equals(doc1));
+        assertFalse(mDoc1.equals(doc3));
+        assertTrue(mDoc3.equals(doc3));
+        assertTrue(mDoc3.equals(mDoc3));
+
+
+        // compare doc1, doc4, mdoc1, and mdoc4
+        assertTrue(doc4.equals(doc4));
+        assertFalse(doc1.equals(doc4));
+        assertFalse(doc4.equals(doc1));
+        assertFalse(doc1.equals(doc4.toMutable()));
+        assertFalse(doc4.toMutable().equals(doc1));
+        assertFalse(doc1.equals(mDoc4));
+        assertFalse(doc4.equals(mDoc1));
+        assertTrue(doc4.equals(mDoc4));
+        assertFalse(mDoc4.equals(doc1));
+        assertFalse(mDoc1.equals(doc4));
+        assertTrue(mDoc4.equals(doc4));
+        assertTrue(mDoc4.equals(mDoc4));
+
+
+        // compare doc3, doc4, mdoc3, and mdoc4
+        assertFalse(doc3.equals(doc4));
+        assertFalse(doc4.equals(doc3));
+        assertFalse(doc3.equals(doc4.toMutable()));
+        assertFalse(doc4.toMutable().equals(doc3));
+        assertFalse(doc3.equals(mDoc4));
+        assertFalse(doc4.equals(mDoc3));
+        assertFalse(mDoc4.equals(doc3));
+        assertFalse(mDoc3.equals(doc4));
+
+        // compare doc3, doc5, mdoc3, and mdoc5
+        assertFalse(doc3.equals(doc5));
+        assertFalse(doc5.equals(doc3));
+        assertFalse(doc3.equals(doc5.toMutable()));
+        assertFalse(doc5.toMutable().equals(doc3));
+        assertFalse(doc3.equals(mDoc5));
+        assertFalse(doc5.equals(mDoc3));
+        assertFalse(mDoc5.equals(doc3));
+        assertFalse(mDoc3.equals(doc5));
+
+        // compare doc5, doc4, mDoc5, and mdoc4
+        assertFalse(doc5.equals(doc4));
+        assertFalse(doc4.equals(doc5));
+        assertFalse(doc5.equals(doc4.toMutable()));
+        assertFalse(doc4.toMutable().equals(doc5));
+        assertFalse(doc5.equals(mDoc4));
+        assertFalse(doc4.equals(mDoc5));
+        assertFalse(mDoc4.equals(doc5));
+        assertFalse(mDoc5.equals(doc4));
+
+        // compare doc1, mDoc1, and mdoc6
+        assertFalse(doc1.equals(mDoc6));
+        assertFalse(mDoc6.equals(doc1));
+        assertFalse(mDoc6.equals(doc1.toMutable()));
+        assertFalse(mDoc1.equals(mDoc6));
+        assertFalse(mDoc6.equals(mDoc1));
+
+        // compare doc4, mDoc4, and mdoc6
+        assertTrue(mDoc6.equals(mDoc6));
+        assertFalse(doc4.equals(mDoc6));
+        assertFalse(mDoc6.equals(doc4));
+        assertFalse(mDoc6.equals(doc4.toMutable()));
+        assertFalse(mDoc4.equals(mDoc6));
+        assertFalse(mDoc6.equals(mDoc4));
+
+        // compare doc5, mDoc5, and mdoc7
+        assertTrue(mDoc7.equals(mDoc7));
+        assertFalse(doc5.equals(mDoc7));
+        assertFalse(mDoc7.equals(doc5));
+        assertFalse(mDoc7.equals(doc5.toMutable()));
+        assertFalse(mDoc5.equals(mDoc7));
+        assertFalse(mDoc7.equals(mDoc5));
+
+        // compare mDoc6 and mDoc7
+        assertTrue(mDoc6.equals(mDoc6));
+        assertFalse(mDoc6.equals(mDoc7));
+        assertFalse(mDoc6.equals(mDoc8));
+        assertFalse(mDoc6.equals(mDoc9));
+        assertFalse(mDoc7.equals(mDoc6));
+        assertTrue(mDoc7.equals(mDoc7));
+        assertFalse(mDoc7.equals(mDoc8));
+        assertFalse(mDoc7.equals(mDoc9));
+
+        // compare mDoc8 and mDoc9
+        assertTrue(mDoc8.equals(mDoc8));
+        assertFalse(mDoc8.equals(mDoc9));
+        assertFalse(mDoc9.equals(mDoc8));
+        assertTrue(mDoc9.equals(mDoc9));
+
+        // against other type
+        assertFalse(doc3.equals(null));
+        assertFalse(doc3.equals(new Object()));
+        assertFalse(doc3.equals(1));
+        assertFalse(doc3.equals(new HashMap<>()));
+        assertFalse(doc3.equals(new MutableDocument()));
+        assertFalse(doc3.equals(new MutableArray()));
+    }
+
+    @Test
+    public void testHashCode() throws CouchbaseLiteException {
+
+        // mDoc1 and mDoc2 have exactly same data
+        // mDoc3 is different
+        // mDoc4 is different
+
+        MutableDocument mDoc1 = new MutableDocument();
+        mDoc1.setValue("key1", 1L);
+        mDoc1.setValue("key2", "Hello");
+        mDoc1.setValue("key3", null);
+
+        MutableDocument mDoc2 = new MutableDocument();
+        mDoc2.setValue("key1", 1L);
+        mDoc2.setValue("key2", "Hello");
+        mDoc2.setValue("key3", null);
+
+        MutableDocument mDoc3 = new MutableDocument();
+        mDoc3.setValue("key1", 100L);
+        mDoc3.setValue("key3", true);
+
+        MutableDocument mDoc4 = new MutableDocument();
+        mDoc4.setValue("key1", 100L);
+
+        MutableDocument mDoc5 = new MutableDocument();
+        mDoc4.setValue("key1", 100L);
+        mDoc3.setValue("key3", false);
+
+        MutableDocument mDoc6 = new MutableDocument();
+        mDoc6.setValue("key1", 100L);
+
+        MutableDocument mDoc7 = new MutableDocument();
+        mDoc7.setValue("key1", 100L);
+        mDoc7.setValue("key3", false);
+
+        Document doc1 = save(mDoc1);
+        Document doc2 = save(mDoc2);
+        Document doc3 = save(mDoc3);
+        Document doc4 = save(mDoc4);
+        Document doc5 = save(mDoc5);
+
+        assertEquals(doc1.hashCode(), doc1.hashCode());
+        assertNotEquals(doc1.hashCode(), doc2.hashCode());
+        assertNotEquals(doc2.hashCode(), doc1.hashCode());
+        assertEquals(doc1.hashCode(), doc1.toMutable().hashCode());
+        assertNotEquals(doc1.hashCode(), doc2.toMutable().hashCode());
+        assertEquals(doc1.hashCode(), mDoc1.hashCode());
+        assertNotEquals(doc1.hashCode(), mDoc2.hashCode());
+        assertNotEquals(doc2.hashCode(), mDoc1.hashCode());
+        assertEquals(doc2.hashCode(), mDoc2.hashCode());
+
+        assertNotEquals(doc3.hashCode(), doc1.hashCode());
+        assertNotEquals(doc3.hashCode(), doc2.hashCode());
+        assertNotEquals(doc3.hashCode(), doc1.toMutable().hashCode());
+        assertNotEquals(doc3.hashCode(), doc2.toMutable().hashCode());
+        assertNotEquals(doc3.hashCode(), mDoc1.hashCode());
+        assertNotEquals(doc3.hashCode(), mDoc2.hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc1.hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc2.hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc1.toMutable().hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc2.toMutable().hashCode());
+        assertNotEquals(mDoc3.hashCode(), mDoc1.hashCode());
+        assertNotEquals(mDoc3.hashCode(), mDoc2.hashCode());
+
+        assertNotEquals(doc3.hashCode(), 0);
+        assertNotEquals(doc3.hashCode(), new Object().hashCode());
+        assertNotEquals(doc3.hashCode(), new Integer(1).hashCode());
+        assertNotEquals(doc3.hashCode(), new HashMap<>().hashCode());
+        assertNotEquals(doc3.hashCode(), new MutableDictionary().hashCode());
+        assertNotEquals(doc3.hashCode(), new MutableArray().hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc1.toMutable().hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc2.toMutable().hashCode());
+        assertNotEquals(mDoc3.hashCode(), mDoc1.hashCode());
+        assertNotEquals(mDoc3.hashCode(), mDoc2.hashCode());
+
+        assertNotEquals(mDoc6.hashCode(), doc1.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc1.toMutable().hashCode());
+        assertNotEquals(mDoc6.hashCode(), mDoc1.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc2.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc2.toMutable().hashCode());
+        assertNotEquals(mDoc6.hashCode(), mDoc2.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc3.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc3.toMutable().hashCode());
+        assertNotEquals(mDoc6.hashCode(), mDoc3.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc4.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc4.toMutable().hashCode());
+        assertNotEquals(mDoc6.hashCode(), mDoc4.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc5.hashCode());
+        assertNotEquals(mDoc6.hashCode(), doc5.toMutable().hashCode());
+        assertNotEquals(mDoc6.hashCode(), mDoc5.hashCode());
+        assertEquals(mDoc6.hashCode(), mDoc6.hashCode());
+        assertNotEquals(mDoc6.hashCode(), mDoc7.hashCode());
+
+        assertNotEquals(mDoc7.hashCode(), doc1.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc1.toMutable().hashCode());
+        assertNotEquals(mDoc7.hashCode(), mDoc1.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc2.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc2.toMutable().hashCode());
+        assertNotEquals(mDoc7.hashCode(), mDoc2.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc3.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc3.toMutable().hashCode());
+        assertNotEquals(mDoc7.hashCode(), mDoc3.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc4.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc4.toMutable().hashCode());
+        assertNotEquals(mDoc7.hashCode(), mDoc4.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc5.hashCode());
+        assertNotEquals(mDoc7.hashCode(), doc5.toMutable().hashCode());
+        assertNotEquals(mDoc7.hashCode(), mDoc5.hashCode());
+        assertNotEquals(mDoc7.hashCode(), mDoc6.hashCode());
+        assertEquals(mDoc7.hashCode(), mDoc7.hashCode());
+
+        assertNotEquals(doc3.hashCode(), doc2.hashCode());
+        assertNotEquals(doc3.hashCode(), doc1.toMutable().hashCode());
+        assertNotEquals(doc3.hashCode(), doc2.toMutable().hashCode());
+        assertNotEquals(doc3.hashCode(), mDoc1.hashCode());
+        assertNotEquals(doc3.hashCode(), mDoc2.hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc1.hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc2.hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc1.toMutable().hashCode());
+        assertNotEquals(mDoc3.hashCode(), doc2.toMutable().hashCode());
+        assertNotEquals(mDoc3.hashCode(), mDoc1.hashCode());
+        assertNotEquals(mDoc3.hashCode(), mDoc2.hashCode());
+    }
 }
