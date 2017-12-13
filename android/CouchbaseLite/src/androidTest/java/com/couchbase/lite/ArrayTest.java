@@ -153,7 +153,7 @@ public class ArrayTest extends BaseTest {
         data.add("2");
         data.add("3");
         MutableArray array = new MutableArray();
-        array.set(data);
+        array.setData(data);
         assertEquals(3, array.count());
         assertEquals(data, array.toList());
 
@@ -171,7 +171,7 @@ public class ArrayTest extends BaseTest {
         data.add("4");
         data.add("5");
         data.add("6");
-        array.set(data);
+        array.setData(data);
 
         assertEquals(data.size(), array.count());
         assertEquals(data, array.toList());

@@ -57,11 +57,11 @@ public final class MutableDocument extends Document implements MutableDictionary
      * saved into a database when you call the Database's save(Document) method with the document
      * object given.
      *
-     * @param dictionary the Map object
+     * @param data the Map object
      */
-    public MutableDocument(Map<String, Object> dictionary) {
+    public MutableDocument(Map<String, Object> data) {
         this((String) null);
-        set(dictionary);
+        setData(data);
     }
 
     /**
@@ -72,12 +72,12 @@ public final class MutableDocument extends Document implements MutableDictionary
      * The created document will be saved into a database when you call
      * the Database's save(Document) method with the document object given.
      *
-     * @param id         the document ID.
-     * @param dictionary the Map object
+     * @param id   the document ID.
+     * @param data the Map object
      */
-    public MutableDocument(String id, Map<String, Object> dictionary) {
+    public MutableDocument(String id, Map<String, Object> data) {
         this(id);
-        set(dictionary);
+        setData(data);
     }
 
     MutableDocument(Document doc, Dictionary dict) {
@@ -100,12 +100,12 @@ public final class MutableDocument extends Document implements MutableDictionary
      * Setting the new dictionary content will replace the current data including the existing Array
      * and Dictionary objects.
      *
-     * @param dictionary the dictionary object.
+     * @param data the dictionary object.
      * @return this Document instance
      */
     @Override
-    public MutableDocument set(Map<String, Object> dictionary) {
-        ((MutableDictionary) _dict).set(dictionary);
+    public MutableDocument setData(Map<String, Object> data) {
+        ((MutableDictionary) _dict).setData(data);
         return this;
     }
 

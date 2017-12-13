@@ -27,11 +27,11 @@ public class MutableArray extends Array implements MutableArrayInterface {
      * Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
      * only the above types.
      *
-     * @param array the array object.
+     * @param data the array object.
      */
-    public MutableArray(List<Object> array) {
+    public MutableArray(List<Object> data) {
         super();
-        set(array);
+        setData(data);
     }
 
     // to create copy
@@ -54,13 +54,13 @@ public class MutableArray extends Array implements MutableArrayInterface {
      * only the above types. Setting the new array content will replcace the current data
      * including the existing Array and Dictionary objects.
      *
-     * @param array the array
+     * @param data the array
      * @return this Array instance
      */
     @Override
-    public MutableArray set(List<Object> array) {
+    public MutableArray setData(List<Object> data) {
         _array.clear();
-        for (Object obj : array)
+        for (Object obj : data)
             _array.append(CBLFleece.toCBLObject(obj));
         return this;
     }

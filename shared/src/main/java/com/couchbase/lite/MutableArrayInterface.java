@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 interface MutableArrayInterface extends ArrayInterface {
-    MutableArrayInterface set(List<Object> list);
+    MutableArrayInterface setData(List<Object> data);
 
     // set
     MutableArrayInterface setValue(int index, Object value);
