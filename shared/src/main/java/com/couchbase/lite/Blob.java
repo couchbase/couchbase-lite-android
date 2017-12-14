@@ -310,32 +310,15 @@ public final class Blob implements FLEncodable {
         if (!(o instanceof Blob)) return false;
 
         Blob m = (Blob) o;
-
-        // saved blob
-        if (database != null && digest != null && m.database != null && m.digest != null)
-            return database.equalsWithPath(m.database) && digest.equals(m.digest);
-
-        // unsaved blob
-        if (database == null && digest == null && m.database == null && m.digest == null)
+        if (digest != null && m.digest != null)
+            return digest.equals(m.digest);
+        else
             return Arrays.equals(getContent(), m.getContent());
-
-        // unsaved vs saved
-        return false;
     }
 
     @Override
     public int hashCode() {
-        int h = 0;
-        // saved blob
-        if (database != null && digest != null) {
-            h = h * 31 + database.hashCode();
-            h = h * 31 + digest.hashCode();
-        }
-        // unsaved blob
-        else {
-            h = h * 31 + Arrays.hashCode(getContent());
-        }
-        return h;
+        return Arrays.hashCode(getContent());
     }
 
     //---------------------------------------------

@@ -46,9 +46,8 @@ public class BlobTest extends BaseTest {
         assertFalse(blob2a.equals(blob1a));
         assertFalse(blob2a.equals(blob1b));
 
-        // TODO - confirm spec
-        assertFalse(blob1a.equals(data1c));
-        assertFalse(data1c.equals(blob1a));
+        assertTrue(blob1a.equals(data1c));
+        assertTrue(data1c.equals(blob1a));
     }
     @Test
     public void testHashCode() throws CouchbaseLiteException {
@@ -86,8 +85,7 @@ public class BlobTest extends BaseTest {
         assertFalse(blob2a.hashCode() == blob1a.hashCode());
         assertFalse(blob2a.hashCode() == blob1b.hashCode());
 
-        // TODO - confirm spec
-        assertFalse(blob1a.hashCode() == data1c.hashCode());
-        assertFalse(data1c.hashCode() == blob1a.hashCode());
+        assertTrue(blob1a.hashCode() == data1c.hashCode());
+        assertTrue(data1c.hashCode() == blob1a.hashCode());
     }
 }
