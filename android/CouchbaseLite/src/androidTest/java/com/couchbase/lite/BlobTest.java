@@ -1,8 +1,16 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.utils.IOUtils;
+
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class BlobTest extends BaseTest {
@@ -87,5 +95,50 @@ public class BlobTest extends BaseTest {
 
         assertTrue(blob1a.hashCode() == data1c.hashCode());
         assertTrue(data1c.hashCode() == blob1a.hashCode());
+    }
+
+    @Test
+    public void testGetContent() throws IOException, CouchbaseLiteException {
+        byte[] bytes;
+
+        InputStream is = getAsset("attachment.png");
+        try {
+            bytes = IOUtils.toByteArray(is);
+        } finally {
+            is.close();
+        }
+
+        Blob blob = new Blob("image/png", bytes);
+        MutableDocument mDoc = new MutableDocument("doc1");
+        mDoc.setBlob("blob", blob);
+        Document doc = save(mDoc);
+        Blob savedBlob = doc.getBlob("blob");
+        assertNotNull(savedBlob);
+        assertEquals("image/png", savedBlob.getContentType());
+        byte[] content = blob.getContent();
+        assertTrue(Arrays.equals(content, bytes));
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1438
+    @Test
+    public void testGetContent6MBFile() throws IOException, CouchbaseLiteException {
+        byte[] bytes;
+
+        InputStream is = getAsset("iTunesMusicLibrary.json");
+        try {
+            bytes = IOUtils.toByteArray(is);
+        } finally {
+            is.close();
+        }
+
+        Blob blob = new Blob("application/json", bytes);
+        MutableDocument mDoc = new MutableDocument("doc1");
+        mDoc.setBlob("blob", blob);
+        Document doc = save(mDoc);
+        Blob savedBlob = doc.getBlob("blob");
+        assertNotNull(savedBlob);
+        assertEquals("application/json", savedBlob.getContentType());
+        byte[] content = blob.getContent();
+        assertTrue(Arrays.equals(content, bytes));
     }
 }
