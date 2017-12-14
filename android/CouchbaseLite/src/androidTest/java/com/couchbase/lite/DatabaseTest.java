@@ -434,27 +434,6 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testSimpleSaveAndGetDoc() throws CouchbaseLiteException {
-        // store doc
-        String docID = "doc1";
-        MutableDocument mDoc = new MutableDocument(docID);
-        mDoc.setValue("key", 1);
-        Document doc = save(mDoc);
-        assertEquals(1, db.getCount());
-        assertEquals(1, doc.getSequence());
-
-        //doc = db.getDocument(docID);
-
-        // retrieve doc
-        assertNotNull(doc);
-        assertEquals(docID, doc.getId());
-        assertFalse(doc.isDeleted());
-        assertTrue(doc.contains("key"));
-        assertNotNull(doc.getValue("key"));
-        assertEquals(1, ((Number) doc.getValue("key")).intValue());
-    }
-
-    @Test
     public void testSaveAndGetMultipleDocs() throws CouchbaseLiteException {
         {
             final int NUM_DOCS = 10;//1000;
@@ -1286,7 +1265,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(1, db.getCount());
         Document doc = db.getDocument("abc");
         assertNotNull(doc);
-        if (doc1.getRevID().compareTo(doc2.getId()) > 0)
+        if (doc1.getRevID().compareTo(doc2.getRevID()) > 0)
             assertEquals("someVar", doc.getString("someKey"));
         else
             assertEquals("newVar", doc.getString("someKey"));
