@@ -317,7 +317,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         Document doc = (Document) o;
 
         // Step 1: Check Database
-        if (_database != null ? !_database.equals(doc._database) : doc._database != null)
+        if (_database != null ? !_database.equalsWithPath(doc._database) : doc._database != null)
             return false;
 
         // Step 2: Check document ID

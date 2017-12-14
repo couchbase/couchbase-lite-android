@@ -289,6 +289,10 @@ public final class Blob implements FLEncodable {
         }
     }
 
+    //---------------------------------------------
+    // Override
+    //---------------------------------------------
+
     /**
      * Returns a string representation of the object.
      *
@@ -298,6 +302,40 @@ public final class Blob implements FLEncodable {
     public String toString() {
         return String.format(Locale.ENGLISH, "Blob[%s; %d KB]",
                 contentType, (length() + 512) / 1024);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Blob)) return false;
+
+        Blob m = (Blob) o;
+
+        // saved blob
+        if (database != null && digest != null && m.database != null && m.digest != null)
+            return database.equalsWithPath(m.database) && digest.equals(m.digest);
+
+        // unsaved blob
+        if (database == null && digest == null && m.database == null && m.digest == null)
+            return Arrays.equals(getContent(), m.getContent());
+
+        // unsaved vs saved
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = 0;
+        // saved blob
+        if (database != null && digest != null) {
+            h = h * 31 + database.hashCode();
+            h = h * 31 + digest.hashCode();
+        }
+        // unsaved blob
+        else {
+            h = h * 31 + Arrays.hashCode(getContent());
+        }
+        return h;
     }
 
     //---------------------------------------------
