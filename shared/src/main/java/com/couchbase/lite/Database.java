@@ -667,6 +667,18 @@ public final class Database implements C4Constants {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+    boolean equalsWithPath(Database other) {
+        if (other == null) return false;
+        File path = getPath();
+        File otherPath = other.getPath();
+        if (path == null && otherPath == null)
+            return true;
+        else if ((path == null && otherPath != null) || (path != null && otherPath == null))
+            return false;
+        else
+            return path.equals(otherPath);
+    }
+
     C4BlobStore getBlobStore() throws CouchbaseLiteRuntimeException {
         mustBeOpen();
         try {
