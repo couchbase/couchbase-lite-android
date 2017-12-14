@@ -336,7 +336,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Override
     public int hashCode() {
         // NOTE _id and _dict never null
-        int result = _database != null ? _database.hashCode() : 0;
+        int result = _database != null && _database.getPath() != null ? _database.getPath().hashCode() : 0;
         result = 31 * result + _id.hashCode();
         result = 31 * result + _dict.hashCode();
         return result;
