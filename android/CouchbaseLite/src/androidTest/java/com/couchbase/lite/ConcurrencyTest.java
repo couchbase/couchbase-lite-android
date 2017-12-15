@@ -18,8 +18,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ConcurrentDatabaseTest extends BaseTest {
-    private static final String TAG = ConcurrentDatabaseTest.class.getSimpleName();
+public class ConcurrencyTest extends BaseTest {
+    private static final String TAG = ConcurrencyTest.class.getSimpleName();
 
     MutableDocument createDocumentWithTag(String tag) {
         MutableDocument doc = new MutableDocument();
