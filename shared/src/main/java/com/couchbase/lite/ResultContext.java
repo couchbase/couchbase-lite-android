@@ -7,7 +7,7 @@ public class ResultContext extends DocContext {
     private C4QueryEnumerator _enumerator;
 
     public ResultContext(Database db, C4QueryEnumerator enumerator) {
-        super(db);
+        super(db, null);
         _enumerator = enumerator;
     }
 

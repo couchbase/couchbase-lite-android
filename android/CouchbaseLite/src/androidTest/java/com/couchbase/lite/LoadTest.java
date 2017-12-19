@@ -143,6 +143,7 @@ public class LoadTest extends BaseTest {
 
         // create doc
         createDocumentNSave(docID, tag);
+
         Document doc = db.getDocument(docID);
         assertNotNull(doc);
         assertEquals(docID, doc.getId());
@@ -213,7 +214,7 @@ public class LoadTest extends BaseTest {
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1447
-    // @Test
+    @Test
     public void testGlobalReferenceExcceded() throws InterruptedException, CouchbaseLiteException {
         if (!config.loadTestsEnabled())
             return;

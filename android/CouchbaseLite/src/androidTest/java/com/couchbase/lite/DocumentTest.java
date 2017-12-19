@@ -1084,7 +1084,10 @@ public class DocumentTest extends BaseTest {
 
             assertTrue(mDict != doc.getValue("dict"));
             assertEquals(doc.getValue("dict"), doc.getDictionary("dict"));
-            assertEquals(mDict.toMap(), ((MutableDictionary) doc.getValue("dict")).toMap());
+
+            Dictionary dict = (Dictionary) doc.getValue("dict");
+            dict = dict instanceof MutableDictionary ? dict : dict.toMutable();
+            assertEquals(mDict.toMap(), ((MutableDictionary) dict).toMap());
 
             // Update:
             mDoc = doc.toMutable();
@@ -1158,7 +1161,10 @@ public class DocumentTest extends BaseTest {
             Document doc = save(mDoc);
             assertTrue(array != doc.getValue("array"));
             assertEquals(doc.getValue("array"), doc.getArray("array"));
-            assertEquals(array.toList(), ((MutableArray) doc.getValue("array")).toList());
+
+            Array mArray = (Array) doc.getValue("array");
+            mArray = array instanceof MutableArray ? array : array.toMutable();
+            assertEquals(array.toList(), ((MutableArray) mArray).toList());
 
             // Update:
             mDoc = doc.toMutable();

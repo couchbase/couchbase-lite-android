@@ -40,6 +40,7 @@ public class ArrayTest extends BaseTest {
         list.add(1);
         list.add(-1);
         list.add(1.1);
+
         list.add(DateUtils.fromJson(kArrayTestDate));
         list.add(null);
 
@@ -219,13 +220,19 @@ public class ArrayTest extends BaseTest {
                     assertEquals(null, a.getValue(8));
 
                     // dictionary
-                    MutableDictionary subdict = (MutableDictionary) a.getValue(9);
+                    Dictionary dict = (Dictionary) a.getValue(9);
+                    MutableDictionary subdict = (dict instanceof MutableDictionary) ?
+                            (MutableDictionary) dict : dict.toMutable();
+
                     Map<String, Object> expectedMap = new HashMap<>();
                     expectedMap.put("name", "Scott Tiger");
                     assertEquals(expectedMap, subdict.toMap());
 
                     // array
-                    MutableArray subarray = (MutableArray) a.getValue(10);
+                    Array array = (Array) a.getValue(10);
+                    MutableArray subarray = array instanceof MutableArray ?
+                            (MutableArray) array :  array.toMutable();
+
                     List<Object> expected = new ArrayList<>();
                     expected.add("a");
                     expected.add("b");
@@ -284,13 +291,17 @@ public class ArrayTest extends BaseTest {
                     assertEquals(null, a.getValue(12 + 8));
 
                     // dictionary
-                    MutableDictionary subdict = (MutableDictionary) a.getValue(12 + 9);
+                    Dictionary dict = (Dictionary) a.getValue(12 + 9);
+                    MutableDictionary subdict = (dict instanceof MutableDictionary) ?
+                            (MutableDictionary) dict : dict.toMutable();
                     Map<String, Object> expectedMap = new HashMap<>();
                     expectedMap.put("name", "Scott Tiger");
                     assertEquals(expectedMap, subdict.toMap());
 
                     // array
-                    MutableArray subarray = (MutableArray) a.getValue(12 + 10);
+                    Array array = (Array) a.getValue(12 + 10);
+                    MutableArray subarray = array instanceof MutableArray ?
+                            (MutableArray) array :  array.toMutable();
                     List<Object> expected = new ArrayList<>();
                     expected.add("a");
                     expected.add("b");
@@ -336,13 +347,17 @@ public class ArrayTest extends BaseTest {
                 assertEquals(null, a.getValue(8));
 
                 // dictionary
-                MutableDictionary subdict = (MutableDictionary) a.getValue(9);
+                Dictionary dict = (Dictionary) a.getValue(9);
+                MutableDictionary subdict = (dict instanceof MutableDictionary) ?
+                        (MutableDictionary) dict : dict.toMutable();
                 Map<String, Object> expectedMap = new HashMap<>();
                 expectedMap.put("name", "Scott Tiger");
                 assertEquals(expectedMap, subdict.toMap());
 
                 // array
-                MutableArray subarray = (MutableArray) a.getValue(10);
+                Array array = (Array) a.getValue(10);
+                MutableArray subarray = array instanceof MutableArray ?
+                        (MutableArray) array :  array.toMutable();
                 List<Object> expected = new ArrayList<>();
                 expected.add("a");
                 expected.add("b");
@@ -672,6 +687,7 @@ public class ArrayTest extends BaseTest {
                     assertEquals(0, a.getInt(11));
                 }
             });
+            break;
         }
     }
 
@@ -1462,6 +1478,8 @@ public class ArrayTest extends BaseTest {
         assertNull(array.getDictionary(1));
         assertNull(array.getDictionary(2));
         assertNotNull(array.getDictionary(3));
+
+        thrown.expect(IndexOutOfBoundsException.class);
         assertNull(array.getDictionary(4));
 
         Dictionary nestedDict = array.getDictionary(3);
@@ -1493,6 +1511,8 @@ public class ArrayTest extends BaseTest {
         assertNull(array.getArray(1));
         assertNull(array.getArray(2));
         assertNotNull(array.getArray(3));
+
+        thrown.expect(IndexOutOfBoundsException.class);
         assertNull(array.getArray(4));
 
         Array nestedArray = array.getArray(3);

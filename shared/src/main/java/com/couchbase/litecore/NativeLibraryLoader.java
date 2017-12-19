@@ -14,6 +14,9 @@
 package com.couchbase.litecore;
 
 import com.couchbase.lite.Log;
+import com.couchbase.litecore.fleece.MValue;
+
+import java.lang.reflect.Constructor;
 
 public class NativeLibraryLoader {
     private static final String TAG = Log.DATABASE;
@@ -25,6 +28,8 @@ public class NativeLibraryLoader {
             Log.v(TAG, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
         else
             Log.e(TAG, "Cannot load native library");
+
+        initMValue();
     }
 
     private static boolean load(String libName) {
@@ -39,5 +44,15 @@ public class NativeLibraryLoader {
             return false;
         }
         return true;
+    }
+
+    private static void initMValue() {
+        try {
+            Constructor c = Class.forName("com.couchbase.lite.MValueDelegate").getDeclaredConstructor();
+            c.setAccessible(true);
+            MValue.registerDelegate((MValue.Delegate) c.newInstance());
+        } catch (Exception e) {
+            throw new IllegalStateException("Cannot initialize MValue delegate", e);
+        }
     }
 }

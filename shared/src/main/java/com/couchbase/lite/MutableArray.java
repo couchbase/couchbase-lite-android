@@ -61,7 +61,7 @@ public class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray setData(List<Object> data) {
         _array.clear();
         for (Object obj : data)
-            _array.append(CBLFleece.toCBLObject(obj));
+            _array.append(Fleece.toCBLObject(obj));
         return this;
     }
 
@@ -74,9 +74,9 @@ public class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray setValue(int index, Object value) {
-        rangeCheck(index);
-        if (CBLFleece.valueWouldChange(value, _array.get(index), _array))
-            _array.set(index, CBLFleece.toCBLObject(value));
+        if (Fleece.valueWouldChange(value, _array.get(index), _array))
+            if (!_array.set(index, Fleece.toCBLObject(value)))
+                throwRangeException(index);
         return this;
     }
 
@@ -143,7 +143,7 @@ public class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray addValue(Object value) {
-        _array.append(CBLFleece.toCBLObject(value));
+        _array.append(Fleece.toCBLObject(value));
         return this;
     }
 
@@ -211,8 +211,8 @@ public class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray insertValue(int index, Object value) {
-        rangeCheck(index);
-        _array.insert(index, CBLFleece.toCBLObject(value));
+        if (!_array.insert(index, Fleece.toCBLObject(value)))
+            throwRangeException(index);
         return this;
     }
 
@@ -279,8 +279,8 @@ public class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray remove(int index) {
-        rangeCheck(index);
-        _array.remove(index);
+        if (!_array.remove(index))
+            throwRangeException(index);
         return this;
     }
 
@@ -292,9 +292,7 @@ public class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray getArray(int index) {
-        rangeCheck(index);
-        Object obj = _get(_array, index).asNative(_array);
-        return obj instanceof MutableArray ? (MutableArray) obj : null;
+        return (MutableArray) super.getArray(index);
     }
 
     /**
@@ -305,8 +303,6 @@ public class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableDictionary getDictionary(int index) {
-        rangeCheck(index);
-        Object obj = _get(_array, index).asNative(_array);
-        return obj instanceof MutableDictionary ? (MutableDictionary) obj : null;
+        return (MutableDictionary) super.getDictionary(index);
     }
 }

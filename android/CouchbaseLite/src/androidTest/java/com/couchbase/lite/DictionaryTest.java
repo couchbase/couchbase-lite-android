@@ -1,6 +1,8 @@
 package com.couchbase.lite;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
@@ -18,6 +20,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DictionaryTest extends BaseTest {
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
     @Test
     public void testCreateDictionary() throws CouchbaseLiteException {
         MutableDictionary address = new MutableDictionary();
@@ -694,6 +699,8 @@ public class DictionaryTest extends BaseTest {
         assertNull(array.getArray(1));
         assertNull(array.getArray(2));
         assertNotNull(array.getArray(3));
+
+        thrown.expect(IndexOutOfBoundsException.class);
         assertNull(array.getArray(4));
 
         Array nestedArray = array.getArray(3);

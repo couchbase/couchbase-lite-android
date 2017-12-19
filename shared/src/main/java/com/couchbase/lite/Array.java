@@ -22,7 +22,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // member variables
     //---------------------------------------------
 
-    protected MArray _array; // pointer to MArray<JNIRef> in native
+    protected MArray _array;
 
     //---------------------------------------------
     // Constructors
@@ -67,7 +67,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Object getValue(int index) {
-        rangeCheck(index);
         return _get(_array, index).asNative(_array);
     }
 
@@ -198,9 +197,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Array getArray(int index) {
-        //return (Array) _get(_array, index).asNative(_array);
-
-        rangeCheck(index);
         Object obj = _get(_array, index).asNative(_array);
         return obj instanceof Array ? (Array) obj : null;
     }
@@ -213,9 +209,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Dictionary getDictionary(int index) {
-        //return (Dictionary) _get(_array, index).asNative(_array);
-
-        rangeCheck(index);
         Object obj = _get(_array, index).asNative(_array);
         return obj instanceof Dictionary ? (Dictionary) obj : null;
     }
@@ -231,7 +224,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         int count = (int) _array.count();
         List<Object> result = new ArrayList<>(count);
         for (int index = 0; index < count; index++)
-            result.add(CBLFleece.toObject(_get(_array, index).asNative(_array)));
+            result.add(Fleece.toObject(_get(_array, index).asNative(_array)));
         return result;
     }
 
@@ -314,17 +307,21 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //---------------------------------------------
 
     protected static MValue _get(MArray array, int index) {
-        return array.get(index);
+        MValue value = array.get(index);
+        if (value.isEmpty())
+            throwRangeException(index);
+        return value;
     }
 
-
-    protected void rangeCheck(int index) {
-        if (index > count() || index < 0)
-            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+    protected static String throwRangeException(int index) {
+        throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
     }
 
+    //---------------------------------------------
+    // package level access
+    //---------------------------------------------
 
-    protected String outOfBoundsMsg(int index) {
-        return "Index: " + index + ", Size: " + count();
+    MCollection toMCollection() {
+        return _array;
     }
 }
