@@ -136,7 +136,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testNewDocWithId() throws CouchbaseLiteException {
+    public void testCreateDocWithID() throws CouchbaseLiteException {
         MutableDocument doc1a = createDocument("doc1");
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
@@ -1702,21 +1702,6 @@ public class DocumentTest extends BaseTest {
         assertTrue(doc.contains("age"));
         assertTrue(doc.contains("address"));
         assertFalse(doc.contains("weight"));
-    }
-
-    @Test
-    public void testDeleteNewDocument() {
-        MutableDocument doc = createDocument("doc1");
-        doc.setValue("name", "Scott Tiger");
-        assertFalse(doc.isDeleted());
-        try {
-            db.delete(doc);
-            fail();
-        } catch (CouchbaseLiteException e) {
-            assertEquals(404, e.getCode());
-        }
-        assertFalse(doc.isDeleted());
-        assertEquals("Scott Tiger", doc.getValue("name"));
     }
 
     @Test

@@ -4,6 +4,7 @@ package com.couchbase.lite;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
@@ -27,6 +28,22 @@ public class ErrorCaseTest extends BaseTest {
         db.delete(doc);
 
         assertNull(db.getDocument(docID));
+    }
+
+    // -- DatabaseTest
+    @Test
+    public void testDeleteUnsavedDocument() {
+        MutableDocument doc = createDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        assertFalse(doc.isDeleted());
+        try {
+            db.delete(doc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(404, e.getCode());
+        }
+        assertFalse(doc.isDeleted());
+        assertEquals("Scott Tiger", doc.getValue("name"));
     }
 
     // -- ArrayTest
