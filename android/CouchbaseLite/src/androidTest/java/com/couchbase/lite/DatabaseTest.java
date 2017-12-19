@@ -79,16 +79,6 @@ public class DatabaseTest extends BaseTest {
             assertFalse(path.exists());
     }
 
-    // helper method to save document
-    Document generateDocument(String docID) throws CouchbaseLiteException {
-        MutableDocument doc = createDocument(docID);
-        doc.setValue("key", 1);
-        Document savedDoc = save(doc);
-        assertEquals(1, db.getCount());
-        assertEquals(1, savedDoc.getSequence());
-        return savedDoc;
-    }
-
     // helper methods to verify getDoc
     void verifyGetDocument(String docID) {
         verifyGetDocument(docID, 1);
@@ -653,25 +643,6 @@ public class DatabaseTest extends BaseTest {
             // close otherDb
             deleteDatabase(otherDB);
         }
-    }
-
-    @Test
-    public void testDeleteSameDocTwice() throws CouchbaseLiteException {
-        // Store doc:
-        String docID = "doc1";
-        Document doc = generateDocument(docID);
-
-        // First time deletion:
-        db.delete(doc);
-        assertEquals(0, db.getCount());
-
-        assertNull(db.getDocument(docID));
-
-        // Second time deletion:
-        // NOTE: doc is pointing to old revision. this cause conflict but this generate same revision
-        db.delete(doc);
-
-        assertNull(db.getDocument(docID));
     }
 
     @Test

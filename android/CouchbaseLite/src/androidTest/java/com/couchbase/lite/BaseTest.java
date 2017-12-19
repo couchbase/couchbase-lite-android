@@ -36,6 +36,7 @@ import java.util.Map;
 
 import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -180,5 +181,15 @@ public class BaseTest implements C4Constants {
         Document doc = db.save(mDoc);
         validator.validate(doc);
         return doc;
+    }
+
+    // helper method to save document
+    protected Document generateDocument(String docID) throws CouchbaseLiteException {
+        MutableDocument doc = createDocument(docID);
+        doc.setValue("key", 1);
+        Document savedDoc = save(doc);
+        assertEquals(1, db.getCount());
+        assertEquals(1, savedDoc.getSequence());
+        return savedDoc;
     }
 }

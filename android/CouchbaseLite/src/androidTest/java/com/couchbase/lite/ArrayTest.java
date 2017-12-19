@@ -1500,32 +1500,7 @@ public class ArrayTest extends BaseTest {
         assertTrue(array.equals(mArray));
     }
 
-    static class CustomClass {
-        public String text = "custom";
-    }
 
-    @Test
-    public void testAddValueUnExpectedObject() {
-        MutableArray mArray = new MutableArray();
-        try {
-            mArray.addValue(new CustomClass());
-            fail();
-        } catch (IllegalArgumentException ex) {
-            // ok!!
-        }
-    }
-
-    @Test
-    public void testSetValueUnExpectedObject() {
-        MutableArray mArray = new MutableArray();
-        mArray.addValue(0);
-        try {
-            mArray.setValue(0, new CustomClass());
-            fail();
-        } catch (IllegalArgumentException ex) {
-            // ok!!
-        }
-    }
 
     @Test
     public void testAddInt() throws CouchbaseLiteException {

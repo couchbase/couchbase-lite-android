@@ -14,6 +14,8 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.query.expression.Collation;
+import com.couchbase.lite.internal.query.expression.CollationExpression;
 import com.couchbase.lite.internal.query.expression.PropertyExpression;
 
 import java.util.ArrayList;
@@ -541,25 +543,6 @@ public abstract class Expression {
         public Object asJSON() {
             List<Object> json = new ArrayList<>();
             json.add("?" + name);
-            return json;
-        }
-    }
-
-    static final class CollationExpression extends Expression {
-        Expression operand;
-        Collation collation;
-
-        public CollationExpression(Expression operand, Collation collation) {
-            this.operand = operand;
-            this.collation = collation;
-        }
-
-        @Override
-        public Object asJSON() {
-            List<Object> json = new ArrayList<>(3);
-            json.add("COLLATE");
-            json.add(collation.asJSON());
-            json.add(operand.asJSON());
             return json;
         }
     }
