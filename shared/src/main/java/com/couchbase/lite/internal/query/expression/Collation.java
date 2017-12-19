@@ -1,4 +1,4 @@
-package com.couchbase.lite;
+package com.couchbase.lite.internal.query.expression;
 
 import java.util.HashMap;
 import java.util.Map;

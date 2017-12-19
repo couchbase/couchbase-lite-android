@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -303,25 +304,6 @@ public class DocumentTest extends BaseTest {
                 assertEquals(new HashMap<>(), d.toMap());
             }
         });
-    }
-
-    @Test
-    public void testGetValueFromExistingEmptyDoc() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("doc1");
-        Document doc = save(mDoc);
-
-        assertEquals(0, doc.getInt("key"));
-        assertEquals(0.0f, doc.getFloat("key"), 0.0f);
-        assertEquals(0.0, doc.getDouble("key"), 0.0);
-        assertEquals(false, doc.getBoolean("key"));
-        assertNull(doc.getBlob("key"));
-        assertNull(doc.getDate("key"));
-        assertNull(doc.getNumber("key"));
-        assertNull(doc.getValue("key"));
-        assertNull(doc.getString("key"));
-        assertNull(doc.getArray("key"));
-        assertNull(doc.getDictionary("key"));
-        assertEquals(new HashMap<>(), doc.toMap());
     }
 
     @Test
@@ -1595,7 +1577,39 @@ public class DocumentTest extends BaseTest {
     public void testToDictionary() {
         MutableDocument doc1 = createDocument("doc1");
         populateData(doc1);
-        // TODO: Should blob be serialized into JSON dictionary?
+
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("true", true);
+        expected.put("false", false);
+        expected.put("string", "string");
+        expected.put("zero", 0);
+        expected.put("one", 1);
+        expected.put("minus_one", -1);
+        expected.put("one_dot_one", 1.1);
+        // TODO: Should be Date or String?
+        //expected.put("date", DateUtils.fromJson(kDocumentTestDate));
+        expected.put("date", kDocumentTestDate);
+        expected.put("null", null);
+
+        // Dictionary:
+        Map<String, Object> dict = new HashMap<>();
+        dict.put("street", "1 Main street");
+        dict.put("city", "Mountain View");
+        dict.put("state", "CA");
+        expected.put("dict", dict);
+
+        // Array:
+        List<Object> array = new ArrayList<>();
+        array.add("650-123-0001");
+        array.add("650-123-0002");
+        expected.put("array", array);
+
+        // Blob:
+        byte[] content = kDocumentTestBlob.getBytes();
+        Blob blob = new Blob("text/plain", content);
+        expected.put("blob", blob);
+
+        assertEquals(expected, doc1.toMap());
     }
 
     @Test
