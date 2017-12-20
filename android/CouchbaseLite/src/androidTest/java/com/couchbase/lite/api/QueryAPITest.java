@@ -210,12 +210,12 @@ public class QueryAPITest extends BaseTest {
             for (Result result : rs) {
                 assertEquals(3, result.count());
                 if (count == 0) {
-                    assertEquals("hotel128", result.getString("_id"));
+                    assertEquals("hotel128", result.getString("id"));
                     assertEquals("hotel128", result.getString(0));
                     assertEquals("Mt View Hotel", result.getString("name"));
                     assertEquals("Mt View Hotel", result.getString(1));
                 } else {
-                    assertEquals("hotel256", result.getString("_id"));
+                    assertEquals("hotel256", result.getString("id"));
                     assertEquals("hotel256", result.getString(0));
                     assertEquals("Hotel Couchbase", result.getString("name"));
                     assertEquals("Hotel Couchbase", result.getString(1));
@@ -238,7 +238,7 @@ public class QueryAPITest extends BaseTest {
             try {
                 ResultSet rs = query.execute();
                 for (Result result : rs) {
-                    Log.i("Sample", String.format("hotel id -> %s", result.getString("_id")));
+                    Log.i("Sample", String.format("hotel id -> %s", result.getString("id")));
                     Log.i("Sample", String.format("hotel name -> %s", result.getString("name")));
                 }
             } catch (CouchbaseLiteException e) {
@@ -264,16 +264,16 @@ public class QueryAPITest extends BaseTest {
             for (Result result : rs) {
                 assertEquals(1, result.count());
                 if (count == 0) {
-                    assertEquals("nrt", result.getString("_id"));
+                    assertEquals("nrt", result.getString("id"));
                     assertEquals("nrt", result.getString(0));
                 } else if (count == 1) {
-                    assertEquals("rix", result.getString("_id"));
+                    assertEquals("rix", result.getString("id"));
                     assertEquals("rix", result.getString(0));
                 } else if (count == 2) {
-                    assertEquals("sfo", result.getString("_id"));
+                    assertEquals("sfo", result.getString("id"));
                     assertEquals("sfo", result.getString(0));
                 } else if (count == 3) {
-                    assertEquals("sjc", result.getString("_id"));
+                    assertEquals("sjc", result.getString("id"));
                     assertEquals("sjc", result.getString(0));
                 }
                 count++;
@@ -290,7 +290,7 @@ public class QueryAPITest extends BaseTest {
                     .orderBy(Ordering.expression(Meta.id));
             ResultSet rs = query.execute();
             for (Result result : rs) {
-                Log.w("Sample", String.format("airport id -> %s", result.getString("_id")));
+                Log.w("Sample", String.format("airport id -> %s", result.getString("id")));
                 Log.w("Sample", String.format("airport id -> %s", result.getString(0)));
             }
         }
@@ -393,7 +393,7 @@ public class QueryAPITest extends BaseTest {
             int count = 0;
             for (Result result : rs) {
                 assertEquals(3, result.count());
-                assertEquals("hotel128", result.getString("_id"));
+                assertEquals("hotel128", result.getString("id"));
                 assertEquals("Mt View Hotel", result.getString("name"));
                 assertEquals(Arrays.asList((Object) "Armani Langworth", "Elfrieda Gutkowski", "Maureen Ruecker"), result.getArray("public_likes").toList());
                 count++;
@@ -433,7 +433,7 @@ public class QueryAPITest extends BaseTest {
             int count = 0;
             for (Result result : rs) {
                 assertEquals(3, result.count());
-                assertEquals("landmark001", result.getString("_id"));
+                assertEquals("landmark001", result.getString("id"));
                 assertEquals("England", result.getString("country"));
                 assertEquals("Royal Engineers Museum", result.getString("name"));
                 count++;
@@ -473,7 +473,7 @@ public class QueryAPITest extends BaseTest {
             int count = 0;
             for (Result result : rs) {
                 assertEquals(3, result.count());
-                assertEquals("landmark002", result.getString("_id"));
+                assertEquals("landmark002", result.getString("id"));
                 assertEquals("England", result.getString("country"));
                 assertEquals("Engineer", result.getString("name"));
                 count++;
@@ -513,7 +513,7 @@ public class QueryAPITest extends BaseTest {
             int count = 0;
             for (Result result : rs) {
                 assertEquals(3, result.count());
-                assertEquals("landmark002", result.getString("_id"));
+                assertEquals("landmark002", result.getString("id"));
                 assertEquals("England", result.getString("country"));
                 assertEquals("Engineer", result.getString("name"));
                 count++;
@@ -553,7 +553,7 @@ public class QueryAPITest extends BaseTest {
             int count = 0;
             for (Result result : rs) {
                 assertEquals(3, result.count());
-                assertEquals("landmark002", result.getString("_id"));
+                assertEquals("landmark002", result.getString("id"));
                 assertEquals("England", result.getString("country"));
                 assertEquals("Engineer", result.getString("name"));
                 count++;
@@ -715,12 +715,12 @@ public class QueryAPITest extends BaseTest {
             for (Result result : rs) {
                 assertEquals(2, result.count());
                 if (count == 0) {
-                    assertEquals("hotel256", result.getString("_id"));
+                    assertEquals("hotel256", result.getString("id"));
                     assertEquals("hotel256", result.getString(0));
                     assertEquals("Hotel Couchbase", result.getString("name"));
                     assertEquals("Hotel Couchbase", result.getString(1));
                 } else {
-                    assertEquals("hotel128", result.getString("_id"));
+                    assertEquals("hotel128", result.getString("id"));
                     assertEquals("hotel128", result.getString(0));
                     assertEquals("Mt View Hotel", result.getString("name"));
                     assertEquals("Mt View Hotel", result.getString(1));

@@ -26,7 +26,7 @@ public class NotificationTest extends BaseTest {
     }
 
     @Test
-    public void testDatabaseNotification()
+    public void testDatabaseChange()
             throws InterruptedException, CouchbaseLiteException {
         final CountDownLatch latch = new CountDownLatch(1);
         db.addChangeListener(new DatabaseChangeListener() {
@@ -58,7 +58,7 @@ public class NotificationTest extends BaseTest {
     }
 
     @Test
-    public void testDocumentNotification()
+    public void testDocumentChange()
             throws InterruptedException, CouchbaseLiteException {
         MutableDocument mDocA = createDocument("A");
         MutableDocument mDocB = createDocument("B");

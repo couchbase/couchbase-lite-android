@@ -207,7 +207,7 @@ public class ConflictTest extends BaseTest {
     }
 
     @Test
-    public void testDeletionConflict() throws CouchbaseLiteException {
+    public void testConflictDeletion() throws CouchbaseLiteException {
         closeDB();
         openDB(null); // set null to conflict resolver, should use default one
 
