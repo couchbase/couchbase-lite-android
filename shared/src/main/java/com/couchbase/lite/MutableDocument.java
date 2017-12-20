@@ -90,6 +90,11 @@ public final class MutableDocument extends Document implements MutableDictionary
     // public API methods
     //---------------------------------------------
 
+    @Override
+    public MutableDocument toMutable() {
+        return new MutableDocument(this, _dict);
+    }
+
     //---------------------------------------------
     // DictionaryInterface implementation
     //---------------------------------------------

@@ -147,7 +147,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testSetArrayList() throws CouchbaseLiteException {
+    public void testSetList() throws CouchbaseLiteException {
         List<Object> data = new ArrayList<>();
         data.add("1");
         data.add("2");
@@ -178,7 +178,7 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
-    public void testNull() throws CouchbaseLiteException {
+    public void testAddNull() throws CouchbaseLiteException {
         MutableArray array = new MutableArray();
         array.addValue(null);
         MutableDocument doc = createDocument("doc1");

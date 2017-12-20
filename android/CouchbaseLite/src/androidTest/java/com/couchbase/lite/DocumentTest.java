@@ -285,7 +285,7 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testGetValueFromNewEmptyDoc() throws CouchbaseLiteException {
+    public void testGetValueFromDocument() throws CouchbaseLiteException {
         MutableDocument doc = createDocument("doc1");
         save(doc, new Validator<Document>() {
             @Override
@@ -1686,6 +1686,26 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
+    public void testRemoveKeysBySettingDictionary() throws CouchbaseLiteException {
+        Map<String, Object> props = new HashMap<>();
+        props.put("PropName1", "Val1");
+        props.put("PropName2", 42);
+
+        MutableDocument mDoc = new MutableDocument("docName", props);
+        save(mDoc);
+
+        Map<String, Object> newProps = new HashMap<>();
+        props.put("PropName3", "Val3");
+        props.put("PropName4", 84);
+
+        MutableDocument existingDoc = db.getDocument("docName").toMutable();
+        existingDoc.setData(newProps);
+        save(existingDoc);
+
+        assertEquals(newProps, existingDoc.toMap());
+    }
+
+    @Test
     public void testContainsKey() {
         MutableDocument doc = createDocument("doc1");
         Map<String, Object> mapAddress = new HashMap<>();
@@ -1702,6 +1722,22 @@ public class DocumentTest extends BaseTest {
         assertTrue(doc.contains("age"));
         assertTrue(doc.contains("address"));
         assertFalse(doc.contains("weight"));
+    }
+
+    @Test
+    public void testDeleteNewDocument() {
+        MutableDocument mDoc = new MutableDocument("doc1");
+        mDoc.setString("name", "Scott Tiger");
+        assertFalse(mDoc.isDeleted());
+        try {
+            db.delete(mDoc);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(Status.CBLErrorDomain, e.getDomain());
+            assertEquals(Status.NotFound, e.getCode());
+        }
+        assertFalse(mDoc.isDeleted());
+        assertEquals("Scott Tiger", mDoc.getString("name"));
     }
 
     @Test
@@ -2026,6 +2062,134 @@ public class DocumentTest extends BaseTest {
         });
     }
 
+    @Test
+    public void testToMutable() throws CouchbaseLiteException {
+        byte[] content = kDocumentTestBlob.getBytes();
+        Blob data = new Blob("text/plain", content);
+        MutableDocument mDoc1 = new MutableDocument("doc1");
+        mDoc1.setBlob("data", data);
+        mDoc1.setString("name", "Jim");
+        mDoc1.setInt("score", 10);
+
+        MutableDocument mDoc2 = mDoc1.toMutable();
+        assertTrue(mDoc1 != mDoc2);
+        assertTrue(mDoc2.equals(mDoc1));
+        assertTrue(mDoc1.equals(mDoc2));
+        assertEquals(mDoc1.getBlob("data"), mDoc2.getBlob("data"));
+        assertEquals(mDoc1.getString("name"), mDoc2.getString("name"));
+        assertEquals(mDoc1.getInt("score"), mDoc2.getInt("score"));
+
+        Document doc1 = db.save(mDoc1);
+        MutableDocument mDoc3 = doc1.toMutable();
+        assertEquals(doc1.getBlob("data"), mDoc3.getBlob("data"));
+        assertEquals(doc1.getString("name"), mDoc3.getString("name"));
+        assertEquals(doc1.getInt("score"), mDoc3.getInt("score"));
+    }
+
+    @Test
+    public void testEquality() throws CouchbaseLiteException {
+        byte[] data1 = "data1".getBytes();
+        byte[] data2 = "data2".getBytes();
+
+        MutableDocument doc1a = new MutableDocument("doc1");
+        MutableDocument doc1b = new MutableDocument("doc1");
+        MutableDocument doc1c = new MutableDocument("doc1");
+
+        doc1a.setInt("answer", 42);
+        doc1a.setValue("options", "1,2,3");
+        doc1a.setBlob("attachment", new Blob("text/plain", data1));
+
+        doc1b.setInt("answer", 42);
+        doc1b.setValue("options", "1,2,3");
+        doc1b.setBlob("attachment", new Blob("text/plain", data1));
+
+        doc1c.setInt("answer", 41);
+        doc1c.setValue("options", "1,2");
+        doc1c.setBlob("attachment", new Blob("text/plain", data2));
+        doc1c.setString("comment", "This is a comment");
+
+        assertTrue(doc1a.equals(doc1a));
+        assertTrue(doc1a.equals(doc1b));
+        assertFalse(doc1a.equals(doc1c));
+
+        assertTrue(doc1b.equals(doc1a));
+        assertTrue(doc1b.equals(doc1b));
+        assertFalse(doc1b.equals(doc1c));
+
+        assertFalse(doc1c.equals(doc1a));
+        assertFalse(doc1c.equals(doc1b));
+        assertTrue(doc1c.equals(doc1c));
+
+        Document savedDoc = db.save(doc1c);
+        MutableDocument mDoc = savedDoc.toMutable();
+        assertTrue(savedDoc.equals(mDoc));
+        assertTrue(mDoc.equals(savedDoc));
+        mDoc.setInt("answer", 50);
+        assertFalse(savedDoc.equals(mDoc));
+        assertFalse(mDoc.equals(savedDoc));
+    }
+
+    @Test
+    public void testEqualityDifferentDocID() throws CouchbaseLiteException {
+        MutableDocument doc1 = new MutableDocument("doc1");
+        MutableDocument doc2 = new MutableDocument("doc2");
+        doc1.setLong("answer", 42L); // TODO: Integer cause unequality with saved doc
+        doc2.setLong("answer", 42L); // TODO: Integer cause unequality with saved doc
+        Document sDoc1 = db.save(doc1);
+        Document sDoc2 = db.save(doc2);
+
+        assertTrue(doc1.equals(doc1));
+        assertTrue(sDoc1.equals(sDoc1));
+        assertTrue(doc1.equals(sDoc1));
+        assertTrue(sDoc1.equals(doc1));
+
+        assertTrue(doc2.equals(doc2));
+        assertTrue(sDoc2.equals(sDoc2));
+        assertTrue(doc2.equals(sDoc2));
+        assertTrue(sDoc2.equals(doc2));
+
+        assertFalse(doc1.equals(doc2));
+        assertFalse(doc2.equals(doc1));
+        assertFalse(sDoc1.equals(sDoc2));
+        assertFalse(sDoc2.equals(sDoc1));
+    }
+
+    @Test
+    public void testEqualityDifferentDB() throws CouchbaseLiteException {
+        Database otherDB = open("other");
+        try {
+            MutableDocument doc1a = new MutableDocument("doc1");
+            MutableDocument doc1b = new MutableDocument("doc1");
+            doc1a.setLong("answer", 42L);
+            doc1b.setLong("answer", 42L);
+            assertTrue(doc1a.equals(doc1b));
+            assertTrue(doc1b.equals(doc1a));
+            Document sDoc1a = db.save(doc1a);
+            Document sDoc1b = otherDB.save(doc1b);
+            assertTrue(doc1a.equals(sDoc1a));
+            assertTrue(sDoc1a.equals(doc1a));
+            assertTrue(doc1b.equals(sDoc1b));
+            assertTrue(sDoc1b.equals(doc1b));
+            assertFalse(sDoc1a.equals(sDoc1b));
+            assertFalse(sDoc1b.equals(sDoc1a));
+
+            sDoc1a = db.getDocument("doc1");
+            sDoc1b = otherDB.getDocument("doc1");
+            assertFalse(sDoc1b.equals(sDoc1a));
+
+            Database sameDB = open(db.getName());
+            try {
+                Document anotherDoc1a = sameDB.getDocument("doc1");
+                assertTrue(anotherDoc1a.equals(sDoc1a));
+                assertTrue(sDoc1a.equals(anotherDoc1a));
+            } finally {
+                sameDB.close();
+            }
+        } finally {
+            otherDB.close();
+        }
+    }
+
     // https://github.com/couchbase/couchbase-lite-android/issues/1449
     @Test
     public void testDeleteDocAndGetDoc() throws CouchbaseLiteException {
@@ -2134,7 +2298,6 @@ public class DocumentTest extends BaseTest {
         assertTrue(mDoc3.equals(doc3));
         assertTrue(mDoc3.equals(mDoc3));
 
-
         // compare doc1, doc4, mdoc1, and mdoc4
         assertTrue(doc4.equals(doc4));
         assertFalse(doc1.equals(doc4));
@@ -2148,7 +2311,6 @@ public class DocumentTest extends BaseTest {
         assertFalse(mDoc1.equals(doc4));
         assertTrue(mDoc4.equals(doc4));
         assertTrue(mDoc4.equals(mDoc4));
-
 
         // compare doc3, doc4, mdoc3, and mdoc4
         assertFalse(doc3.equals(doc4));
