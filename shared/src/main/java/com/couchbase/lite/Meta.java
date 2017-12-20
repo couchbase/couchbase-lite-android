@@ -7,14 +7,14 @@ public class Meta {
     // Inner public Class
     //---------------------------------------------
     public static class MetaExpression extends PropertyExpression {
-        MetaExpression(String property) {
-            super(property);
+        MetaExpression(String keyPath, String columnName, String from) {
+            super(keyPath, columnName, from);
         }
     }
 
     //---------------------------------------------
     // API - public static variables
     //------------------------------------------
-    public static final MetaExpression id = new MetaExpression("_id");
-    public static final MetaExpression sequence = new MetaExpression("_sequence");
+    public static final MetaExpression id = new MetaExpression("_id", "id", null);
+    public static final MetaExpression sequence = new MetaExpression("_sequence", "sequence", null);
 }

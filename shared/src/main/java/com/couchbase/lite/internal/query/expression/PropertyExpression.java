@@ -22,7 +22,7 @@ public class PropertyExpression extends Expression {
         this.from = from;
     }
 
-    private PropertyExpression(String keyPath, String columnName, String from) {
+    protected PropertyExpression(String keyPath, String columnName, String from) {
         this.keyPath = keyPath;
         this.columnName = columnName;
         this.from = from;

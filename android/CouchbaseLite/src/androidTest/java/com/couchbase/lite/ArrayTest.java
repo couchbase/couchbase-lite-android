@@ -358,6 +358,67 @@ public class ArrayTest extends BaseTest {
     }
 
     @Test
+    public void testSetObjectToExistingArray() throws CouchbaseLiteException {
+        for (int i = 0; i < 2; i++) {
+            MutableArray array = new MutableArray();
+            if (i % 2 == 0)
+                populateData(array);
+            else
+                populateDataByType(array);
+
+            // Save
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            MutableDocument doc = createDocument(docID);
+            doc.setArray("array", array);
+            doc = save(doc).toMutable();
+            MutableArray gotArray = doc.getArray("array");
+
+            List<Object> data = arrayOfAllTypes();
+            assertEquals(data.size(), gotArray.count());
+
+            // reverse the array
+            for (int j = 0; j < data.size(); j++)
+                gotArray.setValue(j, data.get(data.size() - j - 1));
+
+            save(doc, "array", gotArray, new Validator<Array>() {
+                @Override
+                public void validate(Array a) {
+                    assertEquals(12, a.count());
+
+                    assertEquals(true, a.getValue(11));
+                    assertEquals(false, a.getValue(10));
+                    assertEquals("string", a.getValue(9));
+                    assertEquals(0, ((Number) a.getValue(8)).intValue());
+                    assertEquals(1, ((Number) a.getValue(7)).intValue());
+                    assertEquals(-1, ((Number) a.getValue(6)).intValue());
+                    assertEquals(1.1, a.getValue(5));
+                    assertEquals(kArrayTestDate, a.getValue(4));
+                    assertEquals(null, a.getValue(3));
+
+                    // dictionary
+                    MutableDictionary subdict = (MutableDictionary) a.getValue(2);
+                    Map<String, Object> expectedMap = new HashMap<>();
+                    expectedMap.put("name", "Scott Tiger");
+                    assertEquals(expectedMap, subdict.toMap());
+
+                    // array
+                    MutableArray subarray = (MutableArray) a.getValue(1);
+                    List<Object> expected = new ArrayList<>();
+                    expected.add("a");
+                    expected.add("b");
+                    expected.add("c");
+                    assertEquals(expected, subarray.toList());
+
+                    // blob
+                    Blob blob = (Blob) a.getValue(0);
+                    assertTrue(Arrays.equals(kArrayTestBlob.getBytes(), blob.getContent()));
+                    assertEquals(kArrayTestBlob, new String(blob.getContent()));
+                }
+            });
+        }
+    }
+
+    @Test
     public void testSetObjectOutOfBound() {
         MutableArray array = new MutableArray();
         array.addValue("a");
@@ -1499,8 +1560,6 @@ public class ArrayTest extends BaseTest {
         assertTrue(nestedArray.equals(mNestedArray));
         assertTrue(array.equals(mArray));
     }
-
-
 
     @Test
     public void testAddInt() throws CouchbaseLiteException {

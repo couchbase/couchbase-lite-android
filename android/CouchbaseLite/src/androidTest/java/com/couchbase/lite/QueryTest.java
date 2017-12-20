@@ -648,12 +648,28 @@ public class QueryTest extends BaseTest {
         int numRows = verifyQuery(q, new QueryResult() {
             @Override
             public void check(int n, Result result) throws Exception {
-                String docID = (String) result.getValue(0);
-                long seq = (long) result.getValue(1);
+                String docID1 = (String) result.getValue(0);
+                String docID2 = result.getString(0);
+                String docID3 = (String) result.getValue("id");
+                String docID4 = result.getString("id");
+
+                long seq1 = (long) result.getValue(1);
+                long seq2 = result.getLong(1);
+                long seq3 = (long) result.getValue("sequence");
+                long seq4 = result.getLong("sequence");
+
                 long number = (long) result.getValue(2);
 
-                assertEquals(expectedDocIDs[n - 1], docID);
-                assertEquals(expectedSeqs[n - 1], seq);
+                assertEquals(expectedDocIDs[n - 1], docID1);
+                assertEquals(expectedDocIDs[n - 1], docID2);
+                assertEquals(expectedDocIDs[n - 1], docID3);
+                assertEquals(expectedDocIDs[n - 1], docID4);
+
+                assertEquals(expectedSeqs[n - 1], seq1);
+                assertEquals(expectedSeqs[n - 1], seq2);
+                assertEquals(expectedSeqs[n - 1], seq3);
+                assertEquals(expectedSeqs[n - 1], seq4);
+
                 assertEquals(expectedNumbers[n - 1], number);
             }
         }, true);
@@ -1842,9 +1858,9 @@ public class QueryTest extends BaseTest {
                 @Override
                 public void changed(QueryChange change) {
                     for (Result r : change.getRows()) {
-                        if (r.getString("_id").equals("doc1"))
+                        if (r.getString("id").equals("doc1"))
                             latch1.countDown();
-                        else if (r.getString("_id").equals("doc2"))
+                        else if (r.getString("id").equals("doc2"))
                             latch2.countDown();
                     }
                 }
