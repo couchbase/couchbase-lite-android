@@ -18,6 +18,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.couchbase.lite.internal.query.expression.Collation;
+import com.couchbase.lite.internal.query.expression.CollationTest;
 import com.couchbase.lite.query.FullTextExpression;
 import com.couchbase.lite.query.FullTextFunction;
 import com.couchbase.lite.query.QueryChange;
@@ -1779,5 +1780,86 @@ public class QueryTest extends BaseTest {
             }
         }, true);
         assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testGenerateJSONCollation() {
+        // NOTE: moved to com.couchbase.lite.internal.query.expression.CollationTest
+        //       This is just consistancy with other platforms
+        new CollationTest().testGenerateJSONCollation();
+    }
+
+    @Test
+    public void testAllComparison() throws CouchbaseLiteException {
+        String[] values = {"Apple", "Aardvark", "Ångström", "Zebra", "äpple"};
+        for (String value : values) {
+            MutableDocument doc = new MutableDocument();
+            doc.setString("hey", value);
+            save(doc);
+        }
+        List<List<Object>> testData = new ArrayList<>();
+        testData.add(Arrays.asList("BINARY collation", Collation.ascii(),
+                Arrays.asList("Aardvark", "Apple", "Zebra", "Ångström", "äpple")));
+        testData.add(Arrays.asList("NOCASE collation", Collation.ascii().ignoreCase(true),
+                Arrays.asList("Aardvark", "Apple", "Zebra", "Ångström", "äpple")));
+        testData.add(Arrays.asList("Unicode case-sensitive, diacritic-sensitive collation",
+                Collation.unicode(),
+                Arrays.asList("Aardvark", "Ångström", "Apple", "äpple", "Zebra")));
+        testData.add(Arrays.asList("Unicode case-INsensitive, diacritic-sensitive collation",
+                Collation.unicode().ignoreCase(true),
+                Arrays.asList("Aardvark", "Ångström", "Apple", "äpple", "Zebra")));
+        testData.add(Arrays.asList("Unicode case-sensitive, diacritic-INsensitive collation",
+                Collation.unicode().ignoreAccents(true),
+                Arrays.asList("Aardvark", "Ångström", "äpple", "Apple", "Zebra")));
+        testData.add(Arrays.asList("Unicode case-INsensitive, diacritic-INsensitive collation",
+                Collation.unicode().ignoreAccents(true).ignoreCase(true),
+                Arrays.asList("Aardvark", "Ångström", "Apple", "äpple", "Zebra")));
+
+        Expression property = Expression.property("hey");
+        for (List<Object> data : testData) {
+            Log.i(TAG, (String) data.get(0));
+            Query q = Query.select(SelectResult.property("hey"))
+                    .from(DataSource.database(db))
+                    .orderBy(Ordering.expression(property.collate((Collation) data.get(1))));
+            ResultSet rs = q.execute();
+            List<String> list = new ArrayList<>();
+            for (Result r : rs)
+                list.add(r.getString(0));
+            assertEquals(data.get(2), list);
+        }
+    }
+
+    @Test
+    public void testLiveQueryStopWhenClosed() throws CouchbaseLiteException, InterruptedException {
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+
+        Database otherDB = new Database(db.getName(), db.getConfig());
+        try {
+            Query query = Query.select(SelectResult.expression(Meta.id))
+                    .from(DataSource.database(otherDB));
+            query.addChangeListener(new QueryChangeListener() {
+                @Override
+                public void changed(QueryChange change) {
+                    for (Result r : change.getRows()) {
+                        if (r.getString("_id").equals("doc1"))
+                            latch1.countDown();
+                        else if (r.getString("_id").equals("doc2"))
+                            latch2.countDown();
+                    }
+                }
+            });
+            MutableDocument doc = new MutableDocument("doc1");
+            doc.setString("value", "string");
+            db.save(doc);
+            assertTrue(latch1.await(2, TimeUnit.SECONDS));
+        } finally {
+            otherDB.close();
+        }
+
+        MutableDocument doc = new MutableDocument("doc1");
+        doc.setString("value", "string");
+        db.save(doc);
+        assertFalse(latch2.await(2, TimeUnit.SECONDS));
     }
 }

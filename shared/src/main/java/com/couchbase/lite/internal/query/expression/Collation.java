@@ -24,6 +24,11 @@ public class Collation {
     public static class Unicode extends Collation {
         public Unicode() {
             this.unicode = true;
+
+            // NOTE: With Android, to get default locale, it requires to access Android Context.
+            //       setting locale could be developer's responsibility.
+            // https://github.com/couchbase/couchbase-lite-ios/blob/feature/2.0/Objective-C/CBLQueryCollation.m#L51-L52
+            // this.locale = <default locale>
         }
 
         public Unicode ignoreCase(boolean ignoreCase) {
