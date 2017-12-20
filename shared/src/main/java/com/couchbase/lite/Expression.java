@@ -14,8 +14,8 @@
 
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.query.expression.Collation;
-import com.couchbase.lite.internal.query.expression.CollationExpression;
+import com.couchbase.lite.query.Collation;
+import com.couchbase.lite.query.CollationExpression;
 import com.couchbase.lite.internal.query.expression.PropertyExpression;
 
 import java.util.ArrayList;

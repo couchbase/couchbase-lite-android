@@ -1,4 +1,4 @@
-package com.couchbase.lite.internal.query.expression;
+package com.couchbase.lite.query;
 
 import com.couchbase.lite.Expression;
 

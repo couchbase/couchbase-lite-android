@@ -1,4 +1,4 @@
-package com.couchbase.lite.internal.query.expression;
+package com.couchbase.lite.query;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +22,7 @@ public class Collation {
     }
 
     public static class Unicode extends Collation {
-        public Unicode() {
+        Unicode() {
             this.unicode = true;
 
             // NOTE: With Android, to get default locale, it requires to access Android Context.
@@ -47,7 +47,7 @@ public class Collation {
         }
     }
 
-    protected Object asJSON() {
+    Object asJSON() {
         Map<String, Object> json = new HashMap<>();
         json.put("UNICODE", unicode);
         json.put("LOCALE", locale == null ? null : locale);

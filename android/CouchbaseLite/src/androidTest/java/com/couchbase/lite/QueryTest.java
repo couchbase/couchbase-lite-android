@@ -17,8 +17,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.couchbase.lite.internal.query.expression.Collation;
-import com.couchbase.lite.internal.query.expression.CollationTest;
+import com.couchbase.lite.query.Collation;
+import com.couchbase.lite.query.CollationTest;
 import com.couchbase.lite.query.FullTextExpression;
 import com.couchbase.lite.query.FullTextFunction;
 import com.couchbase.lite.query.QueryChange;
@@ -1800,7 +1800,7 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testGenerateJSONCollation() {
-        // NOTE: moved to com.couchbase.lite.internal.query.expression.CollationTest
+        // NOTE: moved to com.couchbase.lite.query.CollationTest
         //       This is just consistancy with other platforms
         new CollationTest().testGenerateJSONCollation();
     }
