@@ -4,12 +4,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrUnknownHost;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ReplicatorTest extends BaseReplicatorTest {
 
@@ -147,28 +149,76 @@ public class ReplicatorTest extends BaseReplicatorTest {
         assertEquals(expectedMap, doc1a.toMap());
     }
 
+    //TODO - port from ios
     @Test
     public void testPullConflictNoBaseRevision() {
-        // TODO
+    }
+
+    //TODO - port from ios
+    @Test
+    public void testStopContinuousReplicator() {
     }
 
     @Test
-    public void testStopContinuousReplicator() {
-        // TODO
+    public void testDocIDFilter() throws CouchbaseLiteException, InterruptedException {
+        MutableDocument doc1 = new MutableDocument("doc1");
+        doc1.setString("species", "Tiger");
+        db.save(doc1);
+        doc1.setString("name", "Hobbes");
+        db.save(doc1);
+
+        MutableDocument doc2 = new MutableDocument("doc2");
+        doc2.setString("species", "Tiger");
+        db.save(doc2);
+        doc2.setString("pattern", "striped");
+        db.save(doc2);
+
+        MutableDocument doc3 = new MutableDocument("doc3");
+        doc3.setString("species", "Tiger");
+        otherDB.save(doc3);
+        doc3.setString("name", "Hobbes");
+        otherDB.save(doc3);
+
+        MutableDocument doc4 = new MutableDocument("doc4");
+        doc4.setString("species", "Tiger");
+        otherDB.save(doc4);
+        doc4.setString("pattern", "striped");
+        otherDB.save(doc4);
+
+        ReplicatorConfiguration config = makeConfig(true, true, false);
+        config.setDocumentIDs(Arrays.asList("doc1", "doc3"));
+        run(config, 0, null);
+        assertEquals(3, db.getCount());
+        assertNotNull(db.getDocument("doc3"));
+        assertEquals(3, otherDB.getCount());
+        assertNotNull(otherDB.getDocument("doc1"));
     }
 
-    // https://github.com/couchbase/couchbase-lite-core/issues/149
-    // @Test
-    public void testMissingHost() throws InterruptedException {
-        // should timeout after 10sec
-        // builder.connectTimeout(10, TimeUnit.SECONDS)
-        timeout = 20;
-
-        // NOTE: Following URL causes UnknownHostException which is transient error,
-        //       and replicator status becomes OFFLINE
-
-        String uri = String.format(Locale.ENGLISH, "blip://foo.couchbase.com/db");
-        ReplicatorConfiguration config = makeConfig(false, true, true, uri);
-        run(config, kC4NetErrUnknownHost, "Network");
+    @Test
+    public void testReplicatorStopWhenClosed() throws CouchbaseLiteException {
+        ReplicatorConfiguration config = makeConfig(true, true, true);
+        Replicator repl = new Replicator(config);
+        repl.start();
+        while (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.IDLE) {
+            Log.w(TAG, String.format(Locale.ENGLISH,
+                    "Replicator status is still %s, waiting for idle...",
+                    repl.getStatus().getActivityLevel()));
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+            }
+        }
+        reopenDB();
+        int attemptCount = 0;
+        while (attemptCount++ < 10 && repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
+            Log.w(TAG, String.format(Locale.ENGLISH,
+                    "Replicator status is still %s, waiting for stopped (remaining attempts %d)...",
+                    repl.getStatus().getActivityLevel(), 10 - attemptCount));
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+            }
+        }
+        assertTrue(attemptCount < 10);
     }
 }

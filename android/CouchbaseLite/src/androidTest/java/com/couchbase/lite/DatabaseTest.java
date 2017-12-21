@@ -250,7 +250,7 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testCreateWithDefaultOption() throws CouchbaseLiteException {
+    public void testCreateWithDefaultConfiguration() throws CouchbaseLiteException {
         Database db = new Database("db", new DatabaseConfiguration(this.context));
         try {
         } finally {
@@ -1071,6 +1071,51 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
 
     @Test
+    public void testDeleteWithDefaultDirDB() throws CouchbaseLiteException {
+        String dbName = "db";
+        Database database = open(dbName);
+        File path = database.getPath();
+        assertNotNull(path);
+        assertTrue(path.exists());
+        // close db before delete
+        database.close();
+
+        // Java/Android does not allow null as directory parameter
+        try {
+            Database.delete(dbName, null);
+            fail();
+        } catch (IllegalArgumentException ex) {
+            // ok
+        }
+        assertTrue(path.exists());
+    }
+
+    @Test
+    public void testDeleteOpeningDBWithDefaultDir() throws CouchbaseLiteException {
+        String dbName = "db";
+
+        // create db with custom directory
+        Database db = openDatabase(dbName);
+        try {
+            File path = db.getPath();
+            assertNotNull(path);
+            assertTrue(path.exists());
+
+            // Java/Android does not allow null as directory parameter
+            try {
+                Database.delete(dbName, null);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                // ok
+            } finally {
+                ;
+            }
+        } finally {
+            db.close();
+        }
+    }
+
+    @Test
     public void testDeleteByStaticMethod() throws CouchbaseLiteException {
         String dbName = "db";
 
@@ -1126,6 +1171,20 @@ public class DatabaseTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testDatabaseExistsWithDefaultDir() {
+        // NOTE: Android/Java does not allow to use null as directory parameters
+        //       This test is not valid for Android Java. Will keep this test
+        //       for unit test consistency with other platforms
+
+        try {
+            Database.exists("db", null);
+            fail();
+        } catch (IllegalArgumentException ex) {
+        }
+    }
+
+
     //---------------------------------------------
     //  Database Existing
     //---------------------------------------------
@@ -1165,8 +1224,7 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists("nonexist", dir));
     }
 
-    // TODO: This test does not pass with Android API16 arm-v7a
-    //@Test
+    @Test
     public void testCompact() throws CouchbaseLiteException {
         final int NUM_DOCS = 20;
         final int NUM_UPDATES = 25;
@@ -1208,8 +1266,9 @@ public class DatabaseTest extends BaseTest {
 
         // Delete all docs:
         for (MutableDocument doc : docs) {
-            db.delete(doc);
-            assertTrue(doc.isDeleted());
+            Document savedDoc = db.getDocument(doc.getId());
+            db.delete(savedDoc);
+            assertNull(db.getDocument(doc.getId()));
         }
 
         // Compact:
@@ -1313,7 +1372,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(0, db.getIndexes().size());
 
         // Create value index:
-       ValueIndexItem fNameItem = ValueIndexItem.property("firstName");
+        ValueIndexItem fNameItem = ValueIndexItem.property("firstName");
         ValueIndexItem lNameItem = ValueIndexItem.property("lastName");
 
         Index index1 = Index.valueIndex(fNameItem, lNameItem);
