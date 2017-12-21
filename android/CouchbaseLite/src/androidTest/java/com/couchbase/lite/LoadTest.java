@@ -62,27 +62,30 @@ public class LoadTest extends BaseTest {
         }
     }
 
-    void updateDoc(MutableDocument doc, int rounds, String tag) throws CouchbaseLiteException {
+    Document updateDoc(Document doc, int rounds, String tag) throws CouchbaseLiteException {
+        Document tmpDoc = doc;
         for (int i = 1; i <= rounds; i++) {
-            doc.setValue("update", i);
+            MutableDocument mDoc = tmpDoc.toMutable();
+            mDoc.setValue("update", i);
 
-            doc.setValue("tag", tag);
+            mDoc.setValue("tag", tag);
 
-            MutableDictionary address = doc.getDictionary("address");
+            MutableDictionary address = mDoc.getDictionary("address");
             assertNotNull(address);
             String street = String.format(Locale.ENGLISH, "%d street.", i);
             address.setValue("street", street);
 
-            MutableArray phones = doc.getArray("phones");
+            MutableArray phones = mDoc.getArray("phones");
             assertNotNull(phones);
             assertEquals(2, phones.count());
             String phone = String.format(Locale.ENGLISH, "650-000-%04d", i);
             phones.setValue(0, phone);
 
-            doc.setValue("updated", new Date());
+            mDoc.setValue("updated", new Date());
 
-            db.save(doc);
+            tmpDoc = db.save(mDoc);
         }
+        return tmpDoc;
     }
 
     interface VerifyBlock {
@@ -150,7 +153,7 @@ public class LoadTest extends BaseTest {
 
         // update doc n times
         tag = "Update";
-        updateDoc(doc.toMutable(), n, tag);
+        updateDoc(doc, n, tag);
 
         // check document
         doc = db.getDocument(docID);
