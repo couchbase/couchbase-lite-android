@@ -5,6 +5,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Locale;
 
 import okhttp3.MediaType;
@@ -13,6 +16,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -108,5 +112,48 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s", this.config.remoteHost(), this.config.remotePort(), DB_NAME);
         ReplicatorConfiguration config = makeConfig(true, false, true, uri);
         run(config, 0, null);
+    }
+
+    @Test
+    public void testChannelPull() throws CouchbaseLiteException, InterruptedException, URISyntaxException {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        assertEquals(0, otherDB.getCount());
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 5; i++) {
+                    String docID = String.format(Locale.ENGLISH, "doc-%d", i);
+                    MutableDocument doc = new MutableDocument(docID);
+                    doc.setValue("foo", "var");
+                    try {
+                        db.save(doc);
+                    } catch (CouchbaseLiteException e) {
+                        fail();
+                    }
+                }
+                for (int i = 0; i < 10; i++) {
+                    String docID = String.format(Locale.ENGLISH, "doc-%d", i + 5);
+                    MutableDocument doc = new MutableDocument(docID);
+                    doc.setValue("channels", "my_channel");
+                    try {
+                        db.save(doc);
+                    } catch (CouchbaseLiteException e) {
+                        fail();
+                    }
+                }
+            }
+        });
+
+        String strUri = String.format(Locale.ENGLISH, "blip://%s:%d/%s", this.config.remoteHost(), this.config.remotePort(), DB_NAME);
+        URI uri = new URI(strUri);
+        ReplicatorConfiguration config = makeConfig(true, false, false, uri);
+        run(config, 0, null);
+
+        config = makeConfig(false, true, false, otherDB, uri);
+        config.setChannels(Arrays.asList("my_channel"));
+        run(config, 0, null);
+        assertEquals(10, otherDB.getCount());
     }
 }
