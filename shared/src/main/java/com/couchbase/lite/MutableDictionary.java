@@ -60,7 +60,7 @@ public class MutableDictionary extends Dictionary implements MutableDictionaryIn
     public MutableDictionary setData(Map<String, Object> data) {
         _dict.clear();
         for (Map.Entry<String, Object> entry : data.entrySet())
-            _dict.set(entry.getKey(), new MValue(CBLFleece.toCBLObject(entry.getValue())));
+            _dict.set(entry.getKey(), new MValue(Fleece.toCBLObject(entry.getValue())));
         return this;
     }
 
@@ -76,8 +76,8 @@ public class MutableDictionary extends Dictionary implements MutableDictionaryIn
     @Override
     public MutableDictionary setValue(String key, Object value) {
         MValue oldValue = _dict.get(key);
-        value = CBLFleece.toCBLObject(value);
-        if (CBLFleece.valueWouldChange(value, oldValue, _dict))
+        value = Fleece.toCBLObject(value);
+        if (Fleece.valueWouldChange(value, oldValue, _dict))
             _dict.set(key, new MValue(value));
         return this;
     }

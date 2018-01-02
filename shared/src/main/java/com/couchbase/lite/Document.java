@@ -357,13 +357,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
 
     void free() {
-        if (this._root != null) {
-            this._root.free();
-            this._root = null;
-        }
-        if (this._c4doc != null) {
-            this._c4doc.free();
-            this._c4doc = null;
+        _root = null;
+        if (_c4doc != null) {
+            _c4doc.free();
+            _c4doc = null;
         }
     }
 
@@ -390,13 +387,9 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     void updateDictionary() {
         if (_data != null) {
-            if (_root != null)
-                _root.free();
-            _root = new MRoot(new DocContext(_database), _data.toFLValue(), isMutable());
+            _root = new MRoot(new DocContext(_database, getC4doc()), _data.toFLValue(), isMutable());
             _dict = (Dictionary) _root.asNative();
         } else {
-            if (_root != null)
-                _root.free();
             _root = null;
             _dict = isMutable() ? new MutableDictionary() : new Dictionary();
         }

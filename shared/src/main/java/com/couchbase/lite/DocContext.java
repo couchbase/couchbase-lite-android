@@ -1,25 +1,25 @@
 package com.couchbase.lite;
 
+import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.fleece.AllocSlice;
 import com.couchbase.litecore.fleece.MContext;
 
 public class DocContext extends MContext {
-    DocContext(Database db) {
-        super(new AllocSlice("{}".getBytes()), db.getSharedKeys().getFLSharedKeys());
-        this.setNative(db);
-    }
+    private Database _db;
 
-    public void free() {
-        super.free();
+    private C4Document _doc;
+
+    DocContext(Database db, C4Document doc) {
+        super(new AllocSlice("{}".getBytes()), db.getSharedKeys().getFLSharedKeys());
+        _db = db;
+        _doc = doc;
     }
 
     public Database getDatabase() {
-        return (Database) getNative();
+        return _db;
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        free();
-        super.finalize();
+    public C4Document getDoc() {
+        return _doc;
     }
 }

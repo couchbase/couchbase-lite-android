@@ -6,10 +6,8 @@ import com.couchbase.litecore.fleece.FLEncodable;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.MCollection;
 import com.couchbase.litecore.fleece.MDict;
-import com.couchbase.litecore.fleece.MDictIterator;
 import com.couchbase.litecore.fleece.MValue;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,14 +23,14 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // member variables
     //-------------------------------------------------------------------------
 
-    MDict _dict; // pointer to MDict<JNIRef> in native
+    MDict _dict;
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
     Dictionary() {
-        _dict = new MDict(); // pointer to MDict<JNIRef> in native
+        _dict = new MDict();
     }
 
     Dictionary(MValue mv, MCollection parent) {
@@ -64,15 +62,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
 
     @Override
     public List<String> getKeys() {
-        List<String> keys = new ArrayList<>(count());
-        MDictIterator itr = new MDictIterator(_dict);
-        String key;
-        while ((key = itr.key()) != null) {
-            keys.add(key);
-            if (!itr.next())
-                break;
-        }
-        return keys;
+        return _dict.getKeys();
     }
 
     /**
@@ -181,7 +171,6 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public boolean getBoolean(String key) {
-        //return CBLConverter.asBool(_get(_dict, key), _dict);
         Object value = _get(_dict, key).asNative(_dict);
         if (value == null) return false;
         else if (value instanceof Boolean) return ((Boolean) value).booleanValue();
@@ -253,12 +242,8 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public Map<String, Object> toMap() {
         Map<String, Object> result = new HashMap<>();
-        MDictIterator itr = new MDictIterator(_dict);
-        String key;
-        while ((key = itr.key()) != null) {
-            result.put(key, CBLFleece.toObject(_get(_dict, key).asNative(_dict)));
-            if (!itr.next())
-                break;
+        for (String key : _dict) {
+            result.put(key, Fleece.toObject(_get(_dict, key).asNative(_dict)));
         }
         return result;
     }
@@ -361,5 +346,13 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // hashCode for pair of key and value
     private int hashCode(String key, Object value) {
         return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
+    }
+
+    //---------------------------------------------
+    // package level access
+    //---------------------------------------------
+
+    MCollection toMCollection() {
+        return _dict;
     }
 }

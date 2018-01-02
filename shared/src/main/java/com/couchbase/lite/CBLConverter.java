@@ -7,8 +7,8 @@ import static com.couchbase.lite.internal.support.ClassUtils.cast;
 
 public class CBLConverter {
     static boolean asBool(MValue val, MCollection container) {
-        if (val.value() != null)
-            return val.value().asBool();
+        if (val.getValue() != null)
+            return val.getValue().asBool();
         else
             return toBoolean(val.asNative(container));
     }
@@ -22,8 +22,8 @@ public class CBLConverter {
     }
 
     static int asInteger(MValue val, MCollection container) {
-        if (val.value() != null)
-            return (int) val.value().asInt();
+        if (val.getValue() != null)
+            return (int) val.getValue().asInt();
         else {
             Number num = getNumber(val.asNative(container));
             return num != null ? num.intValue() : 0;
@@ -31,8 +31,8 @@ public class CBLConverter {
     }
 
     static long asLong(MValue val, MCollection container) {
-        if (val.value() != null)
-            return val.value().asInt();
+        if (val.getValue() != null)
+            return val.getValue().asInt();
         else {
             Number num = getNumber(val.asNative(container));
             return num != null ? num.longValue() : 0L;
@@ -40,8 +40,8 @@ public class CBLConverter {
     }
 
     static float asFloat(MValue val, MCollection container) {
-        if (val.value() != null)
-            return val.value().asFloat();
+        if (val.getValue() != null)
+            return val.getValue().asFloat();
         else {
             Number num = getNumber(val.asNative(container));
             return num != null ? num.floatValue() : 0L;
@@ -49,8 +49,8 @@ public class CBLConverter {
     }
 
     static double asDouble(MValue val, MCollection container) {
-        if (val.value() != null)
-            return val.value().asDouble();
+        if (val.getValue() != null)
+            return val.getValue().asDouble();
         else {
             Number num = getNumber(val.asNative(container));
             return num != null ? num.doubleValue() : 0L;
