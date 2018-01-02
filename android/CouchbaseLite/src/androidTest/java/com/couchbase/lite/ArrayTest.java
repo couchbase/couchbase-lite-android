@@ -411,13 +411,19 @@ public class ArrayTest extends BaseTest {
                     assertEquals(null, a.getValue(3));
 
                     // dictionary
-                    MutableDictionary subdict = (MutableDictionary) a.getValue(2);
+                    Dictionary dict = (Dictionary) a.getValue(2);
+                    MutableDictionary subdict = (dict instanceof MutableDictionary) ?
+                            (MutableDictionary) dict : dict.toMutable();
+
                     Map<String, Object> expectedMap = new HashMap<>();
                     expectedMap.put("name", "Scott Tiger");
                     assertEquals(expectedMap, subdict.toMap());
 
                     // array
-                    MutableArray subarray = (MutableArray) a.getValue(1);
+                    Array array = (Array) a.getValue(1);
+                    MutableArray subarray = (array instanceof MutableArray) ?
+                            (MutableArray) array : array.toMutable();
+
                     List<Object> expected = new ArrayList<>();
                     expected.add("a");
                     expected.add("b");
