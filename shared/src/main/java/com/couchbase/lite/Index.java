@@ -18,5 +18,4 @@ public abstract class Index {
     public static FullTextIndex fullTextIndex(FullTextIndexItem... items) {
         return new FullTextIndex(items);
     }
-
 }

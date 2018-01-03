@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-class FullTextIndex extends Index {
+public class FullTextIndex extends Index {
 
     private List<FullTextIndexItem> indexItems;
     String locale = null;
