@@ -224,7 +224,8 @@ public class LoadTest extends BaseTest {
 
         long start = System.currentTimeMillis();
 
-        final int n = 20000; // num of docs;
+        // final int n = 20000; // num of docs;
+        final int n = 2000; // NOTE: changed for unit test
         final int m = 100; // num of fields
 
         // Without Batch
