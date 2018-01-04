@@ -78,7 +78,8 @@ public class ResultSet implements Iterable<Result> {
     }
 
     private Result currentObject() {
-        return new Result(this, _c4enum, _context);
+        // NOTE: C4QueryEnumerator.getColumns() is just get pointer to columns
+        return new Result(this, _c4enum.getColumns(), _context);
     }
 
     //---------------------------------------------
@@ -116,7 +117,9 @@ public class ResultSet implements Iterable<Result> {
 
     public void free() {
         if (_c4enum != null) {
-            _c4enum.close();
+            synchronized (getDatabase().getLock()) {
+                _c4enum.close();
+            }
             _c4enum.free();
             _c4enum = null;
         }
@@ -126,11 +129,13 @@ public class ResultSet implements Iterable<Result> {
         if (_query == null)
             throw new IllegalStateException("_query variable is null");
 
-        try {
-            C4QueryEnumerator newEnum = _c4enum.refresh();
-            return newEnum != null ? new ResultSet(_query, newEnum, _columnNames) : null;
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+        synchronized (getDatabase().getLock()) {
+            try {
+                C4QueryEnumerator newEnum = _c4enum.refresh();
+                return newEnum != null ? new ResultSet(_query, newEnum, _columnNames) : null;
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
         }
     }
 
@@ -148,6 +153,10 @@ public class ResultSet implements Iterable<Result> {
     // Package level access
     //---------------------------------------------
 
+    int columnCount() {
+        return _columnNames.size();
+    }
+
     int getCount() {
         if (_query == null)
             throw new IllegalStateException("_query variable is null");
@@ -159,6 +168,7 @@ public class ResultSet implements Iterable<Result> {
                 throw LiteCoreBridge.convertRuntimeException(e);
             }
         }
+
     }
 
     Result get(int index) {

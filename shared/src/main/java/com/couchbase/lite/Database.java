@@ -38,7 +38,6 @@ import org.json.JSONException;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +55,6 @@ import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevHasAttachments;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotOpen;
-import static java.util.Collections.synchronizedSet;
 
 /**
  * A Couchbase Lite database.
@@ -852,9 +850,9 @@ public final class Database implements C4Constants {
         }
 
         c4DBObserver = null;
-        dbListenerTokens = synchronizedSet(new HashSet<DatabaseChangeListenerToken>());
-        docListenerTokens = Collections.synchronizedMap(new HashMap<String, Set<DocumentChangeListenerToken>>());
-        c4DocObservers = Collections.synchronizedMap(new HashMap<String, C4DocumentObserver>());
+        dbListenerTokens = new HashSet<>();
+        docListenerTokens = new HashMap<>();
+        c4DocObservers = new HashMap<>();
     }
 
     private int getDatabaseFlags() {
@@ -932,7 +930,7 @@ public final class Database implements C4Constants {
     private DocumentChangeListenerToken addDocumentChangeListener(Executor executor, DocumentChangeListener listener, String docID) {
         // NOTE: caller method is synchronized.
         if (!docListenerTokens.containsKey(docID)) {
-            Set<DocumentChangeListenerToken> listeners = Collections.synchronizedSet(new HashSet<DocumentChangeListenerToken>());
+            Set<DocumentChangeListenerToken> listeners = new HashSet<>();
             docListenerTokens.put(docID, listeners);
             registerC4DocObserver(docID);
         }
@@ -1039,12 +1037,9 @@ public final class Database implements C4Constants {
                 boolean newExternal = nChanges > 0 ? c4DBChanges[0].isExternal() : false;
                 if (c4DBChanges == null || c4DBChanges.length == 0 || external != newExternal || docIDs.size() > 1000) {
                     if (docIDs.size() > 0) {
-                        // NOTE: dbListenerTokens is synchronized collections. And, DatabaseChange is immutable.
                         DatabaseChange change = new DatabaseChange(this, docIDs);
-                        synchronized (dbListenerTokens) {
-                            for (DatabaseChangeListenerToken token : dbListenerTokens)
-                                token.notify(change);
-                        }
+                        for (DatabaseChangeListenerToken token : dbListenerTokens)
+                            token.notify(change);
                         docIDs = new ArrayList<>();
                     }
                 }
@@ -1060,15 +1055,11 @@ public final class Database implements C4Constants {
             if (!c4DocObservers.containsKey(documentID) || c4db == null)
                 return;
 
-            // NOTE: docListenerTokens and its Set value are synchronized collections.
-            //       And DocumentChange is immutable
             Set<DocumentChangeListenerToken> tokens = docListenerTokens.get(documentID);
             if (tokens != null) {
-                synchronized (tokens) {
-                    DocumentChange change = new DocumentChange(documentID);
-                    for (DocumentChangeListenerToken token : tokens)
-                        token.notify(change);
-                }
+                DocumentChange change = new DocumentChange(documentID);
+                for (DocumentChangeListenerToken token : tokens)
+                    token.notify(change);
             }
         }
     }
