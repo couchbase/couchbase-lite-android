@@ -46,15 +46,15 @@ public class Document implements DictionaryInterface, Iterable<String> {
         setC4Document(c4doc);
     }
 
-    // TODO: Database -> C4Database
     Document(Database database,
              String id,
-             boolean mustExist,
              boolean includeDeleted) throws CouchbaseLiteException {
         this(database, id, null);
         C4Document doc;
         try {
-            doc = readC4Doc(mustExist);
+            if (_database == null || _database.getC4Database() == null)
+                throw new IllegalStateException();
+            doc = _database.getC4Database().get(getId(), true);
         } catch (LiteCoreException e) {
             if (e.getDomain() == LiteCoreDomain && e.getCode() == kC4ErrorNotFound)
                 throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
@@ -503,12 +503,5 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     protected FLDict getData() {
         return _data;
-    }
-
-    // Reads the document from the db into a new C4Document and returns it, w/o affecting my state.
-    private C4Document readC4Doc(boolean mustExist) throws LiteCoreException {
-        if (_database == null || _database.getC4Database() == null)
-            throw new IllegalStateException();
-        return _database.getC4Database().get(getId(), mustExist);
     }
 }

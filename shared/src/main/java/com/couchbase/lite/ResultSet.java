@@ -61,14 +61,19 @@ public class ResultSet implements Iterable<Result> {
      * if there are no more rows.
      */
     public Result next() {
-        try {
-            if (_c4enum.next()) {
-                return currentObject();
-            } else
+        if (_query == null)
+            throw new IllegalStateException("_query variable is null");
+
+        synchronized (getDatabase().getLock()) {
+            try {
+                if (_c4enum.next()) {
+                    return currentObject();
+                } else
+                    return null;
+            } catch (LiteCoreException e) {
+                Log.w(TAG, "Query enumeration error: %s", e);
                 return null;
-        } catch (LiteCoreException e) {
-            Log.w(TAG, "Query enumeration error: %s", e);
-            return null;
+            }
         }
     }
 
@@ -118,7 +123,9 @@ public class ResultSet implements Iterable<Result> {
     }
 
     public ResultSet refresh() throws CouchbaseLiteException {
-        if (_query == null) return null;
+        if (_query == null)
+            throw new IllegalStateException("_query variable is null");
+
         try {
             C4QueryEnumerator newEnum = _c4enum.refresh();
             return newEnum != null ? new ResultSet(_query, newEnum, _columnNames) : null;
@@ -141,24 +148,32 @@ public class ResultSet implements Iterable<Result> {
     // Package level access
     //---------------------------------------------
 
-
-
     int getCount() {
-        try {
-            return (int) _c4enum.getRowCount();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertRuntimeException(e);
+        if (_query == null)
+            throw new IllegalStateException("_query variable is null");
+
+        synchronized (getDatabase().getLock()) {
+            try {
+                return (int) _c4enum.getRowCount();
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertRuntimeException(e);
+            }
         }
     }
 
     Result get(int index) {
-        try {
-            if (_c4enum.seek(index)) {
-                return currentObject();
-            } else
-                return null;
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertRuntimeException(e);
+        if (_query == null)
+            throw new IllegalStateException("_query variable is null");
+
+        synchronized (getDatabase().getLock()) {
+            try {
+                if (_c4enum.seek(index)) {
+                    return currentObject();
+                } else
+                    return null;
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertRuntimeException(e);
+            }
         }
     }
 
@@ -169,4 +184,9 @@ public class ResultSet implements Iterable<Result> {
     Query getQuery() {
         return _query;
     }
+
+    Database getDatabase() {
+        return _query.getDatabase();
+    }
 }
+

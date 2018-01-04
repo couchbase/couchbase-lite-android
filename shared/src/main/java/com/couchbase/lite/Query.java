@@ -78,6 +78,8 @@ public class Query {
     // Live Query!!
     private LiveQuery liveQuery = null;
 
+    private final Object lock = new Object(); // lock for thread-safety
+
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
@@ -146,7 +148,10 @@ public class Query {
         try {
             C4QueryOptions options = new C4QueryOptions();
             String paramJSON = parameters.encodeAsJSON();
-            C4QueryEnumerator c4enum = c4query.run(options, paramJSON);
+            C4QueryEnumerator c4enum;
+            synchronized (getDatabase().getLock()) {
+                c4enum = c4query.run(options, paramJSON);
+            }
             return new ResultSet(this, c4enum, columnNames);
         } catch (LiteCoreException e) {
             throw LiteCoreBridge.convertException(e);
@@ -170,7 +175,9 @@ public class Query {
     public String explain() throws CouchbaseLiteException {
         if (c4query == null)
             check();
-        return c4query.explain();
+        synchronized (getDatabase().getLock()) {
+            return c4query.explain();
+        }
     }
 
     public ListenerToken addChangeListener(QueryChangeListener listener) {
@@ -200,6 +207,12 @@ public class Query {
     //---------------------------------------------
     // Protected level access
     //---------------------------------------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        free();
+        super.finalize();
+    }
 
     //---------------------------------------------
     // Package level access
@@ -259,25 +272,27 @@ public class Query {
     //---------------------------------------------
 
     private void check() throws CouchbaseLiteException {
-        database = (Database) from.getSource();
-        String json = encodeAsJSON();
-        Log.v(TAG, "Query encoded as %s", json);
-        if (json == null)
-            throw new CouchbaseLiteException("Failed to generate JSON query.");
+        synchronized (lock) {
+            database = (Database) from.getSource();
+            String json = encodeAsJSON();
+            Log.v(TAG, "Query encoded as %s", json);
+            if (json == null)
+                throw new CouchbaseLiteException("Failed to generate JSON query.");
 
-        if (columnNames == null)
-            columnNames = generateColumnNames();
+            if (columnNames == null)
+                columnNames = generateColumnNames();
 
-        C4Query query = null;
-        try {
-            query = database.getC4Database().createQuery(json);
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
-        } finally {
-            if (c4query != null)
-                c4query.free();
+            C4Query query = null;
+            try {
+                query = database.getC4Database().createQuery(json);
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            } finally {
+                if (c4query != null)
+                    c4query.free();
+            }
+            c4query = query;
         }
-        c4query = query;
     }
 
     private Map<String, Integer> generateColumnNames() throws CouchbaseLiteException {
@@ -359,5 +374,14 @@ public class Query {
         if (liveQuery == null)
             liveQuery = new LiveQuery(this);
         return liveQuery;
+    }
+
+    private void free() {
+        if (c4query != null && getDatabase() != null) {
+            synchronized (getDatabase().getLock()) {
+                c4query.free();
+            }
+            c4query = null;
+        }
     }
 }

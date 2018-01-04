@@ -64,7 +64,10 @@ public class Result
 
     @Override
     public int count() {
-        return rs.getQuery().getC4Query().columnCount();
+        Database db = rs.getDatabase();
+        synchronized (db.getLock()) {
+            return rs.getQuery().getC4Query().columnCount();
+        }
     }
 
     //---------------------------------------------

@@ -54,8 +54,8 @@ public class ConcurrencyTest extends BaseTest {
         List<String> docs = Collections.synchronizedList(new ArrayList<String>(nDocs));
         for (int i = 0; i < nDocs; i++) {
             MutableDocument doc = createDocumentWithTag(tag);
-            db.save(doc);
-            docs.add(doc.getId());
+            Document saved = db.save(doc);
+            docs.add(saved.getId());
         }
         return docs;
     }
@@ -63,7 +63,8 @@ public class ConcurrencyTest extends BaseTest {
     boolean updateDocs(List<String> docIds, int rounds, String tag) {
         for (int i = 1; i <= rounds; i++) {
             for (String docId : docIds) {
-                MutableDocument doc = db.getDocument(docId).toMutable();
+                Document d = db.getDocument(docId);
+                MutableDocument doc = d.toMutable();
                 doc.setValue("tag", tag);
 
                 MutableDictionary address = doc.getDictionary("address");
@@ -381,7 +382,8 @@ public class ConcurrencyTest extends BaseTest {
                 for (String docID : docIDs) {
                     try {
                         Document doc = db.getDocument(docID);
-                        db.delete(doc);
+                        if (doc != null)
+                            db.delete(doc);
                     } catch (CouchbaseLiteException e) {
                         Log.e(TAG, "Error in Database.delete(Document)", e);
                         fail();
@@ -397,7 +399,9 @@ public class ConcurrencyTest extends BaseTest {
             public void run() {
                 for (String docID : docIDs) {
                     try {
-                        db.delete(db.getDocument(docID));
+                        Document doc = db.getDocument(docID);
+                        if (doc != null)
+                            db.delete(doc);
                     } catch (CouchbaseLiteException e) {
                         Log.e(TAG, "Error in Database.delete(Document)", e);
                         fail();
