@@ -61,19 +61,25 @@ public class ResultSet implements Iterable<Result> {
      * if there are no more rows.
      */
     public Result next() {
-        try {
-            if (_c4enum.next()) {
-                return currentObject();
-            } else
+        if (_query == null)
+            throw new IllegalStateException("_query variable is null");
+
+        synchronized (getDatabase().getLock()) {
+            try {
+                if (_c4enum.next()) {
+                    return currentObject();
+                } else
+                    return null;
+            } catch (LiteCoreException e) {
+                Log.w(TAG, "Query enumeration error: %s", e);
                 return null;
-        } catch (LiteCoreException e) {
-            Log.w(TAG, "Query enumeration error: %s", e);
-            return null;
+            }
         }
     }
 
     private Result currentObject() {
-        return new Result(this, _c4enum, _context);
+        // NOTE: C4QueryEnumerator.getColumns() is just get pointer to columns
+        return new Result(this, _c4enum.getColumns(), _context);
     }
 
     //---------------------------------------------
@@ -111,19 +117,25 @@ public class ResultSet implements Iterable<Result> {
 
     public void free() {
         if (_c4enum != null) {
-            _c4enum.close();
+            synchronized (getDatabase().getLock()) {
+                _c4enum.close();
+            }
             _c4enum.free();
             _c4enum = null;
         }
     }
 
     public ResultSet refresh() throws CouchbaseLiteException {
-        if (_query == null) return null;
-        try {
-            C4QueryEnumerator newEnum = _c4enum.refresh();
-            return newEnum != null ? new ResultSet(_query, newEnum, _columnNames) : null;
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+        if (_query == null)
+            throw new IllegalStateException("_query variable is null");
+
+        synchronized (getDatabase().getLock()) {
+            try {
+                C4QueryEnumerator newEnum = _c4enum.refresh();
+                return newEnum != null ? new ResultSet(_query, newEnum, _columnNames) : null;
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
         }
     }
 
@@ -141,24 +153,37 @@ public class ResultSet implements Iterable<Result> {
     // Package level access
     //---------------------------------------------
 
-
+    int columnCount() {
+        return _columnNames.size();
+    }
 
     int getCount() {
-        try {
-            return (int) _c4enum.getRowCount();
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertRuntimeException(e);
+        if (_query == null)
+            throw new IllegalStateException("_query variable is null");
+
+        synchronized (getDatabase().getLock()) {
+            try {
+                return (int) _c4enum.getRowCount();
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertRuntimeException(e);
+            }
         }
+
     }
 
     Result get(int index) {
-        try {
-            if (_c4enum.seek(index)) {
-                return currentObject();
-            } else
-                return null;
-        } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertRuntimeException(e);
+        if (_query == null)
+            throw new IllegalStateException("_query variable is null");
+
+        synchronized (getDatabase().getLock()) {
+            try {
+                if (_c4enum.seek(index)) {
+                    return currentObject();
+                } else
+                    return null;
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertRuntimeException(e);
+            }
         }
     }
 
@@ -169,4 +194,9 @@ public class ResultSet implements Iterable<Result> {
     Query getQuery() {
         return _query;
     }
+
+    Database getDatabase() {
+        return _query.getDatabase();
+    }
 }
+

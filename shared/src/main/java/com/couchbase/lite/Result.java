@@ -15,7 +15,6 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.DateUtils;
-import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLArrayIterator;
 import com.couchbase.litecore.fleece.FLValue;
@@ -39,19 +38,16 @@ public class Result
     // member variables
     //---------------------------------------------
     private ResultSet rs;
-    private C4QueryEnumerator c4enum;
     private FLArrayIterator columns;
-    MContext _context;
+    MContext context;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
-
-    Result(ResultSet rs, C4QueryEnumerator c4enum, MContext context) {
+    Result(ResultSet rs, FLArrayIterator columns, MContext context) {
         this.rs = rs;
-        this.c4enum = c4enum;
-        this.columns = c4enum.getColumns();
-        _context = context;
+        this.columns = columns;
+        this.context = context;
     }
 
     //---------------------------------------------
@@ -64,7 +60,7 @@ public class Result
 
     @Override
     public int count() {
-        return rs.getQuery().getC4Query().columnCount();
+        return rs.columnCount();
     }
 
     //---------------------------------------------
@@ -274,7 +270,7 @@ public class Result
     private Object fleeceValueToObject(int index) {
         FLValue value = fleeceValue(index);
         if (value == null) return null;
-        MRoot root = new MRoot(_context, value, false);
+        MRoot root = new MRoot(context, value, false);
         return root.asNative();
     }
 }

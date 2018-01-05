@@ -271,6 +271,7 @@ public class Replicator implements NetworkReachabilityListener {
     public ListenerToken addChangeListener(ReplicatorChangeListener listener) {
         return addChangeListener(null, listener);
     }
+
     /**
      * Set the given ReplicatorChangeListener to the this replicator.
      *
@@ -288,7 +289,7 @@ public class Replicator implements NetworkReachabilityListener {
      * Remove the given ReplicatorChangeListener from the this replicator.
      */
     public void removeChangeListener(ListenerToken token) {
-        if (token == null|| !(token instanceof ReplicatorChangeListenerToken))
+        if (token == null || !(token instanceof ReplicatorChangeListenerToken))
             throw new IllegalArgumentException();
         changeListenerTokens.remove(token);
     }
@@ -415,10 +416,12 @@ public class Replicator implements NetworkReachabilityListener {
         // Create a C4Replicator:
         C4ReplicatorStatus status = null;
         try {
-            c4repl = db.createReplicator(schema, host, port, path, dbName, otherDB,
-                    mkmode(push, continuous), mkmode(pull, continuous),
-                    optionsFleece,
-                    c4ReplListener, this);
+            synchronized (config.getDatabase().getLock()) {
+                c4repl = db.createReplicator(schema, host, port, path, dbName, otherDB,
+                        mkmode(push, continuous), mkmode(pull, continuous),
+                        optionsFleece,
+                        c4ReplListener, this);
+            }
             status = c4repl.getStatus();
             config.getDatabase().getActiveReplications().add(this); // keeps me from being deallocated
         } catch (LiteCoreException e) {

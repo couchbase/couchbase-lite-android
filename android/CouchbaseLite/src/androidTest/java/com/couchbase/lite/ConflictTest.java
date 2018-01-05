@@ -119,6 +119,8 @@ public class ConflictTest extends BaseTest {
                             true,
                             0);
                     assertNotNull(newDoc);
+                    newDoc.free();
+                    trickey.free();
                 } catch (Exception e) {
                     Log.e(TAG, "Error in Runnable.run()", e);
                     throw new RuntimeException(e);
@@ -166,29 +168,30 @@ public class ConflictTest extends BaseTest {
         closeDB();
         openDB(new MergeThenTheirsWins());
 
-        MutableDocument mDoc2 = createDocument("doc2");
-        mDoc2.setValue("type", "profile");
-        mDoc2.setValue("name", "Scott");
-        Document doc2 = save(mDoc2);
-        assertNotNull(doc2);
+        MutableDocument doc2 = createDocument("doc2");
+        doc2.setValue("type", "profile");
+        doc2.setValue("name", "Scott");
+        Document savedDoc2 = save(doc2);
+        assertNotNull(savedDoc2);
 
         // Force a conflict again
-        Map<String, Object> properties = doc2.toMap();
+        Map<String, Object> properties = savedDoc2.toMap();
         properties.put("type", "bio");
         properties.put("gender", "male");
         save(properties, doc2.getId());
 
         // Save and make sure that the correct conflict resolver won
-        mDoc2 = doc2.toMutable();
-        mDoc2.setValue("type", "biography");
-        mDoc2.setValue("age", 31);
-        doc2 = save(mDoc2);
-        assertNotNull(doc2);
+        doc2 = savedDoc2.toMutable();
+        doc2.setValue("type", "biography");
+        doc2.setValue("age", 31);
 
-        assertEquals(31L, doc2.getValue("age"));
-        assertEquals("bio", doc2.getValue("type"));
-        assertEquals("male", doc2.getValue("gender"));
-        assertEquals("Scott", doc2.getValue("name"));
+        savedDoc2 = save(doc2);
+        assertNotNull(savedDoc2);
+
+        assertEquals(31L, savedDoc2.getLong("age"));
+        assertEquals("bio", savedDoc2.getString("type"));
+        assertEquals("male", savedDoc2.getString("gender"));
+        assertEquals("Scott", savedDoc2.getString("name"));
     }
 
     @Test
