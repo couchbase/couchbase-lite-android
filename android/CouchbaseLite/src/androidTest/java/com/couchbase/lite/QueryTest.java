@@ -17,12 +17,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.couchbase.lite.query.Collation;
-import com.couchbase.lite.query.CollationTest;
-import com.couchbase.lite.query.FullTextExpression;
-import com.couchbase.lite.query.FullTextFunction;
-import com.couchbase.lite.query.QueryChange;
-import com.couchbase.lite.query.QueryChangeListener;
+import com.couchbase.lite.internal.support.Log;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -616,7 +611,7 @@ public class QueryTest extends BaseTest {
                 .from(dataSource)
                 .where(EXPR_NUMBER1.between(paramN1, paramN2))
                 .orderBy(ordering);
-        Parameters params = q.getParameters().setValue("num1", 2).setValue("num2", 5);
+        Parameters params = new Parameters.Builder(q.getParameters()).setValue("num1", 2).setValue("num2", 5).build();
         q.setParameters(params);
 
         final long[] expectedNumbers = {2, 3, 4, 5};
@@ -704,7 +699,7 @@ public class QueryTest extends BaseTest {
                 .from(dataSource)
                 .orderBy(Ordering.expression(EXPR_NUMBER1))
                 .limit(paramExpr);
-        Parameters params = q.getParameters().setValue("LIMIT_NUM", 3);
+        Parameters params = new Parameters.Builder(q.getParameters()).setValue("LIMIT_NUM", 3).build();
         q.setParameters(params);
 
         final long[] expectedNumbers2 = {1, 2, 3};
@@ -747,7 +742,7 @@ public class QueryTest extends BaseTest {
                 .from(dataSource)
                 .orderBy(Ordering.expression(EXPR_NUMBER1))
                 .limit(paramLimitExpr, paramOffsetExpr);
-        Parameters params = q.getParameters().setValue("LIMIT_NUM", 3).setValue("OFFSET_NUM", 5);
+        Parameters params = new Parameters.Builder(q.getParameters()).setValue("LIMIT_NUM", 3).setValue("OFFSET_NUM", 5).build();
         q.setParameters(params);
 
         final long[] expectedNumbers2 = {6, 7, 8};
@@ -832,7 +827,7 @@ public class QueryTest extends BaseTest {
         DataSource ds = DataSource.database(db);
 
         Expression exprLikes = Expression.property("likes");
-        Expression exprVarLike = Expression.variable("LIKE");
+        Expression exprVarLike = ArrayExpression.variable("LIKE");
 
         // ANY:
         Query q = Query.select(SR_DOCID).from(ds).where(
@@ -981,7 +976,7 @@ public class QueryTest extends BaseTest {
                 Function.acos(p),
                 Function.asin(p),
                 Function.atan(p),
-                Function.atan2(num, 90.0),
+                Function.atan2(90.0, num),
                 Function.ceil(p),
                 Function.cos(p),
                 Function.degrees(p),
@@ -1077,45 +1072,6 @@ public class QueryTest extends BaseTest {
                 assertEquals(str.replaceAll("\\s+$", ""), result.getString(2));
                 assertEquals(str.trim(), result.getString(3));
                 assertEquals(str.toUpperCase(Locale.ENGLISH), result.getString(4));
-            }
-        }, true);
-        assertEquals(1, numRows);
-    }
-
-    @Test
-    public void testTypeFunctions() throws Exception {
-        MutableDocument doc = createDocument("doc1");
-        doc.setValue("array", new MutableArray(Arrays.<Object>asList("a", "b")));
-        doc.setValue("dictionary", new MutableDictionary(new HashMap<String, Object>() {{
-            put("foo", "bar");
-        }}));
-        doc.setValue("number", 3.14);
-        doc.setValue("string", "string");
-        save(doc);
-
-        Expression exprArray = Expression.property("array");
-        Expression exprDict = Expression.property("dictionary");
-        Expression exprNum = Expression.property("number");
-        Expression exprStr = Expression.property("string");
-
-        Expression fnIsArray = Function.isArray(exprArray);
-        Expression fnIsDict = Function.isDictionary(exprDict);
-        Expression fnIsNum = Function.isNumber(exprNum);
-        Expression fnIsStr = Function.isString(exprStr);
-
-        Query q = Query.select(
-                SelectResult.expression(fnIsArray),
-                SelectResult.expression(fnIsDict),
-                SelectResult.expression(fnIsNum),
-                SelectResult.expression(fnIsStr))
-                .from(DataSource.database(db));
-        int numRows = verifyQuery(q, new QueryResult() {
-            @Override
-            public void check(int n, Result result) throws Exception {
-                assertTrue(result.getBoolean(0));
-                assertTrue(result.getBoolean(1));
-                assertTrue(result.getBoolean(2));
-                assertTrue(result.getBoolean(3));
             }
         }, true);
         assertEquals(1, numRows);
@@ -1399,7 +1355,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void changed(QueryChange change) {
                 assertNotNull(change);
-                ResultSet rs = change.getRows();
+                ResultSet rs = change.getResult();
                 assertNotNull(rs);
                 if (latch.getCount() == 2) {
                     int count = 0;
@@ -1467,7 +1423,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void changed(QueryChange change) {
                 if (consumeAll) {
-                    ResultSet rs = change.getRows();
+                    ResultSet rs = change.getResult();
                     while (rs.next() != null) ;
                 }
                 latch.countDown();
@@ -1800,9 +1756,68 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testGenerateJSONCollation() {
-        // NOTE: moved to com.couchbase.lite.query.CollationTest
-        //       This is just consistancy with other platforms
-        new CollationTest().testGenerateJSONCollation();
+        Collation[] collations = {
+                Collation.ascii().ignoreCase(false),
+                Collation.ascii().ignoreCase(true),
+                Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(false),
+                Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(false),
+                Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(true),
+                Collation.unicode().locale("en").ignoreCase(false).ignoreAccents(false),
+                Collation.unicode().locale("en").ignoreCase(true).ignoreAccents(false),
+                Collation.unicode().locale("en").ignoreCase(true).ignoreAccents(true)
+        };
+
+        List<Map<String, Object>> expected = new ArrayList<>();
+        Map<String, Object> json1 = new HashMap<>();
+        json1.put("UNICODE", false);
+        json1.put("LOCALE", null);
+        json1.put("CASE", true);
+        json1.put("DIAC", true);
+        expected.add(json1);
+        Map<String, Object> json2 = new HashMap<>();
+        json2.put("UNICODE", false);
+        json2.put("LOCALE", null);
+        json2.put("CASE", false);
+        json2.put("DIAC", true);
+        expected.add(json2);
+        Map<String, Object> json3 = new HashMap<>();
+        json3.put("UNICODE", true);
+        json3.put("LOCALE", null);
+        json3.put("CASE", true);
+        json3.put("DIAC", true);
+        expected.add(json3);
+        Map<String, Object> json4 = new HashMap<>();
+        json4.put("UNICODE", true);
+        json4.put("LOCALE", null);
+        json4.put("CASE", false);
+        json4.put("DIAC", true);
+        expected.add(json4);
+        Map<String, Object> json5 = new HashMap<>();
+        json5.put("UNICODE", true);
+        json5.put("LOCALE", null);
+        json5.put("CASE", false);
+        json5.put("DIAC", false);
+        expected.add(json5);
+        Map<String, Object> json6 = new HashMap<>();
+        json6.put("UNICODE", true);
+        json6.put("LOCALE", "en");
+        json6.put("CASE", true);
+        json6.put("DIAC", true);
+        expected.add(json6);
+        Map<String, Object> json7 = new HashMap<>();
+        json7.put("UNICODE", true);
+        json7.put("LOCALE", "en");
+        json7.put("CASE", false);
+        json7.put("DIAC", true);
+        expected.add(json7);
+        Map<String, Object> json8 = new HashMap<>();
+        json8.put("UNICODE", true);
+        json8.put("LOCALE", "en");
+        json8.put("CASE", false);
+        json8.put("DIAC", false);
+        expected.add(json8);
+        for (int i = 0; i < collations.length; i++)
+            assertEquals(expected.get(i), collations[i].asJSON());
     }
 
     @Test
@@ -1857,7 +1872,7 @@ public class QueryTest extends BaseTest {
             query.addChangeListener(new QueryChangeListener() {
                 @Override
                 public void changed(QueryChange change) {
-                    for (Result r : change.getRows()) {
+                    for (Result r : change.getResult()) {
                         if (r.getString("id").equals("doc1"))
                             latch1.countDown();
                         else if (r.getString("id").equals("doc2"))
@@ -1877,5 +1892,86 @@ public class QueryTest extends BaseTest {
         doc.setString("value", "string");
         db.save(doc);
         assertFalse(latch2.await(2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testFunctionCount() throws Exception {
+        loadNumbers(100);
+
+        final MutableDocument doc = new MutableDocument();
+        doc.setValue("string", "STRING");
+        doc.setValue("date", null);
+        save(doc);
+
+        DataSource ds = DataSource.database(this.db);
+        Expression cntNum1 = Function.count(EXPR_NUMBER1);
+        Expression cntInt1 = Function.count(1);
+        Expression cntAstr = Function.count("*");
+        Expression cntAll = Function.count(Expression.all());
+        Expression cntStr = Function.count(Expression.property("string"));
+        Expression cntDate = Function.count(Expression.property("date"));
+        Expression cntNotExist = Function.count(Expression.property("notExist"));
+
+        SelectResult rsCntNum1 = SelectResult.expression(cntNum1);
+        SelectResult rsCntInt1 = SelectResult.expression(cntInt1);
+        SelectResult rsCntAstr = SelectResult.expression(cntAstr);
+        SelectResult rsCntAll = SelectResult.expression(cntAll);
+        SelectResult rsCntStr = SelectResult.expression(cntStr);
+        SelectResult rsCntDate = SelectResult.expression(cntDate);
+        SelectResult rsCntNotExist = SelectResult.expression(cntNotExist);
+
+        Query q = Query.select(rsCntNum1, rsCntInt1, rsCntAstr, rsCntAll, rsCntStr, rsCntDate, rsCntNotExist).from(ds);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(100L, (long) result.getValue(0));
+                assertEquals(101L, (long) result.getValue(1));
+                assertEquals(101L, (long) result.getValue(2));
+                assertEquals(101L, (long) result.getValue(3));
+                assertEquals(1L, (long) result.getValue(4));
+                assertEquals(1L, (long) result.getValue(5));
+                assertEquals(0L, (long) result.getValue(6));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testFunctionCountAll() throws Exception {
+        loadNumbers(100);
+
+        DataSource.As ds = DataSource.database(db);
+
+        Expression countAll = Function.count(Expression.all());
+        Expression countAllFrom = Function.count(Expression.all().from("testdb"));
+        SelectResult srCountAll = SelectResult.expression(countAll);
+        SelectResult srCountAllFrom = SelectResult.expression(countAllFrom);
+
+        Query q;
+        int numRows;
+
+        // SELECT count(*)
+        q = Query.select(srCountAll).from(ds);
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(1, result.count());
+                assertEquals(100L, (long) result.getValue(0));
+            }
+        }, true);
+        assertEquals(1, numRows);
+
+
+        // SELECT count(testdb.*)
+        q = Query.select(srCountAllFrom).from(ds.as("testdb"));
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(1, result.count());
+                assertEquals(100L, (long) result.getValue(0));
+            }
+        }, true);
+        assertEquals(1, numRows);
     }
 }

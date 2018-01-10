@@ -1,4 +1,4 @@
-package com.couchbase.lite.internal.query;
+package com.couchbase.lite;
 
 import org.junit.Test;
 

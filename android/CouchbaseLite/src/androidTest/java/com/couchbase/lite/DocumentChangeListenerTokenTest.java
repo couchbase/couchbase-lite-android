@@ -1,9 +1,5 @@
-package com.couchbase.lite.internal.database;
+package com.couchbase.lite;
 
-
-import com.couchbase.lite.DocumentChange;
-import com.couchbase.lite.DocumentChangeListener;
-import com.couchbase.lite.internal.support.DefaultExecutor;
 
 import org.junit.Test;
 

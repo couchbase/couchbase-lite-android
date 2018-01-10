@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.Log;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

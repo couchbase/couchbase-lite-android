@@ -15,6 +15,8 @@ package com.couchbase.lite;
 
 import android.os.Build;
 
+import com.couchbase.lite.internal.support.Log;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,9 +59,9 @@ public class DatabaseTest extends BaseTest {
     }
 
     private Database openDatabase(String dbName, boolean countCheck) throws CouchbaseLiteException {
-        DatabaseConfiguration options = new DatabaseConfiguration(this.context);
-        options.setDirectory(dir);
-        Database db = new Database(dbName, options);
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
+        builder.setDirectory(dir.getAbsolutePath());
+        Database db = new Database(dbName, builder.build());
         assertEquals(dbName, db.getName());
         assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
         if (countCheck)
@@ -153,47 +155,49 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCreateConfiguration() {
         // Default:
-        DatabaseConfiguration config1 = new DatabaseConfiguration(this.context);
-        config1.setDirectory(new File("/tmp"));
+        DatabaseConfiguration.Builder builder1 = new DatabaseConfiguration.Builder(this.context);
+        builder1.setDirectory("/tmp");
+        DatabaseConfiguration config1 = builder1.build();
         assertNotNull(config1.getDirectory());
-        assertTrue(config1.getDirectory().getAbsolutePath().length() > 0);
-        assertNull(config1.getConflictResolver());
+        assertTrue(config1.getDirectory().length() > 0);
+        assertNotNull(config1.getConflictResolver());
         assertNull(config1.getEncryptionKey());
 
         // Default + Copy
         DatabaseConfiguration config1a = config1.copy();
         assertNotNull(config1a.getDirectory());
-        assertTrue(config1a.getDirectory().getAbsolutePath().length() > 0);
-        assertNull(config1a.getConflictResolver());
+        assertTrue(config1a.getDirectory().length() > 0);
+        assertNotNull(config1a.getConflictResolver());
         assertNull(config1a.getEncryptionKey());
 
         // Custom
         EncryptionKey key = new EncryptionKey("key");
         DummyResolver resolver = new DummyResolver();
-        DatabaseConfiguration config2 = new DatabaseConfiguration(this.context);
-        config2.setDirectory(new File("/tmp/mydb"));
-        config2.setConflictResolver(resolver);
-        config2.setEncryptionKey(key);
-        assertEquals("/tmp/mydb", config2.getDirectory().getAbsolutePath());
+        DatabaseConfiguration.Builder builder2 = new DatabaseConfiguration.Builder(this.context);
+        builder2.setDirectory("/tmp/mydb");
+        builder2.setConflictResolver(resolver);
+        builder2.setEncryptionKey(key);
+        DatabaseConfiguration config2 = builder2.build();
+        assertEquals("/tmp/mydb", config2.getDirectory());
         assertEquals(resolver, config2.getConflictResolver());
         assertEquals(key, config2.getEncryptionKey());
 
         // Custom + Copy
         DatabaseConfiguration config2a = config2.copy();
-        assertEquals("/tmp/mydb", config2a.getDirectory().getAbsolutePath());
+        assertEquals("/tmp/mydb", config2a.getDirectory());
         assertEquals(resolver, config2a.getConflictResolver());
         assertEquals(key, config2a.getEncryptionKey());
     }
 
     @Test
     public void testGetSetConfiguration() throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
-        config.setDirectory(this.db.getConfig().getDirectory());
-
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
+        builder.setDirectory(this.db.getConfig().getDirectory());
+        DatabaseConfiguration config = builder.build();
         Database db = new Database("db", config);
         try {
             assertNotNull(db.getConfig());
-            assertTrue(db.getConfig() != config);
+            assertEquals(db.getConfig(), config);
             assertEquals(db.getConfig().getDirectory(), config.getDirectory());
             assertEquals(db.getConfig().getConflictResolver(), config.getConflictResolver());
             assertEquals(db.getConfig().getEncryptionKey(), config.getEncryptionKey());
@@ -204,12 +208,13 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testConfigurationIsCopiedWhenGetSet() throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
-        config.setDirectory(this.db.getConfig().getDirectory());
-
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
+        builder.setDirectory(this.db.getConfig().getDirectory());
+        DatabaseConfiguration config = builder.build();
         Database db = new Database("db", config);
         try {
-            config.setConflictResolver(new DummyResolver());
+            builder.setConflictResolver(new DummyResolver());
+            config = builder.build();
             assertNotNull(db.getConfig());
             assertTrue(db.getConfig() != config);
             assertTrue(db.getConfig().getConflictResolver() != config.getConflictResolver());
@@ -220,9 +225,9 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDatabaseConfigurationWithAndroidContect() throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(context);
-        assertEquals(config.getDirectory(), context.getFilesDir());
-
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
+        DatabaseConfiguration config = builder.build();
+        assertEquals(config.getDirectory(), context.getFilesDir().getAbsolutePath());
         Database db = new Database("db", config);
         try {
             String expectedPath = context.getFilesDir().getAbsolutePath();
@@ -251,7 +256,8 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testCreateWithDefaultConfiguration() throws CouchbaseLiteException {
-        Database db = new Database("db", new DatabaseConfiguration(this.context));
+
+        Database db = new Database("db", new DatabaseConfiguration.Builder(this.context).build());
         try {
         } finally {
             // delete database
@@ -297,8 +303,9 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists(dbName, dir));
 
         // create db with custom directory
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
-        config.setDirectory(dir);
+        DatabaseConfiguration config = new DatabaseConfiguration.Builder(this.context)
+                .setDirectory(dir.getAbsolutePath())
+                .build();
         Database db = new Database(dbName, config);
         try {
             assertNotNull(db);
@@ -344,7 +351,6 @@ public class DatabaseTest extends BaseTest {
 
         // get doc from other DB.
         assertEquals(1, otherDB.getCount());
-        assertTrue(otherDB.contains(docID));
 
         verifyGetDocument(otherDB, docID);
 
@@ -407,7 +413,6 @@ public class DatabaseTest extends BaseTest {
         generateDocument(docID);
 
         assertEquals(1, db.getCount());
-        assertTrue(db.contains(docID));
 
         // validate document by getDocument
         verifyGetDocument(docID);
@@ -449,7 +454,6 @@ public class DatabaseTest extends BaseTest {
         save(doc);
 
         assertEquals(1, db.getCount());
-        assertTrue(db.contains(docID));
 
         // validate document by getDocument
         verifyGetDocument(docID, 2);
@@ -577,9 +581,10 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
+        } catch (IllegalArgumentException uoe) {
+            // expected
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.NotFound, e.getCode());
+            fail();
         }
     }
 
@@ -603,7 +608,6 @@ public class DatabaseTest extends BaseTest {
         Database otherDB = openDatabase(db.getName(), false);
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
-        assertTrue(otherDB.contains(docID));
         assertEquals(1, otherDB.getCount());
 
         // Delete from the different db instance:
@@ -629,7 +633,6 @@ public class DatabaseTest extends BaseTest {
         Database otherDB = openDatabase("otherDB");
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
-        assertFalse(otherDB.contains(docID));
         assertEquals(0, otherDB.getCount());
 
         // Delete from the different db:
@@ -715,9 +718,10 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
+        } catch (IllegalArgumentException uoe) {
+            // expected
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.NotFound, e.getCode());
+            fail();
         }
         assertEquals(0, db.getCount());
     }
@@ -743,7 +747,6 @@ public class DatabaseTest extends BaseTest {
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
         assertEquals(1, otherDB.getCount());
-        assertTrue(otherDB.contains(docID));
 
         // purge document against other db instance:
         try {
@@ -769,7 +772,6 @@ public class DatabaseTest extends BaseTest {
         assertNotNull(otherDB);
         assertTrue(otherDB != db);
         assertEquals(0, otherDB.getCount());
-        assertFalse(otherDB.contains(docID));
 
         // Purge document against other db:
         try {
@@ -1328,7 +1330,7 @@ public class DatabaseTest extends BaseTest {
 
         String dbName = "nudb";
         DatabaseConfiguration config = db.getConfig();
-        File dir = config.getDirectory();
+        File dir = new File(config.getDirectory());
 
         // Make sure no an existing database at the new location:
         if (Database.exists(dbName, dir))
@@ -1465,8 +1467,9 @@ public class DatabaseTest extends BaseTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1416
     @Test
     public void testDeleteAndOpenDB() throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
-        config.setDirectory(dir);
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
+        builder.setDirectory(dir.toString());
+        DatabaseConfiguration config = builder.build();
 
         // open "application" database
         final Database database1 = new Database("application", config);

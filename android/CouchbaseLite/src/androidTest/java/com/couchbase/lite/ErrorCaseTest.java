@@ -39,8 +39,10 @@ public class ErrorCaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
+        } catch (IllegalArgumentException iae) {
+            ; //expected
         } catch (CouchbaseLiteException e) {
-            assertEquals(404, e.getCode());
+            fail();
         }
         assertFalse(doc.isDeleted());
         assertEquals("Scott Tiger", doc.getValue("name"));

@@ -1,6 +1,5 @@
-package com.couchbase.lite.internal.bridge;
+package com.couchbase.lite;
 
-import com.couchbase.lite.CouchbaseLiteRuntimeException;
 import com.couchbase.litecore.LiteCoreException;
 
 import org.junit.Test;

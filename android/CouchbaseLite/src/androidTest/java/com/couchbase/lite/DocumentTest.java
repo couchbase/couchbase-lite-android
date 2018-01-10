@@ -13,7 +13,7 @@
  */
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 
 import org.junit.After;
 import org.junit.Before;
@@ -1738,9 +1738,10 @@ public class DocumentTest extends BaseTest {
         try {
             db.delete(mDoc);
             fail();
+        } catch (IllegalArgumentException uoe) {
+            ; // expected
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.NotFound, e.getCode());
+            fail();
         }
         assertFalse(mDoc.isDeleted());
         assertEquals("Scott Tiger", mDoc.getString("name"));
@@ -1829,8 +1830,10 @@ public class DocumentTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
+        } catch (IllegalArgumentException uoe) {
+            ;// expected here
         } catch (CouchbaseLiteException e) {
-            assertEquals(404, e.getCode());
+            fail();
         }
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));

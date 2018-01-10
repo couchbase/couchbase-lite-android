@@ -1,4 +1,4 @@
-package com.couchbase.lite.internal.support;
+package com.couchbase.lite.internal.utils;
 
 import org.junit.Test;
 

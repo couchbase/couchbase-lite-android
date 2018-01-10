@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.IOUtils;
 
 import org.junit.After;
@@ -66,11 +67,11 @@ public class DatabaseEncryptionTest extends BaseTest {
     }
 
     Database openSeekrit(String password) throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
         if (password != null)
-            config.setEncryptionKey(new EncryptionKey(password));
-        config.setDirectory(this.dir);
-        return new Database("seekrit", config);
+            builder.setEncryptionKey(new EncryptionKey(password));
+        builder.setDirectory(this.dir.getAbsolutePath());
+        return new Database("seekrit", builder.build());
     }
 
     @Test

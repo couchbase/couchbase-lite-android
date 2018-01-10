@@ -1,7 +1,5 @@
-package com.couchbase.lite.query;
+package com.couchbase.lite;
 
-
-import com.couchbase.lite.Expression;
 
 import org.junit.Test;
 

@@ -66,8 +66,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s",
                 this.config.remoteHost(), this.config.remotePort(), DB_NAME);
-        ReplicatorConfiguration config = makeConfig(true, false, false, uri);
-        run(config, 0, null);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, uri);
+        run(builder.build(), 0, null);
     }
 
     @Test
@@ -82,12 +82,12 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
                 this.config.remoteHost(), this.config.remotePort(), DB_NAME);
 
         // Push replicate from db to SG
-        ReplicatorConfiguration config = makeConfig(true, false, false, uri);
-        run(config, 0, null);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, uri);
+        run(builder.build(), 0, null);
 
         // Pull replicate from SG to otherDB.
-        config = makeConfig(false, true, false, this.otherDB, uri);
-        run(config, 0, null);
+        builder = makeConfig(false, true, false, this.otherDB, uri);
+        run(builder.build(), 0, null);
         assertEquals(100, this.otherDB.getCount());
     }
 
@@ -110,8 +110,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         timeout = 180; // 3min
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s", this.config.remoteHost(), this.config.remotePort(), DB_NAME);
-        ReplicatorConfiguration config = makeConfig(true, false, true, uri);
-        run(config, 0, null);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, true, uri);
+        run(builder.build(), 0, null);
     }
 
     @Test
@@ -148,12 +148,12 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         String strUri = String.format(Locale.ENGLISH, "blip://%s:%d/%s", this.config.remoteHost(), this.config.remotePort(), DB_NAME);
         URI uri = new URI(strUri);
-        ReplicatorConfiguration config = makeConfig(true, false, false, uri);
-        run(config, 0, null);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, uri);
+        run(builder.build(), 0, null);
 
-        config = makeConfig(false, true, false, otherDB, uri);
-        config.setChannels(Arrays.asList("my_channel"));
-        run(config, 0, null);
+        builder = makeConfig(false, true, false, otherDB, uri);
+        builder.setChannels(Arrays.asList("my_channel"));
+        run(builder.build(), 0, null);
         assertEquals(10, otherDB.getCount());
     }
 }

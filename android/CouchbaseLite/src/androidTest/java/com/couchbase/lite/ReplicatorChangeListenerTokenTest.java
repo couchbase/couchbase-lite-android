@@ -1,8 +1,5 @@
-package com.couchbase.lite.internal.database;
+package com.couchbase.lite;
 
-import com.couchbase.lite.DatabaseChange;
-import com.couchbase.lite.DatabaseChangeListener;
-import com.couchbase.lite.internal.support.DefaultExecutor;
 
 import org.junit.Test;
 
@@ -11,11 +8,11 @@ import java.util.concurrent.Executor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class DatabaseChangeListenerTokenTest {
+public class ReplicatorChangeListenerTokenTest {
     @Test
     public void testIllegalArgumentException() {
         try {
-            new DatabaseChangeListenerToken(null, null);
+            new ReplicatorChangeListenerToken(null, null);
             fail();
         } catch (IllegalArgumentException ex) {
             // ok
@@ -30,18 +27,18 @@ public class DatabaseChangeListenerTokenTest {
             }
         };
 
-        DatabaseChangeListener listener = new DatabaseChangeListener() {
+        ReplicatorChangeListener listener = new ReplicatorChangeListener() {
             @Override
-            public void changed(DatabaseChange change) {
+            public void changed(ReplicatorChange change) {
             }
         };
 
         // custom Executor
-        DatabaseChangeListenerToken token = new DatabaseChangeListenerToken(executor, listener);
+        ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
         assertEquals(executor, token.getExecutor());
 
         // UI thread Executor
-        token = new DatabaseChangeListenerToken(null, listener);
+        token = new ReplicatorChangeListenerToken(null, listener);
         assertEquals(DefaultExecutor.instance(), token.getExecutor());
     }
 }

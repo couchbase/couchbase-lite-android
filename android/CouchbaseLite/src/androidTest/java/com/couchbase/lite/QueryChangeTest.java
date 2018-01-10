@@ -1,4 +1,4 @@
-package com.couchbase.lite.query;
+package com.couchbase.lite;
 
 import org.junit.Test;
 
@@ -9,7 +9,7 @@ public class QueryChangeTest {
     public void testQueryChangeTest() {
         QueryChange change = new QueryChange(null, null, null);
         assertNull(change.getQuery());
-        assertNull(change.getRows());
+        assertNull(change.getResult());
         assertNull(change.getError());
     }
 }

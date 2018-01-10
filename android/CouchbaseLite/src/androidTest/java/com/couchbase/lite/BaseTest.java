@@ -17,7 +17,8 @@ import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
 
-import com.couchbase.lite.internal.support.JsonUtils;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
 import com.couchbase.litecore.C4Constants;
@@ -108,11 +109,11 @@ public class BaseTest implements C4Constants {
     }
 
     protected Database open(String name) throws CouchbaseLiteException {
-        DatabaseConfiguration options = new DatabaseConfiguration(this.context);
-        options.setDirectory(dir);
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
+        builder.setDirectory(dir.getAbsolutePath());
         if (this.conflictResolver != null)
-            options.setConflictResolver(this.conflictResolver);
-        return new Database(name, options);
+            builder.setConflictResolver(this.conflictResolver);
+        return new Database(name, builder.build());
     }
 
     protected void openDB() throws CouchbaseLiteException {

@@ -1,20 +1,6 @@
-package com.couchbase.lite.query;
+package com.couchbase.lite;
 
-import com.couchbase.lite.Array;
-import com.couchbase.lite.BaseTest;
-import com.couchbase.lite.Blob;
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.DataSource;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.Dictionary;
-import com.couchbase.lite.DocumentTest;
-import com.couchbase.lite.Meta;
-import com.couchbase.lite.MutableDocument;
-import com.couchbase.lite.Query;
-import com.couchbase.lite.QueryTest;
-import com.couchbase.lite.Result;
-import com.couchbase.lite.SelectResult;
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 
 import org.junit.After;
 import org.junit.Before;

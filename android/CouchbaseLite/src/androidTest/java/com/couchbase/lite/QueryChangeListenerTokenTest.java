@@ -1,8 +1,4 @@
-package com.couchbase.lite.internal.query;
-
-import com.couchbase.lite.internal.support.DefaultExecutor;
-import com.couchbase.lite.query.QueryChange;
-import com.couchbase.lite.query.QueryChangeListener;
+package com.couchbase.lite;
 
 import org.junit.Test;
 
