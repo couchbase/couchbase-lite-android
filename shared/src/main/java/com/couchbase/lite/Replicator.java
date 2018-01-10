@@ -4,14 +4,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
 
-import com.couchbase.lite.internal.replicator.CBLWebSocket;
-import com.couchbase.lite.internal.replicator.ReplicatorChangeListenerToken;
-import com.couchbase.lite.internal.support.StringUtils;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4Replicator;
 import com.couchbase.litecore.C4ReplicatorListener;
 import com.couchbase.litecore.C4ReplicatorStatus;
+import com.couchbase.lite.internal.replicator.CBLWebSocket;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
@@ -34,7 +34,7 @@ import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLeve
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
 import static java.util.Collections.synchronizedSet;
 
-public class Replicator implements NetworkReachabilityListener {
+public class Replicator extends NetworkReachabilityListener {
     private static final String TAG = Log.SYNC;
 
     /**
@@ -305,7 +305,7 @@ public class Replicator implements NetworkReachabilityListener {
     // Implementation of NetworkReachabilityListener
     //---------------------------------------------
     @Override
-    public void networkReachable() {
+    void networkReachable() {
         if (c4repl == null) {
             Log.e(TAG, "%s: Server may now be reachable; retrying...", this);
             retryCount = 0;
@@ -314,7 +314,7 @@ public class Replicator implements NetworkReachabilityListener {
     }
 
     @Override
-    public void networkUnreachable() {
+    void networkUnreachable() {
         Log.v(TAG, "%s: Server may NOT be reachable now.", this);
     }
 
@@ -346,7 +346,6 @@ public class Replicator implements NetworkReachabilityListener {
         String host = null;
         int port = 0;
         String path = null;
-
 
         URI remoteURI = config.getTargetURI();
         String dbName = null;
@@ -578,8 +577,11 @@ public class Replicator implements NetworkReachabilityListener {
 
     private void startReachabilityObserver() {
         URI remoteURI = config.getTargetURI();
+
+        // target is databaes
         if (remoteURI == null)
             return;
+
         String hostname = remoteURI.getHost();
         if ("localhost".equals(hostname) || "127.0.0.1".equals(hostname))
             return;

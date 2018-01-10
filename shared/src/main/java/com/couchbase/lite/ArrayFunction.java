@@ -1,7 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.query.expression.FunctionExpresson;
-
 import java.util.Arrays;
 
 public class ArrayFunction {

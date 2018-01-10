@@ -20,6 +20,8 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import com.couchbase.lite.internal.support.Log;
+
 /**
  * NOTE: https://developer.android.com/training/basics/network-ops/managing.html
  */
@@ -41,7 +43,8 @@ class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {
      * NOTE: startListening() method is called from addNetworkReachabilityListener() which is
      * synchronized. So this method is not necessary to be synchronized.
      */
-    protected void startListening() {
+    @Override
+    void startListening() {
         if (!listening) {
             IntentFilter filter = new IntentFilter();
             filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
@@ -55,7 +58,8 @@ class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {
      * NOTE: stopListening() method is called from removeNetworkReachabilityListener() which is
      * synchronized. So this method is not necessary to be synchronized.
      */
-    protected void stopListening() {
+    @Override
+    void stopListening() {
         if (listening) {
             try {
                 Log.v(TAG, "%s: stopListening() unregistering %s with context %s", this, receiver, context);

@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLDict;
@@ -387,7 +387,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     void updateDictionary() {
         if (_data != null) {
-            _root = new MRoot(new DocContext(_database, getC4doc()), _data.toFLValue(), isMutable());
+            _root = new MRoot(new DocContext(_database), _data.toFLValue(), isMutable());
             _dict = (Dictionary) _root.asNative();
         } else {
             _root = null;
@@ -501,7 +501,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
-    protected FLDict getData() {
-        return _data;
+    boolean isNewDocument() {
+        return _c4doc == null;
     }
 }

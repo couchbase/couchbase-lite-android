@@ -80,11 +80,6 @@ public class DataSource {
         return new As(database);
     }
 
-    public static As query(Query query) {
-        //TODO:
-        return null;
-    }
-
     //---------------------------------------------
     // Package level access
     //---------------------------------------------

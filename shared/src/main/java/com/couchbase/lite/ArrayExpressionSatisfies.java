@@ -32,7 +32,7 @@ public class ArrayExpressionSatisfies {
         }
 
         @Override
-        public Object asJSON() {
+        Object asJSON() {
             List<Object> json = new ArrayList<>(4);
 
             // type

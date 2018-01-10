@@ -18,4 +18,9 @@ public class ArrayExpression {
     public static ArrayExpressionIn anyAndEvery(String variable) {
         return new ArrayExpressionIn(QuantifiesType.ANY_AND_EVERY, variable);
     }
+
+    // Quantified operators:
+    public static Expression variable(String name) {
+        return new Expression.VariableExpression(name);
+    }
 }

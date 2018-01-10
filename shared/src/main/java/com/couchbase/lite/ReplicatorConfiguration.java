@@ -2,8 +2,6 @@ package com.couchbase.lite;
 
 import android.os.Build;
 
-import com.couchbase.lite.internal.support.URIUtils;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,40 +51,109 @@ public class ReplicatorConfiguration {
     //---------------------------------------------
 
     private Database database = null;
-    private Object target = null;
+    private Endpoint target = null;
     private ReplicatorType replicatorType = PUSH_AND_PULL;
     private boolean continuous = false;
     private ConflictResolver conflictResolver = null;
     private Authenticator authenticator = null;
+    private Map<String, String> headers = null;
     private byte[] pinnedServerCertificate = null;
     private List<String> channels = null;
     private List<String> documentIDs = null;
 
     //---------------------------------------------
+    // Builder
+    //---------------------------------------------
+    public static class Builder {
+        //---------------------------------------------
+        // member variables
+        //---------------------------------------------
+        ReplicatorConfiguration conf;
+
+        //---------------------------------------------
+        // Constructors
+        //---------------------------------------------
+        public Builder(Database database, Endpoint target) {
+            conf = new ReplicatorConfiguration(database, target);
+        }
+
+        public Builder(ReplicatorConfiguration config) {
+            conf = config.copy();
+        }
+
+        //---------------------------------------------
+        // Setters
+        //---------------------------------------------
+        public Builder setReplicatorType(ReplicatorType replicatorType) {
+            conf.replicatorType = replicatorType;
+            return this;
+        }
+
+        public Builder setContinuous(boolean continuous) {
+            conf.continuous = continuous;
+            return this;
+        }
+
+        public Builder setConflictResolver(ConflictResolver conflictResolver) {
+            if (conflictResolver == null)
+                throw new IllegalArgumentException("conflictResolver parameter is null");
+            conf.conflictResolver = conflictResolver;
+            return this;
+        }
+
+        public Builder setAuthenticator(Authenticator authenticator) {
+            conf.authenticator = authenticator;
+            return this;
+        }
+
+        public Builder setPinnedServerCertificate(byte[] pinnedServerCertificate) {
+            conf.pinnedServerCertificate = pinnedServerCertificate;
+            return this;
+        }
+
+        public Builder setHeaders(Map<String, String> headers) {
+            conf.headers = new HashMap<>(headers);
+            return this;
+        }
+
+        public Builder setChannels(List<String> channels) {
+            conf.channels = channels;
+            return this;
+        }
+
+        public Builder setDocumentIDs(List<String> documentIDs) {
+            conf.documentIDs = documentIDs;
+            return this;
+        }
+
+        //---------------------------------------------
+        // public API
+        //---------------------------------------------
+        public ReplicatorConfiguration build() {
+            return conf.copy();
+        }
+    }
+    //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    public ReplicatorConfiguration(Database database, Database target) {
+    private ReplicatorConfiguration(Database database, Endpoint target) {
         this.replicatorType = PUSH_AND_PULL;
         this.database = database;
         this.target = target;
+        this.conflictResolver = database.getConflictResolver();
     }
 
-    public ReplicatorConfiguration(Database database, URI target) {
-        this.replicatorType = PUSH_AND_PULL;
-        this.database = database;
-        this.target = target;
-    }
-
-    public ReplicatorConfiguration(Database database,
-                                   Object target,
-                                   ReplicatorType replicatorType,
-                                   boolean continuous,
-                                   ConflictResolver conflictResolver,
-                                   Authenticator authenticator,
-                                   byte[] pinnedServerCertificate,
-                                   List<String> channels,
-                                   List<String> documentIDs) {
+    private ReplicatorConfiguration(Database database,
+                                    Endpoint target,
+                                    ReplicatorType replicatorType,
+                                    boolean continuous,
+                                    ConflictResolver conflictResolver,
+                                    Authenticator authenticator,
+                                    byte[] pinnedServerCertificate,
+                                    Map<String, String> headers,
+                                    List<String> channels,
+                                    List<String> documentIDs) {
         this.database = database;
         this.target = target;
         this.replicatorType = replicatorType;
@@ -94,19 +161,20 @@ public class ReplicatorConfiguration {
         this.conflictResolver = conflictResolver;
         this.authenticator = authenticator;
         this.pinnedServerCertificate = pinnedServerCertificate;
+        this.headers = headers;
         this.channels = channels;
         this.documentIDs = documentIDs;
     }
 
     //---------------------------------------------
-    // Getters/Setters
+    // Getters
     //---------------------------------------------
 
     public Database getDatabase() {
         return database;
     }
 
-    public Object getTarget() {
+    public Endpoint getTarget() {
         return target;
     }
 
@@ -114,16 +182,8 @@ public class ReplicatorConfiguration {
         return replicatorType;
     }
 
-    public void setReplicatorType(ReplicatorType replicatorType) {
-        this.replicatorType = replicatorType;
-    }
-
     public boolean isContinuous() {
         return continuous;
-    }
-
-    public void setContinuous(boolean continuous) {
-        this.continuous = continuous;
     }
 
     /**
@@ -134,24 +194,16 @@ public class ReplicatorConfiguration {
         return conflictResolver;
     }
 
-    public void setConflictResolver(ConflictResolver conflictResolver) {
-        this.conflictResolver = conflictResolver;
+    public Authenticator getAuthenticator() {
+        return authenticator;
     }
 
     public byte[] getPinnedServerCertificate() {
         return pinnedServerCertificate;
     }
 
-    public void setPinnedServerCertificate(byte[] pinnedServerCertificate) {
-        this.pinnedServerCertificate = pinnedServerCertificate;
-    }
-
-    public Authenticator getAuthenticator() {
-        return authenticator;
-    }
-
-    public void setAuthenticator(Authenticator authenticator) {
-        this.authenticator = authenticator;
+    public Map<String, String> getHeaders() {
+        return headers;
     }
 
     /**
@@ -163,10 +215,6 @@ public class ReplicatorConfiguration {
         return channels;
     }
 
-    public void setChannels(List<String> channels) {
-        this.channels = channels;
-    }
-
     /**
      * A set of document IDs to filter by: if not nil, only documents with these IDs will be pushed
      * and/or pulled.
@@ -175,14 +223,11 @@ public class ReplicatorConfiguration {
         return documentIDs;
     }
 
-    public void setDocumentIDs(List<String> documentIDs) {
-        this.documentIDs = documentIDs;
-    }
+    //---------------------------------------------
+    // Package level access
+    //---------------------------------------------
 
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
-    public ReplicatorConfiguration copy() {
+    ReplicatorConfiguration copy() {
         return new ReplicatorConfiguration(
                 database,
                 target,
@@ -193,27 +238,16 @@ public class ReplicatorConfiguration {
                 pinnedServerCertificate != null ?
                         Arrays.copyOf(pinnedServerCertificate, pinnedServerCertificate.length) :
                         null,
+                headers != null ? new HashMap<String, String>(headers) : null,
                 channels != null ? new ArrayList<>(channels) : null,
                 documentIDs != null ? new ArrayList<>(documentIDs) : null);
     }
 
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
     Map<String, Object> effectiveOptions() {
         Map<String, Object> options = new HashMap<>();
 
-        String username = getUsername();
-        if (username != null) {
-            Map<String, Object> auth = new HashMap<>();
-            auth.put(kCBLReplicatorAuthUserName, username);
-            auth.put(kCBLReplicatorAuthPassword, getPassword());
-            options.put(kCBLReplicatorAuthOption, auth);
-        } else {
-            if (authenticator != null)
-                authenticator.authenticate(options);
-        }
+        if (authenticator != null)
+            authenticator.authenticate(options);
 
         // Add the pinned certificate if any:
         if (pinnedServerCertificate != null)
@@ -225,38 +259,39 @@ public class ReplicatorConfiguration {
         if (channels != null && channels.size() > 0)
             options.put(kC4ReplicatorOptionChannels, channels);
 
+
+        Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:
-        Map<String, Object> userAgentHeader = new HashMap<>();
-        userAgentHeader.put("User-Agent", getUserAgent());
-        options.put(kC4ReplicatorOptionExtraHeaders, userAgentHeader);
+        httpHeaders.put("User-Agent", getUserAgent());
+        // headers
+        if (headers != null && headers.size() > 0) {
+            for (Map.Entry<String, String> entry : headers.entrySet())
+                httpHeaders.put(entry.getKey(), entry.getValue());
+        }
+        options.put(kC4ReplicatorOptionExtraHeaders, httpHeaders);
 
         return options;
     }
 
     URI getTargetURI() {
-        return target instanceof URI ? (URI) target : null;
+        if (target instanceof URLEndpoint) {
+            URLEndpoint urlEndpoint = (URLEndpoint) target;
+            return urlEndpoint.getURI();
+        } else
+            return null;
     }
 
     Database getTargetDatabase() {
-        return target instanceof Database ? (Database) target : null;
+        if (target instanceof DatabaseEndpoint) {
+            DatabaseEndpoint urlEndpoint = (DatabaseEndpoint) target;
+            return urlEndpoint.getDatabase();
+        } else
+            return null;
     }
 
     //---------------------------------------------
     // Private level access
     //---------------------------------------------
-    private String getUsername() {
-        if (target != null && target instanceof URI)
-            return URIUtils.getUsername((URI) target);
-        else
-            return null;
-    }
-
-    private String getPassword() {
-        if (target != null && target instanceof URI)
-            return URIUtils.getPassword((URI) target);
-        else
-            return null;
-    }
 
     static String userAgent = null;
 

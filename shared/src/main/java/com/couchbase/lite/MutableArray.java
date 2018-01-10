@@ -126,12 +126,12 @@ public class MutableArray extends Array implements MutableArrayInterface {
     }
 
     @Override
-    public MutableArray setArray(int index, MutableArray value) {
+    public MutableArray setArray(int index, Array value) {
         return setValue(index, value);
     }
 
     @Override
-    public MutableArray setDictionary(int index, MutableDictionary value) {
+    public MutableArray setDictionary(int index, Dictionary value) {
         return setValue(index, value);
     }
 
@@ -193,12 +193,12 @@ public class MutableArray extends Array implements MutableArrayInterface {
     }
 
     @Override
-    public MutableArray addArray(MutableArray value) {
+    public MutableArray addArray(Array value) {
         return addValue(value);
     }
 
     @Override
-    public MutableArray addDictionary(MutableDictionary value) {
+    public MutableArray addDictionary(Dictionary value) {
         return addValue(value);
     }
 
@@ -262,12 +262,12 @@ public class MutableArray extends Array implements MutableArrayInterface {
     }
 
     @Override
-    public MutableArray insertArray(int index, MutableArray value) {
+    public MutableArray insertArray(int index, Array value) {
         return insertValue(index, value);
     }
 
     @Override
-    public MutableArray insertDictionary(int index, MutableDictionary value) {
+    public MutableArray insertDictionary(int index, Dictionary value) {
         return insertValue(index, value);
     }
 

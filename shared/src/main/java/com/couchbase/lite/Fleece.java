@@ -14,7 +14,7 @@
 
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.fleece.FLConstants;
 import com.couchbase.litecore.fleece.MCollection;
 import com.couchbase.litecore.fleece.MValue;

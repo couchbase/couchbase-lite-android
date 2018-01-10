@@ -1,7 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.query.expression.FunctionExpresson;
-
 import java.util.Arrays;
 
 public class Function {
@@ -51,12 +49,12 @@ public class Function {
      * Returns the angle theta from the conversion of rectangular coordinates (x, y)
      * to polar coordinates (r, theta).
      *
-     * @param y the ordinate coordinate
      * @param x the abscissa coordinate
+     * @param y the ordinate coordinate
      * @return the theta component of the point (r, theta) in polar coordinates that corresponds
      * to the point (x, y) in Cartesian coordinates.
      */
-    public static Expression atan2(Object y, Object x) {
+    public static Expression atan2(Object x, Object y) {
         return new FunctionExpresson("ATAN2()", Arrays.asList(x, y));
     }
 
@@ -165,24 +163,5 @@ public class Function {
 
     public static Expression upper(Object expression) {
         return new FunctionExpresson("UPPER()", Arrays.asList(expression));
-    }
-
-    //---------------------------------------------
-    // Type
-    //---------------------------------------------
-    public static Expression isArray(Object expression) {
-        return new FunctionExpresson("ISARRAY()", Arrays.asList(expression));
-    }
-
-    public static Expression isNumber(Object expression) {
-        return new FunctionExpresson("ISNUMBER()", Arrays.asList(expression));
-    }
-
-    public static Expression isDictionary(Object expression) {
-        return new FunctionExpresson("ISOBJECT()", Arrays.asList(expression));
-    }
-
-    public static Expression isString(Object expression) {
-        return new FunctionExpresson("ISSTRING()", Arrays.asList(expression));
     }
 }

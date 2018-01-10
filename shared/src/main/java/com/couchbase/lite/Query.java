@@ -13,11 +13,8 @@
  */
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.bridge.LiteCoreBridge;
-import com.couchbase.lite.internal.query.LiveQuery;
-import com.couchbase.lite.internal.query.QueryChangeListenerToken;
-import com.couchbase.lite.internal.support.JsonUtils;
-import com.couchbase.lite.query.QueryChangeListener;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.litecore.C4Query;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.C4QueryOptions;
@@ -30,10 +27,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
+import static com.couchbase.lite.PropertyExpression.kCBLAllPropertiesName;
 import static com.couchbase.lite.Status.CBLErrorDomain;
 import static com.couchbase.lite.Status.InvalidQuery;
-import static com.couchbase.lite.internal.query.expression.PropertyExpression.kCBLAllPropertiesName;
 
 /**
  * A database query used for querying data from the database. The query statement of the Query
@@ -70,7 +68,7 @@ public class Query {
     private Limit limit; // LIMIT expr
 
     // PARAMETERS
-    private Parameters parameters;
+    private Parameters parameters = null;
 
     // column names
     private Map<String, Integer> columnNames = null;
@@ -84,7 +82,7 @@ public class Query {
     // Constructor
     //---------------------------------------------
     Query() {
-        parameters = new Parameters();
+        parameters = new Parameters.Builder().build();
     }
 
     //---------------------------------------------
@@ -115,7 +113,7 @@ public class Query {
      * Returns a copies of the current parameters.
      */
     public Parameters getParameters() {
-        return parameters.copy();
+        return parameters;
     }
 
     /**
@@ -124,7 +122,9 @@ public class Query {
      * changes.
      */
     public void setParameters(Parameters parameters) {
-        this.parameters = parameters.copy();
+        if (parameters == null)
+            throw new IllegalArgumentException("parameters is null");
+        this.parameters = parameters;
         if (liveQuery != null)
             liveQuery.start();
     }
@@ -181,6 +181,10 @@ public class Query {
         return liveQuery().addChangeListener(listener);
     }
 
+    public ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
+        return liveQuery().addChangeListener(executor, listener);
+    }
+
     public void removeChangeListener(ListenerToken token) {
         if (token == null || !(token instanceof QueryChangeListenerToken))
             throw new IllegalArgumentException("Invalid ListenerToken is given");
@@ -189,16 +193,7 @@ public class Query {
 
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "%s[json=%s]", this.getClass().getSimpleName(), asJSON());
-    }
-
-    //---------------------------------------------
-    // public but not public API method.
-    //---------------------------------------------
-    public Database getDatabase() {
-        if (database == null)
-            database = (Database) from.getSource();
-        return database;
+        return String.format(Locale.ENGLISH, "%s[json=%s]", this.getClass().getSimpleName(), _asJSON());
     }
 
     //---------------------------------------------
@@ -214,6 +209,11 @@ public class Query {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+    Database getDatabase() {
+        if (database == null)
+            database = (Database) from.getSource();
+        return database;
+    }
 
     void setSelect(Select select) {
         this.select = select;
@@ -257,7 +257,7 @@ public class Query {
         this.orderBy = query.orderBy;
         this.limit = query.limit;
 
-        this.parameters = query.parameters.copy();
+        this.parameters = query.parameters;
     }
 
     C4Query getC4Query() {
@@ -314,14 +314,14 @@ public class Query {
 
     private String encodeAsJSON() {
         try {
-            return JsonUtils.toJson(asJSON()).toString();
+            return JsonUtils.toJson(_asJSON()).toString();
         } catch (JSONException e) {
             Log.w(TAG, "Error when encoding the query as a json string", e);
         }
         return null;
     }
 
-    private Map<String, Object> asJSON() {
+    private Map<String, Object> _asJSON() {
         Map<String, Object> json = new HashMap<String, Object>();
 
         // DISTINCT:

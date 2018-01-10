@@ -22,7 +22,7 @@ import java.util.Set;
  * (an example of a NetworkReachabilityListeners is a Replicator that wants to pause when
  * it's been detected that the network is not reachable)
  */
-public abstract class NetworkReachabilityManager {
+abstract class NetworkReachabilityManager {
 
     private Object lock = new Object();
 
@@ -31,7 +31,7 @@ public abstract class NetworkReachabilityManager {
     /**
      * Add Network Reachability Listener
      */
-    public void addNetworkReachabilityListener(NetworkReachabilityListener listener) {
+    void addNetworkReachabilityListener(NetworkReachabilityListener listener) {
         synchronized (lock) {
             listeners.add(listener);
             if (listeners.size() == 1)
@@ -42,7 +42,7 @@ public abstract class NetworkReachabilityManager {
     /**
      * Remove Network Reachability Listener
      */
-    public void removeNetworkReachabilityListener(NetworkReachabilityListener listener) {
+    void removeNetworkReachabilityListener(NetworkReachabilityListener listener) {
         synchronized (lock) {
             listeners.remove(listener);
             if (listeners.size() == 0)
@@ -53,7 +53,7 @@ public abstract class NetworkReachabilityManager {
     /**
      * Notify listeners that the network is now reachable
      */
-    protected void notifyListenersNetworkReachable() {
+    void notifyListenersNetworkReachable() {
         synchronized (lock) {
             for (NetworkReachabilityListener listener : listeners)
                 listener.networkReachable();
@@ -63,7 +63,7 @@ public abstract class NetworkReachabilityManager {
     /**
      * Notify listeners that the network is now unreachable
      */
-    protected void notifyListenersNetworkUneachable() {
+    void notifyListenersNetworkUneachable() {
         synchronized (lock) {
             for (NetworkReachabilityListener listener : listeners)
                 listener.networkUnreachable();
@@ -73,10 +73,10 @@ public abstract class NetworkReachabilityManager {
     /**
      * This method starts listening for network connectivity state changes.
      */
-    protected abstract void startListening();
+    abstract void startListening();
 
     /**
      * This method stops this class from listening for network changes.
      */
-    protected abstract void stopListening();
+    abstract void stopListening();
 }

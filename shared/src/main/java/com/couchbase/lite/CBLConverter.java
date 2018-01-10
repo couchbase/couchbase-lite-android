@@ -3,16 +3,9 @@ package com.couchbase.lite;
 import com.couchbase.litecore.fleece.MCollection;
 import com.couchbase.litecore.fleece.MValue;
 
-import static com.couchbase.lite.internal.support.ClassUtils.cast;
+import static com.couchbase.lite.internal.utils.ClassUtils.cast;
 
-public class CBLConverter {
-    static boolean asBool(MValue val, MCollection container) {
-        if (val.getValue() != null)
-            return val.getValue().asBool();
-        else
-            return toBoolean(val.asNative(container));
-    }
-
+class CBLConverter {
     static Number getNumber(Object value) {
         // special handling for Boolean
         if (value != null && value instanceof Boolean)
@@ -54,19 +47,6 @@ public class CBLConverter {
         else {
             Number num = getNumber(val.asNative(container));
             return num != null ? num.doubleValue() : 0L;
-        }
-    }
-
-    private static boolean toBoolean(Object object) {
-        if (object == null)
-            return false;
-        else {
-            if (object instanceof Boolean)
-                return ((Boolean) object).booleanValue();
-            else if (object instanceof Number)
-                return ((Number) object).doubleValue() != 0.0;
-            else
-                return true;
         }
     }
 }

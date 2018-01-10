@@ -14,7 +14,7 @@
 
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLArrayIterator;
 import com.couchbase.litecore.fleece.FLValue;

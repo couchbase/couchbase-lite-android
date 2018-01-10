@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.fleece.Encoder;
 import com.couchbase.litecore.fleece.FLEncodable;
 import com.couchbase.litecore.fleece.FLEncoder;
@@ -273,6 +273,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Implementation of FLEncodable
     //-------------------------------------------------------------------------
 
+    /**
+     * encodeTo(FlEncoder) is internal method. Please don't use this method.
+     */
     @Override
     public void encodeTo(FLEncoder enc) {
         Encoder encoder = new Encoder(enc);

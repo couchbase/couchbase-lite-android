@@ -16,9 +16,9 @@ package com.couchbase.lite;
 import com.couchbase.litecore.C4Constants;
 
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
-
-import static com.couchbase.lite.internal.support.Misc.CreateUUID;
+import java.util.UUID;
 
 /**
  * A Couchbase Lite Document. A document has key/value properties like a Map.
@@ -49,7 +49,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param id the document ID.
      */
     public MutableDocument(String id) {
-        super(null, id != null ? id : CreateUUID(), null);
+        super(null, id != null ? id : createUUID(), null);
     }
 
     /**
@@ -250,5 +250,10 @@ public final class MutableDocument extends Document implements MutableDictionary
     // For conflict resolver to know that the document is being deleted.
     void markAsDeleted() {
         this.deleted = true;
+    }
+
+
+    static String createUUID() {
+        return UUID.randomUUID().toString().toLowerCase(Locale.ENGLISH);
     }
 }

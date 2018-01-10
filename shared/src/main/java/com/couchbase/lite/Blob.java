@@ -13,8 +13,8 @@
  */
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.bridge.LiteCoreBridge;
-import com.couchbase.lite.internal.support.ClassUtils;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.litecore.C4BlobKey;
 import com.couchbase.litecore.C4BlobStore;
 import com.couchbase.litecore.C4BlobWriteStream;

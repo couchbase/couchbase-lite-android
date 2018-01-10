@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.JsonUtils;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.JsonUtils;
 
 import org.json.JSONException;
 
@@ -9,70 +10,118 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Parameters {
+
     private final static String TAG = Log.QUERY;
 
-    private Map<String, Object> params;
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+    private Map<String, Object> map;
 
-    Parameters() {
-        this.params = new HashMap<>();
+    //---------------------------------------------
+    // Builder
+    //---------------------------------------------
+    public static class Builder {
+        //---------------------------------------------
+        // member variables
+        //---------------------------------------------
+        Parameters params;
+
+        //---------------------------------------------
+        // Constructors
+        //---------------------------------------------
+        public Builder() {
+            params = new Parameters();
+        }
+
+        public Builder(Parameters parameters) {
+            params = parameters.copy();
+        }
+
+        //---------------------------------------------
+        // Setters
+        //---------------------------------------------
+        public Builder setValue(String name, Object value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        public Builder setString(String name, String value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        public Builder setNumber(String name, Number value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        public Builder setInt(String name, int value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        public Builder setLong(String name, long value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        public Builder setFloat(String name, float value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        public Builder setDouble(String name, double value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        public Builder setBoolean(String name, boolean value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        public Builder setDate(String name, Date value) {
+            params.map.put(name, value);
+            return this;
+        }
+
+        //---------------------------------------------
+        // public API
+        //---------------------------------------------
+        public Parameters build() {
+            return params.copy();
+        }
     }
 
-    private Parameters(Map<String, Object> params) {
-        this.params = new HashMap<>(params);
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    private Parameters() {
+        map = new HashMap<>();
     }
 
-    public Parameters setValue(String name, Object value) {
-        params.put(name, value);
-        return this;
+    private Parameters(Map<String, Object> map) {
+        this.map = new HashMap<>(map);
     }
 
-    public Parameters setString(String name, String value) {
-        params.put(name, value);
-        return this;
+    //---------------------------------------------
+    // public API
+    //---------------------------------------------
+    public Object getValue(String name) {
+        return map.get(name);
     }
 
-    public Parameters setNumber(String name, Number value) {
-        params.put(name, value);
-        return this;
-    }
-
-    public Parameters setInt(String name, int value) {
-        params.put(name, value);
-        return this;
-    }
-
-    public Parameters setLong(String name, long value) {
-        params.put(name, value);
-        return this;
-    }
-
-    public Parameters setFloat(String name, float value) {
-        params.put(name, value);
-        return this;
-    }
-
-    public Parameters setDouble(String name, double value) {
-        params.put(name, value);
-        return this;
-    }
-
-    public Parameters setBoolean(String name, boolean value) {
-        params.put(name, value);
-        return this;
-    }
-
-    public Parameters setDate(String name, Date value) {
-        params.put(name, value);
-        return this;
-    }
-
+    //---------------------------------------------
+    // package level access
+    //---------------------------------------------
     Parameters copy() {
-        return new Parameters(params);
+        return new Parameters(map);
     }
 
     String encodeAsJSON() {
         try {
-            return JsonUtils.toJson(params).toString();
+            return JsonUtils.toJson(map).toString();
         } catch (JSONException e) {
             Log.w(TAG, "Error when encoding the query parameters as a json string", e);
         }

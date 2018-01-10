@@ -1,8 +1,6 @@
 package com.couchbase.lite;
 
 
-import com.couchbase.lite.internal.query.expression.PropertyExpression;
-
 public class SelectResult {
 
     //---------------------------------------------
@@ -15,7 +13,7 @@ public class SelectResult {
         }
 
         // API - public methods
-        public SelectResult.From from(String alias) {
+        public SelectResult from(String alias) {
             this.expression = PropertyExpression.allFrom(alias);
             this.alias = alias;
             return this;
@@ -61,7 +59,7 @@ public class SelectResult {
 
     public static SelectResult.From all() {
         PropertyExpression expr = PropertyExpression.allFrom(null);
-        return new SelectResult.From(expr).from(null);
+        return new SelectResult.From(expr);
     }
 
     //---------------------------------------------
@@ -74,6 +72,8 @@ public class SelectResult {
 
         if (expression instanceof PropertyExpression)
             return ((PropertyExpression) expression).getColumnName();
+        if (expression instanceof Meta.MetaExpression)
+            return ((Meta.MetaExpression) expression).getColumnName();
 
         return null;
     }

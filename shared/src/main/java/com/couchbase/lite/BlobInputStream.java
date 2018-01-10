@@ -1,6 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.bridge.LiteCoreBridge;
 import com.couchbase.litecore.C4BlobKey;
 import com.couchbase.litecore.C4BlobReadStream;
 import com.couchbase.litecore.C4BlobStore;
