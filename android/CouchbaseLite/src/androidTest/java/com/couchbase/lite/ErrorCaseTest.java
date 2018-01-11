@@ -33,7 +33,7 @@ public class ErrorCaseTest extends BaseTest {
     // -- DatabaseTest
     @Test
     public void testDeleteUnsavedDocument() {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         assertFalse(doc.isDeleted());
         try {
@@ -46,6 +46,37 @@ public class ErrorCaseTest extends BaseTest {
         }
         assertFalse(doc.isDeleted());
         assertEquals("Scott Tiger", doc.getValue("name"));
+    }
+
+    @Test
+    public void testSaveSavedMutableDocument() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // following is error case
+        doc.setValue("age", 20);
+        try {
+            saved = save(doc);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testDeleteSavedMutableDocument() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // following is error case
+        try {
+            db.delete(doc);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
     }
 
     // -- ArrayTest

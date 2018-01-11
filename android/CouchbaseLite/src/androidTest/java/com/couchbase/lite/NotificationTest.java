@@ -46,7 +46,7 @@ public class NotificationTest extends BaseTest {
             @Override
             public void run() {
                 for (int i = 0; i < 10; i++) {
-                    MutableDocument doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                    MutableDocument doc = createMutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                     doc.setValue("type", "demo");
                     try {
                         save(doc);
@@ -62,8 +62,8 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testDocumentChange()
             throws InterruptedException, CouchbaseLiteException {
-        MutableDocument mDocA = createDocument("A");
-        MutableDocument mDocB = createDocument("B");
+        MutableDocument mDocA = createMutableDocument("A");
+        MutableDocument mDocB = createMutableDocument("B");
 
         // save doc
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -154,7 +154,7 @@ public class NotificationTest extends BaseTest {
                 @Override
                 public void run() {
                     for (int i = 0; i < 10; i++) {
-                        MutableDocument doc = createDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+                        MutableDocument doc = createMutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                         doc.setValue("type", "demo");
                         try {
                             save(doc);
@@ -175,9 +175,9 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testAddSameChangeListeners()
             throws InterruptedException, CouchbaseLiteException {
-        MutableDocument doc1 = createDocument("doc1");
+        MutableDocument doc1 = createMutableDocument("doc1");
         doc1.setValue("name", "Scott");
-        save(doc1);
+        Document savedDoc1 = save(doc1);
 
         final CountDownLatch latch = new CountDownLatch(5);
         // Add change listeners:
@@ -196,6 +196,7 @@ public class NotificationTest extends BaseTest {
 
         try {
             // Update doc1:
+            doc1 = savedDoc1.toMutable();
             doc1.setValue("name", "Scott Tiger");
             save(doc1);
 
@@ -213,9 +214,9 @@ public class NotificationTest extends BaseTest {
     @Test
     public void testRemoveDocumentChangeListener()
             throws InterruptedException, CouchbaseLiteException {
-        MutableDocument doc1 = createDocument("doc1");
+        MutableDocument doc1 = createMutableDocument("doc1");
         doc1.setValue("name", "Scott");
-        save(doc1);
+        Document savedDoc1 = save(doc1);
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(2);
@@ -232,8 +233,9 @@ public class NotificationTest extends BaseTest {
         ListenerToken token = db.addDocumentChangeListener("doc1", listener);
 
         // Update doc1:
+        doc1 = savedDoc1.toMutable();
         doc1.setValue("name", "Scott Tiger");
-        save(doc1);
+        savedDoc1 = save(doc1);
 
         // Let's wait for 0.5 seconds:
         assertTrue(latch1.await(500, TimeUnit.MILLISECONDS));
@@ -242,8 +244,9 @@ public class NotificationTest extends BaseTest {
         db.removeChangeListener(token);
 
         // Update doc1:
+        doc1 = savedDoc1.toMutable();
         doc1.setValue("name", "Scotty");
-        save(doc1);
+        savedDoc1 = save(doc1);
 
         // Let's wait for 0.5 seconds:
         assertFalse(latch2.await(500, TimeUnit.MILLISECONDS));

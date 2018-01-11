@@ -77,7 +77,7 @@ public class ConflictTest extends BaseTest {
 
     private MutableDocument setupConflict() throws CouchbaseLiteException {
         // Setup a default database conflict resolver
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("type", "profile");
         mDoc.setValue("name", "Scott");
         Document doc = save(mDoc);
@@ -170,7 +170,7 @@ public class ConflictTest extends BaseTest {
         closeDB();
         openDB(new MergeThenTheirsWins());
 
-        MutableDocument doc2 = createDocument("doc2");
+        MutableDocument doc2 = createMutableDocument("doc2");
         doc2.setValue("type", "profile");
         doc2.setValue("name", "Scott");
         Document savedDoc2 = save(doc2);

@@ -161,27 +161,31 @@ public class ReplicatorTest extends BaseReplicatorTest {
     public void testDocIDFilter() throws CouchbaseLiteException, InterruptedException {
         MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setString("species", "Tiger");
-        db.save(doc1);
+        Document saved1 = db.save(doc1);
+        doc1 = saved1.toMutable();
         doc1.setString("name", "Hobbes");
-        db.save(doc1);
+        saved1 = db.save(doc1);
 
         MutableDocument doc2 = new MutableDocument("doc2");
         doc2.setString("species", "Tiger");
-        db.save(doc2);
+        Document saved2 = db.save(doc2);
+        doc2 = saved2.toMutable();
         doc2.setString("pattern", "striped");
-        db.save(doc2);
+        saved2 = db.save(doc2);
 
         MutableDocument doc3 = new MutableDocument("doc3");
         doc3.setString("species", "Tiger");
-        otherDB.save(doc3);
+        Document saved3 = otherDB.save(doc3);
+        doc3 = saved3.toMutable();
         doc3.setString("name", "Hobbes");
-        otherDB.save(doc3);
+        saved3 = otherDB.save(doc3);
 
         MutableDocument doc4 = new MutableDocument("doc4");
         doc4.setString("species", "Tiger");
-        otherDB.save(doc4);
+        Document saved4 = otherDB.save(doc4);
+        doc4 = saved4.toMutable();
         doc4.setString("pattern", "striped");
-        otherDB.save(doc4);
+        saved4 = otherDB.save(doc4);
 
         ReplicatorConfiguration.Builder builder = makeConfig(true, true, false);
         builder.setDocumentIDs(Arrays.asList("doc1", "doc3"));

@@ -149,21 +149,21 @@ public class BaseTest implements C4Constants {
             JSONObject json = new JSONObject(line);
             Map<String, Object> props = JsonUtils.fromJson(json);
             String docId = String.format(Locale.ENGLISH, "doc-%03d", n);
-            MutableDocument doc = createDocument(docId);
+            MutableDocument doc = createMutableDocument(docId);
             doc.setData(props);
             save(doc);
         }
     }
 
-    protected MutableDocument createDocument() {
+    protected MutableDocument createMutableDocument() {
         return new MutableDocument();
     }
 
-    protected MutableDocument createDocument(String id) {
+    protected MutableDocument createMutableDocument(String id) {
         return new MutableDocument(id);
     }
 
-    protected MutableDocument createDocument(String id, Map<String, Object> map) {
+    protected MutableDocument createMutableDocument(String id, Map<String, Object> map) {
         return new MutableDocument(id, map);
     }
 
@@ -186,7 +186,7 @@ public class BaseTest implements C4Constants {
 
     // helper method to save document
     protected Document generateDocument(String docID) throws CouchbaseLiteException {
-        MutableDocument doc = createDocument(docID);
+        MutableDocument doc = createMutableDocument(docID);
         doc.setValue("key", 1);
         Document savedDoc = save(doc);
         assertEquals(1, db.getCount());

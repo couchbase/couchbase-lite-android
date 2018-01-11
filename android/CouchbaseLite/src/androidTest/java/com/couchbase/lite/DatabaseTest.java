@@ -114,13 +114,13 @@ public class DatabaseTest extends BaseTest {
     }
 
     // helper method to save n number of docs
-    List<MutableDocument> createDocs(int n) throws CouchbaseLiteException {
-        List<MutableDocument> docs = new ArrayList<>();
+    List<String> createDocs(int n) throws CouchbaseLiteException {
+        List<String> docs = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            MutableDocument doc = createDocument(String.format(Locale.US, "doc_%03d", i));
+            MutableDocument doc = createMutableDocument(String.format(Locale.US, "doc_%03d", i));
             doc.setValue("key", i);
-            save(doc);
-            docs.add(doc);
+            Document savedDoc = save(doc);
+            docs.add(savedDoc.getId());
         }
         assertEquals(n, db.getCount());
         return docs;
@@ -433,7 +433,7 @@ public class DatabaseTest extends BaseTest {
         {
             final int NUM_DOCS = 10;//1000;
             for (int i = 0; i < NUM_DOCS; i++) {
-                MutableDocument doc = createDocument(String.format(Locale.US, "doc_%03d", i));
+                MutableDocument doc = createMutableDocument(String.format(Locale.US, "doc_%03d", i));
                 doc.setValue("key", i);
                 save(doc);
             }
@@ -544,7 +544,7 @@ public class DatabaseTest extends BaseTest {
     public void testSaveDocToClosedDB() throws CouchbaseLiteException {
         db.close();
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("key", 1);
 
         try {
@@ -560,7 +560,7 @@ public class DatabaseTest extends BaseTest {
         // Delete db:
         deleteDatabase(db);
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("key", 1);
 
         try {
@@ -576,7 +576,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     @Test
     public void testDeletePreSaveDoc() {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("key", 1);
         try {
             db.delete(doc);
@@ -714,7 +714,7 @@ public class DatabaseTest extends BaseTest {
     //---------------------------------------------
     @Test
     public void testPurgePreSaveDoc() {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         try {
             db.purge(doc);
             fail();
@@ -1230,17 +1230,19 @@ public class DatabaseTest extends BaseTest {
     public void testCompact() throws CouchbaseLiteException {
         final int NUM_DOCS = 20;
         final int NUM_UPDATES = 25;
-        final List<MutableDocument> docs = createDocs(NUM_DOCS);
+        final List<String> docIDs = createDocs(NUM_DOCS);
 
         // Update each doc 25 times:
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                for (MutableDocument doc : docs) {
+                for (String docID : docIDs) {
+                    Document savedDoc = db.getDocument(docID);
                     for (int i = 0; i < NUM_UPDATES; i++) {
+                        MutableDocument doc = savedDoc.toMutable();
                         doc.setValue("number", i);
                         try {
-                            save(doc);
+                            savedDoc = save(doc);
                         } catch (CouchbaseLiteException e) {
                             throw new RuntimeException(e);
                         }
@@ -1250,9 +1252,11 @@ public class DatabaseTest extends BaseTest {
         });
 
         // Add each doc with a blob object:
-        for (MutableDocument doc : docs) {
+        for (String docID : docIDs) {
+            Document savedDoc = db.getDocument(docID);
+            MutableDocument doc = savedDoc.toMutable();
             doc.setValue("blob", new Blob("text/plain", doc.getId().getBytes()));
-            save(doc);
+            savedDoc = save(doc);
         }
 
         assertEquals(NUM_DOCS, db.getCount());
@@ -1267,10 +1271,10 @@ public class DatabaseTest extends BaseTest {
         db.compact();
 
         // Delete all docs:
-        for (MutableDocument doc : docs) {
-            Document savedDoc = db.getDocument(doc.getId());
+        for (String docID : docIDs) {
+            Document savedDoc = db.getDocument(docID);
             db.delete(savedDoc);
-            assertNull(db.getDocument(doc.getId()));
+            assertNull(db.getDocument(docID));
         }
 
         // Compact:
@@ -1320,7 +1324,7 @@ public class DatabaseTest extends BaseTest {
 
         for (int i = 0; i < NUM_DOCS; i++) {
             String docID = String.format(Locale.US, "doc_%03d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             doc.setValue("name", docID);
             byte[] data = docID.getBytes();
             Blob blob = new Blob("text/plain", data);

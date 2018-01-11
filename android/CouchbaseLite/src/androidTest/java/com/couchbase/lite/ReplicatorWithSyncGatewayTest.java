@@ -1,7 +1,6 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.DateUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -142,7 +141,6 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         JSONObject json = new JSONObject(respBody);
         return new SessionAuthenticator(
                 json.getString("session_id"),
-                DateUtils.fromJson(json.getString("expires")),
                 json.getString("cookie_name"));
     }
 }

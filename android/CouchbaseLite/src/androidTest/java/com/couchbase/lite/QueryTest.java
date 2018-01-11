@@ -86,7 +86,7 @@ public class QueryTest extends BaseTest {
 
     private Document createDocNumbered(int i, int num) throws CouchbaseLiteException {
         String docID = String.format(Locale.ENGLISH, "doc%d", i);
-        MutableDocument doc = createDocument(docID);
+        MutableDocument doc = createMutableDocument(docID);
         doc.setValue("number1", i);
         doc.setValue("number2", num - i);
         return save(doc);
@@ -216,12 +216,12 @@ public class QueryTest extends BaseTest {
     @Test
     public void testWhereNullOrMissing() throws Exception {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
-        MutableDocument doc1 = createDocument("doc1");
+        MutableDocument doc1 = createMutableDocument("doc1");
         doc1.setValue("name", "Scott");
         doc1.setValue("address", null);
         save(doc1);
 
-        MutableDocument doc2 = createDocument("doc2");
+        MutableDocument doc2 = createMutableDocument("doc2");
         doc2.setValue("name", "Tiger");
         doc2.setValue("address", "123 1st ave.");
         doc2.setValue("age", 20);
@@ -901,7 +901,7 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testArrayFunctions() throws Exception {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         MutableArray array = new MutableArray();
         array.addValue("650-123-0001");
         array.addValue("650-123-0002");
@@ -941,7 +941,7 @@ public class QueryTest extends BaseTest {
     public void testMathFunctions() throws Exception {
         double num = 0.6;
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("number", num);
         save(doc);
 
@@ -1015,7 +1015,7 @@ public class QueryTest extends BaseTest {
     @Test
     public void testStringFunctions() throws Exception {
         final String str = "  See you 18r  ";
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("greeting", str);
         save(doc);
 
@@ -1168,7 +1168,7 @@ public class QueryTest extends BaseTest {
     public void testUnicodeCollationWithLocale() throws Exception {
         String[] letters = {"B", "A", "Z", "Å"};
         for (String letter : letters) {
-            MutableDocument doc = createDocument();
+            MutableDocument doc = createMutableDocument();
             doc.setValue("string", letter);
             save(doc);
         }
@@ -1318,7 +1318,7 @@ public class QueryTest extends BaseTest {
         );
 
         for (List<Object> data : testData) {
-            MutableDocument mDoc = createDocument();
+            MutableDocument mDoc = createMutableDocument();
             mDoc.setValue("value", data.get(0));
             Document doc = save(mDoc);
 
@@ -1551,6 +1551,7 @@ public class QueryTest extends BaseTest {
         assertEquals(2, counter);
 
         // Test: Iterator
+        rs = q.execute();
         counter = 0;
         for (Result result : rs) {
             Log.i(TAG, "Round 1: [Iterator] Result -> " + result.toMap());
@@ -1565,9 +1566,9 @@ public class QueryTest extends BaseTest {
         assertNull(db.getDocument(task1.getId()));
 
         // STEP 4: query documents again after deletion
-        rs = q.execute();
 
         // Test: ResultSet.next()
+        rs = q.execute();
         counter = 0;
         while ((r = rs.next()) != null) {
             assertEquals(task2.getId(), r.getString(0));
@@ -1577,6 +1578,7 @@ public class QueryTest extends BaseTest {
         assertEquals(1, counter);
 
         // Test: Iterator
+        rs = q.execute();
         counter = 0;
         for (Result result : rs) {
             assertEquals(task2.getId(), result.getString(0));
@@ -1587,7 +1589,7 @@ public class QueryTest extends BaseTest {
     }
 
     private Document createTaskDocument(String title, boolean complete) throws CouchbaseLiteException {
-        MutableDocument doc = createDocument();
+        MutableDocument doc = createMutableDocument();
         doc.setString("type", "task");
         doc.setString("title", title);
         doc.setBoolean("complete", complete);

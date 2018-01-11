@@ -137,7 +137,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCreateDocWithID() throws CouchbaseLiteException {
-        MutableDocument doc1a = createDocument("doc1");
+        MutableDocument doc1a = createMutableDocument("doc1");
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
         assertFalse(doc1a.isDeleted());
@@ -154,7 +154,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCreateDocWithEmptyStringID() {
-        MutableDocument doc1a = createDocument("");
+        MutableDocument doc1a = createMutableDocument("");
         assertNotNull(doc1a);
         try {
             save(doc1a);
@@ -167,7 +167,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testCreateDocWithNilID() throws CouchbaseLiteException {
-        MutableDocument doc1a = createDocument(null);
+        MutableDocument doc1a = createMutableDocument(null);
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
         assertFalse(doc1a.isDeleted());
@@ -226,7 +226,7 @@ public class DocumentTest extends BaseTest {
 
         dict.put("phones", Arrays.asList("650-123-0001", "650-123-0002"));
 
-        MutableDocument doc1a = createDocument("doc1", dict);
+        MutableDocument doc1a = createMutableDocument("doc1", dict);
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
         assertFalse(doc1a.isDeleted());
@@ -256,7 +256,7 @@ public class DocumentTest extends BaseTest {
 
         dict.put("phones", Arrays.asList("650-123-0001", "650-123-0002"));
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setData(dict);
         assertEquals(dict, doc.toMap());
 
@@ -286,7 +286,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testGetValueFromDocument() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         save(doc, new Validator<Document>() {
             @Override
             public void validate(final Document d) {
@@ -308,7 +308,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSaveThenGetFromAnotherDB() throws CouchbaseLiteException {
-        MutableDocument doc1a = createDocument("doc1");
+        MutableDocument doc1a = createMutableDocument("doc1");
         doc1a.setValue("name", "Scott Tiger");
         save(doc1a);
 
@@ -322,7 +322,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testNoCacheNoLive() throws CouchbaseLiteException {
-        MutableDocument doc1a = createDocument("doc1");
+        MutableDocument doc1a = createMutableDocument("doc1");
         doc1a.setValue("name", "Scott Tiger");
 
         save(doc1a);
@@ -375,7 +375,7 @@ public class DocumentTest extends BaseTest {
 
         // -- setValue
         // save
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("string1", "");
         mDoc.setValue("string2", "string");
         Document doc = save(mDoc, validator4Save);
@@ -387,7 +387,7 @@ public class DocumentTest extends BaseTest {
 
         // -- setString
         // save
-        MutableDocument mDoc2 = createDocument("doc2");
+        MutableDocument mDoc2 = createMutableDocument("doc2");
         mDoc2.setString("string1", "");
         mDoc2.setString("string2", "string");
         Document doc2 = save(mDoc2, validator4Save);
@@ -403,7 +403,7 @@ public class DocumentTest extends BaseTest {
     public void testGetString() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -452,7 +452,7 @@ public class DocumentTest extends BaseTest {
         };
 
         // -- setValue
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("number1", 1);
         mDoc.setValue("number2", 0);
         mDoc.setValue("number3", -1);
@@ -469,7 +469,7 @@ public class DocumentTest extends BaseTest {
 
         // -- setNumber
         // save
-        MutableDocument mDoc2 = createDocument("doc2");
+        MutableDocument mDoc2 = createMutableDocument("doc2");
         mDoc2.setNumber("number1", 1);
         mDoc2.setNumber("number2", 0);
         mDoc2.setNumber("number3", -1);
@@ -486,7 +486,7 @@ public class DocumentTest extends BaseTest {
 
         // -- setInt
         // save
-        MutableDocument mDoc3 = createDocument("doc3");
+        MutableDocument mDoc3 = createMutableDocument("doc3");
         mDoc3.setInt("number1", 1);
         mDoc3.setInt("number2", 0);
         mDoc3.setInt("number3", -1);
@@ -503,7 +503,7 @@ public class DocumentTest extends BaseTest {
 
         // -- setLong
         // save
-        MutableDocument mDoc4 = createDocument("doc4");
+        MutableDocument mDoc4 = createMutableDocument("doc4");
         mDoc4.setLong("number1", 1);
         mDoc4.setLong("number2", 0);
         mDoc4.setLong("number3", -1);
@@ -520,7 +520,7 @@ public class DocumentTest extends BaseTest {
 
         // -- setFloat
         // save
-        MutableDocument mDoc5 = createDocument("doc5");
+        MutableDocument mDoc5 = createMutableDocument("doc5");
         mDoc5.setFloat("number1", 1);
         mDoc5.setFloat("number2", 0);
         mDoc5.setFloat("number3", -1);
@@ -537,7 +537,7 @@ public class DocumentTest extends BaseTest {
 
         // -- setDouble
         // save
-        MutableDocument mDoc6 = createDocument("doc6");
+        MutableDocument mDoc6 = createMutableDocument("doc6");
         mDoc6.setDouble("number1", 1);
         mDoc6.setDouble("number2", 0);
         mDoc6.setDouble("number3", -1);
@@ -557,7 +557,7 @@ public class DocumentTest extends BaseTest {
     public void testGetNumber() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -587,7 +587,7 @@ public class DocumentTest extends BaseTest {
     public void testGetInteger() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -617,7 +617,7 @@ public class DocumentTest extends BaseTest {
     public void testGetLong() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -647,7 +647,7 @@ public class DocumentTest extends BaseTest {
     public void testGetFloat() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -677,7 +677,7 @@ public class DocumentTest extends BaseTest {
     public void testGetDouble() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -739,7 +739,7 @@ public class DocumentTest extends BaseTest {
         };
 
         // -- setValue
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("min_int", Integer.MIN_VALUE);
         doc.setValue("max_int", Integer.MAX_VALUE);
         doc.setValue("min_long", Long.MIN_VALUE);
@@ -751,7 +751,7 @@ public class DocumentTest extends BaseTest {
         save(doc, validator);
 
         // -- setInt, setLong, setFloat, setDouble
-        MutableDocument doc2 = createDocument("doc2");
+        MutableDocument doc2 = createMutableDocument("doc2");
         doc2.setInt("min_int", Integer.MIN_VALUE);
         doc2.setInt("max_int", Integer.MAX_VALUE);
         doc2.setLong("min_long", Long.MIN_VALUE);
@@ -808,7 +808,7 @@ public class DocumentTest extends BaseTest {
 
 
         // -- setValue
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
 
         doc.setValue("number1", 1.00);
         doc.setValue("number2", 1.49);
@@ -818,7 +818,7 @@ public class DocumentTest extends BaseTest {
         save(doc, validator);
 
         // -- setFloat
-        MutableDocument doc2 = createDocument("doc2");
+        MutableDocument doc2 = createMutableDocument("doc2");
         doc2.setFloat("number1", 1.00f);
         doc2.setFloat("number2", 1.49f);
         doc2.setFloat("number3", 1.50f);
@@ -827,7 +827,7 @@ public class DocumentTest extends BaseTest {
         save(doc2, validator);
 
         // -- setDouble
-        MutableDocument doc3 = createDocument("doc3");
+        MutableDocument doc3 = createMutableDocument("doc3");
         doc3.setDouble("number1", 1.00);
         doc3.setDouble("number2", 1.49);
         doc3.setDouble("number3", 1.50);
@@ -858,7 +858,7 @@ public class DocumentTest extends BaseTest {
         };
 
         // -- setValue
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("boolean1", true);
         mDoc.setValue("boolean2", false);
         Document doc = save(mDoc, validator4Save);
@@ -870,7 +870,7 @@ public class DocumentTest extends BaseTest {
         save(mDoc, validator4Update);
 
         // -- setBoolean
-        MutableDocument mDoc2 = createDocument("doc2");
+        MutableDocument mDoc2 = createMutableDocument("doc2");
         mDoc2.setValue("boolean1", true);
         mDoc2.setValue("boolean2", false);
         Document doc2 = save(mDoc2, validator4Save);
@@ -886,7 +886,7 @@ public class DocumentTest extends BaseTest {
     public void testGetBoolean() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -914,7 +914,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetDate() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
 
         Date date = new Date();
         final String dateStr = DateUtils.toJson(date);
@@ -953,7 +953,7 @@ public class DocumentTest extends BaseTest {
     public void testGetDate() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -1013,7 +1013,7 @@ public class DocumentTest extends BaseTest {
         };
 
         // --setValue
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("blob", blob);
         Document doc = save(mDoc, validator4Save);
 
@@ -1023,7 +1023,7 @@ public class DocumentTest extends BaseTest {
         save(mDoc, validator4Update);
 
         // --setBlob
-        MutableDocument mDoc2 = createDocument("doc2");
+        MutableDocument mDoc2 = createMutableDocument("doc2");
         mDoc2.setBlob("blob", blob);
         Document doc2 = save(mDoc2, validator4Save);
 
@@ -1037,7 +1037,7 @@ public class DocumentTest extends BaseTest {
     public void testGetBlob() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -1070,7 +1070,7 @@ public class DocumentTest extends BaseTest {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
             // -- setValue
-            MutableDocument mDoc = createDocument(docID);
+            MutableDocument mDoc = createMutableDocument(docID);
             MutableDictionary mDict = new MutableDictionary();
             mDict.setValue("street", "1 Main street");
             if (i % 2 == 1)
@@ -1111,7 +1111,7 @@ public class DocumentTest extends BaseTest {
     public void testGetDictionary() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -1146,7 +1146,7 @@ public class DocumentTest extends BaseTest {
     public void testSetArray() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument mDoc = createDocument(docID);
+            MutableDocument mDoc = createMutableDocument(docID);
             MutableArray array = new MutableArray();
             array.addValue("item1");
             array.addValue("item2");
@@ -1183,7 +1183,7 @@ public class DocumentTest extends BaseTest {
     public void testGetArray() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -1213,7 +1213,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetNull() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("obj-null", null);
         mDoc.setString("string-null", null);
         mDoc.setNumber("number-null", null);
@@ -1248,7 +1248,7 @@ public class DocumentTest extends BaseTest {
         dict.put("city", "Mountain View");
         dict.put("state", "CA");
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("address", dict);
 
         MutableDictionary address = doc.getDictionary("address");
@@ -1296,7 +1296,7 @@ public class DocumentTest extends BaseTest {
     public void testSetList() throws CouchbaseLiteException {
         List<String> array = Arrays.asList("a", "b", "c");
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("members", array);
 
         MutableArray members = doc.getArray("members");
@@ -1340,7 +1340,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testUpdateNestedDictionary() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         MutableDictionary addresses = new MutableDictionary();
         doc.setValue("addresses", addresses);
 
@@ -1372,7 +1372,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testUpdateDictionaryInArray() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         MutableArray addresses = new MutableArray();
         doc.setValue("addresses", addresses);
 
@@ -1420,7 +1420,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testUpdateNestedArray() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         MutableArray groups = new MutableArray();
         doc.setValue("groups", groups);
 
@@ -1458,7 +1458,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testUpdateArrayInDictionary() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
 
         MutableDictionary group1 = new MutableDictionary();
         MutableArray member1 = new MutableArray();
@@ -1502,7 +1502,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetDictionaryToMultipleKeys() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
 
         MutableDictionary address = new MutableDictionary();
         address.setValue("street", "1 Main street");
@@ -1537,7 +1537,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testSetArrayToMultipleKeys() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
 
         MutableArray phones = new MutableArray();
         phones.addValue("650-000-0001");
@@ -1581,7 +1581,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testToDictionary() {
-        MutableDocument doc1 = createDocument("doc1");
+        MutableDocument doc1 = createMutableDocument("doc1");
         populateData(doc1);
 
         Map<String, Object> expected = new HashMap<>();
@@ -1622,7 +1622,7 @@ public class DocumentTest extends BaseTest {
     public void testCount() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             if (i % 2 == 1)
                 populateData(doc);
             else
@@ -1640,7 +1640,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testRemoveKeys() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         Map<String, Object> mapAddress = new HashMap<>();
         mapAddress.put("street", "1 milky way.");
         mapAddress.put("city", "galaxy city");
@@ -1713,7 +1713,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testContainsKey() {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         Map<String, Object> mapAddress = new HashMap<>();
         mapAddress.put("street", "1 milky way.");
         Map<String, Object> profile = new HashMap<>();
@@ -1750,7 +1750,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testDeleteDocument() throws CouchbaseLiteException {
         String docID = "doc1";
-        MutableDocument mDoc = createDocument(docID);
+        MutableDocument mDoc = createMutableDocument(docID);
         mDoc.setValue("name", "Scott Tiger");
         assertFalse(mDoc.isDeleted());
 
@@ -1779,7 +1779,7 @@ public class DocumentTest extends BaseTest {
         Map<String, Object> dict = new HashMap<>();
         dict.put("address", addr);
 
-        MutableDocument mDoc = createDocument("doc1", dict);
+        MutableDocument mDoc = createMutableDocument("doc1", dict);
         Document doc = save(mDoc);
 
         Dictionary address = doc.getDictionary("address");
@@ -1800,7 +1800,7 @@ public class DocumentTest extends BaseTest {
         Map<String, Object> dict = new HashMap<>();
         dict.put("members", Arrays.asList("a", "b", "c"));
 
-        MutableDocument mDoc = createDocument("doc1", dict);
+        MutableDocument mDoc = createMutableDocument("doc1", dict);
         Document doc = save(mDoc);
 
         Array members = doc.getArray("members");
@@ -1821,7 +1821,7 @@ public class DocumentTest extends BaseTest {
     @Test
     public void testPurgeDocument() throws CouchbaseLiteException {
         String docID = "doc1";
-        MutableDocument doc = createDocument(docID);
+        MutableDocument doc = createMutableDocument(docID);
         doc.setValue("type", "profile");
         doc.setValue("name", "Scott");
         assertFalse(doc.isDeleted());
@@ -1849,7 +1849,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testReopenDB() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("string", "str");
         save(mDoc);
 
@@ -1870,7 +1870,7 @@ public class DocumentTest extends BaseTest {
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("name", "Jim");
         doc.setValue("data", data);
 
@@ -1902,7 +1902,7 @@ public class DocumentTest extends BaseTest {
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("data", data);
 
         doc = save(doc).toMutable();
@@ -1928,7 +1928,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testBlobWithStream() throws IOException, CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         byte[] content = "".getBytes();
         InputStream stream = new ByteArrayInputStream(content);
         try {
@@ -1965,7 +1965,7 @@ public class DocumentTest extends BaseTest {
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("data", data);
 
         data = (Blob) doc.getValue("data");
@@ -2014,7 +2014,7 @@ public class DocumentTest extends BaseTest {
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("data", data);
         doc.setValue("name", "Jim");
         doc = save(doc).toMutable();
@@ -2037,7 +2037,7 @@ public class DocumentTest extends BaseTest {
 
     @Test
     public void testEnumeratingKeys() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         for (long i = 0; i < 20; i++)
             doc.setLong(String.format(Locale.ENGLISH, "key%d", i), i);
         Map<String, Object> content = doc.toMap();
