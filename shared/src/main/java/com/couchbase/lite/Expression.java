@@ -24,8 +24,8 @@ import java.util.Locale;
  */
 public abstract class Expression {
 
-    public static FromExpression all() {
-        return new FromExpression();
+    public static PropertyExpression all() {
+        return new PropertyExpression(PropertyExpression.kCBLAllPropertiesName);
     }
 
     /**
