@@ -5,7 +5,7 @@ import com.couchbase.litecore.fleece.MValue;
 
 import static com.couchbase.lite.internal.utils.ClassUtils.cast;
 
-class CBLConverter {
+final class CBLConverter {
     static Number getNumber(Object value) {
         // special handling for Boolean
         if (value != null && value instanceof Boolean)

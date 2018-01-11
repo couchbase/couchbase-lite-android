@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-public class QueryChange {
+public final class QueryChange {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -11,7 +11,7 @@ public class QueryChange {
     //---------------------------------------------
     // constructors
     //---------------------------------------------
-    public QueryChange(Query query, ResultSet rs, Throwable error) {
+    QueryChange(Query query, ResultSet rs, Throwable error) {
         this.query = query;
         this.rs = rs;
         this.error = error;

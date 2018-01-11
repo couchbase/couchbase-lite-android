@@ -8,7 +8,7 @@ import com.couchbase.litecore.LiteCoreException;
 import java.io.IOException;
 import java.io.InputStream;
 
-class BlobInputStream extends InputStream {
+final class BlobInputStream extends InputStream {
     C4BlobStore store = null;
     C4BlobKey key = null;
     boolean hasBytesAvailable = false;

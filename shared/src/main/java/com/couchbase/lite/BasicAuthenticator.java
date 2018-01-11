@@ -14,7 +14,7 @@ import static com.couchbase.lite.ReplicatorConfiguration.kCBLReplicatorAuthUserN
  * auth with the given username and password. This should only be used over an SSL/TLS connection,
  * as otherwise it's very easy for anyone sniffing network traffic to read the password.
  */
-public class BasicAuthenticator extends Authenticator {
+public final class BasicAuthenticator extends Authenticator {
 
     //---------------------------------------------
     // member variables

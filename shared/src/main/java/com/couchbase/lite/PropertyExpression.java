@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PropertyExpression extends Expression {
+public final class PropertyExpression extends Expression {
     final static String kCBLAllPropertiesName = "";
 
     private final String keyPath;

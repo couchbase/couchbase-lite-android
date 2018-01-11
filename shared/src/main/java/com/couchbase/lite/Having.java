@@ -6,7 +6,7 @@ import java.util.Arrays;
  * Having represents a HAVING clause of the query statement used for filtering the aggregated values
  * from the the GROUP BY clause.
  */
-public class Having extends Query implements OrderByRouter, LimitRouter {
+public final class Having extends Query implements OrderByRouter, LimitRouter {
     private Expression expression;
 
     Having(Query query, Expression expression) {

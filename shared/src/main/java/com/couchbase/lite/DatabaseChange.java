@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Provides details about a Database change.
  */
-public class DatabaseChange {
+public final class DatabaseChange {
     final private List<String> documentIDs;
     final private Database database;
 

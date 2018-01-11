@@ -19,7 +19,7 @@ import java.util.Arrays;
 /**
  * A From represents a FROM clause for specifying the data source of the query.
  */
-public class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
+public final class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------

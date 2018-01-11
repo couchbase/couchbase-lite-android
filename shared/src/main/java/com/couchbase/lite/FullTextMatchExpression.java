@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import java.util.Arrays;
 
 
-class FullTextMatchExpression extends Expression {
+final class FullTextMatchExpression extends Expression {
     //---------------------------------------------
     // member variables
     //---------------------------------------------

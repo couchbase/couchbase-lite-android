@@ -34,7 +34,7 @@ public class Join {
     //---------------------------------------------
     // Inner public Class
     //---------------------------------------------
-    public static class On extends Join {
+    public final static class On extends Join {
         //---------------------------------------------
         // Member variables
         //---------------------------------------------

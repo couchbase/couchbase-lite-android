@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-public class FullTextIndexItem {
+public final class FullTextIndexItem {
     Expression expression;
 
     private FullTextIndexItem(Expression expression) {

@@ -1,10 +1,9 @@
 package com.couchbase.lite;
 
-
-public class ValueIndexItem {
+public final class ValueIndexItem {
     Expression expression;
 
-    public ValueIndexItem(Expression expression) {
+    private ValueIndexItem(Expression expression) {
         this.expression = expression;
     }
 

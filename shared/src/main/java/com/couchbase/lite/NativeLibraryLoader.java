@@ -18,10 +18,13 @@ import com.couchbase.litecore.fleece.MValue;
 
 import java.lang.reflect.Constructor;
 
-class NativeLibraryLoader {
+final class NativeLibraryLoader {
     private static final String TAG = Log.DATABASE;
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
+
+    NativeLibraryLoader() {
+    }
 
     static void load() {
         if (load(LITECORE_JNI_LIBRARY))

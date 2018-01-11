@@ -15,7 +15,7 @@ package com.couchbase.lite.internal.utils;
 
 import java.io.File;
 
-public class FileUtils {
+public final class FileUtils {
     private FileUtils() {
     }
 

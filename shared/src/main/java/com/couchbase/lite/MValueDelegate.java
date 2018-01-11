@@ -25,7 +25,11 @@ import com.couchbase.litecore.fleece.MValue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /* Internal delegate class for MValue - Mutable Fleece Value */
-class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
+final class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
+    MValueDelegate() {
+
+    }
+
     @Override
     public Object toNative(MValue mv, MCollection parent, AtomicBoolean cacheIt) {
         FLValue value = mv.getValue();
@@ -72,7 +76,7 @@ class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
     private static Object mValueToDictionary(MValue mv, MCollection parent) {
         FLValue value = mv.getValue();
         FLDict flDict = value.asFLDict();
-        DocContext context = (DocContext)parent.getContext();
+        DocContext context = (DocContext) parent.getContext();
         FLSharedKeys sk = context.getSharedKeys();
         FLValue flType = flDict.getSharedKey(Blob.kC4ObjectTypeProperty, sk);
         String type = flType != null ? flType.asString() : null;
@@ -94,9 +98,9 @@ class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
     @Override
     public MCollection collectionFromNative(Object object) {
         if (object instanceof Array)
-            return ((Array)object).toMCollection();
+            return ((Array) object).toMCollection();
         else if (object instanceof Dictionary)
-            return ((Dictionary)object).toMCollection();
+            return ((Dictionary) object).toMCollection();
         else
             return null;
     }

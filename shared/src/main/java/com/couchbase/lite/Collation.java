@@ -10,7 +10,7 @@ public class Collation {
     boolean ignoreAccents = false;
     String locale = null;
 
-    public static class ASCII extends Collation {
+    public final static class ASCII extends Collation {
         ASCII() {
             this.unicode = false;
         }
@@ -21,7 +21,7 @@ public class Collation {
         }
     }
 
-    public static class Unicode extends Collation {
+    public final static class Unicode extends Collation {
         Unicode() {
             this.unicode = true;
             // NOTE: System.getProperty("user.country") returns null for country code
@@ -42,6 +42,9 @@ public class Collation {
             this.locale = locale;
             return this;
         }
+    }
+
+    private Collation() {
     }
 
     Object asJSON() {

@@ -52,9 +52,9 @@ import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrUnknownHo
 
 /**
  * NOTE: CBLWebSocket class should be public as this class is instantiated
- *       from com.couchbase.litecore package.
+ * from com.couchbase.litecore package.
  */
-public class CBLWebSocket extends C4Socket {
+public final class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------

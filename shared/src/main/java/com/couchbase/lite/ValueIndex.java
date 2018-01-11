@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ValueIndex extends Index {
+public final class ValueIndex extends Index {
     private List<ValueIndexItem> indexItems;
 
     ValueIndex(ValueIndexItem... indexItems) {

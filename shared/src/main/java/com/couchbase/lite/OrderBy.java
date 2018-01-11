@@ -21,7 +21,7 @@ import java.util.List;
  * An OrderBy represents an ORDER BY clause of the query for specifying properties or expressions
  * that the result rows should be sorted by.
  */
-public class OrderBy extends Query implements LimitRouter {
+public final class OrderBy extends Query implements LimitRouter {
 
     //---------------------------------------------
     // Member variables

@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-public class ArrayExpressionIn {
+public final class ArrayExpressionIn {
     private ArrayExpression.QuantifiesType type;
     private String variable;
 

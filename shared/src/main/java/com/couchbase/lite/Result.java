@@ -31,15 +31,14 @@ import java.util.Map;
 /**
  * Result represents a row of result set returned by a Query.
  */
-public class Result
-        implements ArrayInterface, DictionaryInterface, Iterable<String> {
+public final class Result implements ArrayInterface, DictionaryInterface, Iterable<String> {
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private ResultSet rs;
     private FLArrayIterator columns;
-    MContext context;
+    private MContext context;
 
     //---------------------------------------------
     // constructors

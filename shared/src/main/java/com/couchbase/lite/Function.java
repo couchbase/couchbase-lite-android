@@ -2,7 +2,11 @@ package com.couchbase.lite;
 
 import java.util.Arrays;
 
-public class Function {
+public final class Function {
+    private Function() {
+
+    }
+
     //---------------------------------------------
     // Aggregation
     //---------------------------------------------

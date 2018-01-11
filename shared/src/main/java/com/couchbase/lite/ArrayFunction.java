@@ -2,7 +2,10 @@ package com.couchbase.lite;
 
 import java.util.Arrays;
 
-public class ArrayFunction {
+public final class ArrayFunction {
+    private ArrayFunction() {
+    }
+
     public static Expression contains(Object expression, Object value) {
         return new FunctionExpresson("ARRAY_CONTAINS()", Arrays.asList(expression, value));
     }

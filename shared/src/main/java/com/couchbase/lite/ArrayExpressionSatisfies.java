@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArrayExpressionSatisfies {
+public final class ArrayExpressionSatisfies {
     private ArrayExpression.QuantifiesType type;
     private String variable;
     private Object inExpression;

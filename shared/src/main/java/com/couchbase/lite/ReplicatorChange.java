@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-public class ReplicatorChange {
+public final class ReplicatorChange {
     private final Replicator replicator;
     private final Replicator.Status status;
 

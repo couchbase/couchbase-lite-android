@@ -15,40 +15,40 @@ package com.couchbase.lite.internal.support;
 
 import android.util.Log;
 
-public class Logger {
-    public void v(String tag, String msg) {
+final class Logger {
+    void v(String tag, String msg) {
         Log.v(tag, msg);
     }
 
-    public void v(String tag, String msg, Throwable tr) {
+    void v(String tag, String msg, Throwable tr) {
         Log.v(tag, msg, tr);
     }
 
-    public void i(String tag, String msg) {
+    void i(String tag, String msg) {
         Log.i(tag, msg);
     }
 
-    public void i(String tag, String msg, Throwable tr) {
+    void i(String tag, String msg, Throwable tr) {
         Log.i(tag, msg, tr);
     }
 
-    public void w(String tag, String msg) {
+    void w(String tag, String msg) {
         Log.w(tag, msg);
     }
 
-    public void w(String tag, Throwable tr) {
+    void w(String tag, Throwable tr) {
         Log.w(tag, tr);
     }
 
-    public void w(String tag, String msg, Throwable tr) {
+    void w(String tag, String msg, Throwable tr) {
         Log.w(tag, msg, tr);
     }
 
-    public void e(String tag, String msg) {
+    void e(String tag, String msg) {
         Log.e(tag, msg);
     }
 
-    public void e(String tag, String msg, Throwable tr) {
+    void e(String tag, String msg, Throwable tr) {
         Log.e(tag, msg, tr);
     }
 }

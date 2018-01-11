@@ -9,7 +9,7 @@ import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionCook
  * SessionAuthenticator class is an authenticator that will authenticate by using the sessin ID of
  * the session created by a Sync Gateway
  */
-public class SessionAuthenticator extends Authenticator {
+public final class SessionAuthenticator extends Authenticator {
 
     private final static String DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME = "SyncGatewaySession";
     //---------------------------------------------

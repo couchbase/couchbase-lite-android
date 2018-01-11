@@ -25,7 +25,7 @@ import com.couchbase.lite.internal.support.Log;
 /**
  * NOTE: https://developer.android.com/training/basics/network-ops/managing.html
  */
-class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {
+final class AndroidNetworkReachabilityManager extends NetworkReachabilityManager {
 
     private static final String TAG = Log.SYNC;
 

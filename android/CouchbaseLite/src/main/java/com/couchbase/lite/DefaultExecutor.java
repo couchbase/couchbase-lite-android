@@ -5,7 +5,7 @@ import android.os.Looper;
 
 import java.util.concurrent.Executor;
 
-class DefaultExecutor implements Executor {
+final class DefaultExecutor implements Executor {
 
     private static DefaultExecutor _instance;
 

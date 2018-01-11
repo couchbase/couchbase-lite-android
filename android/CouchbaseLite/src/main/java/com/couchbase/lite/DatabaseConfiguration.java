@@ -2,7 +2,7 @@ package com.couchbase.lite;
 
 import android.content.Context;
 
-public class DatabaseConfiguration {
+public final class DatabaseConfiguration {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -14,7 +14,7 @@ public class DatabaseConfiguration {
     //---------------------------------------------
     // Builder
     //---------------------------------------------
-    public static class Builder {
+    public final static class Builder {
         //---------------------------------------------
         // member variables
         //---------------------------------------------

@@ -1,6 +1,6 @@
 package com.couchbase.lite.internal.utils;
 
-public class ClassUtils {
+public final class ClassUtils {
     private ClassUtils() {
 
     }

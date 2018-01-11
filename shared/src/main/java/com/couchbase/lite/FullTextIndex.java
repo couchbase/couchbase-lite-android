@@ -5,11 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-public class FullTextIndex extends Index {
+public final class FullTextIndex extends Index {
 
     private List<FullTextIndexItem> indexItems;
-    String locale = null;
-    boolean ignoreAccents = false;
+    private String locale = null;
+    private boolean ignoreAccents = false;
 
     FullTextIndex(FullTextIndexItem... indexItems) {
         this.indexItems = Arrays.asList(indexItems);

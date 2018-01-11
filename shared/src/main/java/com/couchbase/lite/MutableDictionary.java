@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Dictionary provides access to dictionary data.
  */
-public class MutableDictionary extends Dictionary implements MutableDictionaryInterface {
+public final class MutableDictionary extends Dictionary implements MutableDictionaryInterface {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------

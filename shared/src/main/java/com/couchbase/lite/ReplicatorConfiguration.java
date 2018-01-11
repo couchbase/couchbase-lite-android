@@ -12,7 +12,7 @@ import java.util.Map;
 
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
 
-public class ReplicatorConfiguration {
+public final class ReplicatorConfiguration {
 
     // Replicator option dictionary keys:
     static final String kC4ReplicatorOptionExtraHeaders = "headers";  // Extra HTTP headers; string[]
@@ -64,7 +64,7 @@ public class ReplicatorConfiguration {
     //---------------------------------------------
     // Builder
     //---------------------------------------------
-    public static class Builder {
+    public final static class Builder {
         //---------------------------------------------
         // member variables
         //---------------------------------------------

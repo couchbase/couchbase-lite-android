@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-public class FullTextExpression {
+public final class FullTextExpression {
     //---------------------------------------------
     // member variables
     //---------------------------------------------

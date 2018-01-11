@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Parameters {
+public final class Parameters {
 
     private final static String TAG = Log.QUERY;
 
@@ -21,7 +21,7 @@ public class Parameters {
     //---------------------------------------------
     // Builder
     //---------------------------------------------
-    public static class Builder {
+    public final static class Builder {
         //---------------------------------------------
         // member variables
         //---------------------------------------------

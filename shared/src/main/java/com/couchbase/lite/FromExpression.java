@@ -3,7 +3,7 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
-final class FromExpression extends Expression {
+public final class FromExpression extends Expression {
     //---------------------------------------------
     // member variables
     //---------------------------------------------

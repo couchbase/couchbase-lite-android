@@ -6,7 +6,7 @@ public class SelectResult {
     //---------------------------------------------
     // Inner public Class
     //---------------------------------------------
-    public static class From extends SelectResult {
+    public final static class From extends SelectResult {
         // Constructor
         private From(Expression expression) {
             super(expression);
@@ -20,7 +20,7 @@ public class SelectResult {
         }
     }
 
-    public static class As extends SelectResult {
+    public final static class As extends SelectResult {
         // Constructor
         private As(Expression expression) {
             super(expression);

@@ -6,7 +6,7 @@ import java.net.URISyntaxException;
 import static com.couchbase.litecore.C4Replicator.kC4Replicator2Scheme;
 import static com.couchbase.litecore.C4Replicator.kC4Replicator2TLSScheme;
 
-public class URLEndpoint implements Endpoint {
+public final class URLEndpoint implements Endpoint {
     private String host = null;
     private int port = -1;
     private String path = null;

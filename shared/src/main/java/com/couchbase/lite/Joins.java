@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Joins extends Query implements WhereRouter, OrderByRouter, LimitRouter {
+public final class Joins extends Query implements WhereRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // member variables
     //---------------------------------------------

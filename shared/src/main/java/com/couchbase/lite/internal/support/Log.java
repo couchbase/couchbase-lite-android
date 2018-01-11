@@ -28,7 +28,7 @@ import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogWarning;
 /**
  * Couchbase Lite Logging API.
  */
-public class Log {
+public final class Log {
 
     private static Logger logger = new Logger();
 

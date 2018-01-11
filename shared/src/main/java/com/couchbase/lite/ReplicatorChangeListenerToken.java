@@ -2,7 +2,7 @@ package com.couchbase.lite;
 
 import java.util.concurrent.Executor;
 
-class ReplicatorChangeListenerToken implements ListenerToken {
+final class ReplicatorChangeListenerToken implements ListenerToken {
     private Executor executor;
     private final ReplicatorChangeListener listener;
 

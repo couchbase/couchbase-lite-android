@@ -3,7 +3,7 @@ package com.couchbase.lite;
 /**
  * Provides details about a Conflict.
  */
-public class Conflict {
+public final class Conflict {
     private Document mine;
     private Document theirs;
     private Document base;

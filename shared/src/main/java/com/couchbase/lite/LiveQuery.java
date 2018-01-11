@@ -14,7 +14,7 @@ import java.util.concurrent.Executor;
 /**
  * A Query subclass that automatically refreshes the result rows every time the database changes.
  */
-public class LiveQuery implements DatabaseChangeListener {
+final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
     // static variables
     //---------------------------------------------

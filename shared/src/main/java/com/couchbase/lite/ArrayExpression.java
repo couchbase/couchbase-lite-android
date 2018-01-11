@@ -1,10 +1,14 @@
 package com.couchbase.lite;
 
-public class ArrayExpression {
+public final class ArrayExpression {
     enum QuantifiesType {
         ANY,
         ANY_AND_EVERY,
         EVERY
+    }
+
+    private ArrayExpression() {
+
     }
 
     public static ArrayExpressionIn any(String variable) {

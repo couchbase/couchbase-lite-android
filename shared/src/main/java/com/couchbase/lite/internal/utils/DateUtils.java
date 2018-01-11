@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-public class DateUtils {
+public final class DateUtils {
     private static SimpleDateFormat sdf;
 
     static {

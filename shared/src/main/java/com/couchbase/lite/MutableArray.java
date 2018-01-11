@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Array provides access to array data.
  */
-public class MutableArray extends Array implements MutableArrayInterface {
+public final class MutableArray extends Array implements MutableArrayInterface {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class GroupBy extends Query implements HavingRouter, OrderByRouter, LimitRouter {
+public final class GroupBy extends Query implements HavingRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // Member variables
     //---------------------------------------------

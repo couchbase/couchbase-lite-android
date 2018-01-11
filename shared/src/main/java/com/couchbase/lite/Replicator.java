@@ -34,7 +34,7 @@ import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLeve
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
 import static java.util.Collections.synchronizedSet;
 
-public class Replicator extends NetworkReachabilityListener {
+public final class Replicator extends NetworkReachabilityListener {
     private static final String TAG = Log.SYNC;
 
     /**
@@ -78,7 +78,7 @@ public class Replicator extends NetworkReachabilityListener {
      * Progress of a replicator. If `total` is zero, the progress is indeterminate; otherwise,
      * dividing the two will produce a fraction that can be used to draw a progress bar.
      */
-    public class Progress {
+    public final class Progress {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
@@ -124,7 +124,7 @@ public class Replicator extends NetworkReachabilityListener {
     /**
      * Combined activity level and progress of a replicator.
      */
-    public class Status {
+    public final class Status {
         //---------------------------------------------
         // member variables
         //---------------------------------------------

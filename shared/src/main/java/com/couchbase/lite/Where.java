@@ -19,7 +19,7 @@ import java.util.Arrays;
 /**
  * A Where represents the WHERE clause of the query for filtering the query result.
  */
-public class Where extends Query implements GroupByRouter, OrderByRouter, LimitRouter {
+public final class Where extends Query implements GroupByRouter, OrderByRouter, LimitRouter {
 
     //---------------------------------------------
     // Constructor

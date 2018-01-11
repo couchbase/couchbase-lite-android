@@ -28,6 +28,10 @@ abstract class NetworkReachabilityManager {
 
     private Set<NetworkReachabilityListener> listeners = new HashSet<>();
 
+    NetworkReachabilityManager(){
+
+    }
+
     /**
      * Add Network Reachability Listener
      */

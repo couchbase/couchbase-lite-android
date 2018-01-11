@@ -15,7 +15,7 @@ package com.couchbase.lite;
 
 import com.couchbase.litecore.LiteCoreException;
 
-class LiteCoreBridge {
+final class LiteCoreBridge {
     private LiteCoreBridge() {
 
     }

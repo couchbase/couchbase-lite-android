@@ -3,6 +3,9 @@ package com.couchbase.lite;
 import java.util.List;
 
 public abstract class Index {
+    protected Index() {
+    }
+
     abstract IndexType type();
 
     abstract String locale();

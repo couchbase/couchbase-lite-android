@@ -2,7 +2,7 @@ package com.couchbase.lite;
 
 import java.util.concurrent.Executor;
 
-class QueryChangeListenerToken implements ListenerToken {
+final class QueryChangeListenerToken implements ListenerToken {
     private Executor executor;
     private final QueryChangeListener listener;
 

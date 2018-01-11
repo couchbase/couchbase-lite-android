@@ -2,7 +2,7 @@ package com.couchbase.lite;
 
 import java.util.concurrent.Executor;
 
-class DocumentChangeListenerToken implements ListenerToken {
+final class DocumentChangeListenerToken implements ListenerToken {
     private Executor executor;
     private final DocumentChangeListener listener;
     private final String docID;
