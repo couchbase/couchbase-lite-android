@@ -107,7 +107,7 @@ public final class Database {
     // member variables
     //---------------------------------------------
     private String name;
-    private DatabaseConfiguration config;
+    private final DatabaseConfiguration config;
     private C4Database c4db;
     private ExecutorService executorService;
 
@@ -697,7 +697,7 @@ public final class Database {
     }
 
     ConflictResolver getConflictResolver() {
-        return config != null ? config.getConflictResolver() : null;
+        return config.getConflictResolver();
     }
 
     // Instead of clone()
@@ -800,7 +800,7 @@ public final class Database {
 
                 // Call the conflict resolver:
                 if (resolver == null)
-                    resolver = effectiveConflictResolver();
+                    resolver = getConflictResolver();
                 Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
                 Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)",
                         docID,
@@ -1154,7 +1154,7 @@ public final class Database {
             }
 
             // Resolve conflict:
-            ConflictResolver resolver = effectiveConflictResolver();
+            ConflictResolver resolver = getConflictResolver();
             Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
 
             Document resolved = resolver.resolve(conflict);
@@ -1243,12 +1243,6 @@ public final class Database {
             }
             return commit;
         }
-    }
-
-    private ConflictResolver effectiveConflictResolver() {
-        return getConflictResolver() != null ?
-                getConflictResolver() :
-                new DefaultConflictResolver();
     }
 
     private void shutdownExecutorService() {

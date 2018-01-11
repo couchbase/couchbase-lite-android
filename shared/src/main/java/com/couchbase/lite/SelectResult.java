@@ -72,8 +72,8 @@ public class SelectResult {
 
         if (expression instanceof PropertyExpression)
             return ((PropertyExpression) expression).getColumnName();
-        if (expression instanceof Meta.MetaExpression)
-            return ((Meta.MetaExpression) expression).getColumnName();
+        if (expression instanceof MetaExpression)
+            return ((MetaExpression) expression).getColumnName();
 
         return null;
     }
