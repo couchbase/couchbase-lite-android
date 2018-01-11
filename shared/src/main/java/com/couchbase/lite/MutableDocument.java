@@ -26,6 +26,7 @@ import java.util.UUID;
 public final class MutableDocument extends Document implements MutableDictionaryInterface, C4Constants {
 
     private boolean deleted = false;
+    private boolean saved = false;
 
     //---------------------------------------------
     // Constructors
@@ -249,9 +250,16 @@ public final class MutableDocument extends Document implements MutableDictionary
 
     // For conflict resolver to know that the document is being deleted.
     void markAsDeleted() {
-        this.deleted = true;
+        deleted = true;
     }
 
+    void markAsSaved() {
+        saved = true;
+    }
+
+    boolean isSaved() {
+        return saved;
+    }
 
     static String createUUID() {
         return UUID.randomUUID().toString().toLowerCase(Locale.ENGLISH);

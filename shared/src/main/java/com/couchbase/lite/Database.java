@@ -236,6 +236,10 @@ public final class Database {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
 
+        // not allowed to save with old MutableDocument
+        if (document.isSaved())
+            throw new IllegalArgumentException("a given document parameter is already saved. Not allowed to re-save.");
+
         // NOTE: synchronized in save(Document, boolean) method
         return save(document, false);
     }
@@ -253,8 +257,15 @@ public final class Database {
     public void delete(Document document) throws CouchbaseLiteException {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
+
+
         if (document.isNewDocument())
             throw new IllegalArgumentException("delete operation is not allowed with newly created document");
+
+        // not allowed to delete with old MutableDocument
+        if (document instanceof MutableDocument && ((MutableDocument) document).isSaved())
+            throw new IllegalArgumentException("a given document parameter is already saved or deleted. Not allowed to re-use it.");
+
 
         // No-ops when the document does not exists or has already been deleted in the database.
         if (!document.exists() || document.isDeleted())
@@ -1122,6 +1133,8 @@ public final class Database {
 
                 // save succeeded
                 if (newDoc != null) {
+                    if (document instanceof MutableDocument)
+                        ((MutableDocument) document).markAsSaved();
                     C4Document newC4Doc = C4Document.document(newDoc);
                     return new Document(this, document.getId(), newC4Doc);
                 }

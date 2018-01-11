@@ -16,7 +16,7 @@ package com.couchbase.lite;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class Join {
+public class Join {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
@@ -55,6 +55,10 @@ public abstract class Join {
             return this;
         }
 
+        //---------------------------------------------
+        // Package level access
+        //---------------------------------------------
+        @Override
         Object asJSON() {
             Map<String, Object> json = new HashMap<>();
             json.put("JOIN", super.type);
@@ -92,13 +96,17 @@ public abstract class Join {
         return new On(kCBLInnerJoin, datasource);
     }
 
-    public static On crossJoin(DataSource datasource) {
-        return new On(kCBLCrossJoin, datasource);
+    public static Join crossJoin(DataSource datasource) {
+        return new Join(kCBLCrossJoin, datasource);
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
-    abstract Object asJSON();
+    Object asJSON() {
+        Map<String, Object> json = new HashMap<>();
+        json.put("JOIN", type);
+        json.putAll(dataSource.asJSON());
+        return json;
+    }
 }

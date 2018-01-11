@@ -1,8 +1,5 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.DateUtils;
-
-import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
@@ -14,39 +11,32 @@ import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionCook
  */
 public class SessionAuthenticator extends Authenticator {
 
+    private final static String DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME = "SyncGatewaySession";
     //---------------------------------------------
     // member variables
     //---------------------------------------------
 
     private String sessionID;
-    private Date expires;
     private String cookieName;
 
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
-
-    public SessionAuthenticator(String sessionID, Date expires, String cookieName) {
-        this.sessionID = sessionID;
-        this.expires = expires;
-        this.cookieName = cookieName;
+    public SessionAuthenticator(String sessionID) {
+        this(sessionID, DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME);
     }
 
-    public SessionAuthenticator(String sessionID, String expires, String cookieName) {
+    public SessionAuthenticator(String sessionID, String cookieName) {
         this.sessionID = sessionID;
-        this.expires = DateUtils.fromJson(expires);
-        this.cookieName = cookieName;
+        this.cookieName = cookieName != null ? cookieName : DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME;
     }
+
     //---------------------------------------------
     // Getters
     //---------------------------------------------
 
     public String getSessionID() {
         return sessionID;
-    }
-
-    public Date getExpires() {
-        return expires;
     }
 
     public String getCookieName() {
@@ -63,7 +53,6 @@ public class SessionAuthenticator extends Authenticator {
 
         if (cookieStr.length() > 0)
             cookieStr.append("; ");
-        // TODO: How about expires?
         cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, sessionID));
 
         options.put(kC4ReplicatorOptionCookies, cookieStr.toString());
