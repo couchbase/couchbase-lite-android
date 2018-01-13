@@ -14,7 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * ReadOnlyArray provides readonly access to array data.
+ * Array provides readonly access to array data.
  */
 public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
 
@@ -254,21 +254,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Iterable implementation
     //---------------------------------------------
 
-    private class ArrayIterator implements Iterator<Object> {
-        private int index = 0;
-        private int count = count();
-
-        @Override
-        public boolean hasNext() {
-            return index < count;
-        }
-
-        @Override
-        public Object next() {
-            return getValue(index++);
-        }
-    }
-
     @Override
     public Iterator<Object> iterator() {
         return new ArrayIterator();
@@ -319,5 +304,20 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
 
     MCollection toMCollection() {
         return _array;
+    }
+
+    private class ArrayIterator implements Iterator<Object> {
+        private int index = 0;
+        private int count = count();
+
+        @Override
+        public boolean hasNext() {
+            return index < count;
+        }
+
+        @Override
+        public Object next() {
+            return getValue(index++);
+        }
     }
 }

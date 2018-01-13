@@ -14,14 +14,23 @@ public final class Conflict {
         this.base = base;
     }
 
+    /**
+     * Return the mine version of the document.
+     */
     public Document getMine() {
         return mine;
     }
 
+    /**
+     * Return the theirs version of the document.
+     */
     public Document getTheirs() {
         return theirs;
     }
 
+    /**
+     * Return the base or common anchester version of the document.
+     */
     public Document getBase() {
         return base;
     }

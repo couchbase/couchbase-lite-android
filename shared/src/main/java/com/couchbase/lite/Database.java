@@ -80,10 +80,17 @@ public final class Database {
     // enums
     //---------------------------------------------
 
+    /**
+     * Log domain. The log domains here are tentative and subject to change.
+     */
     public enum LogDomain {
         ALL, DATABASE, QUERY, REPLICATOR, NETWORK
     }
 
+    /**
+     * Log level. The default log level for all domains is warning.
+     * The log levels here are tentative and subject to change.
+     */
     public enum LogLevel {
         DEBUG(Log.DEBUG),
         VERBOSE(Log.VERBOSE),
@@ -237,8 +244,9 @@ public final class Database {
             throw new IllegalArgumentException("a document parameter is null");
 
         // not allowed to save with old MutableDocument
-        if (document.isSaved())
-            throw new IllegalArgumentException("a given document parameter is already saved. Not allowed to re-save.");
+        if (document.isInvalidated())
+            throw new IllegalArgumentException("Do not allow to save or delete the MutableDocument "
+                    + "that has already been used to save or delete.");
 
         // NOTE: synchronized in save(Document, boolean) method
         return save(document, false);
@@ -260,16 +268,13 @@ public final class Database {
 
 
         if (document.isNewDocument())
-            throw new IllegalArgumentException("delete operation is not allowed with newly created document");
+            throw new IllegalArgumentException("Do not allow to delete a newly created document "
+                    + "that has not been saved into the database.");
 
         // not allowed to delete with old MutableDocument
-        if (document instanceof MutableDocument && ((MutableDocument) document).isSaved())
-            throw new IllegalArgumentException("a given document parameter is already saved or deleted. Not allowed to re-use it.");
-
-
-        // No-ops when the document does not exists or has already been deleted in the database.
-        if (!document.exists() || document.isDeleted())
-            return;
+        if (document.isInvalidated())
+            throw new IllegalArgumentException("Do not allow to save or delete the MutableDocument "
+                    + "that has already been used to save or delete.");
 
         // NOTE: synchronized in save(Document, boolean) method
         save(document, true);
@@ -284,15 +289,13 @@ public final class Database {
     public void purge(Document document) throws CouchbaseLiteException {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
+
         if (document.isNewDocument())
-            throw new IllegalArgumentException("purge operation is not allowed with newly created document");
+            throw new IllegalArgumentException("Do not allow to purge a newly created document "
+                    + "that has not been saved into the database.");
 
         synchronized (lock) {
             prepareDocument(document);
-
-            // No-ops when the document doesn’t exists in the database.
-            if (!document.exists())
-                return;
 
             boolean commit = false;
             beginTransaction();
@@ -321,6 +324,9 @@ public final class Database {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void inBatch(Runnable runnable) throws CouchbaseLiteException {
+        if (runnable == null)
+            throw new IllegalArgumentException("The runnable parameter should not be null.");
+
         synchronized (lock) {
             mustBeOpen();
             try {
@@ -1110,6 +1116,24 @@ public final class Database {
                 boolean commit = false;
                 beginTransaction();
                 try {
+                    if (deletion) {
+                        // Check existing, NO-OPS if the document doesn't exist:
+                        C4Document curDoc = null;
+                        try {
+                            curDoc = getC4Database().get(docID, true);
+                        } catch (LiteCoreException e) {
+                            if (e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorNotFound) {
+                                if (document instanceof MutableDocument)
+                                    ((MutableDocument) document).markAsInvalidated();
+                                return null;
+                            } else
+                                throw LiteCoreBridge.convertException(e);
+                        } finally {
+                            if (curDoc != null)
+                                curDoc.free();
+                        }
+                    }
+
                     try {
                         newDoc = save(doc, baseRev, deletion);
                         commit = true;
@@ -1134,7 +1158,7 @@ public final class Database {
                 // save succeeded
                 if (newDoc != null) {
                     if (document instanceof MutableDocument)
-                        ((MutableDocument) document).markAsSaved();
+                        ((MutableDocument) document).markAsInvalidated();
                     C4Document newC4Doc = C4Document.document(newDoc);
                     return new Document(this, document.getId(), newC4Doc);
                 }
@@ -1163,8 +1187,11 @@ public final class Database {
 
             synchronized (lock) {
                 Document current = new Document(this, docID, true);
-                if (resolved.getRevID() != null && resolved.getRevID().equals(current.getRevID()))
+                if (resolved.getRevID() != null && resolved.getRevID().equals(current.getRevID())) {
+                    if (document instanceof MutableDocument)
+                        ((MutableDocument) document).markAsInvalidated();
                     return resolved; // same as current
+                }
 
                 // for saving:
                 doc = resolved;

@@ -16,6 +16,9 @@ package com.couchbase.lite;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A Join component representing a single JOIN clause in the query statement.
+ */
 public class Join {
     //---------------------------------------------
     // static variables
@@ -34,6 +37,10 @@ public class Join {
     //---------------------------------------------
     // Inner public Class
     //---------------------------------------------
+
+    /**
+     * On component used for specifying join conditions.
+     */
     public final static class On extends Join {
         //---------------------------------------------
         // Member variables
@@ -50,8 +57,15 @@ public class Join {
         //---------------------------------------------
         // API - public methods
         //---------------------------------------------
-        public Join on(Expression on) {
-            this.on = on;
+
+        /**
+         * Specify join conditions from the given expression.
+         *
+         * @param expression The Expression object specifying the join conditions.
+         * @return The Join object that represents a single JOIN clause of the query.
+         */
+        public Join on(Expression expression) {
+            this.on = expression;
             return this;
         }
 
@@ -80,22 +94,57 @@ public class Join {
     // API - public static methods
     //---------------------------------------------
 
+    /**
+     * Create a JOIN (same as INNER JOIN) component with the given data source.
+     * Use the returned On component to specify join conditions.
+     *
+     * @param datasource The DataSource object of the JOIN clause.
+     * @return The On object used for specifying join conditions.
+     */
     public static On join(DataSource datasource) {
         return innerJoin(datasource);
     }
 
+    /**
+     * Create a LEFT JOIN (same as LEFT OUTER JOIN) component with the given data source.
+     * Use the returned On component to specify join conditions.
+     *
+     * @param datasource The DataSource object of the JOIN clause.
+     * @return The On object used for specifying join conditions.
+     */
     public static On leftJoin(DataSource datasource) {
         return new On(kCBLOuterJoin, datasource);
     }
 
+    /**
+     * Create a LEFT OUTER JOIN component with the given data source.
+     * Use the returned On component to specify join conditions.
+     *
+     * @param datasource The DataSource object of the JOIN clause.
+     * @return The On object used for specifying join conditions.
+     */
     public static On leftOuterJoin(DataSource datasource) {
         return new On(kCBLLeftOuterJoin, datasource);
     }
 
+    /**
+     * Create an INNER JOIN component with the given data source.
+     * Use the returned On component to specify join conditions.
+     *
+     * @param datasource The DataSource object of the JOIN clause.
+     * @return The On object used for specifying join conditions.
+     */
     public static On innerJoin(DataSource datasource) {
         return new On(kCBLInnerJoin, datasource);
     }
 
+    /**
+     * Create an CROSS JOIN component with the given data source.
+     * Use the returned On component to specify join conditions.
+     *
+     * @param datasource The DataSource object of the JOIN clause.
+     * @return The Join object used for specifying join conditions.
+     */
     public static Join crossJoin(DataSource datasource) {
         return new Join(kCBLCrossJoin, datasource);
     }

@@ -3,6 +3,10 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ *
+ * An Ordering represents a single ordering component in the query ORDER BY clause.
+ */
 public abstract class Ordering {
     //---------------------------------------------
     // Inner public Class

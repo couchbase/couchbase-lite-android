@@ -27,6 +27,9 @@ public final class DocumentChange {
         this.documentID = documentID;
     }
 
+    /**
+     * Return the Database instance
+     */
     public Database getDatabase() {
         return database;
     }

@@ -9,7 +9,7 @@ public class QueryChangeTest {
     public void testQueryChangeTest() {
         QueryChange change = new QueryChange(null, null, null);
         assertNull(change.getQuery());
-        assertNull(change.getResult());
+        assertNull(change.getResults());
         assertNull(change.getError());
     }
 }

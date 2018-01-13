@@ -12,6 +12,7 @@ import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionCook
 public final class SessionAuthenticator extends Authenticator {
 
     private final static String DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME = "SyncGatewaySession";
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -22,10 +23,23 @@ public final class SessionAuthenticator extends Authenticator {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
+
+    /**
+     * Initializes with the Sync Gateway session ID and uses the default cookie name.
+     *
+     * @param sessionID Sync Gateway session ID
+     */
     public SessionAuthenticator(String sessionID) {
         this(sessionID, DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME);
     }
 
+    /**
+     * Initializes with the session ID and the cookie name. If the given cookieName
+     * is null, the default cookie name will be used.
+     *
+     * @param sessionID  Sync Gateway session ID
+     * @param cookieName The cookie name
+     */
     public SessionAuthenticator(String sessionID, String cookieName) {
         this.sessionID = sessionID;
         this.cookieName = cookieName != null ? cookieName : DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME;
@@ -35,10 +49,17 @@ public final class SessionAuthenticator extends Authenticator {
     // Getters
     //---------------------------------------------
 
+    /**
+     * Return session ID of the session created by a Sync Gateway.
+     */
     public String getSessionID() {
         return sessionID;
     }
 
+    /**
+     * Return session cookie name that the session ID value will be set to when communicating
+     * the Sync Gateaway.
+     */
     public String getCookieName() {
         return cookieName;
     }

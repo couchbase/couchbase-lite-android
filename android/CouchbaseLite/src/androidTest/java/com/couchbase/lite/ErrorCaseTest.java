@@ -79,6 +79,19 @@ public class ErrorCaseTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testDeleteDocAfterPurgeDoc() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // purge doc
+        db.purge(saved);
+
+        // no-op
+        db.delete(saved);
+    }
+
     // -- ArrayTest
 
     static class CustomClass {

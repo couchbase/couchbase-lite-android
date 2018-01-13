@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ReadOnlyDictionary provides readonly access to dictionary data.
+ * Dictionary provides readonly access to dictionary data.
  */
 public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<String> {
 

@@ -82,7 +82,6 @@ public class Query {
     // Constructor
     //---------------------------------------------
     Query() {
-        parameters = new Parameters.Builder().build();
     }
 
     //---------------------------------------------
@@ -90,20 +89,22 @@ public class Query {
     //---------------------------------------------
 
     /**
-     * Create a SELECT ALL (*) query. You can then call the Select object's methods such as
-     * from() method to construct the complete Query object.
+     * Create a SELECT statement instance that you can use further
+     * (e.g. calling the from() function) to construct the complete query statement.
      *
-     * @return the Select object.
+     * @param results The array of the SelectResult object for specifying the returned values.
+     * @return A Select object.
      */
     public static Select select(SelectResult... results) {
         return new Select(false, results);
     }
 
     /**
-     * Create a SELECT DISTINCT ALL (*) query. You can then call the Select object's methods such as
-     * from() method to construct the complete Query object.
+     * Create a SELECT DISTINCT statement instance that you can use further
+     * (e.g. calling the from() function) to construct the complete query statement.
      *
-     * @return the Select object.
+     * @param results The array of the SelectResult object for specifying the returned values.
+     * @return A Select distinct object.
      */
     public static Select selectDistinct(SelectResult... results) {
         return new Select(true, results);
@@ -122,8 +123,6 @@ public class Query {
      * changes.
      */
     public void setParameters(Parameters parameters) {
-        if (parameters == null)
-            throw new IllegalArgumentException("parameters is null");
         this.parameters = parameters;
         if (liveQuery != null)
             liveQuery.start();
@@ -144,7 +143,7 @@ public class Query {
     public ResultSet execute() throws CouchbaseLiteException {
         try {
             C4QueryOptions options = new C4QueryOptions();
-            String paramJSON = parameters.encodeAsJSON();
+            String paramJSON = parameters != null ? parameters.encodeAsJSON() : "{}";
             C4QueryEnumerator c4enum;
             synchronized (getDatabase().getLock()) {
                 check();
@@ -177,14 +176,34 @@ public class Query {
         }
     }
 
+    /**
+     * Adds a query change listener. Changes will be posted on the main queue.
+     *
+     * @param listener The listener to post changes.
+     * @return An opaque listener token object for removing the listener.
+     */
     public ListenerToken addChangeListener(QueryChangeListener listener) {
         return liveQuery().addChangeListener(listener);
     }
 
+    /**
+     * Adds a query change listener with the dispatch queue on which changes
+     * will be posted. If the dispatch queue is not specified, the changes will be
+     * posted on the main queue.
+     *
+     * @param executor The executor object that calls listener
+     * @param listener The listener to post changes.
+     * @return An opaque listener token object for removing the listener.
+     */
     public ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
         return liveQuery().addChangeListener(executor, listener);
     }
 
+    /**
+     * Removes a change listener wih the given listener token.
+     *
+     * @param token The listener token.
+     */
     public void removeChangeListener(ListenerToken token) {
         if (token == null || !(token instanceof QueryChangeListenerToken))
             throw new IllegalArgumentException("Invalid ListenerToken is given");

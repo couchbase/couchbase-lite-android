@@ -2,6 +2,9 @@ package com.couchbase.lite;
 
 import android.content.Context;
 
+/**
+ * Configuration for opening a database.
+ */
 public final class DatabaseConfiguration {
     //---------------------------------------------
     // member variables
@@ -14,6 +17,10 @@ public final class DatabaseConfiguration {
     //---------------------------------------------
     // Builder
     //---------------------------------------------
+
+    /**
+     * The builder for the DatabaseConfiguration.
+     */
     public final static class Builder {
         //---------------------------------------------
         // member variables
@@ -23,12 +30,23 @@ public final class DatabaseConfiguration {
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
+
+        /**
+         * Initializes a DatabaseConfiguration's builder with Android Context.
+         *
+         * @param context <a href="https://developer.android.com/reference/android/content/Context.html">Android Context</a>
+         */
         public Builder(Context context) {
             if (context == null)
                 throw new IllegalArgumentException("context parameter is null");
             conf = new DatabaseConfiguration(context);
         }
 
+        /**
+         * Initializes a DatabaseConfiguration's builder with a configuration.
+         *
+         * @param config The configuration.
+         */
         public Builder(DatabaseConfiguration config) {
             if (config == null)
                 throw new IllegalArgumentException("config parameter is null");
@@ -42,6 +60,7 @@ public final class DatabaseConfiguration {
          * Set the path to the directory to store the database in. If the directory doesn't already exist it willbe created when the database is opened.
          *
          * @param directory the directory
+         * @return The self object.
          */
         public DatabaseConfiguration.Builder setDirectory(String directory) {
             if (directory == null)
@@ -55,12 +74,22 @@ public final class DatabaseConfiguration {
          * it will use this key, and the same key must be given every time it's opened
          *
          * @param encryptionKey the key
+         * @return The self object.
          */
         public DatabaseConfiguration.Builder setEncryptionKey(EncryptionKey encryptionKey) {
             conf.encryptionKey = encryptionKey;
             return this;
         }
 
+        /**
+         * Sets a custom conflict resolver used for solving the conflicts
+         * when saving or deleting documents in the database. Without setting the
+         * conflict resolver, CouchbaseLite will use the default conflict
+         * resolver.
+         *
+         * @param conflictResolver The conflict resolver.
+         * @return The self object.
+         */
         public DatabaseConfiguration.Builder setConflictResolver(ConflictResolver conflictResolver) {
             if (conflictResolver == null)
                 throw new IllegalArgumentException("conflictResolver parameter is null");
@@ -71,6 +100,12 @@ public final class DatabaseConfiguration {
         //---------------------------------------------
         // public API
         //---------------------------------------------
+
+        /**
+         * Builds a database configuration object from the current settings.
+         *
+         * @return the DatabaseConfiguration object
+         */
         public DatabaseConfiguration build() {
             return conf.copy();
         }
@@ -120,6 +155,11 @@ public final class DatabaseConfiguration {
     }
 
 
+    /**
+     * Returns the conflict resolver for this database.
+     *
+     * @return the conflict resolver
+     */
     public ConflictResolver getConflictResolver() {
         return conflictResolver;
     }

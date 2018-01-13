@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Value (standard query) index
+ */
 public final class ValueIndex extends Index {
     private List<ValueIndexItem> indexItems;
 

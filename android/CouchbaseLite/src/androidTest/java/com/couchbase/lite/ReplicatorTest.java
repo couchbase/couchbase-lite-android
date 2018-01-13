@@ -89,6 +89,9 @@ public class ReplicatorTest extends BaseReplicatorTest {
         ReplicatorConfiguration.Builder builder = makeConfig(false, true, false);
         run(builder.build(), 0, null);
 
+        // NOTE: There is some timing issue between repl notification and Database.count().
+        Thread.sleep(100);
+
         assertEquals(2, db.getCount());
         Document doc2a = db.getDocument("doc2");
         assertEquals("Cat", doc2a.getString("name"));

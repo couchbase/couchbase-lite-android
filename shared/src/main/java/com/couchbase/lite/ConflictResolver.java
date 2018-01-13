@@ -19,5 +19,12 @@ package com.couchbase.lite;
  * and also when the replicator pulls a remote revision that conflicts with a locally-saved revision.
  */
 public interface ConflictResolver {
+    /**
+     * Resolves the given conflict. Returning a nil document means giving up the conflict resolution
+     * and will result to a conflicting error returned when saving the document.
+     *
+     * @param conflict The conflict object.
+     * @return The result document of the conflict resolution.
+     */
     Document resolve(Conflict conflict);
 }

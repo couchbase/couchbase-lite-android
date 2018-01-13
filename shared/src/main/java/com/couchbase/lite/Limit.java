@@ -3,6 +3,9 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A Limit component represents the LIMIT clause of the query statement.
+ */
 public class Limit extends Query {
     //---------------------------------------------
     // member variables

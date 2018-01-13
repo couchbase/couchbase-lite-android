@@ -34,6 +34,12 @@ import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLeve
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
 import static java.util.Collections.synchronizedSet;
 
+/**
+ * A replicator for replicating document changes between a local database and a target database.
+ * The replicator can be bidirectional or either push or pull. The replicator can also be one-short
+ * or continuous. The replicator runs asynchronously, so observe the status property to
+ * be notified of progress.
+ */
 public final class Replicator extends NetworkReachabilityListener {
     private static final String TAG = Log.SYNC;
 
@@ -354,7 +360,8 @@ public final class Replicator extends NetworkReachabilityListener {
         if (remoteURI != null) {
             schema = remoteURI.getScheme();
             host = remoteURI.getHost();
-            port = remoteURI.getPort();
+            // NOTE: litecore use 0 for not set
+            port = remoteURI.getPort() <= 0 ? 0 : remoteURI.getPort();
             path = StringUtils.stringByDeletingLastPathComponent(remoteURI.getPath());
             dbName = StringUtils.lastPathComponent(remoteURI.getPath());
         }

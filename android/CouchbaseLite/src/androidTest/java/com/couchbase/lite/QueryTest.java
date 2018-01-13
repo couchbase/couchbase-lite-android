@@ -1355,7 +1355,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void changed(QueryChange change) {
                 assertNotNull(change);
-                ResultSet rs = change.getResult();
+                ResultSet rs = change.getResults();
                 assertNotNull(rs);
                 if (latch.getCount() == 2) {
                     int count = 0;
@@ -1423,7 +1423,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void changed(QueryChange change) {
                 if (consumeAll) {
-                    ResultSet rs = change.getResult();
+                    ResultSet rs = change.getResults();
                     while (rs.next() != null) ;
                 }
                 latch.countDown();
@@ -1874,7 +1874,7 @@ public class QueryTest extends BaseTest {
             query.addChangeListener(new QueryChangeListener() {
                 @Override
                 public void changed(QueryChange change) {
-                    for (Result r : change.getResult()) {
+                    for (Result r : change.getResults()) {
                         if (r.getString("id").equals("doc1"))
                             latch1.countDown();
                         else if (r.getString("id").equals("doc2"))

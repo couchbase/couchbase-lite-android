@@ -23,7 +23,22 @@ import java.util.Locale;
  * An expression used for constructing a query statement.
  */
 public abstract class Expression {
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    Expression() {
 
+    }
+
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
+
+    /**
+     * Creates a * expression to express all properties
+     *
+     * @return a property expression.
+     */
     public static PropertyExpression all() {
         return new PropertyExpression(PropertyExpression.kCBLAllPropertiesName);
     }
@@ -38,6 +53,11 @@ public abstract class Expression {
         return new PropertyExpression(property);
     }
 
+    /**
+     * Creates a parameter expression with the given parameter name.
+     * @param name The parameter name
+     * @return A parameter expression.
+     */
     public static Expression parameter(String name) {
         return new ParameterExpression(name);
     }
@@ -269,16 +289,38 @@ public abstract class Expression {
 
     // Null or Missing:
 
+
+    /**
+     * Creates an IS NULL OR MISSING expression that evaluates whether or not the current
+     * expression is null or missing.
+     *
+     * @return An IS NULL expression.
+     */
     public Expression isNullOrMissing() {
         return new UnaryExpression(this, UnaryExpression.OpType.Null)
                 .or(new UnaryExpression(this, UnaryExpression.OpType.Missing));
     }
 
+    /**
+     * Creates an IS NOT NULL OR MISSING expression that evaluates whether or not the current
+     * expression is NOT null or missing.
+     *
+     * @return An IS NOT NULL expression.
+     */
     public Expression notNullOrMissing() {
         return negated(isNullOrMissing());
     }
 
     // Collation:
+
+    /**
+     * Creates a Collate expression with the given Collation specification. Commonly
+     * the collate expression is used in the Order BY clause or the string comparison
+     * 　expression (e.g. equalTo or lessThan) to specify how the two strings are　compared.
+     *
+     * @param collation 　The collation object.
+     * @return A Collate expression.
+     */
     public Expression collate(Collation collation) {
         return new CollationExpression(this, collation);
     }
@@ -309,7 +351,7 @@ public abstract class Expression {
 
     abstract Object asJSON();
 
-    static class AggregateExpression extends Expression {
+    static final class AggregateExpression extends Expression {
         private List<Object> expressions;
 
         AggregateExpression(List<Object> expressions) {
@@ -330,7 +372,7 @@ public abstract class Expression {
         }
     }
 
-    static class BinaryExpression extends Expression {
+    static final class BinaryExpression extends Expression {
         enum OpType {
             Add, Between, Divide, EqualTo, GreaterThan, GreaterThanOrEqualTo,
             In, Is, IsNot, LessThan, LessThanOrEqualTo, Like, /*Matches,*/
@@ -419,7 +461,7 @@ public abstract class Expression {
         }
     }
 
-    static class CompoundExpression extends Expression {
+    static final class CompoundExpression extends Expression {
         enum OpType {
             And,
             Or,
@@ -555,6 +597,38 @@ public abstract class Expression {
             json.add("COLLATE");
             json.add(collation.asJSON());
             json.add(operand.asJSON());
+            return json;
+        }
+    }
+
+    static final class FunctionExpresson extends Expression {
+        //---------------------------------------------
+        // member variables
+        //---------------------------------------------
+        private String func = null;
+        private List<Object> params = null;
+
+        //---------------------------------------------
+        // Constructors
+        //---------------------------------------------
+        FunctionExpresson(String func, List<Object> params) {
+            this.func = func;
+            this.params = params;
+        }
+
+        //---------------------------------------------
+        // public level access
+        //---------------------------------------------
+        @Override
+        Object asJSON() {
+            List<Object> json = new ArrayList<>();
+            json.add(func);
+            for (Object param : params) {
+                if (param != null && param instanceof Expression)
+                    json.add(((Expression) param).asJSON());
+                else
+                    json.add(param);
+            }
             return json;
         }
     }

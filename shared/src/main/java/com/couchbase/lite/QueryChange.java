@@ -1,5 +1,9 @@
 package com.couchbase.lite;
 
+/**
+ * QueryChange contains the information about the query result changes reported
+ * by a query object.
+ */
 public final class QueryChange {
     //---------------------------------------------
     // member variables
@@ -21,14 +25,23 @@ public final class QueryChange {
     // API - public methods
     //---------------------------------------------
 
+    /**
+     * Return the source live query object.
+     */
     public Query getQuery() {
         return query;
     }
 
-    public ResultSet getResult() {
+    /**
+     * Return the new query result.
+     */
+    public ResultSet getResults() {
         return rs;
     }
 
+    /**
+     * Return the error occurred when running the query.
+     */
     public Throwable getError() {
         return error;
     }

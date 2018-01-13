@@ -60,8 +60,8 @@ public class ResultSet implements Iterable<Result> {
 
     /**
      * Move the cursor forward one row from its current row position.
-     * <p>
-     * Caution: next() method and iterator() method share same data structure. Please don't use them together.
+     * Caution: next() method and iterator() method share same data structure.
+     * Please don't use them together.
      *
      * @return the Result after moving the cursor forward. Returns {@code null} value
      * if there are no more rows.
@@ -89,7 +89,11 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
 
     /**
-     * Caution: next() method and iterator() method share same data structure. Please don't use them together.
+     * Returns an iterator over the elements in this list in proper sequence.
+     * Caution: next() method and iterator() method share same data structure.
+     * Please don't use them together.
+     *
+     * @return an iterator over the elements in this list in proper sequence
      */
     @Override
     public Iterator<Result> iterator() {

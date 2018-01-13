@@ -3,6 +3,9 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Property expression
+ */
 public final class PropertyExpression extends Expression {
     final static String kCBLAllPropertiesName = "";
 
@@ -30,6 +33,12 @@ public final class PropertyExpression extends Expression {
     // public level access
     //---------------------------------------------
 
+    /**
+     * Specifies an alias name of the data source to query the data from.
+     *
+     * @param alias The alias name of the data source.
+     * @return The property Expression with the given data source alias name.
+     */
     public Expression from(String alias) {
         return new PropertyExpression(this.keyPath, alias);
     }

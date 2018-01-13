@@ -3,6 +3,9 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A meta property expression.
+ */
 public class MetaExpression extends Expression {
     private final String keyPath;
     private String columnName;
@@ -22,6 +25,13 @@ public class MetaExpression extends Expression {
     //---------------------------------------------
     // public level access
     //---------------------------------------------
+
+    /**
+     * Specifies an alias name of the data source to query the data from.
+     *
+     * @param alias The data source alias name.
+     * @return The Meta expression with the given alias name specified.
+     */
     public Expression from(String alias) {
         return new MetaExpression(this.keyPath, alias);
     }
