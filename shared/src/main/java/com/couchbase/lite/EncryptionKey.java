@@ -7,7 +7,7 @@ import com.couchbase.litecore.C4Key;
  * or a password string. If the password string is given, it will be internally converted to a
  * raw AES key using 64,000 rounds of PBKDF2 hashing.
  */
-public class EncryptionKey {
+public final class EncryptionKey {
     private static final int kKeySize = 32; // 256-bit (32-byte)
     private static final String DEFAULT_PBKDF2_KEY_SALT = "Salty McNaCl";
     private static final int DEFAULT_PBKDF2_KEY_ROUNDS = 64000; // Same as what SQLCipher uses

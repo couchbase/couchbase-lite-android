@@ -2,12 +2,14 @@ package com.couchbase.lite;
 
 import android.support.test.InstrumentationRegistry;
 
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.Config;
 
 import org.junit.After;
 import org.junit.Before;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -25,40 +27,42 @@ public class BaseReplicatorTest extends BaseTest {
     Replicator repl;
     long timeout;  // seconds
 
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull,
-                                                 boolean continuous) {
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
+                                                         boolean continuous) {
         return makeConfig(push, pull, continuous, this.otherDB);
     }
 
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull,
-                                                 boolean continuous, Database target) {
-        ReplicatorConfiguration config = new ReplicatorConfiguration(this.db, target);
-        config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
-        config.setContinuous(continuous);
-        return config;
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
+                                                         boolean continuous, Database targetDatabase) {
+        DatabaseEndpoint endpoint = new DatabaseEndpoint(targetDatabase);
+        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(this.db, endpoint);
+        builder.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
+        builder.setContinuous(continuous);
+        return builder;
     }
 
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull,
-                                                 boolean continuous, String targetURI) {
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
+                                                         boolean continuous, String targetURI) throws URISyntaxException {
         return makeConfig(push, pull, continuous, URI.create(targetURI));
     }
 
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull,
-                                                 boolean continuous, URI target) {
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
+                                                         boolean continuous, URI target) throws URISyntaxException {
         return makeConfig(push, pull, continuous, this.db, target);
     }
 
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull,
-                                                 boolean continuous, Database db, String targetURI) {
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
+                                                         boolean continuous, Database db, String targetURI) throws URISyntaxException {
         return makeConfig(push, pull, continuous, db, URI.create(targetURI));
     }
 
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull,
-                                                 boolean continuous, Database db, URI target) {
-        ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
-        config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
-        config.setContinuous(continuous);
-        return config;
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
+                                                         boolean continuous, Database db, URI targetURI) throws URISyntaxException {
+        URLEndpoint endpoint = new URLEndpoint(targetURI.getHost(), targetURI.getPort(), targetURI.getPath(), false);
+        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(this.db, endpoint);
+        builder.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
+        builder.setContinuous(continuous);
+        return builder;
     }
 
     protected void run(final ReplicatorConfiguration config, final int code, final String domain)

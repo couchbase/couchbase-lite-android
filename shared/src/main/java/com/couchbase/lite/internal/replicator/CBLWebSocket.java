@@ -1,6 +1,6 @@
 package com.couchbase.lite.internal.replicator;
 
-import com.couchbase.lite.Log;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Socket;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
@@ -50,7 +50,11 @@ import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrUnknownHost;
 
-public class CBLWebSocket extends C4Socket {
+/**
+ * NOTE: CBLWebSocket class should be public as this class is instantiated
+ * from com.couchbase.litecore package.
+ */
+public final class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
@@ -172,7 +176,7 @@ public class CBLWebSocket extends C4Socket {
                     closed(handle, POSIXDomain, ECONNRESET);
                 }
                 // UnknownHostException - this is thrown if Airplane mode, offline
-                else if(t instanceof java.net.UnknownHostException){
+                else if (t instanceof java.net.UnknownHostException) {
                     closed(handle, NetworkDomain, kC4NetErrUnknownHost);
                 }
                 // Unknown

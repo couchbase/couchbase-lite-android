@@ -17,5 +17,10 @@ package com.couchbase.lite;
  * The listener interface for receiving Document change events.
  */
 public interface DocumentChangeListener {
+    /**
+     * Callback function from Database when the specified document is updated.
+     *
+     * @param change
+     */
     void changed(DocumentChange change);
 }

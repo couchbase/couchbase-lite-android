@@ -19,7 +19,7 @@ import java.util.Arrays;
 /**
  * A From represents a FROM clause for specifying the data source of the query.
  */
-public class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
+public final class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
@@ -32,6 +32,13 @@ public class From extends Query implements JoinRouter, WhereRouter, GroupByRoute
     //---------------------------------------------
     // implementation of JoinRouter
     //---------------------------------------------
+
+    /**
+     * Creates and chains a Joins object for specifying the JOIN clause of the query.
+     *
+     * @param joins The Join objects.
+     * @return The Joins object that represents the JOIN clause of the query.
+     */
     @Override
     public Joins join(Join... joins) {
         return new Joins(this, Arrays.asList(joins));
@@ -55,6 +62,13 @@ public class From extends Query implements JoinRouter, WhereRouter, GroupByRoute
     //---------------------------------------------
     // implementation of GroupByRouter
     //---------------------------------------------
+
+    /**
+     * Creates and chains a GroupBy object to group the query result.
+     *
+     * @param expressions The group by expression.
+     * @return The GroupBy object that represents the GROUP BY clause of the query.
+     */
     @Override
     public GroupBy groupBy(Expression... expressions) {
         return new GroupBy(this, Arrays.asList(expressions));
@@ -79,11 +93,25 @@ public class From extends Query implements JoinRouter, WhereRouter, GroupByRoute
     // implementation of LimitRouter
     //---------------------------------------------
 
+    /**
+     * Creates and chains a Limit object to limit the number query results.
+     *
+     * @param limit The limit expression.
+     * @return The Limit object that represents the LIMIT clause of the query.
+     */
     @Override
     public Limit limit(Object limit) {
         return new Limit(this, limit, null);
     }
 
+    /**
+     * Creates and chains a Limit object to skip the returned results for the given offset
+     * position and to limit the number of results to not more than the given limit value.
+     *
+     * @param limit  The limit expression.
+     * @param offset The offset expression.
+     * @return The Limit object that represents the LIMIT clause of the query.
+     */
     @Override
     public Limit limit(Object limit, Object offset) {
         return new Limit(this, limit, offset);

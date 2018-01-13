@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.IOUtils;
 
 import org.junit.After;
@@ -66,11 +67,11 @@ public class DatabaseEncryptionTest extends BaseTest {
     }
 
     Database openSeekrit(String password) throws CouchbaseLiteException {
-        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
         if (password != null)
-            config.setEncryptionKey(new EncryptionKey(password));
-        config.setDirectory(this.dir);
-        return new Database("seekrit", config);
+            builder.setEncryptionKey(new EncryptionKey(password));
+        builder.setDirectory(this.dir.getAbsolutePath());
+        return new Database("seekrit", builder.build());
     }
 
     @Test
@@ -81,7 +82,7 @@ public class DatabaseEncryptionTest extends BaseTest {
 
         Map<String, Object> map = new HashMap<>();
         map.put("answer", 42);
-        MutableDocument doc = createDocument(null, map);
+        MutableDocument doc = createMutableDocument(null, map);
         seekrit.save(doc);
         seekrit.close();
         seekrit = null;
@@ -109,7 +110,7 @@ public class DatabaseEncryptionTest extends BaseTest {
 
         Map<String, Object> map = new HashMap<>();
         map.put("answer", 42);
-        MutableDocument doc = createDocument(null, map);
+        MutableDocument doc = createMutableDocument(null, map);
         seekrit.save(doc);
         seekrit.close();
         seekrit = null;
@@ -180,17 +181,19 @@ public class DatabaseEncryptionTest extends BaseTest {
         // Create a doc and then update it:
         Map<String, Object> map = new HashMap<>();
         map.put("answer", 42);
-        MutableDocument doc = createDocument(null, map);
-        seekrit.save(doc);
+        MutableDocument doc = createMutableDocument(null, map);
+        Document savedDoc = seekrit.save(doc);
+        doc = savedDoc.toMutable();
         doc.setValue("answer", 84);
-        seekrit.save(doc);
+        savedDoc = seekrit.save(doc);
 
         // Compact:
         seekrit.compact();
 
         // Update the document again:
+        doc = savedDoc.toMutable();
         doc.setValue("answer", 85);
-        seekrit.save(doc);
+        savedDoc = seekrit.save(doc);
 
         // Close and re-open:
         seekrit.close();
@@ -211,7 +214,7 @@ public class DatabaseEncryptionTest extends BaseTest {
 
         // Save a doc with a blob:
         byte[] body = "This is a blob!".getBytes();
-        MutableDocument mDoc = createDocument("att");
+        MutableDocument mDoc = createMutableDocument("att");
         Blob blob = new Blob("text/plain", body);
         mDoc.setBlob("blob", blob);
         Document doc = seekrit.save(mDoc);
@@ -275,7 +278,7 @@ public class DatabaseEncryptionTest extends BaseTest {
                 for (int i = 0; i < 100; i++) {
                     Map<String, Object> map = new HashMap<>();
                     map.put("seq", i);
-                    MutableDocument doc = createDocument(null, map);
+                    MutableDocument doc = createMutableDocument(null, map);
                     try {
                         seekrit.save(doc);
                     } catch (CouchbaseLiteException e) {

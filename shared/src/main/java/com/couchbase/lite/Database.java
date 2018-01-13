@@ -13,15 +13,19 @@
  */
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.bridge.LiteCoreBridge;
-import com.couchbase.lite.internal.database.DatabaseChangeListenerToken;
-import com.couchbase.lite.internal.database.DocumentChangeListenerToken;
-import com.couchbase.lite.internal.query.LiveQuery;
-import com.couchbase.lite.internal.support.FileUtils;
-import com.couchbase.lite.internal.support.JsonUtils;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.litecore.C4;
 import com.couchbase.litecore.C4BlobStore;
 import com.couchbase.litecore.C4Constants;
+import com.couchbase.litecore.C4Constants.C4DatabaseFlags;
+import com.couchbase.litecore.C4Constants.C4DocumentVersioning;
+import com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm;
+import com.couchbase.litecore.C4Constants.C4LogDomain;
+import com.couchbase.litecore.C4Constants.C4ErrorDomain;
+import com.couchbase.litecore.C4Constants.C4RevisionFlags;
+import com.couchbase.litecore.C4Constants.LiteCoreError;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4DatabaseChange;
 import com.couchbase.litecore.C4DatabaseObserver;
@@ -30,7 +34,6 @@ import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.C4DocumentObserver;
 import com.couchbase.litecore.C4DocumentObserverListener;
 import com.couchbase.litecore.LiteCoreException;
-import com.couchbase.litecore.NativeLibraryLoader;
 import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLSliceResult;
 
@@ -49,17 +52,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm.kC4EncryptionAES256;
-import static com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm.kC4EncryptionNone;
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevHasAttachments;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotOpen;
-
 /**
  * A Couchbase Lite database.
  */
-public final class Database implements C4Constants {
+public final class Database {
 
     //---------------------------------------------
     // Load LiteCore library and its dependencies
@@ -84,10 +80,17 @@ public final class Database implements C4Constants {
     // enums
     //---------------------------------------------
 
+    /**
+     * Log domain. The log domains here are tentative and subject to change.
+     */
     public enum LogDomain {
         ALL, DATABASE, QUERY, REPLICATOR, NETWORK
     }
 
+    /**
+     * Log level. The default log level for all domains is warning.
+     * The log levels here are tentative and subject to change.
+     */
     public enum LogLevel {
         DEBUG(Log.DEBUG),
         VERBOSE(Log.VERBOSE),
@@ -111,7 +114,7 @@ public final class Database implements C4Constants {
     // member variables
     //---------------------------------------------
     private String name;
-    private DatabaseConfiguration config;
+    private final DatabaseConfiguration config;
     private C4Database c4db;
     private ExecutorService executorService;
 
@@ -146,7 +149,7 @@ public final class Database implements C4Constants {
             throw new IllegalArgumentException("DatabaseConfiguration should not be null.");
 
         this.name = name;
-        this.config = config.copy();
+        this.config = config;
         String tempdir = config.getTempDir();
         if (tempdir != null)
             C4.setenv("TMPDIR", tempdir, 1);
@@ -201,7 +204,7 @@ public final class Database implements C4Constants {
      * @return the copied config object
      */
     public DatabaseConfiguration getConfig() {
-        return config.copy();
+        return config;
     }
 
     // GET EXISTING DOCUMENT
@@ -210,32 +213,23 @@ public final class Database implements C4Constants {
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
      * exist in the database, the value returned will be null.
      *
-     * @param documentID the document ID
+     * @param id the document ID
      * @return the Document object
      */
-    public Document getDocument(String documentID) {
-        if (documentID == null)
+    public Document getDocument(String id) {
+        if (id == null)
             throw new IllegalArgumentException("a documentID parameter is null");
 
         synchronized (lock) {
             mustBeOpen();
             try {
-                return new Document(this, documentID, false);
+                return new Document(this, id, false);
             } catch (CouchbaseLiteException ex) {
                 // only 404 - Not Found error throws CouchbaseLiteException
                 return null;
             }
         }
     }
-
-    // CHECK DOCUMENT EXISTS
-    public boolean contains(String documentID) {
-        return getDocument(documentID) != null;
-    }
-
-    // SUBSCRIPTION
-
-    // SAVE DELETE PURGE
 
     /**
      * Saves the given document to the database. If the document in the database has been updated
@@ -248,6 +242,11 @@ public final class Database implements C4Constants {
     public Document save(MutableDocument document) throws CouchbaseLiteException {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
+
+        // not allowed to save with old MutableDocument
+        if (document.isInvalidated())
+            throw new IllegalArgumentException("Do not allow to save or delete the MutableDocument "
+                    + "that has already been used to save or delete.");
 
         // NOTE: synchronized in save(Document, boolean) method
         return save(document, false);
@@ -267,6 +266,16 @@ public final class Database implements C4Constants {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
 
+
+        if (document.isNewDocument())
+            throw new IllegalArgumentException("Do not allow to delete a newly created document "
+                    + "that has not been saved into the database.");
+
+        // not allowed to delete with old MutableDocument
+        if (document.isInvalidated())
+            throw new IllegalArgumentException("Do not allow to save or delete the MutableDocument "
+                    + "that has already been used to save or delete.");
+
         // NOTE: synchronized in save(Document, boolean) method
         save(document, true);
     }
@@ -281,11 +290,12 @@ public final class Database implements C4Constants {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
 
+        if (document.isNewDocument())
+            throw new IllegalArgumentException("Do not allow to purge a newly created document "
+                    + "that has not been saved into the database.");
+
         synchronized (lock) {
             prepareDocument(document);
-
-            if (!document.exists())
-                throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
 
             boolean commit = false;
             beginTransaction();
@@ -310,10 +320,13 @@ public final class Database implements C4Constants {
      * like multiple inserts/updates; it saves the overhead of multiple database commits, greatly
      * improving performance.
      *
-     * @param action the action which is implementation of Runnable interface
+     * @param runnable the action which is implementation of Runnable interface
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
-    public void inBatch(Runnable action) throws CouchbaseLiteException {
+    public void inBatch(Runnable runnable) throws CouchbaseLiteException {
+        if (runnable == null)
+            throw new IllegalArgumentException("The runnable parameter should not be null.");
+
         synchronized (lock) {
             mustBeOpen();
             try {
@@ -321,7 +334,7 @@ public final class Database implements C4Constants {
                 getC4Database().beginTransaction();
                 try {
                     try {
-                        action.run();
+                        runnable.run();
                         commit = true;
                     } catch (RuntimeException e) {
                         throw new CouchbaseLiteException(e);
@@ -397,17 +410,18 @@ public final class Database implements C4Constants {
     /**
      * Add the given DocumentChangeListener to the specified document.
      */
-    public ListenerToken addDocumentChangeListener(String docID, DocumentChangeListener listener) {
-        return addDocumentChangeListener(docID, null, listener);
+    public ListenerToken addDocumentChangeListener(String id, DocumentChangeListener listener) {
+        return addDocumentChangeListener(id, null, listener);
     }
 
-    public ListenerToken addDocumentChangeListener(String docID, Executor executor, DocumentChangeListener listener) {
-        if (docID == null || listener == null)
+    public ListenerToken addDocumentChangeListener(String id, Executor executor,
+                                                   DocumentChangeListener listener) {
+        if (id == null || listener == null)
             throw new IllegalArgumentException("a listener parameter and/or a listener parameter are null");
 
         synchronized (lock) {
             mustBeOpen();
-            return addDocumentChangeListener(executor, listener, docID);
+            return addDocumentChangeListener(executor, listener, id);
         }
     }
 
@@ -475,7 +489,9 @@ public final class Database implements C4Constants {
     public void setEncryptionKey(EncryptionKey encryptionKey) throws CouchbaseLiteException {
         synchronized (lock) {
             mustBeOpen();
-            int keyType = encryptionKey == null || encryptionKey.getKey() == null ? kC4EncryptionNone : kC4EncryptionAES256;
+            int keyType = encryptionKey == null || encryptionKey.getKey() == null ?
+                    C4EncryptionAlgorithm.kC4EncryptionNone :
+                    C4EncryptionAlgorithm.kC4EncryptionAES256;
             try {
                 c4db.rekey(keyType, encryptionKey.getKey());
             } catch (LiteCoreException e) {
@@ -563,16 +579,16 @@ public final class Database implements C4Constants {
         return getDatabasePath(directory, name).exists();
     }
 
-    public static void copy(File path, String name, DatabaseConfiguration config) throws CouchbaseLiteException {
-
+    public static void copy(File path, String name, DatabaseConfiguration config)
+            throws CouchbaseLiteException {
         String fromPath = path.getPath();
         if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar)
             fromPath += File.separator;
-        String toPath = getDatabasePath(config.getDirectory(), name).getPath();
+        String toPath = getDatabasePath(new File(config.getDirectory()), name).getPath();
         if (toPath.charAt(toPath.length() - 1) != File.separatorChar)
             toPath += File.separator;
         int databaseFlags = DEFAULT_DATABASE_FLAGS;
-        int encryptionAlgorithm = kC4EncryptionNone;
+        int encryptionAlgorithm = C4EncryptionAlgorithm.kC4EncryptionNone;
         byte[] encryptionKey = null;
 
         try {
@@ -687,7 +703,7 @@ public final class Database implements C4Constants {
     }
 
     ConflictResolver getConflictResolver() {
-        return config != null ? config.getConflictResolver() : null;
+        return config.getConflictResolver();
     }
 
     // Instead of clone()
@@ -699,7 +715,8 @@ public final class Database implements C4Constants {
 
     void mustBeOpen() {
         if (c4db == null)
-            throw new CouchbaseLiteRuntimeException("A database is not open", LiteCoreDomain, kC4ErrorNotOpen);
+            throw new CouchbaseLiteRuntimeException("A database is not open",
+                    C4ErrorDomain.LiteCoreDomain, LiteCoreError.kC4ErrorNotOpen);
     }
 
     /**
@@ -749,8 +766,7 @@ public final class Database implements C4Constants {
     }
 
 
-    // TODO: access level
-    public Set<LiveQuery> getActiveLiveQueries() {
+    Set<LiveQuery> getActiveLiveQueries() {
         return activeLiveQueries;
     }
 
@@ -790,7 +806,7 @@ public final class Database implements C4Constants {
 
                 // Call the conflict resolver:
                 if (resolver == null)
-                    resolver = effectiveConflictResolver();
+                    resolver = getConflictResolver();
                 Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
                 Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)",
                         docID,
@@ -800,12 +816,13 @@ public final class Database implements C4Constants {
                         baseDoc != null ? baseDoc.getRevID() : "null");
                 Document resolved = resolver.resolve(conflict);
                 if (resolved == null)
-                    throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
+                    throw new CouchbaseLiteException(C4ErrorDomain.LiteCoreDomain,
+                            LiteCoreError.kC4ErrorConflict);
 
                 try {
                     return saveResolvedDocument(resolved, conflict);
                 } catch (LiteCoreException e) {
-                    if (e.domain == LiteCoreDomain && e.code == kC4ErrorConflict)
+                    if (e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict)
                         continue;
                     else
                         throw LiteCoreBridge.convertException(e);
@@ -824,7 +841,7 @@ public final class Database implements C4Constants {
         if (c4db != null)
             return;
 
-        File dir = config.getDirectory() != null ? config.getDirectory() : getDefaultDirectory();
+        File dir = config.getDirectory() != null ? new File(config.getDirectory()) : getDefaultDirectory();
         setupDirectory(dir);
 
         File dbFile = getDatabasePath(dir, this.name);
@@ -832,7 +849,8 @@ public final class Database implements C4Constants {
         int databaseFlags = getDatabaseFlags();
 
         // encryption key
-        int encryptionAlgorithm = config.getEncryptionKey() == null ? kC4EncryptionNone : kC4EncryptionAES256;
+        int encryptionAlgorithm = config.getEncryptionKey() == null ?
+                C4EncryptionAlgorithm.kC4EncryptionNone : C4EncryptionAlgorithm.kC4EncryptionAES256;
         byte[] encryptionKey = config.getEncryptionKey() == null ? null : config.getEncryptionKey().getKey();
 
         Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
@@ -910,7 +928,8 @@ public final class Database implements C4Constants {
     // --- Notification: - C4DatabaseObserver/C4DocumentObserver
 
     // Database changes:
-    private DatabaseChangeListenerToken addDatabaseChangeListener(Executor executor, DatabaseChangeListener listener) {
+    private DatabaseChangeListenerToken addDatabaseChangeListener(Executor executor,
+                                                                  DatabaseChangeListener listener) {
         // NOTE: caller method is synchronized.
         if (dbListenerTokens.isEmpty())
             registerC4DBObserver();
@@ -927,7 +946,9 @@ public final class Database implements C4Constants {
     }
 
     // Document changes:
-    private DocumentChangeListenerToken addDocumentChangeListener(Executor executor, DocumentChangeListener listener, String docID) {
+    private DocumentChangeListenerToken addDocumentChangeListener(Executor executor,
+                                                                  DocumentChangeListener listener,
+                                                                  String docID) {
         // NOTE: caller method is synchronized.
         if (!docListenerTokens.containsKey(docID)) {
             Set<DocumentChangeListenerToken> listeners = new HashSet<>();
@@ -979,17 +1000,19 @@ public final class Database implements C4Constants {
         if (c4DocObservers.containsKey(docID))
             return;
 
-        C4DocumentObserver docObserver = c4db.createDocumentObserver(docID, new C4DocumentObserverListener() {
-            @Override
-            public void callback(C4DocumentObserver observer, final String docID, final long sequence, Object context) {
-                executorService.submit(new Runnable() {
+        C4DocumentObserver docObserver = c4db.createDocumentObserver(docID,
+                new C4DocumentObserverListener() {
                     @Override
-                    public void run() {
-                        postDocumentChanged(docID);
+                    public void callback(C4DocumentObserver observer, final String docID,
+                                         final long sequence, Object context) {
+                        executorService.submit(new Runnable() {
+                            @Override
+                            public void run() {
+                                postDocumentChanged(docID);
+                            }
+                        });
                     }
-                });
-            }
-        }, this);
+                }, this);
 
         c4DocObservers.put(docID, docObserver);
     }
@@ -1057,7 +1080,7 @@ public final class Database implements C4Constants {
 
             Set<DocumentChangeListenerToken> tokens = docListenerTokens.get(documentID);
             if (tokens != null) {
-                DocumentChange change = new DocumentChange(documentID);
+                DocumentChange change = new DocumentChange(this, documentID);
                 for (DocumentChangeListenerToken token : tokens)
                     token.notify(change);
             }
@@ -1093,12 +1116,30 @@ public final class Database implements C4Constants {
                 boolean commit = false;
                 beginTransaction();
                 try {
+                    if (deletion) {
+                        // Check existing, NO-OPS if the document doesn't exist:
+                        C4Document curDoc = null;
+                        try {
+                            curDoc = getC4Database().get(docID, true);
+                        } catch (LiteCoreException e) {
+                            if (e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorNotFound) {
+                                if (document instanceof MutableDocument)
+                                    ((MutableDocument) document).markAsInvalidated();
+                                return null;
+                            } else
+                                throw LiteCoreBridge.convertException(e);
+                        } finally {
+                            if (curDoc != null)
+                                curDoc.free();
+                        }
+                    }
+
                     try {
                         newDoc = save(doc, baseRev, deletion);
                         commit = true;
                     } catch (LiteCoreException e) {
                         // conflict is not an error, here
-                        if (!(e.domain == LiteCoreDomain && e.code == kC4ErrorConflict)) {
+                        if (!(e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict)) {
                             throw LiteCoreBridge.convertException(e);
                         }
                     }
@@ -1116,6 +1157,8 @@ public final class Database implements C4Constants {
 
                 // save succeeded
                 if (newDoc != null) {
+                    if (document instanceof MutableDocument)
+                        ((MutableDocument) document).markAsInvalidated();
                     C4Document newC4Doc = C4Document.document(newDoc);
                     return new Document(this, document.getId(), newC4Doc);
                 }
@@ -1135,17 +1178,20 @@ public final class Database implements C4Constants {
             }
 
             // Resolve conflict:
-            ConflictResolver resolver = effectiveConflictResolver();
+            ConflictResolver resolver = getConflictResolver();
             Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
 
             Document resolved = resolver.resolve(conflict);
             if (resolved == null)
-                throw new CouchbaseLiteException(LiteCoreDomain, kC4ErrorConflict);
+                throw new CouchbaseLiteException(C4ErrorDomain.LiteCoreDomain, LiteCoreError.kC4ErrorConflict);
 
             synchronized (lock) {
                 Document current = new Document(this, docID, true);
-                if (resolved.getRevID() != null && resolved.getRevID().equals(current.getRevID()))
+                if (resolved.getRevID() != null && resolved.getRevID().equals(current.getRevID())) {
+                    if (document instanceof MutableDocument)
+                        ((MutableDocument) document).markAsInvalidated();
                     return resolved; // same as current
+                }
 
                 // for saving:
                 doc = resolved;
@@ -1169,7 +1215,7 @@ public final class Database implements C4Constants {
                 if (body == null)
                     return null;
                 if (SharedKeys.dictContainsBlobs(body, getSharedKeys()))
-                    revFlags |= kRevHasAttachments;
+                    revFlags |= C4Constants.C4RevisionFlags.kRevHasAttachments;
             }
 
             // Save to database:
@@ -1184,7 +1230,8 @@ public final class Database implements C4Constants {
         }
     }
 
-    private boolean saveResolvedDocument(Document resolved, Conflict conflict) throws CouchbaseLiteException, LiteCoreException {
+    private boolean saveResolvedDocument(Document resolved, Conflict conflict)
+            throws CouchbaseLiteException, LiteCoreException {
         synchronized (lock) {
             boolean commit = false;
             beginTransaction();
@@ -1214,7 +1261,8 @@ public final class Database implements C4Constants {
                 C4Document rawDoc = doc.getC4doc();
                 rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody);
                 rawDoc.save(0);
-                Log.i(TAG, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
+                Log.i(TAG, "Conflict resolved as doc '%s' rev %s",
+                        rawDoc.getDocID(), rawDoc.getRevID());
 
                 commit = true;
             } finally {
@@ -1222,12 +1270,6 @@ public final class Database implements C4Constants {
             }
             return commit;
         }
-    }
-
-    private ConflictResolver effectiveConflictResolver() {
-        return getConflictResolver() != null ?
-                getConflictResolver() :
-                new DefaultConflictResolver();
     }
 
     private void shutdownExecutorService() {

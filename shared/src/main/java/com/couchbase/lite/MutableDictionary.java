@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Dictionary provides access to dictionary data.
  */
-public class MutableDictionary extends Dictionary implements MutableDictionaryInterface {
+public final class MutableDictionary extends Dictionary implements MutableDictionaryInterface {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
@@ -54,7 +54,7 @@ public class MutableDictionary extends Dictionary implements MutableDictionaryIn
      * and Dictionary objects.
      *
      * @param data the dictionary object.
-     * @return this Dictionary instance
+     * @return The self object.
      */
     @Override
     public MutableDictionary setData(Map<String, Object> data) {
@@ -71,7 +71,7 @@ public class MutableDictionary extends Dictionary implements MutableDictionaryIn
      *
      * @param key   the key.
      * @param value the object value.
-     * @return this Dictionary instance
+     * @return The self object.
      */
     @Override
     public MutableDictionary setValue(String key, Object value) {
@@ -82,56 +82,133 @@ public class MutableDictionary extends Dictionary implements MutableDictionaryIn
         return this;
     }
 
+    /**
+     * Set a String value for the given key.
+     *
+     * @param key   The key
+     * @param value The String value.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setString(String key, String value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a Number value for the given key.
+     *
+     * @param key   The key
+     * @param value The number value.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setNumber(String key, Number value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set an int value for the given key.
+     *
+     * @param key   The key
+     * @param value The int value.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setInt(String key, int value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a long value for the given key.
+     *
+     * @param key   The key
+     * @param value The long value.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setLong(String key, long value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a float value for the given key.
+     *
+     * @param key   The key
+     * @param value The float value.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setFloat(String key, float value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a double value for the given key.
+     *
+     * @param key   The key
+     * @param value The double value.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setDouble(String key, double value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a boolean value for the given key.
+     *
+     * @param key   The key
+     * @param value The boolean value.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setBoolean(String key, boolean value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a Blob object for the given key.
+     *
+     * @param key   The key
+     * @param value The Blob object.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setBlob(String key, Blob value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a Date object for the given key.
+     *
+     * @param key   The key
+     * @param value The Date object.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setDate(String key, Date value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set an Array object for the given key.
+     *
+     * @param key   The key
+     * @param value The Array object.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setArray(String key, Array value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a Dictionary object for the given key.
+     *
+     * @param key   The key
+     * @param value The Dictionary object.
+     * @return The self object.
+     */
     @Override
     public MutableDictionary setDictionary(String key, Dictionary value) {
         return setValue(key, value);
@@ -141,7 +218,7 @@ public class MutableDictionary extends Dictionary implements MutableDictionaryIn
      * Removes the mapping for a key from this Dictionary
      *
      * @param key the key.
-     * @return this Dictionary instance
+     * @return The self object.
      */
     @Override
     public MutableDictionary remove(String key) {

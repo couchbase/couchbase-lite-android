@@ -1,25 +1,11 @@
 package com.couchbase.lite;
 
-import com.couchbase.litecore.C4QueryEnumerator;
-
-public class ResultContext extends DocContext {
-
-    private C4QueryEnumerator _enumerator;
-
-    public ResultContext(Database db, C4QueryEnumerator enumerator) {
-        super(db, null);
-        _enumerator = enumerator;
-    }
-
-
-    @Override
-    protected void finalize() throws Throwable {
-        if (_enumerator != null)
-            _enumerator.free();
-        super.finalize();
-    }
-
-    public C4QueryEnumerator getEnumerator() {
-        return _enumerator;
+/**
+ * This ResultContext implementation is simplified version of lite-core ResultContext implementation
+ * by eliminating unused variables and methods
+ */
+final class ResultContext extends DocContext {
+    ResultContext(Database db) {
+        super(db);
     }
 }

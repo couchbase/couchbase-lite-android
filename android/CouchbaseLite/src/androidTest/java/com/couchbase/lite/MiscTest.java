@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 
 import org.junit.Test;
 

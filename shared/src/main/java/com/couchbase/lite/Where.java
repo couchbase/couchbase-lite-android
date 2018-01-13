@@ -19,7 +19,7 @@ import java.util.Arrays;
 /**
  * A Where represents the WHERE clause of the query for filtering the query result.
  */
-public class Where extends Query implements GroupByRouter, OrderByRouter, LimitRouter {
+public final class Where extends Query implements GroupByRouter, OrderByRouter, LimitRouter {
 
     //---------------------------------------------
     // Constructor
@@ -34,6 +34,12 @@ public class Where extends Query implements GroupByRouter, OrderByRouter, LimitR
     // implementation of GroupByRouter
     //---------------------------------------------
 
+    /**
+     * Create and chain a GROUP BY component to group the query result.
+     *
+     * @param expressions The expression objects.
+     * @return The GroupBy object.
+     */
     @Override
     public GroupBy groupBy(Expression... expressions) {
         return new GroupBy(this, Arrays.asList(expressions));
@@ -58,11 +64,25 @@ public class Where extends Query implements GroupByRouter, OrderByRouter, LimitR
     // implementation of LimitRouter
     //---------------------------------------------
 
+    /**
+     * Create and chain a LIMIT component to limit the number query results.
+     *
+     * @param limit The limit Expression object or liternal value.
+     * @return The Limit object.
+     */
     @Override
     public Limit limit(Object limit) {
         return new Limit(this, limit, null);
     }
 
+    /**
+     * Create and chain a LIMIT component to skip the returned results for the given offset
+     * position and to limit the number of results to not more than the given limit value.
+     *
+     * @param limit  The limit Expression object or liternal value.
+     * @param offset The offset Expression object or liternal value.
+     * @return The Limit object.
+     */
     @Override
     public Limit limit(Object limit, Object offset) {
         return new Limit(this, limit, offset);

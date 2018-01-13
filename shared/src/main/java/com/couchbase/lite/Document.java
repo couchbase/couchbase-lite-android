@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLDict;
@@ -30,9 +30,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
     private String _id;
     private C4Document _c4doc;
     private MRoot _root;
-    protected FLDict _data;
-    protected Dictionary _dict; // access from Document
     private LiteCoreException encodingError;
+
+    // access from MutableDocument
+    FLDict _data;
+    Dictionary _dict;
+    boolean invalidated = false;
 
     //---------------------------------------------
     // Constructors
@@ -43,6 +46,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
              C4Document c4doc) {
         this._database = database;
         this._id = id;
+        this.invalidated = false;
         setC4Document(c4doc);
     }
 
@@ -128,6 +132,11 @@ public class Document implements DictionaryInterface, Iterable<String> {
         return _dict.count();
     }
 
+    /**
+     * Get an List containing all keys, or an empty List if the document has no properties.
+     *
+     * @return all keys
+     */
     @Override
     public List<String> getKeys() {
         return _dict.getKeys();
@@ -263,11 +272,26 @@ public class Document implements DictionaryInterface, Iterable<String> {
         return _dict.getDate(key);
     }
 
+    /**
+     * Get a property's value as a Array, which is a mapping object of an array value.
+     * Returns null if the property doesn't exists, or its value is not an Array.
+     *
+     * @param key the key
+     * @return The Array object or null.
+     */
     @Override
     public Array getArray(String key) {
         return _dict.getArray(key);
     }
 
+    /**
+     * Get a property's value as a Dictionary, which is a mapping object of
+     * a Dictionary value.
+     * Returns null if the property doesn't exists, or its value is not a Dictionary.
+     *
+     * @param key the key
+     * @return The Dictionary object or null.
+     */
     @Override
     public Dictionary getDictionary(String key) {
         return _dict.getDictionary(key);
@@ -300,6 +324,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
+
+    /**
+     * Gets  an iterator over the keys of the document's properties
+     *
+     * @return The key iterator
+     */
     @Override
     public Iterator<String> iterator() {
         return getKeys().iterator();
@@ -387,7 +417,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     void updateDictionary() {
         if (_data != null) {
-            _root = new MRoot(new DocContext(_database, getC4doc()), _data.toFLValue(), isMutable());
+            _root = new MRoot(new DocContext(_database), _data.toFLValue(), isMutable());
             _dict = (Dictionary) _root.asNative();
         } else {
             _root = null;
@@ -501,7 +531,11 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
-    protected FLDict getData() {
-        return _data;
+    boolean isNewDocument() {
+        return getRevID() == null;
+    }
+
+    boolean isInvalidated() {
+        return invalidated;
     }
 }

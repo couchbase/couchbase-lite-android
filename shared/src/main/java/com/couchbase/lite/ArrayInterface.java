@@ -3,6 +3,9 @@ package com.couchbase.lite;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Note: ArrayInterface is an internal interface. This should not be public.
+ */
 interface ArrayInterface {
     int count();
 

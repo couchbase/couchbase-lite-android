@@ -17,7 +17,8 @@ import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
 
-import com.couchbase.lite.internal.support.JsonUtils;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
 import com.couchbase.litecore.C4Constants;
@@ -108,11 +109,11 @@ public class BaseTest implements C4Constants {
     }
 
     protected Database open(String name) throws CouchbaseLiteException {
-        DatabaseConfiguration options = new DatabaseConfiguration(this.context);
-        options.setDirectory(dir);
+        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
+        builder.setDirectory(dir.getAbsolutePath());
         if (this.conflictResolver != null)
-            options.setConflictResolver(this.conflictResolver);
-        return new Database(name, options);
+            builder.setConflictResolver(this.conflictResolver);
+        return new Database(name, builder.build());
     }
 
     protected void openDB() throws CouchbaseLiteException {
@@ -148,21 +149,21 @@ public class BaseTest implements C4Constants {
             JSONObject json = new JSONObject(line);
             Map<String, Object> props = JsonUtils.fromJson(json);
             String docId = String.format(Locale.ENGLISH, "doc-%03d", n);
-            MutableDocument doc = createDocument(docId);
+            MutableDocument doc = createMutableDocument(docId);
             doc.setData(props);
             save(doc);
         }
     }
 
-    protected MutableDocument createDocument() {
+    protected MutableDocument createMutableDocument() {
         return new MutableDocument();
     }
 
-    protected MutableDocument createDocument(String id) {
+    protected MutableDocument createMutableDocument(String id) {
         return new MutableDocument(id);
     }
 
-    protected MutableDocument createDocument(String id, Map<String, Object> map) {
+    protected MutableDocument createMutableDocument(String id, Map<String, Object> map) {
         return new MutableDocument(id, map);
     }
 
@@ -185,7 +186,7 @@ public class BaseTest implements C4Constants {
 
     // helper method to save document
     protected Document generateDocument(String docID) throws CouchbaseLiteException {
-        MutableDocument doc = createDocument(docID);
+        MutableDocument doc = createMutableDocument(docID);
         doc.setValue("key", 1);
         Document savedDoc = save(doc);
         assertEquals(1, db.getCount());

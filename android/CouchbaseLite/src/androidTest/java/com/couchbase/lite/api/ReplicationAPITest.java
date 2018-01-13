@@ -3,11 +3,13 @@ package com.couchbase.lite.api;
 import com.couchbase.lite.BaseReplicatorTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
-import com.couchbase.lite.Log;
+import com.couchbase.lite.Endpoint;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.Replicator;
 import com.couchbase.lite.ReplicatorChange;
 import com.couchbase.lite.ReplicatorChangeListener;
 import com.couchbase.lite.ReplicatorConfiguration;
+import com.couchbase.lite.URLEndpoint;
 
 import org.junit.After;
 import org.junit.Before;
@@ -47,9 +49,10 @@ public class ReplicationAPITest extends BaseReplicatorTest {
 
         // --- code example ---
         URI uri = new URI("blip://localhost:4984/db");
-        ReplicatorConfiguration replConfig = new ReplicatorConfiguration(database, uri);
-        replConfig.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
-        Replicator replication = new Replicator(replConfig);
+        Endpoint endpoint = new URLEndpoint(uri.getHost(), uri.getPort(), uri.getPath(), false);
+        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
+        builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+        Replicator replication = new Replicator(builder.build());
         replication.start();
         // --- code example ---
 
@@ -70,9 +73,10 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         URI uri = new URI("blip://localhost:4984/db");
-        ReplicatorConfiguration replConfig = new ReplicatorConfiguration(database, uri);
-        replConfig.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
-        Replicator replication = new Replicator(replConfig);
+        Endpoint endpoint = new URLEndpoint(uri.getHost(), uri.getPort(), uri.getPath(), false);
+        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
+        builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+        Replicator replication = new Replicator(builder.build());
 
         // --- code example ---
         replication.addChangeListener(new ReplicatorChangeListener() {
@@ -90,9 +94,10 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         URI uri = new URI("blip://localhost:4984/db");
-        ReplicatorConfiguration replConfig = new ReplicatorConfiguration(database, uri);
-        replConfig.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
-        Replicator replication = new Replicator(replConfig);
+        Endpoint endpoint = new URLEndpoint(uri.getHost(), uri.getPort(), uri.getPath(), false);
+        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
+        builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+        Replicator replication = new Replicator(builder.build());
 
         // --- code example ---
         replication.addChangeListener(new ReplicatorChangeListener() {

@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -121,7 +121,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(0, array.count());
         assertEquals(new ArrayList<>(), array.toList());
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("array", array);
         assertEquals(array, doc.getArray("array"));
 
@@ -139,7 +139,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(3, array.count());
         assertEquals(data, array.toList());
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("array", array);
         assertEquals(array, doc.getArray("array"));
 
@@ -158,7 +158,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(3, array.count());
         assertEquals(data, array.toList());
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("array", array);
         assertEquals(array, doc.getArray("array"));
 
@@ -182,7 +182,7 @@ public class ArrayTest extends BaseTest {
     public void testAddNull() throws CouchbaseLiteException {
         MutableArray array = new MutableArray();
         array.addValue(null);
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -203,7 +203,7 @@ public class ArrayTest extends BaseTest {
             else
                 populateDataByType(array);
 
-            MutableDocument doc = createDocument("doc1");
+            MutableDocument doc = createMutableDocument("doc1");
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -231,7 +231,7 @@ public class ArrayTest extends BaseTest {
                     // array
                     Array array = (Array) a.getValue(10);
                     MutableArray subarray = array instanceof MutableArray ?
-                            (MutableArray) array :  array.toMutable();
+                            (MutableArray) array : array.toMutable();
 
                     List<Object> expected = new ArrayList<>();
                     expected.add("a");
@@ -259,7 +259,7 @@ public class ArrayTest extends BaseTest {
 
             // Save
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             doc.setValue("array", array);
             doc = save(doc).toMutable();
 
@@ -301,7 +301,7 @@ public class ArrayTest extends BaseTest {
                     // array
                     Array array = (Array) a.getValue(12 + 10);
                     MutableArray subarray = array instanceof MutableArray ?
-                            (MutableArray) array :  array.toMutable();
+                            (MutableArray) array : array.toMutable();
                     List<Object> expected = new ArrayList<>();
                     expected.add("a");
                     expected.add("b");
@@ -330,7 +330,7 @@ public class ArrayTest extends BaseTest {
         for (int i = 0; i < data.size(); i++)
             array.setValue(i, data.get(i));
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -357,7 +357,7 @@ public class ArrayTest extends BaseTest {
                 // array
                 Array array = (Array) a.getValue(10);
                 MutableArray subarray = array instanceof MutableArray ?
-                        (MutableArray) array :  array.toMutable();
+                        (MutableArray) array : array.toMutable();
                 List<Object> expected = new ArrayList<>();
                 expected.add("a");
                 expected.add("b");
@@ -383,7 +383,7 @@ public class ArrayTest extends BaseTest {
 
             // Save
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             doc.setArray("array", array);
             doc = save(doc).toMutable();
             MutableArray gotArray = doc.getArray("array");
@@ -488,7 +488,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testInsertObjectToExistingArray() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("array", new MutableArray());
         Document doc = save(mDoc);
         mDoc = doc.toMutable();
@@ -589,7 +589,7 @@ public class ArrayTest extends BaseTest {
             }
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -610,7 +610,7 @@ public class ArrayTest extends BaseTest {
                 populateDataByType(array);
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             doc.setValue("array", array);
             doc = save(doc).toMutable();
             array = doc.getArray("array");
@@ -651,7 +651,7 @@ public class ArrayTest extends BaseTest {
                 populateDataByType(array);
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -672,7 +672,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -704,7 +704,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -736,7 +736,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -769,7 +769,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -801,7 +801,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -833,7 +833,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -866,7 +866,7 @@ public class ArrayTest extends BaseTest {
         array.addValue(Double.MIN_VALUE);
         array.addValue(Double.MAX_VALUE);
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -910,7 +910,7 @@ public class ArrayTest extends BaseTest {
         array.addValue(1.51);
         array.addValue(1.99);
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         save(doc, "array", array, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -966,7 +966,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -998,7 +998,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -1030,7 +1030,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -1064,7 +1064,7 @@ public class ArrayTest extends BaseTest {
             assertEquals(12, array.count());
 
             String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = createDocument(docID);
+            MutableDocument doc = createMutableDocument(docID);
             save(doc, "array", array, new Validator<Array>() {
                 @Override
                 public void validate(Array a) {
@@ -1096,7 +1096,7 @@ public class ArrayTest extends BaseTest {
         array3.addValue("b");
         array3.addValue("c");
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         save(doc, "array", array1, new Validator<Array>() {
             @Override
             public void validate(Array a) {
@@ -1115,7 +1115,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testReplaceArray() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         MutableArray array1 = new MutableArray();
         array1.addValue("a");
         array1.addValue("b");
@@ -1155,7 +1155,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testReplaceArrayDifferentType() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         MutableArray array1 = new MutableArray();
         array1.addValue("a");
         array1.addValue("b");
@@ -1208,7 +1208,7 @@ public class ArrayTest extends BaseTest {
         }
         assertEquals(content, result);
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("array", array);
 
         final List<Object> c = content;
@@ -1247,7 +1247,7 @@ public class ArrayTest extends BaseTest {
         assertEquals(3, array.count());
         assertEquals(Arrays.asList(0, 1, 2).toString(), array.toList().toString());
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("array", array);
         doc = save(doc).toMutable();
         array = doc.getArray("array");
@@ -1270,7 +1270,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetNull() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addValue(null);
         mArray.addString(null);
@@ -1326,7 +1326,7 @@ public class ArrayTest extends BaseTest {
         mArray4.addValue(100L);
         mArray3.addValue(false);
 
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         mDoc.setArray("array1", mArray1);
         mDoc.setArray("array2", mArray2);
         mDoc.setArray("array3", mArray3);
@@ -1462,7 +1462,7 @@ public class ArrayTest extends BaseTest {
         mArray4.addValue(100L);
         mArray3.addValue(false);
 
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         mDoc.setArray("array1", mArray1);
         mDoc.setArray("array2", mArray2);
         mDoc.setArray("array3", mArray3);
@@ -1534,7 +1534,7 @@ public class ArrayTest extends BaseTest {
         mArray.addValue(null);
         mArray.addValue(mNestedDict);
 
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         mDoc.setArray("array", mArray);
 
         Document doc = save(mDoc);
@@ -1567,7 +1567,7 @@ public class ArrayTest extends BaseTest {
         mArray.addValue(null);
         mArray.addValue(mNestedArray);
 
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         mDoc.setValue("array", mArray);
 
         Document doc = save(mDoc);
@@ -1589,7 +1589,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testAddInt() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addInt(0);
         mArray.addInt(Integer.MAX_VALUE);
@@ -1612,7 +1612,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetInt() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addInt(0);
@@ -1641,7 +1641,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testInsertInt() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addInt(10); // will be pushed 3 times.
@@ -1668,7 +1668,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testAddLong() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addLong(0);
         mArray.addLong(Long.MAX_VALUE);
@@ -1691,7 +1691,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetLong() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addLong(0);
         mArray.addLong(Long.MAX_VALUE);
@@ -1717,7 +1717,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testInsertLong() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addLong(10); // will be pushed 3 times.
@@ -1744,7 +1744,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testAddFloat() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addFloat(0.0F);
         mArray.addFloat(Float.MAX_VALUE);
@@ -1767,7 +1767,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetFloat() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addFloat(0);
@@ -1797,7 +1797,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testInsertFloat() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addFloat(10F); // will be pushed 3 times.
@@ -1824,7 +1824,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testAddDouble() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addDouble(0.0);
@@ -1849,7 +1849,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetDouble() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addDouble(0);
@@ -1879,7 +1879,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testInsertDouble() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addDouble(10.0); // will be pushed 3 times.
@@ -1906,7 +1906,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testAddNumber() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addNumber(Integer.MAX_VALUE);
@@ -1932,7 +1932,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetNumber() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addNumber(Integer.MAX_VALUE);
@@ -1962,7 +1962,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testInsertNumber() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addNumber(10L); // will be pushed 3 times.
@@ -1989,7 +1989,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testAddString() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addString("");
@@ -2015,7 +2015,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetString() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addString("");
@@ -2045,7 +2045,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testInsertString() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addString(""); // will be pushed 3 times.
@@ -2072,7 +2072,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testAddBoolean() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addBoolean(true);
@@ -2096,7 +2096,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testSetBoolean() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addBoolean(true);
@@ -2123,7 +2123,7 @@ public class ArrayTest extends BaseTest {
 
     @Test
     public void testInsertBoolean() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableArray mArray = new MutableArray();
 
         mArray.addBoolean(false); // will be pushed 2 times
@@ -2147,4 +2147,5 @@ public class ArrayTest extends BaseTest {
             }
         });
     }
+
 }

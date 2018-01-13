@@ -17,11 +17,21 @@ package com.couchbase.lite;
 /**
  * Provides details about a Document change.
  */
-public class DocumentChange {
+public final class DocumentChange {
+    private final Database database;
+
     private final String documentID;
 
-    DocumentChange(String documentID) {
+    DocumentChange(Database database, String documentID) {
+        this.database = database;
         this.documentID = documentID;
+    }
+
+    /**
+     * Return the Database instance
+     */
+    public Database getDatabase() {
+        return database;
     }
 
     /**
@@ -34,6 +44,7 @@ public class DocumentChange {
     @Override
     public String toString() {
         return "DocumentChange{" +
+                "database='" + database.getName() + '\'' +
                 "documentID='" + documentID + '\'' +
                 '}';
     }

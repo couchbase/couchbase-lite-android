@@ -14,7 +14,7 @@
 
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.fleece.FLConstants;
 import com.couchbase.litecore.fleece.MCollection;
 import com.couchbase.litecore.fleece.MValue;
@@ -23,7 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-class Fleece implements FLConstants.FLValueType {
+final class Fleece implements FLConstants.FLValueType {
     static boolean valueWouldChange(Object newValue, MValue oldValue, MCollection container) {
         // As a simplification we assume that array and dict values are always different, to avoid
         // a possibly expensive comparison.

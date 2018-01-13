@@ -14,6 +14,9 @@
 
 package com.couchbase.lite;
 
+/**
+ * Note: WhereRouter is an internal interface. This should not be public.
+ */
 interface WhereRouter {
     Where where(Expression expression);
 }

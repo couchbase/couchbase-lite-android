@@ -14,7 +14,7 @@
 
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.bridge.LiteCoreBridge;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.LiteCoreException;
 
@@ -34,20 +34,24 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Query _query;
-    private C4QueryEnumerator _c4enum;
-    private Map<String, Integer> _columnNames;
-    private ResultContext _context;
+    private Query query;
+    private C4QueryEnumerator c4enum;
+    private Map<String, Integer> columnNames;
+    private ResultContext context;
+    private int count = -1;
+    private int currentPosition = 0; // used for Iterator.hasNext();
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
     ResultSet(Query query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
-        _query = query;
-        _c4enum = c4enum;
-        _columnNames = columnNames;
-        _context = new ResultContext(query.getDatabase(), c4enum);
+        this.query = query;
+        this.c4enum = c4enum;
+        this.columnNames = columnNames;
+        this.context = new ResultContext(query.getDatabase());
+        this.count = -1;
+        this.currentPosition = 0;
     }
 
     //---------------------------------------------
@@ -56,17 +60,20 @@ public class ResultSet implements Iterable<Result> {
 
     /**
      * Move the cursor forward one row from its current row position.
+     * Caution: next() method and iterator() method share same data structure.
+     * Please don't use them together.
      *
      * @return the Result after moving the cursor forward. Returns {@code null} value
      * if there are no more rows.
      */
     public Result next() {
-        if (_query == null)
+        if (query == null)
             throw new IllegalStateException("_query variable is null");
 
         synchronized (getDatabase().getLock()) {
             try {
-                if (_c4enum.next()) {
+                if (c4enum.next()) {
+                    currentPosition++;
                     return currentObject();
                 } else
                     return null;
@@ -77,66 +84,30 @@ public class ResultSet implements Iterable<Result> {
         }
     }
 
-    private Result currentObject() {
-        // NOTE: C4QueryEnumerator.getColumns() is just get pointer to columns
-        return new Result(this, _c4enum.getColumns(), _context);
-    }
-
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
 
-    private class ResultSetIterator implements Iterator<Result> {
-        private int index;
-        private int count;
-
-        public ResultSetIterator() {
-            index = 0;
-            count = getCount();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return index < count;
-        }
-
-        @Override
-        public Result next() {
-            return get(index++);
-        }
-    }
-
+    /**
+     * Returns an iterator over the elements in this list in proper sequence.
+     * Caution: next() method and iterator() method share same data structure.
+     * Please don't use them together.
+     *
+     * @return an iterator over the elements in this list in proper sequence
+     */
     @Override
     public Iterator<Result> iterator() {
-        return new ResultSetIterator();
-    }
-
-    //---------------------------------------------
-    // public but not public API method.
-    //---------------------------------------------
-
-    public void free() {
-        if (_c4enum != null) {
-            synchronized (getDatabase().getLock()) {
-                _c4enum.close();
+        return new Iterator<Result>() {
+            @Override
+            public boolean hasNext() {
+                return currentPosition < getCount();
             }
-            _c4enum.free();
-            _c4enum = null;
-        }
-    }
 
-    public ResultSet refresh() throws CouchbaseLiteException {
-        if (_query == null)
-            throw new IllegalStateException("_query variable is null");
-
-        synchronized (getDatabase().getLock()) {
-            try {
-                C4QueryEnumerator newEnum = _c4enum.refresh();
-                return newEnum != null ? new ResultSet(_query, newEnum, _columnNames) : null;
-            } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+            @Override
+            public Result next() {
+                return ResultSet.this.next();
             }
-        }
+        };
     }
 
     //---------------------------------------------
@@ -152,51 +123,65 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+    void free() {
+        if (c4enum != null) {
+            synchronized (getDatabase().getLock()) {
+                c4enum.close();
+            }
+            c4enum.free();
+            c4enum = null;
+        }
+    }
+
+    ResultSet refresh() throws CouchbaseLiteException {
+        if (query == null)
+            throw new IllegalStateException("_query variable is null");
+
+        synchronized (getDatabase().getLock()) {
+            try {
+                C4QueryEnumerator newEnum = c4enum.refresh();
+                return newEnum != null ? new ResultSet(query, newEnum, columnNames) : null;
+            } catch (LiteCoreException e) {
+                throw LiteCoreBridge.convertException(e);
+            }
+        }
+    }
 
     int columnCount() {
-        return _columnNames.size();
+        return columnNames.size();
     }
 
     int getCount() {
-        if (_query == null)
-            throw new IllegalStateException("_query variable is null");
+        if (count == -1) {
+            if (query == null)
+                throw new IllegalStateException("_query variable is null");
 
-        synchronized (getDatabase().getLock()) {
-            try {
-                return (int) _c4enum.getRowCount();
-            } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertRuntimeException(e);
+            synchronized (getDatabase().getLock()) {
+                try {
+                    count = (int) c4enum.getRowCount();
+                } catch (LiteCoreException e) {
+                    throw LiteCoreBridge.convertRuntimeException(e);
+                }
             }
         }
-
-    }
-
-    Result get(int index) {
-        if (_query == null)
-            throw new IllegalStateException("_query variable is null");
-
-        synchronized (getDatabase().getLock()) {
-            try {
-                if (_c4enum.seek(index)) {
-                    return currentObject();
-                } else
-                    return null;
-            } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertRuntimeException(e);
-            }
-        }
+        return count;
     }
 
     Map<String, Integer> getColumnNames() {
-        return _columnNames;
+        return columnNames;
     }
 
     Query getQuery() {
-        return _query;
+        return query;
     }
 
     Database getDatabase() {
-        return _query.getDatabase();
+        return query.getDatabase();
+    }
+
+    Result currentObject() {
+        // NOTE: C4QueryEnumerator.getColumns() is just get pointer to columns
+        return new Result(this, c4enum.getColumns(), context);
     }
 }
 

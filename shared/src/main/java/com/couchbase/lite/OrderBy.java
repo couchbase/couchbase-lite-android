@@ -21,7 +21,7 @@ import java.util.List;
  * An OrderBy represents an ORDER BY clause of the query for specifying properties or expressions
  * that the result rows should be sorted by.
  */
-public class OrderBy extends Query implements LimitRouter {
+public final class OrderBy extends Query implements LimitRouter {
 
     //---------------------------------------------
     // Member variables
@@ -41,11 +41,24 @@ public class OrderBy extends Query implements LimitRouter {
     // implementation of LimitRouter
     //---------------------------------------------
 
+    /**
+     * Creates and chains a Limit object to limit the number query results.
+     *
+     * @param limit The limit expression.
+     * @return The Limit object that represents the LIMIT clause of the query.
+     */
     @Override
     public Limit limit(Object limit) {
         return new Limit(this, limit, null);
     }
 
+    /**
+     * Creates and chains a Limit object to skip the returned results for the given offset
+     *
+     * @param limit  The limit expression.
+     * @param offset The offset expression.
+     * @return The Limit object that represents the LIMIT clause of the query.
+     */
     @Override
     public Limit limit(Object limit, Object offset) {
         return new Limit(this, limit, offset);

@@ -1,8 +1,6 @@
 package com.couchbase.lite;
 
 class DefaultConflictResolver implements ConflictResolver {
-    private static final String TAG = Log.DATABASE;
-
     /**
      * Default resolution algorithm:
      * 1. DELETE always wins.

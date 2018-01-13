@@ -8,14 +8,14 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Expression;
 import com.couchbase.lite.FullTextIndexItem;
 import com.couchbase.lite.Index;
-import com.couchbase.lite.Log;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.Meta;
 import com.couchbase.lite.MutableDocument;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.Result;
 import com.couchbase.lite.ResultSet;
 import com.couchbase.lite.SelectResult;
-import com.couchbase.lite.query.FullTextExpression;
+import com.couchbase.lite.FullTextExpression;
 
 import org.junit.After;
 import org.junit.Before;
@@ -74,7 +74,7 @@ public class FullTextSearchAPITest extends BaseTest {
                 .from(DataSource.database(database))
                 .where(whereClause);
         ResultSet ftsQueryResult = ftsQuery.execute();
-        for(Result result : ftsQueryResult)
+        for (Result result : ftsQueryResult)
             Log.i(TAG, String.format("document properties %s", result.getString(0)));
         // --- code example ---
     }

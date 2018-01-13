@@ -26,7 +26,7 @@ public class DatabaseAPITest extends BaseTest {
     @Test
     public void testNewDatabase() throws CouchbaseLiteException {
         // --- code example ---
-        DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context);
+        DatabaseConfiguration config = new DatabaseConfiguration.Builder(/* Android Context*/ context).build();
         Database database = new Database("my-database", config);
         // --- code example ---
 
@@ -44,7 +44,7 @@ public class DatabaseAPITest extends BaseTest {
     @Test
     public void testSingletonPattern() throws CouchbaseLiteException {
         // --- code example ---
-        DataManager mgr = DataManager.instance(new DatabaseConfiguration(/* Android Context*/ context));
+        DataManager mgr = DataManager.instance(new DatabaseConfiguration.Builder(/* Android Context*/ context).build());
         // --- code example ---
 
         mgr.delete();
@@ -53,8 +53,9 @@ public class DatabaseAPITest extends BaseTest {
     @Test
     public void testEncryption() throws CouchbaseLiteException {
         // --- code example ---
-        DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context);
-        config.setEncryptionKey(new EncryptionKey("secretpassword"));
+        DatabaseConfiguration config = new DatabaseConfiguration.Builder(/* Android Context*/ context)
+                .setEncryptionKey(new EncryptionKey("secretpassword"))
+                .build();
         Database database = new Database("my-database", config);
         // --- code example ---
 

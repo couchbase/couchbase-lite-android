@@ -16,9 +16,9 @@ package com.couchbase.lite;
 import com.couchbase.litecore.C4Constants;
 
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
-
-import static com.couchbase.lite.internal.support.Misc.CreateUUID;
+import java.util.UUID;
 
 /**
  * A Couchbase Lite Document. A document has key/value properties like a Map.
@@ -49,7 +49,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param id the document ID.
      */
     public MutableDocument(String id) {
-        super(null, id != null ? id : CreateUUID(), null);
+        super(null, id != null ? id : createUUID(), null);
     }
 
     /**
@@ -93,12 +93,19 @@ public final class MutableDocument extends Document implements MutableDictionary
     // public API methods
     //---------------------------------------------
 
+    /**
+     * Returns the copy of this MutableDocument object.
+     *
+     * @return The MutableDocument object
+     */
     @Override
     public MutableDocument toMutable() {
         return new MutableDocument(this, _dict);
     }
 
-
+    /**
+     * Is the document deleted?
+     */
     @Override
     public boolean isDeleted() {
         return deleted || super.isDeleted();
@@ -129,7 +136,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * An Date object will be converted to an ISO-8601 format string.
      *
      * @param key   the key.
-     * @param value the object value.
+     * @param value the Object value.
      * @return this Document instance
      */
     @Override
@@ -138,56 +145,133 @@ public final class MutableDocument extends Document implements MutableDictionary
         return this;
     }
 
+    /**
+     * Set a String value for the given key
+     *
+     * @param key the key.
+     * @param key the String value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setString(String key, String value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a Number value for the given key
+     *
+     * @param key the key.
+     * @param key the Number value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setNumber(String key, Number value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a integer value for the given key
+     *
+     * @param key the key.
+     * @param key the integer value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setInt(String key, int value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a long value for the given key
+     *
+     * @param key the key.
+     * @param key the long value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setLong(String key, long value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a float value for the given key
+     *
+     * @param key the key.
+     * @param key the float value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setFloat(String key, float value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a double value for the given key
+     *
+     * @param key the key.
+     * @param key the double value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setDouble(String key, double value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a boolean value for the given key
+     *
+     * @param key the key.
+     * @param key the boolean value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setBoolean(String key, boolean value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a Blob value for the given key
+     *
+     * @param key the key.
+     * @param key the Blob value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setBlob(String key, Blob value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a Date value for the given key
+     *
+     * @param key the key.
+     * @param key the Date value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setDate(String key, Date value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set an Array value for the given key
+     *
+     * @param key the key.
+     * @param key the Array value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setArray(String key, Array value) {
         return setValue(key, value);
     }
 
+    /**
+     * Set a Dictionary value for the given key
+     *
+     * @param key the key.
+     * @param key the Dictionary value.
+     * @return this MutableDocument instance
+     */
     @Override
     public MutableDocument setDictionary(String key, Dictionary value) {
         return setValue(key, value);
@@ -197,7 +281,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * Removes the mapping for a key from this Dictionary
      *
      * @param key the key.
-     * @return this Document instance
+     * @return this MutableDocument instance
      */
     @Override
     public MutableDocument remove(String key) {
@@ -249,6 +333,14 @@ public final class MutableDocument extends Document implements MutableDictionary
 
     // For conflict resolver to know that the document is being deleted.
     void markAsDeleted() {
-        this.deleted = true;
+        deleted = true;
+    }
+
+    void markAsInvalidated() {
+        invalidated = true;
+    }
+
+    static String createUUID() {
+        return UUID.randomUUID().toString().toLowerCase(Locale.ENGLISH);
     }
 }

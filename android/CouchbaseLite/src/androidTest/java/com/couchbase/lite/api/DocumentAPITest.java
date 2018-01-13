@@ -3,7 +3,7 @@ package com.couchbase.lite.api;
 import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
-import com.couchbase.lite.Log;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.MutableDocument;
 
 import org.junit.After;

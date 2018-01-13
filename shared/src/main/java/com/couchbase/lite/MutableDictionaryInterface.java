@@ -3,6 +3,9 @@ package com.couchbase.lite;
 import java.util.Date;
 import java.util.Map;
 
+/**
+ * Note: MutableDictionaryInterface is an internal interface. This should not be public.
+ */
 interface MutableDictionaryInterface extends DictionaryInterface {
     // Set JSON or platform dictionary as a content.
     MutableDictionaryInterface setData(Map<String, Object> data);

@@ -1,5 +1,6 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.fleece.FLEncoder;
 
@@ -76,7 +77,7 @@ public class ConflictTest extends BaseTest {
 
     private MutableDocument setupConflict() throws CouchbaseLiteException {
         // Setup a default database conflict resolver
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("type", "profile");
         mDoc.setValue("name", "Scott");
         Document doc = save(mDoc);
@@ -137,10 +138,11 @@ public class ConflictTest extends BaseTest {
     protected void openDB(ConflictResolver resolver) throws CouchbaseLiteException {
         assertNull(db);
 
-        DatabaseConfiguration options = new DatabaseConfiguration(this.context);
-        options.setDirectory(dir);
-        options.setConflictResolver(resolver);
-        db = new Database(kDatabaseName, options);
+        DatabaseConfiguration config = new DatabaseConfiguration.Builder(this.context)
+                .setDirectory(dir.getAbsolutePath())
+                .setConflictResolver(resolver)
+                .build();
+        db = new Database(kDatabaseName, config);
         assertNotNull(db);
     }
 
@@ -168,7 +170,7 @@ public class ConflictTest extends BaseTest {
         closeDB();
         openDB(new MergeThenTheirsWins());
 
-        MutableDocument doc2 = createDocument("doc2");
+        MutableDocument doc2 = createMutableDocument("doc2");
         doc2.setValue("type", "profile");
         doc2.setValue("name", "Scott");
         Document savedDoc2 = save(doc2);
@@ -212,7 +214,7 @@ public class ConflictTest extends BaseTest {
     @Test
     public void testConflictDeletion() throws CouchbaseLiteException {
         closeDB();
-        openDB(null); // set null to conflict resolver, should use default one
+        openDB(new DefaultConflictResolver()); // set null to conflict resolver, should use default one
 
         MutableDocument mDoc = setupConflict();
         db.delete(mDoc);
@@ -222,7 +224,7 @@ public class ConflictTest extends BaseTest {
     @Test
     public void testConflictMineIsDeeper() throws CouchbaseLiteException {
         closeDB();
-        openDB(null);
+        openDB(new DefaultConflictResolver());
 
         MutableDocument doc = setupConflict();
         save(doc);
@@ -232,7 +234,7 @@ public class ConflictTest extends BaseTest {
     @Test
     public void testConflictTheirsIsDeeper() throws CouchbaseLiteException {
         closeDB();
-        openDB(null);
+        openDB(new DefaultConflictResolver());
 
         MutableDocument mDoc = setupConflict();
 

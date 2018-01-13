@@ -3,7 +3,12 @@ package com.couchbase.lite;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArrayExpressionSatisfies {
+/**
+ * The Satisfies class represents the SATISFIES clause object in a quantified operator
+ * (ANY/ANY AND EVERY/EVERY <variable name> IN <expr> SATISFIES <expr>). The SATISFIES clause
+ * is used for specifying an expression that will be used to evaluate each item in the array.
+ */
+public final class ArrayExpressionSatisfies {
     private ArrayExpression.QuantifiesType type;
     private String variable;
     private Object inExpression;
@@ -14,6 +19,12 @@ public class ArrayExpressionSatisfies {
         this.inExpression = inExpression;
     }
 
+    /**
+     * Creates a complete quantified operator with the given satisfies expression.
+     *
+     * @param expression Parameter expression: The satisfies expression used for evaluating each item in the array.
+     * @return The quantified expression.
+     */
     public Expression satisfies(Expression expression) {
         return new QuantifiedExpression(type, variable, inExpression, expression);
     }
@@ -32,7 +43,7 @@ public class ArrayExpressionSatisfies {
         }
 
         @Override
-        public Object asJSON() {
+        Object asJSON() {
             List<Object> json = new ArrayList<>(4);
 
             // type

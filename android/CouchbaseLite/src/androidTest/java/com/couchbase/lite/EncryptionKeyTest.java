@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.Log;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

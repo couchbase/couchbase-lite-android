@@ -1,6 +1,6 @@
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.DateUtils;
+import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.fleece.Encoder;
 import com.couchbase.litecore.fleece.FLEncodable;
 import com.couchbase.litecore.fleece.FLEncoder;
@@ -14,7 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * ReadOnlyArray provides readonly access to array data.
+ * Array provides readonly access to array data.
  */
 public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
 
@@ -22,7 +22,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // member variables
     //---------------------------------------------
 
-    protected MArray _array;
+    MArray _array;
 
     //---------------------------------------------
     // Constructors
@@ -153,7 +153,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public boolean getBoolean(int index) {
-        //return CBLConverter.asBool(_get(_array, index), _array);
         Object value = _get(_array, index).asNative(_array);
         if (value == null) return false;
         else if (value instanceof Boolean) return ((Boolean) value).booleanValue();
@@ -241,6 +240,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Implementation of FLEncodable
     //-------------------------------------------------------------------------
 
+    /**
+     * encodeTo(FlEncoder) is internal method. Please don't use this method.
+     */
     @Override
     public void encodeTo(FLEncoder enc) {
         Encoder encoder = new Encoder(enc);
@@ -251,21 +253,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
-
-    private class ArrayIterator implements Iterator<Object> {
-        private int index = 0;
-        private int count = count();
-
-        @Override
-        public boolean hasNext() {
-            return index < count;
-        }
-
-        @Override
-        public Object next() {
-            return getValue(index++);
-        }
-    }
 
     @Override
     public Iterator<Object> iterator() {
@@ -301,27 +288,36 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         return h;
     }
 
-
     //---------------------------------------------
-    // protected level access
+    // package level access
     //---------------------------------------------
-
-    protected static MValue _get(MArray array, int index) {
+    static MValue _get(MArray array, int index) {
         MValue value = array.get(index);
         if (value.isEmpty())
             throwRangeException(index);
         return value;
     }
 
-    protected static String throwRangeException(int index) {
+    static String throwRangeException(int index) {
         throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
     }
 
-    //---------------------------------------------
-    // package level access
-    //---------------------------------------------
-
     MCollection toMCollection() {
         return _array;
+    }
+
+    private class ArrayIterator implements Iterator<Object> {
+        private int index = 0;
+        private int count = count();
+
+        @Override
+        public boolean hasNext() {
+            return index < count;
+        }
+
+        @Override
+        public Object next() {
+            return getValue(index++);
+        }
     }
 }

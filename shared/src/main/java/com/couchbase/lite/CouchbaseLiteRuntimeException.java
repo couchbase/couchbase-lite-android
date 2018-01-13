@@ -2,6 +2,9 @@ package com.couchbase.lite;
 
 import java.util.Map;
 
+/**
+ * A CouchbaseLiteRuntimeException gets raised when Couchbase Lite faces unexpected error
+ */
 public final class CouchbaseLiteRuntimeException extends RuntimeException {
 
     private static final String[] DOMAINS = {

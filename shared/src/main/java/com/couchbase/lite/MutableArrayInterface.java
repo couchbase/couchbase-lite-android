@@ -3,6 +3,9 @@ package com.couchbase.lite;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Note: MutableArrayInterface is an internal interface. sThis should not be public.
+ */
 interface MutableArrayInterface extends ArrayInterface {
     MutableArrayInterface setData(List<Object> data);
 
@@ -27,9 +30,9 @@ interface MutableArrayInterface extends ArrayInterface {
 
     MutableArrayInterface setDate(int index, Date value);
 
-    MutableArrayInterface setArray(int index, MutableArray value);
+    MutableArrayInterface setArray(int index, Array value);
 
-    MutableArrayInterface setDictionary(int index, MutableDictionary value);
+    MutableArrayInterface setDictionary(int index, Dictionary value);
 
     // add
     MutableArrayInterface addValue(Object value);
@@ -52,9 +55,9 @@ interface MutableArrayInterface extends ArrayInterface {
 
     MutableArrayInterface addDate(Date value);
 
-    MutableArrayInterface addArray(MutableArray value);
+    MutableArrayInterface addArray(Array value);
 
-    MutableArrayInterface addDictionary(MutableDictionary value);
+    MutableArrayInterface addDictionary(Dictionary value);
 
     // insert
     MutableArrayInterface insertValue(int index, Object value);
@@ -77,9 +80,9 @@ interface MutableArrayInterface extends ArrayInterface {
 
     MutableArrayInterface insertDate(int index, Date value);
 
-    MutableArrayInterface insertArray(int index, MutableArray value);
+    MutableArrayInterface insertArray(int index, Array value);
 
-    MutableArrayInterface insertDictionary(int index, MutableDictionary value);
+    MutableArrayInterface insertDictionary(int index, Dictionary value);
 
     // remove
 

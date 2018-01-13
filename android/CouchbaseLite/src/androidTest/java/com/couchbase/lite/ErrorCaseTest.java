@@ -33,17 +33,63 @@ public class ErrorCaseTest extends BaseTest {
     // -- DatabaseTest
     @Test
     public void testDeleteUnsavedDocument() {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         assertFalse(doc.isDeleted());
         try {
             db.delete(doc);
             fail();
+        } catch (IllegalArgumentException iae) {
+            ; //expected
         } catch (CouchbaseLiteException e) {
-            assertEquals(404, e.getCode());
+            fail();
         }
         assertFalse(doc.isDeleted());
         assertEquals("Scott Tiger", doc.getValue("name"));
+    }
+
+    @Test
+    public void testSaveSavedMutableDocument() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // following is error case
+        doc.setValue("age", 20);
+        try {
+            saved = save(doc);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testDeleteSavedMutableDocument() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // following is error case
+        try {
+            db.delete(doc);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testDeleteDocAfterPurgeDoc() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // purge doc
+        db.purge(saved);
+
+        // no-op
+        db.delete(saved);
     }
 
     // -- ArrayTest

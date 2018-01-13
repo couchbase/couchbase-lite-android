@@ -1,6 +1,9 @@
 package com.couchbase.lite;
 
-public class ReplicatorChange {
+/**
+ * ReplicatorChange contains the replicator status information.
+ */
+public final class ReplicatorChange {
     private final Replicator replicator;
     private final Replicator.Status status;
 
@@ -9,10 +12,16 @@ public class ReplicatorChange {
         this.status = status;
     }
 
+    /**
+     * Return the source replicator object.
+     */
     public Replicator getReplicator() {
         return replicator;
     }
 
+    /**
+     * Return the replicator status.
+     */
     public Replicator.Status getStatus() {
         return status;
     }

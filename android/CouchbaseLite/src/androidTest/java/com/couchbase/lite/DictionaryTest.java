@@ -1,5 +1,7 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.Log;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -29,7 +31,7 @@ public class DictionaryTest extends BaseTest {
         assertEquals(0, address.count());
         assertEquals(new HashMap<String, Object>(), address.toMap());
 
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("address", address);
         assertEquals(address, mDoc.getDictionary("address"));
 
@@ -50,7 +52,7 @@ public class DictionaryTest extends BaseTest {
         assertEquals("CA", address.getValue("state"));
         assertEquals(dict, address.toMap());
 
-        MutableDocument mDoc1 = createDocument("doc1");
+        MutableDocument mDoc1 = createMutableDocument("doc1");
         mDoc1.setValue("address", address);
         assertEquals(address, mDoc1.getDictionary("address"));
 
@@ -75,7 +77,7 @@ public class DictionaryTest extends BaseTest {
         assertTrue(mDict.getArray("key") == null);
         assertEquals(new HashMap<String, Object>(), mDict.toMap());
 
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
         mDoc.setValue("dict", mDict);
 
         Document doc = save(mDoc);
@@ -98,7 +100,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testSetNestedDictionaries() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
 
         MutableDictionary level1 = new MutableDictionary();
         level1.setValue("name", "n1");
@@ -136,7 +138,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testDictionaryArray() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("doc1");
+        MutableDocument mDoc = createMutableDocument("doc1");
 
         List<Object> data = new ArrayList<>();
 
@@ -188,7 +190,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testReplaceDictionary() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
 
         MutableDictionary profile1 = new MutableDictionary();
         profile1.setValue("name", "Scott Tiger");
@@ -219,7 +221,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testReplaceDictionaryDifferentType() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
 
         MutableDictionary profile1 = new MutableDictionary();
         profile1.setValue("name", "Scott Tiger");
@@ -245,7 +247,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testRemoveDictionary() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         MutableDictionary profile1 = new MutableDictionary();
         profile1.setValue("name", "Scott Tiger");
         doc.setValue("profile", profile1);
@@ -305,7 +307,7 @@ public class DictionaryTest extends BaseTest {
 
         final Map<String, Object> finalContent = content;
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("dict", dict);
         save(doc, new Validator<Document>() {
             @Override
@@ -344,7 +346,7 @@ public class DictionaryTest extends BaseTest {
         }
         assertEquals(3, dict.count());
 
-        MutableDocument doc = createDocument("doc1");
+        MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("dict", dict);
         doc = save(doc).toMutable();
         dict = doc.getDictionary("dict");
@@ -367,7 +369,7 @@ public class DictionaryTest extends BaseTest {
     // https://github.com/couchbase/couchbase-lite-core/issues/230
     @Test
     public void testLargeLongValue() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("test");
+        MutableDocument doc = createMutableDocument("test");
         long num1 = 1234567L;
         long num2 = 12345678L;
         long num3 = 123456789L;
@@ -386,7 +388,7 @@ public class DictionaryTest extends BaseTest {
     //https://forums.couchbase.com/t/long-value-on-document-changed-after-saved-to-db/14259/
     @Test
     public void testLargeLongValue2() throws CouchbaseLiteException {
-        MutableDocument doc = createDocument("test");
+        MutableDocument doc = createMutableDocument("test");
         long num1 = 11989091L;
         long num2 = 231548688L;
         doc.setValue("num1", num1);
@@ -400,7 +402,7 @@ public class DictionaryTest extends BaseTest {
 
     @Test
     public void testSetNull() throws CouchbaseLiteException {
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         MutableDictionary mDict = new MutableDictionary();
         mDict.setValue("obj-null", null);
         mDict.setString("string-null", null);
@@ -461,7 +463,7 @@ public class DictionaryTest extends BaseTest {
         mDict4.setValue("key1", 100L);
         mDict3.setValue("key3", false);
 
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         mDoc.setDictionary("dict1", mDict1);
         mDoc.setDictionary("dict2", mDict2);
         mDoc.setDictionary("dict3", mDict3);
@@ -596,7 +598,7 @@ public class DictionaryTest extends BaseTest {
         mDict4.setValue("key1", 100L);
         mDict3.setValue("key3", false);
 
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         mDoc.setDictionary("dict1", mDict1);
         mDoc.setDictionary("dict2", mDict2);
         mDoc.setDictionary("dict3", mDict3);
@@ -660,7 +662,7 @@ public class DictionaryTest extends BaseTest {
         mDict.setValue("key3", null);
         mDict.setValue("nestedDict", mNestedDict);
 
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         mDoc.setDictionary("dict", mDict);
 
         Document doc = save(mDoc);
@@ -688,7 +690,7 @@ public class DictionaryTest extends BaseTest {
         mArray.addValue(null);
         mArray.addValue(mNestedArray);
 
-        MutableDocument mDoc = createDocument("test");
+        MutableDocument mDoc = createMutableDocument("test");
         mDoc.setValue("array", mArray);
 
         Document doc = save(mDoc);

@@ -149,7 +149,7 @@ task javadoc(type: Javadoc) {
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
     options {
         title = "Couchbase Lite ${project.version}"
-        memberLevel = JavadocMemberLevel.PROTECTED
+        memberLevel = JavadocMemberLevel.PUBLIC
         docEncoding = 'UTF-8'
         encoding = 'UTF-8'
         charSet = 'UTF-8'

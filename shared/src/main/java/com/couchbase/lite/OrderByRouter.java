@@ -14,6 +14,9 @@
 
 package com.couchbase.lite;
 
+/**
+ * Note: OrderByRouter is an internal interface. This should not be public.
+ */
 interface OrderByRouter {
     OrderBy orderBy(Ordering... orderings);
 }
