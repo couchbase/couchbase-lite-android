@@ -201,7 +201,7 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"),
                             SelectResult.property("type"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel"))
+                    .where(Expression.property("type").equalTo(Expression.string("hotel")))
                     .orderBy(Ordering.expression(Meta.id));
             assertNotNull(query);
             ResultSet rs = query.execute();
@@ -232,7 +232,7 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"),
                             SelectResult.property("type"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel"))
+                    .where(Expression.property("type").equalTo(Expression.string("hotel")))
                     .orderBy(Ordering.expression(Meta.id));
             ;
             try {
@@ -255,7 +255,7 @@ public class QueryAPITest extends BaseTest {
             Query query = Query
                     .select(SelectResult.expression(Meta.id))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("airport"))
+                    .where(Expression.property("type").equalTo(Expression.string("airport")))
                     .orderBy(Ordering.expression(Meta.id));
             assertNotNull(query);
             ResultSet rs = query.execute();
@@ -286,7 +286,7 @@ public class QueryAPITest extends BaseTest {
             Query query = Query
                     .select(SelectResult.expression(Meta.id))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("airport"))
+                    .where(Expression.property("type").equalTo(Expression.string("airport")))
                     .orderBy(Ordering.expression(Meta.id));
             ResultSet rs = query.execute();
             for (Result result : rs) {
@@ -304,7 +304,7 @@ public class QueryAPITest extends BaseTest {
             Query query = Query
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel"));
+                    .where(Expression.property("type").equalTo(Expression.string("hotel")));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -325,7 +325,7 @@ public class QueryAPITest extends BaseTest {
             Query query = Query
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel"));
+                    .where(Expression.property("type").equalTo(Expression.string("hotel")));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("hotel -> %s", result.getDictionary(DATABASE_NAME).toMap()));
@@ -340,9 +340,9 @@ public class QueryAPITest extends BaseTest {
             Query query = Query
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel"))
+                    .where(Expression.property("type").equalTo(Expression.string("hotel")))
                     .orderBy(Ordering.property("name"))
-                    .limit(1);
+                    .limit(Expression.intValue(1));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -364,8 +364,8 @@ public class QueryAPITest extends BaseTest {
             Query query = Query
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel"))
-                    .limit(10);
+                    .where(Expression.property("type").equalTo(Expression.string("hotel")))
+                    .limit(Expression.intValue(10));
             ResultSet rs = query.execute();
             for (Result result : rs) {
                 Dictionary all = result.getDictionary(DATABASE_NAME);
@@ -385,8 +385,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"),
                             SelectResult.property("public_likes"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel")
-                            .and(ArrayFunction.contains(Expression.property("public_likes"), "Armani Langworth")));
+                    .where(Expression.property("type").equalTo(Expression.string("hotel"))
+                            .and(ArrayFunction.contains(Expression.property("public_likes"), Expression.string("Armani Langworth"))));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -407,8 +407,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"),
                             SelectResult.property("public_likes"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel")
-                            .and(ArrayFunction.contains(Expression.property("public_likes"), "Armani Langworth")));
+                    .where(Expression.property("type").equalTo(Expression.string("hotel"))
+                            .and(ArrayFunction.contains(Expression.property("public_likes"), Expression.string("Armani Langworth"))));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("public_likes -> %s", result.getArray("public_likes").toList()));
@@ -425,8 +425,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("country"),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("Royal engineers museum")));
+                    .where(Expression.property("type").equalTo(Expression.string("landmark"))
+                            .and(Expression.property("name").like(Expression.string("Royal engineers museum"))));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -447,8 +447,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("country"),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("Royal engineers museum")));
+                    .where(Expression.property("type").equalTo(Expression.string("landmark"))
+                            .and(Expression.property("name").like(Expression.string("Royal engineers museum"))));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("name -> %s", result.getString("name")));
@@ -465,8 +465,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("country"),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("eng%e%")));
+                    .where(Expression.property("type").equalTo(Expression.string("landmark"))
+                            .and(Expression.property("name").like(Expression.string("eng%e%"))));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -487,8 +487,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("country"),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("eng%e%")));
+                    .where(Expression.property("type").equalTo(Expression.string("landmark"))
+                            .and(Expression.property("name").like(Expression.string("eng%e%"))));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("name -> %s", result.getString("name")));
@@ -505,8 +505,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("country"),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("eng____r")));
+                    .where(Expression.property("type").equalTo(Expression.string("landmark"))
+                            .and(Expression.property("name").like(Expression.string("eng____r"))));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -527,8 +527,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("country"),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("eng____r")));
+                    .where(Expression.property("type").equalTo(Expression.string("landmark"))
+                            .and(Expression.property("name").like(Expression.string("eng____r"))));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("name -> %s", result.getString("name")));
@@ -545,8 +545,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("country"),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").regex("\\bEng.*r\\b")));
+                    .where(Expression.property("type").equalTo(Expression.string("landmark"))
+                            .and(Expression.property("name").regex(Expression.string("\\bEng.*r\\b"))));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -567,8 +567,8 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("country"),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").regex("\\bEng.*r\\b")));
+                    .where(Expression.property("type").equalTo(Expression.string("landmark"))
+                            .and(Expression.property("name").regex(Expression.string("\\bEng.*r\\b"))));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("name -> %s", result.getString("name")));
@@ -589,9 +589,9 @@ public class QueryAPITest extends BaseTest {
                     .from(DataSource.database(database).as("airline"))
                     .join(Join.join(DataSource.database(database).as("route"))
                             .on(Meta.id.from("airline").equalTo(Expression.property("airlineid").from("route"))))
-                    .where(Expression.property("type").from("route").equalTo("route")
-                            .and(Expression.property("type").from("airline").equalTo("airline"))
-                            .and(Expression.property("sourceairport").from("route").equalTo("RIX")));
+                    .where(Expression.property("type").from("route").equalTo(Expression.string("route"))
+                            .and(Expression.property("type").from("airline").equalTo(Expression.string("airline")))
+                            .and(Expression.property("sourceairport").from("route").equalTo(Expression.string("RIX"))));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -625,9 +625,9 @@ public class QueryAPITest extends BaseTest {
                     .from(DataSource.database(database).as("airline"))
                     .join(Join.join(DataSource.database(database).as("route"))
                             .on(Meta.id.from("airline").equalTo(Expression.property("airlineid").from("route"))))
-                    .where(Expression.property("type").from("route").equalTo("route")
-                            .and(Expression.property("type").from("airline").equalTo("airline"))
-                            .and(Expression.property("sourceairport").from("route").equalTo("RIX")));
+                    .where(Expression.property("type").from("route").equalTo(Expression.string("route"))
+                            .and(Expression.property("type").from("airline").equalTo(Expression.string("airline")))
+                            .and(Expression.property("sourceairport").from("route").equalTo(Expression.string("RIX"))));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.w("Sample", String.format("%s", result.toMap().toString()));
@@ -640,15 +640,15 @@ public class QueryAPITest extends BaseTest {
         // For Validation
         {
             Query query = Query.select(
-                    SelectResult.expression(Function.count("*")),
+                    SelectResult.expression(Function.count(Expression.string("*"))),
                     SelectResult.property("country"),
                     SelectResult.property("tz"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("airport")
-                            .and(Expression.property("geo.alt").greaterThanOrEqualTo(300)))
+                    .where(Expression.property("type").equalTo(Expression.string("airport"))
+                            .and(Expression.property("geo.alt").greaterThanOrEqualTo(Expression.intValue(300))))
                     .groupBy(Expression.property("country"),
                             Expression.property("tz"))
-                    .orderBy(Ordering.expression(Function.count("*")).descending());
+                    .orderBy(Ordering.expression(Function.count(Expression.string("*"))).descending());
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -677,15 +677,15 @@ public class QueryAPITest extends BaseTest {
         // For Documentation
         {
             Query query = Query.select(
-                    SelectResult.expression(Function.count("*")),
+                    SelectResult.expression(Function.count(Expression.string("*"))),
                     SelectResult.property("country"),
                     SelectResult.property("tz"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("airport")
-                            .and(Expression.property("geo.alt").greaterThanOrEqualTo(300)))
+                    .where(Expression.property("type").equalTo(Expression.string("airport"))
+                            .and(Expression.property("geo.alt").greaterThanOrEqualTo(Expression.intValue(300))))
                     .groupBy(Expression.property("country"),
                             Expression.property("tz"))
-                    .orderBy(Ordering.expression(Function.count("*")).descending());
+                    .orderBy(Ordering.expression(Function.count(Expression.string("*"))).descending());
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample",
@@ -705,9 +705,9 @@ public class QueryAPITest extends BaseTest {
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel"))
+                    .where(Expression.property("type").equalTo(Expression.string("hotel")))
                     .orderBy(Ordering.property("name").ascending())
-                    .limit(10);
+                    .limit(Expression.intValue(10));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -736,9 +736,9 @@ public class QueryAPITest extends BaseTest {
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("type").equalTo("hotel"))
+                    .where(Expression.property("type").equalTo(Expression.string("hotel")))
                     .orderBy(Ordering.property("name").ascending())
-                    .limit(10);
+                    .limit(Expression.intValue(10));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("%s", result.toMap()));
@@ -752,8 +752,8 @@ public class QueryAPITest extends BaseTest {
         {
             Query query = Query.select(SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("country").in("Latvia", "usa")
-                            .and(Expression.property("type").equalTo("airport")))
+                    .where(Expression.property("country").in(Expression.string("Latvia"), Expression.string("usa"))
+                            .and(Expression.property("type").equalTo(Expression.string("airport"))))
                     .orderBy(Ordering.property("name"));
             assertNotNull(query);
             ResultSet rs = query.execute();
@@ -772,8 +772,8 @@ public class QueryAPITest extends BaseTest {
         {
             Query query = Query.select(SelectResult.property("name"))
                     .from(DataSource.database(database))
-                    .where(Expression.property("country").in("Latvia", "usa")
-                            .and(Expression.property("type").equalTo("airport")))
+                    .where(Expression.property("country").in(Expression.string("Latvia"), Expression.string("usa"))
+                            .and(Expression.property("type").equalTo(Expression.string("airport"))))
                     .orderBy(Ordering.property("name"));
             ResultSet rs = query.execute();
             for (Result result : rs)

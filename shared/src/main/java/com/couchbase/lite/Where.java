@@ -67,11 +67,11 @@ public final class Where extends Query implements GroupByRouter, OrderByRouter, 
     /**
      * Create and chain a LIMIT component to limit the number query results.
      *
-     * @param limit The limit Expression object or liternal value.
+     * @param limit The limit Expression object
      * @return The Limit object.
      */
     @Override
-    public Limit limit(Object limit) {
+    public Limit limit(Expression limit) {
         return new Limit(this, limit, null);
     }
 
@@ -79,12 +79,12 @@ public final class Where extends Query implements GroupByRouter, OrderByRouter, 
      * Create and chain a LIMIT component to skip the returned results for the given offset
      * position and to limit the number of results to not more than the given limit value.
      *
-     * @param limit  The limit Expression object or liternal value.
-     * @param offset The offset Expression object or liternal value.
+     * @param limit  The limit Expression object
+     * @param offset The offset Expression object
      * @return The Limit object.
      */
     @Override
-    public Limit limit(Object limit, Object offset) {
+    public Limit limit(Expression limit, Expression offset) {
         return new Limit(this, limit, offset);
     }
 }

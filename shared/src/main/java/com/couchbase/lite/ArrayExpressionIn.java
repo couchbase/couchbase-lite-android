@@ -8,9 +8,9 @@ package com.couchbase.lite;
  */
 public final class ArrayExpressionIn {
     private ArrayExpression.QuantifiesType type;
-    private String variable;
+    private VariableExpression variable;
 
-    ArrayExpressionIn(ArrayExpression.QuantifiesType type, String variable) {
+    ArrayExpressionIn(ArrayExpression.QuantifiesType type, VariableExpression variable) {
         this.type = type;
         this.variable = variable;
     }
@@ -19,10 +19,10 @@ public final class ArrayExpressionIn {
      * Creates a Satisfies clause object with the given IN clause expression that could be an
      * array object or an expression evaluated as an array object.
      *
-     * @param expression The array object or the expression evaluated as an array object.
+     * @param expression the expression evaluated as an array object.
      * @return A Satisfies object.
      */
-    public ArrayExpressionSatisfies in(Object expression) {
+    public ArrayExpressionSatisfies in(Expression expression) {
         return new ArrayExpressionSatisfies(type, variable, expression);
     }
 }

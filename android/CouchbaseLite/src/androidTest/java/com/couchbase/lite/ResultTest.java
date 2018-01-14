@@ -38,6 +38,7 @@ public class ResultTest extends BaseTest {
     final static SelectResult SR_NO_KEY = SelectResult.property("non_existing_key");
 
     private static Query generateQuery(Database db, String docID) {
+        Expression exDocID = Expression.string(docID);
         return Query.select(
                 SR_NULL,
                 SR_TRUE,
@@ -53,7 +54,7 @@ public class ResultTest extends BaseTest {
                 SR_BLOB,
                 SR_NO_KEY)
                 .from(DataSource.database(db))
-                .where(Meta.id.equalTo(docID));
+                .where(Meta.id.equalTo(exDocID));
     }
 
     private String prepareData(int i) throws CouchbaseLiteException {

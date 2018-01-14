@@ -26,6 +26,6 @@ public class FullTextFunction {
      * @return The full-text rank function.
      */
     public static Expression rank(String indexName) {
-        return new Expression.FunctionExpresson("RANK()", Arrays.asList((Object) indexName));
+        return new Expression.FunctionExpresson("RANK()", Arrays.asList(Expression.string(indexName)));
     }
 }

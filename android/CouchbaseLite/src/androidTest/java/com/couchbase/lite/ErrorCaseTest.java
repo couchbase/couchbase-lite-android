@@ -92,6 +92,45 @@ public class ErrorCaseTest extends BaseTest {
         db.delete(saved);
     }
 
+    @Test
+    public void testDeleteDocAfterDeleteDoc() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // delete doc
+        db.delete(saved);
+
+        // delete doc -> conflict resolver -> no-op
+        db.delete(saved);
+    }
+
+    @Test
+    public void testPurgeDocAfterDeleteDoc() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // delete doc
+        db.delete(saved);
+
+        // purge doc
+        db.purge(saved);
+    }
+
+    @Test
+    public void testPurgeDocAfterPurgeDoc() throws CouchbaseLiteException {
+        MutableDocument doc = createMutableDocument("doc1");
+        doc.setValue("name", "Scott Tiger");
+        Document saved = save(doc);
+
+        // purge doc
+        db.purge(saved);
+
+        // no-op
+        db.purge(saved);
+    }
+
     // -- ArrayTest
 
     static class CustomClass {
