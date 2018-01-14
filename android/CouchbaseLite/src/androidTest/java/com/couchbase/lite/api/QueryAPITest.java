@@ -426,7 +426,7 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("Royal engineers museum")));
+                            .and(Expression.property("name").like("Royal Engineers Museum")));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -448,7 +448,7 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("Royal engineers museum")));
+                            .and(Expression.property("name").like("Royal Engineers Museum")));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("name -> %s", result.getString("name")));
@@ -466,7 +466,7 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("eng%e%")));
+                            .and(Expression.property("name").like("Eng%e%")));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -488,7 +488,7 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("eng%e%")));
+                            .and(Expression.property("name").like("Eng%e%")));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("name -> %s", result.getString("name")));
@@ -506,7 +506,7 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("eng____r")));
+                            .and(Expression.property("name").like("Eng____r")));
             assertNotNull(query);
             ResultSet rs = query.execute();
             assertNotNull(rs);
@@ -528,7 +528,7 @@ public class QueryAPITest extends BaseTest {
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo("landmark")
-                            .and(Expression.property("name").like("eng____r")));
+                            .and(Expression.property("name").like("Eng____r")));
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("name -> %s", result.getString("name")));
