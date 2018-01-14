@@ -14,6 +14,8 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.utils.DateUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -432,12 +434,25 @@ public abstract class Expression {
         private Object value;
 
         ValueExpression(Object value) {
+            if (!isSupportedType(value))
+                throw new IllegalArgumentException("The given value's type is not supported.");
             this.value = value;
         }
 
         @Override
         Object asJSON() {
-            return this.value;
+            if (value instanceof Date)
+                return DateUtils.toJson((Date) value);
+            else
+                return value;
+        }
+
+        private boolean isSupportedType(Object value) {
+            return (value == null
+                    || value instanceof String
+                    || value instanceof Number   // including int, long, float, double
+                    || value instanceof Boolean
+                    || value instanceof Date);
         }
     }
 

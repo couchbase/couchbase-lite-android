@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -913,6 +914,16 @@ public class ResultTest extends BaseTest {
                     List<String> expected = Arrays.asList("null", "true", "false", "string", "zero", "one", "minus_one", "one_dot_one", "date", "dict", "array", "blob", "non_existing_key");
                     Collections.sort(expected);
                     assertEquals(expected, keys);
+
+                    // Result.iterator() test
+                    Iterator<String> itr = r.iterator();
+                    int i = 0;
+                    while(itr.hasNext()){
+                        assertTrue(expected.contains(itr.next()));
+                        i++;
+                    }
+                    assertEquals(expected.size(), i);
+
                 }
             });
             assertEquals(1, rows);

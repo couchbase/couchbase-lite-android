@@ -428,14 +428,13 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
 
     /**
-     * Gets  an iterator over the prjecting result keys.
+     * Gets  an iterator over the projecting result keys.
      *
      * @return The Iterator object of all result keys.
      */
     @Override
     public Iterator<String> iterator() {
-        // TODO !!!
-        return null;
+        return getKeys().iterator();
     }
 
     //---------------------------------------------
