@@ -19,6 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ResultTest extends BaseTest {
     final static String kDocumentTestDate = "2017-01-01T00:00:00.000Z";
@@ -137,8 +138,16 @@ public class ResultTest extends BaseTest {
                     assertTrue(r.getValue(11) instanceof Blob);
                     assertNull(r.getValue(12));
 
-                    assertNull(r.getValue(-1));
-                    assertNull(r.getValue(100));
+                    try {
+                        r.getValue(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getValue(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -204,8 +213,16 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getString(11));
                     assertNull(r.getString(12));
 
-                    assertNull(r.getString(-1));
-                    assertNull(r.getString(100));
+                    try {
+                        r.getString(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getString(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -271,8 +288,16 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getNumber(11));
                     assertNull(r.getNumber(12));
 
-                    assertNull(r.getNumber(-1));
-                    assertNull(r.getNumber(100));
+                    try {
+                        r.getNumber(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getNumber(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
 
                 }
             });
@@ -340,13 +365,22 @@ public class ResultTest extends BaseTest {
                     assertEquals(0, r.getInt(11));
                     assertEquals(0, r.getInt(12));
 
-                    assertEquals(0, r.getInt(-1));
-                    assertEquals(0, r.getInt(100));
+                    try {
+                        r.getInt(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getInt(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
         }
     }
+
 
     @Test
     public void testGetLongByKey() throws Exception {
@@ -406,8 +440,16 @@ public class ResultTest extends BaseTest {
                     assertEquals(0, r.getLong(11));
                     assertEquals(0, r.getLong(12));
 
-                    assertEquals(0, r.getLong(-1));
-                    assertEquals(0, r.getLong(100));
+                    try {
+                        r.getLong(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getLong(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -472,8 +514,16 @@ public class ResultTest extends BaseTest {
                     assertEquals(0.0f, r.getFloat(11), 0.0f);
                     assertEquals(0.0f, r.getFloat(12), 0.0f);
 
-                    assertEquals(0.0f, r.getFloat(-1), 0.0f);
-                    assertEquals(0.0f, r.getFloat(100), 0.0f);
+                    try {
+                        r.getFloat(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getFloat(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -539,9 +589,16 @@ public class ResultTest extends BaseTest {
                     assertEquals(0.0, r.getDouble(11), 0.0);
                     assertEquals(0.0, r.getDouble(12), 0.0);
 
-
-                    assertEquals(0.0, r.getDouble(-1), 0.0);
-                    assertEquals(0.0, r.getDouble(100), 0.0);
+                    try {
+                        r.getDouble(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getDouble(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -606,8 +663,16 @@ public class ResultTest extends BaseTest {
                     assertEquals(true, r.getBoolean(11));
                     assertEquals(false, r.getBoolean(12));
 
-                    assertFalse(r.getBoolean(-1));
-                    assertFalse(r.getBoolean(100));
+                    try {
+                        r.getBoolean(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getBoolean(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -672,8 +737,16 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getDate(11));
                     assertNull(r.getDate(12));
 
-                    assertNull(r.getDate(-1));
-                    assertNull(r.getDate(100));
+                    try {
+                        r.getDate(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getDate(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -743,8 +816,16 @@ public class ResultTest extends BaseTest {
                             r.getBlob(11).getContent()));
                     assertNull(r.getBlob(12));
 
-                    assertNull(r.getBlob(-1));
-                    assertNull(r.getBlob(100));
+                    try {
+                        r.getBlob(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getBlob(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -820,8 +901,16 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getDictionary(11));
                     assertNull(r.getDictionary(12));
 
-                    assertNull(r.getDictionary(-1));
-                    assertNull(r.getDictionary(100));
+                    try {
+                        r.getDictionary(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getDictionary(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -890,8 +979,16 @@ public class ResultTest extends BaseTest {
                     assertNull(r.getArray(11));
                     assertNull(r.getArray(12));
 
-                    assertNull(r.getArray(-1));
-                    assertNull(r.getArray(100));
+                    try {
+                        r.getArray(-1);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
+                    try {
+                        r.getArray(100);
+                        fail();
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                    }
                 }
             });
             assertEquals(1, rows);
@@ -918,7 +1015,7 @@ public class ResultTest extends BaseTest {
                     // Result.iterator() test
                     Iterator<String> itr = r.iterator();
                     int i = 0;
-                    while(itr.hasNext()){
+                    while (itr.hasNext()) {
                         assertTrue(expected.contains(itr.next()));
                         i++;
                     }
@@ -940,12 +1037,16 @@ public class ResultTest extends BaseTest {
                 @Override
                 public void check(int n, Result r) throws Exception {
                     // exists -> true
-                    List<String> expected = Arrays.asList("null", "true", "false", "string", "zero", "one", "minus_one", "one_dot_one", "date", "dict", "array", "blob", "non_existing_key");
+                    List<String> expected = Arrays.asList(
+                            "null", "true", "false", "string", "zero", "one",
+                            "minus_one", "one_dot_one", "date", "dict", "array",
+                            "blob");
                     for (String key : expected) {
                         assertTrue(r.contains(key));
                     }
 
                     // not exists -> false
+                    assertFalse(r.contains("non_existing_key"));
                     assertFalse(r.contains(null));
                     assertFalse(r.contains("not_in_query_select"));
                 }

@@ -2001,7 +2001,7 @@ public class QueryTest extends BaseTest {
         }
         assertEquals(5, i);
         assertNull(rs.next());
-        assertEquals(5, rs.allResults().size());
+        assertEquals(0, rs.allResults().size());
 
         // Type 2: Enumeration by ResultSet.iterator()
         i = 0;
@@ -2012,7 +2012,7 @@ public class QueryTest extends BaseTest {
         }
         assertEquals(5, i);
         assertNull(rs.next());
-        assertEquals(5, rs.allResults().size());
+        assertEquals(0, rs.allResults().size());
 
         // Type 3: Enumeration by ResultSet.allResults().get(int index)
         i = 0;
@@ -2025,7 +2025,7 @@ public class QueryTest extends BaseTest {
         }
         assertEquals(5, i);
         assertNull(rs.next());
-        assertEquals(5, rs.allResults().size());
+        assertEquals(0, rs.allResults().size());
 
         // Type 4: Enumeration by ResultSet.allResults().iterator()
         i = 0;
@@ -2038,7 +2038,7 @@ public class QueryTest extends BaseTest {
         }
         assertEquals(5, i);
         assertNull(rs.next());
-        assertEquals(5, rs.allResults().size());
+        assertEquals(0, rs.allResults().size());
     }
 
     @Test
@@ -2061,7 +2061,7 @@ public class QueryTest extends BaseTest {
         assertEquals(5, results.size());
         assertEquals(5, i);
         assertNull(rs.next());
-        assertEquals(5, rs.allResults().size());
+        assertEquals(0, rs.allResults().size());
 
         // Get all results by iterator
         i = 0;
@@ -2074,22 +2074,23 @@ public class QueryTest extends BaseTest {
         assertEquals(5, results.size());
         assertEquals(5, i);
         assertNull(rs.next());
-        assertEquals(5, rs.allResults().size());
+        assertEquals(0, rs.allResults().size());
 
         // Partial enumerating then get all results:
-        i = 0;
+
         rs = q.execute();
         assertNotNull(rs.next());
         assertNotNull(rs.next());
         results = rs.allResults();
+        i = 2;
         for (Result r : results) {
             assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
             i++;
         }
-        assertEquals(5, results.size());
+        assertEquals(3, results.size());
         assertEquals(5, i);
         assertNull(rs.next());
-        assertEquals(5, rs.allResults().size());
+        assertEquals(0, rs.allResults().size());
     }
 
     @Test
@@ -2145,5 +2146,40 @@ public class QueryTest extends BaseTest {
         assertEquals(0, i);
         assertNull(rs.next());
         assertEquals(0, rs.allResults().size());
+    }
+
+    @Test
+    public void testMissingValue() throws CouchbaseLiteException {
+        MutableDocument doc1 = createMutableDocument("doc1");
+        doc1.setValue("name", "Scott");
+        doc1.setValue("address", null);
+        save(doc1);
+
+        Query q = Query.select(
+                SelectResult.property("name"),
+                SelectResult.property("address"),
+                SelectResult.property("age"))
+                .from(DataSource.database(db));
+
+        ResultSet rs = q.execute();
+        Result r = rs.next();
+
+        // Array:
+        assertEquals(3, r.count());
+        assertEquals("Scott", r.getString(0));
+        assertNull(r.getValue(1));
+        assertNull(r.getValue(2));
+        assertEquals(Arrays.asList("Scott", null, null), r.toList());
+
+        // Dictionary:
+        assertEquals("Scott", r.getString("name"));
+        assertNull(r.getString("address"));
+        assertTrue(r.contains("address"));
+        assertNull(r.getString("age"));
+        assertFalse(r.contains("age"));
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("name", "Scott");
+        expected.put("address", null);
+        assertEquals(expected, r.toMap());
     }
 }
