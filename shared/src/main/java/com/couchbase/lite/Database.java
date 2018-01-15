@@ -139,7 +139,7 @@ public final class Database {
      * If the database does not yet exist, it will be created, unless the `readOnly` option is used.
      *
      * @param name   The name of the database. May NOT contain capital letters!
-     * @param config The database config, or null for the default config.
+     * @param config The database config, Note: null config parameter is not allowed with Android platform
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
      */
     public Database(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
