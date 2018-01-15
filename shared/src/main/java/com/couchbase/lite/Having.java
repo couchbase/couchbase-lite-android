@@ -44,7 +44,7 @@ public final class Having extends Query implements OrderByRouter, LimitRouter {
      * @return The Limit object that represents the LIMIT clause of the query.
      */
     @Override
-    public Limit limit(Object limit) {
+    public Limit limit(Expression limit) {
         return new Limit(this, limit, null);
     }
 
@@ -57,7 +57,7 @@ public final class Having extends Query implements OrderByRouter, LimitRouter {
      * @return The Limit object that represents the LIMIT clause of the query.
      */
     @Override
-    public Limit limit(Object limit, Object offset) {
+    public Limit limit(Expression limit, Expression offset) {
         return new Limit(this, limit, offset);
     }
 

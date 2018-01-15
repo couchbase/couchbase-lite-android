@@ -15,6 +15,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.litecore.C4QueryEnumerator;
 import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLArrayIterator;
 import com.couchbase.litecore.fleece.FLValue;
@@ -26,6 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -37,15 +39,17 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     // member variables
     //---------------------------------------------
     private ResultSet rs;
-    private FLArrayIterator columns;
+    private List<FLValue> values;
+    private long missingColumns;
     private MContext context;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
-    Result(ResultSet rs, FLArrayIterator columns, MContext context) {
+    Result(ResultSet rs, C4QueryEnumerator c4enum, MContext context) {
         this.rs = rs;
-        this.columns = columns;
+        this.values = extractColumns(c4enum.getColumns());
+        this.missingColumns = c4enum.getMissingColumns();
         this.context = context;
     }
 
@@ -77,6 +81,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Object getValue(int index) {
+        check(index);
         return fleeceValueToObject(index);
     }
 
@@ -88,6 +93,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public String getString(int index) {
+        check(index);
         Object obj = fleeceValueToObject(index);
         return obj instanceof String ? (String) obj : null;
     }
@@ -100,6 +106,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Number getNumber(int index) {
+        check(index);
         return CBLConverter.getNumber(fleeceValueToObject(index));
     }
 
@@ -111,7 +118,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public int getInt(int index) {
-        FLValue flValue = fleeceValue(index);
+        check(index);
+        FLValue flValue = values.get(index);
         return flValue != null ? (int) flValue.asInt() : 0;
     }
 
@@ -123,7 +131,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public long getLong(int index) {
-        FLValue flValue = fleeceValue(index);
+        check(index);
+        FLValue flValue = values.get(index);
         return flValue != null ? flValue.asInt() : 0L;
     }
 
@@ -135,7 +144,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public float getFloat(int index) {
-        FLValue flValue = fleeceValue(index);
+        check(index);
+        FLValue flValue = values.get(index);
         return flValue != null ? flValue.asFloat() : 0.0F;
     }
 
@@ -147,7 +157,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public double getDouble(int index) {
-        FLValue flValue = fleeceValue(index);
+        check(index);
+        FLValue flValue = values.get(index);
         return flValue != null ? flValue.asDouble() : 0.0;
     }
 
@@ -159,7 +170,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public boolean getBoolean(int index) {
-        FLValue flValue = fleeceValue(index);
+        check(index);
+        FLValue flValue = values.get(index);
         return flValue != null ? flValue.asBool() : false;
     }
 
@@ -171,6 +183,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Blob getBlob(int index) {
+        check(index);
         Object obj = fleeceValueToObject(index);
         return obj instanceof Blob ? (Blob) obj : null;
     }
@@ -183,6 +196,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Date getDate(int index) {
+        check(index);
         return DateUtils.fromJson(getString(index));
     }
 
@@ -194,6 +208,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Array getArray(int index) {
+        check(index);
         Object obj = fleeceValueToObject(index);
         return obj instanceof Array ? (Array) obj : null;
     }
@@ -206,6 +221,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public Dictionary getDictionary(int index) {
+        check(index);
         Object obj = fleeceValueToObject(index);
         return obj instanceof Dictionary ? (Dictionary) obj : null;
     }
@@ -221,7 +237,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         List<Object> array = new ArrayList<>();
         for (int i = 0; i < count(); i++) {
             SharedKeys sk = rs.getQuery().getDatabase().getSharedKeys();
-            array.add(SharedKeys.valueToObject(fleeceValue(i), sk));
+            array.add(SharedKeys.valueToObject(values.get(i), sk));
         }
         return array;
     }
@@ -407,7 +423,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         Map<String, Object> dict = new HashMap<>();
         for (String name : rs.getColumnNames().keySet()) {
             int index = indexForColumnName(name);
-            dict.put(name, values.get(index));
+            if (index >= 0)
+                dict.put(name, values.get(index));
         }
         return dict;
     }
@@ -428,14 +445,13 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
 
     /**
-     * Gets  an iterator over the prjecting result keys.
+     * Gets  an iterator over the projecting result keys.
      *
      * @return The Iterator object of all result keys.
      */
     @Override
     public Iterator<String> iterator() {
-        // TODO !!!
-        return null;
+        return getKeys().iterator();
     }
 
     //---------------------------------------------
@@ -445,19 +461,32 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     // - (NSInteger) indexForColumnName: (NSString*)name
     private int indexForColumnName(String name) {
         Integer index = rs.getColumnNames().get(name);
-        return index != null ? index.intValue() : -1;
-    }
-
-    // - (FLValue) fleeceValueAtIndex: (NSUInteger)index
-    private FLValue fleeceValue(int index) {
-        return columns.getValueAt(index);
+        if (index == null) return -1;
+        boolean hasValue = (missingColumns & (1 << index.intValue())) == 0;
+        return hasValue ? index.intValue() : -1;
     }
 
     // - (id) fleeceValueToObjectAtIndex: (NSUInteger)index
     private Object fleeceValueToObject(int index) {
-        FLValue value = fleeceValue(index);
+        check(index);
+        FLValue value = values.get(index);
         if (value == null) return null;
         MRoot root = new MRoot(context, value, false);
         return root.asNative();
+    }
+
+    List<FLValue> extractColumns(FLArrayIterator columns) {
+        int count = rs.getColumnNames().size();
+        List<FLValue> values = new ArrayList<>();
+        for (int i = 0; i < count; i++)
+            values.add(columns.getValueAt(i));
+        return values;
+    }
+
+    private void check(int index) {
+        if (index < 0 || index >= count()) {
+            String msg = String.format(Locale.ENGLISH, "length=%d; index=%d", count(), index);
+            throw new ArrayIndexOutOfBoundsException(msg);
+        }
     }
 }

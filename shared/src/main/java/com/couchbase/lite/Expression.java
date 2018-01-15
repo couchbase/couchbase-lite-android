@@ -14,8 +14,11 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.utils.DateUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -33,6 +36,98 @@ public abstract class Expression {
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
+
+    // Value:
+
+    /**
+     * Create value expression with given value
+     *
+     * @param value the value
+     * @return the value expression
+     */
+    public static Expression value(Object value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with given String value
+     *
+     * @param value the String value
+     * @return the value expression
+     */
+    public static Expression string(String value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with given Number value
+     *
+     * @param value the Number value
+     * @return the value expression
+     */
+    public static Expression number(Number value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with given integer value
+     *
+     * @param value the integer value
+     * @return the value expression
+     */
+    public static Expression intValue(int value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with given long value
+     *
+     * @param value the long value
+     * @return the value expression
+     */
+    public static Expression longValue(long value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with given float value
+     *
+     * @param value the float value
+     * @return the value expression
+     */
+    public static Expression floatValue(float value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with given double value
+     *
+     * @param value the double value
+     * @return the value expression
+     */
+    public static Expression doubleValue(double value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with given boolean value
+     *
+     * @param value the boolean value
+     * @return the value expression
+     */
+    public static Expression booleanValue(boolean value) {
+        return new ValueExpression(value);
+    }
+
+    /**
+     * Create value expression with given Date value
+     *
+     * @param value the Date value
+     * @return the value expression
+     */
+    public static Expression date(Date value) {
+        return new ValueExpression(value);
+    }
 
     /**
      * Creates a * expression to express all properties
@@ -55,6 +150,7 @@ public abstract class Expression {
 
     /**
      * Creates a parameter expression with the given parameter name.
+     *
      * @param name The parameter name
      * @return A parameter expression.
      */
@@ -68,7 +164,7 @@ public abstract class Expression {
      * @param expression the expression to be negated.
      * @return a negated expression.
      */
-    public static Expression negated(Object expression) {
+    public static Expression negated(Expression expression) {
         return new CompoundExpression(Arrays.asList(expression), CompoundExpression.OpType.Not);
     }
 
@@ -78,18 +174,8 @@ public abstract class Expression {
      * @param expression the expression to be negated.
      * @return a negated expression.
      */
-    public static Expression not(Object expression) {
+    public static Expression not(Expression expression) {
         return negated(expression);
-    }
-
-    /**
-     * Create a concat expression to concatenate the current expression with the given expression.
-     *
-     * @param expression the expression to concatenate with.
-     * @return a concat expression.
-     */
-    public Expression concat(Object expression) {
-        throw new UnsupportedOperationException();
     }
 
     /**
@@ -98,7 +184,7 @@ public abstract class Expression {
      * @param expression the expression to multiply by.
      * @return a multiply expression.
      */
-    public Expression multiply(Object expression) {
+    public Expression multiply(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Multiply);
     }
 
@@ -108,7 +194,7 @@ public abstract class Expression {
      * @param expression the expression to divide by.
      * @return a divide expression.
      */
-    public Expression divide(Object expression) {
+    public Expression divide(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Divide);
     }
 
@@ -118,7 +204,7 @@ public abstract class Expression {
      * @param expression the expression to modulo by.
      * @return a modulo expression.
      */
-    public Expression modulo(Object expression) {
+    public Expression modulo(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Modulus);
     }
 
@@ -128,7 +214,7 @@ public abstract class Expression {
      * @param expression an expression to add to the current expression.
      * @return an add expression.
      */
-    public Expression add(Object expression) {
+    public Expression add(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Add);
     }
 
@@ -138,7 +224,7 @@ public abstract class Expression {
      * @param expression an expression to subtract from the current expression.
      * @return a substract expression.
      */
-    public Expression subtract(Object expression) {
+    public Expression subtract(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Subtract);
     }
 
@@ -149,7 +235,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a less than expression.
      */
-    public Expression lessThan(Object expression) {
+    public Expression lessThan(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.LessThan);
     }
 
@@ -160,7 +246,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a less than or equal to expression.
      */
-    public Expression lessThanOrEqualTo(Object expression) {
+    public Expression lessThanOrEqualTo(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.LessThanOrEqualTo);
     }
 
@@ -171,7 +257,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a greater than expression.
      */
-    public Expression greaterThan(Object expression) {
+    public Expression greaterThan(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.GreaterThan);
     }
 
@@ -182,7 +268,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a greater than or equal to expression.
      */
-    public Expression greaterThanOrEqualTo(Object expression) {
+    public Expression greaterThanOrEqualTo(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.GreaterThanOrEqualTo);
     }
 
@@ -193,7 +279,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return an equal to expression.
      */
-    public Expression equalTo(Object expression) {
+    public Expression equalTo(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.EqualTo);
     }
 
@@ -204,7 +290,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a NOT equal to exprssion.
      */
-    public Expression notEqualTo(Object expression) {
+    public Expression notEqualTo(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.NotEqualTo);
     }
 
@@ -215,7 +301,7 @@ public abstract class Expression {
      * @param expression the expression to AND with the current expression.
      * @return a logical AND expression.
      */
-    public Expression and(Object expression) {
+    public Expression and(Expression expression) {
         return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OpType.And);
     }
 
@@ -226,7 +312,7 @@ public abstract class Expression {
      * @param expression the expression to OR with the current expression.
      * @return a logical OR exprssion.
      */
-    public Expression or(Object expression) {
+    public Expression or(Expression expression) {
         return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OpType.Or);
     }
 
@@ -237,7 +323,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a Like expression.
      */
-    public Expression like(Object expression) {
+    public Expression like(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Like);
     }
 
@@ -248,7 +334,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return a regex match expression.
      */
-    public Expression regex(Object expression) {
+    public Expression regex(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.RegexLike);
     }
 
@@ -259,7 +345,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return an IS expression.
      */
-    public Expression is(Object expression) {
+    public Expression is(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.Is);
     }
 
@@ -270,7 +356,7 @@ public abstract class Expression {
      * @param expression the expression to compare with the current expression.
      * @return an IS NOT expression.
      */
-    public Expression isNot(Object expression) {
+    public Expression isNot(Expression expression) {
         return new BinaryExpression(this, expression, BinaryExpression.OpType.IsNot);
     }
 
@@ -282,7 +368,7 @@ public abstract class Expression {
      * @param expression2 the inclusive upper bound expression.
      * @return a between expression.
      */
-    public Expression between(Object expression1, Object expression2) {
+    public Expression between(Expression expression1, Expression expression2) {
         Expression aggr = new AggregateExpression(Arrays.asList(expression1, expression2));
         return new BinaryExpression(this, aggr, BinaryExpression.OpType.Between);
     }
@@ -332,7 +418,7 @@ public abstract class Expression {
      * @param expressions the expression array to evaluate with.
      * @return an IN expression.
      */
-    public Expression in(Object... expressions) {
+    public Expression in(Expression... expressions) {
         Expression aggr = new AggregateExpression(Arrays.asList(expressions));
         return new BinaryExpression(this, aggr, BinaryExpression.OpType.In);
     }
@@ -342,23 +428,42 @@ public abstract class Expression {
         return String.format(Locale.ENGLISH, "%s[json=%s]", getClass().getSimpleName(), asJSON());
     }
 
-    protected Object jsonValue(Object value) {
-        if (value instanceof Expression)
-            return ((Expression) value).asJSON();
-        else
-            return value;
-    }
-
     abstract Object asJSON();
 
-    static final class AggregateExpression extends Expression {
-        private List<Object> expressions;
+    static final class ValueExpression extends Expression {
+        private Object value;
 
-        AggregateExpression(List<Object> expressions) {
+        ValueExpression(Object value) {
+            if (!isSupportedType(value))
+                throw new IllegalArgumentException("The given value's type is not supported.");
+            this.value = value;
+        }
+
+        @Override
+        Object asJSON() {
+            if (value instanceof Date)
+                return DateUtils.toJson((Date) value);
+            else
+                return value;
+        }
+
+        private boolean isSupportedType(Object value) {
+            return (value == null
+                    || value instanceof String
+                    || value instanceof Number   // including int, long, float, double
+                    || value instanceof Boolean
+                    || value instanceof Date);
+        }
+    }
+
+    static final class AggregateExpression extends Expression {
+        private List<Expression> expressions;
+
+        AggregateExpression(List<Expression> expressions) {
             this.expressions = expressions;
         }
 
-        public List<Object> getExpressions() {
+        public List<Expression> getExpressions() {
             return expressions;
         }
 
@@ -366,8 +471,8 @@ public abstract class Expression {
         Object asJSON() {
             List<Object> json = new ArrayList<Object>();
             json.add("[]");
-            for (Object exp : expressions)
-                json.add(jsonValue(exp));
+            for (Expression expr : expressions)
+                json.add(expr.asJSON());
             return json;
         }
     }
@@ -375,15 +480,15 @@ public abstract class Expression {
     static final class BinaryExpression extends Expression {
         enum OpType {
             Add, Between, Divide, EqualTo, GreaterThan, GreaterThanOrEqualTo,
-            In, Is, IsNot, LessThan, LessThanOrEqualTo, Like, /*Matches,*/
+            In, Is, IsNot, LessThan, LessThanOrEqualTo, Like,
             Modulus, Multiply, NotEqualTo, Subtract, RegexLike,
         }
 
-        private Object lhs;
-        private Object rhs;
+        private Expression lhs;
+        private Expression rhs;
         private OpType type;
 
-        BinaryExpression(Object lhs, Object rhs, OpType type) {
+        BinaryExpression(Expression lhs, Expression rhs, OpType type) {
             this.lhs = lhs;
             this.rhs = rhs;
             this.type = type;
@@ -446,16 +551,16 @@ public abstract class Expression {
                     break;
             }
 
-            json.add(jsonValue((lhs)));
+            json.add(lhs.asJSON());
 
             if (type == OpType.Between) {
                 // "between"'s RHS is an aggregate of the min and max, but the min and max need to be
                 // written out as parameters to the BETWEEN operation:
-                List<Object> rangeExprs = ((AggregateExpression) rhs).getExpressions();
-                json.add(jsonValue((rangeExprs.get(0))));
-                json.add(jsonValue((rangeExprs.get(1))));
+                List<Expression> rangeExprs = ((AggregateExpression) rhs).getExpressions();
+                json.add(rangeExprs.get(0).asJSON());
+                json.add(rangeExprs.get(1).asJSON());
             } else
-                json.add(jsonValue((rhs)));
+                json.add(rhs.asJSON());
 
             return json;
         }
@@ -469,9 +574,9 @@ public abstract class Expression {
         }
 
         private OpType type;
-        private List<Object> subexpressions;
+        private List<Expression> subexpressions;
 
-        CompoundExpression(List<Object> subexpressions, OpType type) {
+        CompoundExpression(List<Expression> subexpressions, OpType type) {
             if (subexpressions == null)
                 throw new AssertionError("subexpressions is null.");
             this.type = type;
@@ -492,12 +597,8 @@ public abstract class Expression {
                     json.add("NOT");
                     break;
             }
-            for (Object exp : subexpressions) {
-                if (exp instanceof Expression)
-                    json.add(((Expression) exp).asJSON());
-                else
-                    json.add(exp);
-            }
+            for (Expression expr : subexpressions)
+                json.add(expr.asJSON());
             return json;
         }
     }
@@ -510,10 +611,10 @@ public abstract class Expression {
             Null
         }
 
-        private Object operand;
+        private Expression operand;
         private OpType type;
 
-        UnaryExpression(Object operand, OpType type) {
+        UnaryExpression(Expression operand, OpType type) {
             if (operand == null)
                 throw new AssertionError("operand is null.");
             this.operand = operand;
@@ -522,13 +623,7 @@ public abstract class Expression {
 
         @Override
         Object asJSON() {
-            Object opd;
-            if (operand instanceof Expression)
-                opd = ((Expression) operand).asJSON();
-            else
-                opd = operand;
-
-
+            Object opd = operand.asJSON();
             switch (type) {
                 case Missing: {
                     List<Object> values = new ArrayList<>();
@@ -567,21 +662,6 @@ public abstract class Expression {
         }
     }
 
-    static final class VariableExpression extends Expression {
-        private String name;
-
-        VariableExpression(String name) {
-            this.name = name;
-        }
-
-        @Override
-        Object asJSON() {
-            List<Object> json = new ArrayList<>();
-            json.add("?" + name);
-            return json;
-        }
-    }
-
     static final class CollationExpression extends Expression {
         private Expression operand;
         private Collation collation;
@@ -606,12 +686,12 @@ public abstract class Expression {
         // member variables
         //---------------------------------------------
         private String func = null;
-        private List<Object> params = null;
+        private List<Expression> params = null;
 
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
-        FunctionExpresson(String func, List<Object> params) {
+        FunctionExpresson(String func, List<Expression> params) {
             this.func = func;
             this.params = params;
         }
@@ -623,12 +703,8 @@ public abstract class Expression {
         Object asJSON() {
             List<Object> json = new ArrayList<>();
             json.add(func);
-            for (Object param : params) {
-                if (param != null && param instanceof Expression)
-                    json.add(((Expression) param).asJSON());
-                else
-                    json.add(param);
-            }
+            for (Expression expr : params)
+                json.add(expr.asJSON());
             return json;
         }
     }

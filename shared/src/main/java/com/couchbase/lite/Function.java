@@ -21,7 +21,7 @@ public final class Function {
      * @param expression The expression.
      * @return The AVG(expr) function.
      */
-    public static Expression avg(Object expression) {
+    public static Expression avg(Expression expression) {
         return new Expression.FunctionExpresson("AVG()", Arrays.asList(expression));
     }
 
@@ -32,7 +32,7 @@ public final class Function {
      * @param expression The expression.
      * @return The COUNT(expr) function.
      */
-    public static Expression count(Object expression) {
+    public static Expression count(Expression expression) {
         return new Expression.FunctionExpresson("COUNT()", Arrays.asList(expression));
     } // null expression -> count *
 
@@ -43,7 +43,7 @@ public final class Function {
      * @param expression The expression.
      * @return The MIN(expr) function.
      */
-    public static Expression min(Object expression) {
+    public static Expression min(Expression expression) {
         return new Expression.FunctionExpresson("MIN()", Arrays.asList(expression));
     }
 
@@ -54,7 +54,7 @@ public final class Function {
      * @param expression The expression.
      * @return The MAX(expr) function.
      */
-    public static Expression max(Object expression) {
+    public static Expression max(Expression expression) {
         return new Expression.FunctionExpresson("MAX()", Arrays.asList(expression));
     }
 
@@ -65,7 +65,7 @@ public final class Function {
      * @param expression The expression.
      * @return The SUM(expr) function.
      */
-    public static Expression sum(Object expression) {
+    public static Expression sum(Expression expression) {
         return new Expression.FunctionExpresson("SUM()", Arrays.asList(expression));
     }
 
@@ -80,7 +80,7 @@ public final class Function {
      * @param expression The expression.
      * @return The ABS(expr) function.
      */
-    public static Expression abs(Object expression) {
+    public static Expression abs(Expression expression) {
         return new Expression.FunctionExpresson("ABS()", Arrays.asList(expression));
     }
 
@@ -91,7 +91,7 @@ public final class Function {
      * @param expression The expression.
      * @return The ACOS(expr) function.
      */
-    public static Expression acos(Object expression) {
+    public static Expression acos(Expression expression) {
         return new Expression.FunctionExpresson("ACOS()", Arrays.asList(expression));
     }
 
@@ -102,7 +102,7 @@ public final class Function {
      * @param expression The expression.
      * @return The ASIN(expr) function.
      */
-    public static Expression asin(Object expression) {
+    public static Expression asin(Expression expression) {
         return new Expression.FunctionExpresson("ASIN()", Arrays.asList(expression));
     }
 
@@ -113,7 +113,7 @@ public final class Function {
      * @param expression The expression.
      * @return The ATAN(expr) function.
      */
-    public static Expression atan(Object expression) {
+    public static Expression atan(Expression expression) {
         return new Expression.FunctionExpresson("ATAN()", Arrays.asList(expression));
     }
 
@@ -126,7 +126,7 @@ public final class Function {
      * @return the theta component of the point (r, theta) in polar coordinates that corresponds
      * to the point (x, y) in Cartesian coordinates.
      */
-    public static Expression atan2(Object x, Object y) {
+    public static Expression atan2(Expression x, Expression y) {
         return new Expression.FunctionExpresson("ATAN2()", Arrays.asList(x, y));
     }
 
@@ -137,7 +137,7 @@ public final class Function {
      * @param expression The expression.
      * @return The CEIL(expr) function.
      */
-    public static Expression ceil(Object expression) {
+    public static Expression ceil(Expression expression) {
         return new Expression.FunctionExpresson("CEIL()", Arrays.asList(expression));
     }
 
@@ -147,7 +147,7 @@ public final class Function {
      * @param expression The expression.
      * @return The COS(expr) function.
      */
-    public static Expression cos(Object expression) {
+    public static Expression cos(Expression expression) {
         return new Expression.FunctionExpresson("COS()", Arrays.asList(expression));
     }
 
@@ -158,7 +158,7 @@ public final class Function {
      * @param expression The expression.
      * @return The DEGREES(expr) function.
      */
-    public static Expression degrees(Object expression) {
+    public static Expression degrees(Expression expression) {
         return new Expression.FunctionExpresson("DEGREES()", Arrays.asList(expression));
     }
 
@@ -168,7 +168,7 @@ public final class Function {
      * @return The E() constant function.
      */
     public static Expression e() {
-        return new Expression.FunctionExpresson("E()", Arrays.asList((Object) null));
+        return new Expression.FunctionExpresson("E()", Arrays.asList((Expression) null));
     }
 
     /**
@@ -178,7 +178,7 @@ public final class Function {
      * @param expression The expression.
      * @return The EXP(expr) function.
      */
-    public static Expression exp(Object expression) {
+    public static Expression exp(Expression expression) {
         return new Expression.FunctionExpresson("EXP()", Arrays.asList(expression));
     }
 
@@ -189,7 +189,7 @@ public final class Function {
      * @param expression The expression.
      * @return The FLOOR(expr) function.
      */
-    public static Expression floor(Object expression) {
+    public static Expression floor(Expression expression) {
         return new Expression.FunctionExpresson("FLOOR()", Arrays.asList(expression));
     }
 
@@ -199,7 +199,7 @@ public final class Function {
      * @param expression The expression.
      * @return The LN(expr) function.
      */
-    public static Expression ln(Object expression) {
+    public static Expression ln(Expression expression) {
         return new Expression.FunctionExpresson("LN()", Arrays.asList(expression));
     }
 
@@ -209,7 +209,7 @@ public final class Function {
      * @param expression The expression.
      * @return The LOG(expr) function.
      */
-    public static Expression log(Object expression) {
+    public static Expression log(Expression expression) {
         return new Expression.FunctionExpresson("LOG()", Arrays.asList(expression));
     }
 
@@ -219,7 +219,7 @@ public final class Function {
      * @return The PI() constant function.
      */
     public static Expression pi() {
-        return new Expression.FunctionExpresson("PI()", Arrays.asList((Object) null));
+        return new Expression.FunctionExpresson("PI()", Arrays.asList((Expression) null));
     }
 
     /**
@@ -230,7 +230,7 @@ public final class Function {
      * @param exponent The exponent expression.
      * @return The POWER(base, exponent) function.
      */
-    public static Expression power(Object base, Object exponent) {
+    public static Expression power(Expression base, Expression exponent) {
         return new Expression.FunctionExpresson("POWER()", Arrays.asList(base, exponent));
     }
 
@@ -241,7 +241,7 @@ public final class Function {
      * @param expression The expression.
      * @return The RADIANS(expr) function.
      */
-    public static Expression radians(Object expression) {
+    public static Expression radians(Expression expression) {
         return new Expression.FunctionExpresson("RADIANS()", Arrays.asList(expression));
     }
 
@@ -252,7 +252,7 @@ public final class Function {
      * @param expression The expression.
      * @return The ROUND(expr) function.
      */
-    public static Expression round(Object expression) {
+    public static Expression round(Expression expression) {
         return new Expression.FunctionExpresson("ROUND()", Arrays.asList(expression));
     }
 
@@ -264,7 +264,7 @@ public final class Function {
      * @param digits     The number of digits.
      * @return The ROUND(expr, digits) function.
      */
-    public static Expression round(Object expression, int digits) {
+    public static Expression round(Expression expression, Expression digits) {
         return new Expression.FunctionExpresson("ROUND()", Arrays.asList(expression, digits));
     }
 
@@ -275,7 +275,7 @@ public final class Function {
      * @param expression The expression.
      * @return The SIGN(expr) function.
      */
-    public static Expression sign(Object expression) {
+    public static Expression sign(Expression expression) {
         return new Expression.FunctionExpresson("SIGN()", Arrays.asList(expression));
     }
 
@@ -285,7 +285,7 @@ public final class Function {
      * @param expression The numeric expression.
      * @return The SIN(expr) function.
      */
-    public static Expression sin(Object expression) {
+    public static Expression sin(Expression expression) {
         return new Expression.FunctionExpresson("SIN()", Arrays.asList(expression));
     }
 
@@ -295,7 +295,7 @@ public final class Function {
      * @param expression The numeric expression.
      * @return The SQRT(expr) function.
      */
-    public static Expression sqrt(Object expression) {
+    public static Expression sqrt(Expression expression) {
         return new Expression.FunctionExpresson("SQRT()", Arrays.asList(expression));
     }
 
@@ -305,7 +305,7 @@ public final class Function {
      * @param expression The numeric expression.
      * @return The TAN(expr) function.
      */
-    public static Expression tan(Object expression) {
+    public static Expression tan(Expression expression) {
         return new Expression.FunctionExpresson("TAN()", Arrays.asList(expression));
     }
 
@@ -316,7 +316,7 @@ public final class Function {
      * @param expression The numeric expression.
      * @return The trunc function.
      */
-    public static Expression trunc(Object expression) {
+    public static Expression trunc(Expression expression) {
         return new Expression.FunctionExpresson("TRUNC()", Arrays.asList(expression));
     }
 
@@ -328,7 +328,7 @@ public final class Function {
      * @param digits     The number of digits to truncate.
      * @return The TRUNC(expr, digits) function.
      */
-    public static Expression trunc(Object expression, int digits) {
+    public static Expression trunc(Expression expression, Expression digits) {
         return new Expression.FunctionExpresson("TRUNC()", Arrays.asList(expression, digits));
     }
 
@@ -344,7 +344,7 @@ public final class Function {
      * @param substring  The substring expression.
      * @return The CONTAINS(expr, substr) function.
      */
-    public static Expression contains(Object expression, Object substring) {
+    public static Expression contains(Expression expression, Expression substring) {
         return new Expression.FunctionExpresson("CONTAINS()", Arrays.asList(expression, substring));
     }
 
@@ -354,7 +354,7 @@ public final class Function {
      * @param expression The string expression.
      * @return The LENGTH(expr) function.
      */
-    public static Expression length(Object expression) {
+    public static Expression length(Expression expression) {
         return new Expression.FunctionExpresson("LENGTH()", Arrays.asList(expression));
     }
 
@@ -365,7 +365,7 @@ public final class Function {
      * @param expression The string expression.
      * @return The LOWER(expr) function.
      */
-    public static Expression lower(Object expression) {
+    public static Expression lower(Expression expression) {
         return new Expression.FunctionExpresson("LOWER()", Arrays.asList(expression));
     }
 
@@ -376,7 +376,7 @@ public final class Function {
      * @param expression The string expression.
      * @return The LTRIM(expr) function.
      */
-    public static Expression ltrim(Object expression) {
+    public static Expression ltrim(Expression expression) {
         return new Expression.FunctionExpresson("LTRIM()", Arrays.asList(expression));
     }
 
@@ -387,7 +387,7 @@ public final class Function {
      * @param expression The string expression.
      * @return The RTRIM(expr) function.
      */
-    public static Expression rtrim(Object expression) {
+    public static Expression rtrim(Expression expression) {
         return new Expression.FunctionExpresson("RTRIM()", Arrays.asList(expression));
     }
 
@@ -398,7 +398,7 @@ public final class Function {
      * @param expression The string expression.
      * @return The TRIM(expr) function.
      */
-    public static Expression trim(Object expression) {
+    public static Expression trim(Expression expression) {
         return new Expression.FunctionExpresson("TRIM()", Arrays.asList(expression));
     }
 
@@ -408,7 +408,7 @@ public final class Function {
      * @param expression The string expression.
      * @return The UPPER(expr) function.
      */
-    public static Expression upper(Object expression) {
+    public static Expression upper(Expression expression) {
         return new Expression.FunctionExpresson("UPPER()", Arrays.asList(expression));
     }
 }

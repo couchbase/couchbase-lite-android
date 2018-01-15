@@ -10,10 +10,10 @@ import java.util.List;
  */
 public final class ArrayExpressionSatisfies {
     private ArrayExpression.QuantifiesType type;
-    private String variable;
-    private Object inExpression;
+    private VariableExpression variable;
+    private Expression inExpression;
 
-    ArrayExpressionSatisfies(ArrayExpression.QuantifiesType type, String variable, Object inExpression) {
+    ArrayExpressionSatisfies(ArrayExpression.QuantifiesType type, VariableExpression variable, Expression inExpression) {
         this.type = type;
         this.variable = variable;
         this.inExpression = inExpression;
@@ -31,11 +31,11 @@ public final class ArrayExpressionSatisfies {
 
     private static final class QuantifiedExpression extends Expression {
         private ArrayExpression.QuantifiesType type;
-        private String variable;
-        private Object inExpression;
+        private VariableExpression variable;
+        private Expression inExpression;
         private Expression satisfiedExpression;
 
-        QuantifiedExpression(ArrayExpression.QuantifiesType type, String variable, Object inExpression, Expression satisfiesExpression) {
+        QuantifiedExpression(ArrayExpression.QuantifiesType type, VariableExpression variable, Expression inExpression, Expression satisfiesExpression) {
             this.type = type;
             this.variable = variable;
             this.inExpression = inExpression;
@@ -60,13 +60,10 @@ public final class ArrayExpressionSatisfies {
             }
 
             // variable
-            json.add(variable);
+            json.add(variable.getName());
 
             // in Expression
-            if (inExpression instanceof Expression)
-                json.add(((Expression) inExpression).asJSON());
-            else
-                json.add(inExpression);
+            json.add(inExpression.asJSON());
 
             // satisfies Expression
             json.add(satisfiedExpression.asJSON());

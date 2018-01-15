@@ -317,7 +317,6 @@ public class DatabaseEncryptionTest extends BaseTest {
                 .orderBy(Ordering.expression(SEQ));
         ResultSet rs = query.execute();
         assertNotNull(rs);
-        assertEquals(100, rs.getCount());
         int i = 0;
         for (Result r : rs) {
             assertEquals(i, r.getInt(0));
