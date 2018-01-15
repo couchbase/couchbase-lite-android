@@ -42,8 +42,12 @@ final class Fleece implements FLConstants.FLValueType {
     static Object toCBLObject(Object value) {
         if (value instanceof MutableDictionary) {
             return value;
+        } else if (value instanceof Dictionary) {
+            return ((Dictionary) value).toMutable();
         } else if (value instanceof MutableArray) {
             return value;
+        } else if (value instanceof Array) {
+            return ((Array) value).toMutable();
         } else if (value instanceof Map) {
             MutableDictionary dict = new MutableDictionary((Map) value);
             return dict;
