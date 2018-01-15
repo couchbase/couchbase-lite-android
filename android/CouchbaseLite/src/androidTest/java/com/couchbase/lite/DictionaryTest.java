@@ -709,4 +709,47 @@ public class DictionaryTest extends BaseTest {
         assertTrue(nestedArray.equals(mNestedArray));
         assertTrue(array.equals(mArray));
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1518
+    @Test
+    public void testSetValueWithDictionary() throws CouchbaseLiteException {
+        MutableDictionary mDict = new MutableDictionary();
+        mDict.setString("hello", "world");
+
+        MutableDocument mDoc = createMutableDocument("doc1");
+        mDoc.setValue("dict", mDict);
+        Document doc = save(mDoc);
+
+        Dictionary dict = doc.getDictionary("dict");
+
+        mDoc = doc.toMutable();
+        mDoc.setValue("dict2", dict);
+        doc = save(mDoc);
+
+        dict = doc.getDictionary("dict2");
+        assertEquals(1, dict.count());
+        assertEquals("world", dict.getString("hello"));
+    }
+
+    @Test
+    public void testSetValueWithArray() throws CouchbaseLiteException {
+        MutableArray mArray = new MutableArray();
+        mArray.addString("hello");
+        mArray.addString("world");
+
+        MutableDocument mDoc = createMutableDocument("doc1");
+        mDoc.setValue("array", mArray);
+        Document doc = save(mDoc);
+
+        Array array = doc.getArray("array");
+
+        mDoc = doc.toMutable();
+        mDoc.setValue("array2", array);
+        doc = save(mDoc);
+
+        array = doc.getArray("array2");
+        assertEquals(2, array.count());
+        assertEquals("hello", array.getString(0));
+        assertEquals("world", array.getString(1));
+    }
 }
