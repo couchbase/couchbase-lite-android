@@ -2081,6 +2081,11 @@ public class DocumentTest extends BaseTest {
         mDoc1.setInt("score", 10);
 
         MutableDocument mDoc2 = mDoc1.toMutable();
+        {
+            // https://forums.couchbase.com/t/bug-in-document-tomutable-in-db21/15441
+            assertEquals(3, mDoc2.getKeys().size());
+            assertEquals(3, mDoc2.count());
+        }
         assertTrue(mDoc1 != mDoc2);
         assertTrue(mDoc2.equals(mDoc1));
         assertTrue(mDoc1.equals(mDoc2));
@@ -2090,6 +2095,11 @@ public class DocumentTest extends BaseTest {
 
         Document doc1 = db.save(mDoc1);
         MutableDocument mDoc3 = doc1.toMutable();
+        {
+            // https://forums.couchbase.com/t/bug-in-document-tomutable-in-db21/15441
+            assertEquals(3, mDoc3.getKeys().size());
+            assertEquals(3, mDoc3.count());
+        }
         assertEquals(doc1.getBlob("data"), mDoc3.getBlob("data"));
         assertEquals(doc1.getString("name"), mDoc3.getString("name"));
         assertEquals(doc1.getInt("score"), mDoc3.getInt("score"));
