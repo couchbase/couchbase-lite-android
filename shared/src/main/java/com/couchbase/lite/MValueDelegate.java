@@ -69,8 +69,7 @@ final class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
         FLValue flLength = flDict.getSharedKey("length", sk);
         FLValue flStub = flDict.getSharedKey("stub", sk);
         FLValue flRevPos = flDict.getSharedKey("revpos", sk);
-        FLValue flContentType = flDict.getSharedKey("content_type", sk);
-        return flDigest != null && flLength != null && flStub != null && flRevPos != null && flContentType != null;
+        return flDigest != null && flLength != null && flStub != null && flRevPos != null;
     }
 
     private static Object mValueToDictionary(MValue mv, MCollection parent) {
