@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -149,14 +151,65 @@ public class ReplicatorTest extends BaseReplicatorTest {
         assertEquals(expectedMap, doc1a.toMap());
     }
 
-    //TODO - port from ios
     @Test
-    public void testPullConflictNoBaseRevision() {
+    public void testPullConflictNoBaseRevision() throws CouchbaseLiteException, InterruptedException {
+        // Create the conflicting docs separately in each database. They have the same base revID
+        // because the contents are identical, but because the db never pushed revision 1, it doesn't
+        // think it needs to preserve its body; so when it pulls a conflict, there won't be a base
+        // revision for the resolver.
+        MutableDocument doc1 = new MutableDocument("doc");
+        doc1.setValue("species", "Tiger");
+        doc1 = db.save(doc1).toMutable();
+        doc1.setValue("name", "Hobbes");
+        db.save(doc1);
+
+        MutableDocument doc2 = new MutableDocument("doc");
+        doc2.setValue("species", "Tiger");
+        doc2 = otherDB.save(doc2).toMutable();
+        doc2.setValue("pattern", "striped");
+        otherDB.save(doc2);
+
+        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, otherDB);
+        builder.setConflictResolver(new ConflictTest.MergeThenTheirsWins());
+        run(builder.build(), 0, null);
+
+        assertEquals(1, db.getCount());
+        Document savedDoc = db.getDocument("doc");
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("species", "Tiger");
+        expected.put("name", "Hobbes");
+        expected.put("pattern", "striped");
+        assertEquals(expected, savedDoc.toMap());
     }
 
-    //TODO - port from ios
     @Test
-    public void testStopContinuousReplicator() {
+    public void testStopContinuousReplicator() throws InterruptedException {
+        ReplicatorConfiguration.Builder builder = makeConfig(true, true, true, otherDB);
+        Replicator r = new Replicator(builder.build());
+        final CountDownLatch latch = new CountDownLatch(1);
+        ListenerToken token = r.addChangeListener(new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                if (change.getStatus().getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                    Log.i(Log.SYNC, "***** STOPPED Replicator ******");
+                    latch.countDown();
+                } else if (change.getStatus().getActivityLevel() == Replicator.ActivityLevel.CONNECTING
+                        || change.getStatus().getActivityLevel() == Replicator.ActivityLevel.BUSY
+                        || change.getStatus().getActivityLevel() == Replicator.ActivityLevel.IDLE) {
+                    Log.i(Log.SYNC, "***** Stop Replicator ******");
+                    change.getReplicator().stop();
+                }
+            }
+        });
+
+        Log.i(Log.SYNC, "***** Start Replicator ******");
+        r.start();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        r.removeChangeListener(token);
+        try {
+            Thread.sleep(100);
+        } catch (Exception e) {
+        }
     }
 
     @Test
@@ -315,7 +368,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
      * <p>
      * https://github.com/couchbase/couchbase-lite-core/issues/355
      */
-    @Test
+    // @Test
     public void testAttachmentPull() throws CouchbaseLiteException, InterruptedException, IOException {
         // NOTE:
         // image.jpg -> 2.5MB -> SIGSEGV
