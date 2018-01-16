@@ -270,9 +270,12 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
     /**
      * Database to Database Push replication document has attachment
-     *
-     * NOTE: The test fails with image.jpg with any devices
-     *       The test fails with attachment.png with ARM simulator
+     * <p>
+     * NOTE:
+     * The test fails with image.jpg with any devices
+     * The test fails with attachment.png with older devices
+     * <p>
+     * https://github.com/couchbase/couchbase-lite-core/issues/355
      */
     // @Test
     public void testAttachmentPush() throws CouchbaseLiteException, InterruptedException, IOException {
@@ -305,11 +308,14 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
     /**
      * Database to Database Pull replication document has attachment
-     *
-     * NOTE: The test fails with image.jpg with any devices
-     *       The test fails with attachment.png with ARM simulator
+     * <p>
+     * NOTE:
+     * The test fails with image.jpg with any devices
+     * The test fails with attachment.png with older devices
+     * <p>
+     * https://github.com/couchbase/couchbase-lite-core/issues/355
      */
-    // @Test
+    @Test
     public void testAttachmentPull() throws CouchbaseLiteException, InterruptedException, IOException {
         // NOTE:
         // image.jpg -> 2.5MB -> SIGSEGV
