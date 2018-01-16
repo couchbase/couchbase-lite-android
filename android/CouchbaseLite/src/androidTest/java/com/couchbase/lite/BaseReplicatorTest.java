@@ -59,7 +59,7 @@ public class BaseReplicatorTest extends BaseTest {
     protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
                                                          boolean continuous, Database db, URI targetURI) throws URISyntaxException {
         URLEndpoint endpoint = new URLEndpoint(targetURI.getHost(), targetURI.getPort(), targetURI.getPath(), false);
-        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(this.db, endpoint);
+        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(db, endpoint);
         builder.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
         builder.setContinuous(continuous);
         return builder;
