@@ -68,6 +68,7 @@ public final class CBLWebSocket extends C4Socket {
     private WebSocket webSocket = null;
     OkHttpClient httpClient = null;
     CBLWebSocketListener wsListener = null;
+    String expectedAcceptHeader = null;
 
     //-------------------------------------------------------------------------
     // constructor
@@ -342,6 +343,8 @@ public final class CBLWebSocket extends C4Socket {
         byte[] nonceBytes = new byte[16];
         new Random().nextBytes(nonceBytes);
         String nonceKey = encodeToString(nonceBytes, NO_WRAP);
+        String expectedStr = nonceKey+"258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+        expectedAcceptHeader = encodeToString(expectedStr.getBytes(), NO_WRAP);
 
         // Construct the HTTP request:
         if (options != null) {
@@ -364,6 +367,11 @@ public final class CBLWebSocket extends C4Socket {
         builder.header("Upgrade", "websocket");
         builder.header("Sec-WebSocket-Version", "13");
         builder.header("Sec-WebSocket-Key", nonceKey);
+
+        String protocols = (String) options.get(kC4SocketOptionWSProtocols);
+        if (protocols != null) {
+            builder.header("Sec-WebSocket-Protocol", protocols);
+        }
 
         return builder.build();
     }
