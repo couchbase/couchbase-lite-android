@@ -145,7 +145,9 @@ public final class Blob implements FLEncodable {
         this.properties = new HashMap<>(properties);
         this.properties.remove(kC4ObjectTypeProperty);
 
-        this.length = ClassUtils.cast(properties.get("length"), Number.class).longValue();
+        // NOTE: length field might not be set if length is unknown.
+        if (properties.get("length") != null && properties.get("length") instanceof Number)
+            this.length = ClassUtils.cast(properties.get("length"), Number.class).longValue();
         this.digest = ClassUtils.cast(properties.get("digest"), String.class);
         this.contentType = ClassUtils.cast(properties.get("content-type"), String.class);
         if (this.digest == null) {
