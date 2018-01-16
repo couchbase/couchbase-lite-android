@@ -6,6 +6,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -264,5 +266,75 @@ public class ReplicatorTest extends BaseReplicatorTest {
         // NOTE: Test is implemented in ReplicatorWithSyncGatewayDBTest class.
         //       public void testChannelPull()
         //       This empty test method is for consistancy with other platforms
+    }
+
+    /**
+     * Database to Database Push replication document has attachment
+     *
+     * NOTE: The test fails with image.jpg with any devices
+     *       The test fails with attachment.png with ARM simulator
+     */
+    // @Test
+    public void testAttachmentPush() throws CouchbaseLiteException, InterruptedException, IOException {
+        // NOTE:
+        // image.jpg -> 2.5MB -> SIGSEGV
+        // attachment.png -> 0.5MB -> works
+
+        //InputStream is = getAsset("image.jpg");
+        InputStream is = getAsset("attachment.png");
+        try {
+            //Blob blob = new Blob("image/jpg", is);
+            Blob blob = new Blob("image/png", is);
+            MutableDocument doc1 = new MutableDocument("doc1");
+            doc1.setValue("name", "Tiger");
+            doc1.setBlob("image.jpg", blob);
+            save(doc1);
+        } finally {
+            is.close();
+        }
+        assertEquals(1, db.getCount());
+
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false);
+        run(builder.build(), 0, null);
+
+        assertEquals(1, otherDB.getCount());
+        Document doc1a = otherDB.getDocument("doc1");
+        Blob blob1a = doc1a.getBlob("image.jpg");
+        assertNotNull(blob1a);
+    }
+
+    /**
+     * Database to Database Pull replication document has attachment
+     *
+     * NOTE: The test fails with image.jpg with any devices
+     *       The test fails with attachment.png with ARM simulator
+     */
+    // @Test
+    public void testAttachmentPull() throws CouchbaseLiteException, InterruptedException, IOException {
+        // NOTE:
+        // image.jpg -> 2.5MB -> SIGSEGV
+        // attachment.png -> 0.5MB -> works
+
+        //InputStream is = getAsset("image.jpg");
+        InputStream is = getAsset("attachment.png");
+        try {
+            //Blob blob = new Blob("image/jpg", is);
+            Blob blob = new Blob("image/png", is);
+            MutableDocument doc1 = new MutableDocument("doc1");
+            doc1.setValue("name", "Tiger");
+            doc1.setBlob("image.jpg", blob);
+            otherDB.save(doc1);
+        } finally {
+            is.close();
+        }
+        assertEquals(1, otherDB.getCount());
+
+        ReplicatorConfiguration.Builder builder = makeConfig(true, true, false);
+        run(builder.build(), 0, null);
+
+        assertEquals(1, db.getCount());
+        Document doc1a = db.getDocument("doc1");
+        Blob blob1a = doc1a.getBlob("image.jpg");
+        assertNotNull(blob1a);
     }
 }

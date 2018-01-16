@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -16,6 +17,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
@@ -155,5 +157,48 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         builder.setChannels(Arrays.asList("my_channel"));
         run(builder.build(), 0, null);
         assertEquals(10, otherDB.getCount());
+    }
+
+    // Failing test case
+    // @Test
+    public void testPushToRemoteDBWithAttachment() throws Exception {
+        if (!config.replicatorTestsEnabled()) return;
+
+        // store doc with attachment into db.
+        {
+            // NOTE:
+            // image.jpg -> 2.5MB -> SIGSEGV
+            // attachment.png -> 0.5MB -> works
+
+            //InputStream is = getAsset("image.jpg");
+            InputStream is = getAsset("attachment.png");
+            try {
+                Blob blob = new Blob("image/png", is);
+                MutableDocument doc1 = new MutableDocument("doc1");
+                doc1.setValue("name", "Tiger");
+                doc1.setBlob("image.jpg", blob);
+                save(doc1);
+            } finally {
+                is.close();
+            }
+            assertEquals(1, db.getCount());
+        }
+
+        // target SG URI
+        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s",
+                this.config.remoteHost(), this.config.remotePort(), DB_NAME);
+
+        // Push replicate from db to SG
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, uri);
+        run(builder.build(), 0, null);
+
+        // Pull replicate from SG to otherDB.
+        builder = makeConfig(false, true, false, this.otherDB, uri);
+        run(builder.build(), 0, null);
+        assertEquals(1, this.otherDB.getCount());
+        Document doc = otherDB.getDocument("doc1");
+        assertNotNull(doc);
+        Blob blob = doc.getBlob("image.jpg");
+        assertNotNull(blob);
     }
 }
