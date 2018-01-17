@@ -149,7 +149,7 @@ public final class Blob implements FLEncodable {
         if (properties.get("length") != null && properties.get("length") instanceof Number)
             this.length = ClassUtils.cast(properties.get("length"), Number.class).longValue();
         this.digest = ClassUtils.cast(properties.get("digest"), String.class);
-        this.contentType = ClassUtils.cast(properties.get("content-type"), String.class);
+        this.contentType = ClassUtils.cast(properties.get("content_type"), String.class);
         if (this.digest == null) {
             Log.w(TAG, "Blob read from database has missing digest");
             this.digest = "";
@@ -287,7 +287,7 @@ public final class Blob implements FLEncodable {
             Map<String, Object> props = new HashMap<>();
             props.put("digest", digest);
             props.put("length", length);
-            props.put("content-type", contentType);
+            props.put("content_type", contentType);
             return props;
         }
     }
