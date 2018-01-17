@@ -323,24 +323,13 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
     /**
      * Database to Database Push replication document has attachment
-     * <p>
-     * NOTE:
-     * The test fails with image.jpg with any devices
-     * The test fails with attachment.png with older devices
-     * <p>
      * https://github.com/couchbase/couchbase-lite-core/issues/355
      */
-    // @Test
+    @Test
     public void testAttachmentPush() throws CouchbaseLiteException, InterruptedException, IOException {
-        // NOTE:
-        // image.jpg -> 2.5MB -> SIGSEGV
-        // attachment.png -> 0.5MB -> works
-
-        //InputStream is = getAsset("image.jpg");
-        InputStream is = getAsset("attachment.png");
+        InputStream is = getAsset("image.jpg");
         try {
-            //Blob blob = new Blob("image/jpg", is);
-            Blob blob = new Blob("image/png", is);
+            Blob blob = new Blob("image/jpg", is);
             MutableDocument doc1 = new MutableDocument("doc1");
             doc1.setValue("name", "Tiger");
             doc1.setBlob("image.jpg", blob);
@@ -361,24 +350,13 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
     /**
      * Database to Database Pull replication document has attachment
-     * <p>
-     * NOTE:
-     * The test fails with image.jpg with any devices
-     * The test fails with attachment.png with older devices
-     * <p>
      * https://github.com/couchbase/couchbase-lite-core/issues/355
      */
-    // @Test
+    @Test
     public void testAttachmentPull() throws CouchbaseLiteException, InterruptedException, IOException {
-        // NOTE:
-        // image.jpg -> 2.5MB -> SIGSEGV
-        // attachment.png -> 0.5MB -> works
-
-        //InputStream is = getAsset("image.jpg");
-        InputStream is = getAsset("attachment.png");
+        InputStream is = getAsset("image.jpg");
         try {
-            //Blob blob = new Blob("image/jpg", is);
-            Blob blob = new Blob("image/png", is);
+            Blob blob = new Blob("image/jpg", is);
             MutableDocument doc1 = new MutableDocument("doc1");
             doc1.setValue("name", "Tiger");
             doc1.setBlob("image.jpg", blob);

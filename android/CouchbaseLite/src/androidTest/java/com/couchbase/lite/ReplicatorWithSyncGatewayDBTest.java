@@ -159,21 +159,22 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         assertEquals(10, otherDB.getCount());
     }
 
-    // Failing test case
-    // @Test
+    /**
+     * Push and Pull replication against Sync Gateway with Document which has attachment.
+     * https://github.com/couchbase/couchbase-lite-core/issues/354
+     */
+    @Test
     public void testPushToRemoteDBWithAttachment() throws Exception {
         if (!config.replicatorTestsEnabled()) return;
 
         // store doc with attachment into db.
         {
-            // NOTE:
-            // image.jpg -> 2.5MB -> SIGSEGV
-            // attachment.png -> 0.5MB -> works
-
+            // 2.39MB image -> causes `Compression buffer overflow`
             //InputStream is = getAsset("image.jpg");
+            // 507KB image -> works fine.
             InputStream is = getAsset("attachment.png");
             try {
-                Blob blob = new Blob("image/png", is);
+                Blob blob = new Blob("image/jpg", is);
                 MutableDocument doc1 = new MutableDocument("doc1");
                 doc1.setValue("name", "Tiger");
                 doc1.setBlob("image.jpg", blob);
