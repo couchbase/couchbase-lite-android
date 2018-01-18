@@ -113,7 +113,7 @@ final class LiveQuery implements DatabaseChangeListener {
         observing = false;
         willUpdate = false; // cancels the delayed update started by -databaseChanged
         query.getDatabase().removeChangeListener(dbListenerToken);
-        if(removeFromList)
+        if (removeFromList)
             query.getDatabase().getActiveLiveQueries().remove(this);
         releaseResultSet();
     }

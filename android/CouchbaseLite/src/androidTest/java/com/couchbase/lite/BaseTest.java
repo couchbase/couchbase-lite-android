@@ -97,7 +97,7 @@ public class BaseTest implements C4Constants {
                 } catch (CouchbaseLiteException ex) {
                     if (ex.getCode() == kC4ErrorBusy) {
                         try {
-                            Thread.sleep(300);
+                            Thread.sleep(500);
                         } catch (Exception e) {
                         }
                     } else {
