@@ -129,9 +129,14 @@ public class BaseReplicatorTest extends BaseTest {
         conflictResolver = new ConflictTest.MergeThenTheirsWins();
         super.setUp();
 
-        timeout = 10; // seconds
+        timeout = 15; // seconds
         otherDB = open("otherdb");
         assertNotNull(otherDB);
+
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        }
     }
 
     @After
@@ -140,7 +145,13 @@ public class BaseReplicatorTest extends BaseTest {
             otherDB.close();
             otherDB = null;
         }
+        deleteDatabase("otherdb");
 
         super.tearDown();
+
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        }
     }
 }

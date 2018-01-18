@@ -398,7 +398,6 @@ public final class Database {
             throw new IllegalArgumentException("a token parameter is null");
 
         synchronized (lock) {
-            mustBeOpen();
             if (token instanceof DocumentChangeListenerToken)
                 removeDocumentChangeListener((DocumentChangeListenerToken) token);
             else
@@ -723,6 +722,10 @@ public final class Database {
         if (c4db == null)
             throw new CouchbaseLiteRuntimeException("A database is not open",
                     C4ErrorDomain.LiteCoreDomain, LiteCoreError.kC4ErrorNotOpen);
+    }
+
+    boolean isOpen() {
+        return c4db != null;
     }
 
     /**
