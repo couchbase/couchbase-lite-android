@@ -369,6 +369,12 @@ public class ReplicatorTest extends BaseReplicatorTest {
         ReplicatorConfiguration.Builder builder = makeConfig(true, true, false);
         run(builder.build(), 0, null);
 
+        // give extra time
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        }
+
         assertEquals(1, db.getCount());
         Document doc1a = db.getDocument("doc1");
         Blob blob1a = doc1a.getBlob("image.jpg");

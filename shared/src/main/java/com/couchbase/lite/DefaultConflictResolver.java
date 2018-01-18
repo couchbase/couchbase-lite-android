@@ -15,8 +15,10 @@ class DefaultConflictResolver implements ConflictResolver {
             return theirs;
         else if (mine.isDeleted())
             return mine;
-        else if (mine.generation() >= theirs.generation())
+        else if (mine.generation() > theirs.generation())
             return mine;
+        else if (mine.generation() < theirs.generation())
+            return theirs;
         else if (mine.getRevID() != null && mine.getRevID().compareTo(theirs.getRevID()) > 0)
             return mine;
         else

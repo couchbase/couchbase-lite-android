@@ -1301,10 +1301,13 @@ public class DatabaseTest extends BaseTest {
         assertEquals(1, db.getCount());
         Document doc = db.getDocument("abc");
         assertNotNull(doc);
-        if (doc1.getRevID().compareTo(doc2.getRevID()) > 0)
-            assertEquals("someVar", doc.getString("someKey"));
-        else
+        // NOTE doc1 -> theirs, doc2 -> mine
+        if (doc2.getRevID().compareTo(doc1.getRevID()) > 0)
+            // mine -> doc 2 win
             assertEquals("newVar", doc.getString("someKey"));
+        else
+            // their -> doc 1 win
+            assertEquals("someVar", doc.getString("someKey"));
     }
 
     @Test
