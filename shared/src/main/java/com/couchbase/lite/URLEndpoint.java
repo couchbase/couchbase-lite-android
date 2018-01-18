@@ -65,6 +65,13 @@ public final class URLEndpoint implements Endpoint {
         this.uri = new URI(scheme, null, host, port, path, null, null);
     }
 
+    @Override
+    public String toString() {
+        return "URLEndpoint{" +
+                "uri=" + uri +
+                '}';
+    }
+
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
