@@ -41,6 +41,7 @@ import org.json.JSONException;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -156,8 +157,8 @@ public final class Database {
         open();
         this.sharedKeys = new SharedKeys(c4db);
         this.executorService = Executors.newSingleThreadExecutor();
-        this.activeReplications = new HashSet<>();
-        this.activeLiveQueries = new HashSet<>();
+        this.activeReplications = Collections.synchronizedSet(new HashSet<Replicator>());
+        this.activeLiveQueries = Collections.synchronizedSet(new HashSet<LiveQuery>());
     }
 
     //---------------------------------------------
@@ -440,12 +441,17 @@ public final class Database {
             Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
 
             // stop replicator
-            for (Replicator repl : activeReplications)
-                repl.stop();
+            synchronized (activeReplications) {
+                for (Replicator repl : activeReplications)
+                    repl.stop();
+            }
 
             // stop live query
-            for (LiveQuery liveQuery : activeLiveQueries)
-                liveQuery.stop();
+            synchronized (activeLiveQueries) {
+                for (LiveQuery liveQuery : activeLiveQueries)
+                    liveQuery.stop(false);
+                activeLiveQueries.clear();
+            }
 
             // close db
             closeC4DB();

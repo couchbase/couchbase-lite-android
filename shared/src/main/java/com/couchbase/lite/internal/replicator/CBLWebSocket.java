@@ -218,6 +218,11 @@ public final class CBLWebSocket extends C4Socket {
 
     @Override
     protected void requestClose(int status, String message) {
+        if (webSocket == null) {
+            Log.e(TAG, "CBLWebSocket.requestClose() webSocket is not initialized.");
+            return;
+        }
+
         if (!webSocket.close(status, message)) {
             Log.e(TAG, "CBLWebSocket.requestClose() Failed to attempt to initiate a graceful shutdown of this web socket.");
         }
@@ -343,7 +348,7 @@ public final class CBLWebSocket extends C4Socket {
         byte[] nonceBytes = new byte[16];
         new Random().nextBytes(nonceBytes);
         String nonceKey = encodeToString(nonceBytes, NO_WRAP);
-        String expectedStr = nonceKey+"258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+        String expectedStr = nonceKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         expectedAcceptHeader = encodeToString(expectedStr.getBytes(), NO_WRAP);
 
         // Construct the HTTP request:

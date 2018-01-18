@@ -81,7 +81,7 @@ final class LiveQuery implements DatabaseChangeListener {
     @Override
     protected void finalize() throws Throwable {
         try {
-            stop();
+            stop(true);
         } catch (CouchbaseLiteRuntimeException e) {
             Log.w(TAG, "Error in LiveQuery.finalize()", e);
         }
@@ -109,11 +109,12 @@ final class LiveQuery implements DatabaseChangeListener {
     /**
      * Stops observing database changes.
      */
-    void stop() {
+    void stop(boolean removeFromList) {
         observing = false;
         willUpdate = false; // cancels the delayed update started by -databaseChanged
         query.getDatabase().removeChangeListener(dbListenerToken);
-        query.getDatabase().getActiveLiveQueries().remove(this);
+        if(removeFromList)
+            query.getDatabase().getActiveLiveQueries().remove(this);
         releaseResultSet();
     }
 
