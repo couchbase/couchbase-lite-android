@@ -475,7 +475,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
             _c4doc.selectNextLeafRevision(false, true);
             setC4Document(_c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
         } catch (LiteCoreException e) {
-            Log.e(TAG, "Failed to selectNextLeaf: doc -> %s", e, _c4doc);
+            Log.i(TAG, "Failed to selectNextLeaf: doc -> %s", e, _c4doc);
             return false;
         }
         return true;
