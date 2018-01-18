@@ -75,7 +75,7 @@ public class ResultSet implements Iterable<Result> {
                 } else
                     return null;
             } catch (LiteCoreException e) {
-                Log.w(TAG, "Query enumeration error: %s", e);
+                Log.w(TAG, "Query enumeration error: %s", e.toString());
                 return null;
             }
         }

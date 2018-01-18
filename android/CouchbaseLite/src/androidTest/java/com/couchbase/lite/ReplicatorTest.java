@@ -354,8 +354,10 @@ public class ReplicatorTest extends BaseReplicatorTest {
      */
     @Test
     public void testAttachmentPull() throws CouchbaseLiteException, InterruptedException, IOException {
-        InputStream is = getAsset("image.jpg");
+        //InputStream is = getAsset("image.jpg");
+        InputStream is = getAsset("attachment.png");
         try {
+            //Blob blob = new Blob("image/jpg", is);
             Blob blob = new Blob("image/jpg", is);
             MutableDocument doc1 = new MutableDocument("doc1");
             doc1.setValue("name", "Tiger");
