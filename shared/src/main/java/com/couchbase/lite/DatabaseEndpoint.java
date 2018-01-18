@@ -23,4 +23,11 @@ public final class DatabaseEndpoint implements Endpoint {
     public Database getDatabase() {
         return database;
     }
+
+    @Override
+    public String toString() {
+        return "DatabaseEndpoint{" +
+                "database=" + database +
+                '}';
+    }
 }

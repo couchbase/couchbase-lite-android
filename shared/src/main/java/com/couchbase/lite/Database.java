@@ -661,9 +661,13 @@ public final class Database {
     //---------------------------------------------
     // Override public method
     //---------------------------------------------
+
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "%s[%s]", super.toString(), this.name);
+        return "Database@" + Integer.toHexString(hashCode()) + "{" +
+                "name='" + name + '\'' +
+                //"dir='" + (c4db != null ? c4db.getPath() : "[closed]") + '\'' +
+                '}';
     }
 
     //---------------------------------------------
