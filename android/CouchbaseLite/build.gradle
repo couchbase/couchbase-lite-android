@@ -47,7 +47,7 @@ android {
     buildToolsVersion '26.0.3'
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion 26
         versionCode 1
         versionName version
@@ -58,7 +58,7 @@ android {
         }
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-16', '-DJNI=TRUE'
+                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-19', '-DJNI=TRUE'
                 cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
                 // explicitly build libs
                 targets 'LiteCoreJNI'
