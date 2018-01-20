@@ -70,9 +70,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled())
             return;
 
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s",
-                this.config.remoteHost(), this.config.remotePort(), DB_NAME);
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, uri);
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, target);
         run(builder.build(), 0, null);
     }
 
@@ -85,15 +84,14 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         loadJSONResource("names_100.json");
 
         // target SG URI
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s",
-                this.config.remoteHost(), this.config.remotePort(), DB_NAME);
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
 
         // Push replicate from db to SG
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, uri);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, target);
         run(builder.build(), 0, null);
 
         // Pull replicate from SG to otherDB.
-        builder = makeConfig(false, true, false, this.otherDB, uri);
+        builder = makeConfig(false, true, false, this.otherDB, target);
         run(builder.build(), 0, null);
         assertEquals(100, this.otherDB.getCount());
     }
@@ -116,8 +114,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         loadJSONResource("names_100.json");
 
         timeout = 180; // 3min
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s", this.config.remoteHost(), this.config.remotePort(), DB_NAME);
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, true, uri);
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, true, target);
         run(builder.build(), 0, null);
     }
 
@@ -153,12 +151,11 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             }
         });
 
-        String strUri = String.format(Locale.ENGLISH, "blip://%s:%d/%s", this.config.remoteHost(), this.config.remotePort(), DB_NAME);
-        URI uri = new URI(strUri);
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, uri);
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, target);
         run(builder.build(), 0, null);
 
-        builder = makeConfig(false, true, false, otherDB, uri);
+        builder = makeConfig(false, true, false, otherDB, target);
         builder.setChannels(Arrays.asList("my_channel"));
         run(builder.build(), 0, null);
         assertEquals(10, otherDB.getCount());
@@ -192,15 +189,14 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         }
 
         // target SG URI
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s",
-                this.config.remoteHost(), this.config.remotePort(), DB_NAME);
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
 
         // Push replicate from db to SG
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, uri);
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, target);
         run(builder.build(), 0, null);
 
         // Pull replicate from SG to otherDB.
-        builder = makeConfig(false, true, false, this.otherDB, uri);
+        builder = makeConfig(false, true, false, this.otherDB, target);
         run(builder.build(), 0, null);
         assertEquals(1, this.otherDB.getCount());
         Document doc = otherDB.getDocument("doc1");

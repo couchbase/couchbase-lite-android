@@ -23,8 +23,8 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
     public void testSelfSignedSSLFailure() throws InterruptedException, URISyntaxException {
         if (!config.replicatorTestsEnabled()) return;
 
-        String uri = String.format(Locale.ENGLISH, "blips://%s:4995/beer", this.config.remoteHost());
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, uri);
+        Endpoint target = getRemoteEndpoint("beer", true);
+        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
         run(builder.build(), kC4NetErrTLSCertUntrusted, "Network");
     }
 
@@ -42,9 +42,8 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
         byte[] cert = IOUtils.toByteArray(is);
         is.close();
 
-        String uri = String.format(Locale.ENGLISH, "blips://%s:%d/beer",
-                this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, uri);
+        Endpoint target = getRemoteEndpoint("beer", true);
+        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
         builder.setPinnedServerCertificate(cert);
         run(builder.build(), 0, null);
     }

@@ -2,12 +2,10 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Locale;
 
 import okhttp3.MediaType;
@@ -49,71 +47,55 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     public void testEmptyPullFromRemoteDB() throws Exception {
         if (!config.replicatorTestsEnabled()) return;
 
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/scratch",
-                this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, uri);
+        Endpoint target = getRemoteEndpoint("scratch", false);
+        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
         run(builder.build(), 0, null);
     }
 
     @Test
-    public void testAuthenticationFailure() throws InterruptedException, URISyntaxException {
+    public void testAuthenticationFailure() throws Exception {
         if (!config.replicatorTestsEnabled()) return;
 
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
-                this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, uri);
+        Endpoint target = getRemoteEndpoint("seekrit", false);
+        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
         run(builder.build(), 401, "WebSocket");
     }
 
     @Test
-    public void testAuthenticatedPullWithIncorrectPassword() throws InterruptedException, URISyntaxException {
+    public void testAuthenticatedPullWithIncorrectPassword() throws Exception {
         if (!config.replicatorTestsEnabled()) return;
 
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
-                this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, uri);
+        Endpoint target = getRemoteEndpoint("seekrit", false);
+        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
         builder.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
-        // Retry 3 times then fails with 401
-        run(builder.build(), 401, "WebSocket");
+        run(builder.build(), 401, "WebSocket"); // Retry 3 times then fails with 401
     }
 
     @Test
-    public void testAuthenticatedPullHardcoded() throws InterruptedException, URISyntaxException {
+    public void testAuthenticatedPull() throws Exception {
         if (!config.replicatorTestsEnabled()) return;
 
-        String uri = String.format(Locale.ENGLISH, "blip://pupshaw:frank@%s:%d/seekrit",
-                this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, uri);
-        run(builder.build(), 0, null);
-    }
-
-    @Test
-    public void testAuthenticatedPull() throws InterruptedException, URISyntaxException {
-        if (!config.replicatorTestsEnabled()) return;
-
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
-                this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, uri);
+        Endpoint target = getRemoteEndpoint("seekrit", false);
+        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
         builder.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
         run(builder.build(), 0, null);
     }
 
     @Test
-    public void testSessionAuthenticatorPull() throws InterruptedException, IOException, JSONException, URISyntaxException {
+    public void testSessionAuthenticatorPull() throws Exception {
         if (!config.replicatorTestsEnabled()) return;
 
         // Obtain Sync-Gateway Session ID
         SessionAuthenticator auth = getSessionAuthenticatorFromSG();
         Log.e(TAG, "auth -> " + auth);
 
-        String uri = String.format(Locale.ENGLISH, "blip://%s:%d/seekrit",
-                this.config.remoteHost(), this.config.remotePort());
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, uri);
+        Endpoint target = getRemoteEndpoint("seekrit", false);
+        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
         builder.setAuthenticator(auth);
         run(builder.build(), 0, null);
     }
 
-    SessionAuthenticator getSessionAuthenticatorFromSG() throws IOException, JSONException {
+    SessionAuthenticator getSessionAuthenticatorFromSG() throws Exception {
         // Obtain Sync-Gateway Session ID
         final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
         OkHttpClient client = new OkHttpClient();

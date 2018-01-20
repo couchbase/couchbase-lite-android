@@ -395,7 +395,7 @@ public final class ReplicatorConfiguration {
     URI getTargetURI() {
         if (target instanceof URLEndpoint) {
             URLEndpoint urlEndpoint = (URLEndpoint) target;
-            return urlEndpoint.getURI();
+            return urlEndpoint.getURL();
         } else
             return null;
     }

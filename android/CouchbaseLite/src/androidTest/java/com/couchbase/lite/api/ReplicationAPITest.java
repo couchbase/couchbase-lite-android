@@ -48,8 +48,8 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         // --- code example ---
-        URI uri = new URI("blip://localhost:4984/db");
-        Endpoint endpoint = new URLEndpoint(uri.getHost(), uri.getPort(), uri.getPath(), false);
+        URI uri = new URI("ws://localhost:4984/db");
+        Endpoint endpoint = new URLEndpoint(uri);
         ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
         builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
         Replicator replication = new Replicator(builder.build());
@@ -72,8 +72,8 @@ public class ReplicationAPITest extends BaseReplicatorTest {
     public void testReplicationStatus() throws URISyntaxException {
         if (!config.replicatorTestsEnabled()) return;
 
-        URI uri = new URI("blip://localhost:4984/db");
-        Endpoint endpoint = new URLEndpoint(uri.getHost(), uri.getPort(), uri.getPath(), false);
+        URI uri = new URI("ws://localhost:4984/db");
+        Endpoint endpoint = new URLEndpoint(uri);
         ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
         builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
         Replicator replication = new Replicator(builder.build());
@@ -93,8 +93,8 @@ public class ReplicationAPITest extends BaseReplicatorTest {
     public void testHandlingNetworkErrors() throws URISyntaxException {
         if (!config.replicatorTestsEnabled()) return;
 
-        URI uri = new URI("blip://localhost:4984/db");
-        Endpoint endpoint = new URLEndpoint(uri.getHost(), uri.getPort(), uri.getPath(), false);
+        URI uri = new URI("ws://localhost:4984/db");
+        Endpoint endpoint = new URLEndpoint(uri);
         ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
         builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
         Replicator replication = new Replicator(builder.build());
