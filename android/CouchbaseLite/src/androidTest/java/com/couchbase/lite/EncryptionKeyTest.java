@@ -8,8 +8,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class EncryptionKeyTest extends BaseTest {
-    private final static String TAG = EncryptionKey.class.getSimpleName();
-
     @Test
     public void testDerivePBKDF2SHA256Key() {
         EncryptionKey key = new EncryptionKey("hello world!");

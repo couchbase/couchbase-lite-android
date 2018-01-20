@@ -28,14 +28,17 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        if (!config.replicatorTestsEnabled()) return;
-        remote_PUT_db(DB_NAME);
+        if (config.replicatorTestsEnabled()) {
+            remote_PUT_db(DB_NAME);
+        }
+
     }
 
     @After
     public void tearDown() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
-        remote_DELETE_db(DB_NAME);
+        if (config.replicatorTestsEnabled()) {
+            remote_DELETE_db(DB_NAME);
+        }
         super.tearDown();
     }
 
@@ -64,7 +67,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Test
     public void testEmptyPushToRemoteDB() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled())
+            return;
 
         String uri = String.format(Locale.ENGLISH, "blip://%s:%d/%s",
                 this.config.remoteHost(), this.config.remotePort(), DB_NAME);
@@ -74,7 +78,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Test
     public void testPushToRemoteDB() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled())
+            return;
 
         // Create 100 docs in local db
         loadJSONResource("names_100.json");
@@ -165,7 +170,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
      */
     @Test
     public void testPushToRemoteDBWithAttachment() throws Exception {
-        if (!config.replicatorTestsEnabled()) return;
+        if (!config.replicatorTestsEnabled())
+            return;
 
         // store doc with attachment into db.
         {

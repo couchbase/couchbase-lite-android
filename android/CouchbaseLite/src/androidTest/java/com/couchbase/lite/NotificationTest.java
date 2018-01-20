@@ -2,8 +2,6 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Locale;
@@ -16,17 +14,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class NotificationTest extends BaseTest {
-
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     @Test
     public void testDatabaseChange()
             throws InterruptedException, CouchbaseLiteException {

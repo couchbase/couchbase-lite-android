@@ -439,18 +439,11 @@ public final class Database {
 
             Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
 
-            // stop replicator
-            synchronized (activeReplications) {
-                for (Replicator repl : activeReplications)
-                    repl.stop();
-            }
+            // stop all active replicators
+            stopAllActiveReplicatoin();
 
-            // stop live query
-            synchronized (activeLiveQueries) {
-                for (LiveQuery liveQuery : activeLiveQueries)
-                    liveQuery.stop(false);
-                activeLiveQueries.clear();
-            }
+            // stop all active live queries
+            stopAllActiveLiveQueries();
 
             // close db
             closeC4DB();
@@ -472,6 +465,14 @@ public final class Database {
     public void delete() throws CouchbaseLiteException {
         synchronized (lock) {
             mustBeOpen();
+
+            Log.i(TAG, "Deleting %s at path %s", this, getC4Database().getPath());
+
+            // stop all active replicators
+            stopAllActiveReplicatoin();
+
+            // stop all active live queries
+            stopAllActiveLiveQueries();
 
             // delete db
             deleteC4DB();
@@ -1287,7 +1288,7 @@ public final class Database {
 
     private void shutdownExecutorService() {
         if (!executorService.isShutdown() && !executorService.isTerminated()) {
-            shutdownAndAwaitTermination(executorService, 5);
+            shutdownAndAwaitTermination(executorService, 60);
         }
     }
 
@@ -1306,6 +1307,29 @@ public final class Database {
             pool.shutdownNow();
             // Preserve interrupt status
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private void stopAllActiveReplicatoin() {
+        // stop replicator
+        synchronized (activeReplications) {
+            for (Replicator repl : activeReplications)
+                repl.stop();
+            // NOTE: Need to wait for STOPPED state?
+        }
+        while (activeReplications.size() != 0)
+            try {
+                Thread.sleep(300);
+            } catch (Exception e) {
+            }
+    }
+
+    private void stopAllActiveLiveQueries() {
+        // stop live query
+        synchronized (activeLiveQueries) {
+            for (LiveQuery liveQuery : activeLiveQueries)
+                liveQuery.stop(false);
+            activeLiveQueries.clear();
         }
     }
 }

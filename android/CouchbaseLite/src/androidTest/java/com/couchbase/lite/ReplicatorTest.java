@@ -2,8 +2,6 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -20,20 +18,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class ReplicatorTest extends BaseReplicatorTest {
-
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     @Test
     public void testEmptyPush() throws InterruptedException {
         ReplicatorConfiguration.Builder builder = makeConfig(true, false, false);
+        //run(builder.build(), 0, null, true);
         run(builder.build(), 0, null);
     }
 
@@ -59,22 +47,35 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
     @Test
     public void testPushDocContinuous() throws Exception {
-        MutableDocument doc1 = new MutableDocument("doc1");
-        doc1.setValue("name", "Tiger");
-        save(doc1);
-        assertEquals(1, db.getCount());
+        Log.i(TAG, "testPushDocContinuous() - BEGIN");
+        String strAnotherDB = "anotherDB";
+        Database anotherDB = open(strAnotherDB);
+        try {
+            MutableDocument doc1 = new MutableDocument("doc1");
+            doc1.setValue("name", "Tiger");
+            anotherDB.save(doc1);
+            assertEquals(1, anotherDB.getCount());
 
-        MutableDocument doc2 = new MutableDocument("doc2");
-        doc2.setValue("name", "Cat");
-        otherDB.save(doc2);
-        assertEquals(1, otherDB.getCount());
+            MutableDocument doc2 = new MutableDocument("doc2");
+            doc2.setValue("name", "Cat");
+            otherDB.save(doc2);
+            assertEquals(1, otherDB.getCount());
 
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, true);
-        run(builder.build(), 0, null);
+            ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(anotherDB, new DatabaseEndpoint(otherDB));
+            builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PUSH);
+            builder.setContinuous(true);
+            Replicator repl = run(builder.build(), 0, null);
 
-        assertEquals(2, otherDB.getCount());
-        Document doc2a = otherDB.getDocument("doc2");
-        assertEquals("Cat", doc2a.getString("name"));
+            assertEquals(2, otherDB.getCount());
+            Document doc2a = otherDB.getDocument("doc2");
+            assertEquals("Cat", doc2a.getString("name"));
+
+            stopContinuousReplicator(repl);
+        } finally {
+            anotherDB.close();
+            this.deleteDatabase(strAnotherDB);
+        }
+        Log.i(TAG, "testPushDocContinuous() - END");
     }
 
     @Test
@@ -101,22 +102,35 @@ public class ReplicatorTest extends BaseReplicatorTest {
     // https://github.com/couchbase/couchbase-lite-core/issues/156
     @Test
     public void testPullDocContinuous() throws Exception {
-        MutableDocument doc1 = new MutableDocument("doc1");
-        doc1.setValue("name", "Tiger");
-        save(doc1);
-        assertEquals(1, db.getCount());
+        Log.i(TAG, "testPullDocContinuous() - BEGIN");
+        String strAnotherDB = "anotherDB";
+        Database anotherDB = open(strAnotherDB);
+        try {
+            MutableDocument doc1 = new MutableDocument("doc1");
+            doc1.setValue("name", "Tiger");
+            anotherDB.save(doc1);
+            assertEquals(1, anotherDB.getCount());
 
-        MutableDocument doc2 = new MutableDocument("doc2");
-        doc2.setValue("name", "Cat");
-        otherDB.save(doc2);
-        assertEquals(1, otherDB.getCount());
+            MutableDocument doc2 = new MutableDocument("doc2");
+            doc2.setValue("name", "Cat");
+            otherDB.save(doc2);
+            assertEquals(1, otherDB.getCount());
 
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, true);
-        run(builder.build(), 0, null);
+            ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(anotherDB, new DatabaseEndpoint(otherDB));
+            builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+            builder.setContinuous(true);
+            run(builder.build(), 0, null);
 
-        assertEquals(2, db.getCount());
-        Document doc2a = db.getDocument("doc2");
-        assertEquals("Cat", doc2a.getString("name"));
+            assertEquals(2, anotherDB.getCount());
+            Document doc2a = anotherDB.getDocument("doc2");
+            assertEquals("Cat", doc2a.getString("name"));
+
+            stopContinuousReplicator(repl);
+        } finally {
+            anotherDB.close();
+            this.deleteDatabase(strAnotherDB);
+        }
+        Log.i(TAG, "testPullDocContinuous() - END");
     }
 
     @Test
@@ -253,32 +267,40 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
     @Test
     public void testReplicatorStopWhenClosed() throws CouchbaseLiteException {
-        ReplicatorConfiguration.Builder builder = makeConfig(true, true, true);
-        Replicator repl = new Replicator(builder.build());
-        repl.start();
-        while (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.IDLE) {
-            Log.w(TAG, String.format(Locale.ENGLISH,
-                    "Replicator status is still %s, waiting for idle...",
-                    repl.getStatus().getActivityLevel()));
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
+        try {
+            ReplicatorConfiguration.Builder builder = makeConfig(true, true, true);
+            Replicator repl = new Replicator(builder.build());
+            repl.start();
+            while (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.IDLE) {
+                Log.w(TAG, String.format(Locale.ENGLISH,
+                        "Replicator status is still %s, waiting for idle...",
+                        repl.getStatus().getActivityLevel()));
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                }
             }
-        }
-        reopenDB();
-        int attemptCount = 0;
-        while (attemptCount++ < 10 && repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
-            Log.w(TAG, String.format(Locale.ENGLISH,
-                    "Replicator status is still %s, waiting for stopped (remaining attempts %d)...",
-                    repl.getStatus().getActivityLevel(), 10 - attemptCount));
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
+
+            closeDB();
+
+            int attemptCount = 0;
+            while (attemptCount++ < 20 && repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
+                Log.w(TAG, String.format(Locale.ENGLISH,
+                        "Replicator status is still %s, waiting for stopped (remaining attempts %d)...",
+                        repl.getStatus().getActivityLevel(), 10 - attemptCount));
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                }
             }
+            assertTrue(attemptCount < 20);
+        } finally {
+            // NOTE: DB is closed middle of unit test. So tearDown might not be able to delete it.
+            deleteDatabase(kDatabaseName);
         }
-        assertTrue(attemptCount < 10);
     }
 
+    /*
     @Test
     public void testAuthenticationFailure() {
         // NOTE: Test is implemented in ReplicatorWithSyncGatewayTest class
@@ -320,6 +342,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
         //       public void testChannelPull()
         //       This empty test method is for consistancy with other platforms
     }
+    */
 
     /**
      * Database to Database Push replication document has attachment
@@ -327,25 +350,37 @@ public class ReplicatorTest extends BaseReplicatorTest {
      */
     @Test
     public void testAttachmentPush() throws CouchbaseLiteException, InterruptedException, IOException {
-        InputStream is = getAsset("image.jpg");
+        Log.i(TAG, "testAttachmentPush() - BEGIN");
+        String strAnotherDB = "anotherDB";
+        Database anotherDB = open(strAnotherDB);
         try {
-            Blob blob = new Blob("image/jpg", is);
-            MutableDocument doc1 = new MutableDocument("doc1");
-            doc1.setValue("name", "Tiger");
-            doc1.setBlob("image.jpg", blob);
-            save(doc1);
+            InputStream is = getAsset("image.jpg");
+            try {
+                Blob blob = new Blob("image/jpg", is);
+                MutableDocument doc1 = new MutableDocument("doc1");
+                doc1.setValue("name", "Tiger");
+                doc1.setBlob("image.jpg", blob);
+                //save(doc1);
+                anotherDB.save(doc1);
+            } finally {
+                is.close();
+            }
+            assertEquals(1, anotherDB.getCount());
+
+            //ReplicatorConfiguration.Builder builder = makeConfig(true, false, false);
+            ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(anotherDB, new DatabaseEndpoint(otherDB));
+            builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PUSH);
+            run(builder.build(), 0, null);
+
+            assertEquals(1, otherDB.getCount());
+            Document doc1a = otherDB.getDocument("doc1");
+            Blob blob1a = doc1a.getBlob("image.jpg");
+            assertNotNull(blob1a);
         } finally {
-            is.close();
+            anotherDB.close();
+            this.deleteDatabase(strAnotherDB);
         }
-        assertEquals(1, db.getCount());
-
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false);
-        run(builder.build(), 0, null);
-
-        assertEquals(1, otherDB.getCount());
-        Document doc1a = otherDB.getDocument("doc1");
-        Blob blob1a = doc1a.getBlob("image.jpg");
-        assertNotNull(blob1a);
+        Log.i(TAG, "testAttachmentPush() - END");
     }
 
     /**
@@ -354,26 +389,38 @@ public class ReplicatorTest extends BaseReplicatorTest {
      */
     @Test
     public void testAttachmentPull() throws CouchbaseLiteException, InterruptedException, IOException {
-        //InputStream is = getAsset("image.jpg");
-        InputStream is = getAsset("attachment.png");
+        Log.i(TAG, "testAttachmentPull() - BEGIN");
+        String strAnotherDB = "anotherDB";
+        Database anotherDB = open(strAnotherDB);
         try {
-            //Blob blob = new Blob("image/jpg", is);
-            Blob blob = new Blob("image/jpg", is);
-            MutableDocument doc1 = new MutableDocument("doc1");
-            doc1.setValue("name", "Tiger");
-            doc1.setBlob("image.jpg", blob);
-            otherDB.save(doc1);
+
+            InputStream is = getAsset("image.jpg");
+            //InputStream is = getAsset("attachment.png");
+            try {
+                Blob blob = new Blob("image/jpg", is);
+                //Blob blob = new Blob("image/jpg", is);
+                MutableDocument doc1 = new MutableDocument("doc1");
+                doc1.setValue("name", "Tiger");
+                doc1.setBlob("image.jpg", blob);
+                otherDB.save(doc1);
+            } finally {
+                is.close();
+            }
+            assertEquals(1, otherDB.getCount());
+
+            ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(anotherDB, new DatabaseEndpoint(otherDB));
+            builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+            run(builder.build(), 0, null);
+
+            assertEquals(1, anotherDB.getCount());
+            Document doc1a = anotherDB.getDocument("doc1");
+            Blob blob1a = doc1a.getBlob("image.jpg");
+            assertNotNull(blob1a);
+
         } finally {
-            is.close();
+            anotherDB.close();
+            this.deleteDatabase(strAnotherDB);
         }
-        assertEquals(1, otherDB.getCount());
-
-        ReplicatorConfiguration.Builder builder = makeConfig(true, true, false);
-        run(builder.build(), 0, null);
-
-        assertEquals(1, db.getCount());
-        Document doc1a = db.getDocument("doc1");
-        Blob blob1a = doc1a.getBlob("image.jpg");
-        assertNotNull(blob1a);
+        Log.i(TAG, "testAttachmentPull() - END");
     }
 }
