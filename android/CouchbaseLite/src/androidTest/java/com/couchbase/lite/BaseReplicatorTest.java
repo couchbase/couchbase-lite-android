@@ -27,39 +27,25 @@ public class BaseReplicatorTest extends BaseTest {
     Replicator repl;
     long timeout;  // seconds
 
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
-                                                         boolean continuous) {
+    protected URLEndpoint getRemoteEndpoint(String dbName, boolean secure) throws URISyntaxException {
+        String uri = (secure ? "wss://" : "ws://") + config.remoteHost() + ":" + config.remotePort() + "/" + dbName;
+        return new URLEndpoint(new URI(uri));
+    }
+
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull, boolean continuous) {
         return makeConfig(push, pull, continuous, this.otherDB);
     }
 
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
-                                                         boolean continuous, Database targetDatabase) {
-        DatabaseEndpoint endpoint = new DatabaseEndpoint(targetDatabase);
-        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(this.db, endpoint);
-        builder.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
-        builder.setContinuous(continuous);
-        return builder;
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull, boolean continuous, Database targetDatabase) {
+        return makeConfig(push, pull, continuous, this.db, new DatabaseEndpoint(targetDatabase));
     }
 
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
-                                                         boolean continuous, String targetURI) throws URISyntaxException {
-        return makeConfig(push, pull, continuous, URI.create(targetURI));
-    }
-
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
-                                                         boolean continuous, URI target) throws URISyntaxException {
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull, boolean continuous, Endpoint target) {
         return makeConfig(push, pull, continuous, this.db, target);
     }
 
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
-                                                         boolean continuous, Database db, String targetURI) throws URISyntaxException {
-        return makeConfig(push, pull, continuous, db, URI.create(targetURI));
-    }
-
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull,
-                                                         boolean continuous, Database db, URI targetURI) throws URISyntaxException {
-        URLEndpoint endpoint = new URLEndpoint(targetURI.getHost(), targetURI.getPort(), targetURI.getPath(), false);
-        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(db, endpoint);
+    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull, boolean continuous, Database db, Endpoint target) {
+        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(db, target);
         builder.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
         builder.setContinuous(continuous);
         return builder;
