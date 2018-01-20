@@ -1,12 +1,13 @@
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.Log;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Locale;
@@ -203,5 +204,31 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         assertNotNull(doc);
         Blob blob = doc.getBlob("image.jpg");
         assertNotNull(blob);
+    }
+
+    // DO NOT RUN
+    //@Test
+    public void testContinuousPushNeverending() throws URISyntaxException, InterruptedException {
+        // NOTE: This test never stops even after the replication goes idle.
+        // It can be used to test the response to connectivity issues like killing the remote server.
+
+        // target SG URI
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+
+        // Push replicate from db to SG
+        ReplicatorConfiguration.Builder builder = makeConfig(true, false, true, target);
+        final Replicator repl = run(builder.build(), 0, null);
+        repl.addChangeListener(new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Log.w(TAG, "changed() change -> " + change);
+            }
+        });
+
+        try {
+            Thread.sleep(3 * 60 * 1000);
+        } catch (Exception e) {
+        }
+
     }
 }
