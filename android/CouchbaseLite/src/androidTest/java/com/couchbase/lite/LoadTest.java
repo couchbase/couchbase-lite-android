@@ -13,7 +13,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class LoadTest extends BaseTest {
-    private static final String TAG = LoadTest.class.getSimpleName();
 
     protected void logPerformanceStats(String name, long time) {
         Log.e(TAG, "PerformanceStats: " + name + " -> " + time + " ms");

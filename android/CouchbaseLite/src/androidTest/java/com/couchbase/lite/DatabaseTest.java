@@ -38,8 +38,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DatabaseTest extends BaseTest {
-    private static final String TAG = DatabaseTest.class.getName();
-
     final static String kDatabaseTestBlob = "i'm blob";
 
     //---------------------------------------------
@@ -510,6 +508,7 @@ public class DatabaseTest extends BaseTest {
         } finally {
             // delete otherDb
             deleteDatabase(otherDB);
+            deleteDatabase("otherDB");
         }
     }
 
@@ -645,6 +644,7 @@ public class DatabaseTest extends BaseTest {
         } finally {
             // close otherDb
             deleteDatabase(otherDB);
+            deleteDatabase("otherDB");
         }
     }
 
@@ -783,6 +783,7 @@ public class DatabaseTest extends BaseTest {
         } finally {
             // close otherDb
             deleteDatabase(otherDB);
+            deleteDatabase("otherDB");
         }
     }
 

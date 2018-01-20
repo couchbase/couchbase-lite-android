@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class BaseReplicatorTest extends BaseTest {
-
+    protected final static String kOtherDatabaseName = "otherdb";
     Database otherDB;
     Replicator repl;
     long timeout;  // seconds
@@ -65,7 +65,12 @@ public class BaseReplicatorTest extends BaseTest {
         return builder;
     }
 
-    protected void run(final ReplicatorConfiguration config, final int code, final String domain)
+    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain)
+            throws InterruptedException {
+        return run(config, code, domain, false);
+    }
+
+    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain, final boolean ignoreErrorAtStopped)
             throws InterruptedException {
         repl = new Replicator(config);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -108,9 +113,8 @@ public class BaseReplicatorTest extends BaseTest {
                             if (domain != null)
                                 assertEquals(domain, error.getDomainString());
                         } else {
-                            // TODO: revisited following check!!
-                            //       currently commented out for testing.
-                            //assertNull(error);
+                            if (!ignoreErrorAtStopped)
+                                assertNull(error);
                         }
                         latch.countDown();
                     }
@@ -119,6 +123,26 @@ public class BaseReplicatorTest extends BaseTest {
         });
         repl.start();
         assertTrue(latch.await(timeout, TimeUnit.SECONDS));
+        return repl;
+    }
+
+    void stopContinuousReplicator(Replicator repl) throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ListenerToken token = repl.addChangeListener(new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                    latch.countDown();
+                }
+            }
+        });
+        try {
+            repl.stop();
+            assertTrue(latch.await(timeout, TimeUnit.SECONDS));
+        } finally {
+            repl.removeChangeListener(token);
+        }
     }
 
     @Before
@@ -130,27 +154,29 @@ public class BaseReplicatorTest extends BaseTest {
         super.setUp();
 
         timeout = 15; // seconds
-        otherDB = open("otherdb");
+        otherDB = open(kOtherDatabaseName);
+        assertTrue(otherDB.isOpen());
         assertNotNull(otherDB);
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (Exception e) {
         }
     }
 
     @After
     public void tearDown() throws Exception {
+        assertTrue(otherDB.isOpen());
         if (otherDB != null) {
             otherDB.close();
             otherDB = null;
         }
-        deleteDatabase("otherdb");
+        deleteDatabase(kOtherDatabaseName);
 
         super.tearDown();
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (Exception e) {
         }
     }

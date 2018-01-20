@@ -1,12 +1,7 @@
 package com.couchbase.lite;
 
-import android.support.test.InstrumentationRegistry;
-
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.ZipUtils;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -18,22 +13,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class MigrationTest extends BaseTest {
-    private static final String TAG = MigrationTest.class.getName();
-
     //---------------------------------------------
     //  setUp/tearDown
     //---------------------------------------------
-
-    @Before
-    public void setUp() throws Exception {
-        Log.i("MigrationTest", "setUp");
-        context = InstrumentationRegistry.getTargetContext();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        Log.i("MigrationTest", "tearDown");
-    }
 
     /**
      * Tool to generate test db

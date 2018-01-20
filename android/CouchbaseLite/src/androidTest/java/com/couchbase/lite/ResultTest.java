@@ -2,8 +2,6 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -68,16 +66,6 @@ public class ResultTest extends BaseTest {
             DocumentTest.populateDataByTypedSetter(mDoc);
         save(mDoc);
         return docID;
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
     }
 
     @Test

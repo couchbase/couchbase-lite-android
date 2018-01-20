@@ -3,8 +3,6 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.utils.IOUtils;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,16 +16,6 @@ import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUn
  * Note: https://github.com/couchbase/couchbase-lite-core/tree/master/Replicator/tests/data
  */
 public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     /**
      * This test assumes an SG is serving SSL at port 4994 with a self-signed cert.
      */

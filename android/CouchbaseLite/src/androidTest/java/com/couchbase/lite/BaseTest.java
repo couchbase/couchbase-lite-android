@@ -43,7 +43,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class BaseTest implements C4Constants {
-    public static final String TAG = BaseTest.class.getSimpleName();
+    public static final String TAG = "Test";
 
     protected final static String kDatabaseName = "testdb";
 
@@ -57,8 +57,9 @@ public class BaseTest implements C4Constants {
     public void setUp() throws Exception {
 
         Database.setLogLevel(Database.LogDomain.ALL, Database.LogLevel.INFO);
+        Log.enableLogging(TAG, Log.INFO, false);
 
-        Log.i(TAG, "setUp");
+        Log.i(TAG, "setUp() - BEGIN");
 
         context = InstrumentationRegistry.getTargetContext();
         try {
@@ -66,31 +67,39 @@ public class BaseTest implements C4Constants {
         } catch (IOException e) {
             fail("Failed to load test.properties");
         }
+
         dir = new File(context.getFilesDir(), "CouchbaseLite");
+
+        deleteDatabase(kDatabaseName);
+
         FileUtils.cleanDirectory(dir);
+
         openDB();
+
+        Log.i(TAG, "setUp() - END");
     }
 
     @After
     public void tearDown() throws Exception {
-        Log.i(TAG, "tearDown");
-        if (db != null) {
-            db.close();
-            db = null;
-        }
+        Log.i(TAG, "tearDown() - BEGIN");
+
+        closeDB();
 
         // database exist, delete it
         deleteDatabase(kDatabaseName);
 
         // clean dir
         FileUtils.cleanDirectory(dir);
+
+        Log.i(TAG, "tearDown() - END");
     }
 
     protected void deleteDatabase(String dbName) throws CouchbaseLiteException {
         // database exist, delete it
         if (Database.exists(dbName, dir)) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 20; i++) {
+                // while(true){
                 try {
                     Database.delete(dbName, dir);
                     break;
@@ -117,16 +126,20 @@ public class BaseTest implements C4Constants {
     }
 
     protected void openDB() throws CouchbaseLiteException {
+        Log.i(TAG, "openDB() - BEGIN");
         assertNull(db);
         db = open(kDatabaseName);
         assertNotNull(db);
+        Log.i(TAG, "openDB() - END");
     }
 
     protected void closeDB() throws CouchbaseLiteException {
+        Log.i(TAG, "closeDB() - BEGIN");
         if (db != null) {
             db.close();
             db = null;
         }
+        Log.i(TAG, "closeDB() - END");
     }
 
     protected void reopenDB() throws CouchbaseLiteException {

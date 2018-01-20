@@ -4,8 +4,6 @@ import com.couchbase.lite.internal.support.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -23,16 +21,6 @@ import okhttp3.Response;
  */
 public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
 
     private boolean remote_PUT_db(String db) throws IOException {
         OkHttpClient client = new OkHttpClient();

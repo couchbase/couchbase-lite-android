@@ -19,7 +19,6 @@ import android.os.Looper;
 
 import com.couchbase.lite.internal.support.Log;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -138,12 +137,6 @@ public class QueryTest extends BaseTest {
             documentIDs[i] = "doc" + numbers[i];
         }
         return documentIDs;
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-        Log.enableLogging(TAG, Log.INFO, false);
     }
 
     @Test
