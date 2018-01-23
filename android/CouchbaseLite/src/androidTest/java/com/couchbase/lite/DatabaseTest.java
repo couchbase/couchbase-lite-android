@@ -265,7 +265,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testCreateWithSpecialCharacterDBNames() throws CouchbaseLiteException {
-        Database db = openDatabase("`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'");
+        Database db = openDatabase("`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde");
         try {
             assertNotNull(db);
             assertEquals(0, db.getCount());
