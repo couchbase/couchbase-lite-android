@@ -2,6 +2,8 @@ package com.couchbase.lite;
 
 import android.os.Build;
 
+import com.couchbase.litecore.C4;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -416,12 +418,14 @@ public final class ReplicatorConfiguration {
 
     static String getUserAgent() {
         if (userAgent == null) {
+            String liteCoreVers = C4.getVersion();
             userAgent = String.format(Locale.ENGLISH,
-                    "CouchbaseLite/%s %s Build/%d Commit/%.8s",
+                    "CouchbaseLite/%s %s Build/%d Commit/%.8s LiteCore/%s",
                     BuildConfig.VERSION_NAME,
                     getSystemInfo(),
                     BuildConfig.BUILD_NO,
-                    BuildConfig.GitHash
+                    BuildConfig.GitHash,
+                    liteCoreVers
             );
         }
         return userAgent;
