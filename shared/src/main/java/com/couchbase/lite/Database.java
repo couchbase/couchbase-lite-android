@@ -1315,13 +1315,10 @@ public final class Database {
         synchronized (activeReplications) {
             for (Replicator repl : activeReplications)
                 repl.stop();
-            // NOTE: Need to wait for STOPPED state?
         }
-        while (activeReplications.size() != 0)
-            try {
-                Thread.sleep(300);
-            } catch (Exception e) {
-            }
+
+        // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1543
+        // NOTE: Need to wait for STOPPED state?
     }
 
     private void stopAllActiveLiveQueries() {
