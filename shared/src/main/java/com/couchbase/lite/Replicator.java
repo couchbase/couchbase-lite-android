@@ -486,7 +486,7 @@ public final class Replicator extends NetworkReachabilityListener {
                 responseHeaders = FLValue.fromData(h).asDict();
         }
 
-        Log.e(TAG, "statusChanged() c4Status -> " + c4Status);
+        Log.i(TAG, "statusChanged() c4Status -> " + c4Status);
         if (c4Status.getActivityLevel() == kC4Stopped) {
             if (handleError(c4Status.getC4Error())) {
                 // Change c4Status to offline, so my state will reflect that, and proceed:
@@ -574,7 +574,7 @@ public final class Replicator extends NetworkReachabilityListener {
                 (int) status.getProgressUnitsTotal());
         this.status = new Status(level, progress, error);
 
-        Log.e(TAG, "%s is %s, progress %d/%d, error: %s",
+        Log.i(TAG, "%s is %s, progress %d/%d, error: %s",
                 this,
                 kC4ReplicatorActivityLevelNames[status.getActivityLevel()],
                 status.getProgressUnitsCompleted(),
