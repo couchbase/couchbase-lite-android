@@ -9,7 +9,6 @@ import java.util.Date;
 import static org.junit.Assert.assertEquals;
 
 public class MiscTest {
-
     // Verify that round trip NSString -> NSDate -> NSString conversion doesn't alter the string (#1611)
     @Test
     public void testJSONDateRoundTrip() {

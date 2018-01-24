@@ -16,7 +16,6 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
-
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Config;
@@ -49,15 +48,24 @@ public class BaseTest implements C4Constants {
 
     protected Config config;
     protected Context context;
-    protected File dir;
+    private File dir = null;
     protected Database db = null;
     protected ConflictResolver conflictResolver = null;
+
+    protected File getDir() {
+        return dir;
+    }
+
+    protected void setDir(File dir) {
+        assertNotNull(dir);
+        this.dir = dir;
+    }
 
     @Before
     public void setUp() throws Exception {
 
         Database.setLogLevel(Database.LogDomain.ALL, Database.LogLevel.INFO);
-        Log.enableLogging(TAG, Log.INFO, false);
+        Log.enableLogging(TAG, Log.INFO); // NOTE: Without loading Database, this fails.
 
         Log.i(TAG, "setUp() - BEGIN");
 
@@ -68,10 +76,12 @@ public class BaseTest implements C4Constants {
             fail("Failed to load test.properties");
         }
 
-        dir = new File(context.getFilesDir(), "CouchbaseLite");
+        setDir(new File(context.getFilesDir(), "CouchbaseLite"));
 
+        // database exist, delete it
         deleteDatabase(kDatabaseName);
 
+        // clean dir
         FileUtils.cleanDirectory(dir);
 
         openDB();
@@ -89,19 +99,19 @@ public class BaseTest implements C4Constants {
         deleteDatabase(kDatabaseName);
 
         // clean dir
-        FileUtils.cleanDirectory(dir);
+        FileUtils.cleanDirectory(getDir());
 
         Log.i(TAG, "tearDown() - END");
     }
 
     protected void deleteDatabase(String dbName) throws CouchbaseLiteException {
         // database exist, delete it
-        if (Database.exists(dbName, dir)) {
+        if (Database.exists(dbName, getDir())) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec
             for (int i = 0; i < 20; i++) {
                 // while(true){
                 try {
-                    Database.delete(dbName, dir);
+                    Database.delete(dbName, getDir());
                     break;
                 } catch (CouchbaseLiteException ex) {
                     if (ex.getCode() == kC4ErrorBusy) {
@@ -119,7 +129,7 @@ public class BaseTest implements C4Constants {
 
     protected Database open(String name) throws CouchbaseLiteException {
         DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        builder.setDirectory(dir.getAbsolutePath());
+        builder.setDirectory(getDir().getAbsolutePath());
         if (this.conflictResolver != null)
             builder.setConflictResolver(this.conflictResolver);
         return new Database(name, builder.build());

@@ -21,8 +21,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ConcurrencyTest extends BaseTest {
-    private static final String TAG = ConcurrencyTest.class.getSimpleName();
-
     MutableDocument createDocumentWithTag(String tag) {
         MutableDocument doc = new MutableDocument();
 
@@ -113,7 +111,7 @@ public class ConcurrencyTest extends BaseTest {
         SelectResult DOCID = SelectResult.expression(Meta.id);
         DataSource ds = DataSource.database(db);
         Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
-        Log.e(TAG, "query - > %s", q.explain());
+        Log.i(TAG, "query - > %s", q.explain());
         ResultSet rs = q.execute();
         Result result;
         int n = 0;

@@ -22,8 +22,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DatabaseEncryptionTest extends BaseTest {
-    private static final String TAG = DatabaseEncryptionTest.class.getName();
-
     private Database seekrit;
 
     //---------------------------------------------
@@ -44,11 +42,11 @@ public class DatabaseEncryptionTest extends BaseTest {
         if (seekrit != null) seekrit.close();
 
         // database exist, delete it
-        if (Database.exists("seekrit", dir)) {
+        if (Database.exists("seekrit", getDir())) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec
             for (int i = 0; i < 10; i++) {
                 try {
-                    Database.delete("seekrit", dir);
+                    Database.delete("seekrit", getDir());
                     break;
                 } catch (CouchbaseLiteException ex) {
                     if (ex.getCode() == kC4ErrorBusy) {
@@ -70,7 +68,7 @@ public class DatabaseEncryptionTest extends BaseTest {
         DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
         if (password != null)
             builder.setEncryptionKey(new EncryptionKey(password));
-        builder.setDirectory(this.dir.getAbsolutePath());
+        builder.setDirectory(getDir().getAbsolutePath());
         return new Database("seekrit", builder.build());
     }
 
