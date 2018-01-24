@@ -41,8 +41,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class QueryTest extends BaseTest {
-    public static final String TAG = QueryTest.class.getSimpleName();
-
     private static Expression EXPR_NUMBER1 = Expression.property("number1");
     private static Expression EXPR_NUMBER2 = Expression.property("number2");
 

@@ -22,7 +22,6 @@ import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Constants.C4DatabaseFlags;
 import com.couchbase.litecore.C4Constants.C4DocumentVersioning;
 import com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm;
-import com.couchbase.litecore.C4Constants.C4LogDomain;
 import com.couchbase.litecore.C4Constants.C4ErrorDomain;
 import com.couchbase.litecore.C4Constants.C4RevisionFlags;
 import com.couchbase.litecore.C4Constants.LiteCoreError;
@@ -148,6 +147,8 @@ public final class Database {
             throw new IllegalArgumentException("name should not be empty.");
         if (config == null)
             throw new IllegalArgumentException("DatabaseConfiguration should not be null.");
+
+        Log.init();
 
         this.name = name;
         this.config = config;
@@ -611,52 +612,14 @@ public final class Database {
         }
     }
 
+    /**
+     * Set log level for the given log domain.
+     *
+     * @param domain The log domain
+     * @param level  The log level
+     */
     public static void setLogLevel(LogDomain domain, LogLevel level) {
-        switch (domain) {
-            case ALL:
-                // Database
-                Log.enableLogging(Log.DATABASE, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.DB, level.getValue(), true);         // LiteCore
-                Log.enableLogging(C4LogDomain.Enum, level.getValue(), true);       // LiteCore
-                Log.enableLogging(C4LogDomain.Blob, level.getValue(), true);       // LiteCore
-
-                // Query
-                Log.enableLogging(Log.QUERY, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.SQL, level.getValue(), true);        // LiteCore
-
-                // REPLICATOR
-                Log.enableLogging(Log.SYNC, level.getValue(), false);
-
-                // Network
-                Log.enableLogging(Log.WebSocket, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.BLIP, level.getValue(), true);         // LiteCore
-                Log.enableLogging(C4LogDomain.BLIPMessages, level.getValue(), true); // LiteCore
-                Log.enableLogging(C4LogDomain.ACTOR, level.getValue(), true);        // LiteCore
-                break;
-
-            case DATABASE:
-                Log.enableLogging(Log.DATABASE, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.DB, level.getValue(), true);         // LiteCore
-                Log.enableLogging(C4LogDomain.Enum, level.getValue(), true);       // LiteCore
-                Log.enableLogging(C4LogDomain.Blob, level.getValue(), true);       // LiteCore
-                break;
-
-            case QUERY:
-                Log.enableLogging(Log.QUERY, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.SQL, level.getValue(), true);        // LiteCore
-                break;
-
-            case REPLICATOR:
-                Log.enableLogging(Log.SYNC, level.getValue(), false);
-                break;
-
-            case NETWORK:
-                Log.enableLogging(Log.WebSocket, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.BLIP, level.getValue(), true);         // LiteCore
-                Log.enableLogging(C4LogDomain.BLIPMessages, level.getValue(), true); // LiteCore
-                Log.enableLogging(C4LogDomain.ACTOR, level.getValue(), true);        // LiteCore
-                break;
-        }
+        Log.setLogLevel(domain, level);
     }
 
     //---------------------------------------------

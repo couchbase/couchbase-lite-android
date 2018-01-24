@@ -139,7 +139,7 @@ public class ConflictTest extends BaseTest {
         assertNull(db);
 
         DatabaseConfiguration config = new DatabaseConfiguration.Builder(this.context)
-                .setDirectory(dir.getAbsolutePath())
+                .setDirectory(getDir().getAbsolutePath())
                 .setConflictResolver(resolver)
                 .build();
         db = new Database(kDatabaseName, config);

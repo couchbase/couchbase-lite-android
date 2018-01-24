@@ -58,7 +58,7 @@ public class DatabaseTest extends BaseTest {
 
     private Database openDatabase(String dbName, boolean countCheck) throws CouchbaseLiteException {
         DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        builder.setDirectory(dir.getAbsolutePath());
+        builder.setDirectory(getDir().getAbsolutePath());
         Database db = new Database(dbName, builder.build());
         assertEquals(dbName, db.getName());
         assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
@@ -1129,7 +1129,7 @@ public class DatabaseTest extends BaseTest {
         // close db before delete
         db.close();
 
-        Database.delete(dbName, dir);
+        Database.delete(dbName, getDir());
         assertFalse(path.exists());
     }
 
@@ -1138,7 +1138,7 @@ public class DatabaseTest extends BaseTest {
         Database db = openDatabase("db");
         try {
             try {
-                Database.delete("db", dir);
+                Database.delete("db", getDir());
                 fail();
             } catch (CouchbaseLiteException e) {
                 assertEquals(LiteCoreDomain, e.getDomain());
@@ -1166,7 +1166,7 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDeleteNonExistingDB() {
         try {
-            Database.delete("notexistdb", dir);
+            Database.delete("notexistdb", getDir());
             fail();
         } catch (CouchbaseLiteException e) {
             assertEquals(Status.CBLErrorDomain, e.getDomain());
@@ -1194,22 +1194,22 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDatabaseExistsWithDir() throws CouchbaseLiteException {
-        assertFalse(Database.exists("db", dir));
+        assertFalse(Database.exists("db", getDir()));
 
         // create db with custom directory
         Database db = openDatabase("db");
         File path = db.getPath();
 
-        assertTrue(Database.exists("db", dir));
+        assertTrue(Database.exists("db", getDir()));
 
         db.close();
 
-        assertTrue(Database.exists("db", dir));
+        assertTrue(Database.exists("db", getDir()));
 
-        Database.delete("db", dir);
+        Database.delete("db", getDir());
         assertFalse(path.exists());
 
-        assertFalse(Database.exists("db", dir));
+        assertFalse(Database.exists("db", getDir()));
     }
 
     @Test
@@ -1224,7 +1224,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDatabaseExistsAgainstNonExistDB() {
-        assertFalse(Database.exists("nonexist", dir));
+        assertFalse(Database.exists("nonexist", getDir()));
     }
 
     @Test
@@ -1401,7 +1401,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(3, db.getIndexes().size());
         assertEquals(Arrays.asList("index1", "index2", "index3"), db.getIndexes());
 
-        Log.e(TAG, "db.getIndexes() -> " + db.getIndexes());
+        Log.i(TAG, "db.getIndexes() -> " + db.getIndexes());
     }
 
     @Test
@@ -1476,7 +1476,7 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDeleteAndOpenDB() throws CouchbaseLiteException {
         DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        builder.setDirectory(dir.toString());
+        builder.setDirectory(getDir().toString());
         DatabaseConfiguration config = builder.build();
 
         // open "application" database
