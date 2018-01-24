@@ -300,50 +300,6 @@ public class ReplicatorTest extends BaseReplicatorTest {
         }
     }
 
-    /*
-    @Test
-    public void testAuthenticationFailure() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewayTest class
-        //       public void testAuthenticationFailure()
-        //       This empty test method is for consistancy with other platforms
-    }
-
-    @Test
-    public void testAuthenticationPullHardcoded() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewayTest class.
-        //       public void testAuthenticatedPullHardcoded()
-        //       This empty test method is for consistancy with other platforms
-    }
-
-    @Test
-    public void testAuthenticatedPull() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewayTest class
-        //       public void testAuthenticatedPull()
-        //       This empty test method is for consistancy with other platforms
-    }
-
-    @Test
-    public void testSelfSignedSSLFailure() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewaySSLTest class.
-        //       public void testSelfSignedSSLFailure()
-        //       This empty test method is for consistancy with other platforms
-    }
-
-    @Test
-    public void testSelfSignedSSLPinned() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewaySSLTest class
-        //       public void testSelfSignedSSLPinned()
-        //       This empty test method is for consistancy with other platforms
-    }
-
-    @Test
-    public void testChannelPull() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewayDBTest class.
-        //       public void testChannelPull()
-        //       This empty test method is for consistancy with other platforms
-    }
-    */
-
     /**
      * Database to Database Push replication document has attachment
      * https://github.com/couchbase/couchbase-lite-core/issues/355
