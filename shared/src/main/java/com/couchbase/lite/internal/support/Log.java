@@ -382,7 +382,6 @@ public final class Log {
     }
 
     public static void init() {
-        setLogLevel(Database.LogDomain.ALL, Database.LogLevel.WARNING);
     }
 
     public static void setLogLevel(Database.LogDomain domain, Database.LogLevel level) {
