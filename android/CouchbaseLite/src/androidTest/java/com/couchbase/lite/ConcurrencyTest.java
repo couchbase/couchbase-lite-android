@@ -725,4 +725,32 @@ public class ConcurrencyTest extends BaseTest {
         assertTrue(latch1.await(10, TimeUnit.SECONDS));
         assertTrue(latch2.await(10, TimeUnit.SECONDS));
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1407
+    @Test
+    public void testQueryExecute() throws Exception {
+        if (!config.concurrentTestsEnabled())
+            return;
+
+        loadJSONResource("names_100.json");
+
+        final Query query = Query
+                .select(SelectResult.expression(Meta.id), SelectResult.expression(Meta.sequence))
+                .from(DataSource.database(db));
+
+        concurrentValidator(10, new Callback() {
+            @Override
+            public void callback(int threadIndex) {
+                ResultSet rs = null;
+                try {
+                    rs = query.execute();
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in Query.execute()", e);
+                }
+                List<Result> results = rs.allResults();
+                assertEquals(100, results.size());
+                assertEquals(db.getCount(), results.size());
+            }
+        }, 20);
+    }
 }
