@@ -1,8 +1,5 @@
 package com.couchbase.lite;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import com.couchbase.lite.internal.support.Log;
 
 import java.util.Collections;
@@ -10,6 +7,8 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A Query subclass that automatically refreshes the result rows every time the database changes.
@@ -156,19 +155,19 @@ final class LiveQuery implements DatabaseChangeListener {
             return;
 
         willUpdate = true;
-        // create one doc
-        new Handler(Looper.getMainLooper())
-                .postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        update();
-                    }
-                }, delay); // ms
+
+        ScheduledExecutorService executor = query.getDatabase().getQueryExecutor();
+        if (executor != null && !executor.isShutdown() && !executor.isTerminated()) {
+            executor.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    update();
+                }
+            }, delay, TimeUnit.MILLISECONDS);
+        }
     }
 
     private void update() {
-        // TODO: Make this asynchronous (as in 1.x)
-
         if (!observing)
             return;
 
