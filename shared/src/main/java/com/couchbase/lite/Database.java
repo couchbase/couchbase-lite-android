@@ -14,6 +14,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.litecore.C4;
@@ -48,9 +49,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * A Couchbase Lite database.
@@ -116,7 +116,8 @@ public final class Database {
     private String name;
     private final DatabaseConfiguration config;
     private C4Database c4db;
-    private ExecutorService executorService;
+    private ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
+    private ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
 
     private Set<DatabaseChangeListenerToken> dbListenerTokens;
     private C4DatabaseObserver c4DBObserver;
@@ -157,7 +158,8 @@ public final class Database {
             C4.setenv("TMPDIR", tempdir, 1);
         open();
         this.sharedKeys = new SharedKeys(c4db);
-        this.executorService = Executors.newSingleThreadExecutor();
+        this.postExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.queryExecutor = Executors.newSingleThreadScheduledExecutor();
         this.activeReplications = Collections.synchronizedSet(new HashSet<Replicator>());
         this.activeLiveQueries = Collections.synchronizedSet(new HashSet<LiveQuery>());
     }
@@ -808,6 +810,10 @@ public final class Database {
         }
     }
 
+    ScheduledExecutorService getQueryExecutor() {
+        return queryExecutor;
+    }
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
@@ -955,12 +961,14 @@ public final class Database {
         c4DBObserver = c4db.createDatabaseObserver(new C4DatabaseObserverListener() {
             @Override
             public void callback(C4DatabaseObserver observer, Object context) {
-                executorService.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        postDatabaseChanged();
-                    }
-                });
+                if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+                    postExecutor.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            postDatabaseChanged();
+                        }
+                    });
+                }
             }
         }, this);
     }
@@ -982,12 +990,14 @@ public final class Database {
                     @Override
                     public void callback(C4DocumentObserver observer, final String docID,
                                          final long sequence, Object context) {
-                        executorService.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                postDocumentChanged(docID);
-                            }
-                        });
+                        if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+                            postExecutor.submit(new Runnable() {
+                                @Override
+                                public void run() {
+                                    postDocumentChanged(docID);
+                                }
+                            });
+                        }
                     }
                 }, this);
 
@@ -1250,11 +1260,15 @@ public final class Database {
     }
 
     private void shutdownExecutorService() {
-        if (!executorService.isShutdown() && !executorService.isTerminated()) {
-            shutdownAndAwaitTermination(executorService, 60);
+        if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+            ExecutorUtils.shutdownAndAwaitTermination(postExecutor, 60);
+        }
+        if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
+            ExecutorUtils.shutdownAndAwaitTermination(queryExecutor, 60);
         }
     }
 
+    /*
     private void shutdownAndAwaitTermination(ExecutorService pool, int waitSec) {
         pool.shutdown(); // Disable new tasks from being submitted
         try {
@@ -1272,6 +1286,7 @@ public final class Database {
             Thread.currentThread().interrupt();
         }
     }
+    */
 
     private void stopAllActiveReplicatoin() {
         // stop replicator
