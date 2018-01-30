@@ -1,9 +1,8 @@
 package com.couchbase.lite;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Base64;
 
+import com.couchbase.lite.internal.replicator.CBLWebSocket;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Database;
@@ -11,7 +10,6 @@ import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4Replicator;
 import com.couchbase.litecore.C4ReplicatorListener;
 import com.couchbase.litecore.C4ReplicatorStatus;
-import com.couchbase.lite.internal.replicator.CBLWebSocket;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
@@ -23,6 +21,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
@@ -205,7 +207,7 @@ public final class Replicator extends NetworkReachabilityListener {
     int retryCount;
     CouchbaseLiteException lastError;
     String desc = null;
-    Handler handler; // _dispatchQueue
+    ScheduledExecutorService handler;
     NetworkReachabilityManager reachabilityManager = null;
     Map<String, Object> responseHeaders = null; // Do something with these (for auth)
 
@@ -221,7 +223,12 @@ public final class Replicator extends NetworkReachabilityListener {
     public Replicator(ReplicatorConfiguration config) {
         this.config = config.copy();
         this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
-        this.handler = new Handler(Looper.getMainLooper());
+        this.handler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable target) {
+                return new Thread(target, "ReplicatorListenerThread");
+            }
+        });
     }
 
     //---------------------------------------------
@@ -396,7 +403,7 @@ public final class Replicator extends NetworkReachabilityListener {
                 Log.i(TAG, "C4ReplicatorListener.statusChanged() status -> " + status);
                 final Replicator replicator = (Replicator) context;
                 if (repl == replicator.c4repl) {
-                    handler.post(new Runnable() {
+                    handler.execute(new Runnable() {
                         @Override
                         public void run() {
                             replicator.c4StatusChanged(status);
@@ -409,7 +416,7 @@ public final class Replicator extends NetworkReachabilityListener {
             public void documentError(C4Replicator repl, final boolean pushing, final String docID, final C4Error error, final boolean trans, Object context) {
                 final Replicator replicator = (Replicator) context;
                 if (repl == replicator.c4repl) {
-                    handler.post(new Runnable() {
+                    handler.execute(new Runnable() {
                         @Override
                         public void run() {
                             replicator.documentError(pushing, docID, error, trans);
@@ -537,12 +544,12 @@ public final class Replicator extends NetworkReachabilityListener {
             // On transient error, retry periodically, with exponential backoff:
             int delay = retryDelay(++retryCount);
             Log.i(TAG, "%s: Transient error (%s); will retry in %d sec...", this, c4err, delay);
-            handler.postDelayed(new Runnable() {
+            handler.schedule(new Runnable() {
                 @Override
                 public void run() {
                     retry();
                 }
-            }, delay * 1000);
+            }, delay, TimeUnit.SECONDS);
         } else {
             Log.i(TAG, "%s: Network error (%s); will retry when network changes...", this, c4err);
         }
