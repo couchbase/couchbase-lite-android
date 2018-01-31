@@ -118,11 +118,11 @@ public class BaseTest implements C4Constants {
     }
 
     protected Database open(String name) throws CouchbaseLiteException {
-        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        builder.setDirectory(dir.getAbsolutePath());
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        config.setDirectory(dir.getAbsolutePath());
         if (this.conflictResolver != null)
-            builder.setConflictResolver(this.conflictResolver);
-        return new Database(name, builder.build());
+            config.setConflictResolver(this.conflictResolver);
+        return new Database(name, config);
     }
 
     protected void openDB() throws CouchbaseLiteException {

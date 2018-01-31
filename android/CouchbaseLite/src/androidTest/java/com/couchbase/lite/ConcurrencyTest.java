@@ -112,7 +112,7 @@ public class ConcurrencyTest extends BaseTest {
         Expression TAG_EXPR = Expression.property("tag");
         SelectResult DOCID = SelectResult.expression(Meta.id);
         DataSource ds = DataSource.database(db);
-        Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
+        Query q = QueryBuilder.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
         Log.e(TAG, "query - > %s", q.explain());
         ResultSet rs = q.execute();
         Result result;
@@ -650,7 +650,7 @@ public class ConcurrencyTest extends BaseTest {
             @Override
             public void run() {
                 try {
-                    Index index = Index.fullTextIndex(FullTextIndexItem.property("sentence"));
+                    Index index = IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence"));
                     db.createIndex("sentence", index);
                 } catch (CouchbaseLiteException e) {
                     Log.e(TAG, "Error in Database.createIndex()", e);

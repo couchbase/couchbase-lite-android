@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * A Joins component represents a collection of the joins clauses of the query statement.
  */
-public final class Joins extends Query implements WhereRouter, OrderByRouter, LimitRouter {
+public final class Joins extends AbstractQuery implements WhereRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -17,7 +17,7 @@ public final class Joins extends Query implements WhereRouter, OrderByRouter, Li
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    Joins(Query query, List<Join> joins) {
+    Joins(AbstractQuery query, List<Join> joins) {
         copy(query);
         this.joins = joins;
         setJoins(this);

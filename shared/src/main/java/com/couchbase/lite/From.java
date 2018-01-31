@@ -19,12 +19,12 @@ import java.util.Arrays;
 /**
  * A From represents a FROM clause for specifying the data source of the query.
  */
-public final class From extends Query implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
+public final class From extends AbstractQuery implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
 
-    From(Query query, DataSource dataSource) {
+    From(AbstractQuery query, DataSource dataSource) {
         copy(query);
         setFrom(dataSource);
     }

@@ -8,7 +8,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.util.Locale;
 
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
 
@@ -24,8 +23,8 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         Endpoint target = getRemoteEndpoint("beer", true);
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
-        run(builder.build(), kC4NetErrTLSCertUntrusted, "Network");
+        ReplicatorConfiguration config = makeConfig(false, true, false, target);
+        run(config, kC4NetErrTLSCertUntrusted, "Network");
     }
 
     /**
@@ -43,8 +42,8 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
         is.close();
 
         Endpoint target = getRemoteEndpoint("beer", true);
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
-        builder.setPinnedServerCertificate(cert);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(false, true, false, target);
+        config.setPinnedServerCertificate(cert);
+        run(config, 0, null);
     }
 }
