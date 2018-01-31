@@ -594,6 +594,9 @@ public final class Database {
 
     public static void copy(File path, String name, DatabaseConfiguration config)
             throws CouchbaseLiteException {
+        if (path == null || name == null || config == null)
+            throw new IllegalArgumentException("a path, a dir and/or config parameters are null.");
+
         String fromPath = path.getPath();
         if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar)
             fromPath += File.separator;

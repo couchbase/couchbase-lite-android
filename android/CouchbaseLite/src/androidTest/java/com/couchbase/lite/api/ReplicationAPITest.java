@@ -4,17 +4,20 @@ import com.couchbase.lite.BaseReplicatorTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Endpoint;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.Replicator;
 import com.couchbase.lite.ReplicatorChange;
 import com.couchbase.lite.ReplicatorChangeListener;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.URLEndpoint;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.utils.IOUtils;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -112,5 +115,21 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         // --- code example ---
 
         replication.stop();
+    }
+
+    // ### Certificate Pinning
+
+    @Test
+    public void testCertificatePinning() throws URISyntaxException, IOException {
+        URI uri = new URI("ws://localhost:4984/db");
+        Endpoint endpoint = new URLEndpoint(uri);
+        ReplicatorConfiguration config = new ReplicatorConfiguration(database, endpoint);
+
+        // --- code example ---
+        InputStream is = getAsset("cert.cer");
+        byte[] cert = IOUtils.toByteArray(is);
+        is.close();
+        config.setPinnedServerCertificate(cert);
+        // --- code example ---
     }
 }

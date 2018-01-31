@@ -1,15 +1,19 @@
 package com.couchbase.lite.api;
 
 import com.couchbase.lite.BaseTest;
+import com.couchbase.lite.Blob;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.Document;
 import com.couchbase.lite.MutableDocument;
+import com.couchbase.lite.internal.support.Log;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +44,7 @@ public class DocumentAPITest extends BaseTest {
         super.tearDown();
     }
 
+    // ### Initializers
     @Test
     public void testInitializers() {
         // --- code example ---
@@ -56,6 +61,7 @@ public class DocumentAPITest extends BaseTest {
         // --- code example ---
     }
 
+    // ### Mutability
     @Test
     public void testMutability() {
         MutableDocument newTask = new MutableDocument();
@@ -70,6 +76,7 @@ public class DocumentAPITest extends BaseTest {
         // --- code example ---
     }
 
+    // ### Typed Accessors
     @Test
     public void testTypedAccessors() {
         MutableDocument newTask = new MutableDocument();
@@ -80,6 +87,7 @@ public class DocumentAPITest extends BaseTest {
         // --- code example ---
     }
 
+    // ### Batch operations
     @Test
     public void testBatchOperations() {
         // --- code example ---
@@ -103,6 +111,30 @@ public class DocumentAPITest extends BaseTest {
             });
         } catch (CouchbaseLiteException e) {
             Log.e(TAG, e.toString());
+        }
+        // --- code example ---
+    }
+
+    // ### Blobs
+    @Test
+    public void testBlobs() {
+        // --- code example ---
+        InputStream is = getAsset("attachment.png");
+        try {
+            MutableDocument newTask = new MutableDocument();
+            Blob blob = new Blob("image/png", is);
+            newTask.setBlob("attachment", blob);
+            Document doc = database.save(newTask);
+
+            Blob taskBlob = doc.getBlob("attachment");
+            byte[] bytes = taskBlob.getContent();
+        } catch (CouchbaseLiteException e) {
+            Log.e(TAG, e.toString());
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+            }
         }
         // --- code example ---
     }
