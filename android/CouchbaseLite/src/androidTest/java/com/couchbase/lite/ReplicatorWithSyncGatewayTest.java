@@ -48,8 +48,8 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         Endpoint target = getRemoteEndpoint("scratch", false);
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(false, true, false, target);
+        run(config, 0, null);
     }
 
     @Test
@@ -57,8 +57,8 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
-        run(builder.build(), 401, "WebSocket");
+        ReplicatorConfiguration config = makeConfig(false, true, false, target);
+        run(config, 401, "WebSocket");
     }
 
     @Test
@@ -66,9 +66,9 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
-        builder.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
-        run(builder.build(), 401, "WebSocket"); // Retry 3 times then fails with 401
+        ReplicatorConfiguration config = makeConfig(false, true, false, target);
+        config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
+        run(config, 401, "WebSocket"); // Retry 3 times then fails with 401
     }
 
     @Test
@@ -76,9 +76,9 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
-        builder.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(false, true, false, target);
+        config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank"));
+        run(config, 0, null);
     }
 
     @Test
@@ -90,9 +90,9 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         Log.e(TAG, "auth -> " + auth);
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, target);
-        builder.setAuthenticator(auth);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(false, true, false, target);
+        config.setAuthenticator(auth);
+        run(config, 0, null);
     }
 
     SessionAuthenticator getSessionAuthenticatorFromSG() throws Exception {

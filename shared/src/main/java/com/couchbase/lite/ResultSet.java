@@ -36,7 +36,7 @@ public class ResultSet implements Iterable<Result> {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private Query query;
+    private AbstractQuery query;
     private C4QueryEnumerator c4enum;
     private Map<String, Integer> columnNames;
     private ResultContext context;
@@ -45,7 +45,7 @@ public class ResultSet implements Iterable<Result> {
     // constructors
     //---------------------------------------------
 
-    ResultSet(Query query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
+    ResultSet(AbstractQuery query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
         this.query = query;
         this.c4enum = c4enum;
         this.columnNames = columnNames;
@@ -159,7 +159,7 @@ public class ResultSet implements Iterable<Result> {
         return columnNames;
     }
 
-    Query getQuery() {
+    AbstractQuery getQuery() {
         return query;
     }
 

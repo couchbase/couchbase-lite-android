@@ -97,7 +97,7 @@ public class LoadTest extends BaseTest {
         Expression TAG_EXPR = Expression.property("tag");
         SelectResult DOCID = SelectResult.expression(Meta.id);
         DataSource ds = DataSource.database(db);
-        Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
+        Query q = QueryBuilder.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
         Log.v(TAG, "query - > %s", q.explain());
         ResultSet rs = q.execute();
         Result row;

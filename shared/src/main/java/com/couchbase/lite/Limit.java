@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * A Limit component represents the LIMIT clause of the query statement.
  */
-public class Limit extends Query {
+public class Limit extends AbstractQuery {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -16,7 +16,7 @@ public class Limit extends Query {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    Limit(Query query, Expression limit, Expression offset) {
+    Limit(AbstractQuery query, Expression limit, Expression offset) {
         copy(query);
         this.limit = limit;
         this.offset = offset;

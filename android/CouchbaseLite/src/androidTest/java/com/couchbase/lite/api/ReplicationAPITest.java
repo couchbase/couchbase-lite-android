@@ -50,9 +50,9 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         // --- code example ---
         URI uri = new URI("ws://localhost:4984/db");
         Endpoint endpoint = new URLEndpoint(uri);
-        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
-        builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
-        Replicator replication = new Replicator(builder.build());
+        ReplicatorConfiguration config = new ReplicatorConfiguration(database, endpoint);
+        config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+        Replicator replication = new Replicator(config);
         replication.start();
         // --- code example ---
 
@@ -74,9 +74,9 @@ public class ReplicationAPITest extends BaseReplicatorTest {
 
         URI uri = new URI("ws://localhost:4984/db");
         Endpoint endpoint = new URLEndpoint(uri);
-        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
-        builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
-        Replicator replication = new Replicator(builder.build());
+        ReplicatorConfiguration config = new ReplicatorConfiguration(database, endpoint);
+        config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+        Replicator replication = new Replicator(config);
 
         // --- code example ---
         replication.addChangeListener(new ReplicatorChangeListener() {
@@ -95,9 +95,9 @@ public class ReplicationAPITest extends BaseReplicatorTest {
 
         URI uri = new URI("ws://localhost:4984/db");
         Endpoint endpoint = new URLEndpoint(uri);
-        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(database, endpoint);
-        builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
-        Replicator replication = new Replicator(builder.build());
+        ReplicatorConfiguration config = new ReplicatorConfiguration(database, endpoint);
+        config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+        Replicator replication = new Replicator(config);
 
         // --- code example ---
         replication.addChangeListener(new ReplicatorChangeListener() {

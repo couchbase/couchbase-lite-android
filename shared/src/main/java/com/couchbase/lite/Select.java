@@ -22,7 +22,7 @@ import java.util.List;
  * Select represents the SELECT clause of the query for specifying the returning properties in each
  * query result row.
  */
-public final class Select extends Query implements FromRouter {
+public final class Select extends AbstractQuery implements FromRouter {
     //---------------------------------------------
     // Member variables
     //---------------------------------------------

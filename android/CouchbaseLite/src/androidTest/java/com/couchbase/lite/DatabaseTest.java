@@ -57,9 +57,9 @@ public class DatabaseTest extends BaseTest {
     }
 
     private Database openDatabase(String dbName, boolean countCheck) throws CouchbaseLiteException {
-        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        builder.setDirectory(dir.getAbsolutePath());
-        Database db = new Database(dbName, builder.build());
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        config.setDirectory(dir.getAbsolutePath());
+        Database db = new Database(dbName, config);
         assertEquals(dbName, db.getName());
         assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
         if (countCheck)
@@ -153,49 +153,33 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCreateConfiguration() {
         // Default:
-        DatabaseConfiguration.Builder builder1 = new DatabaseConfiguration.Builder(this.context);
-        builder1.setDirectory("/tmp");
-        DatabaseConfiguration config1 = builder1.build();
+        DatabaseConfiguration config1 = new DatabaseConfiguration(this.context);
+        config1.setDirectory("/tmp");
         assertNotNull(config1.getDirectory());
         assertTrue(config1.getDirectory().length() > 0);
         assertNotNull(config1.getConflictResolver());
         assertNull(config1.getEncryptionKey());
 
-        // Default + Copy
-        DatabaseConfiguration config1a = config1.copy();
-        assertNotNull(config1a.getDirectory());
-        assertTrue(config1a.getDirectory().length() > 0);
-        assertNotNull(config1a.getConflictResolver());
-        assertNull(config1a.getEncryptionKey());
-
         // Custom
         EncryptionKey key = new EncryptionKey("key");
         DummyResolver resolver = new DummyResolver();
-        DatabaseConfiguration.Builder builder2 = new DatabaseConfiguration.Builder(this.context);
-        builder2.setDirectory("/tmp/mydb");
-        builder2.setConflictResolver(resolver);
-        builder2.setEncryptionKey(key);
-        DatabaseConfiguration config2 = builder2.build();
+        DatabaseConfiguration config2 = new DatabaseConfiguration(this.context);
+        config2.setDirectory("/tmp/mydb");
+        config2.setConflictResolver(resolver);
+        config2.setEncryptionKey(key);
         assertEquals("/tmp/mydb", config2.getDirectory());
         assertEquals(resolver, config2.getConflictResolver());
         assertEquals(key, config2.getEncryptionKey());
-
-        // Custom + Copy
-        DatabaseConfiguration config2a = config2.copy();
-        assertEquals("/tmp/mydb", config2a.getDirectory());
-        assertEquals(resolver, config2a.getConflictResolver());
-        assertEquals(key, config2a.getEncryptionKey());
     }
 
     @Test
     public void testGetSetConfiguration() throws CouchbaseLiteException {
-        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        builder.setDirectory(this.db.getConfig().getDirectory());
-        DatabaseConfiguration config = builder.build();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        config.setDirectory(this.db.getConfig().getDirectory());
         Database db = new Database("db", config);
         try {
             assertNotNull(db.getConfig());
-            assertEquals(db.getConfig(), config);
+            assertFalse(db.getConfig() == config);
             assertEquals(db.getConfig().getDirectory(), config.getDirectory());
             assertEquals(db.getConfig().getConflictResolver(), config.getConflictResolver());
             assertEquals(db.getConfig().getEncryptionKey(), config.getEncryptionKey());
@@ -206,13 +190,11 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testConfigurationIsCopiedWhenGetSet() throws CouchbaseLiteException {
-        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        builder.setDirectory(this.db.getConfig().getDirectory());
-        DatabaseConfiguration config = builder.build();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        config.setDirectory(this.db.getConfig().getDirectory());
         Database db = new Database("db", config);
         try {
-            builder.setConflictResolver(new DummyResolver());
-            config = builder.build();
+            config.setConflictResolver(new DummyResolver());
             assertNotNull(db.getConfig());
             assertTrue(db.getConfig() != config);
             assertTrue(db.getConfig().getConflictResolver() != config.getConflictResolver());
@@ -223,8 +205,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDatabaseConfigurationWithAndroidContect() throws CouchbaseLiteException {
-        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        DatabaseConfiguration config = builder.build();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         assertEquals(config.getDirectory(), context.getFilesDir().getAbsolutePath());
         Database db = new Database("db", config);
         try {
@@ -255,7 +236,7 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCreateWithDefaultConfiguration() throws CouchbaseLiteException {
 
-        Database db = new Database("db", new DatabaseConfiguration.Builder(this.context).build());
+        Database db = new Database("db", new DatabaseConfiguration(this.context));
         try {
         } finally {
             // delete database
@@ -301,9 +282,8 @@ public class DatabaseTest extends BaseTest {
         assertFalse(Database.exists(dbName, dir));
 
         // create db with custom directory
-        DatabaseConfiguration config = new DatabaseConfiguration.Builder(this.context)
-                .setDirectory(dir.getAbsolutePath())
-                .build();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context)
+                .setDirectory(dir.getAbsolutePath());
         Database db = new Database(dbName, config);
         try {
             assertNotNull(db);
@@ -1355,7 +1335,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(NUM_DOCS, nudb.getCount());
 
         SelectResult S_DOCID = SelectResult.expression(Meta.id);
-        Query query = Query.select(S_DOCID).from(DataSource.database(nudb));
+        Query query = QueryBuilder.select(S_DOCID).from(DataSource.database(nudb));
         ResultSet rs = query.execute();
         for (Result r : rs) {
             String docID = r.getString(0);
@@ -1385,18 +1365,18 @@ public class DatabaseTest extends BaseTest {
         ValueIndexItem fNameItem = ValueIndexItem.property("firstName");
         ValueIndexItem lNameItem = ValueIndexItem.property("lastName");
 
-        Index index1 = Index.valueIndex(fNameItem, lNameItem);
+        Index index1 = IndexBuilder.valueIndex(fNameItem, lNameItem);
         db.createIndex("index1", index1);
         assertEquals(1, db.getIndexes().size());
 
         // Create FTS index:
         FullTextIndexItem detailItem = FullTextIndexItem.property("detail");
-        Index index2 = Index.fullTextIndex(detailItem);
+        Index index2 = IndexBuilder.fullTextIndex(detailItem);
         db.createIndex("index2", index2);
         assertEquals(2, db.getIndexes().size());
 
         FullTextIndexItem detailItem2 = FullTextIndexItem.property("es-detail");
-        Index index3 = Index.fullTextIndex(detailItem2).ignoreAccents(true).setLocale("es");
+        FullTextIndex index3 = IndexBuilder.fullTextIndex(detailItem2).ignoreAccents(true).setLanguage("es");
         db.createIndex("index3", index3);
         assertEquals(3, db.getIndexes().size());
         assertEquals(Arrays.asList("index1", "index2", "index3"), db.getIndexes());
@@ -1408,7 +1388,7 @@ public class DatabaseTest extends BaseTest {
     public void testCreateSameIndexTwice() throws CouchbaseLiteException {
         // Create index with first name:
         ValueIndexItem indexItem = ValueIndexItem.property("firstName");
-        Index index = Index.valueIndex(indexItem);
+        Index index = IndexBuilder.valueIndex(indexItem);
         db.createIndex("myindex", index);
 
         // Call create index again:
@@ -1425,11 +1405,11 @@ public class DatabaseTest extends BaseTest {
         FullTextIndexItem detailItem = FullTextIndexItem.property("detail");
 
         // Create value index with first name:
-        Index fNameindex = Index.valueIndex(fNameItem);
+        Index fNameindex = IndexBuilder.valueIndex(fNameItem);
         db.createIndex("myindex", fNameindex);
 
         // Create value index with last name:
-        Index lNameindex = Index.valueIndex(lNameItem);
+        ValueIndex lNameindex = IndexBuilder.valueIndex(lNameItem);
         db.createIndex("myindex", lNameindex);
 
         // Check:
@@ -1437,8 +1417,8 @@ public class DatabaseTest extends BaseTest {
         assertEquals(Arrays.asList("myindex"), db.getIndexes());
 
         // Create FTS index:
-        Index detailIndex = Index.fullTextIndex(detailItem);
-        db.createIndex("myindex", lNameindex);
+        Index detailIndex = IndexBuilder.fullTextIndex(detailItem);
+        db.createIndex("myindex", detailIndex);
 
         // Check:
         assertEquals(1, db.getIndexes().size());
@@ -1469,15 +1449,13 @@ public class DatabaseTest extends BaseTest {
         db.deleteIndex("index1");
         db.deleteIndex("index2");
         db.deleteIndex("index3");
-
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1416
     @Test
     public void testDeleteAndOpenDB() throws CouchbaseLiteException {
-        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
-        builder.setDirectory(dir.toString());
-        DatabaseConfiguration config = builder.build();
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
+        config.setDirectory(dir.toString());
 
         // open "application" database
         final Database database1 = new Database("application", config);

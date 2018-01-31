@@ -138,10 +138,9 @@ public class ConflictTest extends BaseTest {
     protected void openDB(ConflictResolver resolver) throws CouchbaseLiteException {
         assertNull(db);
 
-        DatabaseConfiguration config = new DatabaseConfiguration.Builder(this.context)
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context)
                 .setDirectory(dir.getAbsolutePath())
-                .setConflictResolver(resolver)
-                .build();
+                .setConflictResolver(resolver);
         db = new Database(kDatabaseName, config);
         assertNotNull(db);
     }

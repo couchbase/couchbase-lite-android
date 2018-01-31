@@ -32,23 +32,23 @@ public class BaseReplicatorTest extends BaseTest {
         return new URLEndpoint(new URI(uri));
     }
 
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull, boolean continuous) {
+    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous) {
         return makeConfig(push, pull, continuous, this.otherDB);
     }
 
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull, boolean continuous, Database targetDatabase) {
+    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, Database targetDatabase) {
         return makeConfig(push, pull, continuous, this.db, new DatabaseEndpoint(targetDatabase));
     }
 
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull, boolean continuous, Endpoint target) {
+    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, Endpoint target) {
         return makeConfig(push, pull, continuous, this.db, target);
     }
 
-    protected ReplicatorConfiguration.Builder makeConfig(boolean push, boolean pull, boolean continuous, Database db, Endpoint target) {
-        ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(db, target);
-        builder.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
-        builder.setContinuous(continuous);
-        return builder;
+    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, Database db, Endpoint target) {
+        ReplicatorConfiguration config = new ReplicatorConfiguration(db, target);
+        config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
+        config.setContinuous(continuous);
+        return config;
     }
 
     protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain)

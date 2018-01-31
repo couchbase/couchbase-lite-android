@@ -221,7 +221,7 @@ public final class Replicator extends NetworkReachabilityListener {
      * @param config
      */
     public Replicator(ReplicatorConfiguration config) {
-        this.config = config.copy();
+        this.config = config.readonlyCopy();
         this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
         this.handler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
@@ -269,7 +269,7 @@ public final class Replicator extends NetworkReachabilityListener {
      * @return
      */
     public ReplicatorConfiguration getConfig() {
-        return config.copy();
+        return config.readonlyCopy();
     }
 
     /**
