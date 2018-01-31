@@ -181,7 +181,7 @@ public class QueryAPITest extends BaseTest {
         super.tearDown();
     }
 
-    // Indexing
+    // ### Indexing
     @Test
     public void testIndexing() throws CouchbaseLiteException {
         // For Documentation
@@ -192,7 +192,7 @@ public class QueryAPITest extends BaseTest {
         }
     }
 
-    // SELECT statement
+    // ### SELECT statement
     @Test
     public void testSelectStatement() throws CouchbaseLiteException {
         // For Validation
@@ -235,7 +235,7 @@ public class QueryAPITest extends BaseTest {
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo(Expression.string("hotel")))
                     .orderBy(Ordering.expression(Meta.id));
-            ;
+
             try {
                 ResultSet rs = query.execute();
                 for (Result result : rs) {
@@ -297,7 +297,7 @@ public class QueryAPITest extends BaseTest {
         }
     }
 
-    // all(*)
+    // ### all(*)
     @Test
     public void testSelectAll() throws CouchbaseLiteException {
         // For Validation
@@ -333,7 +333,7 @@ public class QueryAPITest extends BaseTest {
         }
     }
 
-    // WHERE statement
+    // ###　WHERE statement
     @Test
     public void testWhereStatement() throws CouchbaseLiteException {
         // For Validation
@@ -376,7 +376,7 @@ public class QueryAPITest extends BaseTest {
         }
     }
 
-    // Collection Operators
+    // ####　Collection Operators
     @Test
     public void testCollectionStatement() throws CouchbaseLiteException {
         // For Validation
@@ -456,7 +456,7 @@ public class QueryAPITest extends BaseTest {
         }
     }
 
-    // Wildcard Match
+    // ### Wildcard Match
     @Test
     public void testWildcardMatch() throws CouchbaseLiteException {
         // For Validation
@@ -536,7 +536,7 @@ public class QueryAPITest extends BaseTest {
         }
     }
 
-    // Regex Match
+    // ### Regex Match
     @Test
     public void testRegexMatch() throws CouchbaseLiteException {
         // For Validation
@@ -635,7 +635,7 @@ public class QueryAPITest extends BaseTest {
         }
     }
 
-    // GROUPBY statement
+    // ### GROUPBY statement
     @Test
     public void testGroupByStatement() throws CouchbaseLiteException {
         // For Validation
@@ -697,7 +697,7 @@ public class QueryAPITest extends BaseTest {
         }
     }
 
-    // ORDER BY statement
+    // ### ORDER BY statement
     @Test
     public void testOrderByStatement() throws CouchbaseLiteException {
         // For Validation
