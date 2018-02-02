@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Value (standard query) index
  */
-public final class ValueIndex extends Index {
+public final class ValueIndex extends AbstractIndex {
     private List<ValueIndexItem> indexItems;
 
     ValueIndex(ValueIndexItem... indexItems) {
@@ -20,12 +20,12 @@ public final class ValueIndex extends Index {
     }
 
     @Override
-    String locale() {
+    String language() {
         return null;
     }
 
     @Override
-    boolean ignoreDiacritics() {
+    boolean ignoreAccents() {
         return false;
     }
 

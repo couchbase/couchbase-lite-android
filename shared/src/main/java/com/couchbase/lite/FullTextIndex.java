@@ -8,10 +8,10 @@ import java.util.Locale;
 /**
  * Index for Full-Text search
  */
-public final class FullTextIndex extends Index {
+public final class FullTextIndex extends AbstractIndex {
 
     private List<FullTextIndexItem> indexItems;
-    private String locale = null;
+    private String language = getDefaultLanguage();
     private boolean ignoreAccents = false;
 
     FullTextIndex(FullTextIndexItem... indexItems) {
@@ -19,13 +19,13 @@ public final class FullTextIndex extends Index {
     }
 
     /**
-     * Set the local code which is an ISO-639 language code plus, optionally, an underscore and an ISO-3166
-     * country code: "en", "en_US", "fr_CA", etc. Setting the locale code affects how word breaks and
-     * word stems are parsed. Setting null value to use current locale and setting "" to disable stemming.
-     * The default value is null.
+     * The language code which is an ISO-639 language such as "en", "fr", etc.
+     * Setting the language code affects how word breaks and word stems are parsed.
+     * Without setting the value, the current locale's language will be used. Setting
+     * a nil or "" value to disable the language features.
      */
-    public FullTextIndex setLocale(String locale) {
-        this.locale = locale;
+    public FullTextIndex setLanguage(String language) {
+        this.language = language;
         return this;
     }
 
@@ -43,20 +43,14 @@ public final class FullTextIndex extends Index {
     }
 
     @Override
-    String locale() {
-        if (locale == null) {
-            return Locale.getDefault().getLanguage();
-        }
-        return locale;
+    String language() {
+        return language;
     }
 
     @Override
-    boolean ignoreDiacritics() {
-        if (locale == null && ignoreAccents == false)
-            return Locale.getDefault().getLanguage().equals("en");
+    boolean ignoreAccents() {
         return ignoreAccents;
     }
-
 
     @Override
     List<Object> items() {
@@ -64,5 +58,9 @@ public final class FullTextIndex extends Index {
         for (FullTextIndexItem item : indexItems)
             items.add(item.expression.asJSON());
         return items;
+    }
+
+    private static String getDefaultLanguage() {
+        return Locale.getDefault().getLanguage();
     }
 }

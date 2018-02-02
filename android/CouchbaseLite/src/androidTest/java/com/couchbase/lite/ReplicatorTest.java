@@ -20,9 +20,9 @@ import static org.junit.Assert.assertTrue;
 public class ReplicatorTest extends BaseReplicatorTest {
     @Test
     public void testEmptyPush() throws InterruptedException {
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false);
-        //run(builder.build(), 0, null, true);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, false, false);
+        //run(config, 0, null, true);
+        run(config, 0, null);
     }
 
     @Test
@@ -37,8 +37,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
 
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, false, false);
+        run(config, 0, null);
 
         assertEquals(2, otherDB.getCount());
         Document doc2a = otherDB.getDocument("doc2");
@@ -61,10 +61,10 @@ public class ReplicatorTest extends BaseReplicatorTest {
             otherDB.save(doc2);
             assertEquals(1, otherDB.getCount());
 
-            ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(anotherDB, new DatabaseEndpoint(otherDB));
-            builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PUSH);
-            builder.setContinuous(true);
-            Replicator repl = run(builder.build(), 0, null);
+            ReplicatorConfiguration config = new ReplicatorConfiguration(anotherDB, new DatabaseEndpoint(otherDB));
+            config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PUSH);
+            config.setContinuous(true);
+            Replicator repl = run(config, 0, null);
 
             assertEquals(2, otherDB.getCount());
             Document doc2a = otherDB.getDocument("doc2");
@@ -91,8 +91,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
         otherDB.save(doc2);
         assertEquals(1, otherDB.getCount());
 
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(false, true, false);
+        run(config, 0, null);
 
         assertEquals(2, db.getCount());
         Document doc2a = db.getDocument("doc2");
@@ -116,10 +116,10 @@ public class ReplicatorTest extends BaseReplicatorTest {
             otherDB.save(doc2);
             assertEquals(1, otherDB.getCount());
 
-            ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(anotherDB, new DatabaseEndpoint(otherDB));
-            builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
-            builder.setContinuous(true);
-            run(builder.build(), 0, null);
+            ReplicatorConfiguration config = new ReplicatorConfiguration(anotherDB, new DatabaseEndpoint(otherDB));
+            config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+            config.setContinuous(true);
+            run(config, 0, null);
 
             assertEquals(2, anotherDB.getCount());
             Document doc2a = anotherDB.getDocument("doc2");
@@ -153,8 +153,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
         doc2 = otherDB.save(mDoc2);
         assertEquals(1, otherDB.getCount());
 
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(false, true, false);
+        run(config, 0, null);
         assertEquals(1, db.getCount());
 
         Document doc1a = db.getDocument("doc");
@@ -183,9 +183,9 @@ public class ReplicatorTest extends BaseReplicatorTest {
         doc2.setValue("pattern", "striped");
         otherDB.save(doc2);
 
-        ReplicatorConfiguration.Builder builder = makeConfig(false, true, false, otherDB);
-        builder.setConflictResolver(new ConflictTest.MergeThenTheirsWins());
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(false, true, false, otherDB);
+        config.setConflictResolver(new ConflictTest.MergeThenTheirsWins());
+        run(config, 0, null);
 
         assertEquals(1, db.getCount());
         Document savedDoc = db.getDocument("doc");
@@ -198,8 +198,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
     @Test
     public void testStopContinuousReplicator() throws InterruptedException {
-        ReplicatorConfiguration.Builder builder = makeConfig(true, true, true, otherDB);
-        Replicator r = new Replicator(builder.build());
+        ReplicatorConfiguration config = makeConfig(true, true, true, otherDB);
+        Replicator r = new Replicator(config);
         final CountDownLatch latch = new CountDownLatch(1);
         ListenerToken token = r.addChangeListener(new ReplicatorChangeListener() {
             @Override
@@ -256,9 +256,9 @@ public class ReplicatorTest extends BaseReplicatorTest {
         doc4.setString("pattern", "striped");
         saved4 = otherDB.save(doc4);
 
-        ReplicatorConfiguration.Builder builder = makeConfig(true, true, false);
-        builder.setDocumentIDs(Arrays.asList("doc1", "doc3"));
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, true, false);
+        config.setDocumentIDs(Arrays.asList("doc1", "doc3"));
+        run(config, 0, null);
         assertEquals(3, db.getCount());
         assertNotNull(db.getDocument("doc3"));
         assertEquals(3, otherDB.getCount());
@@ -268,8 +268,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
     @Test
     public void testReplicatorStopWhenClosed() throws CouchbaseLiteException {
         try {
-            ReplicatorConfiguration.Builder builder = makeConfig(true, true, true);
-            Replicator repl = new Replicator(builder.build());
+            ReplicatorConfiguration config = makeConfig(true, true, true);
+            Replicator repl = new Replicator(config);
             repl.start();
             while (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.IDLE) {
                 Log.w(TAG, String.format(Locale.ENGLISH,
@@ -323,10 +323,10 @@ public class ReplicatorTest extends BaseReplicatorTest {
             }
             assertEquals(1, anotherDB.getCount());
 
-            //ReplicatorConfiguration.Builder builder = makeConfig(true, false, false);
-            ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(anotherDB, new DatabaseEndpoint(otherDB));
-            builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PUSH);
-            run(builder.build(), 0, null);
+            //ReplicatorConfiguration config = makeConfig(true, false, false);
+            ReplicatorConfiguration config = new ReplicatorConfiguration(anotherDB, new DatabaseEndpoint(otherDB));
+            config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PUSH);
+            run(config, 0, null);
 
             assertEquals(1, otherDB.getCount());
             Document doc1a = otherDB.getDocument("doc1");
@@ -364,9 +364,9 @@ public class ReplicatorTest extends BaseReplicatorTest {
             }
             assertEquals(1, otherDB.getCount());
 
-            ReplicatorConfiguration.Builder builder = new ReplicatorConfiguration.Builder(anotherDB, new DatabaseEndpoint(otherDB));
-            builder.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
-            run(builder.build(), 0, null);
+            ReplicatorConfiguration config = new ReplicatorConfiguration(anotherDB, new DatabaseEndpoint(otherDB));
+            config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+            run(config, 0, null);
 
             assertEquals(1, anotherDB.getCount());
             Document doc1a = anotherDB.getDocument("doc1");

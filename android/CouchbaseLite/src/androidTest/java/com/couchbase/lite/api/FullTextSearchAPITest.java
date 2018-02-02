@@ -6,16 +6,18 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Expression;
+import com.couchbase.lite.FullTextExpression;
 import com.couchbase.lite.FullTextIndexItem;
-import com.couchbase.lite.Index;
-import com.couchbase.lite.internal.support.Log;
+
+import com.couchbase.lite.IndexBuilder;
 import com.couchbase.lite.Meta;
 import com.couchbase.lite.MutableDocument;
 import com.couchbase.lite.Query;
+import com.couchbase.lite.QueryBuilder;
 import com.couchbase.lite.Result;
 import com.couchbase.lite.ResultSet;
 import com.couchbase.lite.SelectResult;
-import com.couchbase.lite.FullTextExpression;
+import com.couchbase.lite.internal.support.Log;
 
 import org.junit.After;
 import org.junit.Before;
@@ -41,7 +43,7 @@ public class FullTextSearchAPITest extends BaseTest {
 
     void prepareIndex() throws CouchbaseLiteException {
         // --- code example ---
-        database.createIndex("nameFTSIndex", Index.fullTextIndex(FullTextIndexItem.property("name")).ignoreAccents(false));
+        database.createIndex("nameFTSIndex", IndexBuilder.fullTextIndex(FullTextIndexItem.property("name")).ignoreAccents(false));
         // --- code example ---
     }
 
@@ -70,7 +72,7 @@ public class FullTextSearchAPITest extends BaseTest {
     public void testFTS() throws CouchbaseLiteException {
         // --- code example ---
         Expression whereClause = FullTextExpression.index("nameFTSIndex").match("buy");
-        Query ftsQuery = Query.select(SelectResult.expression(Meta.id))
+        Query ftsQuery = QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(database))
                 .where(whereClause);
         ResultSet ftsQueryResult = ftsQuery.execute();

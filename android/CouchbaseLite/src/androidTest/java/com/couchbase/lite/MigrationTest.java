@@ -22,7 +22,7 @@ public class MigrationTest extends BaseTest {
      */
     //NOTE: @Test
     public void testPrepareDB() throws CouchbaseLiteException {
-        Database db = new Database("android-sqlite", new DatabaseConfiguration.Builder(context).build());
+        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
         try {
             for (int i = 1; i <= 2; i++) {
                 MutableDocument doc = new MutableDocument("doc" + i);
@@ -48,7 +48,7 @@ public class MigrationTest extends BaseTest {
 
         ZipUtils.unzip(getAsset("replacedb/android140-sqlite.cblite2.zip"), context.getFilesDir());
 
-        Database db = new Database("android-sqlite", new DatabaseConfiguration.Builder(context).build());
+        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
         try {
             assertEquals(2, db.getCount());
             for (int i = 1; i <= 2; i++) {
@@ -82,7 +82,7 @@ public class MigrationTest extends BaseTest {
 
         ZipUtils.unzip(getAsset("replacedb/android140-sqlite-noattachment.cblite2.zip"), context.getFilesDir());
 
-        Database db = new Database("android-sqlite", new DatabaseConfiguration.Builder(context).build());
+        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
         try {
             assertEquals(2, db.getCount());
             for (int i = 1; i <= 2; i++) {
@@ -105,7 +105,7 @@ public class MigrationTest extends BaseTest {
 
         ZipUtils.unzip(getAsset("replacedb/android200-sqlite.cblite2.zip"), context.getFilesDir());
 
-        Database db = new Database("android-sqlite", new DatabaseConfiguration.Builder(context).build());
+        Database db = new Database("android-sqlite", new DatabaseConfiguration(context));
         try {
             assertEquals(2, db.getCount());
             for (int i = 1; i <= 2; i++) {

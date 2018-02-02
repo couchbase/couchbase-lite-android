@@ -152,8 +152,9 @@ public final class Database {
         Log.init();
 
         this.name = name;
-        this.config = config;
-        String tempdir = config.getTempDir();
+        this.config = config.readonlyCopy();
+
+        String tempdir = this.config.getTempDir();
         if (tempdir != null)
             C4.setenv("TMPDIR", tempdir, 1);
         open();
@@ -203,12 +204,13 @@ public final class Database {
     }
 
     /**
-     * Returned the copied config object
+     * Returns a READONLY config object which will throw a runtime exception
+     * when any setter methods are called.
      *
-     * @return the copied config object
+     * @return the READONLY copied config object
      */
     public DatabaseConfiguration getConfig() {
-        return config;
+        return config.readonlyCopy();
     }
 
     // GET EXISTING DOCUMENT
@@ -523,12 +525,17 @@ public final class Database {
     }
 
     public void createIndex(String name, Index index) throws CouchbaseLiteException {
+        if (name == null || index == null)
+            throw new IllegalArgumentException();
         synchronized (lock) {
             mustBeOpen();
             try {
-                String json = JsonUtils.toJson(index.items()).toString();
+                AbstractIndex abstractIndex = (AbstractIndex) index;
+                String json = JsonUtils.toJson(abstractIndex.items()).toString();
                 getC4Database().createIndex(name, json,
-                        index.type().getValue(), index.locale(), index.ignoreDiacritics());
+                        abstractIndex.type().getValue(),
+                        abstractIndex.language(),
+                        abstractIndex.ignoreAccents());
             } catch (LiteCoreException e) {
                 throw LiteCoreBridge.convertException(e);
             } catch (JSONException e) {

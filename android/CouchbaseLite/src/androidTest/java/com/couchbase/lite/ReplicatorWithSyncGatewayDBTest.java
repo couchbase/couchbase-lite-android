@@ -75,8 +75,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             return;
 
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, target);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, false, false, target);
+        run(config, 0, null);
     }
 
     @Test
@@ -91,12 +91,12 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
 
         // Push replicate from db to SG
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, target);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, false, false, target);
+        run(config, 0, null);
 
         // Pull replicate from SG to otherDB.
-        builder = makeConfig(false, true, false, this.otherDB, target);
-        run(builder.build(), 0, null);
+        config = makeConfig(false, true, false, this.otherDB, target);
+        run(config, 0, null);
         assertEquals(100, this.otherDB.getCount());
     }
 
@@ -119,8 +119,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         timeout = 180; // 3min
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, true, target);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, false, true, target);
+        run(config, 0, null);
     }
 
     @Test
@@ -156,12 +156,12 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         });
 
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, target);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, false, false, target);
+        run(config, 0, null);
 
-        builder = makeConfig(false, true, false, otherDB, target);
-        builder.setChannels(Arrays.asList("my_channel"));
-        run(builder.build(), 0, null);
+        config = makeConfig(false, true, false, otherDB, target);
+        config.setChannels(Arrays.asList("my_channel"));
+        run(config, 0, null);
         assertEquals(10, otherDB.getCount());
     }
 
@@ -196,12 +196,12 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
 
         // Push replicate from db to SG
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, false, target);
-        run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, false, false, target);
+        run(config, 0, null);
 
         // Pull replicate from SG to otherDB.
-        builder = makeConfig(false, true, false, this.otherDB, target);
-        run(builder.build(), 0, null);
+        config = makeConfig(false, true, false, this.otherDB, target);
+        run(config, 0, null);
         assertEquals(1, this.otherDB.getCount());
         Document doc = otherDB.getDocument("doc1");
         assertNotNull(doc);
@@ -219,8 +219,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
 
         // Push replicate from db to SG
-        ReplicatorConfiguration.Builder builder = makeConfig(true, false, true, target);
-        final Replicator repl = run(builder.build(), 0, null);
+        ReplicatorConfiguration config = makeConfig(true, false, true, target);
+        final Replicator repl = run(config, 0, null);
         repl.addChangeListener(new ReplicatorChangeListener() {
             @Override
             public void changed(ReplicatorChange change) {
@@ -260,8 +260,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         // 3. Setup Push&Pull continuous replicator
         timeout = 180; // 3min
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
-        ReplicatorConfiguration.Builder builder = makeConfig(true, true, true, target);
-        Replicator repl = new Replicator(builder.build());
+        ReplicatorConfiguration config = makeConfig(true, true, true, target);
+        Replicator repl = new Replicator(config);
 
         // 4. Set replicator change listener to detect replicator IDLE state.
         final CountDownLatch latch2 = new CountDownLatch(1); // for before update doc
@@ -299,8 +299,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         db.removeChangeListener(token1);
 
         // 10. Pull replicate from SG to otherDB. And verify the document
-        builder = makeConfig(false, true, false, this.otherDB, target);
-        run(builder.build(), 0, null);
+        config = makeConfig(false, true, false, this.otherDB, target);
+        run(config, 0, null);
         assertEquals(1, this.otherDB.getCount());
         doc = otherDB.getDocument(docID);
         assertNotNull(doc);

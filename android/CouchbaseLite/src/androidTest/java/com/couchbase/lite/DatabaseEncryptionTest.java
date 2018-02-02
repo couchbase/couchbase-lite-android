@@ -65,11 +65,11 @@ public class DatabaseEncryptionTest extends BaseTest {
     }
 
     Database openSeekrit(String password) throws CouchbaseLiteException {
-        DatabaseConfiguration.Builder builder = new DatabaseConfiguration.Builder(this.context);
+        DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         if (password != null)
-            builder.setEncryptionKey(new EncryptionKey(password));
-        builder.setDirectory(getDir().getAbsolutePath());
-        return new Database("seekrit", builder.build());
+            config.setEncryptionKey(new EncryptionKey(password));
+        config.setDirectory(this.getDir().getAbsolutePath());
+        return new Database("seekrit", config);
     }
 
     @Test
@@ -308,7 +308,7 @@ public class DatabaseEncryptionTest extends BaseTest {
 
         // Query documents:
         Expression SEQ = Expression.property("seq");
-        Query query = Query
+        Query query = QueryBuilder
                 .select(SelectResult.expression(SEQ))
                 .from(DataSource.database(seekrit))
                 .where(SEQ.notNullOrMissing())

@@ -10,7 +10,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Dictionary;
 import com.couchbase.lite.Expression;
 import com.couchbase.lite.Function;
-import com.couchbase.lite.Index;
+import com.couchbase.lite.IndexBuilder;
 import com.couchbase.lite.Join;
 import com.couchbase.lite.Meta;
 import com.couchbase.lite.MutableArray;
@@ -18,6 +18,7 @@ import com.couchbase.lite.MutableDictionary;
 import com.couchbase.lite.MutableDocument;
 import com.couchbase.lite.Ordering;
 import com.couchbase.lite.Query;
+import com.couchbase.lite.QueryBuilder;
 import com.couchbase.lite.Result;
 import com.couchbase.lite.ResultSet;
 import com.couchbase.lite.SelectResult;
@@ -155,7 +156,7 @@ public class QueryAPITest extends BaseTest {
 
     void prepareIndex() throws CouchbaseLiteException {
         database.createIndex("TypeNameIndex",
-                Index.valueIndex(ValueIndexItem.property("type"),
+                IndexBuilder.valueIndex(ValueIndexItem.property("type"),
                         ValueIndexItem.property("name")));
     }
 
@@ -186,7 +187,7 @@ public class QueryAPITest extends BaseTest {
         // For Documentation
         {
             database.createIndex("TypeNameIndex",
-                    Index.valueIndex(ValueIndexItem.property("type"),
+                    IndexBuilder.valueIndex(ValueIndexItem.property("type"),
                             ValueIndexItem.property("name")));
         }
     }
@@ -196,7 +197,7 @@ public class QueryAPITest extends BaseTest {
     public void testSelectStatement() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"),
                             SelectResult.property("type"))
@@ -227,7 +228,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"),
                             SelectResult.property("type"))
@@ -252,7 +253,7 @@ public class QueryAPITest extends BaseTest {
     public void testMetaFunction() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id))
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo(Expression.string("airport")))
@@ -283,7 +284,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id))
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo(Expression.string("airport")))
@@ -301,7 +302,7 @@ public class QueryAPITest extends BaseTest {
     public void testSelectAll() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo(Expression.string("hotel")));
@@ -322,7 +323,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo(Expression.string("hotel")));
@@ -337,7 +338,7 @@ public class QueryAPITest extends BaseTest {
     public void testWhereStatement() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo(Expression.string("hotel")))
@@ -361,7 +362,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
                     .where(Expression.property("type").equalTo(Expression.string("hotel")))
@@ -380,7 +381,7 @@ public class QueryAPITest extends BaseTest {
     public void testCollectionStatement() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"),
                             SelectResult.property("public_likes"))
@@ -402,7 +403,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"),
                             SelectResult.property("public_likes"))
@@ -420,7 +421,7 @@ public class QueryAPITest extends BaseTest {
     public void testPatternMatching() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
                             SelectResult.property("name"))
@@ -442,7 +443,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
                             SelectResult.property("name"))
@@ -460,7 +461,7 @@ public class QueryAPITest extends BaseTest {
     public void testWildcardMatch() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
                             SelectResult.property("name"))
@@ -482,7 +483,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
                             SelectResult.property("name"))
@@ -500,7 +501,7 @@ public class QueryAPITest extends BaseTest {
     public void testWildCharacterMatch() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
                             SelectResult.property("name"))
@@ -522,7 +523,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
                             SelectResult.property("name"))
@@ -540,7 +541,7 @@ public class QueryAPITest extends BaseTest {
     public void testRegexMatch() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
                             SelectResult.property("name"))
@@ -562,7 +563,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
                             SelectResult.property("name"))
@@ -580,7 +581,7 @@ public class QueryAPITest extends BaseTest {
     public void testJoinStatement() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query.select(
+            Query query = QueryBuilder.select(
                     SelectResult.expression(Expression.property("name").from("airline")),
                     SelectResult.expression(Expression.property("callsign").from("airline")),
                     SelectResult.expression(Expression.property("destinationairport").from("route")),
@@ -616,7 +617,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-            Query query = Query.select(
+            Query query = QueryBuilder.select(
                     SelectResult.expression(Expression.property("name").from("airline")),
                     SelectResult.expression(Expression.property("callsign").from("airline")),
                     SelectResult.expression(Expression.property("destinationairport").from("route")),
@@ -639,7 +640,7 @@ public class QueryAPITest extends BaseTest {
     public void testGroupByStatement() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query.select(
+            Query query = QueryBuilder.select(
                     SelectResult.expression(Function.count(Expression.string("*"))),
                     SelectResult.property("country"),
                     SelectResult.property("tz"))
@@ -676,7 +677,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-            Query query = Query.select(
+            Query query = QueryBuilder.select(
                     SelectResult.expression(Function.count(Expression.string("*"))),
                     SelectResult.property("country"),
                     SelectResult.property("tz"))
@@ -701,7 +702,7 @@ public class QueryAPITest extends BaseTest {
     public void testOrderByStatement() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
@@ -732,7 +733,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-            Query query = Query
+            Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"))
                     .from(DataSource.database(database))
@@ -750,7 +751,7 @@ public class QueryAPITest extends BaseTest {
     public void testInOperator() throws CouchbaseLiteException {
         // For Validation
         {
-            Query query = Query.select(SelectResult.property("name"))
+            Query query = QueryBuilder.select(SelectResult.property("name"))
                     .from(DataSource.database(database))
                     .where(Expression.property("country").in(Expression.string("Latvia"), Expression.string("usa"))
                             .and(Expression.property("type").equalTo(Expression.string("airport"))))
@@ -770,7 +771,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-            Query query = Query.select(SelectResult.property("name"))
+            Query query = QueryBuilder.select(SelectResult.property("name"))
                     .from(DataSource.database(database))
                     .where(Expression.property("country").in(Expression.string("Latvia"), Expression.string("usa"))
                             .and(Expression.property("type").equalTo(Expression.string("airport"))))

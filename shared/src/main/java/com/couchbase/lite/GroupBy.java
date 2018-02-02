@@ -9,7 +9,7 @@ import java.util.List;
  * The GROUP BY clause is normally used with aggregate functions (AVG, COUNT, MAX, MIN, SUM)
  * to aggregate the group of the values.
  */
-public final class GroupBy extends Query implements HavingRouter, OrderByRouter, LimitRouter {
+public final class GroupBy extends AbstractQuery implements HavingRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
@@ -18,7 +18,7 @@ public final class GroupBy extends Query implements HavingRouter, OrderByRouter,
     //---------------------------------------------
     // Constructor
     //--------------------------------------------
-    GroupBy(Query query, List<Expression> expressions) {
+    GroupBy(AbstractQuery query, List<Expression> expressions) {
         copy(query);
         this.expressions = expressions;
         setGroupBy(this);

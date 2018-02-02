@@ -110,8 +110,8 @@ public class ConcurrencyTest extends BaseTest {
         Expression TAG_EXPR = Expression.property("tag");
         SelectResult DOCID = SelectResult.expression(Meta.id);
         DataSource ds = DataSource.database(db);
-        Query q = Query.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
-        Log.i(TAG, "query - > %s", q.explain());
+        Query q = QueryBuilder.select(DOCID).from(ds).where(TAG_EXPR.equalTo(Expression.string(tag)));
+        Log.e(TAG, "query - > %s", q.explain());
         ResultSet rs = q.execute();
         Result result;
         int n = 0;
@@ -648,7 +648,7 @@ public class ConcurrencyTest extends BaseTest {
             @Override
             public void run() {
                 try {
-                    Index index = Index.fullTextIndex(FullTextIndexItem.property("sentence"));
+                    Index index = IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence"));
                     db.createIndex("sentence", index);
                 } catch (CouchbaseLiteException e) {
                     Log.e(TAG, "Error in Database.createIndex()", e);
@@ -734,7 +734,7 @@ public class ConcurrencyTest extends BaseTest {
 
         loadJSONResource("names_100.json");
 
-        final Query query = Query
+        final Query query = QueryBuilder
                 .select(SelectResult.expression(Meta.id), SelectResult.expression(Meta.sequence))
                 .from(DataSource.database(db));
 

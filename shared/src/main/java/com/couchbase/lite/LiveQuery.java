@@ -25,7 +25,7 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
 
     private Set<QueryChangeListenerToken> queryChangeListenerTokens;
-    private final Query query;
+    private final AbstractQuery query;
     private ResultSet resultSet;
     private boolean observing;
     private boolean willUpdate;
@@ -36,7 +36,7 @@ final class LiveQuery implements DatabaseChangeListener {
     // Constructors
     //---------------------------------------------
 
-    LiveQuery(Query query) {
+    LiveQuery(AbstractQuery query) {
         if (query == null)
             throw new IllegalArgumentException("query should not be null.");
 

@@ -39,7 +39,7 @@ public class ResultTest extends BaseTest {
 
     private static Query generateQuery(Database db, String docID) {
         Expression exDocID = Expression.string(docID);
-        return Query.select(
+        return QueryBuilder.select(
                 SR_NULL,
                 SR_TRUE,
                 SR_FALSE,
