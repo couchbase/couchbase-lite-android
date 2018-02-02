@@ -6,6 +6,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -378,5 +380,32 @@ public class ReplicatorTest extends BaseReplicatorTest {
             this.deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testAttachmentPull() - END");
+    }
+
+    @Test
+    public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
+        timeout = 200;
+        URLEndpoint target = new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
+        ReplicatorConfiguration config = makeConfig(false, true, true, db, target);
+        Replicator repl = new Replicator(config);
+        final CountDownLatch offline = new CountDownLatch(1);
+        final CountDownLatch stopped = new CountDownLatch(1);
+        ListenerToken token = repl.addChangeListener(new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
+                    offline.countDown();
+                    change.getReplicator().stop();
+                }
+                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                    stopped.countDown();
+                }
+            }
+        });
+        repl.start();
+        assertTrue(offline.await(10, TimeUnit.SECONDS));
+        assertTrue(stopped.await(10, TimeUnit.SECONDS));
+        repl.removeChangeListener(token);
     }
 }
