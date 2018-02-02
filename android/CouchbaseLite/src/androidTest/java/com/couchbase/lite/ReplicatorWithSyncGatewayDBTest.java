@@ -221,7 +221,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         // Push replicate from db to SG
         ReplicatorConfiguration config = makeConfig(true, false, true, target);
         final Replicator repl = run(config, 0, null);
-        repl.addChangeListener(new ReplicatorChangeListener() {
+        repl.addChangeListener(executor, new ReplicatorChangeListener() {
             @Override
             public void changed(ReplicatorChange change) {
                 Log.w(TAG, "changed() change -> " + change);
