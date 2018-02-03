@@ -59,9 +59,18 @@ public class BaseReplicatorTest extends BaseTest {
         return run(config, code, domain, false);
     }
 
-    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain, final boolean ignoreErrorAtStopped)
+    protected Replicator run(final Replicator r, final int code, final String domain)
             throws InterruptedException {
-        repl = new Replicator(config);
+        return run(r, code, domain, false);
+    }
+
+    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain, final boolean ignoreErrorAtStopped) throws InterruptedException {
+        return run(new Replicator(config), code, domain, ignoreErrorAtStopped);
+    }
+
+    protected Replicator run(final Replicator r, final int code, final String domain, final boolean ignoreErrorAtStopped)
+            throws InterruptedException {
+        repl = r;
         final CountDownLatch latch = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
             @Override
@@ -73,7 +82,7 @@ public class BaseReplicatorTest extends BaseTest {
                         kActivityNames[status.getActivityLevel().getValue()],
                         status.getProgress().getCompleted(), status.getProgress().getTotal(),
                         error);
-                if (config.isContinuous()) {
+                if (r.getConfig().isContinuous()) {
                     if (status.getActivityLevel() == Replicator.ActivityLevel.IDLE &&
                             status.getProgress().getCompleted() == status.getProgress().getTotal()) {
                         if (code != 0) {

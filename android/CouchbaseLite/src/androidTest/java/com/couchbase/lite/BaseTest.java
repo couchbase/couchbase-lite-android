@@ -31,6 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -215,5 +217,32 @@ public class BaseTest implements C4Constants {
         assertEquals(1, db.getCount());
         assertEquals(1, savedDoc.getSequence());
         return savedDoc;
+    }
+
+    protected Document createDocNumbered(int i, int num) throws CouchbaseLiteException {
+        String docID = String.format(Locale.ENGLISH, "doc%d", i);
+        MutableDocument doc = createMutableDocument(docID);
+        doc.setValue("number1", i);
+        doc.setValue("number2", num - i);
+        return save(doc);
+    }
+
+    protected List<Map<String, Object>> loadNumbers(final int num) throws Exception {
+        final List<Map<String, Object>> numbers = new ArrayList<Map<String, Object>>();
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 1; i <= num; i++) {
+                    Document doc = null;
+                    try {
+                        doc = createDocNumbered(i, num);
+                    } catch (CouchbaseLiteException e) {
+                        throw new RuntimeException(e);
+                    }
+                    numbers.add(doc.toMap());
+                }
+            }
+        });
+        return numbers;
     }
 }

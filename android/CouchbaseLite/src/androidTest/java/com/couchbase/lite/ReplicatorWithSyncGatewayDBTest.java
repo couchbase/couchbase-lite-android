@@ -100,8 +100,61 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         assertEquals(100, this.otherDB.getCount());
     }
 
+    @Test
+    public void testProgress() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        timeout = 60;
+
+        final int numDocs = 5000;
+        loadNumbers(numDocs);
+
+        // target SG URI
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+
+        {
+            // Push replicate from db to SG
+            ReplicatorConfiguration config = makeConfig(true, false, false, target);
+            Replicator r = new Replicator(config);
+            final CountDownLatch progressLatch = new CountDownLatch(1);
+            ListenerToken token = r.addChangeListener(new ReplicatorChangeListener() {
+                @Override
+                public void changed(ReplicatorChange change) {
+                    Replicator.Status status = change.getStatus();
+                    Replicator.Progress progress = status.getProgress();
+                    if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal())
+                        progressLatch.countDown();
+                }
+            });
+            run(r, 0, null);
+            r.removeChangeListener(token);
+            assertTrue(progressLatch.await(20, TimeUnit.SECONDS));
+        }
+
+        // Pull replicate from SG to otherDB.
+        {
+            ReplicatorConfiguration config = makeConfig(false, true, false, this.otherDB, target);
+            Replicator r = new Replicator(config);
+            final CountDownLatch progressLatch = new CountDownLatch(1);
+            ListenerToken token = r.addChangeListener(new ReplicatorChangeListener() {
+                @Override
+                public void changed(ReplicatorChange change) {
+                    Replicator.Status status = change.getStatus();
+                    Replicator.Progress progress = status.getProgress();
+                    if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal())
+                        progressLatch.countDown();
+                }
+            });
+            run(r, 0, null);
+            r.removeChangeListener(token);
+            assertTrue(progressLatch.await(20, TimeUnit.SECONDS));
+            assertEquals(numDocs, this.otherDB.getCount());
+        }
+    }
+
     /**
-     * How to test reaciability.
+     * How to test reachability.
      * 1. Run sync gateway
      * 2. Disable Wifi with the device
      * 3. Run  testContinuousPush()

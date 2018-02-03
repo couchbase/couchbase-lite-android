@@ -82,33 +82,6 @@ public class QueryTest extends BaseTest {
         return counter1;
     }
 
-    private Document createDocNumbered(int i, int num) throws CouchbaseLiteException {
-        String docID = String.format(Locale.ENGLISH, "doc%d", i);
-        MutableDocument doc = createMutableDocument(docID);
-        doc.setValue("number1", i);
-        doc.setValue("number2", num - i);
-        return save(doc);
-    }
-
-    private List<Map<String, Object>> loadNumbers(final int num) throws Exception {
-        final List<Map<String, Object>> numbers = new ArrayList<Map<String, Object>>();
-        db.inBatch(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 1; i <= num; i++) {
-                    Document doc = null;
-                    try {
-                        doc = createDocNumbered(i, num);
-                    } catch (CouchbaseLiteException e) {
-                        throw new RuntimeException(e);
-                    }
-                    numbers.add(doc.toMap());
-                }
-            }
-        });
-        return numbers;
-    }
-
     private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases)
             throws Exception {
         for (Object[] c : cases) {
