@@ -649,11 +649,12 @@ public final class Replicator extends NetworkReachabilityListener {
 
     // - (NSString*) description
     private String description() {
-        return String.format(Locale.ENGLISH, "%s[%s%s%s %s]",
+        return String.format(Locale.ENGLISH, "%s[%s%s%s %s %s]",
                 Replicator.class.getSimpleName(),
                 isPull(config.getReplicatorType()) ? "<" : "",
                 config.isContinuous() ? "*" : "-",
                 isPush(config.getReplicatorType()) ? ">" : "",
+                config.getDatabase(),
                 config.getTarget());
     }
 
