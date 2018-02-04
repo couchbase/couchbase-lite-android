@@ -1347,7 +1347,7 @@ public class QueryTest extends BaseTest {
                 latch.countDown();
             }
         };
-        ListenerToken token = query.addChangeListener(listener);
+        ListenerToken token = query.addChangeListener(executor, listener);
         try {
             // create one doc
             new Handler(Looper.getMainLooper())
@@ -1400,7 +1400,7 @@ public class QueryTest extends BaseTest {
                 // should come only once!
             }
         };
-        ListenerToken token = query.addChangeListener(listener);
+        ListenerToken token = query.addChangeListener(executor, listener);
         try {
             // create one doc
             new Handler(Looper.getMainLooper())
@@ -1841,7 +1841,7 @@ public class QueryTest extends BaseTest {
         try {
             Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
                     .from(DataSource.database(otherDB));
-            query.addChangeListener(new QueryChangeListener() {
+            query.addChangeListener(executor, new QueryChangeListener() {
                 @Override
                 public void changed(QueryChange change) {
                     for (Result r : change.getResults()) {

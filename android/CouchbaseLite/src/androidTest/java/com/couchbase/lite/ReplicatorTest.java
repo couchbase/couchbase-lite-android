@@ -394,7 +394,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
         Replicator repl = new Replicator(config);
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
-        ListenerToken token = repl.addChangeListener(new ReplicatorChangeListener() {
+        ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
             @Override
             public void changed(ReplicatorChange change) {
                 Replicator.Status status = change.getStatus();

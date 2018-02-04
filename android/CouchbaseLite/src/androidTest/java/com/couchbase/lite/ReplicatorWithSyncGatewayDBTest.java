@@ -118,7 +118,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             ReplicatorConfiguration config = makeConfig(true, false, false, target);
             Replicator r = new Replicator(config);
             final CountDownLatch progressLatch = new CountDownLatch(1);
-            ListenerToken token = r.addChangeListener(new ReplicatorChangeListener() {
+            ListenerToken token = r.addChangeListener(executor, new ReplicatorChangeListener() {
                 @Override
                 public void changed(ReplicatorChange change) {
                     Replicator.Status status = change.getStatus();
@@ -137,7 +137,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             ReplicatorConfiguration config = makeConfig(false, true, false, this.otherDB, target);
             Replicator r = new Replicator(config);
             final CountDownLatch progressLatch = new CountDownLatch(1);
-            ListenerToken token = r.addChangeListener(new ReplicatorChangeListener() {
+            ListenerToken token = r.addChangeListener(executor, new ReplicatorChangeListener() {
                 @Override
                 public void changed(ReplicatorChange change) {
                     Replicator.Status status = change.getStatus();
@@ -330,7 +330,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
                 }
             }
         };
-        ListenerToken token2 = repl.addChangeListener(listener2);
+        ListenerToken token2 = repl.addChangeListener(executor, listener2);
 
         // 5. Start Replicator
         repl.start();

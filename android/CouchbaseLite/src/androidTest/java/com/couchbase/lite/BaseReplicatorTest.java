@@ -11,8 +11,6 @@ import org.junit.Before;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PULL;
@@ -28,7 +26,7 @@ public class BaseReplicatorTest extends BaseTest {
     Database otherDB;
     Replicator repl;
     long timeout;  // seconds
-    ExecutorService executor = null;
+
 
     protected URLEndpoint getRemoteEndpoint(String dbName, boolean secure) throws URISyntaxException {
         String uri = (secure ? "wss://" : "ws://") + config.remoteHost() + ":" + config.remotePort() + "/" + dbName;
@@ -164,8 +162,6 @@ public class BaseReplicatorTest extends BaseTest {
         assertTrue(otherDB.isOpen());
         assertNotNull(otherDB);
 
-        executor = Executors.newSingleThreadExecutor();
-
         try {
             Thread.sleep(500);
         } catch (Exception e) {
@@ -181,32 +177,11 @@ public class BaseReplicatorTest extends BaseTest {
         }
         deleteDatabase(kOtherDatabaseName);
 
-        shutdownAndAwaitTermination(executor);
-        executor = null;
-
         super.tearDown();
 
         try {
             Thread.sleep(500);
         } catch (Exception e) {
-        }
-    }
-
-    void shutdownAndAwaitTermination(ExecutorService pool) {
-        pool.shutdown(); // Disable new tasks from being submitted
-        try {
-            // Wait a while for existing tasks to terminate
-            if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
-                pool.shutdownNow(); // Cancel currently executing tasks
-                // Wait a while for tasks to respond to being cancelled
-                if (!pool.awaitTermination(60, TimeUnit.SECONDS))
-                    System.err.println("Pool did not terminate");
-            }
-        } catch (InterruptedException ie) {
-            // (Re-)Cancel if current thread also interrupted
-            pool.shutdownNow();
-            // Preserve interrupt status
-            Thread.currentThread().interrupt();
         }
     }
 }

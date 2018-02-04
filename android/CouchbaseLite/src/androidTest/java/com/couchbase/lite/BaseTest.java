@@ -17,6 +17,7 @@ import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.FileUtils;
@@ -35,6 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
@@ -53,6 +56,7 @@ public class BaseTest implements C4Constants {
     private File dir = null;
     protected Database db = null;
     protected ConflictResolver conflictResolver = null;
+    ExecutorService executor = null;
 
     protected File getDir() {
         return dir;
@@ -70,6 +74,8 @@ public class BaseTest implements C4Constants {
         Log.enableLogging(TAG, Log.INFO); // NOTE: Without loading Database, this fails.
 
         Log.i(TAG, "setUp() - BEGIN");
+
+        executor = Executors.newSingleThreadExecutor();
 
         context = InstrumentationRegistry.getTargetContext();
         try {
@@ -102,6 +108,9 @@ public class BaseTest implements C4Constants {
 
         // clean dir
         FileUtils.cleanDirectory(getDir());
+
+        ExecutorUtils.shutdownAndAwaitTermination(executor, 60);
+        executor = null;
 
         Log.i(TAG, "tearDown() - END");
     }

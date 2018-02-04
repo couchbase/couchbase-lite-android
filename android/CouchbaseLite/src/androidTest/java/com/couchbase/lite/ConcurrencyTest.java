@@ -670,7 +670,7 @@ public class ConcurrencyTest extends BaseTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
-        db.addChangeListener(new DatabaseChangeListener() {
+        db.addChangeListener(executor, new DatabaseChangeListener() {
             @Override
             public void changed(DatabaseChange change) {
                 Log.e(TAG, "changed() change -> %s", change);

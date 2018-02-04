@@ -18,7 +18,7 @@ public class NotificationTest extends BaseTest {
     public void testDatabaseChange()
             throws InterruptedException, CouchbaseLiteException {
         final CountDownLatch latch = new CountDownLatch(1);
-        db.addChangeListener(new DatabaseChangeListener() {
+        db.addChangeListener(executor, new DatabaseChangeListener() {
             @Override
             public void changed(DatabaseChange change) {
                 Log.v(TAG, "DatabaseChangeListener.changed() change -> " + change);
@@ -114,7 +114,7 @@ public class NotificationTest extends BaseTest {
         assertNotNull(db2);
         try {
             final CountDownLatch latchDB = new CountDownLatch(1);
-            db2.addChangeListener(new DatabaseChangeListener() {
+            db2.addChangeListener(executor, new DatabaseChangeListener() {
                 @Override
                 public void changed(DatabaseChange change) {
                     assertNotNull(change);
@@ -125,7 +125,7 @@ public class NotificationTest extends BaseTest {
             });
 
             final CountDownLatch latchDoc = new CountDownLatch(1);
-            db2.addDocumentChangeListener("doc-6", new DocumentChangeListener() {
+            db2.addDocumentChangeListener("doc-6", executor, new DocumentChangeListener() {
                 @Override
                 public void changed(DocumentChange change) {
                     assertNotNull(change);
