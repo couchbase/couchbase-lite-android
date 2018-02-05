@@ -93,7 +93,9 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public Parameters getParameters() {
-        return parameters;
+        synchronized (lock) {
+            return parameters;
+        }
     }
 
     /**
@@ -103,9 +105,11 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public void setParameters(Parameters parameters) {
-        this.parameters = parameters.readonlyCopy();
-        if (liveQuery != null)
-            liveQuery.start();
+        synchronized (lock) {
+            this.parameters = parameters != null ? parameters.readonlyCopy() : null;
+            if (liveQuery != null)
+                liveQuery.start();
+        }
     }
 
     /**
@@ -166,7 +170,7 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public ListenerToken addChangeListener(QueryChangeListener listener) {
-        return liveQuery().addChangeListener(listener);
+        return addChangeListener(null, listener);
     }
 
     /**
@@ -174,13 +178,17 @@ abstract class AbstractQuery implements Query {
      * will be posted. If the dispatch queue is not specified, the changes will be
      * posted on the main queue.
      *
-     * @param executor The executor object that calls listener
+     * @param executor The executor object that calls listener. If null, use default executor.
      * @param listener The listener to post changes.
      * @return An opaque listener token object for removing the listener.
      */
     @Override
     public ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
-        return liveQuery().addChangeListener(executor, listener);
+        if (listener == null)
+            throw new IllegalArgumentException("listener parameter is null.");
+        synchronized (lock) {
+            return liveQuery().addChangeListener(executor, listener);
+        }
     }
 
     /**
@@ -192,7 +200,9 @@ abstract class AbstractQuery implements Query {
     public void removeChangeListener(ListenerToken token) {
         if (token == null || !(token instanceof QueryChangeListenerToken))
             throw new IllegalArgumentException("Invalid ListenerToken is given");
-        liveQuery().removeChangeListener((QueryChangeListenerToken) token);
+        synchronized (lock) {
+            liveQuery().removeChangeListener((QueryChangeListenerToken) token);
+        }
     }
 
     @Override
@@ -369,17 +379,21 @@ abstract class AbstractQuery implements Query {
     }
 
     private LiveQuery liveQuery() {
-        if (liveQuery == null)
-            liveQuery = new LiveQuery(this);
-        return liveQuery;
+        synchronized (lock) {
+            if (liveQuery == null)
+                liveQuery = new LiveQuery(this);
+            return liveQuery;
+        }
     }
 
     private void free() {
-        if (c4query != null && getDatabase() != null) {
-            synchronized (getDatabase().getLock()) {
-                c4query.free();
+        synchronized (lock) {
+            if (c4query != null && getDatabase() != null) {
+                synchronized (getDatabase().getLock()) {
+                    c4query.free();
+                }
+                c4query = null;
             }
-            c4query = null;
         }
     }
 }
