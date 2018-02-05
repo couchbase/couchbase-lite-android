@@ -46,6 +46,7 @@ public final class ReplicatorConfiguration {
     static final String kC4ReplicatorOptionSkipDeleted = "skipDeleted"; // Don't push/pull tombstones; bool
     static final String kC4ReplicatorOptionNoConflicts = "noConflicts"; // Puller rejects conflicts; bool
     static final String kC4ReplicatorCheckpointInterval = "checkpointInterval"; // How often to checkpoint, in seconds; number
+    static final String kC4ReplicatorOptionRemoteDBUniqueID = "remoteDBUniqueID"; // How often to checkpoint, in seconds; number
 
     // Auth dictionary keys:
     static final String kC4ReplicatorAuthType = "type"; // Auth property; string
