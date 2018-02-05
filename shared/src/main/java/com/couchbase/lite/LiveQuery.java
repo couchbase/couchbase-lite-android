@@ -119,7 +119,7 @@ final class LiveQuery implements DatabaseChangeListener {
         releaseResultSet();
         query.getDatabase().getActiveLiveQueries().add(this);
         dbListenerToken = query.getDatabase().addChangeListener(this);
-        update();
+        update(0);
     }
 
     /**
