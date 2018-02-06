@@ -93,9 +93,7 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public Parameters getParameters() {
-        synchronized (lock) {
-            return parameters;
-        }
+        return parameters;
     }
 
     /**
@@ -105,11 +103,10 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public void setParameters(Parameters parameters) {
-        synchronized (lock) {
-            this.parameters = parameters != null ? parameters.readonlyCopy() : null;
-            if (liveQuery != null)
-                liveQuery.start();
-        }
+        this.parameters = parameters != null ? parameters.readonlyCopy() : null;
+        if (liveQuery != null)
+            liveQuery.start();
+
     }
 
     /**
@@ -186,9 +183,7 @@ abstract class AbstractQuery implements Query {
     public ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
         if (listener == null)
             throw new IllegalArgumentException("listener parameter is null.");
-        synchronized (lock) {
-            return liveQuery().addChangeListener(executor, listener);
-        }
+        return liveQuery().addChangeListener(executor, listener);
     }
 
     /**
@@ -200,9 +195,7 @@ abstract class AbstractQuery implements Query {
     public void removeChangeListener(ListenerToken token) {
         if (token == null || !(token instanceof QueryChangeListenerToken))
             throw new IllegalArgumentException("Invalid ListenerToken is given");
-        synchronized (lock) {
-            liveQuery().removeChangeListener((QueryChangeListenerToken) token);
-        }
+        liveQuery().removeChangeListener((QueryChangeListenerToken) token);
     }
 
     @Override

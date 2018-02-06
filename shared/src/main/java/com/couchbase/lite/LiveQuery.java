@@ -48,6 +48,7 @@ final class LiveQuery implements DatabaseChangeListener {
     private boolean willUpdate;
     private long lastUpdatedAt;
     private ListenerToken dbListenerToken;
+    private final Object lock = new Object(); // lock for thread-safety
 
     //---------------------------------------------
     // Constructors
@@ -79,17 +80,20 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
     @Override
     public void changed(DatabaseChange change) {
-        if (willUpdate)
-            return; // Already a pending update scheduled
+        synchronized (lock) {
+            if (willUpdate)
+                return; // Already a pending update scheduled
 
-        if (!observing)
-            return;
+            if (!observing)
+                return;
 
-        // Schedule an update, respecting the updateInterval:
-        long updateDelay = lastUpdatedAt + kDefaultLiveQueryUpdateInterval - System.currentTimeMillis();
-        updateDelay = Math.max(0, Math.min(this.kDefaultLiveQueryUpdateInterval, updateDelay));
-        update(updateDelay);
+            // Schedule an update, respecting the updateInterval:
+            long updateDelay = lastUpdatedAt + kDefaultLiveQueryUpdateInterval - System.currentTimeMillis();
+            updateDelay = Math.max(0, Math.min(this.kDefaultLiveQueryUpdateInterval, updateDelay));
+            update(updateDelay);
+        }
     }
+
     //---------------------------------------------
     // protected methods
     //---------------------------------------------
@@ -112,49 +116,59 @@ final class LiveQuery implements DatabaseChangeListener {
      * Starts observing database changes and reports changes in the query result.
      */
     void start() {
-        if (query.getDatabase() == null)
-            throw new IllegalArgumentException("associated database should not be null.");
+        synchronized (lock) {
+            if (query.getDatabase() == null)
+                throw new IllegalArgumentException("associated database should not be null.");
 
-        observing = true;
-        releaseResultSet();
-        query.getDatabase().getActiveLiveQueries().add(this);
-        dbListenerToken = query.getDatabase().addChangeListener(this);
-        update(0);
+            observing = true;
+            releaseResultSet();
+            query.getDatabase().getActiveLiveQueries().add(this);
+            dbListenerToken = query.getDatabase().addChangeListener(this);
+            update(0);
+        }
     }
 
     /**
      * Stops observing database changes.
      */
     void stop(boolean removeFromList) {
-        observing = false;
-        willUpdate = false; // cancels the delayed update started by -databaseChanged
-        if (query != null && query.getDatabase() != null)
-            query.getDatabase().removeChangeListener(dbListenerToken);
-        if (removeFromList && query != null && query.getDatabase() != null)
-            query.getDatabase().getActiveLiveQueries().remove(this);
-        releaseResultSet();
-    }
-
-    QueryChangeListenerToken addChangeListener(QueryChangeListener listener) {
-        return addChangeListener(null, listener);
+        synchronized (lock) {
+            observing = false;
+            willUpdate = false; // cancels the delayed update started by -databaseChanged
+            if (query != null && query.getDatabase() != null)
+                query.getDatabase().removeChangeListener(dbListenerToken);
+            if (removeFromList && query != null && query.getDatabase() != null)
+                query.getDatabase().getActiveLiveQueries().remove(this);
+            releaseResultSet();
+        }
     }
 
     /**
      * Adds a change listener.
+     * <p>
+     * NOTE: this method is synchronized with Query level.
      */
     QueryChangeListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
-        QueryChangeListenerToken token = new QueryChangeListenerToken(executor, listener);
-        queryChangeListenerTokens.add(token);
-        if (!observing)
-            start();
-        return token;
+        synchronized (lock) {
+            QueryChangeListenerToken token = new QueryChangeListenerToken(executor, listener);
+            queryChangeListenerTokens.add(token);
+            if (!observing)
+                start();
+            return token;
+        }
     }
 
     /**
      * Removes a change listener
+     * <p>
+     * NOTE: this method is synchronized with Query level.
      */
     void removeChangeListener(QueryChangeListenerToken token) {
-        queryChangeListenerTokens.remove(token);
+        synchronized (lock) {
+            queryChangeListenerTokens.remove(token);
+            if (queryChangeListenerTokens.isEmpty())
+                stop(true);
+        }
     }
 
     //---------------------------------------------
@@ -162,6 +176,8 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
 
     /**
+     * NOTE: update(long delay) is only called from synchronzied LiveQuery methods by lock.
+     *
      * @param delay millisecond
      */
     private void update(long delay) {
@@ -184,32 +200,38 @@ final class LiveQuery implements DatabaseChangeListener {
         }
     }
 
+    /**
+     * NOTE: update() method is called from only ExecutorService for LiveQuery which is
+     * a single thread. But update changes and refers some instant variables
+     */
     private void update() {
-        if (!observing)
-            return;
+        synchronized (lock) {
+            if (!observing)
+                return;
 
-        try {
-            Log.i(TAG, "%s: Querying...", this);
-            ResultSet oldResultSet = resultSet;
-            ResultSet newResultSet;
-            if (oldResultSet == null)
-                newResultSet = query.execute();
-            else
-                newResultSet = oldResultSet.refresh();
+            try {
+                Log.i(TAG, "%s: Querying...", this);
+                ResultSet oldResultSet = resultSet;
+                ResultSet newResultSet;
+                if (oldResultSet == null)
+                    newResultSet = query.execute();
+                else
+                    newResultSet = oldResultSet.refresh();
 
-            willUpdate = false;
-            lastUpdatedAt = System.currentTimeMillis();
+                willUpdate = false;
+                lastUpdatedAt = System.currentTimeMillis();
 
-            if (newResultSet != null) {
-                if (oldResultSet != null)
-                    Log.i(TAG, "%s: Changed!", this);
-                resultSet = newResultSet;
-                sendNotification(new QueryChange(this.query, resultSet, null));
-            } else {
-                Log.i(TAG, "%s: ...no change", this);
+                if (newResultSet != null) {
+                    if (oldResultSet != null)
+                        Log.i(TAG, "%s: Changed!", this);
+                    resultSet = newResultSet;
+                    sendNotification(new QueryChange(this.query, resultSet, null));
+                } else {
+                    Log.i(TAG, "%s: ...no change", this);
+                }
+            } catch (CouchbaseLiteException e) {
+                sendNotification(new QueryChange(this.query, null, e));
             }
-        } catch (CouchbaseLiteException e) {
-            sendNotification(new QueryChange(this.query, null, e));
         }
     }
 
