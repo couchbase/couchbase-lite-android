@@ -38,11 +38,8 @@ import static org.junit.Assert.assertTrue;
 
 public class ReplicatorTest extends BaseReplicatorTest {
 
-    // TODO: It seems the replication finishes before constructor returns.
-    //       This causes RefCounted throws exception.
-    //       Also this might be related with disk I/O error
     // https://github.com/couchbase/couchbase-lite-core/issues/383
-    // @Test
+    @Test
     public void testEmptyPush() throws InterruptedException {
         ReplicatorConfiguration config = makeConfig(true, false, false);
         run(config, 0, null);

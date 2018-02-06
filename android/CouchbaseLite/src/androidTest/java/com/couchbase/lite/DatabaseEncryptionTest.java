@@ -90,6 +90,9 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testUnEncryptedDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create unencrypted database:
         seekrit = openSeekrit(null);
         assertNotNull(seekrit);
@@ -118,6 +121,9 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testEncryptedDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create encrypted database:
         seekrit = openSeekrit("letmein");
         assertNotNull(seekrit);
@@ -155,6 +161,9 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testDeleteEncryptedDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create encrypted database:
         seekrit = openSeekrit("letmein");
         assertNotNull(seekrit);
@@ -188,6 +197,9 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testCompactEncryptedDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create encrypted database:
         seekrit = openSeekrit("letmein");
         assertNotNull(seekrit);
@@ -218,10 +230,16 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testEncryptedBlobs() throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         testEncryptedBlobs("letmein");
     }
 
     void testEncryptedBlobs(String password) throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create database with the password:
         seekrit = openSeekrit(password);
         assertNotNull(seekrit);
@@ -253,6 +271,9 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testMultipleDatabases() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create encryped database:
         seekrit = openSeekrit("seekrit");
 
@@ -268,16 +289,25 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testAddKey() throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         rekeyUsingOldPassword(null, "letmein");
     }
 
     @Test
     public void testReKey() throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         rekeyUsingOldPassword("letmein", "letmeout");
     }
 
     @Test
     public void testRemoveKey() throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         rekeyUsingOldPassword("letmein", null);
     }
 

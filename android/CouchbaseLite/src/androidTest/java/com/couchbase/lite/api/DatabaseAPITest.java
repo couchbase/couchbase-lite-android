@@ -48,6 +48,9 @@ public class DatabaseAPITest extends BaseTest {
     // ### New Database
     @Test
     public void testNewDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // --- code example ---
         DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context);
         Database database = new Database("my-database", config);
@@ -77,6 +80,9 @@ public class DatabaseAPITest extends BaseTest {
     // ###  Encryption
     @Test
     public void testEncryption() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // --- code example ---
         DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context)
                 .setEncryptionKey(new EncryptionKey("secretpassword"));
