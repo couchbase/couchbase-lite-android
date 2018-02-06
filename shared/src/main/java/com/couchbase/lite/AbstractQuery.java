@@ -103,10 +103,11 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public void setParameters(Parameters parameters) {
-        this.parameters = parameters != null ? parameters.readonlyCopy() : null;
-        if (liveQuery != null)
-            liveQuery.start();
-
+        synchronized (lock) {
+            this.parameters = parameters != null ? parameters.readonlyCopy() : null;
+            if (liveQuery != null)
+                liveQuery.start();
+        }
     }
 
     /**
