@@ -188,7 +188,7 @@ public class ConcurrencyTest extends BaseTest {
 
         final int kNDocs = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // concurrently creates documents
         concurrentValidator(kNThreads, new Callback() {
@@ -216,7 +216,7 @@ public class ConcurrencyTest extends BaseTest {
 
         final int kNDocs = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // concurrently creates documents
         concurrentValidator(kNThreads, new Callback() {
@@ -256,7 +256,7 @@ public class ConcurrencyTest extends BaseTest {
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -292,7 +292,7 @@ public class ConcurrencyTest extends BaseTest {
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -315,7 +315,7 @@ public class ConcurrencyTest extends BaseTest {
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -373,8 +373,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
 
         verifyByTagName(tag, kNDocs);
     }
@@ -426,8 +426,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
 
         assertEquals(0, db.getCount());
     }
@@ -480,8 +480,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
 
         assertEquals(0, db.getCount());
     }
@@ -529,8 +529,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -576,8 +576,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -623,8 +623,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -673,8 +673,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -705,8 +705,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(10, TimeUnit.SECONDS));
-        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -737,8 +737,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(10, TimeUnit.SECONDS));
-        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1407
@@ -766,6 +766,6 @@ public class ConcurrencyTest extends BaseTest {
                 assertEquals(100, results.size());
                 assertEquals(db.getCount(), results.size());
             }
-        }, 20);
+        }, 180);
     }
 }
