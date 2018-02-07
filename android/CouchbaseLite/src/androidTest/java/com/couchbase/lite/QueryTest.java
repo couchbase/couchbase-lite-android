@@ -491,6 +491,69 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
+    public void testLeftJoin() throws Exception {
+        loadNumbers(100);
+
+        final MutableDocument joinme = new MutableDocument("joinme");
+        joinme.setValue("theone", 42);
+        save(joinme);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
+        Expression mainPropExpr = Expression.property("number1").from("main");
+        Expression secondaryExpr = Expression.property("theone").from("secondary");
+        Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
+        Join join = Join.leftJoin(secondaryDS).on(joinExpr);
+
+        SelectResult sr1 = SelectResult.expression(Expression.property("number2").from("main"));
+        SelectResult sr2 = SelectResult.expression(Expression.property("theone").from("secondary"));
+
+        Query q = QueryBuilder.select(sr1, sr2).from(mainDS).join(join);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                if (n == 41) {
+                    assertEquals(59, result.getInt(0));
+                    assertNull(result.getValue(1));
+                }
+                if (n == 42) {
+                    assertEquals(58, result.getInt(0));
+                    assertEquals(42, result.getInt(1));
+                }
+            }
+        }, true);
+        assertEquals(101, numRows);
+    }
+
+    @Test
+    public void testCrossJoin() throws Exception {
+        loadNumbers(10);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
+        Join join = Join.crossJoin(secondaryDS);
+
+        SelectResult sr1 = SelectResult.expression(Expression.property("number1").from("main"));
+        SelectResult sr2 = SelectResult.expression(Expression.property("number2").from("secondary"));
+
+        Query q = QueryBuilder.select(sr1, sr2).from(mainDS).join(join);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                int num1 = result.getInt(0);
+                int num2 = result.getInt(1);
+                assertEquals((num1 - 1) % 10, (n - 1) / 10);
+                assertEquals((10 - num2) % 10, n % 10);
+            }
+        }, true);
+        assertEquals(100, numRows);
+    }
+
+    @Test
     public void testGroupBy() throws Exception {
         loadJSONResource("names_100.json");
 
