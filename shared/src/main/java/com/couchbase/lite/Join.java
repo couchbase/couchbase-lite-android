@@ -117,7 +117,7 @@ public class Join {
      * @return The On object used for specifying join conditions.
      */
     public static On leftJoin(DataSource datasource) {
-        return new On(kCBLOuterJoin, datasource);
+        return new On(kCBLLeftOuterJoin, datasource);
     }
 
     /**
