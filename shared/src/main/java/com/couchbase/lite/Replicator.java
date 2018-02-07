@@ -276,7 +276,7 @@ public final class Replicator extends NetworkReachabilityListener {
     public void start() {
         synchronized (lock) {
             if (c4repl != null) {
-                Log.w(TAG, "%s has already started", this);
+                Log.i(TAG, "%s has already started", this);
                 return;
             }
 
@@ -295,13 +295,16 @@ public final class Replicator extends NetworkReachabilityListener {
         synchronized (lock) {
             if (c4repl != null)
                 c4repl.stop(); // this is async; status will change when repl actually stops
-            else if (c4ReplStatus.getActivityLevel() == kC4Offline) {
+
+            if (c4ReplStatus.getActivityLevel() == kC4Offline) {
                 C4ReplicatorStatus c4replStatus = new C4ReplicatorStatus();
                 c4replStatus.setActivityLevel(kC4Stopped);
                 this.c4StatusChanged(c4replStatus);
             }
+
             if (reachabilityManager != null)
                 reachabilityManager.removeNetworkReachabilityListener(this);
+
         }
     }
 
@@ -367,7 +370,7 @@ public final class Replicator extends NetworkReachabilityListener {
     void networkReachable() {
         synchronized (lock) {
             if (c4repl == null) {
-                Log.e(TAG, "%s: Server may now be reachable; retrying...", this);
+                Log.i(TAG, "%s: Server may now be reachable; retrying...", this);
                 retryCount = 0;
                 retry();
             }
@@ -531,7 +534,7 @@ public final class Replicator extends NetworkReachabilityListener {
         synchronized (lock) {
             if (c4repl != null || this.c4ReplStatus.getActivityLevel() != kC4Offline)
                 return;
-            Log.e(TAG, "%s: Retrying...", this);
+            Log.i(TAG, "%s: Retrying...", this);
             _start();
         }
     }
@@ -618,7 +621,7 @@ public final class Replicator extends NetworkReachabilityListener {
     private void updateStateProperties(C4ReplicatorStatus status) {
         CouchbaseLiteException error = null;
         if (status.getErrorCode() != 0)
-            error = new CouchbaseLiteException(status.getErrorDomain(), status.getErrorCode());
+            error = CBLStatus.convertException(status.getErrorDomain(), status.getErrorCode(), null);
         if (error != this.lastError)
             this.lastError = error;
 

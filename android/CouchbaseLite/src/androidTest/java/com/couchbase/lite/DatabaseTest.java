@@ -31,9 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorTransactionNotClosed;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -460,8 +458,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             otherDB.close();
@@ -487,8 +485,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // delete otherDb
             deleteDatabase(otherDB);
@@ -598,8 +596,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.delete(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             otherDB.close();
@@ -623,8 +621,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.delete(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             deleteDatabase(otherDB);
@@ -737,8 +735,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.purge(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             otherDB.close();
@@ -762,8 +760,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.purge(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             deleteDatabase(otherDB);
@@ -919,10 +917,8 @@ public class DatabaseTest extends BaseTest {
                     db.close();
                     fail();
                 } catch (CouchbaseLiteException e) {
-                    assertEquals(LiteCoreDomain, e.getDomain());
-                    // 26 -> kC4ErrorTransactionNotClosed:
-                    //          Function cannot be called while in a transaction
-                    assertEquals(kC4ErrorTransactionNotClosed, e.getCode()); // 26
+                    assertEquals(CBLErrorDomain, e.getDomain());
+                    assertEquals(CBLErrorTransactionNotClosed, e.getCode()); // 26
                 }
             }
         });
@@ -1025,10 +1021,8 @@ public class DatabaseTest extends BaseTest {
                     db.delete();
                     fail();
                 } catch (CouchbaseLiteException e) {
-                    assertEquals(LiteCoreDomain, e.getDomain());
-                    // 26 -> kC4ErrorTransactionNotClosed:
-                    //          Function cannot be called while in a transaction
-                    assertEquals(kC4ErrorTransactionNotClosed, e.getCode()); // 26
+                    assertEquals(CBLErrorDomain, e.getDomain());
+                    assertEquals(CBLErrorTransactionNotClosed, e.getCode()); // 26
                 }
             }
         });
@@ -1045,8 +1039,8 @@ public class DatabaseTest extends BaseTest {
                 db.delete();
                 fail();
             } catch (CouchbaseLiteException e) {
-                assertEquals(LiteCoreDomain, e.getDomain());
-                assertEquals(kC4ErrorBusy, e.getCode()); // 24
+                assertEquals(CBLErrorDomain, e.getDomain());
+                assertEquals(CBLErrorBusy, e.getCode()); // 24
             }
         } finally {
             otherDB.close();
@@ -1125,8 +1119,8 @@ public class DatabaseTest extends BaseTest {
                 Database.delete("db", getDir());
                 fail();
             } catch (CouchbaseLiteException e) {
-                assertEquals(LiteCoreDomain, e.getDomain());
-                assertEquals(kC4ErrorBusy, e.getCode()); // 24
+                assertEquals(CBLErrorDomain, e.getDomain());
+                assertEquals(CBLErrorBusy, e.getCode()); // 24
             } finally {
                 ;
             }
@@ -1153,8 +1147,8 @@ public class DatabaseTest extends BaseTest {
             Database.delete("notexistdb", getDir());
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.NotFound, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorNotFound, e.getCode());
         }
     }
 

@@ -22,19 +22,8 @@ import java.util.Map;
 /**
  * A CouchbaseLiteRuntimeException gets raised when Couchbase Lite faces unexpected error
  */
-public final class CouchbaseLiteRuntimeException extends RuntimeException {
-
-    private static final String[] DOMAINS = {
-            null,
-            "LiteCore",
-            "POSIXErrorDomain",
-            "ForestDB",
-            "SQLite",
-            "Fleece",
-            "Network",
-            "WebSocket"};
-
-    private final int domain;
+public final class CouchbaseLiteRuntimeException extends RuntimeException implements CBLError.Domain {
+    private final String domain;
     private final int code;
     private final Map<String, Object> info;
 
@@ -45,7 +34,7 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
      */
     public CouchbaseLiteRuntimeException(String message) {
         super(message);
-        this.domain = 0;
+        this.domain = CBLErrorDomain;
         this.code = 0;
         this.info = null;
     }
@@ -57,7 +46,7 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
      */
     public CouchbaseLiteRuntimeException(Throwable cause) {
         super(cause);
-        this.domain = 0;
+        this.domain = CBLErrorDomain;
         this.code = 0;
         this.info = null;
     }
@@ -68,7 +57,7 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
      * @param domain the error domain
      * @param code   the error code
      */
-    public CouchbaseLiteRuntimeException(int domain, int code) {
+    public CouchbaseLiteRuntimeException(String domain, int code) {
         super();
         this.domain = domain;
         this.code = code;
@@ -83,7 +72,7 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
      * @param domain  the error domain
      * @param code    the error code
      */
-    public CouchbaseLiteRuntimeException(String message, Throwable cause, int domain, int code) {
+    public CouchbaseLiteRuntimeException(String message, Throwable cause, String domain, int code) {
         super(message, cause);
         this.domain = domain;
         this.code = code;
@@ -97,14 +86,14 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
      * @param domain  the error domain
      * @param code    the error code
      */
-    public CouchbaseLiteRuntimeException(String message, int domain, int code) {
+    public CouchbaseLiteRuntimeException(String message, String domain, int code) {
         super(message);
         this.domain = domain;
         this.code = code;
         this.info = null;
     }
 
-    public CouchbaseLiteRuntimeException(int domain, int code, Map<String, Object> info) {
+    public CouchbaseLiteRuntimeException(String domain, int code, Map<String, Object> info) {
         super();
         this.domain = domain;
         this.code = code;
@@ -116,20 +105,10 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
      *
      * @return The numerical domain code for this error.
      */
-    public int getDomain() {
+    public String getDomain() {
         return domain;
     }
 
-    /**
-     * Access the error domain for this error.
-     *
-     * @return The string domain code for this error.
-     */
-    public String getDomainString() {
-        if (domain < 0 || domain >= DOMAINS.length)
-            return null;
-        return DOMAINS[domain];
-    }
 
     /**
      * Access the error code for this error.
@@ -146,13 +125,10 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException {
 
     @Override
     public String toString() {
-        if (domain > 0 && code > 0)
-            return "CouchbaseLiteRuntimeException{" +
-                    "domain=" + domain +
-                    ", code=" + code +
-                    ", msg=" + super.getMessage() +
-                    '}';
-        else
-            return super.toString();
+        return "CouchbaseLiteRuntimeException{" +
+                "domain='" + domain + '\'' +
+                ", code=" + code +
+                ", info=" + info +
+                '}';
     }
 }

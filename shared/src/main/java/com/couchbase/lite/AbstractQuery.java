@@ -34,8 +34,6 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 
 import static com.couchbase.lite.PropertyExpression.kCBLAllPropertiesName;
-import static com.couchbase.lite.Status.CBLErrorDomain;
-import static com.couchbase.lite.Status.InvalidQuery;
 
 abstract class AbstractQuery implements Query {
     //---------------------------------------------
@@ -134,7 +132,7 @@ abstract class AbstractQuery implements Query {
             }
             return new ResultSet(this, c4enum, columnNames);
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
@@ -292,7 +290,7 @@ abstract class AbstractQuery implements Query {
             try {
                 c4query = database.getC4Database().createQuery(json);
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             }
         }
     }
@@ -312,7 +310,7 @@ abstract class AbstractQuery implements Query {
                 name = String.format(Locale.ENGLISH, "$%d", ++provisionKeyIndex);
             if (map.containsKey(name)) {
                 String desc = String.format(Locale.ENGLISH, "Duplicate select result named %s", name);
-                throw new CouchbaseLiteException(desc, CBLErrorDomain, InvalidQuery);
+                throw new CouchbaseLiteException(desc, CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidQuery);
             }
             map.put(name, index);
             index++;

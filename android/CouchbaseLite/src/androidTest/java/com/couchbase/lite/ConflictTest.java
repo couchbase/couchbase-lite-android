@@ -31,8 +31,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -222,8 +220,8 @@ public class ConflictTest extends BaseTest {
             save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(LiteCoreDomain, e.getDomain());
-            assertEquals(kC4ErrorConflict, e.getCode());
+            assertEquals(CBLError.Domain.CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorConflict, e.getCode());
         }
     }
 
@@ -324,8 +322,8 @@ public class ConflictTest extends BaseTest {
         } catch (CouchbaseLiteException e) {
             // Currently returned error code is LiteCore error code.
             // This could change to HTTP error code.
-            assertEquals(LiteCoreDomain, e.getDomain());
-            assertEquals(kC4ErrorConflict, e.getCode()); // int kC4ErrorConflict = 14;
+            assertEquals(CBLError.Domain.CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorConflict, e.getCode());
         }
     }
 }

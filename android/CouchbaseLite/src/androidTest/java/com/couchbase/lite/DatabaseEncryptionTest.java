@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -65,7 +64,7 @@ public class DatabaseEncryptionTest extends BaseTest {
                     Database.delete("seekrit", getDir());
                     break;
                 } catch (CouchbaseLiteException ex) {
-                    if (ex.getCode() == kC4ErrorBusy) {
+                    if (ex.getCode() == CBLErrorBusy) {
                         try {
                             Thread.sleep(300);
                         } catch (Exception e) {
@@ -109,8 +108,8 @@ public class DatabaseEncryptionTest extends BaseTest {
             openSeekrit("wrong");
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals("LiteCore", e.getDomainString());
-            assertEquals(29, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorUnreadableDatabase, e.getCode());
         }
 
         // Reopen with no password:
@@ -140,8 +139,8 @@ public class DatabaseEncryptionTest extends BaseTest {
             openSeekrit(null);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals("LiteCore", e.getDomainString());
-            assertEquals(29, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorUnreadableDatabase, e.getCode());
         }
 
         // Reopen with wrong password (fails):
@@ -149,8 +148,8 @@ public class DatabaseEncryptionTest extends BaseTest {
             openSeekrit("wrong");
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals("LiteCore", e.getDomainString());
-            assertEquals(29, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorUnreadableDatabase, e.getCode());
         }
 
         // Reopen with correct password:
@@ -190,8 +189,8 @@ public class DatabaseEncryptionTest extends BaseTest {
             seekrit = openSeekrit("letmein");
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals("LiteCore", e.getDomainString());
-            assertEquals(29, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorUnreadableDatabase, e.getCode());
         }
     }
 

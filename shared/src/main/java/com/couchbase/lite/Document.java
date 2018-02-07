@@ -78,13 +78,13 @@ public class Document implements DictionaryInterface, Iterable<String> {
             doc = _database.getC4Database().get(getId(), true);
         } catch (LiteCoreException e) {
             if (e.getDomain() == LiteCoreDomain && e.getCode() == kC4ErrorNotFound)
-                throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
-            throw LiteCoreBridge.convertRuntimeException(e);
+                throw CBLStatus.convertException(e);
+            throw CBLStatus.convertRuntimeException(e);
         }
 
         if (!includeDeleted && (doc.getFlags() & kDocDeleted) != 0) {
             doc.free();
-            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+            throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
         }
 
         // NOTE: _c4doc should not be null.
@@ -522,7 +522,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
             }
             return encoder.finish();
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertRuntimeException(e);
+            throw CBLStatus.convertRuntimeException(e);
         } finally {
             encoder.setExtraInfo(null);
             encoder.free();

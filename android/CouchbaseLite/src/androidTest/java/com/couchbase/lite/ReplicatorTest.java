@@ -371,10 +371,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
         try {
 
             InputStream is = getAsset("image.jpg");
-            //InputStream is = getAsset("attachment.png");
             try {
                 Blob blob = new Blob("image/jpg", is);
-                //Blob blob = new Blob("image/jpg", is);
                 MutableDocument doc1 = new MutableDocument("doc1");
                 doc1.setValue("name", "Tiger");
                 doc1.setBlob("image.jpg", blob);
@@ -413,8 +411,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
             public void changed(ReplicatorChange change) {
                 Replicator.Status status = change.getStatus();
                 if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
-                    offline.countDown();
                     change.getReplicator().stop();
+                    offline.countDown();
                 }
                 if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
                     stopped.countDown();

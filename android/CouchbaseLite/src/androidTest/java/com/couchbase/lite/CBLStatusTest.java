@@ -1,5 +1,5 @@
 //
-// LiteCoreBridge.java
+// CBLStatusTest.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -19,16 +19,20 @@ package com.couchbase.lite;
 
 import com.couchbase.litecore.LiteCoreException;
 
-final class LiteCoreBridge {
-    private LiteCoreBridge() {
+import org.junit.Test;
 
-    }
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-    static CouchbaseLiteException convertException(LiteCoreException orgEx) {
-        return new CouchbaseLiteException(orgEx.getMessage(), orgEx, orgEx.domain, orgEx.code);
-    }
-
-    static CouchbaseLiteRuntimeException convertRuntimeException(LiteCoreException orgEx) {
-        return new CouchbaseLiteRuntimeException(orgEx.getMessage(), orgEx, orgEx.domain, orgEx.code);
+public class CBLStatusTest {
+    @Test
+    public void testConvertRuntimeException() {
+        LiteCoreException orgEx = new LiteCoreException(1, 2, "3");
+        CouchbaseLiteRuntimeException ex = CBLStatus.convertRuntimeException(orgEx);
+        assertNotNull(ex);
+        assertEquals(CBLError.Domain.CBLErrorDomain, ex.getDomain());
+        assertEquals(2, ex.getCode());
+        assertEquals("3", ex.getMessage());
+        assertEquals(orgEx, ex.getCause());
     }
 }

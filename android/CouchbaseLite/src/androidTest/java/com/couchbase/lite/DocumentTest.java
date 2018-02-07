@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBadDocID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -164,8 +162,8 @@ public class DocumentTest extends BaseTest {
             save(doc1a);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(LiteCoreDomain, e.getDomain());
-            assertEquals(kC4ErrorBadDocID, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorBadDocID, e.getCode());
         }
     }
 
