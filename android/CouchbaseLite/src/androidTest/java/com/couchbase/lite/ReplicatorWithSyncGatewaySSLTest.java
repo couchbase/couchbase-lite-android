@@ -17,8 +17,13 @@
 //
 package com.couchbase.lite;
 
+import android.support.test.InstrumentationRegistry;
+
+import com.couchbase.lite.utils.Config;
 import com.couchbase.lite.utils.IOUtils;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -31,6 +36,23 @@ import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUn
  * Note: https://github.com/couchbase/couchbase-lite-core/tree/master/Replicator/tests/data
  */
 public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
+    @Before
+    public void setUp() throws Exception {
+        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        super.setUp();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        super.tearDown();
+    }
+
     /**
      * This test assumes an SG is serving SSL at port 4994 with a self-signed cert.
      */

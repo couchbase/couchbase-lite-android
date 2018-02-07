@@ -17,9 +17,14 @@
 //
 package com.couchbase.lite;
 
+import android.support.test.InstrumentationRegistry;
+
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.utils.Config;
 
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -36,6 +41,23 @@ import okhttp3.Response;
  */
 public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+    @Before
+    public void setUp() throws Exception {
+        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        super.setUp();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        super.tearDown();
+    }
 
     private boolean remote_PUT_db(String db) throws IOException {
         OkHttpClient client = new OkHttpClient();

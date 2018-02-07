@@ -17,7 +17,10 @@
 //
 package com.couchbase.lite;
 
+import android.support.test.InstrumentationRegistry;
+
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.utils.Config;
 
 import org.junit.After;
 import org.junit.Before;
@@ -48,17 +51,22 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Before
     public void setUp() throws Exception {
+        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+        if (!config.replicatorTestsEnabled())
+            return;
+
         super.setUp();
-        if (config.replicatorTestsEnabled()) {
-            remote_PUT_db(DB_NAME);
-        }
+
+        remote_PUT_db(DB_NAME);
     }
 
     @After
     public void tearDown() throws Exception {
-        if (config.replicatorTestsEnabled()) {
-            remote_DELETE_db(DB_NAME);
-        }
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        remote_DELETE_db(DB_NAME);
+
         super.tearDown();
     }
 
