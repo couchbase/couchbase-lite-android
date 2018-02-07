@@ -150,7 +150,7 @@ public class ResultSet implements Iterable<Result> {
                 C4QueryEnumerator newEnum = c4enum.refresh();
                 return newEnum != null ? new ResultSet(query, newEnum, columnNames) : null;
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             }
         }
     }

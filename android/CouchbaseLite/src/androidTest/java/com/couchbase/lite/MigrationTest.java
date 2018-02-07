@@ -25,7 +25,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
 
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -142,7 +141,7 @@ public class MigrationTest extends BaseTest {
         }
     }
 
-    //  // if db exist, delete it
+    // if db exist, delete it
     private void deleteDB(String name, File dir) throws CouchbaseLiteException {
         // database exist, delete it
         if (Database.exists("android-sqlite", context.getFilesDir())) {
@@ -152,7 +151,7 @@ public class MigrationTest extends BaseTest {
                     Database.delete("android-sqlite", dir);
                     break;
                 } catch (CouchbaseLiteException ex) {
-                    if (ex.getCode() == kC4ErrorBusy) {
+                    if (ex.getCode() == CBLErrorBusy) {
                         try {
                             Thread.sleep(300);
                         } catch (Exception e) {

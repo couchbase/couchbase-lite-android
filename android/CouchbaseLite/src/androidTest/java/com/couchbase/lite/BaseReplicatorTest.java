@@ -93,7 +93,7 @@ public class BaseReplicatorTest extends BaseTest {
                 Replicator.Status status = change.getStatus();
                 CouchbaseLiteException error = status.getError();
                 final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
-                Log.e(TAG, "--- Status: %s (%d / %d), lastError = %s",
+                Log.i(TAG, "ReplicatorChangeListener.changed() status: %s (%d / %d), lastError = %s",
                         kActivityNames[status.getActivityLevel().getValue()],
                         status.getProgress().getCompleted(), status.getProgress().getTotal(),
                         error);
@@ -103,7 +103,7 @@ public class BaseReplicatorTest extends BaseTest {
                         if (code != 0) {
                             assertEquals(code, error.getCode());
                             if (domain != null)
-                                assertEquals(domain, error.getDomainString());
+                                assertEquals(domain, error.getDomain());
                         } else {
                             assertNull(error);
                         }
@@ -112,7 +112,7 @@ public class BaseReplicatorTest extends BaseTest {
                         if (code != 0) {
                             assertNotNull(error);
                             assertEquals(code, error.getCode());
-                            assertEquals(domain, error.getDomainString());
+                            assertEquals(domain, error.getDomain());
                             latch.countDown();
                         } else {
                             // TBD
@@ -124,7 +124,7 @@ public class BaseReplicatorTest extends BaseTest {
                             assertNotNull(error);
                             assertEquals(code, error.getCode());
                             if (domain != null)
-                                assertEquals(domain, error.getDomainString());
+                                assertEquals(domain, error.getDomain());
                         } else {
                             if (!ignoreErrorAtStopped)
                                 assertNull(error);
@@ -149,7 +149,7 @@ public class BaseReplicatorTest extends BaseTest {
                 Replicator.Status status = change.getStatus();
                 CouchbaseLiteException error = status.getError();
                 final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
-                Log.e(TAG, "--- stopContinuousReplicator() -> Status: %s (%d / %d), lastError = %s",
+                Log.i(TAG, "--- ReplicatorChangeListener.changed() -> status: %s (%d / %d), lastError = %s",
                         kActivityNames[status.getActivityLevel().getValue()],
                         status.getProgress().getCompleted(), status.getProgress().getTotal(),
                         error);

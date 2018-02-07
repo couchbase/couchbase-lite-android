@@ -386,7 +386,7 @@ public final class Blob implements FLEncodable {
                     store.free();
             }
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertRuntimeException(e);
+            throw CBLStatus.convertRuntimeException(e);
         } catch (IOException ioe) {
             throw new CouchbaseLiteRuntimeException(ioe);
         } finally {
@@ -462,7 +462,7 @@ public final class Blob implements FLEncodable {
                 this.hasBytesAvailable = true;
                 this.closed = false;
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertRuntimeException(e);
+                throw CBLStatus.convertRuntimeException(e);
             }
         }
 

@@ -30,8 +30,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotOpen;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -503,12 +501,12 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
-                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                    if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (CouchbaseLiteRuntimeException re) {
-                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
@@ -550,12 +548,12 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
-                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                    if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (CouchbaseLiteRuntimeException re) {
-                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
@@ -597,12 +595,12 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
-                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                    if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (CouchbaseLiteRuntimeException re) {
-                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
@@ -646,12 +644,12 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
-                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                    if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (CouchbaseLiteRuntimeException re) {
-                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }

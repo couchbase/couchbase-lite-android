@@ -44,13 +44,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-public class BaseTest implements C4Constants {
+public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     public static final String TAG = "Test";
 
     protected final static String kDatabaseName = "testdb";
@@ -73,11 +72,8 @@ public class BaseTest implements C4Constants {
 
     @Before
     public void setUp() throws Exception {
-
         Database.setLogLevel(Database.LogDomain.ALL, Database.LogLevel.INFO);
         Log.enableLogging(TAG, Log.INFO); // NOTE: Without loading Database, this fails.
-
-        Log.i(TAG, "setUp() - BEGIN");
 
         executor = Executors.newSingleThreadExecutor();
 
@@ -97,14 +93,10 @@ public class BaseTest implements C4Constants {
         FileUtils.cleanDirectory(dir);
 
         openDB();
-
-        Log.i(TAG, "setUp() - END");
     }
 
     @After
     public void tearDown() throws Exception {
-        Log.i(TAG, "tearDown() - BEGIN");
-
         closeDB();
 
         // database exist, delete it
@@ -115,8 +107,6 @@ public class BaseTest implements C4Constants {
 
         ExecutorUtils.shutdownAndAwaitTermination(executor, 60);
         executor = null;
-
-        Log.i(TAG, "tearDown() - END");
     }
 
     protected void deleteDatabase(String dbName) throws CouchbaseLiteException {
@@ -129,7 +119,7 @@ public class BaseTest implements C4Constants {
                     Database.delete(dbName, getDir());
                     break;
                 } catch (CouchbaseLiteException ex) {
-                    if (ex.getCode() == kC4ErrorBusy) {
+                    if (ex.getCode() == CBLErrorBusy) {
                         try {
                             Thread.sleep(500);
                         } catch (Exception e) {
@@ -151,20 +141,16 @@ public class BaseTest implements C4Constants {
     }
 
     protected void openDB() throws CouchbaseLiteException {
-        Log.i(TAG, "openDB() - BEGIN");
         assertNull(db);
         db = open(kDatabaseName);
         assertNotNull(db);
-        Log.i(TAG, "openDB() - END");
     }
 
     protected void closeDB() throws CouchbaseLiteException {
-        Log.i(TAG, "closeDB() - BEGIN");
         if (db != null) {
             db.close();
             db = null;
         }
-        Log.i(TAG, "closeDB() - END");
     }
 
     protected void reopenDB() throws CouchbaseLiteException {

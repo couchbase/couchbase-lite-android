@@ -42,4 +42,12 @@ public final class ReplicatorChange {
     public Replicator.Status getStatus() {
         return status;
     }
+
+    @Override
+    public String toString() {
+        return "ReplicatorChange{" +
+                "replicator=" + replicator +
+                ", status=" + status +
+                '}';
+    }
 }

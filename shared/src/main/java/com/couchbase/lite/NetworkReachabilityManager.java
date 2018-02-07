@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,19 +29,17 @@ import java.util.Set;
  */
 abstract class NetworkReachabilityManager {
 
-    private Object lock = new Object();
-
-    private Set<NetworkReachabilityListener> listeners = new HashSet<>();
+    private Set<NetworkReachabilityListener> listeners;
 
     NetworkReachabilityManager() {
-
+        listeners = Collections.synchronizedSet(new HashSet<NetworkReachabilityListener>());
     }
 
     /**
      * Add Network Reachability Listener
      */
     void addNetworkReachabilityListener(NetworkReachabilityListener listener) {
-        synchronized (lock) {
+        synchronized (listeners) {
             listeners.add(listener);
             if (listeners.size() == 1)
                 startListening();
@@ -51,7 +50,7 @@ abstract class NetworkReachabilityManager {
      * Remove Network Reachability Listener
      */
     void removeNetworkReachabilityListener(NetworkReachabilityListener listener) {
-        synchronized (lock) {
+        synchronized (listeners) {
             listeners.remove(listener);
             if (listeners.size() == 0)
                 stopListening();
@@ -62,8 +61,10 @@ abstract class NetworkReachabilityManager {
      * Notify listeners that the network is now reachable
      */
     void notifyListenersNetworkReachable() {
-        synchronized (lock) {
-            for (NetworkReachabilityListener listener : listeners)
+        // NOTE: synchronized(listener) causes deadlock with listeners and Replicator.lock.
+        Set<NetworkReachabilityListener> copy = new HashSet<>(listeners);
+        for (NetworkReachabilityListener listener : copy) {
+            if (listener != null)
                 listener.networkReachable();
         }
     }
@@ -72,8 +73,10 @@ abstract class NetworkReachabilityManager {
      * Notify listeners that the network is now unreachable
      */
     void notifyListenersNetworkUneachable() {
-        synchronized (lock) {
-            for (NetworkReachabilityListener listener : listeners)
+        // NOTE: synchronized(listener) causes deadlock with listeners and Replicator.lock.
+        Set<NetworkReachabilityListener> copy = new HashSet<>(listeners);
+        for (NetworkReachabilityListener listener : copy) {
+            if (listener != null)
                 listener.networkUnreachable();
         }
     }
