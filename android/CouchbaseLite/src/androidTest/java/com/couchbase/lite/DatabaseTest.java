@@ -186,7 +186,7 @@ public class DatabaseTest extends BaseTest {
             assertEquals(db.getConfig().getConflictResolver(), config.getConflictResolver());
             assertEquals(db.getConfig().getEncryptionKey(), config.getEncryptionKey());
         } finally {
-            db.close();
+            db.delete();
         }
     }
 
@@ -201,7 +201,7 @@ public class DatabaseTest extends BaseTest {
             assertTrue(db.getConfig() != config);
             assertTrue(db.getConfig().getConflictResolver() != config.getConflictResolver());
         } finally {
-            db.close();
+            db.delete();
         }
     }
 
@@ -214,7 +214,7 @@ public class DatabaseTest extends BaseTest {
             String expectedPath = context.getFilesDir().getAbsolutePath();
             assertTrue(db.getPath().getAbsolutePath().contains(expectedPath));
         } finally {
-            db.close();
+            db.delete();
         }
     }
 
@@ -1054,21 +1054,25 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDeleteWithDefaultDirDB() throws CouchbaseLiteException {
         String dbName = "db";
-        Database database = open(dbName);
-        File path = database.getPath();
-        assertNotNull(path);
-        assertTrue(path.exists());
-        // close db before delete
-        database.close();
-
-        // Java/Android does not allow null as directory parameter
         try {
-            Database.delete(dbName, null);
-            fail();
-        } catch (IllegalArgumentException ex) {
-            // ok
+            Database database = open(dbName);
+            File path = database.getPath();
+            assertNotNull(path);
+            assertTrue(path.exists());
+            // close db before delete
+            database.close();
+
+            // Java/Android does not allow null as directory parameter
+            try {
+                Database.delete(dbName, null);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                // ok
+            }
+            assertTrue(path.exists());
+        } finally {
+            Database.delete(dbName, getDir());
         }
-        assertTrue(path.exists());
     }
 
     @Test
@@ -1092,7 +1096,7 @@ public class DatabaseTest extends BaseTest {
                 ;
             }
         } finally {
-            db.close();
+            db.delete();
         }
     }
 

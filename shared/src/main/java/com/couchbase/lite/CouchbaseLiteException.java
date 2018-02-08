@@ -142,7 +142,7 @@ public final class CouchbaseLiteException extends Exception implements CBLError.
         return "CouchbaseLiteException{" +
                 "domain='" + domain + '\'' +
                 ", code=" + code +
-                ", info=" + info +
+                ", msg=" + super.getMessage() +
                 '}';
     }
 }

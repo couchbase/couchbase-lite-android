@@ -70,6 +70,28 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
         this.dir = dir;
     }
 
+    // https://stackoverflow.com/questions/2799097/how-can-i-detect-when-an-android-application-is-running-in-the-emulator?noredirect=1&lq=1
+    private static String getSystemProperty(String name) throws Exception {
+        Class systemPropertyClazz = Class.forName("android.os.SystemProperties");
+        return (String) systemPropertyClazz.getMethod("get", new Class[]{String.class}).invoke(systemPropertyClazz, new Object[]{name});
+    }
+
+    protected static boolean isEmulator() {
+        try {
+            boolean goldfish = getSystemProperty("ro.hardware").contains("goldfish");
+            boolean emu = getSystemProperty("ro.kernel.qemu").length() > 0;
+            boolean sdk = getSystemProperty("ro.product.model").equals("sdk");
+            return goldfish || emu || sdk;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    protected static boolean isARM() {
+        String arch = System.getProperty("os.arch").toLowerCase();
+        return arch.indexOf("arm") != -1;
+    }
+
     @Before
     public void setUp() throws Exception {
         Database.setLogLevel(Database.LogDomain.ALL, Database.LogLevel.INFO);
