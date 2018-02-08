@@ -111,7 +111,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public Number getNumber(int index) {
         check(index);
-        return CBLConverter.getNumber(fleeceValueToObject(index));
+        return CBLConverter.asNumber(fleeceValueToObject(index));
     }
 
     /**

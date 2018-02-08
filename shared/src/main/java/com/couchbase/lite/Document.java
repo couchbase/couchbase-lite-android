@@ -435,7 +435,9 @@ public class Document implements DictionaryInterface, Iterable<String> {
     void updateDictionary() {
         if (_data != null) {
             _root = new MRoot(new DocContext(_database), _data.toFLValue(), isMutable());
-            _dict = (Dictionary) _root.asNative();
+            synchronized (_database.getLock()) {
+                _dict = (Dictionary) _root.asNative();
+            }
         } else {
             _root = null;
             _dict = isMutable() ? new MutableDictionary() : new Dictionary();

@@ -75,10 +75,12 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableDictionary setData(Map<String, Object> data) {
-        _dict.clear();
-        for (Map.Entry<String, Object> entry : data.entrySet())
-            _dict.set(entry.getKey(), new MValue(Fleece.toCBLObject(entry.getValue())));
-        return this;
+        synchronized (_sharedLock) {
+            _dict.clear();
+            for (Map.Entry<String, Object> entry : data.entrySet())
+                _dict.set(entry.getKey(), new MValue(Fleece.toCBLObject(entry.getValue())));
+            return this;
+        }
     }
 
     /**
@@ -92,11 +94,13 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableDictionary setValue(String key, Object value) {
-        MValue oldValue = _dict.get(key);
-        value = Fleece.toCBLObject(value);
-        if (Fleece.valueWouldChange(value, oldValue, _dict))
-            _dict.set(key, new MValue(value));
-        return this;
+        synchronized (_sharedLock) {
+            MValue oldValue = _dict.get(key);
+            value = Fleece.toCBLObject(value);
+            if (Fleece.valueWouldChange(value, oldValue, _dict))
+                _dict.set(key, new MValue(value));
+            return this;
+        }
     }
 
     /**
@@ -239,8 +243,10 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableDictionary remove(String key) {
-        _dict.remove(key);
-        return this;
+        synchronized (_sharedLock) {
+            _dict.remove(key);
+            return this;
+        }
     }
 
     /**
@@ -252,8 +258,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableArray getArray(String key) {
-        Object obj = _get(_dict, key).asNative(_dict);
-        return obj instanceof MutableArray ? (MutableArray) obj : null;
+        return (MutableArray) super.getArray(key);
     }
 
     /**
@@ -265,13 +270,14 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableDictionary getDictionary(String key) {
-        Object obj = _get(_dict, key).asNative(_dict);
-        return obj instanceof MutableDictionary ? (MutableDictionary) obj : null;
+        return (MutableDictionary) super.getDictionary(key);
     }
 
 
     protected boolean isChanged() {
-        return _dict.isMutated();
+        synchronized (_sharedLock) {
+            return _dict.isMutated();
+        }
     }
 
     @Override

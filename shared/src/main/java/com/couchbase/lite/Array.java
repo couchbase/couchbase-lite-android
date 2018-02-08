@@ -23,6 +23,7 @@ import com.couchbase.litecore.fleece.FLEncodable;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.MArray;
 import com.couchbase.litecore.fleece.MCollection;
+import com.couchbase.litecore.fleece.MContext;
 import com.couchbase.litecore.fleece.MValue;
 
 import java.util.ArrayList;
@@ -41,23 +42,28 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
 
     MArray _array;
 
+    protected Object _sharedLock;
+
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     Array() {
         _array = new MArray();
+        setupSharedLock();
     }
 
     Array(MValue mv, MCollection parent) {
-        this();
+        _array = new MArray();
         _array.initInSlot(mv, parent);
+        setupSharedLock();
     }
 
     // to crete mutable copy
     Array(MArray mArray, boolean isMutable) {
-        this();
+        _array = new MArray();
         _array.initAsCopyOf(mArray, isMutable);
+        setupSharedLock();
     }
 
     //---------------------------------------------
@@ -71,7 +77,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public int count() {
-        return (int) _array.count();
+        synchronized (_sharedLock) {
+            return (int) _array.count();
+        }
     }
 
     /**
@@ -84,7 +92,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Object getValue(int index) {
-        return _get(_array, index).asNative(_array);
+        synchronized (_sharedLock) {
+            return _get(_array, index).asNative(_array);
+        }
     }
 
     /**
@@ -95,8 +105,10 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public String getString(int index) {
-        Object obj = _get(_array, index).asNative(_array);
-        return obj instanceof String ? (String) obj : null;
+        synchronized (_sharedLock) {
+            Object obj = _get(_array, index).asNative(_array);
+            return obj instanceof String ? (String) obj : null;
+        }
     }
 
     /**
@@ -107,7 +119,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Number getNumber(int index) {
-        return CBLConverter.getNumber(_get(_array, index).asNative(_array));
+        synchronized (_sharedLock) {
+            return CBLConverter.asNumber(_get(_array, index).asNative(_array));
+        }
     }
 
     /**
@@ -120,7 +134,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public int getInt(int index) {
-        return CBLConverter.asInteger(_get(_array, index), _array);
+        synchronized (_sharedLock) {
+            return CBLConverter.asInteger(_get(_array, index), _array);
+        }
     }
 
     /**
@@ -133,7 +149,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public long getLong(int index) {
-        return CBLConverter.asLong(_get(_array, index), _array);
+        synchronized (_sharedLock) {
+            return CBLConverter.asLong(_get(_array, index), _array);
+        }
     }
 
     /**
@@ -146,7 +164,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public float getFloat(int index) {
-        return CBLConverter.asFloat(_get(_array, index), _array);
+        synchronized (_sharedLock) {
+            return CBLConverter.asFloat(_get(_array, index), _array);
+        }
     }
 
     /**
@@ -159,7 +179,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public double getDouble(int index) {
-        return CBLConverter.asDouble(_get(_array, index), _array);
+        synchronized (_sharedLock) {
+            return CBLConverter.asDouble(_get(_array, index), _array);
+        }
     }
 
     /**
@@ -170,11 +192,11 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public boolean getBoolean(int index) {
-        Object value = _get(_array, index).asNative(_array);
-        if (value == null) return false;
-        else if (value instanceof Boolean) return ((Boolean) value).booleanValue();
-        else if (value instanceof Number) return ((Number) value).intValue() != 0;
-        else return true;
+        synchronized (_sharedLock) {
+            Object value = _get(_array, index).asNative(_array);
+            return CBLConverter.asBoolean(value);
+        }
+
     }
 
     /**
@@ -186,7 +208,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Blob getBlob(int index) {
-        return (Blob) _get(_array, index).asNative(_array);
+        synchronized (_sharedLock) {
+            return (Blob) _get(_array, index).asNative(_array);
+        }
     }
 
     /**
@@ -213,8 +237,10 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Array getArray(int index) {
-        Object obj = _get(_array, index).asNative(_array);
-        return obj instanceof Array ? (Array) obj : null;
+        synchronized (_sharedLock) {
+            Object obj = _get(_array, index).asNative(_array);
+            return obj instanceof Array ? (Array) obj : null;
+        }
     }
 
     /**
@@ -225,8 +251,10 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public Dictionary getDictionary(int index) {
-        Object obj = _get(_array, index).asNative(_array);
-        return obj instanceof Dictionary ? (Dictionary) obj : null;
+        synchronized (_sharedLock) {
+            Object obj = _get(_array, index).asNative(_array);
+            return obj instanceof Dictionary ? (Dictionary) obj : null;
+        }
     }
 
     /**
@@ -237,11 +265,13 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public List<Object> toList() {
-        int count = (int) _array.count();
-        List<Object> result = new ArrayList<>(count);
-        for (int index = 0; index < count; index++)
-            result.add(Fleece.toObject(_get(_array, index).asNative(_array)));
-        return result;
+        synchronized (_sharedLock) {
+            int count = (int) _array.count();
+            List<Object> result = new ArrayList<>(count);
+            for (int index = 0; index < count; index++)
+                result.add(Fleece.toObject(_get(_array, index).asNative(_array)));
+            return result;
+        }
     }
 
     /**
@@ -250,7 +280,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      * @return the MutableArray instance
      */
     public MutableArray toMutable() {
-        return new MutableArray(_array, true);
+        synchronized (_sharedLock) {
+            return new MutableArray(_array, true);
+        }
     }
 
     //-------------------------------------------------------------------------
@@ -336,5 +368,13 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         public Object next() {
             return getValue(index++);
         }
+    }
+
+    private void setupSharedLock() {
+        MContext context = _array.getContext();
+        if (context != null && context != MContext.NULL)
+            _sharedLock = ((DocContext)context).getDatabase().getLock();
+        else
+            _sharedLock = new Object();
     }
 }

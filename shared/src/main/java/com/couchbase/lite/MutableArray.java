@@ -77,10 +77,12 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray setData(List<Object> data) {
-        _array.clear();
-        for (Object obj : data)
-            _array.append(Fleece.toCBLObject(obj));
-        return this;
+        synchronized (_sharedLock) {
+            _array.clear();
+            for (Object obj : data)
+                _array.append(Fleece.toCBLObject(obj));
+            return this;
+        }
     }
 
     /**
@@ -92,10 +94,12 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray setValue(int index, Object value) {
-        if (Fleece.valueWouldChange(value, _array.get(index), _array))
-            if (!_array.set(index, Fleece.toCBLObject(value)))
-                throwRangeException(index);
-        return this;
+        synchronized (_sharedLock) {
+            if (Fleece.valueWouldChange(value, _array.get(index), _array))
+                if (!_array.set(index, Fleece.toCBLObject(value)))
+                    throwRangeException(index);
+            return this;
+        }
     }
 
     /**
@@ -238,8 +242,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray addValue(Object value) {
-        _array.append(Fleece.toCBLObject(value));
-        return this;
+        synchronized (_sharedLock) {
+            _array.append(Fleece.toCBLObject(value));
+            return this;
+        }
     }
 
     /**
@@ -372,9 +378,11 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray insertValue(int index, Object value) {
-        if (!_array.insert(index, Fleece.toCBLObject(value)))
-            throwRangeException(index);
-        return this;
+        synchronized (_sharedLock) {
+            if (!_array.insert(index, Fleece.toCBLObject(value)))
+                throwRangeException(index);
+            return this;
+        }
     }
 
     /**
@@ -517,9 +525,11 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @Override
     public MutableArray remove(int index) {
-        if (!_array.remove(index))
-            throwRangeException(index);
-        return this;
+        synchronized (_sharedLock) {
+            if (!_array.remove(index))
+                throwRangeException(index);
+            return this;
+        }
     }
 
     /**
