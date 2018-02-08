@@ -93,7 +93,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
             stopContinuousReplicator(repl);
         } finally {
             anotherDB.close();
-            this.deleteDatabase(strAnotherDB);
+            deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testPushDocContinuous() - END");
     }
@@ -148,7 +148,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
             stopContinuousReplicator(repl);
         } finally {
             anotherDB.close();
-            this.deleteDatabase(strAnotherDB);
+            deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testPullDocContinuous() - END");
     }
@@ -287,37 +287,32 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
     @Test
     public void testReplicatorStopWhenClosed() throws CouchbaseLiteException {
-        try {
-            ReplicatorConfiguration config = makeConfig(true, true, true);
-            Replicator repl = new Replicator(config);
-            repl.start();
-            while (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.IDLE) {
-                Log.w(TAG, String.format(Locale.ENGLISH,
-                        "Replicator status is still %s, waiting for idle...",
-                        repl.getStatus().getActivityLevel()));
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                }
+        ReplicatorConfiguration config = makeConfig(true, true, true);
+        Replicator repl = new Replicator(config);
+        repl.start();
+        while (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.IDLE) {
+            Log.w(TAG, String.format(Locale.ENGLISH,
+                    "Replicator status is still %s, waiting for idle...",
+                    repl.getStatus().getActivityLevel()));
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
             }
-
-            closeDB();
-
-            int attemptCount = 0;
-            while (attemptCount++ < 20 && repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
-                Log.w(TAG, String.format(Locale.ENGLISH,
-                        "Replicator status is still %s, waiting for stopped (remaining attempts %d)...",
-                        repl.getStatus().getActivityLevel(), 10 - attemptCount));
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                }
-            }
-            assertTrue(attemptCount < 20);
-        } finally {
-            // NOTE: DB is closed middle of unit test. So tearDown might not be able to delete it.
-            deleteDatabase(kDatabaseName);
         }
+
+        closeDB();
+
+        int attemptCount = 0;
+        while (attemptCount++ < 20 && repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
+            Log.w(TAG, String.format(Locale.ENGLISH,
+                    "Replicator status is still %s, waiting for stopped (remaining attempts %d)...",
+                    repl.getStatus().getActivityLevel(), 10 - attemptCount));
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+            }
+        }
+        assertTrue(attemptCount < 20);
     }
 
     /**
@@ -336,14 +331,12 @@ public class ReplicatorTest extends BaseReplicatorTest {
                 MutableDocument doc1 = new MutableDocument("doc1");
                 doc1.setValue("name", "Tiger");
                 doc1.setBlob("image.jpg", blob);
-                //save(doc1);
                 anotherDB.save(doc1);
             } finally {
                 is.close();
             }
             assertEquals(1, anotherDB.getCount());
 
-            //ReplicatorConfiguration config = makeConfig(true, false, false);
             ReplicatorConfiguration config = new ReplicatorConfiguration(anotherDB, new DatabaseEndpoint(otherDB));
             config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PUSH);
             run(config, 0, null);
@@ -354,7 +347,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
             assertNotNull(blob1a);
         } finally {
             anotherDB.close();
-            this.deleteDatabase(strAnotherDB);
+            deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testAttachmentPush() - END");
     }
@@ -393,7 +386,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
         } finally {
             anotherDB.close();
-            this.deleteDatabase(strAnotherDB);
+            deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testAttachmentPull() - END");
     }

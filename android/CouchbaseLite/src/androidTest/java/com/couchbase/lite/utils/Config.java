@@ -32,6 +32,10 @@ public class Config extends java.util.Properties {
         }
     }
 
+    public boolean deleteDatabaseInTearDown() {
+        return Boolean.parseBoolean(getProperty("deleteDatabaseInTearDown"));
+    }
+
     public boolean eeFeaturesTestsEnabled() {
         return Boolean.parseBoolean(getProperty("eeFeaturesTestsEnabled"));
     }

@@ -132,6 +132,9 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     }
 
     protected void deleteDatabase(String dbName) throws CouchbaseLiteException {
+        if (config != null && !config.deleteDatabaseInTearDown())
+            return;
+
         // database exist, delete it
         if (Database.exists(dbName, getDir())) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec
