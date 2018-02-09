@@ -43,6 +43,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class QueryTest extends BaseTest {
     private static Expression EXPR_NUMBER1 = Expression.property("number1");
@@ -1900,37 +1901,29 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testLiveQueryStopWhenClosed() throws CouchbaseLiteException, InterruptedException {
+    public void testCloseDatabaseWithActiveLiveQuery() throws CouchbaseLiteException, InterruptedException {
         final CountDownLatch latch1 = new CountDownLatch(1);
-        final CountDownLatch latch2 = new CountDownLatch(1);
+        Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(db));
+        ListenerToken token = query.addChangeListener(executor, new QueryChangeListener() {
+            @Override
+            public void changed(QueryChange change) {
+                latch1.countDown();
+            }
+        });
+        assertTrue(latch1.await(2, TimeUnit.SECONDS));
 
-        Database otherDB = new Database(db.getName(), db.getConfig());
         try {
-            Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
-                    .from(DataSource.database(otherDB));
-            query.addChangeListener(executor, new QueryChangeListener() {
-                @Override
-                public void changed(QueryChange change) {
-                    for (Result r : change.getResults()) {
-                        if (r.getString("id").equals("doc1"))
-                            latch1.countDown();
-                        else if (r.getString("id").equals("doc2"))
-                            latch2.countDown();
-                    }
-                }
-            });
-            MutableDocument doc = new MutableDocument("doc1");
-            doc.setString("value", "string");
-            db.save(doc);
-            assertTrue(latch1.await(2, TimeUnit.SECONDS));
-        } finally {
-            otherDB.close();
+            closeDB();
+            fail();
+        } catch (CouchbaseLiteException e) {
+            Log.e(TAG, "5");
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorBusy, e.getCode());
         }
 
-        MutableDocument doc = new MutableDocument("doc1");
-        doc.setString("value", "string");
-        db.save(doc);
-        assertFalse(latch2.await(2, TimeUnit.SECONDS));
+        query.removeChangeListener(token);
+        closeDB();
     }
 
     @Test

@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ReplicatorTest extends BaseReplicatorTest {
 
@@ -286,7 +287,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testReplicatorStopWhenClosed() throws CouchbaseLiteException {
+    public void testCloseDatabaseWithActiveReplicator() throws CouchbaseLiteException {
         ReplicatorConfiguration config = makeConfig(true, true, true);
         Replicator repl = new Replicator(config);
         repl.start();
@@ -300,7 +301,15 @@ public class ReplicatorTest extends BaseReplicatorTest {
             }
         }
 
-        closeDB();
+        try {
+            closeDB();
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorBusy, e.getCode());
+        } 
+
+        repl.stop();
 
         int attemptCount = 0;
         while (attemptCount++ < 20 && repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
@@ -313,6 +322,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
             }
         }
         assertTrue(attemptCount < 20);
+
+        closeDB();
     }
 
     /**

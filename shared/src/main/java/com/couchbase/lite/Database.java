@@ -448,11 +448,19 @@ public final class Database {
 
             Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
 
-            // stop all active replicators
-            stopAllActiveReplicatoin();
+            if (activeReplications.size() > 0) {
+                throw new CouchbaseLiteException(
+                        "Cannot close the database. Please stop all of the replicators before " +
+                                "closing the database.",
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+            }
 
-            // stop all active live queries
-            stopAllActiveLiveQueries();
+
+            if (activeLiveQueries.size() > 0) {
+                throw new CouchbaseLiteException("Cannot close the database. Please remove all of " +
+                        "the query listeners before closing the database",
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+            }
 
             // close db
             closeC4DB();
@@ -477,11 +485,19 @@ public final class Database {
 
             Log.i(TAG, "Deleting %s at path %s", this, getC4Database().getPath());
 
-            // stop all active replicators
-            stopAllActiveReplicatoin();
+            if (activeReplications.size() > 0) {
+                throw new CouchbaseLiteException(
+                        "Cannot delete the database. Please stop all of the replicators before " +
+                                "deleting the database.",
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+            }
 
-            // stop all active live queries
-            stopAllActiveLiveQueries();
+
+            if (activeLiveQueries.size() > 0) {
+                throw new CouchbaseLiteException("Cannot delete the database. Please remove all of " +
+                        "the query listeners before deleting the database",
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+            }
 
             // delete db
             deleteC4DB();
@@ -1278,26 +1294,6 @@ public final class Database {
         }
         if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
             ExecutorUtils.shutdownAndAwaitTermination(queryExecutor, 60);
-        }
-    }
-
-    private void stopAllActiveReplicatoin() {
-        // stop replicator
-        synchronized (activeReplications) {
-            for (Replicator repl : activeReplications)
-                repl.stop();
-        }
-
-        // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1543
-        // NOTE: Need to wait for STOPPED state?
-    }
-
-    private void stopAllActiveLiveQueries() {
-        // stop live query
-        synchronized (activeLiveQueries) {
-            for (LiveQuery liveQuery : activeLiveQueries)
-                liveQuery.stop(false);
-            activeLiveQueries.clear();
         }
     }
 }
