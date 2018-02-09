@@ -65,11 +65,10 @@ public class DocumentAPITest extends BaseTest {
     @Test
     public void testInitializers() {
         // --- code example ---
-        Map<String, Object> dict = new HashMap<>();
-        dict.put("type", "task");
-        dict.put("owner", "todo");
-        dict.put("createdAt", new Date());
-        MutableDocument newTask = new MutableDocument(dict);
+        MutableDocument newTask = new MutableDocument();
+        newTask.setString("type", "task");
+        newTask.setString("owner", "todo");
+        newTask.setDate("createdAt", new Date());
         try {
             database.save(newTask);
         } catch (CouchbaseLiteException e) {
@@ -81,12 +80,12 @@ public class DocumentAPITest extends BaseTest {
     // ### Mutability
     @Test
     public void testMutability() {
-        MutableDocument newTask = new MutableDocument();
-
         // --- code example ---
-        newTask.setString("name", "apples");
+        Document document = database.getDocument("xyz");
+        MutableDocument mutableDocument = document.toMutable();
+        mutableDocument.setString("name", "apples");
         try {
-            database.save(newTask);
+            database.save(mutableDocument);
         } catch (CouchbaseLiteException e) {
             Log.e(TAG, e.toString());
         }
