@@ -1,3 +1,20 @@
+//
+// MutableDictionary.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.litecore.fleece.MCollection;
@@ -58,10 +75,12 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableDictionary setData(Map<String, Object> data) {
-        _dict.clear();
-        for (Map.Entry<String, Object> entry : data.entrySet())
-            _dict.set(entry.getKey(), new MValue(Fleece.toCBLObject(entry.getValue())));
-        return this;
+        synchronized (_sharedLock) {
+            _dict.clear();
+            for (Map.Entry<String, Object> entry : data.entrySet())
+                _dict.set(entry.getKey(), new MValue(Fleece.toCBLObject(entry.getValue())));
+            return this;
+        }
     }
 
     /**
@@ -75,11 +94,13 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableDictionary setValue(String key, Object value) {
-        MValue oldValue = _dict.get(key);
-        value = Fleece.toCBLObject(value);
-        if (Fleece.valueWouldChange(value, oldValue, _dict))
-            _dict.set(key, new MValue(value));
-        return this;
+        synchronized (_sharedLock) {
+            MValue oldValue = _dict.get(key);
+            value = Fleece.toCBLObject(value);
+            if (Fleece.valueWouldChange(value, oldValue, _dict))
+                _dict.set(key, new MValue(value));
+            return this;
+        }
     }
 
     /**
@@ -222,8 +243,10 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableDictionary remove(String key) {
-        _dict.remove(key);
-        return this;
+        synchronized (_sharedLock) {
+            _dict.remove(key);
+            return this;
+        }
     }
 
     /**
@@ -235,8 +258,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableArray getArray(String key) {
-        Object obj = _get(_dict, key).asNative(_dict);
-        return obj instanceof MutableArray ? (MutableArray) obj : null;
+        return (MutableArray) super.getArray(key);
     }
 
     /**
@@ -248,13 +270,14 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @Override
     public MutableDictionary getDictionary(String key) {
-        Object obj = _get(_dict, key).asNative(_dict);
-        return obj instanceof MutableDictionary ? (MutableDictionary) obj : null;
+        return (MutableDictionary) super.getDictionary(key);
     }
 
 
     protected boolean isChanged() {
-        return _dict.isMutated();
+        synchronized (_sharedLock) {
+            return _dict.isMutated();
+        }
     }
 
     @Override

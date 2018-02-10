@@ -1,4 +1,20 @@
-
+//
+// LoadTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
@@ -75,12 +91,14 @@ public class LoadTest extends BaseTest {
             assertNotNull(address);
             String street = String.format(Locale.ENGLISH, "%d street.", i);
             address.setValue("street", street);
+            mDoc.setDictionary("address", address);
 
             MutableArray phones = mDoc.getArray("phones");
             assertNotNull(phones);
             assertEquals(2, phones.count());
             String phone = String.format(Locale.ENGLISH, "650-000-%04d", i);
             phones.setValue(0, phone);
+            mDoc.setArray("phones", phones);
 
             mDoc.setValue("updated", new Date());
 
@@ -118,6 +136,15 @@ public class LoadTest extends BaseTest {
         assertEquals(nRows, count.intValue());
     }
 
+    private int numIteration() {
+        if (isEmulator() /*&& isARM()*/)
+            // arm emulator
+            return 1000;
+        else
+            // real device or x86 emulator
+            return 2000;
+    }
+
     @Test
     public void testCreate() throws InterruptedException, CouchbaseLiteException {
         if (!config.loadTestsEnabled())
@@ -125,7 +152,7 @@ public class LoadTest extends BaseTest {
 
         long start = System.currentTimeMillis();
 
-        final int n = 2000;
+        final int n = numIteration();
         final String tag = "Create";
         createDocumentNSave(tag, n);
         verifyByTagName(tag, n);
@@ -141,7 +168,7 @@ public class LoadTest extends BaseTest {
 
         long start = System.currentTimeMillis();
 
-        final int n = 2000;
+        final int n = numIteration();
         final String docID = "doc1";
         String tag = "Create";
 
@@ -164,6 +191,11 @@ public class LoadTest extends BaseTest {
         assertEquals(tag, doc.getString("tag"));
         assertEquals(n, doc.getInt("update"));
 
+        String street = String.format(Locale.ENGLISH, "%d street.", n);
+        String phone = String.format(Locale.ENGLISH, "650-000-%04d", n);
+        assertEquals(street, doc.getDictionary("address").getString("street"));
+        assertEquals(phone, doc.getArray("phones").getString(0));
+
         logPerformanceStats("testUpdate()", (System.currentTimeMillis() - start));
     }
 
@@ -174,7 +206,7 @@ public class LoadTest extends BaseTest {
 
         long start = System.currentTimeMillis();
 
-        final int n = 2000;
+        final int n = numIteration();
         final String docID = "doc1";
         final String tag = "Read";
 
@@ -199,7 +231,7 @@ public class LoadTest extends BaseTest {
 
         long start = System.currentTimeMillis();
 
-        final int n = 2000;
+        final int n = numIteration();
         final String tag = "Delete";
 
         // create & delete doc n times
@@ -226,7 +258,7 @@ public class LoadTest extends BaseTest {
         long start = System.currentTimeMillis();
 
         // final int n = 20000; // num of docs;
-        final int n = 2000; // NOTE: changed for unit test
+        final int n = numIteration(); // NOTE: changed for unit test
         final int m = 100; // num of fields
 
         // Without Batch

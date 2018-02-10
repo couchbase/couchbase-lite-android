@@ -1,8 +1,30 @@
+//
+// ReplicatorWithSyncGatewayTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
+import android.support.test.InstrumentationRegistry;
+
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.utils.Config;
 
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -19,6 +41,23 @@ import okhttp3.Response;
  */
 public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+    @Before
+    public void setUp() throws Exception {
+        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        super.setUp();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        super.tearDown();
+    }
 
     private boolean remote_PUT_db(String db) throws IOException {
         OkHttpClient client = new OkHttpClient();

@@ -1,3 +1,20 @@
+//
+// CBLWebSocket.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite.internal.replicator;
 
 import com.couchbase.lite.internal.support.Log;
@@ -58,7 +75,7 @@ public final class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
-    private static final String TAG = Log.WebSocket;
+    private static final String TAG = Log.WEB_SOCKET;
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -92,7 +109,7 @@ public final class CBLWebSocket extends C4Socket {
     class CBLWebSocketListener extends WebSocketListener {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
-            Log.e(TAG, "WebSocketListener.onOpen() response -> " + response);
+            Log.v(TAG, "WebSocketListener.onOpen() response -> " + response);
             CBLWebSocket.this.webSocket = webSocket;
             receivedHTTPResponse(response);
             opened(handle);
@@ -100,25 +117,25 @@ public final class CBLWebSocket extends C4Socket {
 
         @Override
         public void onMessage(WebSocket webSocket, String text) {
-            Log.e(TAG, "WebSocketListener.onMessage() text -> " + text);
+            Log.v(TAG, "WebSocketListener.onMessage() text -> " + text);
             received(handle, text.getBytes());
         }
 
         @Override
         public void onMessage(WebSocket webSocket, ByteString bytes) {
-            Log.e(TAG, "WebSocketListener.onMessage() bytes -> " + bytes.hex());
+            Log.v(TAG, "WebSocketListener.onMessage() bytes -> " + bytes.hex());
             received(handle, bytes.toByteArray());
         }
 
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
-            Log.e(TAG, "WebSocketListener.onClosing() code -> " + code + ", reason -> " + reason);
+            Log.v(TAG, "WebSocketListener.onClosing() code -> " + code + ", reason -> " + reason);
             closeRequested(handle, code, reason);
         }
 
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
-            Log.e(TAG, "WebSocketListener.onClosed() code -> " + code + ", reason -> " + reason);
+            Log.v(TAG, "WebSocketListener.onClosed() code -> " + code + ", reason -> " + reason);
             closed(handle, WebSocketDomain, code);
         }
 
@@ -134,7 +151,7 @@ public final class CBLWebSocket extends C4Socket {
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-            Log.e(TAG, "WebSocketListener.onFailure() response -> " + response, t);
+            Log.w(TAG, "WebSocketListener.onFailure() response -> " + response, t);
 
             // Invoked when a web socket has been closed due to an error reading from or writing to the
             // network. Both outgoing and incoming messages may have been lost. No further calls to this
@@ -196,7 +213,7 @@ public final class CBLWebSocket extends C4Socket {
 
     @Override
     protected void start() {
-        Log.i(TAG, String.format(Locale.ENGLISH, "CBLWebSocket connecting to %s...", uri));
+        Log.v(TAG, String.format(Locale.ENGLISH, "CBLWebSocket connecting to %s...", uri));
         httpClient.newWebSocket(newRequest(), wsListener);
     }
 
@@ -219,12 +236,12 @@ public final class CBLWebSocket extends C4Socket {
     @Override
     protected void requestClose(int status, String message) {
         if (webSocket == null) {
-            Log.e(TAG, "CBLWebSocket.requestClose() webSocket is not initialized.");
+            Log.w(TAG, "CBLWebSocket.requestClose() webSocket is not initialized.");
             return;
         }
 
         if (!webSocket.close(status, message)) {
-            Log.e(TAG, "CBLWebSocket.requestClose() Failed to attempt to initiate a graceful shutdown of this web socket.");
+            Log.w(TAG, "CBLWebSocket.requestClose() Failed to attempt to initiate a graceful shutdown of this web socket.");
         }
     }
 
@@ -269,14 +286,14 @@ public final class CBLWebSocket extends C4Socket {
 
                             // http://www.ietf.org/rfc/rfc2617.txt
 
-                            Log.i(TAG, "Authenticating for response: " + response);
+                            Log.v(TAG, "Authenticating for response: " + response);
 
                             // If failed 3 times, give up.
                             if (responseCount(response) >= 3)
                                 return null;
 
                             List<Challenge> challenges = response.challenges();
-                            Log.i(TAG, "Challenges: " + challenges);
+                            Log.v(TAG, "Challenges: " + challenges);
                             if (challenges != null) {
                                 for (Challenge challenge : challenges) {
                                     if (challenge.scheme().equals("Basic")) {
@@ -383,7 +400,7 @@ public final class CBLWebSocket extends C4Socket {
 
     private void receivedHTTPResponse(Response response) {
         int httpStatus = response.code();
-        Log.e(TAG, "receivedHTTPResponse() httpStatus -> " + httpStatus);
+        Log.v(TAG, "receivedHTTPResponse() httpStatus -> " + httpStatus);
 
         // Post the response headers to LiteCore:
         Headers hs = response.headers();

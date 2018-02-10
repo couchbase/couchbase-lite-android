@@ -1,3 +1,20 @@
+//
+// Replicator.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import android.util.Base64;
@@ -124,6 +141,14 @@ public final class Replicator extends NetworkReachabilityListener {
             return total;
         }
 
+        @Override
+        public String toString() {
+            return "Progress{" +
+                    "completed=" + completed +
+                    ", total=" + total +
+                    '}';
+        }
+
         Progress copy() {
             return new Progress(completed, total);
         }
@@ -171,6 +196,15 @@ public final class Replicator extends NetworkReachabilityListener {
             return error;
         }
 
+        @Override
+        public String toString() {
+            return "Status{" +
+                    "activityLevel=" + activityLevel +
+                    ", progress=" + progress +
+                    ", error=" + error +
+                    '}';
+        }
+
         Status copy() {
             return new Status(activityLevel, progress.copy(), error);
         }
@@ -197,19 +231,19 @@ public final class Replicator extends NetworkReachabilityListener {
     // member variables
     //---------------------------------------------
 
+    private Object lock = new Object();
     private ReplicatorConfiguration config;
     private Status status;
-
     private Set<ReplicatorChangeListenerToken> changeListenerTokens;
-    C4Replicator c4repl;
-    C4ReplicatorStatus c4ReplStatus;
-    C4ReplicatorListener c4ReplListener;
-    int retryCount;
-    CouchbaseLiteException lastError;
-    String desc = null;
-    ScheduledExecutorService handler;
-    NetworkReachabilityManager reachabilityManager = null;
-    Map<String, Object> responseHeaders = null; // Do something with these (for auth)
+    private C4Replicator c4repl;
+    private C4ReplicatorStatus c4ReplStatus;
+    private C4ReplicatorListener c4ReplListener;
+    private int retryCount;
+    private CouchbaseLiteException lastError;
+    private String desc = null;
+    private ScheduledExecutorService handler;
+    private NetworkReachabilityManager reachabilityManager = null;
+    private Map<String, Object> responseHeaders = null; // Do something with these (for auth)
 
     //---------------------------------------------
     // Constructors
@@ -240,16 +274,17 @@ public final class Replicator extends NetworkReachabilityListener {
      * and will report its progress throuh the replicator change notification.
      */
     public void start() {
-        if (c4repl != null) {
-            Log.w(TAG, "%s has already started", this);
-            return;
+        synchronized (lock) {
+            if (c4repl != null) {
+                Log.i(TAG, "%s has already started", this);
+                return;
+            }
+
+            Log.i(TAG, "%s: Starting", this);
+            retryCount = 0;
+            _start();
         }
-
-        Log.i(TAG, "%s: Starting", this);
-        retryCount = 0;
-        _start();
     }
-
 
     /**
      * Stops a running replicator. This method returns immediately; when the replicator actually
@@ -257,10 +292,20 @@ public final class Replicator extends NetworkReachabilityListener {
      * and the replicator change notification will be notified accordingly.
      */
     public void stop() {
-        if (c4repl != null)
-            c4repl.stop(); // this is async; status will change when repl actually stops
-        if (reachabilityManager != null)
-            reachabilityManager.removeNetworkReachabilityListener(this);
+        synchronized (lock) {
+            if (c4repl != null)
+                c4repl.stop(); // this is async; status will change when repl actually stops
+
+            if (c4ReplStatus.getActivityLevel() == kC4Offline) {
+                C4ReplicatorStatus c4replStatus = new C4ReplicatorStatus();
+                c4replStatus.setActivityLevel(kC4Stopped);
+                this.c4StatusChanged(c4replStatus);
+            }
+
+            if (reachabilityManager != null)
+                reachabilityManager.removeNetworkReachabilityListener(this);
+
+        }
     }
 
     /**
@@ -291,20 +336,24 @@ public final class Replicator extends NetworkReachabilityListener {
      * @param listener
      */
     public ListenerToken addChangeListener(Executor executor, ReplicatorChangeListener listener) {
-        if (listener == null)
-            throw new IllegalArgumentException();
-        ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
-        changeListenerTokens.add(token);
-        return token;
+        synchronized (lock) {
+            if (listener == null)
+                throw new IllegalArgumentException();
+            ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
+            changeListenerTokens.add(token);
+            return token;
+        }
     }
 
     /**
      * Remove the given ReplicatorChangeListener from the this replicator.
      */
     public void removeChangeListener(ListenerToken token) {
-        if (token == null || !(token instanceof ReplicatorChangeListenerToken))
-            throw new IllegalArgumentException();
-        changeListenerTokens.remove(token);
+        synchronized (lock) {
+            if (token == null || !(token instanceof ReplicatorChangeListenerToken))
+                throw new IllegalArgumentException();
+            changeListenerTokens.remove(token);
+        }
     }
 
     @Override
@@ -319,10 +368,12 @@ public final class Replicator extends NetworkReachabilityListener {
     //---------------------------------------------
     @Override
     void networkReachable() {
-        if (c4repl == null) {
-            Log.e(TAG, "%s: Server may now be reachable; retrying...", this);
-            retryCount = 0;
-            retry();
+        synchronized (lock) {
+            if (c4repl == null) {
+                Log.i(TAG, "%s: Server may now be reachable; retrying...", this);
+                retryCount = 0;
+                retry();
+            }
         }
     }
 
@@ -480,48 +531,51 @@ public final class Replicator extends NetworkReachabilityListener {
     }
 
     private void retry() {
-        if (c4repl != null || this.c4ReplStatus.getActivityLevel() != kC4Offline)
-            return;
-        Log.e(TAG, "%s: Retrying...", this);
-        _start();
+        synchronized (lock) {
+            if (c4repl != null || this.c4ReplStatus.getActivityLevel() != kC4Offline)
+                return;
+            Log.i(TAG, "%s: Retrying...", this);
+            _start();
+        }
     }
 
     private void c4StatusChanged(C4ReplicatorStatus c4Status) {
-        if (responseHeaders == null && c4repl != null) {
-            byte[] h = c4repl.getResponseHeaders();
-            if (h != null)
-                responseHeaders = FLValue.fromData(h).asDict();
-        }
-
-        Log.e(TAG, "statusChanged() c4Status -> " + c4Status);
-        if (c4Status.getActivityLevel() == kC4Stopped) {
-            if (handleError(c4Status.getC4Error())) {
-                // Change c4Status to offline, so my state will reflect that, and proceed:
-                c4Status.setActivityLevel(kC4Offline);
+        synchronized (lock) {
+            if (responseHeaders == null && c4repl != null) {
+                byte[] h = c4repl.getResponseHeaders();
+                if (h != null)
+                    responseHeaders = FLValue.fromData(h).asDict();
             }
-        } else if (c4Status.getActivityLevel() > kC4Connecting) {
-            retryCount = 0;
-            if (reachabilityManager != null)
-                reachabilityManager.removeNetworkReachabilityListener(this);
-        }
 
+            Log.i(TAG, "statusChanged() c4Status -> " + c4Status);
+            if (c4Status.getActivityLevel() == kC4Stopped) {
+                if (handleError(c4Status.getC4Error())) {
+                    // Change c4Status to offline, so my state will reflect that, and proceed:
+                    c4Status.setActivityLevel(kC4Offline);
+                }
+            } else if (c4Status.getActivityLevel() > kC4Connecting) {
+                retryCount = 0;
+                if (reachabilityManager != null)
+                    reachabilityManager.removeNetworkReachabilityListener(this);
+            }
 
-        // Update my properties:
-        updateStateProperties(c4Status);
+            // Update my properties:
+            updateStateProperties(c4Status);
 
-        // Post notification
-        synchronized (changeListenerTokens) {
-            // Replicator.getStatus() creates a copy of Status.
-            ReplicatorChange change = new ReplicatorChange(this, this.getStatus());
-            for (ReplicatorChangeListenerToken token : changeListenerTokens)
-                token.notify(change);
-        }
+            // Post notification
+            synchronized (changeListenerTokens) {
+                // Replicator.getStatus() creates a copy of Status.
+                ReplicatorChange change = new ReplicatorChange(this, this.getStatus());
+                for (ReplicatorChangeListenerToken token : changeListenerTokens)
+                    token.notify(change);
+            }
 
-        // If Stopped:
-        if (c4Status.getActivityLevel() == kC4Stopped) {
-            // Stopped
-            this.clearRepl();
-            config.getDatabase().getActiveReplications().remove(this); // this is likely to dealloc me
+            // If Stopped:
+            if (c4Status.getActivityLevel() == kC4Stopped) {
+                // Stopped
+                this.clearRepl();
+                config.getDatabase().getActiveReplications().remove(this); // this is likely to dealloc me
+            }
         }
     }
 
@@ -567,7 +621,7 @@ public final class Replicator extends NetworkReachabilityListener {
     private void updateStateProperties(C4ReplicatorStatus status) {
         CouchbaseLiteException error = null;
         if (status.getErrorCode() != 0)
-            error = new CouchbaseLiteException(status.getErrorDomain(), status.getErrorCode());
+            error = CBLStatus.convertException(status.getErrorDomain(), status.getErrorCode(), null);
         if (error != this.lastError)
             this.lastError = error;
 
@@ -581,7 +635,7 @@ public final class Replicator extends NetworkReachabilityListener {
                 (int) status.getProgressUnitsTotal());
         this.status = new Status(level, progress, error);
 
-        Log.e(TAG, "%s is %s, progress %d/%d, error: %s",
+        Log.i(TAG, "%s is %s, progress %d/%d, error: %s",
                 this,
                 kC4ReplicatorActivityLevelNames[status.getActivityLevel()],
                 status.getProgressUnitsCompleted(),
@@ -615,11 +669,12 @@ public final class Replicator extends NetworkReachabilityListener {
 
     // - (NSString*) description
     private String description() {
-        return String.format(Locale.ENGLISH, "%s[%s%s%s %s]",
+        return String.format(Locale.ENGLISH, "%s[%s%s%s %s %s]",
                 Replicator.class.getSimpleName(),
                 isPull(config.getReplicatorType()) ? "<" : "",
                 config.isContinuous() ? "*" : "-",
                 isPush(config.getReplicatorType()) ? ">" : "",
+                config.getDatabase(),
                 config.getTarget());
     }
 

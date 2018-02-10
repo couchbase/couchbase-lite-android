@@ -1,3 +1,20 @@
+//
+// Dictionary.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
@@ -5,6 +22,7 @@ import com.couchbase.litecore.fleece.Encoder;
 import com.couchbase.litecore.fleece.FLEncodable;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.MCollection;
+import com.couchbase.litecore.fleece.MContext;
 import com.couchbase.litecore.fleece.MDict;
 import com.couchbase.litecore.fleece.MValue;
 
@@ -25,23 +43,29 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
 
     MDict _dict;
 
+    protected Object _sharedLock;
+
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
     Dictionary() {
         _dict = new MDict();
+        setupSharedLock();
     }
 
     Dictionary(MValue mv, MCollection parent) {
-        this();
+        _dict = new MDict();
         _dict.initInSlot(mv, parent);
+        setupSharedLock();
     }
 
     Dictionary(MDict mDict, boolean isMutable) {
-        this();
+        _dict = new MDict();
         _dict.initAsCopyOf(mDict, isMutable);
+        setupSharedLock();
     }
+
     //-------------------------------------------------------------------------
     // API - public methods
     //-------------------------------------------------------------------------
@@ -57,12 +81,16 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public int count() {
-        return (int) _dict.count();
+        synchronized (_sharedLock) {
+            return (int) _dict.count();
+        }
     }
 
     @Override
     public List<String> getKeys() {
-        return _dict.getKeys();
+        synchronized (_sharedLock) {
+            return _dict.getKeys();
+        }
     }
 
     /**
@@ -84,7 +112,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Object getValue(String key) {
-        return _get(_dict, key).asNative(_dict);
+        synchronized (_sharedLock) {
+            return _get(_dict, key).asNative(_dict);
+        }
     }
 
     /**
@@ -95,8 +125,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public String getString(String key) {
-        Object obj = _get(_dict, key).asNative(_dict);
-        return obj instanceof String ? (String) obj : null;
+        synchronized (_sharedLock) {
+            Object obj = _get(_dict, key).asNative(_dict);
+            return obj instanceof String ? (String) obj : null;
+        }
     }
 
     /**
@@ -107,7 +139,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Number getNumber(String key) {
-        return CBLConverter.getNumber(_get(_dict, key).asNative(_dict));
+        synchronized (_sharedLock) {
+            Object obj = _get(_dict, key).asNative(_dict);
+            return CBLConverter.asNumber(obj);
+        }
     }
 
     /**
@@ -120,7 +155,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public int getInt(String key) {
-        return CBLConverter.asInteger(_get(_dict, key), _dict);
+        synchronized (_sharedLock) {
+            return CBLConverter.asInteger(_get(_dict, key), _dict);
+        }
     }
 
     /**
@@ -133,7 +170,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public long getLong(String key) {
-        return CBLConverter.asLong(_get(_dict, key), _dict);
+        synchronized (_sharedLock) {
+            return CBLConverter.asLong(_get(_dict, key), _dict);
+        }
     }
 
     /**
@@ -146,7 +185,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public float getFloat(String key) {
-        return CBLConverter.asFloat(_get(_dict, key), _dict);
+        synchronized (_sharedLock) {
+            return CBLConverter.asFloat(_get(_dict, key), _dict);
+        }
     }
 
     /**
@@ -159,7 +200,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public double getDouble(String key) {
-        return CBLConverter.asDouble(_get(_dict, key), _dict);
+        synchronized (_sharedLock) {
+            return CBLConverter.asDouble(_get(_dict, key), _dict);
+        }
     }
 
     /**
@@ -171,11 +214,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public boolean getBoolean(String key) {
-        Object value = _get(_dict, key).asNative(_dict);
-        if (value == null) return false;
-        else if (value instanceof Boolean) return ((Boolean) value).booleanValue();
-        else if (value instanceof Number) return ((Number) value).intValue() != 0;
-        else return true;
+        synchronized (_sharedLock) {
+            Object obj = _get(_dict, key).asNative(_dict);
+            return CBLConverter.asBoolean(obj);
+        }
     }
 
     /**
@@ -187,8 +229,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Blob getBlob(String key) {
-        Object obj = _get(_dict, key).asNative(_dict);
-        return obj instanceof Blob ? (Blob) obj : null;
+        synchronized (_sharedLock) {
+            Object obj = _get(_dict, key).asNative(_dict);
+            return obj instanceof Blob ? (Blob) obj : null;
+        }
     }
 
     /**
@@ -216,8 +260,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Array getArray(String key) {
-        Object obj = _get(_dict, key).asNative(_dict);
-        return obj instanceof Array ? (Array) obj : null;
+        synchronized (_sharedLock) {
+            Object obj = _get(_dict, key).asNative(_dict);
+            return obj instanceof Array ? (Array) obj : null;
+        }
     }
 
     /**
@@ -229,8 +275,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Dictionary getDictionary(String key) {
-        Object obj = _get(_dict, key).asNative(_dict);
-        return obj instanceof Dictionary ? (Dictionary) obj : null;
+        synchronized (_sharedLock) {
+            Object obj = _get(_dict, key).asNative(_dict);
+            return obj instanceof Dictionary ? (Dictionary) obj : null;
+        }
     }
 
     /**
@@ -241,11 +289,13 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public Map<String, Object> toMap() {
-        Map<String, Object> result = new HashMap<>();
-        for (String key : _dict) {
-            result.put(key, Fleece.toObject(_get(_dict, key).asNative(_dict)));
+        synchronized (_sharedLock) {
+            Map<String, Object> result = new HashMap<>();
+            for (String key : _dict) {
+                result.put(key, Fleece.toObject(_get(_dict, key).asNative(_dict)));
+            }
+            return result;
         }
-        return result;
     }
 
     /**
@@ -257,7 +307,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @Override
     public boolean contains(String key) {
-        return !_get(_dict, key).isEmpty();
+        synchronized (_sharedLock) {
+            return !_get(_dict, key).isEmpty();
+        }
     }
 
     /**
@@ -266,7 +318,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * @return the MutableDictionary instance
      */
     public MutableDictionary toMutable() {
-        return new MutableDictionary(_dict, true);
+        synchronized (_sharedLock) {
+            return new MutableDictionary(_dict, true);
+        }
     }
 
     //-------------------------------------------------------------------------
@@ -345,6 +399,14 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     //---------------------------------------------
     // private
     //---------------------------------------------
+
+    private void setupSharedLock() {
+        MContext context = _dict.getContext();
+        if (context != null && context != MContext.NULL)
+            _sharedLock = ((DocContext)context).getDatabase().getLock();
+        else
+            _sharedLock = new Object();
+    }
 
     // hashCode for pair of key and value
     private int hashCode(String key, Object value) {

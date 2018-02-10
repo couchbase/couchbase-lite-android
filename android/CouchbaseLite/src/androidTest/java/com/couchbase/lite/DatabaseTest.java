@@ -1,16 +1,20 @@
-/**
- * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
+//
+// DatabaseTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import android.os.Build;
@@ -27,9 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorTransactionNotClosed;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -58,7 +60,7 @@ public class DatabaseTest extends BaseTest {
 
     private Database openDatabase(String dbName, boolean countCheck) throws CouchbaseLiteException {
         DatabaseConfiguration config = new DatabaseConfiguration(this.context);
-        config.setDirectory(dir.getAbsolutePath());
+        config.setDirectory(getDir().getAbsolutePath());
         Database db = new Database(dbName, config);
         assertEquals(dbName, db.getName());
         assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
@@ -184,7 +186,7 @@ public class DatabaseTest extends BaseTest {
             assertEquals(db.getConfig().getConflictResolver(), config.getConflictResolver());
             assertEquals(db.getConfig().getEncryptionKey(), config.getEncryptionKey());
         } finally {
-            db.close();
+            db.delete();
         }
     }
 
@@ -199,7 +201,7 @@ public class DatabaseTest extends BaseTest {
             assertTrue(db.getConfig() != config);
             assertTrue(db.getConfig().getConflictResolver() != config.getConflictResolver());
         } finally {
-            db.close();
+            db.delete();
         }
     }
 
@@ -212,7 +214,7 @@ public class DatabaseTest extends BaseTest {
             String expectedPath = context.getFilesDir().getAbsolutePath();
             assertTrue(db.getPath().getAbsolutePath().contains(expectedPath));
         } finally {
-            db.close();
+            db.delete();
         }
     }
 
@@ -246,7 +248,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testCreateWithSpecialCharacterDBNames() throws CouchbaseLiteException {
-        Database db = openDatabase("`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'");
+        Database db = openDatabase("`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde");
         try {
             assertNotNull(db);
             assertEquals(0, db.getCount());
@@ -456,8 +458,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             otherDB.close();
@@ -483,8 +485,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // delete otherDb
             deleteDatabase(otherDB);
@@ -594,8 +596,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.delete(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             otherDB.close();
@@ -619,8 +621,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.delete(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             deleteDatabase(otherDB);
@@ -733,8 +735,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.purge(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             otherDB.close();
@@ -758,8 +760,8 @@ public class DatabaseTest extends BaseTest {
             otherDB.purge(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.Forbidden, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorInvalidParameter, e.getCode());
         } finally {
             // close otherDb
             deleteDatabase(otherDB);
@@ -915,10 +917,8 @@ public class DatabaseTest extends BaseTest {
                     db.close();
                     fail();
                 } catch (CouchbaseLiteException e) {
-                    assertEquals(LiteCoreDomain, e.getDomain());
-                    // 26 -> kC4ErrorTransactionNotClosed:
-                    //          Function cannot be called while in a transaction
-                    assertEquals(kC4ErrorTransactionNotClosed, e.getCode()); // 26
+                    assertEquals(CBLErrorDomain, e.getDomain());
+                    assertEquals(CBLErrorTransactionNotClosed, e.getCode()); // 26
                 }
             }
         });
@@ -1021,10 +1021,8 @@ public class DatabaseTest extends BaseTest {
                     db.delete();
                     fail();
                 } catch (CouchbaseLiteException e) {
-                    assertEquals(LiteCoreDomain, e.getDomain());
-                    // 26 -> kC4ErrorTransactionNotClosed:
-                    //          Function cannot be called while in a transaction
-                    assertEquals(kC4ErrorTransactionNotClosed, e.getCode()); // 26
+                    assertEquals(CBLErrorDomain, e.getDomain());
+                    assertEquals(CBLErrorTransactionNotClosed, e.getCode()); // 26
                 }
             }
         });
@@ -1041,8 +1039,8 @@ public class DatabaseTest extends BaseTest {
                 db.delete();
                 fail();
             } catch (CouchbaseLiteException e) {
-                assertEquals(LiteCoreDomain, e.getDomain());
-                assertEquals(kC4ErrorBusy, e.getCode()); // 24
+                assertEquals(CBLErrorDomain, e.getDomain());
+                assertEquals(CBLErrorBusy, e.getCode()); // 24
             }
         } finally {
             otherDB.close();
@@ -1056,21 +1054,25 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDeleteWithDefaultDirDB() throws CouchbaseLiteException {
         String dbName = "db";
-        Database database = open(dbName);
-        File path = database.getPath();
-        assertNotNull(path);
-        assertTrue(path.exists());
-        // close db before delete
-        database.close();
-
-        // Java/Android does not allow null as directory parameter
         try {
-            Database.delete(dbName, null);
-            fail();
-        } catch (IllegalArgumentException ex) {
-            // ok
+            Database database = open(dbName);
+            File path = database.getPath();
+            assertNotNull(path);
+            assertTrue(path.exists());
+            // close db before delete
+            database.close();
+
+            // Java/Android does not allow null as directory parameter
+            try {
+                Database.delete(dbName, null);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                // ok
+            }
+            assertTrue(path.exists());
+        } finally {
+            Database.delete(dbName, getDir());
         }
-        assertTrue(path.exists());
     }
 
     @Test
@@ -1094,7 +1096,7 @@ public class DatabaseTest extends BaseTest {
                 ;
             }
         } finally {
-            db.close();
+            db.delete();
         }
     }
 
@@ -1109,7 +1111,7 @@ public class DatabaseTest extends BaseTest {
         // close db before delete
         db.close();
 
-        Database.delete(dbName, dir);
+        Database.delete(dbName, getDir());
         assertFalse(path.exists());
     }
 
@@ -1118,11 +1120,11 @@ public class DatabaseTest extends BaseTest {
         Database db = openDatabase("db");
         try {
             try {
-                Database.delete("db", dir);
+                Database.delete("db", getDir());
                 fail();
             } catch (CouchbaseLiteException e) {
-                assertEquals(LiteCoreDomain, e.getDomain());
-                assertEquals(kC4ErrorBusy, e.getCode()); // 24
+                assertEquals(CBLErrorDomain, e.getDomain());
+                assertEquals(CBLErrorBusy, e.getCode()); // 24
             } finally {
                 ;
             }
@@ -1146,11 +1148,11 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDeleteNonExistingDB() {
         try {
-            Database.delete("notexistdb", dir);
+            Database.delete("notexistdb", getDir());
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(Status.CBLErrorDomain, e.getDomain());
-            assertEquals(Status.NotFound, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorNotFound, e.getCode());
         }
     }
 
@@ -1174,22 +1176,22 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDatabaseExistsWithDir() throws CouchbaseLiteException {
-        assertFalse(Database.exists("db", dir));
+        assertFalse(Database.exists("db", getDir()));
 
         // create db with custom directory
         Database db = openDatabase("db");
         File path = db.getPath();
 
-        assertTrue(Database.exists("db", dir));
+        assertTrue(Database.exists("db", getDir()));
 
         db.close();
 
-        assertTrue(Database.exists("db", dir));
+        assertTrue(Database.exists("db", getDir()));
 
-        Database.delete("db", dir);
+        Database.delete("db", getDir());
         assertFalse(path.exists());
 
-        assertFalse(Database.exists("db", dir));
+        assertFalse(Database.exists("db", getDir()));
     }
 
     @Test
@@ -1204,7 +1206,7 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDatabaseExistsAgainstNonExistDB() {
-        assertFalse(Database.exists("nonexist", dir));
+        assertFalse(Database.exists("nonexist", getDir()));
     }
 
     @Test
@@ -1381,7 +1383,7 @@ public class DatabaseTest extends BaseTest {
         assertEquals(3, db.getIndexes().size());
         assertEquals(Arrays.asList("index1", "index2", "index3"), db.getIndexes());
 
-        Log.e(TAG, "db.getIndexes() -> " + db.getIndexes());
+        Log.i(TAG, "db.getIndexes() -> " + db.getIndexes());
     }
 
     @Test
@@ -1455,7 +1457,7 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDeleteAndOpenDB() throws CouchbaseLiteException {
         DatabaseConfiguration config = new DatabaseConfiguration(this.context);
-        config.setDirectory(dir.toString());
+        config.setDirectory(getDir().toString());
 
         // open "application" database
         final Database database1 = new Database("application", config);

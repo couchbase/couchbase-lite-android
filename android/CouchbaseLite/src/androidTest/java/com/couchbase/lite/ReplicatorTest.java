@@ -1,3 +1,20 @@
+//
+// ReplicatorTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
@@ -6,6 +23,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -16,14 +35,12 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ReplicatorTest extends BaseReplicatorTest {
 
-    // TODO: It seems the replication finishes before constructor returns.
-    //       This causes RefCounted throws exception.
-    //       Also this might be related with disk I/O error
     // https://github.com/couchbase/couchbase-lite-core/issues/383
-    // @Test
+    @Test
     public void testEmptyPush() throws InterruptedException {
         ReplicatorConfiguration config = makeConfig(true, false, false);
         run(config, 0, null);
@@ -77,7 +94,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
             stopContinuousReplicator(repl);
         } finally {
             anotherDB.close();
-            this.deleteDatabase(strAnotherDB);
+            deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testPushDocContinuous() - END");
     }
@@ -132,7 +149,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
             stopContinuousReplicator(repl);
         } finally {
             anotherDB.close();
-            this.deleteDatabase(strAnotherDB);
+            deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testPullDocContinuous() - END");
     }
@@ -270,83 +287,44 @@ public class ReplicatorTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testReplicatorStopWhenClosed() throws CouchbaseLiteException {
-        try {
-            ReplicatorConfiguration config = makeConfig(true, true, true);
-            Replicator repl = new Replicator(config);
-            repl.start();
-            while (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.IDLE) {
-                Log.w(TAG, String.format(Locale.ENGLISH,
-                        "Replicator status is still %s, waiting for idle...",
-                        repl.getStatus().getActivityLevel()));
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                }
+    public void testCloseDatabaseWithActiveReplicator() throws CouchbaseLiteException {
+        ReplicatorConfiguration config = makeConfig(true, true, true);
+        Replicator repl = new Replicator(config);
+        repl.start();
+        while (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.IDLE) {
+            Log.w(TAG, String.format(Locale.ENGLISH,
+                    "Replicator status is still %s, waiting for idle...",
+                    repl.getStatus().getActivityLevel()));
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
             }
-
-            closeDB();
-
-            int attemptCount = 0;
-            while (attemptCount++ < 20 && repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
-                Log.w(TAG, String.format(Locale.ENGLISH,
-                        "Replicator status is still %s, waiting for stopped (remaining attempts %d)...",
-                        repl.getStatus().getActivityLevel(), 10 - attemptCount));
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                }
-            }
-            assertTrue(attemptCount < 20);
-        } finally {
-            // NOTE: DB is closed middle of unit test. So tearDown might not be able to delete it.
-            deleteDatabase(kDatabaseName);
         }
-    }
 
-    /*
-    @Test
-    public void testAuthenticationFailure() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewayTest class
-        //       public void testAuthenticationFailure()
-        //       This empty test method is for consistancy with other platforms
-    }
+        try {
+            closeDB();
+            fail();
+        } catch (CouchbaseLiteException e) {
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorBusy, e.getCode());
+        } 
 
-    @Test
-    public void testAuthenticationPullHardcoded() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewayTest class.
-        //       public void testAuthenticatedPullHardcoded()
-        //       This empty test method is for consistancy with other platforms
-    }
+        repl.stop();
 
-    @Test
-    public void testAuthenticatedPull() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewayTest class
-        //       public void testAuthenticatedPull()
-        //       This empty test method is for consistancy with other platforms
-    }
+        int attemptCount = 0;
+        while (attemptCount++ < 20 && repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
+            Log.w(TAG, String.format(Locale.ENGLISH,
+                    "Replicator status is still %s, waiting for stopped (remaining attempts %d)...",
+                    repl.getStatus().getActivityLevel(), 10 - attemptCount));
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+            }
+        }
+        assertTrue(attemptCount < 20);
 
-    @Test
-    public void testSelfSignedSSLFailure() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewaySSLTest class.
-        //       public void testSelfSignedSSLFailure()
-        //       This empty test method is for consistancy with other platforms
+        closeDB();
     }
-
-    @Test
-    public void testSelfSignedSSLPinned() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewaySSLTest class
-        //       public void testSelfSignedSSLPinned()
-        //       This empty test method is for consistancy with other platforms
-    }
-
-    @Test
-    public void testChannelPull() {
-        // NOTE: Test is implemented in ReplicatorWithSyncGatewayDBTest class.
-        //       public void testChannelPull()
-        //       This empty test method is for consistancy with other platforms
-    }
-    */
 
     /**
      * Database to Database Push replication document has attachment
@@ -364,14 +342,12 @@ public class ReplicatorTest extends BaseReplicatorTest {
                 MutableDocument doc1 = new MutableDocument("doc1");
                 doc1.setValue("name", "Tiger");
                 doc1.setBlob("image.jpg", blob);
-                //save(doc1);
                 anotherDB.save(doc1);
             } finally {
                 is.close();
             }
             assertEquals(1, anotherDB.getCount());
 
-            //ReplicatorConfiguration config = makeConfig(true, false, false);
             ReplicatorConfiguration config = new ReplicatorConfiguration(anotherDB, new DatabaseEndpoint(otherDB));
             config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PUSH);
             run(config, 0, null);
@@ -382,7 +358,7 @@ public class ReplicatorTest extends BaseReplicatorTest {
             assertNotNull(blob1a);
         } finally {
             anotherDB.close();
-            this.deleteDatabase(strAnotherDB);
+            deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testAttachmentPush() - END");
     }
@@ -399,10 +375,8 @@ public class ReplicatorTest extends BaseReplicatorTest {
         try {
 
             InputStream is = getAsset("image.jpg");
-            //InputStream is = getAsset("attachment.png");
             try {
                 Blob blob = new Blob("image/jpg", is);
-                //Blob blob = new Blob("image/jpg", is);
                 MutableDocument doc1 = new MutableDocument("doc1");
                 doc1.setValue("name", "Tiger");
                 doc1.setBlob("image.jpg", blob);
@@ -423,8 +397,35 @@ public class ReplicatorTest extends BaseReplicatorTest {
 
         } finally {
             anotherDB.close();
-            this.deleteDatabase(strAnotherDB);
+            deleteDatabase(strAnotherDB);
         }
         Log.i(TAG, "testAttachmentPull() - END");
+    }
+
+    @Test
+    public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
+        timeout = 200;
+        URLEndpoint target = new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
+        ReplicatorConfiguration config = makeConfig(false, true, true, db, target);
+        Replicator repl = new Replicator(config);
+        final CountDownLatch offline = new CountDownLatch(1);
+        final CountDownLatch stopped = new CountDownLatch(1);
+        ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
+                    change.getReplicator().stop();
+                    offline.countDown();
+                }
+                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                    stopped.countDown();
+                }
+            }
+        });
+        repl.start();
+        assertTrue(offline.await(10, TimeUnit.SECONDS));
+        assertTrue(stopped.await(10, TimeUnit.SECONDS));
+        repl.removeChangeListener(token);
     }
 }

@@ -1,3 +1,20 @@
+//
+// BaseReplicatorTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import android.support.test.InstrumentationRegistry;
@@ -11,8 +28,6 @@ import org.junit.Before;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PULL;
@@ -28,7 +43,7 @@ public class BaseReplicatorTest extends BaseTest {
     Database otherDB;
     Replicator repl;
     long timeout;  // seconds
-    ExecutorService executor = null;
+
 
     protected URLEndpoint getRemoteEndpoint(String dbName, boolean secure) throws URISyntaxException {
         String uri = (secure ? "wss://" : "ws://") + config.remoteHost() + ":" + config.remotePort() + "/" + dbName;
@@ -59,9 +74,18 @@ public class BaseReplicatorTest extends BaseTest {
         return run(config, code, domain, false);
     }
 
-    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain, final boolean ignoreErrorAtStopped)
+    protected Replicator run(final Replicator r, final int code, final String domain)
             throws InterruptedException {
-        repl = new Replicator(config);
+        return run(r, code, domain, false);
+    }
+
+    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain, final boolean ignoreErrorAtStopped) throws InterruptedException {
+        return run(new Replicator(config), code, domain, ignoreErrorAtStopped);
+    }
+
+    protected Replicator run(final Replicator r, final int code, final String domain, final boolean ignoreErrorAtStopped)
+            throws InterruptedException {
+        repl = r;
         final CountDownLatch latch = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
             @Override
@@ -69,17 +93,17 @@ public class BaseReplicatorTest extends BaseTest {
                 Replicator.Status status = change.getStatus();
                 CouchbaseLiteException error = status.getError();
                 final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
-                Log.e(TAG, "--- Status: %s (%d / %d), lastError = %s",
+                Log.i(TAG, "ReplicatorChangeListener.changed() status: %s (%d / %d), lastError = %s",
                         kActivityNames[status.getActivityLevel().getValue()],
                         status.getProgress().getCompleted(), status.getProgress().getTotal(),
                         error);
-                if (config.isContinuous()) {
+                if (r.getConfig().isContinuous()) {
                     if (status.getActivityLevel() == Replicator.ActivityLevel.IDLE &&
                             status.getProgress().getCompleted() == status.getProgress().getTotal()) {
                         if (code != 0) {
                             assertEquals(code, error.getCode());
                             if (domain != null)
-                                assertEquals(domain, error.getDomainString());
+                                assertEquals(domain, error.getDomain());
                         } else {
                             assertNull(error);
                         }
@@ -88,7 +112,7 @@ public class BaseReplicatorTest extends BaseTest {
                         if (code != 0) {
                             assertNotNull(error);
                             assertEquals(code, error.getCode());
-                            assertEquals(domain, error.getDomainString());
+                            assertEquals(domain, error.getDomain());
                             latch.countDown();
                         } else {
                             // TBD
@@ -100,7 +124,7 @@ public class BaseReplicatorTest extends BaseTest {
                             assertNotNull(error);
                             assertEquals(code, error.getCode());
                             if (domain != null)
-                                assertEquals(domain, error.getDomainString());
+                                assertEquals(domain, error.getDomain());
                         } else {
                             if (!ignoreErrorAtStopped)
                                 assertNull(error);
@@ -125,7 +149,7 @@ public class BaseReplicatorTest extends BaseTest {
                 Replicator.Status status = change.getStatus();
                 CouchbaseLiteException error = status.getError();
                 final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
-                Log.e(TAG, "--- stopContinuousReplicator() -> Status: %s (%d / %d), lastError = %s",
+                Log.i(TAG, "--- ReplicatorChangeListener.changed() -> status: %s (%d / %d), lastError = %s",
                         kActivityNames[status.getActivityLevel().getValue()],
                         status.getProgress().getCompleted(), status.getProgress().getTotal(),
                         error);
@@ -155,8 +179,6 @@ public class BaseReplicatorTest extends BaseTest {
         assertTrue(otherDB.isOpen());
         assertNotNull(otherDB);
 
-        executor = Executors.newSingleThreadExecutor();
-
         try {
             Thread.sleep(500);
         } catch (Exception e) {
@@ -172,32 +194,11 @@ public class BaseReplicatorTest extends BaseTest {
         }
         deleteDatabase(kOtherDatabaseName);
 
-        shutdownAndAwaitTermination(executor);
-        executor = null;
-
         super.tearDown();
 
         try {
             Thread.sleep(500);
         } catch (Exception e) {
-        }
-    }
-
-    void shutdownAndAwaitTermination(ExecutorService pool) {
-        pool.shutdown(); // Disable new tasks from being submitted
-        try {
-            // Wait a while for existing tasks to terminate
-            if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
-                pool.shutdownNow(); // Cancel currently executing tasks
-                // Wait a while for tasks to respond to being cancelled
-                if (!pool.awaitTermination(60, TimeUnit.SECONDS))
-                    System.err.println("Pool did not terminate");
-            }
-        } catch (InterruptedException ie) {
-            // (Re-)Cancel if current thread also interrupted
-            pool.shutdownNow();
-            // Preserve interrupt status
-            Thread.currentThread().interrupt();
         }
     }
 }

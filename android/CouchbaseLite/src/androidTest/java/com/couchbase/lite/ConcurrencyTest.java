@@ -1,3 +1,20 @@
+//
+// ConcurrencyTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
@@ -13,16 +30,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotOpen;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ConcurrencyTest extends BaseTest {
-    private static final String TAG = ConcurrencyTest.class.getSimpleName();
-
     MutableDocument createDocumentWithTag(String tag) {
         MutableDocument doc = new MutableDocument();
 
@@ -175,7 +188,7 @@ public class ConcurrencyTest extends BaseTest {
 
         final int kNDocs = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // concurrently creates documents
         concurrentValidator(kNThreads, new Callback() {
@@ -203,7 +216,7 @@ public class ConcurrencyTest extends BaseTest {
 
         final int kNDocs = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // concurrently creates documents
         concurrentValidator(kNThreads, new Callback() {
@@ -243,7 +256,7 @@ public class ConcurrencyTest extends BaseTest {
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -279,7 +292,7 @@ public class ConcurrencyTest extends BaseTest {
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -302,7 +315,7 @@ public class ConcurrencyTest extends BaseTest {
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 60;
+        final int kWaitInSec = 180;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
@@ -360,8 +373,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
 
         verifyByTagName(tag, kNDocs);
     }
@@ -413,8 +426,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
 
         assertEquals(0, db.getCount());
     }
@@ -467,8 +480,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
 
         assertEquals(0, db.getCount());
     }
@@ -488,12 +501,12 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
-                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                    if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (CouchbaseLiteRuntimeException re) {
-                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
@@ -516,8 +529,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -535,12 +548,12 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
-                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                    if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (CouchbaseLiteRuntimeException re) {
-                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
@@ -563,8 +576,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -582,12 +595,12 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
-                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                    if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (CouchbaseLiteRuntimeException re) {
-                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
@@ -610,8 +623,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -631,12 +644,12 @@ public class ConcurrencyTest extends BaseTest {
                 try {
                     createDocs(kNDocs, tag1);
                 } catch (CouchbaseLiteException e) {
-                    if (e.getDomain() != LiteCoreDomain || e.getCode() != kC4ErrorNotOpen) {
+                    if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
                 } catch (CouchbaseLiteRuntimeException re) {
-                    if (re.getDomain() != LiteCoreDomain || re.getCode() != kC4ErrorNotOpen) {
+                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
@@ -660,8 +673,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(60, TimeUnit.SECONDS));
-        assertTrue(latch2.await(60, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -672,7 +685,7 @@ public class ConcurrencyTest extends BaseTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
-        db.addChangeListener(new DatabaseChangeListener() {
+        db.addChangeListener(executor, new DatabaseChangeListener() {
             @Override
             public void changed(DatabaseChange change) {
                 Log.e(TAG, "changed() change -> %s", change);
@@ -692,8 +705,8 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(10, TimeUnit.SECONDS));
-        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
     }
 
     @Test
@@ -724,7 +737,35 @@ public class ConcurrencyTest extends BaseTest {
             }
         }).start();
 
-        assertTrue(latch1.await(10, TimeUnit.SECONDS));
-        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+        assertTrue(latch1.await(180, TimeUnit.SECONDS));
+        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1407
+    @Test
+    public void testQueryExecute() throws Exception {
+        if (!config.concurrentTestsEnabled())
+            return;
+
+        loadJSONResource("names_100.json");
+
+        final Query query = QueryBuilder
+                .select(SelectResult.expression(Meta.id), SelectResult.expression(Meta.sequence))
+                .from(DataSource.database(db));
+
+        concurrentValidator(10, new Callback() {
+            @Override
+            public void callback(int threadIndex) {
+                ResultSet rs = null;
+                try {
+                    rs = query.execute();
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in Query.execute()", e);
+                }
+                List<Result> results = rs.allResults();
+                assertEquals(100, results.size());
+                assertEquals(db.getCount(), results.size());
+            }
+        }, 180);
     }
 }

@@ -1,18 +1,24 @@
-/**
- * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
+//
+// Log.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite.internal.support;
 
+import com.couchbase.lite.Database;
+import com.couchbase.litecore.C4Constants.C4LogDomain;
 import com.couchbase.litecore.C4Log;
 
 import java.util.Locale;
@@ -40,22 +46,22 @@ public final class Log {
     /**
      * Logging Tag for Database related operations
      */
-    public static final String DATABASE = "Database";
+    public static final String DATABASE = C4LogDomain.Database;
 
     /**
      * Logging Tag for Query related operations
      */
-    public static final String QUERY = "Query";
+    public static final String QUERY = C4LogDomain.Query;
 
     /**
      * Logging Tag for Sync related operations
      */
-    public static final String SYNC = "Sync";
+    public static final String SYNC = C4LogDomain.Sync;
 
     /**
      * Logging Tag for Sync related operations
      */
-    public static final String WebSocket = "WebSocket";
+    public static final String WEB_SOCKET = C4LogDomain.WebSocket;
 
     /**
      * Priority constant for the println method; use Log.d.
@@ -81,8 +87,7 @@ public final class Log {
     public static final int NONE = kC4LogNone; // 5
 
     static {
-        enabledTags = new ConcurrentHashMap<String, Integer>();
-        enabledTags.put(Log.DATABASE, WARN);
+        enabledTags = new ConcurrentHashMap<>();
     }
 
     /**
@@ -91,11 +96,6 @@ public final class Log {
     private Log() {
     }
 
-    public static void enableLogging(String tag, int logLevel, boolean litecore) {
-        enabledTags.put(tag, logLevel);
-        if(litecore)
-            C4Log.setLevel(tag, logLevel);
-    }
 
     /**
      * Is logging enabled for given tag / loglevel combo?
@@ -321,7 +321,6 @@ public final class Log {
         }
     }
 
-
     /**
      * Send an ERROR message.
      *
@@ -384,5 +383,43 @@ public final class Log {
                 logger.e(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
             }
         }
+    }
+
+    public static void init() {
+    }
+
+    public static void setLogLevel(Database.LogDomain domain, Database.LogLevel level) {
+        switch (domain) {
+            case ALL:
+                enableLogging(DATABASE, level.getValue());
+                enableLogging(QUERY, level.getValue());
+                enableLogging(SYNC, level.getValue());
+                enableLogging(C4LogDomain.BLIP, level.getValue());
+                enableLogging(WEB_SOCKET, level.getValue());
+                break;
+            case DATABASE:
+                enableLogging(DATABASE, level.getValue());
+                break;
+
+            case QUERY:
+                enableLogging(QUERY, level.getValue());
+                break;
+
+            case REPLICATOR:
+                enableLogging(SYNC, level.getValue());
+                break;
+
+            case NETWORK:
+                enableLogging(C4LogDomain.BLIP, level.getValue());
+                enableLogging(WEB_SOCKET, level.getValue());
+                break;
+        }
+    }
+
+    public static void enableLogging(String tag, int logLevel) {
+        // CBL logging
+        enabledTags.put(tag, logLevel);
+        // LiteCore logging
+        C4Log.setLevel(tag, logLevel);
     }
 }

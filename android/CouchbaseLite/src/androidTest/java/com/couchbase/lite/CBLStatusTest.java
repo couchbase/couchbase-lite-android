@@ -1,5 +1,5 @@
 //
-// ResultContext.java
+// CBLStatusTest.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -17,12 +17,22 @@
 //
 package com.couchbase.lite;
 
-/**
- * This ResultContext implementation is simplified version of lite-core ResultContext implementation
- * by eliminating unused variables and methods
- */
-final class ResultContext extends DocContext {
-    ResultContext(Database db) {
-        super(db);
+import com.couchbase.litecore.LiteCoreException;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+public class CBLStatusTest {
+    @Test
+    public void testConvertRuntimeException() {
+        LiteCoreException orgEx = new LiteCoreException(1, 2, "3");
+        CouchbaseLiteRuntimeException ex = CBLStatus.convertRuntimeException(orgEx);
+        assertNotNull(ex);
+        assertEquals(CBLError.Domain.CBLErrorDomain, ex.getDomain());
+        assertEquals(2, ex.getCode());
+        assertEquals("3", ex.getMessage());
+        assertEquals(orgEx, ex.getCause());
     }
 }

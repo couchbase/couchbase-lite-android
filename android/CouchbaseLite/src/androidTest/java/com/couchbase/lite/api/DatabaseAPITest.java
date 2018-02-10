@@ -1,3 +1,20 @@
+//
+// DatabaseAPITest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite.api;
 
 import com.couchbase.lite.BaseTest;
@@ -31,6 +48,9 @@ public class DatabaseAPITest extends BaseTest {
     // ### New Database
     @Test
     public void testNewDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // --- code example ---
         DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context);
         Database database = new Database("my-database", config);
@@ -60,6 +80,9 @@ public class DatabaseAPITest extends BaseTest {
     // ###  Encryption
     @Test
     public void testEncryption() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // --- code example ---
         DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context)
                 .setEncryptionKey(new EncryptionKey("secretpassword"));

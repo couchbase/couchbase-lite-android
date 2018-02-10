@@ -1,3 +1,20 @@
+//
+// DocumentAPITest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite.api;
 
 import com.couchbase.lite.BaseTest;
@@ -48,11 +65,10 @@ public class DocumentAPITest extends BaseTest {
     @Test
     public void testInitializers() {
         // --- code example ---
-        Map<String, Object> dict = new HashMap<>();
-        dict.put("type", "task");
-        dict.put("owner", "todo");
-        dict.put("createdAt", new Date());
-        MutableDocument newTask = new MutableDocument(dict);
+        MutableDocument newTask = new MutableDocument();
+        newTask.setString("type", "task");
+        newTask.setString("owner", "todo");
+        newTask.setDate("createdAt", new Date());
         try {
             database.save(newTask);
         } catch (CouchbaseLiteException e) {
@@ -64,12 +80,12 @@ public class DocumentAPITest extends BaseTest {
     // ### Mutability
     @Test
     public void testMutability() {
-        MutableDocument newTask = new MutableDocument();
-
         // --- code example ---
-        newTask.setString("name", "apples");
+        Document document = database.getDocument("xyz");
+        MutableDocument mutableDocument = document.toMutable();
+        mutableDocument.setString("name", "apples");
         try {
-            database.save(newTask);
+            database.save(mutableDocument);
         } catch (CouchbaseLiteException e) {
             Log.e(TAG, e.toString());
         }

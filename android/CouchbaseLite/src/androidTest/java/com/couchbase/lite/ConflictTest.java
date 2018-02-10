@@ -1,3 +1,20 @@
+//
+// ConflictTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
@@ -14,8 +31,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -139,7 +154,7 @@ public class ConflictTest extends BaseTest {
         assertNull(db);
 
         DatabaseConfiguration config = new DatabaseConfiguration(this.context)
-                .setDirectory(dir.getAbsolutePath())
+                .setDirectory(getDir().getAbsolutePath())
                 .setConflictResolver(resolver);
         db = new Database(kDatabaseName, config);
         assertNotNull(db);
@@ -205,8 +220,8 @@ public class ConflictTest extends BaseTest {
             save(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals(LiteCoreDomain, e.getDomain());
-            assertEquals(kC4ErrorConflict, e.getCode());
+            assertEquals(CBLError.Domain.CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorConflict, e.getCode());
         }
     }
 
@@ -307,8 +322,8 @@ public class ConflictTest extends BaseTest {
         } catch (CouchbaseLiteException e) {
             // Currently returned error code is LiteCore error code.
             // This could change to HTTP error code.
-            assertEquals(LiteCoreDomain, e.getDomain());
-            assertEquals(kC4ErrorConflict, e.getCode()); // int kC4ErrorConflict = 14;
+            assertEquals(CBLError.Domain.CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorConflict, e.getCode());
         }
     }
 }

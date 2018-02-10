@@ -1,6 +1,25 @@
+//
+// ReplicatorConfiguration.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import android.os.Build;
+
+import com.couchbase.litecore.C4;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -27,6 +46,7 @@ public final class ReplicatorConfiguration {
     static final String kC4ReplicatorOptionSkipDeleted = "skipDeleted"; // Don't push/pull tombstones; bool
     static final String kC4ReplicatorOptionNoConflicts = "noConflicts"; // Puller rejects conflicts; bool
     static final String kC4ReplicatorCheckpointInterval = "checkpointInterval"; // How often to checkpoint, in seconds; number
+    static final String kC4ReplicatorOptionRemoteDBUniqueID = "remoteDBUniqueID"; // How often to checkpoint, in seconds; number
 
     // Auth dictionary keys:
     static final String kC4ReplicatorAuthType = "type"; // Auth property; string
@@ -373,12 +393,14 @@ public final class ReplicatorConfiguration {
 
     static String getUserAgent() {
         if (userAgent == null) {
+            String liteCoreVers = C4.getVersion();
             userAgent = String.format(Locale.ENGLISH,
-                    "CouchbaseLite/%s %s Build/%d Commit/%.8s",
+                    "CouchbaseLite/%s %s Build/%d Commit/%.8s LiteCore/%s",
                     BuildConfig.VERSION_NAME,
                     getSystemInfo(),
                     BuildConfig.BUILD_NO,
-                    BuildConfig.GitHash
+                    BuildConfig.GitHash,
+                    liteCoreVers
             );
         }
         return userAgent;

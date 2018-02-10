@@ -1,3 +1,20 @@
+//
+// AbstractQuery.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
@@ -17,8 +34,6 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 
 import static com.couchbase.lite.PropertyExpression.kCBLAllPropertiesName;
-import static com.couchbase.lite.Status.CBLErrorDomain;
-import static com.couchbase.lite.Status.InvalidQuery;
 
 abstract class AbstractQuery implements Query {
     //---------------------------------------------
@@ -86,9 +101,11 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public void setParameters(Parameters parameters) {
-        this.parameters = parameters.readonlyCopy();
-        if (liveQuery != null)
-            liveQuery.start();
+        synchronized (lock) {
+            this.parameters = parameters != null ? parameters.readonlyCopy() : null;
+            if (liveQuery != null)
+                liveQuery.start();
+        }
     }
 
     /**
@@ -115,7 +132,7 @@ abstract class AbstractQuery implements Query {
             }
             return new ResultSet(this, c4enum, columnNames);
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
@@ -149,7 +166,7 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public ListenerToken addChangeListener(QueryChangeListener listener) {
-        return liveQuery().addChangeListener(listener);
+        return addChangeListener(null, listener);
     }
 
     /**
@@ -157,12 +174,14 @@ abstract class AbstractQuery implements Query {
      * will be posted. If the dispatch queue is not specified, the changes will be
      * posted on the main queue.
      *
-     * @param executor The executor object that calls listener
+     * @param executor The executor object that calls listener. If null, use default executor.
      * @param listener The listener to post changes.
      * @return An opaque listener token object for removing the listener.
      */
     @Override
     public ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
+        if (listener == null)
+            throw new IllegalArgumentException("listener parameter is null.");
         return liveQuery().addChangeListener(executor, listener);
     }
 
@@ -271,7 +290,7 @@ abstract class AbstractQuery implements Query {
             try {
                 c4query = database.getC4Database().createQuery(json);
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             }
         }
     }
@@ -291,7 +310,7 @@ abstract class AbstractQuery implements Query {
                 name = String.format(Locale.ENGLISH, "$%d", ++provisionKeyIndex);
             if (map.containsKey(name)) {
                 String desc = String.format(Locale.ENGLISH, "Duplicate select result named %s", name);
-                throw new CouchbaseLiteException(desc, CBLErrorDomain, InvalidQuery);
+                throw new CouchbaseLiteException(desc, CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidQuery);
             }
             map.put(name, index);
             index++;
@@ -352,17 +371,21 @@ abstract class AbstractQuery implements Query {
     }
 
     private LiveQuery liveQuery() {
-        if (liveQuery == null)
-            liveQuery = new LiveQuery(this);
-        return liveQuery;
+        synchronized (lock) {
+            if (liveQuery == null)
+                liveQuery = new LiveQuery(this);
+            return liveQuery;
+        }
     }
 
     private void free() {
-        if (c4query != null && getDatabase() != null) {
-            synchronized (getDatabase().getLock()) {
-                c4query.free();
+        synchronized (lock) {
+            if (c4query != null && getDatabase() != null) {
+                synchronized (getDatabase().getLock()) {
+                    c4query.free();
+                }
+                c4query = null;
             }
-            c4query = null;
         }
     }
 }

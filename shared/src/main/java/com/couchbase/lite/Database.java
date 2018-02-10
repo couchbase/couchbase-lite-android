@@ -1,19 +1,24 @@
-/**
- * Copyright (c) 2017 Couchbase, Inc. All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
+//
+// Database.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.litecore.C4;
@@ -22,7 +27,6 @@ import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Constants.C4DatabaseFlags;
 import com.couchbase.litecore.C4Constants.C4DocumentVersioning;
 import com.couchbase.litecore.C4Constants.C4EncryptionAlgorithm;
-import com.couchbase.litecore.C4Constants.C4LogDomain;
 import com.couchbase.litecore.C4Constants.C4ErrorDomain;
 import com.couchbase.litecore.C4Constants.C4RevisionFlags;
 import com.couchbase.litecore.C4Constants.LiteCoreError;
@@ -49,9 +53,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * A Couchbase Lite database.
@@ -117,7 +120,8 @@ public final class Database {
     private String name;
     private final DatabaseConfiguration config;
     private C4Database c4db;
-    private ExecutorService executorService;
+    private ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
+    private ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
 
     private Set<DatabaseChangeListenerToken> dbListenerTokens;
     private C4DatabaseObserver c4DBObserver;
@@ -149,6 +153,8 @@ public final class Database {
         if (config == null)
             throw new IllegalArgumentException("DatabaseConfiguration should not be null.");
 
+        Log.init();
+
         this.name = name;
         this.config = config.readonlyCopy();
 
@@ -157,7 +163,8 @@ public final class Database {
             C4.setenv("TMPDIR", tempdir, 1);
         open();
         this.sharedKeys = new SharedKeys(c4db);
-        this.executorService = Executors.newSingleThreadExecutor();
+        this.postExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.queryExecutor = Executors.newSingleThreadScheduledExecutor();
         this.activeReplications = Collections.synchronizedSet(new HashSet<Replicator>());
         this.activeLiveQueries = Collections.synchronizedSet(new HashSet<LiveQuery>());
     }
@@ -309,7 +316,7 @@ public final class Database {
                     commit = true;
                 }
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             } finally {
                 endTransaction(commit);
             }
@@ -346,7 +353,7 @@ public final class Database {
                     getC4Database().endTransaction(commit);
                 }
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             }
         }
 
@@ -364,7 +371,7 @@ public final class Database {
             try {
                 getC4Database().compact();
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             }
         }
     }
@@ -441,11 +448,19 @@ public final class Database {
 
             Log.i(TAG, "Closing %s at path %s", this, getC4Database().getPath());
 
-            // stop all active replicators
-            stopAllActiveReplicatoin();
+            if (activeReplications.size() > 0) {
+                throw new CouchbaseLiteException(
+                        "Cannot close the database. Please stop all of the replicators before " +
+                                "closing the database.",
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+            }
 
-            // stop all active live queries
-            stopAllActiveLiveQueries();
+
+            if (activeLiveQueries.size() > 0) {
+                throw new CouchbaseLiteException("Cannot close the database. Please remove all of " +
+                        "the query listeners before closing the database",
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+            }
 
             // close db
             closeC4DB();
@@ -470,11 +485,19 @@ public final class Database {
 
             Log.i(TAG, "Deleting %s at path %s", this, getC4Database().getPath());
 
-            // stop all active replicators
-            stopAllActiveReplicatoin();
+            if (activeReplications.size() > 0) {
+                throw new CouchbaseLiteException(
+                        "Cannot delete the database. Please stop all of the replicators before " +
+                                "deleting the database.",
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+            }
 
-            // stop all active live queries
-            stopAllActiveLiveQueries();
+
+            if (activeLiveQueries.size() > 0) {
+                throw new CouchbaseLiteException("Cannot delete the database. Please remove all of " +
+                        "the query listeners before deleting the database",
+                        CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
+            }
 
             // delete db
             deleteC4DB();
@@ -503,7 +526,7 @@ public final class Database {
             try {
                 c4db.rekey(keyType, encryptionKey.getKey());
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             }
         }
     }
@@ -516,7 +539,7 @@ public final class Database {
             try {
                 return (List<String>) SharedKeys.valueToObject(c4db.getIndexes(), sharedKeys);
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             }
         }
     }
@@ -534,7 +557,7 @@ public final class Database {
                         abstractIndex.language(),
                         abstractIndex.ignoreAccents());
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             } catch (JSONException e) {
                 throw new CouchbaseLiteException(e);
             }
@@ -547,7 +570,7 @@ public final class Database {
             try {
                 c4db.deleteIndex(name);
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertException(e);
+                throw CBLStatus.convertException(e);
             }
         }
     }
@@ -568,14 +591,14 @@ public final class Database {
             throw new IllegalArgumentException("a name parameter and/or a dir parameter are null.");
 
         if (!exists(name, directory))
-            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+            throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
 
         File path = getDatabasePath(directory, name);
         try {
             Log.i(TAG, "delete(): path=%s", path.toString());
             C4Database.deleteAtPath(path.getPath());
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
@@ -617,56 +640,18 @@ public final class Database {
                     encryptionKey);
         } catch (LiteCoreException e) {
             FileUtils.deleteRecursive(toPath);
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
+    /**
+     * Set log level for the given log domain.
+     *
+     * @param domain The log domain
+     * @param level  The log level
+     */
     public static void setLogLevel(LogDomain domain, LogLevel level) {
-        switch (domain) {
-            case ALL:
-                // Database
-                Log.enableLogging(Log.DATABASE, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.DB, level.getValue(), true);         // LiteCore
-                Log.enableLogging(C4LogDomain.Enum, level.getValue(), true);       // LiteCore
-                Log.enableLogging(C4LogDomain.Blob, level.getValue(), true);       // LiteCore
-
-                // Query
-                Log.enableLogging(Log.QUERY, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.SQL, level.getValue(), true);        // LiteCore
-
-                // REPLICATOR
-                Log.enableLogging(Log.SYNC, level.getValue(), false);
-
-                // Network
-                Log.enableLogging(Log.WebSocket, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.BLIP, level.getValue(), true);         // LiteCore
-                Log.enableLogging(C4LogDomain.BLIPMessages, level.getValue(), true); // LiteCore
-                Log.enableLogging(C4LogDomain.ACTOR, level.getValue(), true);        // LiteCore
-                break;
-
-            case DATABASE:
-                Log.enableLogging(Log.DATABASE, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.DB, level.getValue(), true);         // LiteCore
-                Log.enableLogging(C4LogDomain.Enum, level.getValue(), true);       // LiteCore
-                Log.enableLogging(C4LogDomain.Blob, level.getValue(), true);       // LiteCore
-                break;
-
-            case QUERY:
-                Log.enableLogging(Log.QUERY, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.SQL, level.getValue(), true);        // LiteCore
-                break;
-
-            case REPLICATOR:
-                Log.enableLogging(Log.SYNC, level.getValue(), false);
-                break;
-
-            case NETWORK:
-                Log.enableLogging(Log.WebSocket, level.getValue(), false);
-                Log.enableLogging(C4LogDomain.BLIP, level.getValue(), true);         // LiteCore
-                Log.enableLogging(C4LogDomain.BLIPMessages, level.getValue(), true); // LiteCore
-                Log.enableLogging(C4LogDomain.ACTOR, level.getValue(), true);        // LiteCore
-                break;
-        }
+        Log.setLogLevel(domain, level);
     }
 
     //---------------------------------------------
@@ -717,7 +702,7 @@ public final class Database {
             try {
                 return c4db.getBlobStore();
             } catch (LiteCoreException e) {
-                throw LiteCoreBridge.convertRuntimeException(e);
+                throw CBLStatus.convertRuntimeException(e);
             }
         }
     }
@@ -736,7 +721,7 @@ public final class Database {
     void mustBeOpen() {
         if (c4db == null)
             throw new CouchbaseLiteRuntimeException("A database is not open",
-                    C4ErrorDomain.LiteCoreDomain, LiteCoreError.kC4ErrorNotOpen);
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotOpen);
     }
 
     boolean isOpen() {
@@ -759,7 +744,7 @@ public final class Database {
         try {
             getC4Database().beginTransaction();
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
@@ -767,7 +752,7 @@ public final class Database {
         try {
             getC4Database().endTransaction(commit);
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
@@ -781,7 +766,7 @@ public final class Database {
         try {
             return getC4Database().get(docID, mustExist);
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
@@ -840,8 +825,7 @@ public final class Database {
                         baseDoc != null ? baseDoc.getRevID() : "null");
                 Document resolved = resolver.resolve(conflict);
                 if (resolved == null)
-                    throw new CouchbaseLiteException(C4ErrorDomain.LiteCoreDomain,
-                            LiteCoreError.kC4ErrorConflict);
+                    throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorConflict);
 
                 try {
                     return saveResolvedDocument(resolved, conflict);
@@ -849,10 +833,14 @@ public final class Database {
                     if (e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict)
                         continue;
                     else
-                        throw LiteCoreBridge.convertException(e);
+                        throw CBLStatus.convertException(e);
                 }
             }
         }
+    }
+
+    ScheduledExecutorService getQueryExecutor() {
+        return queryExecutor;
     }
 
     //---------------------------------------------
@@ -888,7 +876,7 @@ public final class Database {
                     encryptionAlgorithm,
                     encryptionKey);
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
 
         c4DBObserver = null;
@@ -930,7 +918,7 @@ public final class Database {
         try {
             getC4Database().close();
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
@@ -938,7 +926,7 @@ public final class Database {
         try {
             getC4Database().delete();
         } catch (LiteCoreException e) {
-            throw LiteCoreBridge.convertException(e);
+            throw CBLStatus.convertException(e);
         }
     }
 
@@ -1002,12 +990,14 @@ public final class Database {
         c4DBObserver = c4db.createDatabaseObserver(new C4DatabaseObserverListener() {
             @Override
             public void callback(C4DatabaseObserver observer, Object context) {
-                executorService.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        postDatabaseChanged();
-                    }
-                });
+                if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+                    postExecutor.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            postDatabaseChanged();
+                        }
+                    });
+                }
             }
         }, this);
     }
@@ -1029,12 +1019,14 @@ public final class Database {
                     @Override
                     public void callback(C4DocumentObserver observer, final String docID,
                                          final long sequence, Object context) {
-                        executorService.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                postDocumentChanged(docID);
-                            }
-                        });
+                        if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+                            postExecutor.submit(new Runnable() {
+                                @Override
+                                public void run() {
+                                    postDocumentChanged(docID);
+                                }
+                            });
+                        }
                     }
                 }, this);
 
@@ -1117,13 +1109,13 @@ public final class Database {
         if (document.getDatabase() == null)
             document.setDatabase(this);
         else if (document.getDatabase() != this)
-            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.Forbidden);
+            throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidParameter);
     }
 
     // The main save method.
     private Document save(Document document, boolean deletion) throws CouchbaseLiteException {
         if (deletion && !document.exists())
-            throw new CouchbaseLiteException(Status.CBLErrorDomain, Status.NotFound);
+            throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
 
         // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
         String docID = document.getId();
@@ -1151,7 +1143,7 @@ public final class Database {
                                     ((MutableDocument) document).markAsInvalidated();
                                 return null;
                             } else
-                                throw LiteCoreBridge.convertException(e);
+                                throw CBLStatus.convertException(e);
                         } finally {
                             if (curDoc != null)
                                 curDoc.free();
@@ -1164,7 +1156,7 @@ public final class Database {
                     } catch (LiteCoreException e) {
                         // conflict is not an error, here
                         if (!(e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict)) {
-                            throw LiteCoreBridge.convertException(e);
+                            throw CBLStatus.convertException(e);
                         }
                     }
                 } finally {
@@ -1207,7 +1199,7 @@ public final class Database {
 
             Document resolved = resolver.resolve(conflict);
             if (resolved == null)
-                throw new CouchbaseLiteException(C4ErrorDomain.LiteCoreDomain, LiteCoreError.kC4ErrorConflict);
+                throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorConflict);
 
             synchronized (lock) {
                 Document current = new Document(this, docID, true);
@@ -1297,46 +1289,11 @@ public final class Database {
     }
 
     private void shutdownExecutorService() {
-        if (!executorService.isShutdown() && !executorService.isTerminated()) {
-            shutdownAndAwaitTermination(executorService, 60);
+        if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
+            ExecutorUtils.shutdownAndAwaitTermination(postExecutor, 60);
         }
-    }
-
-    private void shutdownAndAwaitTermination(ExecutorService pool, int waitSec) {
-        pool.shutdown(); // Disable new tasks from being submitted
-        try {
-            // Wait a while for existing tasks to terminate
-            if (!pool.awaitTermination(waitSec, TimeUnit.SECONDS)) {
-                pool.shutdownNow(); // Cancel currently executing tasks
-                // Wait a while for tasks to respond to being cancelled
-                if (!pool.awaitTermination(waitSec, TimeUnit.SECONDS))
-                    Log.w(TAG, "Pool did not terminate");
-            }
-        } catch (InterruptedException ie) {
-            // (Re-)Cancel if current thread also interrupted
-            pool.shutdownNow();
-            // Preserve interrupt status
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private void stopAllActiveReplicatoin() {
-        // stop replicator
-        synchronized (activeReplications) {
-            for (Replicator repl : activeReplications)
-                repl.stop();
-        }
-
-        // TODO: https://github.com/couchbase/couchbase-lite-android/issues/1543
-        // NOTE: Need to wait for STOPPED state?
-    }
-
-    private void stopAllActiveLiveQueries() {
-        // stop live query
-        synchronized (activeLiveQueries) {
-            for (LiveQuery liveQuery : activeLiveQueries)
-                liveQuery.stop(false);
-            activeLiveQueries.clear();
+        if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
+            ExecutorUtils.shutdownAndAwaitTermination(queryExecutor, 60);
         }
     }
 }

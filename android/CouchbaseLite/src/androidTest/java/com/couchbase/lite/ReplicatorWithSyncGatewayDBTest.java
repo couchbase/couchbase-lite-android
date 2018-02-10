@@ -1,6 +1,26 @@
+//
+// ReplicatorWithSyncGatewayDBTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
+import android.support.test.InstrumentationRegistry;
+
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.utils.Config;
 
 import org.junit.After;
 import org.junit.Before;
@@ -11,6 +31,8 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -19,6 +41,7 @@ import okhttp3.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
@@ -28,18 +51,22 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
     @Before
     public void setUp() throws Exception {
-        super.setUp();
-        if (config.replicatorTestsEnabled()) {
-            remote_PUT_db(DB_NAME);
-        }
+        config = new Config(InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
+        if (!config.replicatorTestsEnabled())
+            return;
 
+        super.setUp();
+
+        remote_PUT_db(DB_NAME);
     }
 
     @After
     public void tearDown() throws Exception {
-        if (config.replicatorTestsEnabled()) {
-            remote_DELETE_db(DB_NAME);
-        }
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        remote_DELETE_db(DB_NAME);
+
         super.tearDown();
     }
 
@@ -97,8 +124,61 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         assertEquals(100, this.otherDB.getCount());
     }
 
+    @Test
+    public void testProgress() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        timeout = 60;
+
+        final int numDocs = 5000;
+        loadNumbers(numDocs);
+
+        // target SG URI
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+
+        {
+            // Push replicate from db to SG
+            ReplicatorConfiguration config = makeConfig(true, false, false, target);
+            Replicator r = new Replicator(config);
+            final CountDownLatch progressLatch = new CountDownLatch(1);
+            ListenerToken token = r.addChangeListener(executor, new ReplicatorChangeListener() {
+                @Override
+                public void changed(ReplicatorChange change) {
+                    Replicator.Status status = change.getStatus();
+                    Replicator.Progress progress = status.getProgress();
+                    if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal())
+                        progressLatch.countDown();
+                }
+            });
+            run(r, 0, null);
+            r.removeChangeListener(token);
+            assertTrue(progressLatch.await(20, TimeUnit.SECONDS));
+        }
+
+        // Pull replicate from SG to otherDB.
+        {
+            ReplicatorConfiguration config = makeConfig(false, true, false, this.otherDB, target);
+            Replicator r = new Replicator(config);
+            final CountDownLatch progressLatch = new CountDownLatch(1);
+            ListenerToken token = r.addChangeListener(executor, new ReplicatorChangeListener() {
+                @Override
+                public void changed(ReplicatorChange change) {
+                    Replicator.Status status = change.getStatus();
+                    Replicator.Progress progress = status.getProgress();
+                    if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal())
+                        progressLatch.countDown();
+                }
+            });
+            run(r, 0, null);
+            r.removeChangeListener(token);
+            assertTrue(progressLatch.await(20, TimeUnit.SECONDS));
+            assertEquals(numDocs, this.otherDB.getCount());
+        }
+    }
+
     /**
-     * How to test reaciability.
+     * How to test reachability.
      * 1. Run sync gateway
      * 2. Disable Wifi with the device
      * 3. Run  testContinuousPush()
@@ -229,6 +309,78 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             Thread.sleep(3 * 60 * 1000);
         } catch (Exception e) {
         }
+    }
 
+    // https://github.com/couchbase/couchbase-lite-android/issues/1545
+    @Test
+    public void testPushDocAndDocChangeListener() throws CouchbaseLiteException, URISyntaxException, InterruptedException {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        String docID = "doc1";
+
+        // 1. save new Document
+        MutableDocument mDoc = new MutableDocument(docID);
+        Document doc = db.save(mDoc);
+
+        // 2. Set document change listner
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        DocumentChangeListener listener1 = new DocumentChangeListener() {
+            @Override
+            public void changed(DocumentChange change) {
+                assertNotNull(change);
+                latch1.countDown();
+            }
+        };
+        ListenerToken token1 = db.addDocumentChangeListener(docID, listener1);
+
+        // 3. Setup Push&Pull continuous replicator
+        timeout = 180; // 3min
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+        ReplicatorConfiguration config = makeConfig(true, true, true, target);
+        Replicator repl = new Replicator(config);
+
+        // 4. Set replicator change listener to detect replicator IDLE state.
+        final CountDownLatch latch2 = new CountDownLatch(1); // for before update doc
+        final CountDownLatch latch3 = new CountDownLatch(2); // for after update doc
+        ReplicatorChangeListener listener2 = new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                CouchbaseLiteException error = status.getError();
+                if (status.getActivityLevel() == Replicator.ActivityLevel.IDLE) {
+                    latch2.countDown();
+                    latch3.countDown();
+                }
+            }
+        };
+        ListenerToken token2 = repl.addChangeListener(executor, listener2);
+
+        // 5. Start Replicator
+        repl.start();
+
+        // 6. Wait replicator becomes IDLE state
+        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+
+        // 7. Update document
+        mDoc = doc.toMutable();
+        mDoc.setString("hello", "world");
+        doc = db.save(mDoc);
+
+        // 8. Wait replicator becomes IDLE state
+        assertTrue(latch3.await(10, TimeUnit.SECONDS));
+
+        // 9. Stop replicator
+        repl.removeChangeListener(token2);
+        stopContinuousReplicator(repl);
+        db.removeChangeListener(token1);
+
+        // 10. Pull replicate from SG to otherDB. And verify the document
+        config = makeConfig(false, true, false, this.otherDB, target);
+        run(config, 0, null);
+        assertEquals(1, this.otherDB.getCount());
+        doc = otherDB.getDocument(docID);
+        assertNotNull(doc);
+        assertEquals("world", doc.getString("hello"));
     }
 }

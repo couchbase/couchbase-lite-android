@@ -1,15 +1,19 @@
 //
-// Copyright (c) 2017 Couchbase, Inc. All rights reserved.
+// QueryTest.java
 //
-// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
-// except in compliance with the License. You may obtain a copy of the License at
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software distributed under the
-// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific language governing permissions
-// and limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 package com.couchbase.lite;
 
@@ -39,10 +43,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class QueryTest extends BaseTest {
-    public static final String TAG = QueryTest.class.getSimpleName();
-
     private static Expression EXPR_NUMBER1 = Expression.property("number1");
     private static Expression EXPR_NUMBER2 = Expression.property("number2");
 
@@ -82,33 +85,6 @@ public class QueryTest extends BaseTest {
             assertEquals(counter1, counter2);
         }
         return counter1;
-    }
-
-    private Document createDocNumbered(int i, int num) throws CouchbaseLiteException {
-        String docID = String.format(Locale.ENGLISH, "doc%d", i);
-        MutableDocument doc = createMutableDocument(docID);
-        doc.setValue("number1", i);
-        doc.setValue("number2", num - i);
-        return save(doc);
-    }
-
-    private List<Map<String, Object>> loadNumbers(final int num) throws Exception {
-        final List<Map<String, Object>> numbers = new ArrayList<Map<String, Object>>();
-        db.inBatch(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 1; i <= num; i++) {
-                    Document doc = null;
-                    try {
-                        doc = createDocNumbered(i, num);
-                    } catch (CouchbaseLiteException e) {
-                        throw new RuntimeException(e);
-                    }
-                    numbers.add(doc.toMap());
-                }
-            }
-        });
-        return numbers;
     }
 
     private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases)
@@ -513,6 +489,69 @@ public class QueryTest extends BaseTest {
             }
         }, true);
         assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testLeftJoin() throws Exception {
+        loadNumbers(100);
+
+        final MutableDocument joinme = new MutableDocument("joinme");
+        joinme.setValue("theone", 42);
+        save(joinme);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
+        Expression mainPropExpr = Expression.property("number1").from("main");
+        Expression secondaryExpr = Expression.property("theone").from("secondary");
+        Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
+        Join join = Join.leftJoin(secondaryDS).on(joinExpr);
+
+        SelectResult sr1 = SelectResult.expression(Expression.property("number2").from("main"));
+        SelectResult sr2 = SelectResult.expression(Expression.property("theone").from("secondary"));
+
+        Query q = QueryBuilder.select(sr1, sr2).from(mainDS).join(join);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                if (n == 41) {
+                    assertEquals(59, result.getInt(0));
+                    assertNull(result.getValue(1));
+                }
+                if (n == 42) {
+                    assertEquals(58, result.getInt(0));
+                    assertEquals(42, result.getInt(1));
+                }
+            }
+        }, true);
+        assertEquals(101, numRows);
+    }
+
+    @Test
+    public void testCrossJoin() throws Exception {
+        loadNumbers(10);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
+        Join join = Join.crossJoin(secondaryDS);
+
+        SelectResult sr1 = SelectResult.expression(Expression.property("number1").from("main"));
+        SelectResult sr2 = SelectResult.expression(Expression.property("number2").from("secondary"));
+
+        Query q = QueryBuilder.select(sr1, sr2).from(mainDS).join(join);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                int num1 = result.getInt(0);
+                int num2 = result.getInt(1);
+                assertEquals((num1 - 1) % 10, (n - 1) / 10);
+                assertEquals((10 - num2) % 10, n % 10);
+            }
+        }, true);
+        assertEquals(100, numRows);
     }
 
     @Test
@@ -1376,7 +1415,7 @@ public class QueryTest extends BaseTest {
                 latch.countDown();
             }
         };
-        ListenerToken token = query.addChangeListener(listener);
+        ListenerToken token = query.addChangeListener(executor, listener);
         try {
             // create one doc
             new Handler(Looper.getMainLooper())
@@ -1429,7 +1468,7 @@ public class QueryTest extends BaseTest {
                 // should come only once!
             }
         };
-        ListenerToken token = query.addChangeListener(listener);
+        ListenerToken token = query.addChangeListener(executor, listener);
         try {
             // create one doc
             new Handler(Looper.getMainLooper())
@@ -1862,37 +1901,29 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testLiveQueryStopWhenClosed() throws CouchbaseLiteException, InterruptedException {
+    public void testCloseDatabaseWithActiveLiveQuery() throws CouchbaseLiteException, InterruptedException {
         final CountDownLatch latch1 = new CountDownLatch(1);
-        final CountDownLatch latch2 = new CountDownLatch(1);
+        Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(db));
+        ListenerToken token = query.addChangeListener(executor, new QueryChangeListener() {
+            @Override
+            public void changed(QueryChange change) {
+                latch1.countDown();
+            }
+        });
+        assertTrue(latch1.await(2, TimeUnit.SECONDS));
 
-        Database otherDB = new Database(db.getName(), db.getConfig());
         try {
-            Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
-                    .from(DataSource.database(otherDB));
-            query.addChangeListener(new QueryChangeListener() {
-                @Override
-                public void changed(QueryChange change) {
-                    for (Result r : change.getResults()) {
-                        if (r.getString("id").equals("doc1"))
-                            latch1.countDown();
-                        else if (r.getString("id").equals("doc2"))
-                            latch2.countDown();
-                    }
-                }
-            });
-            MutableDocument doc = new MutableDocument("doc1");
-            doc.setString("value", "string");
-            db.save(doc);
-            assertTrue(latch1.await(2, TimeUnit.SECONDS));
-        } finally {
-            otherDB.close();
+            closeDB();
+            fail();
+        } catch (CouchbaseLiteException e) {
+            Log.e(TAG, "5");
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorBusy, e.getCode());
         }
 
-        MutableDocument doc = new MutableDocument("doc1");
-        doc.setString("value", "string");
-        db.save(doc);
-        assertFalse(latch2.await(2, TimeUnit.SECONDS));
+        query.removeChangeListener(token);
+        closeDB();
     }
 
     @Test

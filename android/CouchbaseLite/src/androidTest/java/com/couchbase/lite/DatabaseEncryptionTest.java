@@ -1,3 +1,20 @@
+//
+// DatabaseEncryptionTest.java
+//
+// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
@@ -14,7 +31,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorBusy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -22,8 +38,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DatabaseEncryptionTest extends BaseTest {
-    private static final String TAG = DatabaseEncryptionTest.class.getName();
-
     private Database seekrit;
 
     //---------------------------------------------
@@ -34,7 +48,6 @@ public class DatabaseEncryptionTest extends BaseTest {
     public void setUp() throws Exception {
         Log.i(TAG, "setUp");
         super.setUp();
-
     }
 
     @After
@@ -44,14 +57,14 @@ public class DatabaseEncryptionTest extends BaseTest {
         if (seekrit != null) seekrit.close();
 
         // database exist, delete it
-        if (Database.exists("seekrit", dir)) {
+        if (Database.exists("seekrit", getDir())) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec
             for (int i = 0; i < 10; i++) {
                 try {
-                    Database.delete("seekrit", dir);
+                    Database.delete("seekrit", getDir());
                     break;
                 } catch (CouchbaseLiteException ex) {
-                    if (ex.getCode() == kC4ErrorBusy) {
+                    if (ex.getCode() == CBLErrorBusy) {
                         try {
                             Thread.sleep(300);
                         } catch (Exception e) {
@@ -70,12 +83,15 @@ public class DatabaseEncryptionTest extends BaseTest {
         DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         if (password != null)
             config.setEncryptionKey(new EncryptionKey(password));
-        config.setDirectory(this.dir.getAbsolutePath());
+        config.setDirectory(this.getDir().getAbsolutePath());
         return new Database("seekrit", config);
     }
 
     @Test
     public void testUnEncryptedDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create unencrypted database:
         seekrit = openSeekrit(null);
         assertNotNull(seekrit);
@@ -92,8 +108,8 @@ public class DatabaseEncryptionTest extends BaseTest {
             openSeekrit("wrong");
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals("LiteCore", e.getDomainString());
-            assertEquals(29, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorUnreadableDatabase, e.getCode());
         }
 
         // Reopen with no password:
@@ -104,6 +120,9 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testEncryptedDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create encrypted database:
         seekrit = openSeekrit("letmein");
         assertNotNull(seekrit);
@@ -120,8 +139,8 @@ public class DatabaseEncryptionTest extends BaseTest {
             openSeekrit(null);
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals("LiteCore", e.getDomainString());
-            assertEquals(29, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorUnreadableDatabase, e.getCode());
         }
 
         // Reopen with wrong password (fails):
@@ -129,8 +148,8 @@ public class DatabaseEncryptionTest extends BaseTest {
             openSeekrit("wrong");
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals("LiteCore", e.getDomainString());
-            assertEquals(29, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorUnreadableDatabase, e.getCode());
         }
 
         // Reopen with correct password:
@@ -141,6 +160,9 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testDeleteEncryptedDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create encrypted database:
         seekrit = openSeekrit("letmein");
         assertNotNull(seekrit);
@@ -167,13 +189,16 @@ public class DatabaseEncryptionTest extends BaseTest {
             seekrit = openSeekrit("letmein");
             fail();
         } catch (CouchbaseLiteException e) {
-            assertEquals("LiteCore", e.getDomainString());
-            assertEquals(29, e.getCode());
+            assertEquals(CBLErrorDomain, e.getDomain());
+            assertEquals(CBLErrorUnreadableDatabase, e.getCode());
         }
     }
 
     @Test
     public void testCompactEncryptedDatabase() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create encrypted database:
         seekrit = openSeekrit("letmein");
         assertNotNull(seekrit);
@@ -204,10 +229,16 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testEncryptedBlobs() throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         testEncryptedBlobs("letmein");
     }
 
     void testEncryptedBlobs(String password) throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create database with the password:
         seekrit = openSeekrit(password);
         assertNotNull(seekrit);
@@ -239,6 +270,9 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testMultipleDatabases() throws CouchbaseLiteException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         // Create encryped database:
         seekrit = openSeekrit("seekrit");
 
@@ -254,16 +288,25 @@ public class DatabaseEncryptionTest extends BaseTest {
 
     @Test
     public void testAddKey() throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         rekeyUsingOldPassword(null, "letmein");
     }
 
     @Test
     public void testReKey() throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         rekeyUsingOldPassword("letmein", "letmeout");
     }
 
     @Test
     public void testRemoveKey() throws CouchbaseLiteException, IOException {
+        if (!config.eeFeaturesTestsEnabled())
+            return;
+
         rekeyUsingOldPassword("letmein", null);
     }
 
