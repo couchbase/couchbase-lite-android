@@ -80,6 +80,10 @@ public class DocumentAPITest extends BaseTest {
     // ### Mutability
     @Test
     public void testMutability() {
+        try {
+            database.save(new MutableDocument("xyz"));
+        } catch (CouchbaseLiteException e) { }
+
         // --- code example ---
         Document document = database.getDocument("xyz");
         MutableDocument mutableDocument = document.toMutable();
