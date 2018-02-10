@@ -1,0 +1,69 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.3"
+    defaultConfig {
+        applicationId "com.couchbase.liteservandroid"
+        minSdkVersion 16
+        targetSdkVersion 25
+        versionCode 1
+        versionName version
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        ndk {
+            //abiFilters 'x86', 'armeabi-v7a', 'arm64-v8a'
+            abiFilters 'x86'
+        }
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static', "-DANDROID_TOOLCHAIN=clang", '-DANDROID_PLATFORM=android-16', '-DJNI=TRUE', '-DREST=TRUE'
+                cppFlags "-std=c++11 -frtti -fexceptions -fPIC"
+                // explicitly build libs
+                targets 'LiteCoreJNI'
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "${rootDir}/../libs/couchbase-lite-core/CMakeLists.txt"
+        }
+    }
+    sourceSets {
+        main {
+            java.srcDirs = [
+                    "src/main/java",                                  // android specific codes
+                    "${rootDir}/../libs/couchbase-lite-core/Java/src" // lite-core java codes
+            ]
+        }
+        androidTest {
+            java.srcDirs = [
+                    "src/androidTest/java",                                        // android specific codes
+                    "${rootDir}/../libs/couchbase-lite-core/Java/androidTest/java" // lite-core java codes
+            ]
+            assets.srcDirs = [
+                    "src/main/assets",
+                    "src/androidTest/assets",
+                    "${rootDir}/../libs/couchbase-lite-core/C/tests/data" // lite-core test assets
+            ]
+        }
+    }
+
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    testCompile 'junit:junit:4.12'
+
+    compile 'com.squareup.okhttp3:okhttp:3.8.0'
+}

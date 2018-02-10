@@ -1,0 +1,25 @@
+// The Top-level Build File
+
+buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        /**
+         * NOTE: dependencies configuration moved to module level build file to allow to build
+         *       CBL as submodule of application
+         */
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
