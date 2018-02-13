@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
@@ -66,6 +67,9 @@ import static com.couchbase.litecore.C4Constants.C4ErrorDomain.POSIXDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrUnknownHost;
+import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseNormal;
+import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketClosePolicyError;
+import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseProtocolError;
 
 /**
  * NOTE: CBLWebSocket class should be public as this class is instantiated
@@ -76,6 +80,11 @@ public final class CBLWebSocket extends C4Socket {
     // Constants
     //-------------------------------------------------------------------------
     private static final String TAG = Log.WEB_SOCKET;
+
+    // Posix errno values with Android.
+    // from sysroot/usr/include/asm-generic/errno.h
+    private final static int ECONNRESET = 104;    // java.net.SocketException
+    private final static int ECONNREFUSED = 111;  // java.net.ConnectException
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -112,7 +121,6 @@ public final class CBLWebSocket extends C4Socket {
             Log.v(TAG, "WebSocketListener.onOpen() response -> " + response);
             CBLWebSocket.this.webSocket = webSocket;
             receivedHTTPResponse(response);
-            opened(handle);
         }
 
         @Override
@@ -136,18 +144,13 @@ public final class CBLWebSocket extends C4Socket {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             Log.v(TAG, "WebSocketListener.onClosed() code -> " + code + ", reason -> " + reason);
-            closed(handle, WebSocketDomain, code);
+            didClose(code, reason);
         }
 
         // NOTE: from CBLStatus.mm
         // {kCFErrorHTTPConnectionLost,                {POSIXDomain, ECONNRESET}},
         // {kCFURLErrorCannotConnectToHost,            {POSIXDomain, ECONNREFUSED}},
         // {kCFURLErrorNetworkConnectionLost,          {POSIXDomain, ECONNRESET}},
-
-        // Posix errno values with Android.
-        // from sysroot/usr/include/asm-generic/errno.h
-        final static int ECONNRESET = 104;    // java.net.SocketException
-        final static int ECONNREFUSED = 111;  // java.net.ConnectException
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
@@ -156,53 +159,10 @@ public final class CBLWebSocket extends C4Socket {
             // Invoked when a web socket has been closed due to an error reading from or writing to the
             // network. Both outgoing and incoming messages may have been lost. No further calls to this
             // listener will be made.
-
-            if (response != null)
-                closed(handle, WebSocketDomain, response.code());
-            else if (t != null) {
-                // TODO: Following codes works with only Android.
-                // In case errno is set
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP &&
-                        t.getCause() != null &&
-                        t.getCause().getCause() != null &&
-                        t.getCause().getCause() instanceof android.system.ErrnoException) {
-                    android.system.ErrnoException e = (android.system.ErrnoException) t.getCause().getCause();
-                    closed(handle, POSIXDomain, e != null ? e.errno : 0);
-                }
-
-                // TLS Certificate error
-                else if (t.getCause() != null &&
-                        t.getCause() instanceof java.security.cert.CertificateException) {
-                    closed(handle, NetworkDomain, kC4NetErrTLSCertUntrusted);
-                }
-
-                // SSLPeerUnverifiedException
-                else if (t instanceof javax.net.ssl.SSLPeerUnverifiedException) {
-                    closed(handle, NetworkDomain, kC4NetErrTLSCertUntrusted);
-                }
-
-                // ConnectException
-                else if (t instanceof java.net.ConnectException) {
-                    closed(handle, POSIXDomain, ECONNREFUSED);
-                }
-                // SocketException
-                else if (t instanceof java.net.SocketException) {
-                    closed(handle, POSIXDomain, ECONNRESET);
-                }
-                // EOFException
-                else if (t instanceof java.io.EOFException) {
-                    closed(handle, POSIXDomain, ECONNRESET);
-                }
-                // UnknownHostException - this is thrown if Airplane mode, offline
-                else if (t instanceof java.net.UnknownHostException) {
-                    closed(handle, NetworkDomain, kC4NetErrUnknownHost);
-                }
-                // Unknown
-                else {
-                    closed(handle, WebSocketDomain, 0);
-                }
+            if (response != null) {
+                didClose(response.code(), response.message());
             } else {
-                closed(handle, WebSocketDomain, 0);
+                didClose(t);
             }
         }
     }
@@ -361,13 +321,6 @@ public final class CBLWebSocket extends C4Socket {
             host = String.format(Locale.ENGLISH, "%s:%d", host, uri.getPort());
         builder.header("Host", host);
 
-        // Configure the nonce/key for the request:
-        byte[] nonceBytes = new byte[16];
-        new Random().nextBytes(nonceBytes);
-        String nonceKey = encodeToString(nonceBytes, NO_WRAP);
-        String expectedStr = nonceKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        expectedAcceptHeader = encodeToString(expectedStr.getBytes(), NO_WRAP);
-
         // Construct the HTTP request:
         if (options != null) {
             // Extra Headers
@@ -384,16 +337,26 @@ public final class CBLWebSocket extends C4Socket {
                 builder.addHeader("Cookie", cookieString);
         }
 
-        // other header values
-        builder.header("Connection", "Upgrade");
-        builder.header("Upgrade", "websocket");
-        builder.header("Sec-WebSocket-Version", "13");
-        builder.header("Sec-WebSocket-Key", nonceKey);
-
+        // Configure WebSocket related headers:
         String protocols = (String) options.get(kC4SocketOptionWSProtocols);
         if (protocols != null) {
             builder.header("Sec-WebSocket-Protocol", protocols);
         }
+
+        builder.header("Connection", "Upgrade");
+        builder.header("Upgrade", "websocket");
+        builder.header("Sec-WebSocket-Version", "13");
+
+        // Configure the nonce key for the request:
+        //
+        // Setting nonce key is not effective due to the following issue:
+        // https://github.com/couchbase/couchbase-lite-android/issues/1597
+        //
+        byte[] nonceBytes = new byte[16];
+        new Random().nextBytes(nonceBytes);
+        String nonceKey = encodeToString(nonceBytes, NO_WRAP);
+        expectedAcceptHeader = getBase64Digest(nonceKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+        builder.header("Sec-WebSocket-Key", nonceKey);
 
         return builder.build();
     }
@@ -421,6 +384,30 @@ public final class CBLWebSocket extends C4Socket {
                 enc.free();
             }
             gotHTTPResponse(httpStatus, headersFleece);
+        }
+
+        if (httpStatus != 101) {
+            // Unexpected HTTP status:
+            int closeCode = kWebSocketClosePolicyError;
+            if (httpStatus >= 300 && httpStatus < 1000)
+                closeCode = httpStatus;
+            String reason = response.message();
+            didClose(closeCode, reason);
+        } else if (!checkHeader(hs, "Connection", "Upgrade", false)) {
+            didClose(kWebSocketCloseProtocolError, "Invalid 'Connection' header");
+        } else if (!checkHeader(hs, "Upgrade", "websocket", false)) {
+            didClose(kWebSocketCloseProtocolError, "Invalid 'Upgrade' header");
+        }
+
+        // https://github.com/couchbase/couchbase-lite-android/issues/1597
+        //
+        // else if (!checkHeader(hs, "Sec-WebSocket-Accept", expectedAcceptHeader, true)) {
+        //     didClose(kWebSocketCloseProtocolError, "Invalid 'Sec-WebSocket-Accept' header");
+        // }
+
+        else {
+            Log.i(TAG, "CBLWebSocket CONNECTED!");
+            opened(handle);
         }
     }
 
@@ -464,6 +451,88 @@ public final class CBLWebSocket extends C4Socket {
             return keyStore;
         } catch (IOException e) {
             throw new AssertionError(e);
+        }
+    }
+
+    private void didClose(int code, String reason) {
+        if (code == kWebSocketCloseNormal) {
+            didClose(null);
+            return;
+        }
+
+        Log.i(TAG, "CBLWebSocket CLOSED WITH STATUS " + code + " \"" + reason  + "\"");
+        closed(handle, WebSocketDomain, code, reason);
+    }
+
+    private void didClose(Throwable error) {
+        if (error == null) {
+            closed(handle, WebSocketDomain, 0, null);
+        }
+        // TODO: Following codes works with only Android.
+        else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP &&
+                error.getCause() != null &&
+                error.getCause().getCause() != null &&
+                error.getCause().getCause() instanceof android.system.ErrnoException) {
+            android.system.ErrnoException e = (android.system.ErrnoException) error.getCause().getCause();
+            closed(handle, POSIXDomain, e != null ? e.errno : 0, null);
+        }
+        // TLS Certificate error
+        else if (error.getCause() != null &&
+                error.getCause() instanceof java.security.cert.CertificateException) {
+            closed(handle, NetworkDomain, kC4NetErrTLSCertUntrusted, null);
+        }
+        // SSLPeerUnverifiedException
+        else if (error instanceof javax.net.ssl.SSLPeerUnverifiedException) {
+            closed(handle, NetworkDomain, kC4NetErrTLSCertUntrusted, null);
+        }
+        // ConnectException
+        else if (error instanceof java.net.ConnectException) {
+            closed(handle, POSIXDomain, ECONNREFUSED, null);
+        }
+        // SocketException
+        else if (error instanceof java.net.SocketException) {
+            closed(handle, POSIXDomain, ECONNRESET, null);
+        }
+        // EOFException
+        else if (error instanceof java.io.EOFException) {
+            closed(handle, POSIXDomain, ECONNRESET, null);
+        }
+        // UnknownHostException - this is thrown if Airplane mode, offline
+        else if (error instanceof java.net.UnknownHostException) {
+            closed(handle, NetworkDomain, kC4NetErrUnknownHost, null);
+        }
+        // Unknown
+        else {
+            closed(handle, WebSocketDomain, 0, null);
+        }
+    }
+
+    private String getBase64Digest(String str) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            byte[] bytes = str.getBytes("US-ASCII");
+            byte[] digest = md.digest(bytes);
+            return encodeToString(digest, NO_WRAP);
+        } catch (Exception e) {
+            Log.e(TAG, "Cannot generate base64 digest", e);
+        }
+        return null;
+    }
+
+    private boolean checkHeader(Headers headers, String header, String expected, boolean caseSens) {
+        if (headers == null) {
+            return false;
+        }
+
+        String value = headers.get(header);
+        if (value == null) {
+            return false;
+        }
+
+        if (caseSens) {
+            return value.equals(expected);
+        } else {
+            return value.equalsIgnoreCase(expected);
         }
     }
 }
