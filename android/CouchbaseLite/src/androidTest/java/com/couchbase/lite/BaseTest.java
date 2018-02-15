@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.couchbase.lite.utils.Config.EE_TEST_PROPERTIES_FILE;
 import static com.couchbase.lite.utils.Config.TEST_PROPERTIES_FILE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -101,7 +102,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
 
         context = InstrumentationRegistry.getTargetContext();
         try {
-            config = new Config(context.getAssets().open(TEST_PROPERTIES_FILE));
+            config = new Config(openTestPropertiesFile());
         } catch (IOException e) {
             fail("Failed to load test.properties");
         }
@@ -115,6 +116,14 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
         FileUtils.cleanDirectory(dir);
 
         openDB();
+    }
+
+    private InputStream openTestPropertiesFile() throws IOException {
+        try {
+            return context.getAssets().open(EE_TEST_PROPERTIES_FILE);
+        } catch (IOException e) {
+            return context.getAssets().open(TEST_PROPERTIES_FILE);
+        }
     }
 
     @After
