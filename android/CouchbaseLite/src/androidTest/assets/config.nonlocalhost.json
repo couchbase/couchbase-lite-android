@@ -1,0 +1,12 @@
+{
+  "log":["*"],
+  "databases": {
+    "db": {
+      "server":"walrus:",
+      "users": {
+        "GUEST": {"disabled": false, "admin_channels": ["*"]}
+      }
+    }
+  },
+"adminInterface": "10.17.0.37:4985"
+}

@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * NOTE: To execute ReplicatorWithSyncGatewayDBTest unit tests, please launch
+ * Sync Gateway with using assets/config.json configuration file.
+ * In case of executing unit test from real device, please use asset/config.nonlocalhost.json
+ * configuration file.
+ */
 public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -57,6 +64,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         super.setUp();
 
+        remote_DELETE_db(DB_NAME);
         remote_PUT_db(DB_NAME);
     }
 
@@ -88,6 +96,18 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         okhttp3.Request request = new okhttp3.Request.Builder()
                 .url(url)
                 .delete()
+                .build();
+        Response response = client.newCall(request).execute();
+        return response.code() >= 200 && response.code() < 300;
+    }
+
+    private boolean remote_PUT_db(String db, String docID, String jsonBody) throws IOException {
+        OkHttpClient client = new OkHttpClient();
+        String url = String.format(Locale.ENGLISH, "http://%s:4984/%s/%s", this.config.remoteHost(), db, docID);
+        RequestBody body = RequestBody.create(JSON, jsonBody);
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(url)
+                .put(body)
                 .build();
         Response response = client.newCall(request).execute();
         return response.code() >= 200 && response.code() < 300;
@@ -383,5 +403,58 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         doc = otherDB.getDocument(docID);
         assertNotNull(doc);
         assertEquals("world", doc.getString("hello"));
+    }
+
+    @Test
+    public void testPullReplicateMultipleDocs() throws IOException, URISyntaxException, InterruptedException {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        // create multiple documents on sync gateway
+        final int N = 10;
+        for (int i = 1; i <= N; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            String jsonBody = String.format(Locale.ENGLISH, "{\"type\":\"text\",\"idx\":%d}", i);
+            assertTrue(remote_PUT_db(DB_NAME, docID, jsonBody));
+        }
+
+        db.addChangeListener(new DatabaseChangeListener() {
+            @Override
+            public void changed(DatabaseChange change) {
+                Log.e(TAG, "DatabaseChangeListener.changed() %s", change);
+
+                // check getDocumentIDs values
+                if (change.getDocumentIDs() != null)
+                    assertEquals(N, change.getDocumentIDs().size());
+
+
+                // check query result
+                Query q = QueryBuilder.select(SelectResult.expression(Meta.id))
+                        .from(DataSource.database(db))
+                        .where(Expression.property("type").equalTo(Expression.string("text")));
+                try {
+                    ResultSet rs = q.execute();
+                    List<Result> results = rs.allResults();
+                    assertEquals(N, results.size());
+                } catch (CouchbaseLiteException e) {
+                    Log.e(TAG, "Error in Query.execute()", e);
+                    fail("Error in Query.execute(): " + e.getMessage());
+                }
+            }
+        });
+
+        // target SG URI
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+
+        // Pull replicate from SG to otherDB.
+        ReplicatorConfiguration config = makeConfig(false, true, false, this.db, target);
+        run(config, 0, null);
+        assertEquals(N, this.db.getCount());
+        for (int i = 1; i <= N; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc%d", i);
+            Document doc = db.getDocument(docID);
+            assertNotNull(doc);
+            assertEquals(i, doc.getInt("idx"));
+        }
     }
 }
