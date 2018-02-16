@@ -97,7 +97,7 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
-        run(config, 401, "WebSocket");
+        run(config, CBLErrorHTTPAuthRequired, CBLErrorDomain);
     }
 
     @Test
@@ -107,12 +107,13 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
         config.setAuthenticator(new BasicAuthenticator("pupshaw", "frank!"));
-        run(config, 401, "WebSocket"); // Retry 3 times then fails with 401
+        run(config, CBLErrorHTTPAuthRequired, CBLErrorDomain); // Retry 3 times then fails with 401
     }
 
     @Test
     public void testAuthenticatedPull() throws Exception {
         if (!config.replicatorTestsEnabled()) return;
+
 
         Endpoint target = getRemoteEndpoint("seekrit", false);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);

@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
@@ -36,7 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -60,8 +58,6 @@ import okhttp3.internal.tls.CustomHostnameVerifier;
 import okio.Buffer;
 import okio.ByteString;
 
-import static android.util.Base64.NO_WRAP;
-import static android.util.Base64.encodeToString;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.NetworkDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.POSIXDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
@@ -121,6 +117,8 @@ public final class CBLWebSocket extends C4Socket {
             Log.v(TAG, "WebSocketListener.onOpen() response -> " + response);
             CBLWebSocket.this.webSocket = webSocket;
             receivedHTTPResponse(response);
+            Log.i(TAG, "CBLWebSocket CONNECTED!");
+            opened(handle);
         }
 
         @Override
@@ -160,7 +158,15 @@ public final class CBLWebSocket extends C4Socket {
             // network. Both outgoing and incoming messages may have been lost. No further calls to this
             // listener will be made.
             if (response != null) {
-                didClose(response.code(), response.message());
+                int httpStatus = response.code();
+                if (httpStatus != 101) {
+                    int closeCode = kWebSocketClosePolicyError;
+                    if (httpStatus >= 300 && httpStatus < 1000)
+                        closeCode = httpStatus;
+                    didClose(closeCode, response.message());
+                } else {
+                    didClose(kWebSocketCloseProtocolError, response.message());
+                }
             } else {
                 didClose(t);
             }
@@ -343,21 +349,6 @@ public final class CBLWebSocket extends C4Socket {
             builder.header("Sec-WebSocket-Protocol", protocols);
         }
 
-        builder.header("Connection", "Upgrade");
-        builder.header("Upgrade", "websocket");
-        builder.header("Sec-WebSocket-Version", "13");
-
-        // Configure the nonce key for the request:
-        //
-        // Setting nonce key is not effective due to the following issue:
-        // https://github.com/couchbase/couchbase-lite-android/issues/1597
-        //
-        byte[] nonceBytes = new byte[16];
-        new Random().nextBytes(nonceBytes);
-        String nonceKey = encodeToString(nonceBytes, NO_WRAP);
-        expectedAcceptHeader = getBase64Digest(nonceKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-        builder.header("Sec-WebSocket-Key", nonceKey);
-
         return builder.build();
     }
 
@@ -384,30 +375,6 @@ public final class CBLWebSocket extends C4Socket {
                 enc.free();
             }
             gotHTTPResponse(httpStatus, headersFleece);
-        }
-
-        if (httpStatus != 101) {
-            // Unexpected HTTP status:
-            int closeCode = kWebSocketClosePolicyError;
-            if (httpStatus >= 300 && httpStatus < 1000)
-                closeCode = httpStatus;
-            String reason = response.message();
-            didClose(closeCode, reason);
-        } else if (!checkHeader(hs, "Connection", "Upgrade", false)) {
-            didClose(kWebSocketCloseProtocolError, "Invalid 'Connection' header");
-        } else if (!checkHeader(hs, "Upgrade", "websocket", false)) {
-            didClose(kWebSocketCloseProtocolError, "Invalid 'Upgrade' header");
-        }
-
-        // https://github.com/couchbase/couchbase-lite-android/issues/1597
-        //
-        // else if (!checkHeader(hs, "Sec-WebSocket-Accept", expectedAcceptHeader, true)) {
-        //     didClose(kWebSocketCloseProtocolError, "Invalid 'Sec-WebSocket-Accept' header");
-        // }
-
-        else {
-            Log.i(TAG, "CBLWebSocket CONNECTED!");
-            opened(handle);
         }
     }
 
@@ -504,35 +471,6 @@ public final class CBLWebSocket extends C4Socket {
         // Unknown
         else {
             closed(handle, WebSocketDomain, 0, null);
-        }
-    }
-
-    private String getBase64Digest(String str) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            byte[] bytes = str.getBytes("US-ASCII");
-            byte[] digest = md.digest(bytes);
-            return encodeToString(digest, NO_WRAP);
-        } catch (Exception e) {
-            Log.e(TAG, "Cannot generate base64 digest", e);
-        }
-        return null;
-    }
-
-    private boolean checkHeader(Headers headers, String header, String expected, boolean caseSens) {
-        if (headers == null) {
-            return false;
-        }
-
-        String value = headers.get(header);
-        if (value == null) {
-            return false;
-        }
-
-        if (caseSens) {
-            return value.equals(expected);
-        } else {
-            return value.equalsIgnoreCase(expected);
         }
     }
 }
