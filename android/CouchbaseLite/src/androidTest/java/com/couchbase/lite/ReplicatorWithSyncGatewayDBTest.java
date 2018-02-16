@@ -197,7 +197,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         timeout = 180; // 3min
         Endpoint target = getRemoteEndpoint(DB_NAME, false);
         ReplicatorConfiguration config = makeConfig(true, false, true, target);
-        run(config, 0, null);
+        Replicator repl = run(config, 0, null);
+        stopContinuousReplicator(repl);
     }
 
     @Test
