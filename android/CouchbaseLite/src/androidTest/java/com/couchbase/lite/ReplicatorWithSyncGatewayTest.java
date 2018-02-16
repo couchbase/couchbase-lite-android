@@ -27,14 +27,19 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Note: https://github.com/couchbase/couchbase-lite-core/tree/master/Replicator/tests/data
@@ -59,27 +64,34 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
         super.tearDown();
     }
 
-    private boolean remote_PUT_db(String db) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        String url = String.format(Locale.ENGLISH, "http://%s:4985/%s/", this.config.remoteHost(), db);
-        RequestBody body = RequestBody.create(JSON, "{\"server\": \"walrus:\", \"users\": { \"GUEST\": { \"disabled\": false, \"admin_channels\": [\"*\"] } }, \"unsupported\": {\"replicator_2\":true}}");
-        okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(url)
-                .put(body)
-                .build();
-        Response response = client.newCall(request).execute();
-        return response.code() >= 200 && response.code() < 300;
-    }
+    @Test
+    public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
+        if (!config.replicatorTestsEnabled())
+            return;
 
-    private boolean remote_DELETE_db(String db) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        String url = String.format(Locale.ENGLISH, "http://%s:4985/%s/", this.config.remoteHost(), db);
-        okhttp3.Request request = new okhttp3.Request.Builder()
-                .url(url)
-                .delete()
-                .build();
-        Response response = client.newCall(request).execute();
-        return response.code() >= 200 && response.code() < 300;
+        timeout = 200;
+        URLEndpoint target = new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
+        ReplicatorConfiguration config = makeConfig(false, true, true, db, target);
+        Replicator repl = new Replicator(config);
+        final CountDownLatch offline = new CountDownLatch(1);
+        final CountDownLatch stopped = new CountDownLatch(1);
+        ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
+                    change.getReplicator().stop();
+                    offline.countDown();
+                }
+                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) {
+                    stopped.countDown();
+                }
+            }
+        });
+        repl.start();
+        assertTrue(offline.await(10, TimeUnit.SECONDS));
+        assertTrue(stopped.await(10, TimeUnit.SECONDS));
+        repl.removeChangeListener(token);
     }
 
     @Test

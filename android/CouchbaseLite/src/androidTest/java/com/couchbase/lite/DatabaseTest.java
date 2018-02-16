@@ -163,15 +163,13 @@ public class DatabaseTest extends BaseTest {
         assertNull(config1.getEncryptionKey());
 
         // Custom
-        EncryptionKey key = new EncryptionKey("key");
         DummyResolver resolver = new DummyResolver();
         DatabaseConfiguration config2 = new DatabaseConfiguration(this.context);
         config2.setDirectory("/tmp/mydb");
         config2.setConflictResolver(resolver);
-        config2.setEncryptionKey(key);
         assertEquals("/tmp/mydb", config2.getDirectory());
         assertEquals(resolver, config2.getConflictResolver());
-        assertEquals(key, config2.getEncryptionKey());
+        assertNull(config2.getEncryptionKey());
     }
 
     @Test

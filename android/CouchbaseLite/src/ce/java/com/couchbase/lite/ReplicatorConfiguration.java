@@ -378,11 +378,7 @@ public final class ReplicatorConfiguration {
     }
 
     Database getTargetDatabase() {
-        if (target instanceof DatabaseEndpoint) {
-            DatabaseEndpoint urlEndpoint = (DatabaseEndpoint) target;
-            return urlEndpoint.getDatabase();
-        } else
-            return null;
+        return null;
     }
 
     //---------------------------------------------

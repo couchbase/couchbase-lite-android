@@ -21,7 +21,6 @@ import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.DatabaseConfiguration;
-import com.couchbase.lite.EncryptionKey;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.ZipUtils;
 
@@ -75,21 +74,6 @@ public class DatabaseAPITest extends BaseTest {
         // --- code example ---
 
         mgr.delete();
-    }
-
-    // ###  Encryption
-    @Test
-    public void testEncryption() throws CouchbaseLiteException {
-        if (!config.eeFeaturesTestsEnabled())
-            return;
-
-        // --- code example ---
-        DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context)
-                .setEncryptionKey(new EncryptionKey("secretpassword"));
-        Database database = new Database("my-database", config);
-        // --- code example ---
-
-        database.delete();
     }
 
     // ### Loading a pre-built database

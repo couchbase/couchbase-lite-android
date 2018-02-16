@@ -50,14 +50,6 @@ public class BaseReplicatorTest extends BaseTest {
         return new URLEndpoint(new URI(uri));
     }
 
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous) {
-        return makeConfig(push, pull, continuous, this.otherDB);
-    }
-
-    protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, Database targetDatabase) {
-        return makeConfig(push, pull, continuous, this.db, new DatabaseEndpoint(targetDatabase));
-    }
-
     protected ReplicatorConfiguration makeConfig(boolean push, boolean pull, boolean continuous, Endpoint target) {
         return makeConfig(push, pull, continuous, this.db, target);
     }

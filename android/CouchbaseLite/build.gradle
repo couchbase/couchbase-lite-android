@@ -104,7 +104,8 @@ android {
     sourceSets {
         main {
             java.srcDirs = [
-                    "src/main/java",                                  // android specific codes
+                    "src/ce/java",                                          // CE android specific codes
+                    "src/main/java",                                        // android specific codes
                     "${projectDir}/../../shared/src/main/java",             // shared java codes
                     "${projectDir}/../../libs/couchbase-lite-core/Java/src" // lite-core java codes
             ]

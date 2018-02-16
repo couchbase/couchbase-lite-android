@@ -29,7 +29,6 @@ public final class DatabaseConfiguration {
     private boolean readonly = false;
     private Context context = null;
     private String directory = null;
-    private EncryptionKey encryptionKey = null;
     private ConflictResolver conflictResolver = null;
 
     //---------------------------------------------
@@ -42,7 +41,6 @@ public final class DatabaseConfiguration {
         this.readonly = false;
         this.context = context;
         this.directory = context.getFilesDir().getAbsolutePath();
-        this.encryptionKey = null;
         this.conflictResolver = new DefaultConflictResolver();
     }
 
@@ -52,7 +50,6 @@ public final class DatabaseConfiguration {
         this.readonly = false;
         this.context = config.context;
         this.directory = config.directory;
-        this.encryptionKey = config.encryptionKey;
         this.conflictResolver = config.conflictResolver;
     }
 
@@ -72,20 +69,6 @@ public final class DatabaseConfiguration {
         if (readonly)
             throw new IllegalStateException("DatabaseConfiguration is readonly mode.");
         this.directory = directory;
-        return this;
-    }
-
-    /**
-     * Set a key to encrypt the database with. If the database does not exist and is being created,
-     * it will use this key, and the same key must be given every time it's opened
-     *
-     * @param encryptionKey the key
-     * @return The self object.
-     */
-    public DatabaseConfiguration setEncryptionKey(EncryptionKey encryptionKey) {
-        if (readonly)
-            throw new IllegalStateException("DatabaseConfiguration is readonly mode.");
-        this.encryptionKey = encryptionKey;
         return this;
     }
 
@@ -117,15 +100,6 @@ public final class DatabaseConfiguration {
     }
 
     /**
-     * Returns a key to encrypt the database with.
-     *
-     * @return the key
-     */
-    public EncryptionKey getEncryptionKey() {
-        return encryptionKey;
-    }
-
-    /**
      * Returns the conflict resolver for this database.
      *
      * @return the conflict resolver
@@ -137,6 +111,16 @@ public final class DatabaseConfiguration {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    /**
+     * Returns always null as encryption is not supported
+     *
+     * @return null
+     */
+    EncryptionKey getEncryptionKey() {
+        return null;
+    }
+
     DatabaseConfiguration readonlyCopy() {
         DatabaseConfiguration config = new DatabaseConfiguration(this);
         config.readonly = true;
