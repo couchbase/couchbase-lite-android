@@ -2206,4 +2206,25 @@ public class QueryTest extends BaseTest {
         expected.put("address", null);
         assertEquals(expected, r.toMap());
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1603
+    @Test
+    public void testExpressionNot() throws Exception {
+        loadNumbers(10);
+        Query q = QueryBuilder
+                .select(SelectResult.expression(Meta.id), SelectResult.property("number1"))
+                .from(DataSource.database(db))
+                .where(Expression.not(Expression.property("number1").between(Expression.intValue(3), Expression.intValue(5))))
+                .orderBy(Ordering.expression(Expression.property("number1")).ascending());
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                if (n < 3)
+                    assertEquals(n, result.getInt("number1"));
+                else
+                    assertEquals(n + 3, result.getInt("number1"));
+            }
+        }, true);
+        assertEquals(7, numRows);
+    }
 }
