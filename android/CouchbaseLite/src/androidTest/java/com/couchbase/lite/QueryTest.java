@@ -2227,4 +2227,21 @@ public class QueryTest extends BaseTest {
         }, true);
         assertEquals(7, numRows);
     }
+
+    @Test
+    public void testLimitValueIsLargerThanResult() throws Exception {
+        final int N = 4;
+        loadNumbers(N);
+        Query q = QueryBuilder
+                .select(SelectResult.all())
+                .from(DataSource.database(db))
+                .limit(Expression.intValue(10));
+        ResultSet rs = q.execute();
+        int count = 0;
+        for (Result r : rs.allResults()) {
+            Log.i(TAG, "result -> " + r.toMap());
+            count++;
+        }
+        assertEquals(N, count);
+    }
 }
