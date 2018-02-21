@@ -1477,6 +1477,33 @@ public class DatabaseTest extends BaseTest {
     }
 
     @Test
+    public void testSaveAndUpdateMutableDoc() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument("doc1");
+        doc.setString("firstName", "Daniel");
+        db.save(doc);
+
+        // Update:
+        doc.setString("lastName", "Tiger");
+        db.save(doc);
+
+        // Update:
+        doc.setLong("age", 20L); // Int vs Long assertEquals can not ignore diff.
+        db.save(doc);
+
+
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("firstName", "Daniel");
+        expected.put("lastName", "Tiger");
+        expected.put("age", 20L);
+        assertEquals(expected, doc.toMap());
+        assertEquals(3, doc.getSequence());
+
+        Document savedDoc = db.getDocument(doc.getId());
+        assertEquals(expected, savedDoc.toMap());
+        assertEquals(3, savedDoc.getSequence());
+    }
+
+    @Test
     public void testSaveDocWithConflict() throws CouchbaseLiteException {
         testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl.NONE);
         testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl.OPTIMISTIC);
@@ -1590,6 +1617,30 @@ public class DatabaseTest extends BaseTest {
         }
 
         cleanDB();
+    }
+
+    @Test
+    public void testDeleteAndUpdateDoc() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument("doc1");
+        doc.setString("firstName", "Daniel");
+        doc.setString("lastName", "Tiger");
+        db.save(doc);
+
+        db.delete(doc);
+        assertEquals(2, doc.getSequence());
+        assertNull(db.getDocument(doc.getId()));
+
+        doc.setString("firstName", "Scott");
+        db.save(doc);
+        assertEquals(3, doc.getSequence());
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("firstName", "Scott");
+        expected.put("lastName", "Tiger");
+        assertEquals(expected, doc.toMap());
+
+        Document savedDoc = db.getDocument(doc.getId());
+        assertNotNull(savedDoc);
+        assertEquals(expected, savedDoc.toMap());
     }
 
     @Test

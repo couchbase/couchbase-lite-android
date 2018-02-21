@@ -1031,7 +1031,8 @@ abstract class AbstractDatabase {
     // The main save method.
     private boolean save(Document document, boolean deletion, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
         if (deletion && !document.exists())
-            throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+            throw new CouchbaseLiteException("Document doesn't exist in the database.",
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
 
         C4Document curDoc = null;
         C4Document newDoc = null;
@@ -1063,16 +1064,15 @@ abstract class AbstractDatabase {
                         throw CBLStatus.convertException(e);
                 }
 
-                // Handle conflict:
                 if (newDoc == null) {
-                    if (concurrencyControl.equals(ConcurrencyControl.OPTIMISTIC)) {
-                        return false;
-                    }
+                    // Handle conflict:
+                    if (concurrencyControl.equals(ConcurrencyControl.OPTIMISTIC))
+                        return false; // document is conflicted and return false because of OPTIMISTIC
 
                     // If deletion and the current doc has already been deleted:
                     if (deletion && curDoc.deleted()) {
                         document.replaceC4Document(curDoc);
-                        curDoc = null; // prevent to call curDoc.free() in finally block
+                        curDoc = null; // NOTE: prevent to call curDoc.free() in finally block
                         return true;
                     }
 
@@ -1081,7 +1081,7 @@ abstract class AbstractDatabase {
                             curDoc = getC4Database().get(document.getId(), true);
                         } catch (LiteCoreException e) {
                             // unexpected error
-                            throw CBLStatus.convertRuntimeException(e);
+                            throw CBLStatus.convertException(e);
                         }
                     }
 
