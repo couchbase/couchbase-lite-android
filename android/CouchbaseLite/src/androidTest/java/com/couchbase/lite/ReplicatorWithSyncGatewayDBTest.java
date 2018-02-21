@@ -342,7 +342,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         // 1. save new Document
         MutableDocument mDoc = new MutableDocument(docID);
-        Document doc = db.save(mDoc);
+        Document doc = save(mDoc);
 
         // 2. Set document change listner
         final CountDownLatch latch1 = new CountDownLatch(1);
@@ -386,7 +386,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         // 7. Update document
         mDoc = doc.toMutable();
         mDoc.setString("hello", "world");
-        doc = db.save(mDoc);
+        doc = save(mDoc);
 
         // 8. Wait replicator becomes IDLE state
         assertTrue(latch3.await(10, TimeUnit.SECONDS));

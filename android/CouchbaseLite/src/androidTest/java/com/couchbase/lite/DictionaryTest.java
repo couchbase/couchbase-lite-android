@@ -428,7 +428,7 @@ public class DictionaryTest extends BaseTest {
         mDict.setArray("array-null", null);
         mDict.setDictionary("dict-null", null);
         mDoc.setDictionary("dict", mDict);
-        Document doc = save(mDoc, new Validator<Document>() {
+        save(mDoc, new Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());

@@ -1598,7 +1598,6 @@ public class QueryTest extends BaseTest {
         assertEquals(2, counter);
 
         // STEP 3: delete task 1
-        assertFalse(task1.isDeleted());
         db.delete(task1);
         assertEquals(1, db.getCount());
         assertNull(db.getDocument(task1.getId()));

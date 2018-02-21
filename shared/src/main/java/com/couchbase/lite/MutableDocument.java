@@ -29,8 +29,6 @@ import java.util.UUID;
  */
 public final class MutableDocument extends Document implements MutableDictionaryInterface, C4Constants {
 
-    private boolean deleted = false;
-
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
@@ -105,14 +103,6 @@ public final class MutableDocument extends Document implements MutableDictionary
     @Override
     public MutableDocument toMutable() {
         return new MutableDocument(this, _dict);
-    }
-
-    /**
-     * Is the document deleted?
-     */
-    @Override
-    public boolean isDeleted() {
-        return deleted || super.isDeleted();
     }
 
     //---------------------------------------------
@@ -333,15 +323,6 @@ public final class MutableDocument extends Document implements MutableDictionary
 
     boolean isChanged() {
         return ((MutableDictionary) _dict).isChanged();
-    }
-
-    // For conflict resolver to know that the document is being deleted.
-    void markAsDeleted() {
-        deleted = true;
-    }
-
-    void markAsInvalidated() {
-        invalidated = true;
     }
 
     static String createUUID() {

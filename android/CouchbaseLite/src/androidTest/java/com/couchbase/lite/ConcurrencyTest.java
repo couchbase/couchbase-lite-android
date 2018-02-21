@@ -69,7 +69,7 @@ public class ConcurrencyTest extends BaseTest {
         List<String> docs = Collections.synchronizedList(new ArrayList<String>(nDocs));
         for (int i = 0; i < nDocs; i++) {
             MutableDocument doc = createDocumentWithTag(tag);
-            Document saved = db.save(doc);
+            Document saved = save(doc);
             docs.add(saved.getId());
         }
         return docs;

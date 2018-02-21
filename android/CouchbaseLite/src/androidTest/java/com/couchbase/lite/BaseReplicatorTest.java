@@ -163,7 +163,6 @@ public class BaseReplicatorTest extends BaseTest {
         config = new Config(
                 InstrumentationRegistry.getContext().getAssets().open(Config.TEST_PROPERTIES_FILE));
 
-        conflictResolver = new ConflictTest.MergeThenTheirsWins();
         super.setUp();
 
         timeout = 15; // seconds

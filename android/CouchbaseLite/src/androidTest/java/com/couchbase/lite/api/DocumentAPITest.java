@@ -32,8 +32,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 // https://github.com/couchbaselabs/couchbase-mobile-portal/edit/master/md-docs/_20/guides/couchbase-lite/native-api/document/java.md
 public class DocumentAPITest extends BaseTest {
@@ -82,7 +80,8 @@ public class DocumentAPITest extends BaseTest {
     public void testMutability() {
         try {
             database.save(new MutableDocument("xyz"));
-        } catch (CouchbaseLiteException e) { }
+        } catch (CouchbaseLiteException e) {
+        }
 
         // --- code example ---
         Document document = database.getDocument("xyz");
@@ -144,8 +143,8 @@ public class DocumentAPITest extends BaseTest {
             MutableDocument newTask = new MutableDocument();
             Blob blob = new Blob("image/png", is);
             newTask.setBlob("attachment", blob);
-            Document doc = database.save(newTask);
-
+            database.save(newTask);
+            Document doc = database.getDocument(newTask.getId());
             Blob taskBlob = doc.getBlob("attachment");
             byte[] bytes = taskBlob.getContent();
         } catch (CouchbaseLiteException e) {

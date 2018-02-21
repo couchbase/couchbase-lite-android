@@ -102,7 +102,7 @@ public class LoadTest extends BaseTest {
 
             mDoc.setValue("updated", new Date());
 
-            tmpDoc = db.save(mDoc);
+            tmpDoc = save(mDoc);
         }
         return tmpDoc;
     }
