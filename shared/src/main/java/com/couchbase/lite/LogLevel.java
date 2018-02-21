@@ -1,5 +1,5 @@
 //
-// EncryptionKeyTest.java
+// LiveQuery.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -19,25 +19,25 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 
-import org.junit.Test;
+/**
+ * Log level. The default log level for all domains is warning.
+ * The log levels here are tentative and subject to change.
+ */
+public enum LogLevel {
+    DEBUG(Log.DEBUG),
+    VERBOSE(Log.VERBOSE),
+    INFO(Log.INFO),
+    WARNING(Log.WARN),
+    ERROR(Log.ERROR),
+    NONE(Log.NONE);
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+    private final int value;
 
-public class EncryptionKeyTest extends BaseTest {
-    @Test
-    public void testDerivePBKDF2SHA256Key() {
-        EncryptionKey key = new EncryptionKey("hello world!");
-        assertNotNull(key.getKey());
-        assertEquals(32, key.getKey().length);
-        Log.i(TAG, "key -> " + bytesToHex(key.getKey()));
+    LogLevel(int value) {
+        this.value = value;
     }
 
-    static String bytesToHex(byte[] in) {
-        final StringBuilder builder = new StringBuilder();
-        for (byte b : in) {
-            builder.append(String.format("%02x", b));
-        }
-        return builder.toString();
+    public int getValue() {
+        return value;
     }
 }

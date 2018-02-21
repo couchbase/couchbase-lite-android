@@ -21,6 +21,8 @@ import com.couchbase.lite.BaseReplicatorTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Endpoint;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.Replicator;
 import com.couchbase.lite.ReplicatorChange;
 import com.couchbase.lite.ReplicatorChangeListener;
@@ -84,7 +86,7 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         if (!config.replicatorTestsEnabled()) return;
 
         // --- code example ---
-        Database.setLogLevel(Database.LogDomain.REPLICATOR, Database.LogLevel.VERBOSE);
+        Database.setLogLevel(LogDomain.REPLICATOR, LogLevel.VERBOSE);
         // --- code example ---
     }
 

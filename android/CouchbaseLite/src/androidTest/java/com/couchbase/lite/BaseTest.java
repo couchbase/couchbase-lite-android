@@ -94,7 +94,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
 
     @Before
     public void setUp() throws Exception {
-        Database.setLogLevel(Database.LogDomain.ALL, Database.LogLevel.INFO);
+        Database.setLogLevel(LogDomain.ALL, LogLevel.INFO);
         Log.enableLogging(TAG, Log.INFO); // NOTE: Without loading Database, this fails.
 
         executor = Executors.newSingleThreadExecutor();

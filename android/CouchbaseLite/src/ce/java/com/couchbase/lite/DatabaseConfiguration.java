@@ -29,7 +29,6 @@ public final class DatabaseConfiguration {
     private boolean readonly = false;
     private Context context = null;
     private String directory = null;
-    private ConflictResolver conflictResolver = null;
 
     //---------------------------------------------
     // Constructors
@@ -41,7 +40,6 @@ public final class DatabaseConfiguration {
         this.readonly = false;
         this.context = context;
         this.directory = context.getFilesDir().getAbsolutePath();
-        this.conflictResolver = new DefaultConflictResolver();
     }
 
     public DatabaseConfiguration(DatabaseConfiguration config) {
@@ -50,7 +48,6 @@ public final class DatabaseConfiguration {
         this.readonly = false;
         this.context = config.context;
         this.directory = config.directory;
-        this.conflictResolver = config.conflictResolver;
     }
 
     //---------------------------------------------
@@ -73,24 +70,6 @@ public final class DatabaseConfiguration {
     }
 
     /**
-     * Sets a custom conflict resolver used for solving the conflicts
-     * when saving or deleting documents in the database. Without setting the
-     * conflict resolver, CouchbaseLite will use the default conflict
-     * resolver.
-     *
-     * @param conflictResolver The conflict resolver.
-     * @return The self object.
-     */
-    public DatabaseConfiguration setConflictResolver(ConflictResolver conflictResolver) {
-        if (conflictResolver == null)
-            throw new IllegalArgumentException("conflictResolver parameter is null");
-        if (readonly)
-            throw new IllegalStateException("DatabaseConfiguration is readonly mode.");
-        this.conflictResolver = conflictResolver;
-        return this;
-    }
-
-    /**
      * Returns the path to the directory to store the database in.
      *
      * @return the directory
@@ -99,27 +78,9 @@ public final class DatabaseConfiguration {
         return directory;
     }
 
-    /**
-     * Returns the conflict resolver for this database.
-     *
-     * @return the conflict resolver
-     */
-    public ConflictResolver getConflictResolver() {
-        return conflictResolver;
-    }
-
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
-    /**
-     * Returns always null as encryption is not supported
-     *
-     * @return null
-     */
-    EncryptionKey getEncryptionKey() {
-        return null;
-    }
 
     DatabaseConfiguration readonlyCopy() {
         DatabaseConfiguration config = new DatabaseConfiguration(this);

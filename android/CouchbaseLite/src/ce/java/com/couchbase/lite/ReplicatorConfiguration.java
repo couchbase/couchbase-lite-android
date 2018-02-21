@@ -81,7 +81,6 @@ public final class ReplicatorConfiguration {
     private Endpoint target = null;
     private ReplicatorType replicatorType = PUSH_AND_PULL;
     private boolean continuous = false;
-    private ConflictResolver conflictResolver = null;
     private Authenticator authenticator = null;
     private Map<String, String> headers = null;
     private byte[] pinnedServerCertificate = null;
@@ -98,7 +97,6 @@ public final class ReplicatorConfiguration {
         this.target = config.target;
         this.replicatorType = config.replicatorType;
         this.continuous = config.continuous;
-        this.conflictResolver = config.conflictResolver;
         this.authenticator = config.authenticator;
         this.pinnedServerCertificate = config.pinnedServerCertificate;
         this.headers = config.headers;
@@ -111,7 +109,6 @@ public final class ReplicatorConfiguration {
         this.replicatorType = PUSH_AND_PULL;
         this.database = database;
         this.target = target;
-        this.conflictResolver = database.getConflictResolver();
     }
 
     //---------------------------------------------
@@ -145,23 +142,6 @@ public final class ReplicatorConfiguration {
         if (readonly)
             throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
         this.continuous = continuous;
-        return this;
-    }
-
-    /**
-     * Sets the custom conflict resolver for this replicator. Without
-     * setting the conflict resolver, CouchbaseLite will use the default
-     * conflict resolver.
-     *
-     * @param conflictResolver The conflict resolver.
-     * @return The self object.
-     */
-    public ReplicatorConfiguration setConflictResolver(ConflictResolver conflictResolver) {
-        if (conflictResolver == null)
-            throw new IllegalArgumentException("conflictResolver parameter is null");
-        if (readonly)
-            throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
-        this.conflictResolver = conflictResolver;
         return this;
     }
 
@@ -270,13 +250,6 @@ public final class ReplicatorConfiguration {
     }
 
     /**
-     * The conflict resolver for this replicator.
-     */
-    public ConflictResolver getConflictResolver() {
-        return conflictResolver;
-    }
-
-    /**
      * Return the Authenticator to authenticate with a remote target.
      */
     public Authenticator getAuthenticator() {
@@ -322,21 +295,6 @@ public final class ReplicatorConfiguration {
         ReplicatorConfiguration config = new ReplicatorConfiguration(this);
         config.readonly = true;
         return config;
-        /*
-        return new ReplicatorConfiguration(
-                database,
-                target,
-                replicatorType,
-                continuous,
-                conflictResolver,
-                authenticator,
-                pinnedServerCertificate != null ?
-                        Arrays.copyOf(pinnedServerCertificate, pinnedServerCertificate.length) :
-                        null,
-                headers != null ? new HashMap<String, String>(headers) : null,
-                channels != null ? new ArrayList<>(channels) : null,
-                documentIDs != null ? new ArrayList<>(documentIDs) : null);
-                */
     }
 
     Map<String, Object> effectiveOptions() {

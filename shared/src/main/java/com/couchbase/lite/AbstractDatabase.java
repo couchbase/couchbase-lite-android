@@ -57,10 +57,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * A Couchbase Lite database.
+ * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
-public final class Database {
-
+abstract class AbstractDatabase {
     //---------------------------------------------
     // Load LiteCore library and its dependencies
     //---------------------------------------------
@@ -71,11 +70,11 @@ public final class Database {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private static final String TAG = Log.DATABASE;
-    private static final String DB_EXTENSION = "cblite2";
-    private static final int MAX_CHANGES = 100;
+    protected static final String TAG = Log.DATABASE;
+    protected static final String DB_EXTENSION = "cblite2";
+    protected static final int MAX_CHANGES = 100;
 
-    private static final int DEFAULT_DATABASE_FLAGS
+    protected static final int DEFAULT_DATABASE_FLAGS
             = C4DatabaseFlags.kC4DB_Create
             | C4DatabaseFlags.kC4DB_AutoCompact
             | C4DatabaseFlags.kC4DB_SharedKeys;
@@ -84,90 +83,36 @@ public final class Database {
     // enums
     //---------------------------------------------
 
-    /**
-     * Log domain. The log domains here are tentative and subject to change.
-     */
-    public enum LogDomain {
-        ALL, DATABASE, QUERY, REPLICATOR, NETWORK
-    }
-
-    /**
-     * Log level. The default log level for all domains is warning.
-     * The log levels here are tentative and subject to change.
-     */
-    public enum LogLevel {
-        DEBUG(Log.DEBUG),
-        VERBOSE(Log.VERBOSE),
-        INFO(Log.INFO),
-        WARNING(Log.WARN),
-        ERROR(Log.ERROR),
-        NONE(Log.NONE);
-
-        private final int value;
-
-        LogLevel(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
-
-    /**
-     * Concurrency control type used when saving or deleting a document.
-     * - none: The last operation wins if there is a conflict.
-     * - optimistic: The operation will fail if there is a conflict.
-     */
-    public enum ConcurrencyControl {
-        NONE(0),
-        OPTIMISTIC(1);
-
-        private final int value;
-
-        ConcurrencyControl(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private String name;
-    private final DatabaseConfiguration config;
-    private C4Database c4db;
-    private ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
-    private ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
-
-    private Set<DatabaseChangeListenerToken> dbListenerTokens;
-    private C4DatabaseObserver c4DBObserver;
-    private Map<String, Set<DocumentChangeListenerToken>> docListenerTokens;
-    private Map<String, C4DocumentObserver> c4DocObservers;
-
-    private final SharedKeys sharedKeys;
-
-    private Set<Replicator> activeReplications;
-    private Set<LiveQuery> activeLiveQueries;
-
-    private final Object lock = new Object(); // lock for thread-safety
+    protected String name;
+    protected final DatabaseConfiguration config;
+    protected C4Database c4db;
+    protected ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
+    protected ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
+    protected Set<DatabaseChangeListenerToken> dbListenerTokens;
+    protected C4DatabaseObserver c4DBObserver;
+    protected Map<String, Set<DocumentChangeListenerToken>> docListenerTokens;
+    protected Map<String, C4DocumentObserver> c4DocObservers;
+    protected final SharedKeys sharedKeys;
+    protected Set<Replicator> activeReplications;
+    protected Set<LiveQuery> activeLiveQueries;
+    protected final Object lock = new Object(); // lock for thread-safety
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     /**
-     * Construct a  Database with a given name and database config.
+     * Construct a  AbstractDatabase with a given name and database config.
      * If the database does not yet exist, it will be created, unless the `readOnly` option is used.
      *
      * @param name   The name of the database. May NOT contain capital letters!
      * @param config The database config, Note: null config parameter is not allowed with Android platform
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
      */
-    public Database(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
+    protected AbstractDatabase(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("name should not be empty.");
         if (config == null)
@@ -253,7 +198,7 @@ public final class Database {
         synchronized (lock) {
             mustBeOpen();
             try {
-                return new Document(this, id, false);
+                return new Document((Database) this, id, false);
             } catch (CouchbaseLiteException ex) {
                 // only 404 - Not Found error throws CouchbaseLiteException
                 return null;
@@ -532,26 +477,6 @@ public final class Database {
         }
     }
 
-    /**
-     * Changes the database's encryption key, or removes encryption if the new key is null.
-     *
-     * @param encryptionKey The encryption key
-     * @throws CouchbaseLiteException
-     */
-    public void setEncryptionKey(EncryptionKey encryptionKey) throws CouchbaseLiteException {
-        synchronized (lock) {
-            mustBeOpen();
-            int keyType = encryptionKey == null || encryptionKey.getKey() == null ?
-                    C4EncryptionAlgorithm.kC4EncryptionNone :
-                    C4EncryptionAlgorithm.kC4EncryptionAES256;
-            try {
-                c4db.rekey(keyType, encryptionKey.getKey());
-            } catch (LiteCoreException e) {
-                throw CBLStatus.convertException(e);
-            }
-        }
-    }
-
     // Maintenance operations:
 
     public List<String> getIndexes() throws CouchbaseLiteException {
@@ -804,10 +729,10 @@ public final class Database {
             beginTransaction();
             try {
                 // Read local document:
-                Document localDoc = new Document(this, docID, true);
+                Document localDoc = new Document((Database) this, docID, true);
 
                 // Read the conflicting remote revision:
-                Document remoteDoc = new Document(this, docID, true);
+                Document remoteDoc = new Document((Database) this, docID, true);
                 try {
                     remoteDoc.selectConflictingRevision();
                 } catch (LiteCoreException e) {
@@ -840,6 +765,10 @@ public final class Database {
     // Private (in class only)
     //---------------------------------------------
 
+    abstract int getEncryptionAlgorithm();
+
+    abstract byte[] getEncryptionKey();
+
     //////// DATABASES:
 
     private void open() throws CouchbaseLiteException {
@@ -850,13 +779,7 @@ public final class Database {
         setupDirectory(dir);
 
         File dbFile = getDatabasePath(dir, this.name);
-
         int databaseFlags = getDatabaseFlags();
-
-        // encryption key
-        int encryptionAlgorithm = config.getEncryptionKey() == null ?
-                C4EncryptionAlgorithm.kC4EncryptionNone : C4EncryptionAlgorithm.kC4EncryptionAES256;
-        byte[] encryptionKey = config.getEncryptionKey() == null ? null : config.getEncryptionKey().getKey();
 
         Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
 
@@ -866,8 +789,8 @@ public final class Database {
                     databaseFlags,
                     null,
                     C4DocumentVersioning.kC4RevisionTrees,
-                    encryptionAlgorithm,
-                    encryptionKey);
+                    getEncryptionAlgorithm(),
+                    getEncryptionKey());
         } catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
         }
@@ -1069,7 +992,7 @@ public final class Database {
                 boolean newExternal = nChanges > 0 ? c4DBChanges[0].isExternal() : false;
                 if (c4DBChanges == null || c4DBChanges.length == 0 || external != newExternal || docIDs.size() > 1000) {
                     if (docIDs.size() > 0) {
-                        DatabaseChange change = new DatabaseChange(this, docIDs);
+                        DatabaseChange change = new DatabaseChange((Database) this, docIDs);
                         for (DatabaseChangeListenerToken token : dbListenerTokens)
                             token.notify(change);
                         docIDs = new ArrayList<>();
@@ -1089,7 +1012,7 @@ public final class Database {
 
             Set<DocumentChangeListenerToken> tokens = docListenerTokens.get(documentID);
             if (tokens != null) {
-                DocumentChange change = new DocumentChange(this, documentID);
+                DocumentChange change = new DocumentChange((Database) this, documentID);
                 for (DocumentChangeListenerToken token : tokens)
                     token.notify(change);
             }
@@ -1100,7 +1023,7 @@ public final class Database {
         mustBeOpen();
 
         if (document.getDatabase() == null)
-            document.setDatabase(this);
+            document.setDatabase((Database) this);
         else if (document.getDatabase() != this)
             throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidParameter);
     }
@@ -1240,7 +1163,7 @@ public final class Database {
             beginTransaction();
             try {
                 if (remoteDoc != localDoc)
-                    resolvedDoc.setDatabase(this);
+                    resolvedDoc.setDatabase((Database) this);
 
                 // The remote branch has to win, so that the doc revision history matches the server's.
                 String winningRevID = remoteDoc.getRevID();

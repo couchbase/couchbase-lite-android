@@ -21,6 +21,8 @@ import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.DatabaseConfiguration;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.ZipUtils;
 
@@ -62,8 +64,8 @@ public class DatabaseAPITest extends BaseTest {
     @Test
     public void testLogging() throws CouchbaseLiteException {
         // --- code example ---
-        Database.setLogLevel(Database.LogDomain.REPLICATOR, Database.LogLevel.VERBOSE);
-        Database.setLogLevel(Database.LogDomain.QUERY, Database.LogLevel.VERBOSE);
+        Database.setLogLevel(LogDomain.REPLICATOR, LogLevel.VERBOSE);
+        Database.setLogLevel(LogDomain.QUERY, LogLevel.VERBOSE);
         // --- code example ---
     }
 
