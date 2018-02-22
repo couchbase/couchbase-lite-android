@@ -522,7 +522,7 @@ public final class Database {
             mustBeOpen();
             int keyType = encryptionKey == null || encryptionKey.getKey() == null ?
                     C4EncryptionAlgorithm.kC4EncryptionNone :
-                    C4EncryptionAlgorithm.kC4EncryptionAES256;
+                    C4EncryptionAlgorithm.kC4EncryptionAES128;
             try {
                 c4db.rekey(keyType, encryptionKey.getKey());
             } catch (LiteCoreException e) {
@@ -862,7 +862,7 @@ public final class Database {
 
         // encryption key
         int encryptionAlgorithm = config.getEncryptionKey() == null ?
-                C4EncryptionAlgorithm.kC4EncryptionNone : C4EncryptionAlgorithm.kC4EncryptionAES256;
+                C4EncryptionAlgorithm.kC4EncryptionNone : C4EncryptionAlgorithm.kC4EncryptionAES128;
         byte[] encryptionKey = config.getEncryptionKey() == null ? null : config.getEncryptionKey().getKey();
 
         Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
