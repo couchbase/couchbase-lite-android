@@ -22,11 +22,14 @@ import com.couchbase.lite.internal.support.Log;
 import org.junit.Test;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class LoadTest extends BaseTest {
 
@@ -277,5 +280,47 @@ public class LoadTest extends BaseTest {
         assertEquals(n, db.getCount());
 
         logPerformanceStats("testGlobalReferenceExcceded()", (System.currentTimeMillis() - start));
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1610
+    @Test
+    public void testUpdate2() throws CouchbaseLiteException {
+        if (!config.loadTestsEnabled())
+            return;
+
+        MutableDocument mDoc = new MutableDocument("doc1");
+        Map<String, Object> map = new HashMap<>();
+        map.put("ID", "doc1");
+        mDoc.setValue("map", map);
+        save(mDoc);
+
+        long start = System.currentTimeMillis();
+
+        final int N = 2000;
+
+        for (int i = 0; i < N; i++) {
+            map.put("index", i);
+            assertTrue(updateMap(map, i, (long) i));
+        }
+
+        logPerformanceStats("testUpdate2()", (System.currentTimeMillis() - start));
+    }
+
+    boolean updateMap(Map map, int i, long l) {
+        Document doc = db.getDocument(map.get("ID").toString());
+        if (doc == null)
+            return false;
+        MutableDocument newDoc = doc.toMutable();
+        newDoc.setValue("map", map);
+        newDoc.setInt("int", i);
+        newDoc.setLong("long", l);
+        try {
+            db.save(newDoc);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+            Log.e(TAG, "DB is not responding");
+            return false;
+        }
+        return true;
     }
 }
