@@ -212,7 +212,7 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException
      */
     public void save(MutableDocument document) throws CouchbaseLiteException {
-        save(document, ConcurrencyControl.NONE);
+        save(document, ConcurrencyControl.LAST_WRITE_WINS);
     }
 
     /**
@@ -235,7 +235,7 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException
      */
     public void delete(Document document) throws CouchbaseLiteException {
-        delete(document, ConcurrencyControl.NONE);
+        delete(document, ConcurrencyControl.LAST_WRITE_WINS);
     }
 
     /**
@@ -1066,7 +1066,7 @@ abstract class AbstractDatabase {
 
                 if (newDoc == null) {
                     // Handle conflict:
-                    if (concurrencyControl.equals(ConcurrencyControl.OPTIMISTIC))
+                    if (concurrencyControl.equals(ConcurrencyControl.FAIL_ON_CONFLICT))
                         return false; // document is conflicted and return false because of OPTIMISTIC
 
                     // If deletion and the current doc has already been deleted:

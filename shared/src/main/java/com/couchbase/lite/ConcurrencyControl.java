@@ -18,13 +18,13 @@
 package com.couchbase.lite;
 
 /**
- * Concurrency control type used when saving or deleting a document.
- * - none: The last operation wins if there is a conflict.
- * - optimistic: The operation will fail if there is a conflict.
+ * ConcurrencyControl type used when saving or deleting a document.
+ * - LAST_WRITE_WINS: The last operation wins if there is a conflict.
+ * - FAIL_ON_CONFLICT: The operation will fail if there is a conflict.
  */
 public enum ConcurrencyControl {
-    NONE(0),
-    OPTIMISTIC(1);
+    LAST_WRITE_WINS(0),
+    FAIL_ON_CONFLICT(1);
 
     private final int value;
 

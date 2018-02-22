@@ -1505,8 +1505,8 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testSaveDocWithConflict() throws CouchbaseLiteException {
-        testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl.NONE);
-        testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl.OPTIMISTIC);
+        testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS);
+        testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT);
     }
 
     void testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl cc) throws CouchbaseLiteException {
@@ -1534,7 +1534,7 @@ public class DatabaseTest extends BaseTest {
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Lion");
-        if (cc == ConcurrencyControl.NONE) {
+        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
             assertTrue(db.save(doc1b, cc));
             Document savedDoc = db.getDocument(doc.getId());
             assertEquals(doc1b.toMap(), savedDoc.toMap());
@@ -1551,8 +1551,8 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testSaveDocWithNoParentConflict() throws CouchbaseLiteException {
-        testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl.NONE);
-        testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl.OPTIMISTIC);
+        testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS);
+        testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT);
     }
 
     void testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl cc) throws CouchbaseLiteException {
@@ -1568,7 +1568,7 @@ public class DatabaseTest extends BaseTest {
         MutableDocument doc1b = new MutableDocument("doc1");
         doc1b.setString("firstName", "Scott");
         doc1b.setString("lastName", "Tiger");
-        if (cc == ConcurrencyControl.NONE) {
+        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
             assertTrue(db.save(doc1b, cc));
             savedDoc = db.getDocument(doc1b.getId());
             assertEquals(doc1b.toMap(), savedDoc.toMap());
@@ -1585,8 +1585,8 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testSaveDocWithDeletedConflict() throws CouchbaseLiteException {
-        testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl.NONE);
-        testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl.OPTIMISTIC);
+        testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS);
+        testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT);
     }
 
     void testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl cc) throws CouchbaseLiteException {
@@ -1606,7 +1606,7 @@ public class DatabaseTest extends BaseTest {
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Lion");
-        if (cc == ConcurrencyControl.NONE) {
+        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
             assertTrue(db.save(doc1b, cc));
             Document savedDoc = db.getDocument(doc.getId());
             assertEquals(doc1b.toMap(), savedDoc.toMap());
@@ -1667,8 +1667,8 @@ public class DatabaseTest extends BaseTest {
 
     @Test
     public void testDeleteDocWithConflict() throws CouchbaseLiteException {
-        testDeleteDocWithConflictUsingConcurrencyControl(ConcurrencyControl.NONE);
-        testDeleteDocWithConflictUsingConcurrencyControl(ConcurrencyControl.OPTIMISTIC);
+        testDeleteDocWithConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS);
+        testDeleteDocWithConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT);
     }
 
     void testDeleteDocWithConflictUsingConcurrencyControl(ConcurrencyControl cc) throws CouchbaseLiteException {
@@ -1694,7 +1694,7 @@ public class DatabaseTest extends BaseTest {
 
         // Modify doc1b and delete, result to conflict when delete:
         doc1b.setString("lastName", "Lion");
-        if (cc == ConcurrencyControl.NONE) {
+        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
             assertTrue(db.delete(doc1b, cc));
             assertEquals(3, doc1b.getSequence());
             assertNull(db.getDocument(doc1b.getId()));
