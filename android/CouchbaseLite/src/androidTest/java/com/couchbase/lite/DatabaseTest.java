@@ -1707,4 +1707,27 @@ public class DatabaseTest extends BaseTest {
 
         cleanDB();
     }
+
+    @Test
+    public void testDeleteNonExistingDoc() throws CouchbaseLiteException {
+        Document doc1a = generateDocument("doc1");
+        Document doc1b = db.getDocument("doc1");
+
+        // purge doc
+        db.purge(doc1a);
+        assertEquals(0, db.getCount());
+        assertNull(db.getDocument(doc1a.getId()));
+
+        try {
+            db.delete(doc1a);
+            fail();
+        }catch (IllegalArgumentException e){
+            // expected
+        }
+
+        db.delete(doc1b);
+        assertEquals(0, db.getCount());
+        assertNull(db.getDocument(doc1b.getId()));
+
+    }
 }

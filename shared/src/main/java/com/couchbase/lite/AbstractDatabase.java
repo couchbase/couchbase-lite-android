@@ -247,11 +247,6 @@ abstract class AbstractDatabase {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
 
-
-        if (document.isNewDocument())
-            throw new IllegalArgumentException("Do not allow to delete a newly created document "
-                    + "that has not been saved into the database.");
-
         // NOTE: synchronized in save(Document, boolean) method
         return save(document, true, concurrencyControl);
     }
@@ -279,6 +274,9 @@ abstract class AbstractDatabase {
                 // revID: null, all revisions are purged.
                 if (document.getC4doc().purgeRevision(null) >= 0) {
                     document.getC4doc().save(0);
+                    // Reload c4doc, still preserve the document data:
+                    C4Document newDoc = getC4Database().get(document.getId(), false);
+                    document.replaceC4Document(newDoc);
                     commit = true;
                 }
             } catch (LiteCoreException e) {
@@ -1031,35 +1029,19 @@ abstract class AbstractDatabase {
     // The main save method.
     private boolean save(Document document, boolean deletion, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
         if (deletion && !document.exists())
-            throw new CouchbaseLiteException("Document doesn't exist in the database.",
-                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+            throw new IllegalArgumentException("Document doesn't exist in the database.");
 
         C4Document curDoc = null;
         C4Document newDoc = null;
-
         synchronized (lock) {
             prepareDocument(document);
             boolean commit = false;
             beginTransaction();
             try {
-
-                if (deletion) {
-                    // Check existing, NO-OPS if the document doesn't exist:
-                    try {
-                        curDoc = getC4Database().get(document.getId(), true);
-                    } catch (LiteCoreException e) {
-                        if (e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorNotFound)
-                            return true;
-                        else
-                            throw CBLStatus.convertException(e);
-                    }
-                }
-
                 try {
                     newDoc = save(document, null, deletion);
                     commit = true;
                 } catch (LiteCoreException e) {
-                    // non-conflict error
                     if (!(e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict))
                         throw CBLStatus.convertException(e);
                 }
@@ -1069,20 +1051,19 @@ abstract class AbstractDatabase {
                     if (concurrencyControl.equals(ConcurrencyControl.FAIL_ON_CONFLICT))
                         return false; // document is conflicted and return false because of OPTIMISTIC
 
-                    // If deletion and the current doc has already been deleted:
+                    try {
+                        curDoc = getC4Database().get(document.getId(), true);
+                    } catch (LiteCoreException e) {
+                        if (deletion && e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorNotFound)
+                            return true;
+                        else
+                            throw CBLStatus.convertException(e);
+                    }
+
                     if (deletion && curDoc.deleted()) {
                         document.replaceC4Document(curDoc);
                         curDoc = null; // NOTE: prevent to call curDoc.free() in finally block
                         return true;
-                    }
-
-                    if (curDoc == null) {
-                        try {
-                            curDoc = getC4Database().get(document.getId(), true);
-                        } catch (LiteCoreException e) {
-                            // unexpected error
-                            throw CBLStatus.convertException(e);
-                        }
                     }
 
                     // Save changes on the current branch:
@@ -1098,7 +1079,6 @@ abstract class AbstractDatabase {
             } finally {
                 if (curDoc != null)
                     curDoc.free();
-
                 try {
                     endTransaction(commit);// true: commit the transaction, false: abort the transaction
                 } catch (CouchbaseLiteException e) {

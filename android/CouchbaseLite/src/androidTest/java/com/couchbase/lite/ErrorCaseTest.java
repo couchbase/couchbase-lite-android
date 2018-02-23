@@ -91,8 +91,11 @@ public class ErrorCaseTest extends BaseTest {
         // purge doc
         db.purge(saved);
 
-        // no-op
-        db.delete(saved);
+        try {
+            db.delete(saved);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
     }
 
     @Test
@@ -130,8 +133,11 @@ public class ErrorCaseTest extends BaseTest {
         // purge doc
         db.purge(saved);
 
-        // no-op
-        db.purge(saved);
+        try {
+            db.purge(saved);
+            fail();
+        }catch (IllegalArgumentException e){
+        }
     }
 
     // -- ArrayTest
