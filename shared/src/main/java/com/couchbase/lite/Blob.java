@@ -171,10 +171,12 @@ public final class Blob implements FLEncodable {
      * @return the contents of a Blob as a block of memory
      */
     public byte[] getContent() {
+
         if (content != null) {
             // Data is in memory:
             return content;
         } else if (database != null) {
+            byte[] contentResult = null;
             // Read blob from the BlobStore:
             C4BlobStore blobStore = getBlobStore(); // BlobStore does not required to close because it is created from database.
             if (blobStore == null)
@@ -187,8 +189,12 @@ public final class Blob implements FLEncodable {
                     FLSliceResult res = blobStore.getContents(key);
                     try {
                         byte[] bytes = res.getBuf();
-                        if (bytes != null && bytes.length <= MAX_CACHED_CONTENT_LENGTH)
-                            content = bytes;
+                        if (bytes != null) {
+                            if (bytes.length <= MAX_CACHED_CONTENT_LENGTH) {
+                                content = bytes;  // cache for later re-use
+                            }
+                            contentResult = bytes;
+                        }
                     } finally {
                         res.free();
                     }
@@ -197,13 +203,14 @@ public final class Blob implements FLEncodable {
                 } finally {
                     key.free();
                 }
-                return content;
+                return contentResult;
             } finally {
                 if (blobStore != null)
                     blobStore.free();
             }
         } else {
             // No recourse but to read the initial stream into memory:
+            byte[] contentResult = null;
             if (initialContentStream == null)
                 return null;
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -214,8 +221,11 @@ public final class Blob implements FLEncodable {
                     while ((bytesRead = initialContentStream.read(buffer)) != -1) {
                         out.write(buffer, 0, bytesRead);
                     }
-                    content = out.toByteArray();
-                    length = content.length;
+                    contentResult = out.toByteArray();
+                    length = contentResult.length;
+                    if (length <= MAX_CACHED_CONTENT_LENGTH) {
+                        content = contentResult;  // cache for later re-use
+                    }
                 } catch (IOException e) {
                     Log.w(TAG, "I/O Error with the given stream.", e);
                     throw new CouchbaseLiteRuntimeException(e);
@@ -232,7 +242,7 @@ public final class Blob implements FLEncodable {
                 } catch (IOException e) {
                 }
             }
-            return content;
+            return contentResult;
         }
     }
 
