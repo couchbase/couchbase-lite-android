@@ -26,10 +26,10 @@ import static org.junit.Assert.assertNotNull;
 
 public class EncryptionKeyTest extends BaseTest {
     @Test
-    public void testDerivePBKDF2SHA256Key() {
+    public void testEncryptionKey() {
         EncryptionKey key = new EncryptionKey("hello world!");
         assertNotNull(key.getKey());
-        assertEquals(32, key.getKey().length);
+        assertEquals(C4EncryptionKeySize.kC4EncryptionKeySizeAES128, key.getKey().length);
         Log.i(TAG, "key -> " + bytesToHex(key.getKey()));
     }
 
