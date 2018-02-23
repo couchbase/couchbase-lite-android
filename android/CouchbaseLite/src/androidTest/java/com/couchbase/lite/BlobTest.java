@@ -159,4 +159,32 @@ public class BlobTest extends BaseTest {
         byte[] content = blob.getContent();
         assertTrue(Arrays.equals(content, bytes));
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1611
+    @Test
+    public void testGetNonCachedContent6MBFile() throws IOException, CouchbaseLiteException {
+        byte[] bytes;
+
+        InputStream is = getAsset("iTunesMusicLibrary.json");
+        try {
+            bytes = IOUtils.toByteArray(is);
+        } finally {
+            is.close();
+        }
+
+        Blob blob = new Blob("application/json", bytes);
+        MutableDocument mDoc = new MutableDocument("doc1");
+        mDoc.setBlob("blob", blob);
+        Document doc = save(mDoc);
+
+        // Reload the doc from the database to make sure to "bust the cache" for the blob
+        // cached in the doc object
+        Document reloadedDoc = db.getDocument(doc.getId());
+        Blob savedBlob = reloadedDoc.getBlob("blob");
+        byte[] content = savedBlob.getContent();
+        assertTrue(Arrays.equals(content, bytes));
+
+    }
+
+
 }
