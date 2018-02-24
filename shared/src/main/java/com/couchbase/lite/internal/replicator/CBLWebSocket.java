@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -54,7 +55,6 @@ import okhttp3.Response;
 import okhttp3.Route;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
-import okhttp3.internal.tls.CustomHostnameVerifier;
 import okio.Buffer;
 import okio.ByteString;
 
@@ -90,7 +90,6 @@ public final class CBLWebSocket extends C4Socket {
     private WebSocket webSocket = null;
     OkHttpClient httpClient = null;
     CBLWebSocketListener wsListener = null;
-    String expectedAcceptHeader = null;
 
     //-------------------------------------------------------------------------
     // constructor
@@ -230,11 +229,15 @@ public final class CBLWebSocket extends C4Socket {
         if (authenticator != null)
             builder.authenticator(authenticator);
 
-        // certificate
-        setupSelfSignedCertificate(builder);
+        // trusted certificate
+        setupTrustedCertificate(builder);
 
-        // HostnameVerifier
-        setupHostnameVerifier(builder);
+        // -- for test
+        if (trustManager != null)
+            builder.sslSocketFactory(sslSocketFactory(trustManager), trustManager);
+
+        if (hostnameVerifier != null)
+            builder.hostnameVerifier(hostnameVerifier);
 
         return builder.build();
     }
@@ -284,7 +287,7 @@ public final class CBLWebSocket extends C4Socket {
         return null;
     }
 
-    private void setupSelfSignedCertificate(OkHttpClient.Builder builder) throws GeneralSecurityException {
+    private void setupTrustedCertificate(OkHttpClient.Builder builder) throws GeneralSecurityException {
         if (options != null && options.containsKey(kC4ReplicatorOptionPinnedServerCert)) {
             byte[] pin = (byte[]) options.get(kC4ReplicatorOptionPinnedServerCert);
             if (pin != null) {
@@ -300,10 +303,6 @@ public final class CBLWebSocket extends C4Socket {
 
     private InputStream toStream(byte[] pin) {
         return new Buffer().write(pin).inputStream();
-    }
-
-    private void setupHostnameVerifier(OkHttpClient.Builder builder) {
-        builder.hostnameVerifier(CustomHostnameVerifier.getInstance());
     }
 
     private int responseCount(Response response) {
@@ -378,6 +377,7 @@ public final class CBLWebSocket extends C4Socket {
         }
     }
 
+    // https://github.com/square/okhttp/wiki/HTTPS
     // https://github.com/square/okhttp/blob/master/samples/guide/src/main/java/okhttp3/recipes/CustomTrust.java
     private X509TrustManager trustManagerForCertificates(InputStream in) throws GeneralSecurityException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
@@ -427,7 +427,7 @@ public final class CBLWebSocket extends C4Socket {
             return;
         }
 
-        Log.i(TAG, "CBLWebSocket CLOSED WITH STATUS " + code + " \"" + reason  + "\"");
+        Log.i(TAG, "CBLWebSocket CLOSED WITH STATUS " + code + " \"" + reason + "\"");
         closed(handle, WebSocketDomain, code, reason);
     }
 
@@ -472,5 +472,28 @@ public final class CBLWebSocket extends C4Socket {
         else {
             closed(handle, WebSocketDomain, 0, null);
         }
+    }
+
+    //-------------------------------------------------------------------------
+    // For test
+    //-------------------------------------------------------------------------
+
+    // https://developer.android.com/training/articles/security-ssl.html
+
+    private static X509TrustManager trustManager = null;
+    private static HostnameVerifier hostnameVerifier = null;
+
+    public static void setTrustManager(X509TrustManager trustManager) {
+        CBLWebSocket.trustManager = trustManager;
+    }
+
+    public static void setHostnameVerifier(HostnameVerifier hostnameVerifier) {
+        CBLWebSocket.hostnameVerifier = hostnameVerifier;
+    }
+
+    static SSLSocketFactory sslSocketFactory(X509TrustManager trustManager) throws GeneralSecurityException {
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, new TrustManager[]{trustManager}, null);
+        return sslContext.getSocketFactory();
     }
 }

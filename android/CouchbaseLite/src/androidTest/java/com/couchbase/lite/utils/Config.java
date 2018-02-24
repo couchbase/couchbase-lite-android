@@ -60,4 +60,8 @@ public class Config extends java.util.Properties {
     public int remotePort() {
         return Integer.parseInt(getProperty("remotePort"));
     }
+
+    public int secureRemotePort() {
+        return Integer.parseInt(getProperty("secureRemotePort"));
+    }
 }
