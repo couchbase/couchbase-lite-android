@@ -17,7 +17,8 @@
 //
 package com.couchbase.lite.internal.support;
 
-import com.couchbase.lite.Database;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.LogLevel;
 import com.couchbase.litecore.C4Constants.C4LogDomain;
 import com.couchbase.litecore.C4Log;
 
@@ -388,7 +389,7 @@ public final class Log {
     public static void init() {
     }
 
-    public static void setLogLevel(Database.LogDomain domain, Database.LogLevel level) {
+    public static void setLogLevel(LogDomain domain, LogLevel level) {
         switch (domain) {
             case ALL:
                 enableLogging(DATABASE, level.getValue());

@@ -20,7 +20,6 @@ package com.couchbase.lite;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
@@ -51,7 +50,6 @@ public class ErrorCaseTest extends BaseTest {
     public void testDeleteUnsavedDocument() {
         MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
-        assertFalse(doc.isDeleted());
         try {
             db.delete(doc);
             fail();
@@ -60,7 +58,6 @@ public class ErrorCaseTest extends BaseTest {
         } catch (CouchbaseLiteException e) {
             fail();
         }
-        assertFalse(doc.isDeleted());
         assertEquals("Scott Tiger", doc.getValue("name"));
     }
 
@@ -69,15 +66,11 @@ public class ErrorCaseTest extends BaseTest {
         MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         Document saved = save(doc);
-
-        // following is error case
         doc.setValue("age", 20);
-        try {
-            saved = save(doc);
-            fail();
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+        saved = save(doc);
+        assertEquals(2, saved.generation());
+        assertEquals(20, saved.getInt("age"));
+        assertEquals("Scott Tiger", saved.getString("name"));
     }
 
     @Test
@@ -85,14 +78,8 @@ public class ErrorCaseTest extends BaseTest {
         MutableDocument doc = createMutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         Document saved = save(doc);
-
-        // following is error case
-        try {
-            db.delete(doc);
-            fail();
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+        db.delete(doc);
+        assertNull(db.getDocument("doc1"));
     }
 
     @Test
@@ -104,8 +91,11 @@ public class ErrorCaseTest extends BaseTest {
         // purge doc
         db.purge(saved);
 
-        // no-op
-        db.delete(saved);
+        try {
+            db.delete(saved);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
     }
 
     @Test
@@ -143,8 +133,11 @@ public class ErrorCaseTest extends BaseTest {
         // purge doc
         db.purge(saved);
 
-        // no-op
-        db.purge(saved);
+        try {
+            db.purge(saved);
+            fail();
+        }catch (IllegalArgumentException e){
+        }
     }
 
     // -- ArrayTest

@@ -52,7 +52,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
     // access from MutableDocument
     FLDict _data;
     Dictionary _dict;
-    boolean invalidated = false;
+
+    private final Object lock = new Object(); // lock for thread-safety
 
     //---------------------------------------------
     // Constructors
@@ -63,7 +64,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
              C4Document c4doc) {
         this._database = database;
         this._id = id;
-        this.invalidated = false;
         setC4Document(c4doc);
     }
 
@@ -114,16 +114,9 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the sequence number of the document in the database.
      */
     public long getSequence() {
-        return _c4doc != null ? _c4doc.getSelectedSequence() : 0;
-    }
-
-    /**
-     * Return whether the document is deleted
-     *
-     * @return true if deleted, false otherwise
-     */
-    public boolean isDeleted() {
-        return _c4doc != null && _c4doc != null ? _c4doc.deleted() : false;
+        synchronized (lock) {
+            return _c4doc != null ? _c4doc.getSelectedSequence() : 0;
+        }
     }
 
     /**
@@ -412,15 +405,23 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     // Sets _c4doc and updates my root dictionary
-    synchronized void setC4Document(C4Document c4doc) {
-        // NOTE: don't call free(), both _c4doc and this._c4doc point to same C4Document.
-        this._c4doc = c4doc;
-        _data = null;
-        if (c4doc != null) {
-            if (c4doc != null && !c4doc.deleted())
-                _data = c4doc.getSelectedBody2();
+    void setC4Document(C4Document c4doc) {
+        synchronized (lock) {
+            // NOTE: don't call free(), both _c4doc and this._c4doc point to same C4Document.
+            this._c4doc = c4doc;
+            _data = null;
+            if (c4doc != null) {
+                if (c4doc != null && !c4doc.deleted())
+                    _data = c4doc.getSelectedBody2();
+            }
+            updateDictionary();
         }
-        updateDictionary();
+    }
+
+    void replaceC4Document(C4Document c4doc) {
+        synchronized (lock) {
+            this._c4doc = c4doc;
+        }
     }
 
     boolean isMutable() {
@@ -463,8 +464,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     // Document overrides this
     long generation() {
-        // TODO: c4rev_getGeneration
-        return generationFromRevID(getRevID());
+        synchronized (lock) {
+            // TODO: c4rev_getGeneration
+            return generationFromRevID(getRevID());
+        }
     }
 
     /**
@@ -486,29 +489,22 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     C4Document getC4doc() {
-        return _c4doc;
-    }
-
-    boolean selectConflictingRevision() {
-        try {
-            _c4doc.selectNextLeafRevision(false, true);
-            setC4Document(_c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
-        } catch (LiteCoreException e) {
-            Log.i(TAG, "Failed to selectNextLeaf: doc -> %s", e, _c4doc);
-            return false;
+        synchronized (lock) {
+            return _c4doc;
         }
-        return true;
     }
 
-    boolean selectCommonAncestor(Document doc1, Document doc2) {
-        if (!_c4doc.selectCommonAncestorRevision(doc1.getRevID(), doc2.getRevID()))
-            return false;
-        setC4Document(_c4doc); // self.c4Doc = _c4Doc; // This will update to the selected revision
-        return true;
+    void selectConflictingRevision() throws LiteCoreException {
+        synchronized (lock) {
+            _c4doc.selectNextLeafRevision(false, true);
+            setC4Document(_c4doc);
+        }
     }
 
     String getRevID() {
-        return _c4doc != null ? _c4doc.getSelectedRevID() : null;
+        synchronized (lock) {
+            return _c4doc != null ? _c4doc.getSelectedRevID() : null;
+        }
     }
 
     byte[] encode() throws LiteCoreException {
@@ -554,7 +550,14 @@ public class Document implements DictionaryInterface, Iterable<String> {
         return getRevID() == null;
     }
 
-    boolean isInvalidated() {
-        return invalidated;
+    /**
+     * Return whether the document is deleted
+     *
+     * @return true if deleted, false otherwise
+     */
+    boolean isDeleted() {
+        synchronized (lock) {
+            return _c4doc != null && _c4doc != null ? _c4doc.deleted() : false;
+        }
     }
 }

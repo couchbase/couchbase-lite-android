@@ -1296,7 +1296,7 @@ public class ArrayTest extends BaseTest {
         mArray.addArray(null);
         mArray.addDictionary(null);
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1612,7 +1612,7 @@ public class ArrayTest extends BaseTest {
         mArray.addInt(Integer.MAX_VALUE);
         mArray.addInt(Integer.MIN_VALUE);
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1641,7 +1641,7 @@ public class ArrayTest extends BaseTest {
         mArray.setInt(2, 0);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1667,7 +1667,7 @@ public class ArrayTest extends BaseTest {
         mArray.insertInt(2, Integer.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1691,7 +1691,7 @@ public class ArrayTest extends BaseTest {
         mArray.addLong(Long.MAX_VALUE);
         mArray.addLong(Long.MIN_VALUE);
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1717,7 +1717,7 @@ public class ArrayTest extends BaseTest {
         mArray.setLong(1, Long.MIN_VALUE);
         mArray.setLong(2, 0);
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1743,7 +1743,7 @@ public class ArrayTest extends BaseTest {
         mArray.insertLong(2, Long.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1767,7 +1767,7 @@ public class ArrayTest extends BaseTest {
         mArray.addFloat(Float.MAX_VALUE);
         mArray.addFloat(Float.MIN_VALUE);
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1796,7 +1796,7 @@ public class ArrayTest extends BaseTest {
         mArray.setFloat(2, 0);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1823,7 +1823,7 @@ public class ArrayTest extends BaseTest {
         mArray.insertFloat(2, Float.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1849,7 +1849,7 @@ public class ArrayTest extends BaseTest {
         mArray.addDouble(Double.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1878,7 +1878,7 @@ public class ArrayTest extends BaseTest {
         mArray.setDouble(2, 0.0);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1905,7 +1905,7 @@ public class ArrayTest extends BaseTest {
         mArray.insertDouble(2, Double.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1931,7 +1931,7 @@ public class ArrayTest extends BaseTest {
         mArray.addNumber(Double.MAX_VALUE);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1961,7 +1961,7 @@ public class ArrayTest extends BaseTest {
         mArray.setNumber(2, Integer.MAX_VALUE);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -1988,7 +1988,7 @@ public class ArrayTest extends BaseTest {
         mArray.insertNumber(2, Double.MAX_VALUE);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -2014,7 +2014,7 @@ public class ArrayTest extends BaseTest {
         mArray.addString("World");
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -2044,7 +2044,7 @@ public class ArrayTest extends BaseTest {
         mArray.setString(2, "");
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -2071,7 +2071,7 @@ public class ArrayTest extends BaseTest {
         mArray.insertString(2, "!");
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -2096,7 +2096,7 @@ public class ArrayTest extends BaseTest {
         mArray.addBoolean(false);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -2123,7 +2123,7 @@ public class ArrayTest extends BaseTest {
         mArray.setBoolean(1, true);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());
@@ -2149,7 +2149,7 @@ public class ArrayTest extends BaseTest {
         mArray.insertBoolean(1, false);
 
         mDoc.setArray("array", mArray);
-        Document doc = save(mDoc, new BaseTest.Validator<Document>() {
+        save(mDoc, new BaseTest.Validator<Document>() {
             @Override
             public void validate(Document doc) {
                 assertEquals(1, doc.count());

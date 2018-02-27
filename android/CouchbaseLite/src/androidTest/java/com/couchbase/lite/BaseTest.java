@@ -59,7 +59,6 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     protected Context context;
     private File dir = null;
     protected Database db = null;
-    protected ConflictResolver conflictResolver = null;
     ExecutorService executor = null;
 
     protected File getDir() {
@@ -95,7 +94,7 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
 
     @Before
     public void setUp() throws Exception {
-        Database.setLogLevel(Database.LogDomain.ALL, Database.LogLevel.INFO);
+        Database.setLogLevel(LogDomain.ALL, LogLevel.INFO);
         Log.enableLogging(TAG, Log.INFO); // NOTE: Without loading Database, this fails.
 
         executor = Executors.newSingleThreadExecutor();
@@ -169,8 +168,6 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     protected Database open(String name) throws CouchbaseLiteException {
         DatabaseConfiguration config = new DatabaseConfiguration(this.context);
         config.setDirectory(dir.getAbsolutePath());
-        if (this.conflictResolver != null)
-            config.setConflictResolver(this.conflictResolver);
         return new Database(name, config);
     }
 
@@ -189,6 +186,14 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
 
     protected void reopenDB() throws CouchbaseLiteException {
         closeDB();
+        openDB();
+    }
+
+    protected void cleanDB() throws CouchbaseLiteException {
+        if (db != null) {
+            db.delete();
+            db = null;
+        }
         openDB();
     }
 
@@ -226,38 +231,44 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     }
 
     protected Document save(MutableDocument doc) throws CouchbaseLiteException {
-        Document newDoc = db.save(doc);
-        assertNotNull(newDoc);
-        return newDoc;
+        db.save(doc);
+        Document savedDoc = db.getDocument(doc.getId());
+        assertNotNull(savedDoc);
+        assertEquals(doc.getId(), savedDoc.getId());
+        return savedDoc;
     }
 
     interface Validator<T> {
         void validate(final T doc);
     }
 
-    protected Document save(MutableDocument mDoc, Validator<Document> validator) throws CouchbaseLiteException {
-        validator.validate(mDoc);
-        Document doc = db.save(mDoc);
+    protected Document save(MutableDocument doc, Validator<Document> validator) throws CouchbaseLiteException {
         validator.validate(doc);
-        return doc;
+        db.save(doc);
+        Document savedDoc = db.getDocument(doc.getId());
+        validator.validate(doc);
+        validator.validate(savedDoc);
+        return savedDoc;
     }
 
     // helper method to save document
     protected Document generateDocument(String docID) throws CouchbaseLiteException {
         MutableDocument doc = createMutableDocument(docID);
         doc.setValue("key", 1);
-        Document savedDoc = save(doc);
+        save(doc);
+        Document savedDoc = db.getDocument(docID);
         assertEquals(1, db.getCount());
         assertEquals(1, savedDoc.getSequence());
         return savedDoc;
     }
 
-    protected Document createDocNumbered(int i, int num) throws CouchbaseLiteException {
+    protected String createDocNumbered(int i, int num) throws CouchbaseLiteException {
         String docID = String.format(Locale.ENGLISH, "doc%d", i);
         MutableDocument doc = createMutableDocument(docID);
         doc.setValue("number1", i);
         doc.setValue("number2", num - i);
-        return save(doc);
+        save(doc);
+        return docID;
     }
 
     protected List<Map<String, Object>> loadNumbers(final int num) throws Exception {
@@ -266,13 +277,13 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
             @Override
             public void run() {
                 for (int i = 1; i <= num; i++) {
-                    Document doc = null;
+                    String docID;
                     try {
-                        doc = createDocNumbered(i, num);
+                        docID = createDocNumbered(i, num);
                     } catch (CouchbaseLiteException e) {
                         throw new RuntimeException(e);
                     }
-                    numbers.add(doc.toMap());
+                    numbers.add(db.getDocument(docID).toMap());
                 }
             }
         });

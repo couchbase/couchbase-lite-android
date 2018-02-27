@@ -57,10 +57,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * A Couchbase Lite database.
+ * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
-public final class Database {
-
+abstract class AbstractDatabase {
     //---------------------------------------------
     // Load LiteCore library and its dependencies
     //---------------------------------------------
@@ -71,11 +70,11 @@ public final class Database {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
-    private static final String TAG = Log.DATABASE;
-    private static final String DB_EXTENSION = "cblite2";
-    private static final int MAX_CHANGES = 100;
+    protected static final String TAG = Log.DATABASE;
+    protected static final String DB_EXTENSION = "cblite2";
+    protected static final int MAX_CHANGES = 100;
 
-    private static final int DEFAULT_DATABASE_FLAGS
+    protected static final int DEFAULT_DATABASE_FLAGS
             = C4DatabaseFlags.kC4DB_Create
             | C4DatabaseFlags.kC4DB_AutoCompact
             | C4DatabaseFlags.kC4DB_SharedKeys;
@@ -84,70 +83,36 @@ public final class Database {
     // enums
     //---------------------------------------------
 
-    /**
-     * Log domain. The log domains here are tentative and subject to change.
-     */
-    public enum LogDomain {
-        ALL, DATABASE, QUERY, REPLICATOR, NETWORK
-    }
-
-    /**
-     * Log level. The default log level for all domains is warning.
-     * The log levels here are tentative and subject to change.
-     */
-    public enum LogLevel {
-        DEBUG(Log.DEBUG),
-        VERBOSE(Log.VERBOSE),
-        INFO(Log.INFO),
-        WARNING(Log.WARN),
-        ERROR(Log.ERROR),
-        NONE(Log.NONE);
-
-        private final int value;
-
-        LogLevel(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private String name;
-    private final DatabaseConfiguration config;
-    private C4Database c4db;
-    private ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
-    private ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
-
-    private Set<DatabaseChangeListenerToken> dbListenerTokens;
-    private C4DatabaseObserver c4DBObserver;
-    private Map<String, Set<DocumentChangeListenerToken>> docListenerTokens;
-    private Map<String, C4DocumentObserver> c4DocObservers;
-
-    private final SharedKeys sharedKeys;
-
-    private Set<Replicator> activeReplications;
-    private Set<LiveQuery> activeLiveQueries;
-
-    private final Object lock = new Object(); // lock for thread-safety
+    protected String name;
+    protected final DatabaseConfiguration config;
+    protected C4Database c4db;
+    protected ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
+    protected ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
+    protected Set<DatabaseChangeListenerToken> dbListenerTokens;
+    protected C4DatabaseObserver c4DBObserver;
+    protected Map<String, Set<DocumentChangeListenerToken>> docListenerTokens;
+    protected Map<String, C4DocumentObserver> c4DocObservers;
+    protected final SharedKeys sharedKeys;
+    protected Set<Replicator> activeReplications;
+    protected Set<LiveQuery> activeLiveQueries;
+    protected final Object lock = new Object(); // lock for thread-safety
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     /**
-     * Construct a  Database with a given name and database config.
+     * Construct a  AbstractDatabase with a given name and database config.
      * If the database does not yet exist, it will be created, unless the `readOnly` option is used.
      *
      * @param name   The name of the database. May NOT contain capital letters!
      * @param config The database config, Note: null config parameter is not allowed with Android platform
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
      */
-    public Database(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
+    protected AbstractDatabase(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("name should not be empty.");
         if (config == null)
@@ -233,7 +198,7 @@ public final class Database {
         synchronized (lock) {
             mustBeOpen();
             try {
-                return new Document(this, id, false);
+                return new Document((Database) this, id, false);
             } catch (CouchbaseLiteException ex) {
                 // only 404 - Not Found error throws CouchbaseLiteException
                 return null;
@@ -242,52 +207,48 @@ public final class Database {
     }
 
     /**
-     * Saves the given document to the database. If the document in the database has been updated
-     * since it was read by this Document, a conflict occurs, which will be resolved by invoking
-     * the conflict handler. This can happen if multiple application threads are writing to the
-     * database, or a pull replication is copying changes from a server.
-     *
      * @param document
+     * @return
+     * @throws CouchbaseLiteException
      */
-    public Document save(MutableDocument document) throws CouchbaseLiteException {
-        if (document == null)
-            throw new IllegalArgumentException("a document parameter is null");
-
-        // not allowed to save with old MutableDocument
-        if (document.isInvalidated())
-            throw new IllegalArgumentException("Do not allow to save or delete the MutableDocument "
-                    + "that has already been used to save or delete.");
-
-        // NOTE: synchronized in save(Document, boolean) method
-        return save(document, false);
+    public void save(MutableDocument document) throws CouchbaseLiteException {
+        save(document, ConcurrencyControl.LAST_WRITE_WINS);
     }
 
     /**
-     * Delete the givin document. All properties are removed, and subsequent calls to
-     * getDocument(String) will return null. Deletion adds a special "tombstone" revision
-     * to the database, as bookkeeping so that the change can be replicated to other databases.
-     * Thus, it does not free up all of the disk space occupied by the document.
-     * To delete a document entirely (but without the ability to replicate this),
-     * use purge(Document).
-     *
      * @param document
+     * @param concurrencyControl
+     * @return
+     * @throws CouchbaseLiteException
      */
-    public void delete(Document document) throws CouchbaseLiteException {
+    public boolean save(MutableDocument document, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
         if (document == null)
             throw new IllegalArgumentException("a document parameter is null");
 
+        // NOTE: synchronized in save(Document, boolean) method
+        return save(document, false, concurrencyControl);
+    }
 
-        if (document.isNewDocument())
-            throw new IllegalArgumentException("Do not allow to delete a newly created document "
-                    + "that has not been saved into the database.");
 
-        // not allowed to delete with old MutableDocument
-        if (document.isInvalidated())
-            throw new IllegalArgumentException("Do not allow to save or delete the MutableDocument "
-                    + "that has already been used to save or delete.");
+    /**
+     * @param document
+     * @throws CouchbaseLiteException
+     */
+    public void delete(Document document) throws CouchbaseLiteException {
+        delete(document, ConcurrencyControl.LAST_WRITE_WINS);
+    }
+
+    /**
+     * @param document
+     * @param concurrencyControl
+     * @throws CouchbaseLiteException
+     */
+    public boolean delete(Document document, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
+        if (document == null)
+            throw new IllegalArgumentException("a document parameter is null");
 
         // NOTE: synchronized in save(Document, boolean) method
-        save(document, true);
+        return save(document, true, concurrencyControl);
     }
 
     /**
@@ -313,6 +274,9 @@ public final class Database {
                 // revID: null, all revisions are purged.
                 if (document.getC4doc().purgeRevision(null) >= 0) {
                     document.getC4doc().save(0);
+                    // Reload c4doc, still preserve the document data:
+                    C4Document newDoc = getC4Database().get(document.getId(), false);
+                    document.replaceC4Document(newDoc);
                     commit = true;
                 }
             } catch (LiteCoreException e) {
@@ -511,26 +475,6 @@ public final class Database {
         }
     }
 
-    /**
-     * Changes the database's encryption key, or removes encryption if the new key is null.
-     *
-     * @param encryptionKey The encryption key
-     * @throws CouchbaseLiteException
-     */
-    public void setEncryptionKey(EncryptionKey encryptionKey) throws CouchbaseLiteException {
-        synchronized (lock) {
-            mustBeOpen();
-            int keyType = encryptionKey == null || encryptionKey.getKey() == null ?
-                    C4EncryptionAlgorithm.kC4EncryptionNone :
-                    C4EncryptionAlgorithm.kC4EncryptionAES128;
-            try {
-                c4db.rekey(keyType, encryptionKey.getKey());
-            } catch (LiteCoreException e) {
-                throw CBLStatus.convertException(e);
-            }
-        }
-    }
-
     // Maintenance operations:
 
     public List<String> getIndexes() throws CouchbaseLiteException {
@@ -707,10 +651,6 @@ public final class Database {
         }
     }
 
-    ConflictResolver getConflictResolver() {
-        return config.getConflictResolver();
-    }
-
     // Instead of clone()
     Database copy() throws CouchbaseLiteException {
         return new Database(this.name, this.config);
@@ -781,60 +721,36 @@ public final class Database {
 
     //////// RESOLVING REPLICATED CONFLICTS:
 
-    boolean resolveConflictInDocument(String docID, ConflictResolver resolver)
-            throws CouchbaseLiteException {
-        Document doc;
-        Document otherDoc;
-        Document baseDoc;
+    void resolveConflictInDocument(String docID) throws CouchbaseLiteException {
+        synchronized (lock) {
+            boolean commit = false;
+            beginTransaction();
+            try {
+                // Read local document:
+                Document localDoc = new Document((Database) this, docID, true);
 
-        while (true) {
-            synchronized (lock) {
-                // Open a transaction as a workaround to make sure that
-                // the replicator commits the current changes before we
-                // try to read the documents.
-                // https://github.com/couchbase/couchbase-lite-core/issues/322
-                boolean commit = false;
-                beginTransaction();
+                // Read the conflicting remote revision:
+                Document remoteDoc = new Document((Database) this, docID, true);
                 try {
-                    doc = new Document(this, docID, true);
-
-                    // Read the conflicting remote revision:
-                    otherDoc = new Document(this, docID, true);
-                    if (!otherDoc.selectConflictingRevision())
-                        return false;
-
-                    // Read the common ancestor revision (if it's available):
-                    baseDoc = new Document(this, docID, true);
-                    if (!baseDoc.selectCommonAncestor(doc, otherDoc) || baseDoc.toMap() == null)
-                        baseDoc = null;
-
-                    commit = true;
-                } finally {
-                    endTransaction(commit);
-                }
-
-                // Call the conflict resolver:
-                if (resolver == null)
-                    resolver = getConflictResolver();
-                Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
-                Log.i(TAG, "Resolving doc '%s' with %s (mine=%s, theirs=%s, base=%s)",
-                        docID,
-                        resolver != null ? resolver.getClass().getSimpleName() : "null",
-                        doc != null ? doc.getRevID() : "null",
-                        otherDoc != null ? otherDoc.getRevID() : "null",
-                        baseDoc != null ? baseDoc.getRevID() : "null");
-                Document resolved = resolver.resolve(conflict);
-                if (resolved == null)
-                    throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorConflict);
-
-                try {
-                    return saveResolvedDocument(resolved, conflict);
+                    remoteDoc.selectConflictingRevision();
                 } catch (LiteCoreException e) {
-                    if (e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict)
-                        continue;
-                    else
-                        throw CBLStatus.convertException(e);
+                    throw CBLStatus.convertException(e);
                 }
+
+                // Resolve conflict:
+                Log.v(TAG, "Resolving doc '%s' (local=%s and remote=%s)", docID, localDoc.getRevID(), remoteDoc.getRevID());
+                Document resolvedDoc = resolveConflict(localDoc, remoteDoc);
+
+                // Save resolved document:
+                try {
+                    saveResolvedDocument(resolvedDoc, localDoc, remoteDoc);
+                } catch (LiteCoreException e) {
+                    throw CBLStatus.convertException(e);
+                }
+
+                commit = true;
+            } finally {
+                endTransaction(commit);
             }
         }
     }
@@ -847,6 +763,10 @@ public final class Database {
     // Private (in class only)
     //---------------------------------------------
 
+    abstract int getEncryptionAlgorithm();
+
+    abstract byte[] getEncryptionKey();
+
     //////// DATABASES:
 
     private void open() throws CouchbaseLiteException {
@@ -857,13 +777,7 @@ public final class Database {
         setupDirectory(dir);
 
         File dbFile = getDatabasePath(dir, this.name);
-
         int databaseFlags = getDatabaseFlags();
-
-        // encryption key
-        int encryptionAlgorithm = config.getEncryptionKey() == null ?
-                C4EncryptionAlgorithm.kC4EncryptionNone : C4EncryptionAlgorithm.kC4EncryptionAES128;
-        byte[] encryptionKey = config.getEncryptionKey() == null ? null : config.getEncryptionKey().getKey();
 
         Log.i(TAG, "Opening %s at path %s", this, dbFile.getPath());
 
@@ -873,8 +787,8 @@ public final class Database {
                     databaseFlags,
                     null,
                     C4DocumentVersioning.kC4RevisionTrees,
-                    encryptionAlgorithm,
-                    encryptionKey);
+                    getEncryptionAlgorithm(),
+                    getEncryptionKey());
         } catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
         }
@@ -1076,7 +990,7 @@ public final class Database {
                 boolean newExternal = nChanges > 0 ? c4DBChanges[0].isExternal() : false;
                 if (c4DBChanges == null || c4DBChanges.length == 0 || external != newExternal || docIDs.size() > 1000) {
                     if (docIDs.size() > 0) {
-                        DatabaseChange change = new DatabaseChange(this, docIDs);
+                        DatabaseChange change = new DatabaseChange((Database) this, docIDs);
                         for (DatabaseChangeListenerToken token : dbListenerTokens)
                             token.notify(change);
                         docIDs = new ArrayList<>();
@@ -1096,7 +1010,7 @@ public final class Database {
 
             Set<DocumentChangeListenerToken> tokens = docListenerTokens.get(documentID);
             if (tokens != null) {
-                DocumentChange change = new DocumentChange(this, documentID);
+                DocumentChange change = new DocumentChange((Database) this, documentID);
                 for (DocumentChangeListenerToken token : tokens)
                     token.notify(change);
             }
@@ -1107,113 +1021,73 @@ public final class Database {
         mustBeOpen();
 
         if (document.getDatabase() == null)
-            document.setDatabase(this);
+            document.setDatabase((Database) this);
         else if (document.getDatabase() != this)
             throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidParameter);
     }
 
     // The main save method.
-    private Document save(Document document, boolean deletion) throws CouchbaseLiteException {
+    private boolean save(Document document, boolean deletion, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
         if (deletion && !document.exists())
-            throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+            throw new IllegalArgumentException("Document doesn't exist in the database.");
 
-        // Attempt to save. (On conflict, this will succeed but newDoc will be null.)
-        String docID = document.getId();
-        Document doc = document;
-        Document baseDoc = null;
-        Document otherDoc = null;
+        C4Document curDoc = null;
         C4Document newDoc = null;
-        C4Document baseRev = null;
-        while (true) {
-            synchronized (lock) {
-                prepareDocument(doc);
-
-                // Begin a database transaction:
-                boolean commit = false;
-                beginTransaction();
+        synchronized (lock) {
+            prepareDocument(document);
+            boolean commit = false;
+            beginTransaction();
+            try {
                 try {
-                    if (deletion) {
-                        // Check existing, NO-OPS if the document doesn't exist:
-                        C4Document curDoc = null;
-                        try {
-                            curDoc = getC4Database().get(docID, true);
-                        } catch (LiteCoreException e) {
-                            if (e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorNotFound) {
-                                if (document instanceof MutableDocument)
-                                    ((MutableDocument) document).markAsInvalidated();
-                                return null;
-                            } else
-                                throw CBLStatus.convertException(e);
-                        } finally {
-                            if (curDoc != null)
-                                curDoc.free();
-                        }
-                    }
+                    newDoc = save(document, null, deletion);
+                    commit = true;
+                } catch (LiteCoreException e) {
+                    if (!(e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict))
+                        throw CBLStatus.convertException(e);
+                }
+
+                if (newDoc == null) {
+                    // Handle conflict:
+                    if (concurrencyControl.equals(ConcurrencyControl.FAIL_ON_CONFLICT))
+                        return false; // document is conflicted and return false because of OPTIMISTIC
 
                     try {
-                        newDoc = save(doc, baseRev, deletion);
-                        commit = true;
+                        curDoc = getC4Database().get(document.getId(), true);
                     } catch (LiteCoreException e) {
-                        // conflict is not an error, here
-                        if (!(e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorConflict)) {
+                        if (deletion && e.domain == C4ErrorDomain.LiteCoreDomain && e.code == LiteCoreError.kC4ErrorNotFound)
+                            return true;
+                        else
                             throw CBLStatus.convertException(e);
-                        }
                     }
-                } finally {
-                    // true: commit the transaction, false: abort the transaction
+
+                    if (deletion && curDoc.deleted()) {
+                        document.replaceC4Document(curDoc);
+                        curDoc = null; // NOTE: prevent to call curDoc.free() in finally block
+                        return true;
+                    }
+
+                    // Save changes on the current branch:
                     try {
-                        endTransaction(commit);
-                    } catch (CouchbaseLiteException e) {
-                        // NOTE: newDoc could be null if initial save() throws Exception.
-                        if (newDoc != null)
-                            newDoc.free();
-                        throw e;
+                        newDoc = save(document, curDoc, deletion);
+                    } catch (LiteCoreException e) {
+                        throw CBLStatus.convertException(e);
                     }
                 }
 
-                // save succeeded
-                if (newDoc != null) {
-                    if (document instanceof MutableDocument)
-                        ((MutableDocument) document).markAsInvalidated();
-                    C4Document newC4Doc = C4Document.document(newDoc);
-                    return new Document(this, document.getId(), newC4Doc);
+                document.replaceC4Document(newDoc);
+                commit = true;
+            } finally {
+                if (curDoc != null)
+                    curDoc.free();
+                try {
+                    endTransaction(commit);// true: commit the transaction, false: abort the transaction
+                } catch (CouchbaseLiteException e) {
+                    if (newDoc != null)
+                        newDoc.free();
+                    throw e;
                 }
-
-                // save not succeeded as conflicting:
-                if (deletion && !doc.isDeleted()) {
-                    // Copy and mark as deleted:
-                    MutableDocument deletedDoc = doc.toMutable();
-                    deletedDoc.markAsDeleted();
-                    doc = deletedDoc;
-                }
-
-                if (doc.getC4doc() != null)
-                    baseDoc = new Document(this, docID, doc.getC4doc());
-
-                otherDoc = new Document(this, docID, true);
             }
-
-            // Resolve conflict:
-            ConflictResolver resolver = getConflictResolver();
-            Conflict conflict = new Conflict(doc, otherDoc, baseDoc);
-
-            Document resolved = resolver.resolve(conflict);
-            if (resolved == null)
-                throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorConflict);
-
-            synchronized (lock) {
-                Document current = new Document(this, docID, true);
-                if (resolved.getRevID() != null && resolved.getRevID().equals(current.getRevID())) {
-                    if (document instanceof MutableDocument)
-                        ((MutableDocument) document).markAsInvalidated();
-                    return resolved; // same as current
-                }
-
-                // for saving:
-                doc = resolved;
-                baseRev = current.getC4doc();
-                deletion = resolved.isDeleted();
-            }
+            return true;
         }
     }
 
@@ -1246,35 +1120,45 @@ public final class Database {
         }
     }
 
-    private boolean saveResolvedDocument(Document resolved, Conflict conflict)
+    private Document resolveConflict(Document localDoc, Document remoteDoc) {
+        if (remoteDoc.isDeleted())
+            return remoteDoc;
+        else if (localDoc.isDeleted())
+            return localDoc;
+        else if (localDoc.generation() > remoteDoc.generation())
+            return localDoc;
+        else if (localDoc.generation() < remoteDoc.generation())
+            return remoteDoc;
+        else if (localDoc.getRevID() != null && localDoc.getRevID().compareTo(remoteDoc.getRevID()) > 0)
+            return localDoc;
+        else
+            return remoteDoc;
+    }
+
+    private boolean saveResolvedDocument(Document resolvedDoc, Document localDoc, Document remoteDoc)
             throws CouchbaseLiteException, LiteCoreException {
+
         synchronized (lock) {
             boolean commit = false;
             beginTransaction();
             try {
-                Document doc = conflict.getMine();
-                Document otherDoc = conflict.getTheirs();
+                if (remoteDoc != localDoc)
+                    resolvedDoc.setDatabase((Database) this);
 
-                // Figure out what revision to delete and what if anything to add:
-                String winningRevID;
-                String losingRevID;
+                // The remote branch has to win, so that the doc revision history matches the server's.
+                String winningRevID = remoteDoc.getRevID();
+                String losingRevID = localDoc.getRevID();
+
                 byte[] mergedBody = null;
-                if (resolved == otherDoc) {
-                    winningRevID = otherDoc.getRevID();
-                    losingRevID = doc.getRevID();
-                } else {
-                    winningRevID = doc.getRevID();
-                    losingRevID = otherDoc.getRevID();
-                    if (resolved != doc) {
-                        resolved.setDatabase(this);
-                        mergedBody = resolved.encode();
-                        if (mergedBody == null)
-                            return false;
-                    }
+                if (resolvedDoc != remoteDoc) {
+                    // Unless the remote revision is being used as-is, we need a new revision:
+                    mergedBody = resolvedDoc.encode();
+                    if (mergedBody == null)
+                        return false;
                 }
 
                 // Tell LiteCore to do the resolution:
-                C4Document rawDoc = doc.getC4doc();
+                C4Document rawDoc = localDoc.getC4doc();
                 rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody);
                 rawDoc.save(0);
                 Log.i(TAG, "Conflict resolved as doc '%s' rev %s",

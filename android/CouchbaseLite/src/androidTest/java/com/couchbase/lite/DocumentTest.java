@@ -125,7 +125,6 @@ public class DocumentTest extends BaseTest {
         MutableDocument doc1a = new MutableDocument();
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
-        assertFalse(doc1a.isDeleted());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
         save(doc1a);
@@ -133,7 +132,6 @@ public class DocumentTest extends BaseTest {
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
         assertTrue(doc1b.exists());
-        assertFalse(doc1b.isDeleted());
         assertEquals(doc1a.getId(), doc1b.getId());
     }
 
@@ -142,7 +140,6 @@ public class DocumentTest extends BaseTest {
         MutableDocument doc1a = createMutableDocument("doc1");
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
-        assertFalse(doc1a.isDeleted());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
         save(doc1a);
@@ -150,7 +147,6 @@ public class DocumentTest extends BaseTest {
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
         assertTrue(doc1b.exists());
-        assertFalse(doc1b.isDeleted());
         assertEquals(doc1a.getId(), doc1b.getId());
     }
 
@@ -172,7 +168,6 @@ public class DocumentTest extends BaseTest {
         MutableDocument doc1a = createMutableDocument(null);
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
-        assertFalse(doc1a.isDeleted());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
         save(doc1a);
@@ -180,7 +175,6 @@ public class DocumentTest extends BaseTest {
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
         assertTrue(doc1b.exists());
-        assertFalse(doc1b.isDeleted());
         assertEquals(doc1a.getId(), doc1b.getId());
     }
 
@@ -201,7 +195,6 @@ public class DocumentTest extends BaseTest {
         final MutableDocument doc1a = new MutableDocument(dict);
         assertNotNull(doc1a);
         assertTrue(doc1a.getId().length() > 0);
-        assertFalse(doc1a.isDeleted());
         assertEquals(dict, doc1a.toMap());
 
         save(doc1a);
@@ -209,7 +202,6 @@ public class DocumentTest extends BaseTest {
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
         assertTrue(doc1b.exists());
-        assertFalse(doc1b.isDeleted());
         assertEquals(doc1a.getId(), doc1b.getId());
         assertEquals(dict, doc1b.toMap());
     }
@@ -231,7 +223,6 @@ public class DocumentTest extends BaseTest {
         MutableDocument doc1a = createMutableDocument("doc1", dict);
         assertNotNull(doc1a);
         assertEquals("doc1", doc1a.getId());
-        assertFalse(doc1a.isDeleted());
         assertEquals(dict, doc1a.toMap());
 
         save(doc1a);
@@ -239,7 +230,6 @@ public class DocumentTest extends BaseTest {
         assertNotNull(doc1b);
         assertTrue(doc1a != doc1b);
         assertTrue(doc1b.exists());
-        assertFalse(doc1b.isDeleted());
         assertEquals(doc1a.getId(), doc1b.getId());
         assertEquals(dict, doc1b.toMap());
     }
@@ -1736,7 +1726,6 @@ public class DocumentTest extends BaseTest {
     public void testDeleteNewDocument() {
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setString("name", "Scott Tiger");
-        assertFalse(mDoc.isDeleted());
         try {
             db.delete(mDoc);
             fail();
@@ -1745,7 +1734,6 @@ public class DocumentTest extends BaseTest {
         } catch (CouchbaseLiteException e) {
             fail();
         }
-        assertFalse(mDoc.isDeleted());
         assertEquals("Scott Tiger", mDoc.getString("name"));
     }
 
@@ -1754,7 +1742,6 @@ public class DocumentTest extends BaseTest {
         String docID = "doc1";
         MutableDocument mDoc = createMutableDocument(docID);
         mDoc.setValue("name", "Scott Tiger");
-        assertFalse(mDoc.isDeleted());
 
         // Save:
         Document doc = save(mDoc);
@@ -1765,7 +1752,6 @@ public class DocumentTest extends BaseTest {
         assertNull(db.getDocument(docID));
 
         // NOTE: doc is reserved.
-        assertFalse(doc.isDeleted());
         assertEquals("Scott Tiger", doc.getValue("name"));
         Map<String, Object> expected = new HashMap<>();
         expected.put("name", "Scott Tiger");
@@ -1826,7 +1812,6 @@ public class DocumentTest extends BaseTest {
         MutableDocument doc = createMutableDocument(docID);
         doc.setValue("type", "profile");
         doc.setValue("name", "Scott");
-        assertFalse(doc.isDeleted());
 
         // Purge before save:
         try {
@@ -1842,7 +1827,6 @@ public class DocumentTest extends BaseTest {
 
         //Save
         Document savedDoc = save(doc);
-        assertFalse(savedDoc.isDeleted());
 
         // purge
         db.purge(savedDoc);
@@ -2095,7 +2079,7 @@ public class DocumentTest extends BaseTest {
         assertEquals(mDoc1.getString("name"), mDoc2.getString("name"));
         assertEquals(mDoc1.getInt("score"), mDoc2.getInt("score"));
 
-        Document doc1 = db.save(mDoc1);
+        Document doc1 = save(mDoc1);
         MutableDocument mDoc3 = doc1.toMutable();
         {
             // https://forums.couchbase.com/t/bug-in-document-tomutable-in-db21/15441
@@ -2141,7 +2125,7 @@ public class DocumentTest extends BaseTest {
         assertFalse(doc1c.equals(doc1b));
         assertTrue(doc1c.equals(doc1c));
 
-        Document savedDoc = db.save(doc1c);
+        Document savedDoc = save(doc1c);
         MutableDocument mDoc = savedDoc.toMutable();
         assertTrue(savedDoc.equals(mDoc));
         assertTrue(mDoc.equals(savedDoc));
@@ -2156,8 +2140,8 @@ public class DocumentTest extends BaseTest {
         MutableDocument doc2 = new MutableDocument("doc2");
         doc1.setLong("answer", 42L); // TODO: Integer cause unequality with saved doc
         doc2.setLong("answer", 42L); // TODO: Integer cause unequality with saved doc
-        Document sDoc1 = db.save(doc1);
-        Document sDoc2 = db.save(doc2);
+        Document sDoc1 = save(doc1);
+        Document sDoc2 = save(doc2);
 
         assertTrue(doc1.equals(doc1));
         assertTrue(sDoc1.equals(sDoc1));
@@ -2185,8 +2169,9 @@ public class DocumentTest extends BaseTest {
             doc1b.setLong("answer", 42L);
             assertTrue(doc1a.equals(doc1b));
             assertTrue(doc1b.equals(doc1a));
-            Document sDoc1a = db.save(doc1a);
-            Document sDoc1b = otherDB.save(doc1b);
+            Document sDoc1a = save(doc1a);
+            otherDB.save(doc1b);
+            Document sDoc1b = otherDB.getDocument(doc1b.getId());
             assertTrue(doc1a.equals(sDoc1a));
             assertTrue(sDoc1a.equals(doc1a));
             assertTrue(doc1b.equals(sDoc1b));
@@ -2221,7 +2206,7 @@ public class DocumentTest extends BaseTest {
 
         MutableDocument mDoc = new MutableDocument(docID);
         mDoc.setValue("key", "value");
-        doc = db.save(mDoc);
+        doc = save(mDoc);
         assertNotNull(doc);
         assertEquals(1, db.getCount());
 
