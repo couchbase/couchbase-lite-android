@@ -64,9 +64,11 @@ public class ResultSet implements Iterable<Result> {
      * Move the cursor forward one row from its current row position.
      * Caution: next() method and iterator() method share same data structure.
      * Please don't use them together.
+     * Caution: In case ResultSet is obtained from QueryChangeListener, and QueryChangeListener is
+     * already removed from Query, ResultSet is already freed. And this next() method returns null.
      *
      * @return the Result after moving the cursor forward. Returns {@code null} value
-     * if there are no more rows.
+     * if there are no more rows, or ResultSet is freed already.
      */
     public Result next() {
         if (query == null)
@@ -74,10 +76,10 @@ public class ResultSet implements Iterable<Result> {
 
         synchronized (getDatabase().getLock()) {
             try {
-                if (c4enum.next()) {
-                    return currentObject();
-                } else
+                if (c4enum == null || !c4enum.next())
                     return null;
+                else
+                    return currentObject();
             } catch (LiteCoreException e) {
                 Log.w(TAG, "Query enumeration error: %s", e.toString());
                 return null;

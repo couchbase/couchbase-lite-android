@@ -37,6 +37,14 @@ dependencies {
 
 - [Developer Guide](https://developer.couchbase.com/documentation/mobile/2.0/couchbase-lite/java.html)
 
+## How to build from source
+
+1. `git clone --recursive https://github.com/couchbase/couchbase-lite-android.git` to clone this repo and it's submodules
+1. In Android Studio, open the `android` subdirectory
+1. [Install CMake](https://stackoverflow.com/questions/41218241/unable-to-find-cmake-in-android-studio)
+
+At this point it should build without errors.
+
 ## Sample Apps
 
 - [Todo](https://github.com/couchbaselabs/mobile-training-todo/tree/feature/2.0)
@@ -44,5 +52,5 @@ dependencies {
 
 ## License
 
-Like all Couchbase source code, this is released under the Apache 2 [license](LICENSE).
+Apache 2 [license](LICENSE).
 
