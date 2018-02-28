@@ -207,8 +207,12 @@ abstract class AbstractDatabase {
     }
 
     /**
-     * @param document
-     * @return
+     * Saves a document to the database. When write operations are executed
+     * concurrently, the last writer will overwrite all other written values.
+     * Calling this method is the same as calling the ave(MutableDocument, ConcurrencyControl)
+     * method with LAST_WRITE_WINS concurrency control.
+     *
+     * @param document The document.
      * @throws CouchbaseLiteException
      */
     public void save(MutableDocument document) throws CouchbaseLiteException {
@@ -216,9 +220,13 @@ abstract class AbstractDatabase {
     }
 
     /**
-     * @param document
-     * @param concurrencyControl
-     * @return
+     * Saves a document to the database. When used with LAST_WRITE_WINS
+     * concurrency control, the last write operation will win if there is a conflict.
+     * When used with FAIL_ON_CONFLICT concurrency control, save will fail with false value
+     *
+     * @param document           The document.
+     * @param concurrencyControl The concurrency control.
+     * @return true if successful. false if the FAIL_ON_CONFLICT concurrency
      * @throws CouchbaseLiteException
      */
     public boolean save(MutableDocument document, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
@@ -229,9 +237,13 @@ abstract class AbstractDatabase {
         return save(document, false, concurrencyControl);
     }
 
-
     /**
-     * @param document
+     * Deletes a document from the database. When write operations are executed
+     * concurrently, the last writer will overwrite all other written values.
+     * Calling this function is the same as calling the delete(Document, ConcurrencyControl)
+     * function with LAST_WRITE_WINS concurrency control.
+     *
+     * @param document 　The document.
      * @throws CouchbaseLiteException
      */
     public void delete(Document document) throws CouchbaseLiteException {
@@ -239,8 +251,13 @@ abstract class AbstractDatabase {
     }
 
     /**
-     * @param document
-     * @param concurrencyControl
+     * Deletes a document from the database. When used with lastWriteWins concurrency
+     * control, the last write operation will win if there is a conflict.
+     * When used with FAIL_ON_CONFLICT concurrency control, delete will fail with
+     * 'false' value returned.
+     *
+     * @param document           The document.
+     * @param concurrencyControl The concurrency control.
      * @throws CouchbaseLiteException
      */
     public boolean delete(Document document, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
@@ -262,8 +279,8 @@ abstract class AbstractDatabase {
             throw new IllegalArgumentException("a document parameter is null");
 
         if (document.isNewDocument())
-            throw new IllegalArgumentException("Do not allow to purge a newly created document "
-                    + "that has not been saved into the database.");
+            throw new CouchbaseLiteException("Document doesn't exist in the database.",
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
 
         synchronized (lock) {
             prepareDocument(document);
@@ -274,9 +291,8 @@ abstract class AbstractDatabase {
                 // revID: null, all revisions are purged.
                 if (document.getC4doc().purgeRevision(null) >= 0) {
                     document.getC4doc().save(0);
-                    // Reload c4doc, still preserve the document data:
-                    C4Document newDoc = getC4Database().get(document.getId(), false);
-                    document.replaceC4Document(newDoc);
+                    // Reset c4doc:
+                    document.replaceC4Document(null);
                     commit = true;
                 }
             } catch (LiteCoreException e) {
@@ -1029,7 +1045,8 @@ abstract class AbstractDatabase {
     // The main save method.
     private boolean save(Document document, boolean deletion, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
         if (deletion && !document.exists())
-            throw new IllegalArgumentException("Document doesn't exist in the database.");
+            throw new CouchbaseLiteException("Document doesn't exist in the database.",
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
 
         C4Document curDoc = null;
         C4Document newDoc = null;
@@ -1067,6 +1084,7 @@ abstract class AbstractDatabase {
                     }
 
                     // Save changes on the current branch:
+                    // NOTE: curDoc null check is done in prev try-catch blcok
                     try {
                         newDoc = save(document, curDoc, deletion);
                     } catch (LiteCoreException e) {

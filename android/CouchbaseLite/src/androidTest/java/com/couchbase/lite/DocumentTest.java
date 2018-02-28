@@ -1729,10 +1729,11 @@ public class DocumentTest extends BaseTest {
         try {
             db.delete(mDoc);
             fail();
-        } catch (IllegalArgumentException uoe) {
-            ; // expected
         } catch (CouchbaseLiteException e) {
-            fail();
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
         }
         assertEquals("Scott Tiger", mDoc.getString("name"));
     }
@@ -1817,10 +1818,11 @@ public class DocumentTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (IllegalArgumentException uoe) {
-            ;// expected here
         } catch (CouchbaseLiteException e) {
-            fail();
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
         }
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
