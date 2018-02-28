@@ -2243,4 +2243,47 @@ public class QueryTest extends BaseTest {
         }
         assertEquals(N, count);
     }
+
+    @Test
+    public void testFTSwithStemming() throws CouchbaseLiteException {
+        MutableDocument mDoc0 = new MutableDocument("doc0");
+        mDoc0.setString("content", "hello");
+        save(mDoc0);
+
+        MutableDocument mDoc1 = new MutableDocument("doc1");
+        mDoc1.setString("content", "beauty");
+        save(mDoc1);
+
+        MutableDocument mDoc2 = new MutableDocument("doc2");
+        mDoc2.setString("content", "beautifully");
+        save(mDoc2);
+
+        MutableDocument mDoc3 = new MutableDocument("doc3");
+        mDoc3.setString("content", "beautiful");
+        save(mDoc3);
+
+        MutableDocument mDoc4 = new MutableDocument("doc4");
+        mDoc4.setString("content", "pretty");
+        save(mDoc4);
+
+        FullTextIndex ftsIndex = IndexBuilder.fullTextIndex(FullTextIndexItem.property("content"));
+        db.createIndex("ftsIndex", ftsIndex);
+
+
+        String[] expectedIDs = {"doc1", "doc2", "doc3"};
+        String[] expectedContents = {"beauty", "beautifully", "beautiful"};
+        Query ftsQuery  = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("ftsIndex").match("beautiful"))
+                .orderBy(Ordering.expression(Meta.id));
+        ResultSet rs = ftsQuery.execute();
+        int count = 0;
+        for(Result r: rs){
+            Log.e(TAG, r.toMap().toString());
+            assertEquals(expectedIDs[count], r.getString("id"));
+            assertEquals(expectedContents[count], r.getString("content"));
+            count++;
+        }
+        assertEquals(3, count);
+    }
 }
