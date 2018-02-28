@@ -2413,4 +2413,115 @@ public class QueryTest extends BaseTest {
         assertEquals(expectedIDs6.length, count6);
         */
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1621
+    @Test
+    public void testFTSMixedOperators() throws CouchbaseLiteException {
+        MutableDocument mDoc1 = new MutableDocument("doc1");
+        mDoc1.setString("content", "a database is a software system");
+        save(mDoc1);
+
+        MutableDocument mDoc2 = new MutableDocument("doc2");
+        mDoc2.setString("content", "sqlite is a software system");
+        save(mDoc2);
+
+        MutableDocument mDoc3 = new MutableDocument("doc3");
+        mDoc3.setString("content", "sqlite is a database");
+        save(mDoc3);
+
+        FullTextIndex ftsIndex = IndexBuilder.fullTextIndex(FullTextIndexItem.property("content"));
+        db.createIndex("ftsIndex", ftsIndex);
+
+        // The enhanced query syntax
+        // https://www.sqlite.org/fts3.html#_set_operations_using_the_enhanced_query_syntax
+
+        // A AND B AND C
+        Query ftsQuery = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("ftsIndex").match("sqlite AND software AND system"))
+                .orderBy(Ordering.expression(Meta.id));
+        ResultSet rs = ftsQuery.execute();
+        String[] expectedIDs = {"doc2"};
+        int count = 0;
+        for (Result r : rs) {
+            Log.e(TAG, r.toMap().toString());
+            assertEquals(expectedIDs[count], r.getString("id"));
+            count++;
+        }
+        assertEquals(expectedIDs.length, count);
+
+
+        // (A AND B) OR C
+        Query ftsQuery2 = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("ftsIndex").match("(sqlite AND software) OR database"))
+                .orderBy(Ordering.expression(Meta.id));
+        ResultSet rs2 = ftsQuery2.execute();
+        String[] expectedIDs2 = {"doc1", "doc2", "doc3"};
+        int count2 = 0;
+        for (Result r : rs2) {
+            Log.e(TAG, r.toMap().toString());
+            assertEquals(expectedIDs2[count2], r.getString("id"));
+            count2++;
+        }
+        assertEquals(expectedIDs2.length, count2);
+
+        Query ftsQuery3 = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("ftsIndex").match("(sqlite AND software) OR system"))
+                .orderBy(Ordering.expression(Meta.id));
+        ResultSet rs3 = ftsQuery3.execute();
+        String[] expectedIDs3 = {"doc1", "doc2"};
+        int count3 = 0;
+        for (Result r : rs3) {
+            Log.e(TAG, r.toMap().toString());
+            assertEquals(expectedIDs3[count3], r.getString("id"));
+            count3++;
+        }
+        assertEquals(expectedIDs3.length, count3);
+
+        // (A OR B) AND C
+        Query ftsQuery4 = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("ftsIndex").match("(sqlite OR software) AND database"))
+                .orderBy(Ordering.expression(Meta.id));
+        ResultSet rs4 = ftsQuery4.execute();
+        String[] expectedIDs4 = {"doc1", "doc3"};
+        int count4 = 0;
+        for (Result r : rs4) {
+            Log.e(TAG, r.toMap().toString());
+            assertEquals(expectedIDs4[count4], r.getString("id"));
+            count4++;
+        }
+        assertEquals(expectedIDs4.length, count4);
+
+        Query ftsQuery5 = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("ftsIndex").match("(sqlite OR software) AND system"))
+                .orderBy(Ordering.expression(Meta.id));
+        ResultSet rs5 = ftsQuery5.execute();
+        String[] expectedIDs5 = {"doc1", "doc2"};
+        int count5 = 0;
+        for (Result r : rs5) {
+            Log.e(TAG, r.toMap().toString());
+            assertEquals(expectedIDs5[count5], r.getString("id"));
+            count5++;
+        }
+        assertEquals(expectedIDs5.length, count5);
+
+        // A OR B OR C
+        Query ftsQuery6 = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("ftsIndex").match("database OR software OR system"))
+                .orderBy(Ordering.expression(Meta.id));
+        ResultSet rs6 = ftsQuery6.execute();
+        String[] expectedIDs6 = {"doc1", "doc2", "doc3"};
+        int count6 = 0;
+        for (Result r : rs6) {
+            Log.e(TAG, r.toMap().toString());
+            assertEquals(expectedIDs6[count6], r.getString("id"));
+            count6++;
+        }
+        assertEquals(expectedIDs6.length, count6);
+    }
 }
