@@ -2373,6 +2373,8 @@ public class QueryTest extends BaseTest {
         assertEquals(expectedIDs4.length, count4);
 
         /*
+        NOTE: `and` is stop word for English. So following query does not work!
+
         // lowercase `and` which is not operator
         Query ftsQuery5 = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
                 .from(DataSource.database(db))
