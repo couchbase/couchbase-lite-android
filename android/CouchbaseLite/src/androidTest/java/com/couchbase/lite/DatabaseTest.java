@@ -543,10 +543,11 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (IllegalArgumentException uoe) {
-            // expected
         } catch (CouchbaseLiteException e) {
-            fail();
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
         }
     }
 
@@ -681,10 +682,11 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (IllegalArgumentException uoe) {
-            // expected
         } catch (CouchbaseLiteException e) {
-            fail();
+            if(e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
         }
         assertEquals(0, db.getCount());
     }
@@ -1721,8 +1723,11 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc1a);
             fail();
-        }catch (IllegalArgumentException e){
-            // expected
+        } catch (CouchbaseLiteException e) {
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
         }
 
         db.delete(doc1b);

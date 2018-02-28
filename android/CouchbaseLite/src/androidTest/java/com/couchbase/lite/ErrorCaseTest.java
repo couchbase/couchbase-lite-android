@@ -53,10 +53,11 @@ public class ErrorCaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (IllegalArgumentException iae) {
-            ; //expected
         } catch (CouchbaseLiteException e) {
-            fail();
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
         }
         assertEquals("Scott Tiger", doc.getValue("name"));
     }
@@ -94,7 +95,11 @@ public class ErrorCaseTest extends BaseTest {
         try {
             db.delete(saved);
             fail();
-        } catch (IllegalArgumentException e) {
+        } catch (CouchbaseLiteException e) {
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
         }
     }
 
@@ -136,7 +141,11 @@ public class ErrorCaseTest extends BaseTest {
         try {
             db.purge(saved);
             fail();
-        }catch (IllegalArgumentException e){
+        } catch (CouchbaseLiteException e) {
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
         }
     }
 

@@ -19,11 +19,15 @@ package com.couchbase.lite;
 
 /**
  * ConcurrencyControl type used when saving or deleting a document.
- * - LAST_WRITE_WINS: The last operation wins if there is a conflict.
- * - FAIL_ON_CONFLICT: The operation will fail if there is a conflict.
  */
 public enum ConcurrencyControl {
+    /**
+     * The last write operation will win if there is a conflict.
+     */
     LAST_WRITE_WINS(0),
+    /**
+     * The operation will fail if there is a conflict.
+     */
     FAIL_ON_CONFLICT(1);
 
     private final int value;
