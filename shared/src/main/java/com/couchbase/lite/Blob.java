@@ -178,9 +178,8 @@ public final class Blob implements FLEncodable {
         } else if (database != null) {
             byte[] contentResult = null;
             // Read blob from the BlobStore:
-            C4BlobStore blobStore = getBlobStore(); // BlobStore does not required to close because it is created from database.
-            if (blobStore == null)
-                return null;
+            // NOTE: should not return null.
+            C4BlobStore blobStore = getBlobStore(); // BlobStore does not require to be closed because it is created from database.
             try {
                 C4BlobKey key = getBlobKey();
                 if (key == null)
@@ -433,12 +432,7 @@ public final class Blob implements FLEncodable {
             Log.w(TAG, "database instance is null.");
             return null;
         }
-        try {
-            return database.getBlobStore();
-        } catch (RuntimeException e) {
-            Log.w(TAG, "Failed to get BlobStore instance", e);
-            return null;
-        }
+        return database.getBlobStore();
     }
 
     private C4BlobKey getBlobKey() {

@@ -683,7 +683,7 @@ public class DatabaseTest extends BaseTest {
             db.purge(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            if(e.getCode() == CBLError.Code.CBLErrorNotFound)
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
                 ;// expected
             else
                 fail();
@@ -847,7 +847,12 @@ public class DatabaseTest extends BaseTest {
     public void testCloseThenAccessDoc() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
-        Document doc = generateDocument(docID);
+        MutableDocument mDoc = new MutableDocument(docID);
+        mDoc.setInt("key", 1);
+        MutableDictionary mDict = new MutableDictionary(); // nested dictionary
+        mDict.setString("hello", "world");
+        mDoc.setDictionary("dict", mDict);
+        Document doc = save(mDoc);
 
         // Close db:
         db.close();
@@ -855,6 +860,9 @@ public class DatabaseTest extends BaseTest {
         // Content should be accessible & modifiable without error:
         assertEquals(docID, doc.getId());
         assertEquals(1, ((Number) doc.getValue("key")).intValue());
+        Dictionary dict = doc.getDictionary("dict");
+        assertNotNull(dict);
+        assertEquals("world", dict.getString("hello"));
         MutableDocument updateDoc = doc.toMutable();
         updateDoc.setValue("key", 2);
         updateDoc.setValue("key1", "value");
@@ -863,9 +871,9 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testCloseThenAccessBlob() throws CouchbaseLiteException {
         // Store doc with blob:
-        MutableDocument doc = generateDocument("doc1").toMutable();
-        doc.setValue("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
-        save(doc);
+        MutableDocument mDoc = generateDocument("doc1").toMutable();
+        mDoc.setValue("blob", new Blob("text/plain", kDatabaseTestBlob.getBytes()));
+        Document doc = save(mDoc);
 
         // Close db:
         db.close();
@@ -874,8 +882,12 @@ public class DatabaseTest extends BaseTest {
         assertTrue(doc.getValue("blob") instanceof Blob);
         Blob blob = doc.getBlob("blob");
         assertEquals(8, blob.length());
-        // NOTE: content is still in memory for this
-        assertNotNull(blob.getContent());
+        try {
+            blob.getContent();
+            fail();
+        } catch (CouchbaseLiteRuntimeException e) {
+            ; // expected
+        }
     }
 
     @Test
