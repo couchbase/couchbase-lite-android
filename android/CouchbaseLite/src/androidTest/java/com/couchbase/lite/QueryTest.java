@@ -2288,6 +2288,46 @@ public class QueryTest extends BaseTest {
         assertEquals(3, count);
     }
 
+    // https://github.com/couchbase/couchbase-lite-net/blob/master/src/Couchbase.Lite.Tests.Shared/QueryTest.cs#L1721
+    @Test
+    public void testFTSStemming2() throws Exception {
+        db.createIndex("passageIndex", IndexBuilder.fullTextIndex(FullTextIndexItem.property("passage")).setLanguage("en"));
+        db.createIndex("passageIndexStemless", IndexBuilder.fullTextIndex(FullTextIndexItem.property("passage")).setLanguage(null));
+
+        MutableDocument mDoc1 = new MutableDocument("doc1");
+        mDoc1.setString("passage", "The boy said to the child, 'Mommy, I want a cat.'");
+        save(mDoc1);
+
+        MutableDocument mDoc2 = new MutableDocument("doc2");
+        mDoc2.setString("passage", "The mother replied 'No, you already have too many cats.'");
+        save(mDoc2);
+
+        Query q = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("passageIndex").match("cat"));
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                String id = String.format(Locale.ENGLISH, "doc%d", n);
+                assertEquals(id, result.getString(0));
+            }
+        }, true);
+        assertEquals(2, numRows);
+
+        Query q2 = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(db))
+                .where(FullTextExpression.index("passageIndexStemless").match("cat"));
+        int numRows2 = verifyQuery(q2, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                String id = String.format(Locale.ENGLISH, "doc%d", n);
+                assertEquals(id, result.getString(0));
+            }
+        }, true);
+        assertEquals(1, numRows2);
+    }
+
+
     // 3.1. Set Operations Using The Enhanced Query Syntax
     // https://www.sqlite.org/fts3.html#_set_operations_using_the_enhanced_query_syntax
     // https://github.com/couchbase/couchbase-lite-android/issues/1620
