@@ -125,7 +125,7 @@ public final class CouchbaseLiteRuntimeException extends RuntimeException implem
 
     @Override
     public String toString() {
-        return "CouchbaseLiteException{" +
+        return "CouchbaseLiteRuntimeException{" +
                 "domain='" + domain + '\'' +
                 ", code=" + code +
                 ", msg=" + super.getMessage() +
