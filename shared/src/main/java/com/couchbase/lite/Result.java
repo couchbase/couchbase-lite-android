@@ -476,7 +476,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         FLValue value = values.get(index);
         if (value == null) return null;
         MRoot root = new MRoot(context, value, false);
-        return root.asNative();
+        synchronized (rs.getQuery().getDatabase().getLock()) {
+            return root.asNative();
+        }
     }
 
     List<FLValue> extractColumns(FLArrayIterator columns) {
