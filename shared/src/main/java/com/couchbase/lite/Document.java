@@ -407,8 +407,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     // Sets _c4doc and updates my root dictionary
     void setC4Document(C4Document c4doc) {
         synchronized (lock) {
-            // NOTE: don't call free(), both _c4doc and this._c4doc point to same C4Document.
-            this._c4doc = c4doc;
+            replaceC4Document(c4doc);
             _data = null;
             if (c4doc != null) {
                 if (c4doc != null && !c4doc.deleted())
@@ -420,7 +419,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     void replaceC4Document(C4Document c4doc) {
         synchronized (lock) {
+            C4Document oldC4Doc = this._c4doc;
             this._c4doc = c4doc;
+            if (oldC4Doc != null && (c4doc == null || !oldC4Doc.equals(c4doc)))
+                oldC4Doc.free();
         }
     }
 
