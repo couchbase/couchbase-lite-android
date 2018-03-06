@@ -4,7 +4,6 @@ import android.util.Log;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DatabaseConfiguration;
-import com.couchbase.lite.Document;
 import com.couchbase.lite.MutableDocument;
 
 public class DocPerfTest extends PerfTest{
@@ -32,12 +31,8 @@ public class DocPerfTest extends PerfTest{
                 public void run() {
                     try {
                         MutableDocument mDoc = new MutableDocument("doc");
-                        for(int i = 0; i < revisions; i++){
-                            mDoc.setValue("count", i);
-                            db.save(mDoc);
-                            Document doc = db.getDocument("doc");
-                            mDoc = doc.toMutable();
-                        }
+                        updateDoc(mDoc, revisions);
+                        //updateDocWithGetDocument(mDoc, revisions);
                     }catch (CouchbaseLiteException e) {
                         e.printStackTrace();
                     }
@@ -46,6 +41,20 @@ public class DocPerfTest extends PerfTest{
             });
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
+        }
+    }
+    void updateDoc(MutableDocument doc, final int revisions) throws CouchbaseLiteException {
+        for(int i = 0; i < revisions; i++){
+            doc.setValue("count", i);
+            db.save(doc);
+        }
+    }
+
+    void updateDocWithGetDocument(MutableDocument doc, final int revisions) throws CouchbaseLiteException {
+        for(int i = 0; i < revisions; i++){
+            doc.setValue("count", i);
+            db.save(doc);
+            doc = db.getDocument("doc").toMutable();
         }
     }
 }
