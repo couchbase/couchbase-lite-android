@@ -1168,16 +1168,19 @@ abstract class AbstractDatabase {
                 String losingRevID = localDoc.getRevID();
 
                 byte[] mergedBody = null;
+                int mergedFlags = 0x00;
                 if (resolvedDoc != remoteDoc) {
                     // Unless the remote revision is being used as-is, we need a new revision:
                     mergedBody = resolvedDoc.encode();
                     if (mergedBody == null)
                         return false;
+                    if(resolvedDoc.isDeleted())
+                        mergedFlags |= C4RevisionFlags.kRevDeleted;
                 }
 
                 // Tell LiteCore to do the resolution:
                 C4Document rawDoc = localDoc.getC4doc();
-                rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody);
+                rawDoc.resolveConflict(winningRevID, losingRevID, mergedBody, mergedFlags);
                 rawDoc.save(0);
                 Log.i(TAG, "Conflict resolved as doc '%s' rev %s",
                         rawDoc.getDocID(), rawDoc.getRevID());
