@@ -1,20 +1,23 @@
-//
-// CustomHostnameVerifier.java
-//
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *  Original Code: https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/tls/OkHostnameVerifier.java
+ *  Patch        : https://github.com/square/okhttp/pull/2214/commits/56cf2e64306449adf63677f23d06e38503256ad4
+ *  Issue & PR   : https://github.com/square/okhttp/pull/2214
+ */
 package okhttp3.internal.tls;
 
 import java.security.cert.Certificate;
@@ -35,11 +38,6 @@ import static okhttp3.internal.Util.verifyAsIpAddress;
 
 /**
  * A HostnameVerifier consistent with <a href="http://www.ietf.org/rfc/rfc2818.txt">RFC 2818</a>.
- * <p>
- * NOTE: CustomHostnameVerifier is the class that applied patch (see below) based on OkHostnameVerifier
- * - BASE: https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/tls/OkHostnameVerifier.java
- * - PATCH: https://github.com/square/okhttp/pull/2214/commits/56cf2e64306449adf63677f23d06e38503256ad4
- * - ISSUE & PR: https://github.com/square/okhttp/pull/2214
  */
 public final class CustomHostnameVerifier implements HostnameVerifier {
     public static final CustomHostnameVerifier INSTANCE = new CustomHostnameVerifier();
