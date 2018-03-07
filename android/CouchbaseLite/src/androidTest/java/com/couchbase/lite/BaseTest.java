@@ -272,14 +272,18 @@ public class BaseTest implements C4Constants, CBLError.Domain, CBLError.Code {
     }
 
     protected List<Map<String, Object>> loadNumbers(final int num) throws Exception {
+        return loadNumbers(1, num);
+    }
+
+    protected List<Map<String, Object>> loadNumbers(final int from, final int to) throws Exception {
         final List<Map<String, Object>> numbers = new ArrayList<Map<String, Object>>();
         db.inBatch(new Runnable() {
             @Override
             public void run() {
-                for (int i = 1; i <= num; i++) {
+                for (int i = from; i <= to; i++) {
                     String docID;
                     try {
-                        docID = createDocNumbered(i, num);
+                        docID = createDocNumbered(i, to);
                     } catch (CouchbaseLiteException e) {
                         throw new RuntimeException(e);
                     }

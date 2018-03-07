@@ -2564,4 +2564,50 @@ public class QueryTest extends BaseTest {
         }
         assertEquals(expectedIDs6.length, count6);
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1628
+    @Test
+    public void testLiveQueryResultsCount() throws Exception {
+        loadNumbers(50);
+
+        Query query = QueryBuilder
+                .select()
+                .from(DataSource.database(db))
+                .where(EXPR_NUMBER1.greaterThan(Expression.intValue(25)))
+                .orderBy(Ordering.property("number1").ascending());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        QueryChangeListener listener = new QueryChangeListener() {
+            @Override
+            public void changed(QueryChange change) {
+                int count = 0;
+                ResultSet rs = change.getResults();
+                while (rs.next() != null)
+                    count++;
+                if(count == 75)// 26-100
+                    latch.countDown();
+            }
+        };
+        ListenerToken token = query.addChangeListener(executor, listener);
+        try {
+            // create one doc
+            final CountDownLatch latchAdd = new CountDownLatch(1);
+            new Handler(Looper.getMainLooper())
+                    .postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                loadNumbers(51, 100);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            latchAdd.countDown();
+                        }
+                    }, 500); // 500ms
+            assertTrue(latchAdd.await(20, TimeUnit.SECONDS));
+            assertTrue(latch.await(20, TimeUnit.SECONDS));
+        } finally {
+            query.removeChangeListener(token);
+        }
+    }
 }
