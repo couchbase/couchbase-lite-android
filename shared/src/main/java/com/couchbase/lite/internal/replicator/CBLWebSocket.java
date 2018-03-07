@@ -229,11 +229,8 @@ public final class CBLWebSocket extends C4Socket {
         if (authenticator != null)
             builder.authenticator(authenticator);
 
-        // trusted certificate
+        // trusted certificate (pinned certificate)
         setupTrustedCertificate(builder);
-
-        // HostnameVerifier
-        setupCustomHostnameVerifier(builder);
 
         return builder.build();
     }
@@ -293,6 +290,9 @@ public final class CBLWebSocket extends C4Socket {
                 SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
                 if (trustManager != null && sslSocketFactory != null)
                     builder.sslSocketFactory(sslSocketFactory, trustManager);
+
+                // custom hostname verifier - allow IP address and empty Common Name (CN).
+                builder.hostnameVerifier(CustomHostnameVerifier.getInstance());
             }
         }
     }
