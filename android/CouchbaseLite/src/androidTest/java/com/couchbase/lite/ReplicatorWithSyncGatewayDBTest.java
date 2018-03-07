@@ -45,10 +45,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+
 /**
+ * Note: https://github.com/couchbase/couchbase-lite-android/tree/master/test/replicator
+ *
  * NOTE: To execute ReplicatorWithSyncGatewayDBTest unit tests, please launch
- * Sync Gateway with using assets/config.json configuration file.
- * In case of executing unit test from real device, please use asset/config.nonlocalhost.json
+ * Sync Gateway with using test/replicator/config.json configuration file.
+ * In case of executing unit test from real device, please use test/replicator/config.nonlocalhost.json
  * configuration file.
  */
 public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {

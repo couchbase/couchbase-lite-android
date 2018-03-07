@@ -42,7 +42,7 @@ import okhttp3.Response;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Note: https://github.com/couchbase/couchbase-lite-core/tree/master/Replicator/tests/data
+ * Note: https://github.com/couchbase/couchbase-lite-android/tree/master/test/replicator
  */
 public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");

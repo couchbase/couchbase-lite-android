@@ -33,7 +33,7 @@ import java.net.URISyntaxException;
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
 
 /**
- * Note: https://github.com/couchbase/couchbase-lite-core/tree/master/Replicator/tests/data
+ * Note: https://github.com/couchbase/couchbase-lite-android/tree/master/test/replicator
  */
 public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
     @Before
