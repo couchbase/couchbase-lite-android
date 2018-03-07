@@ -86,6 +86,9 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
             if (ipAddress.equalsIgnoreCase(cn)) {
                 return true;
             }
+        }else{
+            // NOTE: In case of empty Common Name (CN), not checking
+            return true;
         }
 
         return false;
@@ -111,6 +114,9 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
             String cn = new DistinguishedNameParser(principal).findMostSpecific("cn");
             if (cn != null) {
                 return verifyHostname(hostname, cn);
+            }else{
+                // NOTE: In case of empty Common Name (CN), not checking
+                return true;
             }
         }
 
