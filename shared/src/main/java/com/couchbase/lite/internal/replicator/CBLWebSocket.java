@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -55,6 +54,7 @@ import okhttp3.Response;
 import okhttp3.Route;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
+import okhttp3.internal.tls.CustomHostnameVerifier;
 import okio.Buffer;
 import okio.ByteString;
 
@@ -232,12 +232,8 @@ public final class CBLWebSocket extends C4Socket {
         // trusted certificate
         setupTrustedCertificate(builder);
 
-        // -- for test
-        if (trustManager != null)
-            builder.sslSocketFactory(sslSocketFactory(trustManager), trustManager);
-
-        if (hostnameVerifier != null)
-            builder.hostnameVerifier(hostnameVerifier);
+        // HostnameVerifier
+        setupCustomHostnameVerifier(builder);
 
         return builder.build();
     }
@@ -474,26 +470,7 @@ public final class CBLWebSocket extends C4Socket {
         }
     }
 
-    //-------------------------------------------------------------------------
-    // For test
-    //-------------------------------------------------------------------------
-
-    // https://developer.android.com/training/articles/security-ssl.html
-
-    private static X509TrustManager trustManager = null;
-    private static HostnameVerifier hostnameVerifier = null;
-
-    public static void setTrustManager(X509TrustManager trustManager) {
-        CBLWebSocket.trustManager = trustManager;
-    }
-
-    public static void setHostnameVerifier(HostnameVerifier hostnameVerifier) {
-        CBLWebSocket.hostnameVerifier = hostnameVerifier;
-    }
-
-    static SSLSocketFactory sslSocketFactory(X509TrustManager trustManager) throws GeneralSecurityException {
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, new TrustManager[]{trustManager}, null);
-        return sslContext.getSocketFactory();
+    private void setupCustomHostnameVerifier(OkHttpClient.Builder builder) {
+        builder.hostnameVerifier(CustomHostnameVerifier.getInstance());
     }
 }
