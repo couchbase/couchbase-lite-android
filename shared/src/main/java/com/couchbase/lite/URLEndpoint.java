@@ -26,8 +26,8 @@ public final class URLEndpoint implements Endpoint {
     //---------------------------------------------
     // Constant variables
     //---------------------------------------------
-    private static final String kURLEndpointScheme = "ws";
-    private static final String kURLEndpointTLSScheme = "wss";
+    static final String kURLEndpointScheme = "ws";
+    static final String kURLEndpointTLSScheme = "wss";
 
     //---------------------------------------------
     // Member variables

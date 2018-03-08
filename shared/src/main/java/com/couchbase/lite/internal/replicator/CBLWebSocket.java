@@ -469,8 +469,4 @@ public final class CBLWebSocket extends C4Socket {
             closed(handle, WebSocketDomain, 0, null);
         }
     }
-
-    private void setupCustomHostnameVerifier(OkHttpClient.Builder builder) {
-        builder.hostnameVerifier(CustomHostnameVerifier.getInstance());
-    }
 }
