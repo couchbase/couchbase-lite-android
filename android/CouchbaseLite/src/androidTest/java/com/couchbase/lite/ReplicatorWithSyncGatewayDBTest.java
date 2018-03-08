@@ -22,12 +22,14 @@ import android.support.test.InstrumentationRegistry;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.Config;
 
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +44,7 @@ import okhttp3.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -460,4 +463,73 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             assertEquals(i, doc.getInt("idx"));
         }
     }
+    @Test
+    public void testPullConflictDeleteWins_SG() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        URLEndpoint target = getRemoteEndpoint(DB_NAME, false);
+
+        MutableDocument doc1 = new MutableDocument("doc1");
+        doc1.setValue("species", "Tiger");
+        db.save(doc1);
+
+        // push to SG
+
+        ReplicatorConfiguration config = makeConfig(true, false, false, target);
+        run(config, 0, null);
+
+        // Get doc form SG:
+        JSONObject json = sendRequestToEndpoint(target, "GET", doc1.getId(), null, null);
+        Log.i(TAG, "----> Common ancestor revision is %s", json.get("_rev"));
+
+        // Update doc on SG:
+        JSONObject copy = new JSONObject(json.toString());
+        copy.put("species", "Cat");
+        json = sendRequestToEndpoint(target, "PUT", doc1.getId(), "application/json", copy.toString().getBytes());
+        Log.e(TAG, "json -> " + json.toString());
+        Log.i(TAG, "----> Conflicting server revision is %s", json.get("rev"));
+
+        // Delete local doc:
+        db.delete(doc1);
+        assertNull(db.getDocument(doc1.getId()));
+
+        // Start pull replicator:
+        Log.i(TAG, "-------- Starting pull replication to pick up conflict --------");
+        config = makeConfig(false, true, false, target);
+        run(config, 0, null);
+
+        // Verify local doc should be null
+        assertNull(db.getDocument(doc1.getId()));
+    }
+
+    JSONObject sendRequestToEndpoint(URLEndpoint endpoint, String method, String path, String mediaType, byte[] body) throws Exception {
+        URI endpointURI = endpoint.getURL();
+
+        String _scheme = endpointURI.getScheme().equals(URLEndpoint.kURLEndpointTLSScheme) ? "https" : "http";
+        String _host = endpointURI.getHost();
+        int _port = endpointURI.getPort() + 1;
+        path = (path != null) ? (path.startsWith("/") ? path : "/" + path) : "";
+        String _path = String.format(Locale.ENGLISH, "%s%s", endpointURI.getPath(), path);
+        URI uri = new URI(_scheme, null, _host, _port, _path, null, null);
+
+        OkHttpClient client = new OkHttpClient();
+        okhttp3.Request.Builder builder = new okhttp3.Request.Builder().url(uri.toURL());
+
+        RequestBody requestBody = null;
+        if (body != null && body instanceof byte[])
+            requestBody = RequestBody.create(MediaType.parse(mediaType), body);
+        builder.method(method, requestBody);
+        okhttp3.Request request = builder.build();
+        Response response = client.newCall(request).execute();
+        if (response.isSuccessful()) {
+            Log.i(TAG, "Send request succeeded; URL=<%s>, Method=<%s>, Status=%d", uri, method, response.code());
+            return new JSONObject(response.body().string());
+        } else {
+            // error
+            Log.e(TAG, "Failed to send request; URL=<%s>, Method=<%s>, Status=%d, Error=%s", uri, method, response.code(), response.message());
+            return null;
+        }
+    }
+
 }
