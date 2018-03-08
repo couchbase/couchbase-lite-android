@@ -386,9 +386,6 @@ public final class Log {
         }
     }
 
-    public static void init() {
-    }
-
     public static void setLogLevel(LogDomain domain, LogLevel level) {
         switch (domain) {
             case ALL:

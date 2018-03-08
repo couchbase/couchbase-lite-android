@@ -65,6 +65,7 @@ abstract class AbstractDatabase {
     //---------------------------------------------
     static {
         NativeLibraryLoader.load();
+        Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
     }
 
     //---------------------------------------------
@@ -117,8 +118,6 @@ abstract class AbstractDatabase {
             throw new IllegalArgumentException("name should not be empty.");
         if (config == null)
             throw new IllegalArgumentException("DatabaseConfiguration should not be null.");
-
-        Log.init();
 
         this.name = name;
         this.config = config.readonlyCopy();
