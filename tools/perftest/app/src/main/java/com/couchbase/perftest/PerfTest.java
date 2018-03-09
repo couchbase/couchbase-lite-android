@@ -1,6 +1,5 @@
 package com.couchbase.perftest;
 
-
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -11,7 +10,6 @@ import com.couchbase.lite.DatabaseConfiguration;
 
 import java.io.File;
 import java.io.InputStream;
-
 
 public abstract class PerfTest {
     protected static final String TAG = "PerfTest";
@@ -43,7 +41,7 @@ public abstract class PerfTest {
     }
 
     protected void setUp() {
-        eraseDB();
+        openDB();
     }
 
     protected void tearDown() {
@@ -62,8 +60,8 @@ public abstract class PerfTest {
         }
         System.err.print("(sec)\n");
         b.printReport(null);
-        if(count > 1)
-            b.printReport(1.0/count, unit);
+        if (count > 1)
+            b.printReport(1.0 / count, unit);
     }
 
     protected void openDB() {
@@ -77,6 +75,7 @@ public abstract class PerfTest {
     protected void closeDB() {
         db = closeDB(db);
     }
+
     protected Database closeDB(Database _db) {
         if (_db != null) {
             try {
@@ -98,7 +97,7 @@ public abstract class PerfTest {
         openDB();
     }
 
-    protected void reopenDB(){
+    protected void reopenDB() {
         closeDB();
         openDB();
     }

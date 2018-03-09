@@ -7,7 +7,7 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DatabaseConfiguration;
 import com.couchbase.lite.MutableDocument;
 
-public class DocPerfTest extends PerfTest{
+public class DocPerfTest extends PerfTest {
 
     public DocPerfTest(Context context, DatabaseConfiguration dbConfig) {
         super(context, dbConfig);
@@ -25,7 +25,7 @@ public class DocPerfTest extends PerfTest{
         });
     }
 
-    void addRevisions(final int revisions){
+    void addRevisions(final int revisions) {
         try {
             db.inBatch(new Runnable() {
                 @Override
@@ -34,7 +34,7 @@ public class DocPerfTest extends PerfTest{
                         MutableDocument mDoc = new MutableDocument("doc");
                         updateDoc(mDoc, revisions);
                         //updateDocWithGetDocument(mDoc, revisions);
-                    }catch (CouchbaseLiteException e) {
+                    } catch (CouchbaseLiteException e) {
                         e.printStackTrace();
                     }
 
@@ -44,15 +44,16 @@ public class DocPerfTest extends PerfTest{
             e.printStackTrace();
         }
     }
+
     void updateDoc(MutableDocument doc, final int revisions) throws CouchbaseLiteException {
-        for(int i = 0; i < revisions; i++){
+        for (int i = 0; i < revisions; i++) {
             doc.setValue("count", i);
             db.save(doc);
         }
     }
 
     void updateDocWithGetDocument(MutableDocument doc, final int revisions) throws CouchbaseLiteException {
-        for(int i = 0; i < revisions; i++){
+        for (int i = 0; i < revisions; i++) {
             doc.setValue("count", i);
             db.save(doc);
             doc = db.getDocument("doc").toMutable();
