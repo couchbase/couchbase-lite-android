@@ -165,9 +165,9 @@ abstract class AbstractDatabase {
      *
      * @return the number of documents in the database, 0 if database is closed.
      */
-    public int getCount() {
+    public long getCount() {
         synchronized (lock) {
-            return c4db != null ? (int) getC4Database().getDocumentCount() : 0;
+            return c4db != null ? getC4Database().getDocumentCount() : 0L;
         }
     }
 
@@ -1173,7 +1173,7 @@ abstract class AbstractDatabase {
                     mergedBody = resolvedDoc.encode();
                     if (mergedBody == null)
                         return false;
-                    if(resolvedDoc.isDeleted())
+                    if (resolvedDoc.isDeleted())
                         mergedFlags |= C4RevisionFlags.kRevDeleted;
                 }
 
