@@ -1,6 +1,7 @@
 package com.couchbase.perftest;
 
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -9,18 +10,21 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.DatabaseConfiguration;
 
 import java.io.File;
+import java.io.InputStream;
 
 
 public abstract class PerfTest {
     protected static final String TAG = "PerfTest";
     protected static final String DB_NAME = "perfdb";
+    protected Context context;
     protected Database db;
     protected String dbName;
     protected DatabaseConfiguration dbConfig;
 
     protected abstract void test();
 
-    protected PerfTest(DatabaseConfiguration dbConfig) {
+    protected PerfTest(Context context, DatabaseConfiguration dbConfig) {
+        this.context = context;
         this.dbConfig = dbConfig;
         this.dbName = DB_NAME;
     }
@@ -39,7 +43,7 @@ public abstract class PerfTest {
     }
 
     protected void setUp() {
-        openDB();
+        eraseDB();
     }
 
     protected void tearDown() {
@@ -71,14 +75,17 @@ public abstract class PerfTest {
     }
 
     protected void closeDB() {
-        if (db != null) {
+        db = closeDB(db);
+    }
+    protected Database closeDB(Database _db) {
+        if (_db != null) {
             try {
-                db.close();
+                _db.close();
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
-            db = null;
         }
+        return null;
     }
 
     protected void eraseDB() {
@@ -94,5 +101,9 @@ public abstract class PerfTest {
     protected void reopenDB(){
         closeDB();
         openDB();
+    }
+
+    protected InputStream getAsset(String name) {
+        return this.getClass().getResourceAsStream("/assets/" + name);
     }
 }

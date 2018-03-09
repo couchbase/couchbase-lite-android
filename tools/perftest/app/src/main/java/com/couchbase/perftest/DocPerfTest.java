@@ -1,5 +1,6 @@
 package com.couchbase.perftest;
 
+import android.content.Context;
 import android.util.Log;
 
 import com.couchbase.lite.CouchbaseLiteException;
@@ -8,8 +9,8 @@ import com.couchbase.lite.MutableDocument;
 
 public class DocPerfTest extends PerfTest{
 
-    public DocPerfTest(DatabaseConfiguration dbConfig) {
-        super(dbConfig);
+    public DocPerfTest(Context context, DatabaseConfiguration dbConfig) {
+        super(context, dbConfig);
     }
 
     @Override

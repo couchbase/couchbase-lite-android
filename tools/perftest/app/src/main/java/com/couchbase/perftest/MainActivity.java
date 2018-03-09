@@ -20,10 +20,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 switch (view.getId()) {
                     case R.id.btnDocPerf:
-                        new DocPerfTest(new DatabaseConfiguration(MainActivity.this)).run();
+                        new DocPerfTest(MainActivity.this,new DatabaseConfiguration( MainActivity.this)).run();
                         break;
                     case R.id.btnTunesPerf:
-                        new TunesPerfTest(new DatabaseConfiguration(MainActivity.this)).run();
+                        new TunesPerfTest(MainActivity.this,new DatabaseConfiguration(MainActivity.this)).run();
+                        break;
+                    case R.id.btnQuryPerf:
+                        new QueryPerfTest(MainActivity.this,new DatabaseConfiguration(MainActivity.this)).run();
                         break;
                 }
             }
@@ -31,5 +34,6 @@ public class MainActivity extends AppCompatActivity {
 
         findViewById(R.id.btnDocPerf).setOnClickListener(clickListener);
         findViewById(R.id.btnTunesPerf).setOnClickListener(clickListener);
+        findViewById(R.id.btnQuryPerf).setOnClickListener(clickListener);
     }
 }

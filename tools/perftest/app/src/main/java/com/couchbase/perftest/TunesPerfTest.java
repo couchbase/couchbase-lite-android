@@ -1,6 +1,8 @@
 package com.couchbase.perftest;
 
 
+import android.content.Context;
+
 import com.couchbase.lite.Collation;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
@@ -53,10 +55,9 @@ public class TunesPerfTest extends PerfTest {
     Benchmark _queryFTSBench = new Benchmark();
 
 
-    public TunesPerfTest(DatabaseConfiguration dbConfig) {
-        super(dbConfig);
+    public TunesPerfTest(Context context, DatabaseConfiguration dbConfig) {
+        super(context, dbConfig);
     }
-
     @Override
     protected void setUp() {
         super.setUp();
