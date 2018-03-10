@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static com.couchbase.litecore.C4Constants.C4DocumentFlags.kDocDeleted;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevIsConflict;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotFound;
 
 /**
@@ -498,8 +499,15 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     void selectConflictingRevision() throws LiteCoreException {
         synchronized (lock) {
-            _c4doc.selectNextLeafRevision(false, true);
-            setC4Document(_c4doc);
+            boolean foundConflict = false;
+            if (_c4doc != null) {
+                while (!foundConflict) {
+                    _c4doc.selectNextLeafRevision(true, true);
+                    foundConflict = (_c4doc.getFlags() & kRevIsConflict) != 0;
+                }
+            }
+            if (foundConflict)
+                setC4Document(_c4doc);
         }
     }
 
