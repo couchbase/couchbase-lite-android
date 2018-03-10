@@ -502,7 +502,15 @@ public class Document implements DictionaryInterface, Iterable<String> {
             boolean foundConflict = false;
             if (_c4doc != null) {
                 while (!foundConflict) {
-                    _c4doc.selectNextLeafRevision(true, true);
+                    try {
+                        _c4doc.selectNextLeafRevision(true, true);
+                    } catch (LiteCoreException e) {
+                        // NOTE: other platforms checks if return value from c4doc_selectNextLeafRevision() is false
+                        if (e.code == 0)
+                            break;
+                        else
+                            throw e;
+                    }
                     foundConflict = _c4doc.isSelectedRevFlags(kRevIsConflict);
                 }
             }
