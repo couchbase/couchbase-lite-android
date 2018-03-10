@@ -503,7 +503,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
             if (_c4doc != null) {
                 while (!foundConflict) {
                     _c4doc.selectNextLeafRevision(true, true);
-                    foundConflict = (_c4doc.getFlags() & kRevIsConflict) != 0;
+                    foundConflict = _c4doc.isSelectedRevFlags(kRevIsConflict);
                 }
             }
             if (foundConflict)
