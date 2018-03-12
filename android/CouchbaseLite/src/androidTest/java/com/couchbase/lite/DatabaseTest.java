@@ -1745,6 +1745,24 @@ public class DatabaseTest extends BaseTest {
         db.delete(doc1b);
         assertEquals(0, db.getCount());
         assertNull(db.getDocument(doc1b.getId()));
+    }
 
+    // https://github.com/couchbase/couchbase-lite-android/issues/1652
+    @Test
+    public void testDeleteWithOldDocInstance() throws CouchbaseLiteException {
+        // 1. save
+        MutableDocument mdoc = new MutableDocument("doc");
+        mdoc.setBoolean("updated", false);
+        db.save(mdoc);
+
+        // 2. update
+        Document doc = db.getDocument("doc");
+        mdoc = doc.toMutable();
+        mdoc.setBoolean("updated", true);
+        db.save(mdoc);
+
+        // 3. delete by previously retrived document
+        db.delete(doc);
+        assertNull(db.getDocument("doc"));
     }
 }

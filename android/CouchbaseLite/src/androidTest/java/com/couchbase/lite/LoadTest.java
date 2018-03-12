@@ -323,4 +323,51 @@ public class LoadTest extends BaseTest {
         }
         return true;
     }
+
+    // NOTE: not yet activated
+    // @Test
+    public void testAddRevisions() {
+        final int revs = 10000;
+        addRevisions(revs, false);
+        addRevisions(revs, true);
+    }
+
+    void addRevisions(final int revisions, final boolean retriveNewDoc) {
+        try {
+            db.inBatch(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        MutableDocument mDoc = new MutableDocument("doc");
+                        if (retriveNewDoc)
+                            updateDocWithGetDocument(mDoc, revisions);
+                        else
+                            updateDoc(mDoc, revisions);
+                    } catch (CouchbaseLiteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            Document doc = db.getDocument("doc");
+            assertEquals(revisions - 1, doc.getInt("count")); // start from 0.
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void updateDoc(MutableDocument doc, final int revisions) throws CouchbaseLiteException {
+        for (int i = 0; i < revisions; i++) {
+            doc.setValue("count", i);
+            db.save(doc);
+            System.gc();
+        }
+    }
+
+    void updateDocWithGetDocument(MutableDocument doc, final int revisions) throws CouchbaseLiteException {
+        for (int i = 0; i < revisions; i++) {
+            doc.setValue("count", i);
+            db.save(doc);
+            doc = db.getDocument("doc").toMutable();
+        }
+    }
 }

@@ -420,10 +420,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     void replaceC4Document(C4Document c4doc) {
         synchronized (lock) {
-            C4Document oldC4Doc = this._c4doc;
             this._c4doc = c4doc;
-            if (oldC4Doc != null && (c4doc == null || !oldC4Doc.equals(c4doc)))
-                oldC4Doc.free();
         }
     }
 
