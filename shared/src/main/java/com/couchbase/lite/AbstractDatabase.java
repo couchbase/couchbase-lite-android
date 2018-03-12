@@ -621,7 +621,6 @@ abstract class AbstractDatabase {
     public String toString() {
         return "Database@" + Integer.toHexString(hashCode()) + "{" +
                 "name='" + name + '\'' +
-                //"dir='" + (c4db != null ? c4db.getPath() : "[closed]") + '\'' +
                 '}';
     }
 
@@ -716,14 +715,6 @@ abstract class AbstractDatabase {
     }
 
     //////// DOCUMENTS:
-    C4Document read(String docID, boolean mustExist)
-            throws CouchbaseLiteException {
-        try {
-            return getC4Database().get(docID, mustExist);
-        } catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
-        }
-    }
 
     Set<Replicator> getActiveReplications() {
         return activeReplications;
@@ -824,9 +815,8 @@ abstract class AbstractDatabase {
     }
 
     private void setupDirectory(File dir) throws CouchbaseLiteException {
-        if (!dir.exists()) {
+        if (!dir.exists())
             dir.mkdirs();
-        }
         if (!dir.isDirectory()) {
             throw new CouchbaseLiteException(String.format(Locale.ENGLISH,
                     "Unable to create directory for: %s", dir));
@@ -834,7 +824,6 @@ abstract class AbstractDatabase {
     }
 
     private static File getDatabasePath(File dir, String name) {
-        // TODO:
         name = name.replaceAll("/", ":");
         name = String.format(Locale.ENGLISH, "%s.%s", name, DB_EXTENSION);
         return new File(dir, name);
