@@ -738,7 +738,10 @@ abstract class AbstractDatabase {
                 // Read the conflicting remote revision:
                 Document remoteDoc = new Document((Database) this, docID, true);
                 try {
-                    remoteDoc.selectConflictingRevision();
+                    if(!remoteDoc.selectConflictingRevision()){
+                        Log.w(TAG, "Unable to select conflicting revision for '%s', skipping...",docID);
+                        return;
+                    }
                 } catch (LiteCoreException e) {
                     throw CBLStatus.convertException(e);
                 }
