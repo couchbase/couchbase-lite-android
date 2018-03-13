@@ -494,7 +494,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
-    void selectConflictingRevision() throws LiteCoreException {
+    boolean selectConflictingRevision() throws LiteCoreException {
         synchronized (lock) {
             boolean foundConflict = false;
             if (_c4doc != null) {
@@ -513,6 +513,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
             }
             if (foundConflict)
                 setC4Document(_c4doc);
+            return foundConflict;
         }
     }
 
