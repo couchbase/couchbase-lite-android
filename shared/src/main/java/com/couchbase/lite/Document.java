@@ -31,9 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.couchbase.litecore.C4Constants.C4DocumentFlags.kDocDeleted;
-import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevIsConflict;
-import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorNotFound;
 
 /**
  * Readonly version of the Document.
@@ -78,9 +76,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
                 throw new IllegalStateException();
             doc = _database.getC4Database().get(getId(), true);
         } catch (LiteCoreException e) {
-            if (e.getDomain() == LiteCoreDomain && e.getCode() == kC4ErrorNotFound)
-                throw CBLStatus.convertException(e);
-            throw CBLStatus.convertRuntimeException(e);
+            throw CBLStatus.convertException(e);
         }
 
         if (!includeDeleted && (doc.getFlags() & kDocDeleted) != 0) {
@@ -543,8 +539,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
                 throw ex;
             }
             return encoder.finish();
-        } catch (LiteCoreException e) {
-            throw CBLStatus.convertRuntimeException(e);
         } finally {
             encoder.setExtraInfo(null);
             encoder.free();

@@ -45,9 +45,8 @@ public final class URLEndpoint implements Endpoint {
      * @param url The url.
      */
     public URLEndpoint(URI url) {
-        if (url == null) {
+        if (url == null)
             throw new IllegalArgumentException("The url parameter cannot be null.");
-        }
 
         String scheme = url.getScheme();
         if (!(kURLEndpointScheme.equals(scheme) || kURLEndpointTLSScheme.equals(scheme))) {
@@ -55,6 +54,10 @@ public final class URLEndpoint implements Endpoint {
                     "The url parameter has an unsupported URL scheme (" + scheme + ") " +
                             "The supported URL schemes are " + kURLEndpointScheme + " and " + kURLEndpointTLSScheme + ".");
         }
+
+        String userInfo = url.getUserInfo();
+        if (userInfo != null && userInfo.split(":").length == 2)
+            throw new IllegalArgumentException("Embedded credentials in a URL (username:password@url) are not allowed; use the BasicAuthenticator class instead");
 
         this.url = url;
     }
