@@ -256,7 +256,7 @@ public class ConcurrencyTest extends BaseTest {
         final int kNDocs = 5;
         final int kNRounds = 50;
         final int kNThreads = 4;
-        final int kWaitInSec = 180;
+        final int kWaitInSec = 600;
 
         // createDocs2 returns synchronized List.
         final List<String> docIDs = createDocs(kNDocs, "Create");
