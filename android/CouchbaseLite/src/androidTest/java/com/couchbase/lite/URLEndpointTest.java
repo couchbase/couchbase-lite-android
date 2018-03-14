@@ -1,5 +1,5 @@
 //
-// CBLStatusTest.java
+// URLEndpointTest.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -17,22 +17,28 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.litecore.LiteCoreException;
-
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import java.net.URI;
+import java.net.URISyntaxException;
 
-public class CBLStatusTest {
+import static org.junit.Assert.fail;
+
+public class URLEndpointTest extends BaseTest {
     @Test
-    public void testConvertRuntimeException() {
-        LiteCoreException orgEx = new LiteCoreException(1, 2, "3");
-        CouchbaseLiteRuntimeException ex = CBLStatus.convertRuntimeException(orgEx);
-        assertNotNull(ex);
-        assertEquals(CBLError.Domain.CBLErrorDomain, ex.getDomain());
-        assertEquals(2, ex.getCode());
-        assertEquals("3", ex.getMessage());
-        assertEquals(orgEx, ex.getCause());
+    public void testEmbeddedUserCredentialIsNotAllowed() throws URISyntaxException {
+
+        // only username in user-info is ok.
+        URI url = new URI("ws://user@couchbase.com/sg");
+        new URLEndpoint(url);
+
+        // containing password is not allowed
+        url = new URI("ws://user:pass@couchbase.com/sg");
+        try {
+            new URLEndpoint(url);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected!
+        }
     }
 }

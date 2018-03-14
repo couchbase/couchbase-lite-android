@@ -344,7 +344,7 @@ public class DatabaseTest extends BaseTest {
         try {
             Document doc = db.getDocument("doc1");
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -359,7 +359,7 @@ public class DatabaseTest extends BaseTest {
         try {
             Document doc = db.getDocument("doc1");
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -512,7 +512,7 @@ public class DatabaseTest extends BaseTest {
         try {
             save(doc);
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -528,7 +528,7 @@ public class DatabaseTest extends BaseTest {
         try {
             save(doc);
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -651,7 +651,7 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -668,7 +668,7 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete(doc);
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -807,7 +807,7 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -824,7 +824,7 @@ public class DatabaseTest extends BaseTest {
         try {
             db.purge(doc);
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should be thrown IllegalStateException!!
         }
     }
@@ -885,7 +885,7 @@ public class DatabaseTest extends BaseTest {
         try {
             blob.getContent();
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             ; // expected
         }
     }
@@ -925,7 +925,7 @@ public class DatabaseTest extends BaseTest {
         try {
             deleteDatabase(db);
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should come here!
         }
     }
@@ -947,7 +947,7 @@ public class DatabaseTest extends BaseTest {
         try {
             db.delete();
             fail();
-        } catch (CouchbaseLiteRuntimeException e) {
+        } catch (IllegalStateException e) {
             // should come here!
         }
         assertFalse(path.exists());

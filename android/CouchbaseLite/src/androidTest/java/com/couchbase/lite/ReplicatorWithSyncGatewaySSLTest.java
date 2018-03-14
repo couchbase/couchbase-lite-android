@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 
-import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
-
 /**
  * Note: https://github.com/couchbase/couchbase-lite-android/tree/master/test/replicator
  */
@@ -62,7 +60,7 @@ public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
 
         Endpoint target = getRemoteEndpoint("beer", true);
         ReplicatorConfiguration config = makeConfig(false, true, false, target);
-        run(config, kC4NetErrTLSCertUntrusted, "NetworkDomain");
+        run(config, CBLErrorTLSCertUntrusted, "NetworkDomain");
     }
     
     @Test

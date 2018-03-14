@@ -386,6 +386,7 @@ abstract class AbstractDatabase {
             throw new IllegalArgumentException("a token parameter is null");
 
         synchronized (lock) {
+            mustBeOpen();
             if (token instanceof DocumentChangeListenerToken)
                 removeDocumentChangeListener((DocumentChangeListenerToken) token);
             else
@@ -654,14 +655,10 @@ abstract class AbstractDatabase {
             return path.equals(otherPath);
     }
 
-    C4BlobStore getBlobStore() throws CouchbaseLiteRuntimeException {
+    C4BlobStore getBlobStore() throws LiteCoreException {
         synchronized (lock) {
             mustBeOpen();
-            try {
-                return c4db.getBlobStore();
-            } catch (LiteCoreException e) {
-                throw CBLStatus.convertRuntimeException(e);
-            }
+            return c4db.getBlobStore();
         }
     }
 
@@ -674,8 +671,7 @@ abstract class AbstractDatabase {
 
     void mustBeOpen() {
         if (c4db == null)
-            throw new CouchbaseLiteRuntimeException("A database is not open",
-                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotOpen);
+            throw new IllegalStateException("Database is not open.");
     }
 
     boolean isOpen() {
@@ -1042,6 +1038,7 @@ abstract class AbstractDatabase {
         C4Document curDoc = null;
         C4Document newDoc = null;
         synchronized (lock) {
+            mustBeOpen();
             prepareDocument(document);
             boolean commit = false;
             beginTransaction();

@@ -113,6 +113,10 @@ public final class Blob implements FLEncodable {
      * @param content     The data that this Blob will contain
      */
     public Blob(String contentType, byte[] content) {
+        if (contentType == null)
+            throw new IllegalArgumentException("contentType parameter should not be null.");
+        if (content == null)
+            throw new IllegalArgumentException("content parameter should not be null.");
         this.contentType = contentType;
         this.content = content;
         this.length = content.length;
@@ -126,6 +130,10 @@ public final class Blob implements FLEncodable {
      * @param stream      The stream of data that this Blob will consume
      */
     public Blob(String contentType, InputStream stream) {
+        if (contentType == null)
+            throw new IllegalArgumentException("contentType parameter should not be null.");
+        if (stream == null)
+            throw new IllegalArgumentException("stream parameter should not be null.");
         this.contentType = contentType;
         this.initialContentStream = stream;
         this.length = 0L; // unknown
@@ -140,7 +148,18 @@ public final class Blob implements FLEncodable {
      * @throws IOException
      */
     public Blob(String contentType, URL fileURL) throws IOException {
-        this(contentType, fileURL.openStream());
+        if (contentType == null)
+            throw new IllegalArgumentException("contentType parameter should not be null.");
+        if (fileURL == null)
+            throw new IllegalArgumentException("fileURL parameter should not be null.");
+        if (!fileURL.getProtocol().equalsIgnoreCase("file"))
+            throw new IllegalArgumentException(
+                    String.format(Locale.ENGLISH,
+                            "fileUrl parameter must be a file-based URL: %s.",
+                            fileURL.toString()));
+        this.contentType = contentType;
+        this.initialContentStream = fileURL.openStream();
+        this.length = 0L; // unknown
     }
 
     // Initializer for an existing blob being read from a document
@@ -171,7 +190,6 @@ public final class Blob implements FLEncodable {
      * @return the contents of a Blob as a block of memory
      */
     public byte[] getContent() {
-
         if (content != null) {
             // Data is in memory:
             return content;
@@ -183,7 +201,7 @@ public final class Blob implements FLEncodable {
             try {
                 C4BlobKey key = getBlobKey();
                 if (key == null)
-                    return null;
+                    throw new IllegalStateException("Invalid digest: " + digest);
                 try {
                     FLSliceResult res = blobStore.getContents(key);
                     try {
@@ -199,6 +217,7 @@ public final class Blob implements FLEncodable {
                     }
                 } catch (LiteCoreException e) {
                     Log.e(TAG, "Failed to obtain content from BlobStore. digest=" + digest, e);
+                    throw new IllegalStateException("Failed to obtain content from BlobStore. digest=" + digest, e);
                 } finally {
                     key.free();
                 }
@@ -211,7 +230,7 @@ public final class Blob implements FLEncodable {
             // No recourse but to read the initial stream into memory:
             byte[] contentResult = null;
             if (initialContentStream == null)
-                return null;
+                throw new IllegalStateException("initialContentStream variable is null");
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try {
                 byte[] buffer = new byte[MAX_CACHED_CONTENT_LENGTH];
@@ -227,7 +246,7 @@ public final class Blob implements FLEncodable {
                     }
                 } catch (IOException e) {
                     Log.w(TAG, "I/O Error with the given stream.", e);
-                    throw new CouchbaseLiteRuntimeException(e);
+                    throw new IllegalStateException(e);
                 } finally {
                     try {
                         initialContentStream.close();
@@ -371,6 +390,8 @@ public final class Blob implements FLEncodable {
                         this.length = 0;
                         InputStream contentStream = getContentStream();
                         try {
+                            if (contentStream == null)
+                                throw new IllegalStateException("No data available to write for install");
                             while ((bytesRead = contentStream.read(buffer)) > 0) {
                                 this.length += bytesRead;
                                 blobOut.write(Arrays.copyOfRange(buffer, 0, bytesRead));
@@ -394,10 +415,8 @@ public final class Blob implements FLEncodable {
                 if (store != null)
                     store.free();
             }
-        } catch (LiteCoreException e) {
-            throw CBLStatus.convertRuntimeException(e);
-        } catch (IOException ioe) {
-            throw new CouchbaseLiteRuntimeException(ioe);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         } finally {
             if (key != null)
                 key.free();
@@ -407,7 +426,6 @@ public final class Blob implements FLEncodable {
     //FLEncodable
     @Override
     public void encodeTo(FLEncoder encoder) {
-        // TODO: error handling??
         Object obj = encoder.getExtraInfo();
         if (obj != null) {
             MutableDocument doc = (MutableDocument) obj;
@@ -432,7 +450,11 @@ public final class Blob implements FLEncodable {
             Log.w(TAG, "database instance is null.");
             return null;
         }
-        return database.getBlobStore();
+        try {
+            return database.getBlobStore();
+        } catch (LiteCoreException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private C4BlobKey getBlobKey() {
@@ -466,7 +488,7 @@ public final class Blob implements FLEncodable {
                 this.hasBytesAvailable = true;
                 this.closed = false;
             } catch (LiteCoreException e) {
-                throw CBLStatus.convertRuntimeException(e);
+                throw new IllegalStateException(e);
             }
         }
 

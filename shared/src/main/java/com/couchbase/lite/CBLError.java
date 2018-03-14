@@ -68,6 +68,20 @@ interface CBLError {
         int CBLErrorCantUpgradeDatabase = 29;    // Database can't be upgraded (might be unsupported dev version)
         // Note: These are equivalent to the C4Error codes declared in LiteCore's c4Base.h
 
+        // Network error codes (higher level than POSIX, lower level than HTTP.)
+        int CBLErrorNetworkBase = 5000;           // --- Network status codes start here
+        int CBLErrorDNSFailure = 5001;            // DNS lookup failed
+        int CBLErrorUnknownHost = 5002;           // DNS server doesn't know the hostname
+        int CBLErrorTimeout = 5003;               // socket timeout during an operation
+        int CBLErrorInvalidURL = 5004;            // the provided url is not valid
+        int CBLErrorTooManyRedirects = 5005;      // too many HTTP redirects for the HTTP client to handle
+        int CBLErrorTLSHandshakeFailed = 5006;    // failure during TLS handshake process
+        int CBLErrorTLSCertExpired = 5007;        // the provided tls certificate has expired
+        int CBLErrorTLSCertUntrusted = 5008;      // Cert isn't trusted for other reason
+        int CBLErrorTLSClientCertRequired = 5009; // a required client certificate was not provided
+        int CBLErrorTLSClientCertRejected = 5010; // client certificate was rejected by the server
+        int CBLErrorTLSCertUnknownRoot = 5011;    // Self-signed cert, or unknown anchor cert
+
         int CBLErrorHTTPBase = 10000;                   // ---- HTTP status codes start here
         int CBLErrorHTTPAuthRequired = 10401;           // Missing or incorrect user authentication
         int CBLErrorHTTPForbidden = 10403;              // User doesn't have permission to access resource

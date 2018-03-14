@@ -35,7 +35,9 @@ class CBLStatus {
     static CouchbaseLiteException convertException(int _domain, int _code, LiteCoreException e) {
         String domain = kErrorDomains[_domain];
         int code = _code;
-        if (_domain == C4Constants.C4ErrorDomain.WebSocketDomain)
+        if (_domain == C4Constants.C4ErrorDomain.NetworkDomain)
+            code += CBLError.Code.CBLErrorNetworkBase;
+        else if (_domain == C4Constants.C4ErrorDomain.WebSocketDomain)
             code += CBLError.Code.CBLErrorHTTPBase;
 
         if (domain == null) {
@@ -51,26 +53,5 @@ class CBLStatus {
 
     static CouchbaseLiteException convertException(LiteCoreException e) {
         return convertException(e.domain, e.code, e);
-    }
-
-    static CouchbaseLiteRuntimeException convertRuntimeException(LiteCoreException e) {
-        return convertRuntimeException(e.domain, e.code, e);
-    }
-
-    static CouchbaseLiteRuntimeException convertRuntimeException(int _domain, int _code, LiteCoreException e) {
-        String domain = kErrorDomains[_domain];
-        int code = _code;
-        if (_domain == C4Constants.C4ErrorDomain.WebSocketDomain)
-            code += CBLError.Code.CBLErrorHTTPBase;
-
-        if (domain == null) {
-            Log.w(Log.DATABASE, "Unable to map C4Error(%d,%d) to an CouchbaseLiteRuntimeException", _domain, _code);
-            domain = CBLError.Domain.CBLErrorDomain;
-            code = CBLError.Code.CBLErrorUnexpectedError;
-        }
-        if (e != null)
-            return new CouchbaseLiteRuntimeException(e.getMessage(), e, domain, code);
-        else
-            return new CouchbaseLiteRuntimeException(domain, code);
     }
 }

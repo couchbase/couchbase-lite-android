@@ -505,11 +505,8 @@ public class ConcurrencyTest extends BaseTest {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
-                } catch (CouchbaseLiteRuntimeException re) {
-                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
-                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
-                        fail();
-                    }
+                } catch (IllegalStateException ise) {
+                    // db not open
                 }
                 latch1.countDown();
             }
@@ -552,11 +549,8 @@ public class ConcurrencyTest extends BaseTest {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
                         fail();
                     }
-                } catch (CouchbaseLiteRuntimeException re) {
-                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
-                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
-                        fail();
-                    }
+                } catch (IllegalStateException ise) {
+                    // db not open
                 }
                 latch1.countDown();
             }
@@ -597,11 +591,6 @@ public class ConcurrencyTest extends BaseTest {
                 } catch (CouchbaseLiteException e) {
                     if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
-                        fail();
-                    }
-                } catch (CouchbaseLiteRuntimeException re) {
-                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
-                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
                 }
@@ -646,11 +635,6 @@ public class ConcurrencyTest extends BaseTest {
                 } catch (CouchbaseLiteException e) {
                     if (!e.getDomain().equals(CBLError.Domain.CBLErrorDomain) || e.getCode() != CBLErrorNotOpen) {
                         Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", e, kNDocs, tag1);
-                        fail();
-                    }
-                } catch (CouchbaseLiteRuntimeException re) {
-                    if (!re.getDomain().equals(CBLError.Domain.CBLErrorDomain) || re.getCode() != CBLErrorNotOpen) {
-                        Log.e(TAG, "Error in createDocs() kNDocs -> %d, tag1 -> %s", re, kNDocs, tag1);
                         fail();
                     }
                 }
