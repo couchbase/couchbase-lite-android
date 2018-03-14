@@ -738,8 +738,8 @@ abstract class AbstractDatabase {
                 // Read the conflicting remote revision:
                 Document remoteDoc = new Document((Database) this, docID, true);
                 try {
-                    if(!remoteDoc.selectConflictingRevision()){
-                        Log.w(TAG, "Unable to select conflicting revision for '%s', skipping...",docID);
+                    if (!remoteDoc.selectConflictingRevision()) {
+                        Log.w(TAG, "Unable to select conflicting revision for '%s', skipping...", docID);
                         return;
                     }
                 } catch (LiteCoreException e) {
@@ -1086,13 +1086,15 @@ abstract class AbstractDatabase {
                 document.replaceC4Document(newDoc);
                 commit = true;
             } finally {
-                if (curDoc != null)
-                    curDoc.free();
+                if (curDoc != null) {
+                    curDoc.retain();
+                    curDoc.release(); // curDoc is not retained
+                }
                 try {
                     endTransaction(commit);// true: commit the transaction, false: abort the transaction
                 } catch (CouchbaseLiteException e) {
                     if (newDoc != null)
-                        newDoc.free();
+                        newDoc.release(); // newDoc is already retained
                     throw e;
                 }
             }

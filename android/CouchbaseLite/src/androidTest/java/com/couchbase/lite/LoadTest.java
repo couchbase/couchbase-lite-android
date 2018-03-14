@@ -324,10 +324,9 @@ public class LoadTest extends BaseTest {
         return true;
     }
 
-    // NOTE: not yet activated
-    // @Test
+    @Test
     public void testAddRevisions() {
-        final int revs = 10000;
+        final int revs = 1000;
         addRevisions(revs, false);
         addRevisions(revs, true);
     }

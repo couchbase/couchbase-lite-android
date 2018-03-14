@@ -84,7 +84,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
 
         if (!includeDeleted && (doc.getFlags() & kDocDeleted) != 0) {
-            doc.free();
+            doc.retain();
+            doc.release(); // doc is not retained before set.
             throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
         }
 
@@ -400,7 +401,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     void free() {
         _root = null;
         if (_c4doc != null) {
-            _c4doc.free();
+            _c4doc.release(); // _c4doc should be retained.
             _c4doc = null;
         }
     }
@@ -420,7 +421,14 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     void replaceC4Document(C4Document c4doc) {
         synchronized (lock) {
+            C4Document oldDoc = this._c4doc;
             this._c4doc = c4doc;
+            if (oldDoc != this._c4doc) {
+                if (this._c4doc != null)
+                    this._c4doc.retain();
+                if (oldDoc != null)
+                    oldDoc.release();  // oldDoc should be retained.
+            }
         }
     }
 
