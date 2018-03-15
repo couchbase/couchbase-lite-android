@@ -29,43 +29,36 @@ interface CBLError {
     interface Code {
         int CBLErrorAssertionFailed = 1;         // Internal assertion failure
         int CBLErrorUnimplemented = 2;           // Oops, an unimplemented API call
-        int CBLErrorNoSequences = 3;             // This KeyStore does not support sequences
-        int CBLErrorUnsupportedEncryption = 4;   // Unsupported encryption algorithm
-        int CBLErrorNoTransaction = 5;           // Function must be called within a transaction
-        int CBLErrorBadRevisionID = 6;           // Invalid revision ID syntax
-        int CBLErrorBadVersionVector = 7;        // Invalid version vector syntax
-        int CBLErrorCorruptRevisionData = 8;     // Revision contains corrupted/unreadable data
-        int CBLErrorCorruptIndexData = 9;        // Index contains corrupted/unreadable data
-        int CBLErrorTokenizerError = 10; /*10*/  // can't create text tokenizer for FTS
-        int CBLErrorNotOpen = 11;                // Database/KeyStore/index is not open
-        int CBLErrorNotFound = 12;               // Document not found
-        int CBLErrorDeleted = 13;                // Document has been deleted
-        int CBLErrorConflict = 14;               // Document update conflict
-        int CBLErrorInvalidParameter = 15;       // Invalid function parameter or struct value
-        int CBLErrorDatabaseError = 16;          // Lower-level database error (SQLite)
-        int CBLErrorUnexpectedError = 17;        // Internal unexpected C++ exception
-        int CBLErrorCantOpenFile = 18;           // Database file can't be opened; may not exist
-        int CBLErrorIOError = 19;                // File I/O error
-        int CBLErrorCommitFailed = 20; /*20*/    // Transaction commit failed
-        int CBLErrorMemoryError = 21;            // Memory allocation failed (out of memory?)
-        int CBLErrorNotWriteable = 22;           // File is not writeable
-        int CBLErrorCorruptData = 23;            // Data is corrupted
-        int CBLErrorBusy = 24;                   // Database is busy/locked
-        int CBLErrorNotInTransaction = 25;       // Function cannot be called while in a transaction
-        int CBLErrorTransactionNotClosed = 26;   // Database can't be closed while a transaction is open
-        int CBLErrorIndexBusy = 27;              // (unused)
-        int CBLErrorUnsupported = 28;            // Operation not supported in this database
-        int CBLErrorUnreadableDatabase = 29;     // File is not a database, or encryption key is wrong
-        int CBLErrorWrongFormat = 30; /*30*/     // Database exists but not in the format/storage requested
-        int CBLErrorCrypto = 31;                 // Encryption/decryption error
-        int CBLErrorInvalidQuery = 32;           // Invalid query
-        int CBLErrorMissingIndex = 33;           // No such index, or query requires a nonexistent index
-        int CBLErrorInvalidQueryParam = 34;      // Unknown query param name, or param number out of range
-        int CBLErrorRemoteError = 35;            // Unknown error from remote server
-        int CBLErrorDatabaseTooOld = 36;         // Database file format is older than what I can open
-        int CBLErrorDatabaseTooNew = 37;         // Database file format is newer than what I can open
-        int CBLErrorBadDocID = 38;               // Invalid document ID
-        int CBLErrorCantUpgradeDatabase = 29;    // Database can't be upgraded (might be unsupported dev version)
+        int CBLErrorUnsupportedEncryption = 3;   // Unsupported encryption algorithm
+        int CBLErrorBadRevisionID = 4;           // Invalid revision ID syntax
+        int CBLErrorCorruptRevisionData = 5;     // Revision contains corrupted/unreadable data
+        int CBLErrorNotOpen = 6;                 // Database/KeyStore/index is not open
+        int CBLErrorNotFound = 7;                // Document not found
+        int CBLErrorConflict = 8;                // Document update conflict
+        int CBLErrorInvalidParameter = 9;        // Invalid function parameter or struct value
+        int CBLErrorUnexpectedError = 10;        // Internal unexpected C++ exception
+
+        int CBLErrorCantOpenFile = 11;           // Database file can't be opened; may not exist
+        int CBLErrorIOError = 12;                // File I/O error
+        int CBLErrorMemoryError = 13;            // Memory allocation failed (out of memory?)
+        int CBLErrorNotWriteable = 14;           // File is not writeable
+        int CBLErrorCorruptData = 15;            // Data is corrupted
+        int CBLErrorBusy = 16;                   // Database is busy/locked
+        int CBLErrorNotInTransaction = 17;       // Function cannot be called while in a transaction
+        int CBLErrorTransactionNotClosed = 18;   // Database can't be closed while a transaction is open
+        int CBLErrorUnsupported = 19;            // Operation not supported in this database
+        int CBLErrorNotADatabaseFile = 20;       // File is not a database, or encryption key is wrong
+
+        int CBLErrorWrongFormat = 21;            // Database exists but not in the format/storage requested
+        int CBLErrorCrypto = 22;                 // Encryption/decryption error
+        int CBLErrorInvalidQuery = 23;           // Invalid query
+        int CBLErrorMissingIndex = 24;           // No such index, or query requires a nonexistent index
+        int CBLErrorInvalidQueryParam = 25;      // Unknown query param name, or param number out of range
+        int CBLErrorRemoteError = 26;            // Unknown error from remote server
+        int CBLErrorDatabaseTooOld = 27;         // Database file format is older than what I can open
+        int CBLErrorDatabaseTooNew = 28;         // Database file format is newer than what I can open
+        int CBLErrorBadDocID = 29;               // Invalid document ID
+        int CBLErrorCantUpgradeDatabase = 30;    // Database can't be upgraded (might be unsupported dev version)
         // Note: These are equivalent to the C4Error codes declared in LiteCore's c4Base.h
 
         // Network error codes (higher level than POSIX, lower level than HTTP.)
@@ -81,6 +74,7 @@ interface CBLError {
         int CBLErrorTLSClientCertRequired = 5009; // a required client certificate was not provided
         int CBLErrorTLSClientCertRejected = 5010; // client certificate was rejected by the server
         int CBLErrorTLSCertUnknownRoot = 5011;    // Self-signed cert, or unknown anchor cert
+        int CBLErrorInvalidRedirect = 5012;       // Attempted redirect to invalid replication endpoint
 
         int CBLErrorHTTPBase = 10000;                   // ---- HTTP status codes start here
         int CBLErrorHTTPAuthRequired = 10401;           // Missing or incorrect user authentication
