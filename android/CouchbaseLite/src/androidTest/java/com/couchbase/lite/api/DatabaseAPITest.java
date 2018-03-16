@@ -52,10 +52,10 @@ public class DatabaseAPITest extends BaseTest {
         if (!config.eeFeaturesTestsEnabled())
             return;
 
-        // --- code example ---
+        // # tag::new-database[]
         DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context);
         Database database = new Database("my-database", config);
-        // --- code example ---
+        // # end::new-database[]
 
         database.delete();
     }
@@ -63,10 +63,10 @@ public class DatabaseAPITest extends BaseTest {
     // ### Logging
     @Test
     public void testLogging() throws CouchbaseLiteException {
-        // --- code example ---
+        // # tag::logging[]
         Database.setLogLevel(LogDomain.REPLICATOR, LogLevel.VERBOSE);
         Database.setLogLevel(LogDomain.QUERY, LogLevel.VERBOSE);
-        // --- code example ---
+        // # end::logging[]
     }
 
     @Test
@@ -81,7 +81,7 @@ public class DatabaseAPITest extends BaseTest {
     // ### Loading a pre-built database
     @Test
     public void testPreBuiltDatabase() throws IOException {
-        // --- code example ---
+        // # tag::prebuilt-database[]
         DatabaseConfiguration config = new DatabaseConfiguration(/* Android Context*/ context);
         ZipUtils.unzip(getAsset("replacedb/android200-sqlite.cblite2.zip"), context.getFilesDir());
         File path = new File(context.getFilesDir(), "android-sqlite");
@@ -90,6 +90,6 @@ public class DatabaseAPITest extends BaseTest {
         } catch (CouchbaseLiteException e) {
             Log.e(TAG, "Could not load pre-built database");
         }
-        // --- code example ---
+        // # end::prebuilt-database[]
     }
 }

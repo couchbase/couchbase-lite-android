@@ -69,14 +69,14 @@ public class ReplicationAPITest extends BaseReplicatorTest {
     public void testStartingAReplication() throws URISyntaxException {
         if (!config.replicatorTestsEnabled()) return;
 
-        // --- code example ---
+        // # tag::start-replication[]
         URI uri = new URI("ws://localhost:4984/db");
         Endpoint endpoint = new URLEndpoint(uri);
         ReplicatorConfiguration config = new ReplicatorConfiguration(database, endpoint);
         config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
         Replicator replication = new Replicator(config);
         replication.start();
-        // --- code example ---
+        // # end::start-replication[]
 
         replication.stop();
     }
@@ -85,9 +85,9 @@ public class ReplicationAPITest extends BaseReplicatorTest {
     public void testTroubleshooting() {
         if (!config.replicatorTestsEnabled()) return;
 
-        // --- code example ---
+        // # tag::replication-logging[]
         Database.setLogLevel(LogDomain.REPLICATOR, LogLevel.VERBOSE);
-        // --- code example ---
+        // # end::replication-logging[]
     }
 
     @Test
@@ -100,7 +100,7 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
         Replicator replication = new Replicator(config);
 
-        // --- code example ---
+        // # tag::replication-status[]
         replication.addChangeListener(new ReplicatorChangeListener() {
             @Override
             public void changed(ReplicatorChange change) {
@@ -108,7 +108,7 @@ public class ReplicationAPITest extends BaseReplicatorTest {
                     Log.i(TAG, "Replication stopped");
             }
         });
-        // --- code example ---
+        // # end::replication-status[]
     }
 
     @Test
@@ -121,7 +121,7 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
         Replicator replication = new Replicator(config);
 
-        // --- code example ---
+        // # tag::replication-error-handling[]
         replication.addChangeListener(new ReplicatorChangeListener() {
             @Override
             public void changed(ReplicatorChange change) {
@@ -131,7 +131,7 @@ public class ReplicationAPITest extends BaseReplicatorTest {
             }
         });
         replication.start();
-        // --- code example ---
+        // # end::replication-error-handling[]
 
         replication.stop();
     }
@@ -144,11 +144,11 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         Endpoint endpoint = new URLEndpoint(uri);
         ReplicatorConfiguration config = new ReplicatorConfiguration(database, endpoint);
 
-        // --- code example ---
+        // # tag::certificate-pinning[]
         InputStream is = getAsset("cert.cer");
         byte[] cert = IOUtils.toByteArray(is);
         is.close();
         config.setPinnedServerCertificate(cert);
-        // --- code example ---
+        // # end::certificate-pinning[]
     }
 }

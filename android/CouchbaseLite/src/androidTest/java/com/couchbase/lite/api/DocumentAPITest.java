@@ -62,7 +62,7 @@ public class DocumentAPITest extends BaseTest {
     // ### Initializers
     @Test
     public void testInitializers() {
-        // --- code example ---
+        // # tag::initializer[]
         MutableDocument newTask = new MutableDocument();
         newTask.setString("type", "task");
         newTask.setString("owner", "todo");
@@ -72,7 +72,7 @@ public class DocumentAPITest extends BaseTest {
         } catch (CouchbaseLiteException e) {
             Log.e(TAG, e.toString());
         }
-        // --- code example ---
+        // # end::initializer[]
     }
 
     // ### Mutability
@@ -83,7 +83,7 @@ public class DocumentAPITest extends BaseTest {
         } catch (CouchbaseLiteException e) {
         }
 
-        // --- code example ---
+        // # tag::update-document[]
         Document document = database.getDocument("xyz");
         MutableDocument mutableDocument = document.toMutable();
         mutableDocument.setString("name", "apples");
@@ -92,7 +92,7 @@ public class DocumentAPITest extends BaseTest {
         } catch (CouchbaseLiteException e) {
             Log.e(TAG, e.toString());
         }
-        // --- code example ---
+        // # end::update-document[]
     }
 
     // ### Typed Accessors
@@ -100,16 +100,16 @@ public class DocumentAPITest extends BaseTest {
     public void testTypedAccessors() {
         MutableDocument newTask = new MutableDocument();
 
-        // --- code example ---
+        // # tag::date-getter[]
         newTask.setValue("createdAt", new Date());
         Date date = newTask.getDate("createdAt");
-        // --- code example ---
+        // # end::date-getter[]
     }
 
     // ### Batch operations
     @Test
     public void testBatchOperations() {
-        // --- code example ---
+        // # tag::batch[]
         try {
             database.inBatch(new Runnable() {
                 @Override
@@ -131,13 +131,13 @@ public class DocumentAPITest extends BaseTest {
         } catch (CouchbaseLiteException e) {
             Log.e(TAG, e.toString());
         }
-        // --- code example ---
+        // # end::batch[]
     }
 
     // ### Blobs
     @Test
     public void testBlobs() {
-        // --- code example ---
+        // # tag::blob[]
         InputStream is = getAsset("attachment.png");
         try {
             MutableDocument newTask = new MutableDocument();
@@ -155,6 +155,6 @@ public class DocumentAPITest extends BaseTest {
             } catch (IOException e) {
             }
         }
-        // --- code example ---
+        // # end::blob[]
     }
 }
