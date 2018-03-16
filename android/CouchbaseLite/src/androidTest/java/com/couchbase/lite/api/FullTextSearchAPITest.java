@@ -59,9 +59,9 @@ public class FullTextSearchAPITest extends BaseTest {
     }
 
     void prepareIndex() throws CouchbaseLiteException {
-        // --- code example ---
+        // # tag::fts-index[]
         database.createIndex("nameFTSIndex", IndexBuilder.fullTextIndex(FullTextIndexItem.property("name")).ignoreAccents(false));
-        // --- code example ---
+        // # end::fts-index[]
     }
 
     @Before
@@ -87,7 +87,7 @@ public class FullTextSearchAPITest extends BaseTest {
 
     @Test
     public void testFTS() throws CouchbaseLiteException {
-        // --- code example ---
+        // # tag::fts-query[]
         Expression whereClause = FullTextExpression.index("nameFTSIndex").match("buy");
         Query ftsQuery = QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(database))
@@ -95,6 +95,6 @@ public class FullTextSearchAPITest extends BaseTest {
         ResultSet ftsQueryResult = ftsQuery.execute();
         for (Result result : ftsQueryResult)
             Log.i(TAG, String.format("document properties %s", result.getString(0)));
-        // --- code example ---
+        // # end::fts-query[]
     }
 }
