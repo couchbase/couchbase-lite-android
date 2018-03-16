@@ -5,18 +5,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.couchbase.lite.Database;
-import com.couchbase.lite.DatabaseOptions;
-import com.couchbase.lite.Document;
-import com.couchbase.lite.Manager;
-import com.couchbase.lite.android.AndroidContext;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.couchbase.lite.DatabaseConfiguration;
 
 public class MainActivity extends AppCompatActivity {
 
     private final static String TAG = "UpgradeTest";
-    private final static String DB_NAME = "upgrade";
+    private final static String DB_NAME = "ecouchpojox1";
     private final static String DOC_ID = "doc_upgrade";
 
     @Override
@@ -29,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     // TODO - comment out CBL 1.4.1, activate 2.0.0
 
+    /*
     // 1.4.1
     void databaseOperation() {
         try {
@@ -62,26 +57,26 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+*/
 
 
-    /*
     // 2.0.0
     void databaseOperation() {
         try {
             DatabaseConfiguration config = new DatabaseConfiguration(getBaseContext());
             Database db = new Database(DB_NAME, config);
 
-            Document doc = db.getDocument(DOC_ID);
-            if (doc != null) {
-                Log.i(TAG, "Doc content: " + db.getDocument(DOC_ID).toMap());
-                MutableDocument mDoc = doc.toMutable();
-                mDoc.setString("Database Version", "2.0.0");
-                mDoc.setInt("update", mDoc.getInt("update") + 1);
-                db.save(mDoc);
-            }
+//            Document doc = db.getDocument(DOC_ID);
+//            if (doc != null) {
+//                Log.i(TAG, "Doc content: " + db.getDocument(DOC_ID).toMap());
+//                MutableDocument mDoc = doc.toMutable();
+//                mDoc.setString("Database Version", "2.0.0");
+//                mDoc.setInt("update", mDoc.getInt("update") + 1);
+//                db.save(mDoc);
+//            }
 
             Log.i(TAG, "Num of docs: " + db.getCount());
-            Log.i(TAG, "Doc content: " + db.getDocument(DOC_ID).toMap());
+            //Log.i(TAG, "Doc content: " + db.getDocument(DOC_ID).toMap());
 
             db.close();
         } catch (Exception e) {
@@ -89,6 +84,5 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-    */
 
 }

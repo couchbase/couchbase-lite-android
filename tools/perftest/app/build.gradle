@@ -26,6 +26,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile 'com.google.code.gson:gson:2.8.2'
-    compile 'com.couchbase.lite:couchbase-lite-android:2.0.0-390'
-
+    compile 'com.couchbase.lite:couchbase-lite-android:2.0.0-DB023'
 }

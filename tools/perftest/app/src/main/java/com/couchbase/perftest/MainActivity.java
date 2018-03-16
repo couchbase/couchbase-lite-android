@@ -3,13 +3,10 @@ package com.couchbase.perftest;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.Button;
 
 import com.couchbase.lite.DatabaseConfiguration;
 
 public class MainActivity extends AppCompatActivity {
-    Button btnDocPerf;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -20,13 +17,19 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 switch (view.getId()) {
                     case R.id.btnDocPerf:
-                        new DocPerfTest(MainActivity.this,new DatabaseConfiguration( MainActivity.this)).run();
+                        new DocPerfTest(MainActivity.this, new DatabaseConfiguration(MainActivity.this)).run();
                         break;
                     case R.id.btnTunesPerf:
-                        new TunesPerfTest(MainActivity.this,new DatabaseConfiguration(MainActivity.this)).run();
+                        new TunesPerfTest(MainActivity.this, new DatabaseConfiguration(MainActivity.this)).run();
                         break;
                     case R.id.btnQuryPerf:
-                        new QueryPerfTest(MainActivity.this,new DatabaseConfiguration(MainActivity.this)).run();
+                        new QueryPerfTest(MainActivity.this, new DatabaseConfiguration(MainActivity.this)).run();
+                        break;
+                    case R.id.btnPushPerf:
+                        new PushPerfTest(MainActivity.this, new DatabaseConfiguration(MainActivity.this)).run();
+                        break;
+                    case R.id.btnPullPerf:
+                        new PullPerfTest(MainActivity.this, new DatabaseConfiguration(MainActivity.this)).run();
                         break;
                 }
             }
@@ -35,5 +38,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnDocPerf).setOnClickListener(clickListener);
         findViewById(R.id.btnTunesPerf).setOnClickListener(clickListener);
         findViewById(R.id.btnQuryPerf).setOnClickListener(clickListener);
+        findViewById(R.id.btnPushPerf).setOnClickListener(clickListener);
+        findViewById(R.id.btnPullPerf).setOnClickListener(clickListener);
     }
 }
