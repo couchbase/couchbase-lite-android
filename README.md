@@ -7,8 +7,9 @@ Couchbase Lite 2.0 has a completely new set of APIs. The implementation is on to
 
 ## Requirements
 
-- Android 4.1+
+- Android 4.4+ (API 19+)
 - Android Studio 3.0
+- Supported architectures: armeabi-v7a, arm64-v8a and x86
 
 ## Installation
 
