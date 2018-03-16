@@ -25,11 +25,10 @@ class CBLStatus {
     final static String[] kErrorDomains = {
             null,
             CBLError.Domain.CBLErrorDomain,     // LiteCoreDomain
-            "POSIXErrorDomain", // POSIXDomain
-            null,               // ForestDBDomain
+            "POSIXErrorDomain",                 // POSIXDomain
             CBLError.Domain.SQLiteErrorDomain,  // SQLiteDomain
             CBLError.Domain.FleeceErrorDomain,  // FleeceDomain
-            "NetworkDomain",    // network error
+            CBLError.Domain.CBLErrorDomain,     // Network error
             CBLError.Domain.CBLErrorDomain};    // WebSocketDomain
 
     static CouchbaseLiteException convertException(int _domain, int _code, LiteCoreException e) {
