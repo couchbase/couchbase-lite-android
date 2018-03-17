@@ -16,7 +16,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private final static String TAG = "UpgradeTest";
-    private final static String DB_NAME = "ecouchpojox1";
+    private final static String DB_NAME = "upgrade";
     private final static String DOC_ID = "doc_upgrade";
 
     @Override
