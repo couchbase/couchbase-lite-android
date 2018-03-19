@@ -56,6 +56,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.couchbase.lite.CBLError.Code.CBLErrorCantOpenFile;
+import static com.couchbase.lite.CBLError.Code.CBLErrorNotADatabaseFile;
+
 /**
  * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
@@ -115,9 +118,9 @@ abstract class AbstractDatabase {
      */
     protected AbstractDatabase(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
         if (name == null || name.length() == 0)
-            throw new IllegalArgumentException("name should not be empty.");
+            throw new IllegalArgumentException("id cannot be null.");
         if (config == null)
-            throw new IllegalArgumentException("DatabaseConfiguration should not be null.");
+            throw new IllegalArgumentException("id cannot be null.");
 
         this.name = name;
         this.config = config.readonlyCopy();
@@ -192,7 +195,7 @@ abstract class AbstractDatabase {
      */
     public Document getDocument(String id) {
         if (id == null)
-            throw new IllegalArgumentException("a documentID parameter is null");
+            throw new IllegalArgumentException("id cannot be null.");
 
         synchronized (lock) {
             mustBeOpen();
@@ -230,7 +233,7 @@ abstract class AbstractDatabase {
      */
     public boolean save(MutableDocument document, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
         if (document == null)
-            throw new IllegalArgumentException("a document parameter is null");
+            throw new IllegalArgumentException("document cannot be null.");
 
         // NOTE: synchronized in save(Document, boolean) method
         return save(document, false, concurrencyControl);
@@ -261,7 +264,7 @@ abstract class AbstractDatabase {
      */
     public boolean delete(Document document, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
         if (document == null)
-            throw new IllegalArgumentException("a document parameter is null");
+            throw new IllegalArgumentException("document cannot be null.");
 
         // NOTE: synchronized in save(Document, boolean) method
         return save(document, true, concurrencyControl);
@@ -275,7 +278,7 @@ abstract class AbstractDatabase {
      */
     public void purge(Document document) throws CouchbaseLiteException {
         if (document == null)
-            throw new IllegalArgumentException("a document parameter is null");
+            throw new IllegalArgumentException("document cannot be null.");
 
         if (document.isNewDocument())
             throw new CouchbaseLiteException("Document doesn't exist in the database.",
@@ -314,7 +317,7 @@ abstract class AbstractDatabase {
      */
     public void inBatch(Runnable runnable) throws CouchbaseLiteException {
         if (runnable == null)
-            throw new IllegalArgumentException("The runnable parameter should not be null.");
+            throw new IllegalArgumentException("runnable cannot be null.");
 
         synchronized (lock) {
             mustBeOpen();
@@ -368,7 +371,7 @@ abstract class AbstractDatabase {
 
     public ListenerToken addChangeListener(Executor executor, DatabaseChangeListener listener) {
         if (listener == null)
-            throw new IllegalArgumentException("a listener parameter is null");
+            throw new IllegalArgumentException("listener cannot be null.");
 
         synchronized (lock) {
             mustBeOpen();
@@ -383,7 +386,7 @@ abstract class AbstractDatabase {
      */
     public void removeChangeListener(ListenerToken token) {
         if (token == null)
-            throw new IllegalArgumentException("a token parameter is null");
+            throw new IllegalArgumentException("token cannot be null.");
 
         synchronized (lock) {
             mustBeOpen();
@@ -405,8 +408,10 @@ abstract class AbstractDatabase {
 
     public ListenerToken addDocumentChangeListener(String id, Executor executor,
                                                    DocumentChangeListener listener) {
-        if (id == null || listener == null)
-            throw new IllegalArgumentException("a listener parameter and/or a listener parameter are null");
+        if (id == null)
+            throw new IllegalArgumentException("id cannot be null.");
+        if (listener == null)
+            throw new IllegalArgumentException("listener cannot be null.");
 
         synchronized (lock) {
             mustBeOpen();
@@ -430,15 +435,14 @@ abstract class AbstractDatabase {
 
             if (activeReplications.size() > 0) {
                 throw new CouchbaseLiteException(
-                        "Cannot close the database. Please stop all of the replicators before " +
-                                "closing the database.",
+                        "Cannot close the database.  Please stop all of the replicators before closing the database.",
                         CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
             }
 
 
             if (activeLiveQueries.size() > 0) {
-                throw new CouchbaseLiteException("Cannot close the database. Please remove all of " +
-                        "the query listeners before closing the database",
+                throw new CouchbaseLiteException(
+                        "Cannot close the database.  Please remove all of the query listeners before closing the database.",
                         CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
             }
 
@@ -467,15 +471,14 @@ abstract class AbstractDatabase {
 
             if (activeReplications.size() > 0) {
                 throw new CouchbaseLiteException(
-                        "Cannot delete the database. Please stop all of the replicators before " +
-                                "deleting the database.",
+                        "Cannot delete the database.  Please stop all of the replicators before closing the database.",
                         CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
             }
 
 
             if (activeLiveQueries.size() > 0) {
-                throw new CouchbaseLiteException("Cannot delete the database. Please remove all of " +
-                        "the query listeners before deleting the database",
+                throw new CouchbaseLiteException(
+                        "Cannot delete the database.  Please remove all of the query listeners before closing the database.",
                         CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
             }
 
@@ -505,8 +508,10 @@ abstract class AbstractDatabase {
     }
 
     public void createIndex(String name, Index index) throws CouchbaseLiteException {
-        if (name == null || index == null)
-            throw new IllegalArgumentException();
+        if (name == null)
+            throw new IllegalArgumentException("name cannot be null.");
+        if (index == null)
+            throw new IllegalArgumentException("index cannot be null.");
         synchronized (lock) {
             mustBeOpen();
             try {
@@ -547,9 +552,10 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public static void delete(String name, File directory) throws CouchbaseLiteException {
-        if (name == null || directory == null)
-            throw new IllegalArgumentException("a name parameter and/or a dir parameter are null.");
-
+        if (name == null)
+            throw new IllegalArgumentException("name cannot be null.");
+        if (directory == null)
+            throw new IllegalArgumentException("directory cannot be null.");
         if (!exists(name, directory))
             throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
 
@@ -570,15 +576,21 @@ abstract class AbstractDatabase {
      * @return true if exists, false otherwise.
      */
     public static boolean exists(String name, File directory) {
-        if (name == null || directory == null)
-            throw new IllegalArgumentException("a name parameter and/or a dir parameter are null.");
+        if (name == null)
+            throw new IllegalArgumentException("name cannot be null.");
+        if (directory == null)
+            throw new IllegalArgumentException("directory cannot be null.");
         return getDatabasePath(directory, name).exists();
     }
 
     public static void copy(File path, String name, DatabaseConfiguration config)
             throws CouchbaseLiteException {
-        if (path == null || name == null || config == null)
-            throw new IllegalArgumentException("a path, a dir and/or config parameters are null.");
+        if (path == null)
+            throw new IllegalArgumentException("path cannot be null.");
+        if (name == null)
+            throw new IllegalArgumentException("name cannot be null.");
+        if (config == null)
+            throw new IllegalArgumentException("config cannot be null.");
 
         String fromPath = path.getPath();
         if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar)
@@ -671,7 +683,7 @@ abstract class AbstractDatabase {
 
     void mustBeOpen() {
         if (c4db == null)
-            throw new IllegalStateException("Database is not open.");
+            throw new IllegalStateException("Attempt to perform an operation on a closed database");
     }
 
     boolean isOpen() {
@@ -795,7 +807,12 @@ abstract class AbstractDatabase {
                     getEncryptionAlgorithm(),
                     getEncryptionKey());
         } catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
+            if (e.code == CBLErrorNotADatabaseFile)
+                throw new CouchbaseLiteException("The provided encryption key was incorrect.", e, CBLError.Domain.CBLErrorDomain, e.code);
+            else if (e.code == CBLErrorCantOpenFile)
+                throw new CouchbaseLiteException("TUnable to create database directory.", e, CBLError.Domain.CBLErrorDomain, e.code);
+            else
+                throw CBLStatus.convertException(e);
         }
 
         c4DBObserver = null;
@@ -818,7 +835,7 @@ abstract class AbstractDatabase {
             dir.mkdirs();
         if (!dir.isDirectory()) {
             throw new CouchbaseLiteException(String.format(Locale.ENGLISH,
-                    "Unable to create directory for: %s", dir));
+                    "Unable to create directory for: %s.", dir));
         }
     }
 
@@ -1026,13 +1043,14 @@ abstract class AbstractDatabase {
         if (document.getDatabase() == null)
             document.setDatabase((Database) this);
         else if (document.getDatabase() != this)
-            throw new CouchbaseLiteException(CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidParameter);
+            throw new CouchbaseLiteException("Cannot operate on a document from another database.",
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorInvalidParameter);
     }
 
     // The main save method.
     private boolean save(Document document, boolean deletion, ConcurrencyControl concurrencyControl) throws CouchbaseLiteException {
         if (deletion && !document.exists())
-            throw new CouchbaseLiteException("Document doesn't exist in the database.",
+            throw new CouchbaseLiteException("Cannot delete a document that has not yet been saved.",
                     CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
 
         C4Document curDoc = null;

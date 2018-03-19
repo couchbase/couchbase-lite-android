@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import java.net.URI;
+import java.util.Locale;
 
 /**
  * URL based replication target endpoint
@@ -46,18 +47,19 @@ public final class URLEndpoint implements Endpoint {
      */
     public URLEndpoint(URI url) {
         if (url == null)
-            throw new IllegalArgumentException("The url parameter cannot be null.");
+            throw new IllegalArgumentException("url cannot be null.");
 
         String scheme = url.getScheme();
         if (!(kURLEndpointScheme.equals(scheme) || kURLEndpointTLSScheme.equals(scheme))) {
             throw new IllegalArgumentException(
-                    "The url parameter has an unsupported URL scheme (" + scheme + ") " +
-                            "The supported URL schemes are " + kURLEndpointScheme + " and " + kURLEndpointTLSScheme + ".");
+                    String.format(Locale.ENGLISH,
+                            "Invalid scheme for URLEndpoint url (%s); must be either %s or %s.",
+                            scheme, kURLEndpointScheme, kURLEndpointTLSScheme));
         }
 
         String userInfo = url.getUserInfo();
         if (userInfo != null && userInfo.split(":").length == 2)
-            throw new IllegalArgumentException("Embedded credentials in a URL (username:password@url) are not allowed; use the BasicAuthenticator class instead");
+            throw new IllegalArgumentException("Embedded credentials in a URL (username:password@url) are not allowed; use the BasicAuthenticator class instead.");
 
         this.url = url;
     }
