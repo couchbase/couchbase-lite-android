@@ -25,9 +25,12 @@ import com.couchbase.litecore.fleece.MValue;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 final class Fleece implements FLConstants.FLValueType {
+    static String LIST_OF_SUPPORTED_TYPES = "MutableDictionary, Dictionary, MutableArray, Array, Map, List, Date, String, Number, Boolean, Blob or null";
+
     static boolean valueWouldChange(Object newValue, MValue oldValue, MCollection container) {
         // As a simplification we assume that array and dict values are always different, to avoid
         // a possibly expensive comparison.
@@ -66,8 +69,10 @@ final class Fleece implements FLConstants.FLValueType {
                     value instanceof Number ||
                     value instanceof Boolean ||
                     value instanceof Blob)) {
-                throw new IllegalArgumentException("Unsupported value type. value = "
-                        + value.getClass().getSimpleName());
+                String msg = String.format(Locale.ENGLISH,
+                        "%s is not a valid type. You may only pass %s.",
+                        value.getClass().getSimpleName(), LIST_OF_SUPPORTED_TYPES);
+                throw new IllegalArgumentException(msg);
             }
         }
         return value;

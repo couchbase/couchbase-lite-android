@@ -31,6 +31,7 @@ class CBLStatus {
             CBLError.Domain.CBLErrorDomain,     // Network error
             CBLError.Domain.CBLErrorDomain};    // WebSocketDomain
 
+
     static CouchbaseLiteException convertException(int _domain, int _code, LiteCoreException e) {
         String domain = kErrorDomains[_domain];
         int code = _code;

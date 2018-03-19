@@ -114,9 +114,9 @@ public final class Blob implements FLEncodable {
      */
     public Blob(String contentType, byte[] content) {
         if (contentType == null)
-            throw new IllegalArgumentException("contentType parameter should not be null.");
+            throw new IllegalArgumentException("contentType cannot be null.");
         if (content == null)
-            throw new IllegalArgumentException("content parameter should not be null.");
+            throw new IllegalArgumentException("content cannot be null.");
         this.contentType = contentType;
         this.content = content;
         this.length = content.length;
@@ -131,9 +131,9 @@ public final class Blob implements FLEncodable {
      */
     public Blob(String contentType, InputStream stream) {
         if (contentType == null)
-            throw new IllegalArgumentException("contentType parameter should not be null.");
+            throw new IllegalArgumentException("contentType cannot be null.");
         if (stream == null)
-            throw new IllegalArgumentException("stream parameter should not be null.");
+            throw new IllegalArgumentException("stream cannot be null.");
         this.contentType = contentType;
         this.initialContentStream = stream;
         this.length = 0L; // unknown
@@ -149,13 +149,13 @@ public final class Blob implements FLEncodable {
      */
     public Blob(String contentType, URL fileURL) throws IOException {
         if (contentType == null)
-            throw new IllegalArgumentException("contentType parameter should not be null.");
+            throw new IllegalArgumentException("contentType cannot be null.");
         if (fileURL == null)
-            throw new IllegalArgumentException("fileURL parameter should not be null.");
+            throw new IllegalArgumentException("fileURL cannot be null.");
         if (!fileURL.getProtocol().equalsIgnoreCase("file"))
             throw new IllegalArgumentException(
                     String.format(Locale.ENGLISH,
-                            "fileUrl parameter must be a file-based URL: %s.",
+                            "<%s> must be a file-based URL.",
                             fileURL.toString()));
         this.contentType = contentType;
         this.initialContentStream = fileURL.openStream();
@@ -368,11 +368,11 @@ public final class Blob implements FLEncodable {
 
     void installInDatabase(Database db) {
         if (db == null)
-            throw new IllegalArgumentException("database is null");
+            throw new IllegalArgumentException("db cannot be null.");
 
         if (this.database != null) {
             if (this.database != db)
-                throw new IllegalArgumentException("Blob belongs to a different database");
+                throw new IllegalStateException("A document contains a blob that was saved to a different database; the save operation cannot complete.");
             return;
         }
 
@@ -391,7 +391,7 @@ public final class Blob implements FLEncodable {
                         InputStream contentStream = getContentStream();
                         try {
                             if (contentStream == null)
-                                throw new IllegalStateException("No data available to write for install");
+                                throw new IllegalStateException("No data available to write for install.  Please ensure that all blobs in the document have non-null content.");
                             while ((bytesRead = contentStream.read(buffer)) > 0) {
                                 this.length += bytesRead;
                                 blobOut.write(Arrays.copyOfRange(buffer, 0, bytesRead));
@@ -475,10 +475,10 @@ public final class Blob implements FLEncodable {
 
         BlobInputStream(C4BlobStore store, C4BlobKey key) {
             if (key == null)
-                throw new IllegalArgumentException("key is null.");
+                throw new IllegalArgumentException("key cannot be null.");
             if (store == null) {
                 key.free();
-                throw new IllegalArgumentException("store is null.");
+                throw new IllegalArgumentException("store cannot be null.");
             }
             this.store = store;
             this.key = key;
