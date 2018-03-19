@@ -2584,7 +2584,7 @@ public class QueryTest extends BaseTest {
                 ResultSet rs = change.getResults();
                 while (rs.next() != null)
                     count++;
-                if(count == 75)// 26-100
+                if (count == 75)// 26-100
                     latch.countDown();
             }
         };
@@ -2608,6 +2608,51 @@ public class QueryTest extends BaseTest {
             assertTrue(latch.await(20, TimeUnit.SECONDS));
         } finally {
             query.removeChangeListener(token);
+        }
+    }
+
+    // https://forums.couchbase.com/t/how-to-be-notifed-that-docuemnt-is-changed-but-livequerys-query-isnt-catching-it-anymore/16199/9
+    @Test
+    public void testLiveQueryNotification() throws CouchbaseLiteException, InterruptedException {
+        // save doc1 with number1 -> 5
+        MutableDocument doc = new MutableDocument("doc1");
+        doc.setInt("number1", 5);
+        db.save(doc);
+
+        Query q = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("number1"))
+                .from(DataSource.database(db))
+                .where(Expression.property("number1").lessThan(Expression.intValue(10)))
+                .orderBy(Ordering.property("number1"));
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        ListenerToken token = q.addChangeListener(executor, new QueryChangeListener() {
+            @Override
+            public void changed(QueryChange change) {
+                int matchs = 0;
+                ResultSet rs = change.getResults();
+                Log.v(TAG, "----------");
+                for (Result r : rs) {
+                    Log.v(TAG, r.toMap().toString());
+                    matchs++;
+                }
+                Log.v(TAG, "----------");
+
+                if (matchs == 1) // match doc1 with number1 -> 5 which is less than 10
+                    latch1.countDown();
+                else // Not match with doc1 because number1 -> 15 which does not quarify the query cliteria
+                    latch2.countDown();
+            }
+        });
+        try {
+            assertTrue(latch1.await(5, TimeUnit.SECONDS));
+
+            doc = db.getDocument("doc1").toMutable();
+            doc.setInt("number1", 15);
+            db.save(doc);
+
+            assertTrue(latch2.await(5, TimeUnit.SECONDS));
+        } finally {
+            q.removeChangeListener(token);
         }
     }
 }
