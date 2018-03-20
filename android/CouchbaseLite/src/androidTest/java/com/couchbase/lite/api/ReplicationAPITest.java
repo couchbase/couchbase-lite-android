@@ -69,14 +69,14 @@ public class ReplicationAPITest extends BaseReplicatorTest {
     public void testStartingAReplication() throws URISyntaxException {
         if (!config.replicatorTestsEnabled()) return;
 
-        // # tag::start-replication[]
+        // # tag::replication[]
         URI uri = new URI("ws://localhost:4984/db");
         Endpoint endpoint = new URLEndpoint(uri);
         ReplicatorConfiguration config = new ReplicatorConfiguration(database, endpoint);
         config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
         Replicator replication = new Replicator(config);
         replication.start();
-        // # end::start-replication[]
+        // # end::replication[]
 
         replication.stop();
     }
