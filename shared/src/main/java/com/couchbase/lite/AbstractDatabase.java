@@ -117,6 +117,9 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
      */
     protected AbstractDatabase(String name, DatabaseConfiguration config) throws CouchbaseLiteException {
+        // Logging version number of CBL
+        Log.info(TAG, CBLVersion.getUserAgent());
+
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("id cannot be null.");
         if (config == null)
