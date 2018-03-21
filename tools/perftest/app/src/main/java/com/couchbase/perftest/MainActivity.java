@@ -31,6 +31,9 @@ public class MainActivity extends AppCompatActivity {
                     case R.id.btnPullPerf:
                         new PullPerfTest(MainActivity.this, new DatabaseConfiguration(MainActivity.this)).run();
                         break;
+                    case R.id.btnDocSavePerf:
+                        new DocSavePerfTest(MainActivity.this, new DatabaseConfiguration(MainActivity.this)).run();
+                        break;
                 }
             }
         };
@@ -40,5 +43,6 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnQuryPerf).setOnClickListener(clickListener);
         findViewById(R.id.btnPushPerf).setOnClickListener(clickListener);
         findViewById(R.id.btnPullPerf).setOnClickListener(clickListener);
+        findViewById(R.id.btnDocSavePerf).setOnClickListener(clickListener);
     }
 }
