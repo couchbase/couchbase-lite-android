@@ -17,14 +17,9 @@
 //
 package com.couchbase.lite;
 
-import android.os.Build;
-
-import com.couchbase.litecore.C4;
-
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static com.couchbase.lite.ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
@@ -316,7 +311,7 @@ public final class ReplicatorConfiguration {
 
         Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:
-        httpHeaders.put("User-Agent", getUserAgent());
+        httpHeaders.put("User-Agent", CBLVersion.getUserAgent());
         // headers
         if (headers != null && headers.size() > 0) {
             for (Map.Entry<String, String> entry : headers.entrySet())
@@ -337,43 +332,5 @@ public final class ReplicatorConfiguration {
 
     Database getTargetDatabase() {
         return null;
-    }
-
-    //---------------------------------------------
-    // Private level access
-    //---------------------------------------------
-
-    static String userAgent = null;
-
-    static String getUserAgent() {
-        if (userAgent == null) {
-            String liteCoreVers = C4.getVersion();
-            userAgent = String.format(Locale.ENGLISH,
-                    "CouchbaseLite/%s %s Build/%d Commit/%.8s LiteCore/%s",
-                    BuildConfig.VERSION_NAME,
-                    getSystemInfo(),
-                    BuildConfig.BUILD_NO,
-                    BuildConfig.GitHash,
-                    liteCoreVers
-            );
-        }
-        return userAgent;
-    }
-
-    static String getSystemInfo() {
-        StringBuilder result = new StringBuilder(64);
-        result.append("(Java; Android ");
-        String version = Build.VERSION.RELEASE; // "1.0" or "3.4b5"
-        result.append(version.length() > 0 ? version : "1.0");
-        // add the model for the release build
-        if ("REL".equals(Build.VERSION.CODENAME)) {
-            String model = Build.MODEL;
-            if (model.length() > 0) {
-                result.append("; ");
-                result.append(model);
-            }
-        }
-        result.append(")");
-        return result.toString();
     }
 }

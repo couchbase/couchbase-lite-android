@@ -208,6 +208,14 @@ public final class Log {
         }
     }
 
+    public static void info(String tag, String msg) {
+        logger.i(tag, msg);
+    }
+
+    public static void info(String tag, String msg, Throwable tr) {
+        logger.i(tag, msg, tr);
+    }
+
     /**
      * Send an INFO message.
      *
@@ -392,8 +400,9 @@ public final class Log {
                 enableLogging(DATABASE, level.getValue());
                 enableLogging(QUERY, level.getValue());
                 enableLogging(SYNC, level.getValue());
-                enableLogging(C4LogDomain.BLIP, level.getValue());
                 enableLogging(WEB_SOCKET, level.getValue());
+                enableLogging(C4LogDomain.BLIP, level.getValue());
+                enableLogging(C4LogDomain.SyncBusy, level.getValue());
                 break;
             case DATABASE:
                 enableLogging(DATABASE, level.getValue());
@@ -405,6 +414,7 @@ public final class Log {
 
             case REPLICATOR:
                 enableLogging(SYNC, level.getValue());
+                enableLogging(C4LogDomain.SyncBusy, level.getValue());
                 break;
 
             case NETWORK:
