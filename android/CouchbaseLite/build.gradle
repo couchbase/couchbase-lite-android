@@ -240,7 +240,7 @@ def pomConfig = {
     licenses {
         license {
             name "Couchbase Community Edition License Agreement"
-            url "http://www.couchbase.com/agreement/community"
+            url "https://www.couchbase.com/binaries/content/assets/website/legal/ce-license-agreement.pdf"
             distribution "repo"
         }
     }
