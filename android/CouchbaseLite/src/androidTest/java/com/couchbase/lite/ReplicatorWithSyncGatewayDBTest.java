@@ -51,7 +51,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Note: https://github.com/couchbase/couchbase-lite-android/tree/master/test/replicator
- *
+ * <p>
  * NOTE: To execute ReplicatorWithSyncGatewayDBTest unit tests, please launch
  * Sync Gateway with using test/replicator/config.json configuration file.
  * In case of executing unit test from real device, please use test/replicator/config.nonlocalhost.json
@@ -463,6 +463,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             assertEquals(i, doc.getInt("idx"));
         }
     }
+
     @Test
     public void testPullConflictDeleteWins_SG() throws Exception {
         if (!config.replicatorTestsEnabled())
@@ -532,4 +533,35 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         }
     }
 
+    // https://github.com/couchbase/couchbase-lite-android/issues/1674
+    // SG does not support document ID filter with continuous mode
+    // Currently CBL ignore the error wight setting  code 26 (Unknown error).
+    @Test
+    public void testDocIDFilterSG() throws Exception {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        URLEndpoint target = getRemoteEndpoint(DB_NAME, false);
+
+        // Document 1
+        String docID1 = "doc1";
+        String body1 = "{\"index\":1}";
+        JSONObject json1 = sendRequestToEndpoint(target, "PUT", docID1, "application/json", body1.getBytes());
+        assertNotNull(json1);
+        assertTrue(json1.getBoolean("ok"));
+        assertEquals(docID1, json1.getString("id"));
+
+        // Document 2
+        String docID2 = "doc2";
+        String body2 = "{\"index\":2}";
+        JSONObject json2 = sendRequestToEndpoint(target, "PUT", docID2, "application/json", body2.getBytes());
+        assertNotNull(json2);
+        assertTrue(json2.getBoolean("ok"));
+        assertEquals(docID2, json2.getString("id"));
+
+        ReplicatorConfiguration config = makeConfig(true, true, true, target);
+        config.setDocumentIDs(Arrays.asList(docID1));
+        Replicator repl = run(config, 26, null);
+        stopContinuousReplicator(repl);
+    }
 }
