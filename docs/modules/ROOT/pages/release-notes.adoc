@@ -1,0 +1,18 @@
+= Known Issues
+
+- link:https://github.com/couchbase/couchbase-lite-android/issues/1665[#1665]: it is currently not possible to enable link:https://developer.android.com/studio/build/shrink-code.html[code shrinking] (`minifyEnabled: true`) in an Android Studio project that uses Couchbase Lite 2.0. As a workaround, code shrinking can be disabled for Couchbase Lite classes and its dependencies by adding the following in **proguard-rules.pro**.
+
+[source,groovy]
+----
+# OkHttp3
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+# A resource is loaded with a relative path so the package of this class must be preserved.
+-keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
+
+# CBL2.x
+-keep class com.couchbase.litecore.**{ *; }
+-keep class com.couchbase.lite.**{ *; }
+----
