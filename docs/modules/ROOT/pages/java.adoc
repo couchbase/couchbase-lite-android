@@ -43,9 +43,8 @@ Supported Versions
 |Android |x86 |19
 |==================================================
 
-[[api-references]]
-[[api-references]]API Referenceslink:#api-references[]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+API References
+~~~~~~~~~~~~~~
 
 http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022[Java SDK
 API References]
