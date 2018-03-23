@@ -23,7 +23,7 @@ import java.util.Map;
 import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionCookies;
 
 /**
- * SessionAuthenticator class is an authenticator that will authenticate by using the sessin ID of
+ * SessionAuthenticator class is an authenticator that will authenticate by using the session ID of
  * the session created by a Sync Gateway
  */
 public final class SessionAuthenticator extends Authenticator {
