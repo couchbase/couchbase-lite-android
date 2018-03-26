@@ -145,6 +145,7 @@ properties.load(project.rootProject.file('local.properties').newDataInputStream(
 // -- bintray
 def bintrayUser = properties.getProperty('bintray.user')
 def bintrayKey = properties.getProperty('bintray.key')
+
 // -- maven repo
 def mavenRepoUrl = properties.getProperty('maven.repo.url')
 def mavenRepoUser = properties.getProperty('maven.repo.user')
@@ -209,23 +210,21 @@ def gitUrl = 'https://github.com:couchbase/couchbase-lite-android.git'
 // JFrog Bintray - JCenter deployment
 bintray {
     user = bintrayUser
-    key = bintrayKey
-
-    publications = ['maven']
-
+    key  = bintrayKey
+    publications = ['mavenJava']
     pkg {
         repo = 'couchbase'
         name = 'couchbase-lite-android'
         desc = 'Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend.'
         userOrg = 'couchbase'
-        licenses = ['Couchbase Community Edition License Agreement']
+        licenses = ['Couchbase, Inc. Community Edition License Agreement']
         labels = ['couchbase lite', 'android', 'sync', 'mobile']
         vcsUrl = gitUrl
         websiteUrl = siteUrl
         issueTrackerUrl = 'https://github.com/couchbase/couchbase-lite-android/issues'
         publicDownloadNumbers = false
         version {
-            name = version
+            name = this.version
         }
     }
 }
@@ -239,7 +238,7 @@ bintray {
 def pomConfig = {
     licenses {
         license {
-            name "Couchbase Community Edition License Agreement"
+            name "Couchbase, Inc. Community Edition License Agreement"
             url "https://www.couchbase.com/binaries/content/assets/website/legal/ce-license-agreement.pdf"
             distribution "repo"
         }
@@ -268,7 +267,7 @@ publishing {
         mavenJava(MavenPublication) {
             groupId group
             artifactId 'couchbase-lite-android'
-            version version
+            version this.version
 
             artifact bundleRelease
             artifact sourcesJar
