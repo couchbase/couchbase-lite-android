@@ -620,11 +620,10 @@ public final class Replicator extends NetworkReachabilityListener {
     private void updateStateProperties(C4ReplicatorStatus status) {
         CouchbaseLiteException error = null;
         if (status.getErrorCode() != 0)
-            error = CBLStatus.convertException(status.getErrorDomain(), status.getErrorCode(), null);
+            error = CBLStatus.convertException(status.getErrorDomain(), status.getErrorCode(), status.getErrorInternalInfo());
         if (error != this.lastError)
             this.lastError = error;
 
-        //c4ReplStatus = status.copy();
         c4ReplStatus = status.copy();
 
         // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:

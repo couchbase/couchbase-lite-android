@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.litecore.C4Base;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.LiteCoreException;
 
@@ -30,7 +31,6 @@ class CBLStatus {
             CBLError.Domain.FleeceErrorDomain,  // FleeceDomain
             CBLError.Domain.CBLErrorDomain,     // Network error
             CBLError.Domain.CBLErrorDomain};    // WebSocketDomain
-
 
     static CouchbaseLiteException convertException(int _domain, int _code, LiteCoreException e) {
         String domain = kErrorDomains[_domain];
@@ -53,5 +53,13 @@ class CBLStatus {
 
     static CouchbaseLiteException convertException(LiteCoreException e) {
         return convertException(e.domain, e.code, e);
+    }
+
+    static CouchbaseLiteException convertException(int _domain, int _code, int _internalInfo) {
+        if (_domain != 0 && _code != 0) {
+            String errMsg = C4Base.getMessage(_domain, _code, _internalInfo);
+            return convertException(new LiteCoreException(_domain, _code, errMsg));
+        } else
+            return convertException(_domain, _code, null);
     }
 }
