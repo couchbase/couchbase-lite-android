@@ -85,8 +85,9 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            consumerProguardFiles 'proguard-rules.pro'
             buildConfigField "int", "BUILD_NO", "$buildNo"
             buildConfigField "String", "GitHash", "\"${getGitHash()}\""
         }
