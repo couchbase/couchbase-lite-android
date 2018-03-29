@@ -2690,7 +2690,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(int n, Result result) throws Exception {
                 assertEquals(1, result.count());
-                if(n == 1)
+                if (n == 1)
                     assertEquals("doc1", result.getString(0));
                 else
                     assertEquals("doc2", result.getString(0));
@@ -2709,7 +2709,7 @@ public class QueryTest extends BaseTest {
             @Override
             public void check(int n, Result result) throws Exception {
                 assertEquals(1, result.count());
-                if(n == 1)
+                if (n == 1)
                     assertEquals("doc1", result.getString(0));
                 else
                     assertEquals("doc4", result.getString(0));
@@ -2732,5 +2732,46 @@ public class QueryTest extends BaseTest {
             }
         }, true);
         assertEquals(1, numRows);
+    }
+
+    // https://forums.couchbase.com/t/how-to-implement-an-index-join-clause-in-couchbase-lite-2-0-using-objective-c-api/16246
+    // https://github.com/couchbase/couchbase-lite-core/issues/497
+    @Test
+    public void testQueryJoinAndSelectAll() throws Exception {
+        loadNumbers(100);
+
+        final MutableDocument joinme = new MutableDocument("joinme");
+        joinme.setValue("theone", 42);
+        save(joinme);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
+        Expression mainPropExpr = Expression.property("number1").from("main");
+        Expression secondaryExpr = Expression.property("theone").from("secondary");
+        Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
+        Join join = Join.leftJoin(secondaryDS).on(joinExpr);
+
+        SelectResult sr1 = SelectResult.all().from("main");
+        SelectResult sr2 = SelectResult.all().from("secondary");
+
+        Query q = QueryBuilder.select(sr1, sr2).from(mainDS).join(join);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                if (n == 41) {
+                    Log.e(TAG, "41: " + result.toMap().toString());
+                    assertEquals(59, result.getDictionary("main").getInt("number2"));
+                    assertNull(result.getDictionary("secondary"));
+                }
+                if (n == 42) {
+                    Log.e(TAG, "42: " + result.toMap().toString());
+                    assertEquals(58, result.getDictionary("main").getInt("number2"));
+                    assertEquals(42, result.getDictionary("secondary").getInt("theone"));
+                }
+            }
+        }, true);
+        assertEquals(101, numRows);
     }
 }
