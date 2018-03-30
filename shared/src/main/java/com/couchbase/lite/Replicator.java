@@ -17,8 +17,6 @@
 //
 package com.couchbase.lite;
 
-import android.util.Base64;
-
 import com.couchbase.lite.internal.replicator.CBLWebSocket;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
@@ -32,7 +30,6 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -511,22 +508,6 @@ public final class Replicator extends NetworkReachabilityListener {
             Log.i(TAG, "C4ReplicatorListener.documentError() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
             // TODO: Should pass error along to listener
         }
-    }
-
-    /**
-     * Generates authentication requests headers from username & password for basic auth
-     *
-     * @param username
-     * @param password
-     * @return
-     */
-    private Map<String, Object> getAuthenticatedHeaders(String username, String password) {
-        byte[] cipher = String.format("%s:%s", username, password).getBytes();
-        String encodedVal = Base64.encodeToString(cipher, Base64.NO_WRAP); // NOTE: Base64.DEFAULT adds new line which causes the problem
-        String authHeaderValue = String.format(Locale.ENGLISH, "Basic %s", encodedVal);
-        Map<String, Object> headers = new HashMap<>();
-        headers.put("Authorization", authHeaderValue);
-        return headers;
     }
 
     private void retry() {
