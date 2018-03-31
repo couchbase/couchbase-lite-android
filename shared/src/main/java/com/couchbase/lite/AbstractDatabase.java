@@ -159,9 +159,9 @@ abstract class AbstractDatabase {
      *
      * @return the database's path.
      */
-    public File getPath() {
+    public String getPath() {
         synchronized (lock) {
-            return c4db != null ? new File(getC4Database().getPath()) : null;
+            return c4db != null ? getC4Database().getPath() : null;
         }
     }
 
@@ -660,8 +660,8 @@ abstract class AbstractDatabase {
 
     boolean equalsWithPath(Database other) {
         if (other == null) return false;
-        File path = getPath();
-        File otherPath = other.getPath();
+        File path = getFilePath();
+        File otherPath = other.getFilePath();
         if (path == null && otherPath == null)
             return true;
         else if ((path == null && otherPath != null) || (path != null && otherPath == null))
@@ -777,6 +777,11 @@ abstract class AbstractDatabase {
 
     ScheduledExecutorService getQueryExecutor() {
         return queryExecutor;
+    }
+
+    File getFilePath() {
+        String path = getPath();
+        return path != null ? new File(path) : null;
     }
 
     //---------------------------------------------
