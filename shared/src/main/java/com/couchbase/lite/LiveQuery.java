@@ -119,7 +119,10 @@ final class LiveQuery implements DatabaseChangeListener {
             observing = true;
             releaseResultSet();
             query.getDatabase().getActiveLiveQueries().add(this);
-            dbListenerToken = query.getDatabase().addChangeListener(this);
+            // NOTE: start() method could be called during LiveQuery is running.
+            // Ex) Query.setParameters() with LiveQuery.
+            if(dbListenerToken == null)
+                dbListenerToken = query.getDatabase().addChangeListener(this);
             update(0);
         }
     }
@@ -131,8 +134,10 @@ final class LiveQuery implements DatabaseChangeListener {
         synchronized (lock) {
             observing = false;
             willUpdate = false; // cancels the delayed update started by -databaseChanged
-            if (query != null && query.getDatabase() != null)
+            if (query != null && query.getDatabase() != null && dbListenerToken != null) {
                 query.getDatabase().removeChangeListener(dbListenerToken);
+                dbListenerToken = null;
+            }
             if (removeFromList && query != null && query.getDatabase() != null)
                 query.getDatabase().getActiveLiveQueries().remove(this);
             releaseResultSet();
