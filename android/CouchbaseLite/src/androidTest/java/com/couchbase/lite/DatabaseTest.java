@@ -57,7 +57,7 @@ public class DatabaseTest extends BaseTest {
         config.setDirectory(getDir().getAbsolutePath());
         Database db = new Database(dbName, config);
         assertEquals(dbName, db.getName());
-        assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
+        assertTrue(new File(db.getPath()).getAbsolutePath().endsWith(".cblite2"));
         if (countCheck)
             assertEquals(0, db.getCount());
         return db;
@@ -65,7 +65,7 @@ public class DatabaseTest extends BaseTest {
 
     // helper method to delete database
     void deleteDatabase(Database db) throws CouchbaseLiteException {
-        File path = db.getPath();
+        File path = db.getPath() != null ? new File(db.getPath()) : null;
         // if path is null, db is already closed
         if (path != null)
             assertTrue(path.exists());
@@ -193,7 +193,7 @@ public class DatabaseTest extends BaseTest {
         Database db = new Database("db", config);
         try {
             String expectedPath = context.getFilesDir().getAbsolutePath();
-            assertTrue(db.getPath().getAbsolutePath().contains(expectedPath));
+            assertTrue(new File(db.getPath()).getAbsolutePath().contains(expectedPath));
         } finally {
             db.delete();
         }
@@ -271,8 +271,8 @@ public class DatabaseTest extends BaseTest {
         try {
             assertNotNull(db);
             assertEquals(dbName, db.getName());
-            assertTrue(db.getPath().getAbsolutePath().endsWith(".cblite2"));
-            assertTrue(db.getPath().getAbsolutePath().indexOf(dir.getPath()) != -1);
+            assertTrue(new File(db.getPath()).getAbsolutePath().endsWith(".cblite2"));
+            assertTrue(new File(db.getPath()).getAbsolutePath().indexOf(dir.getPath()) != -1);
             assertTrue(Database.exists(dbName, dir));
             assertEquals(0, db.getCount());
         } finally {
@@ -941,7 +941,7 @@ public class DatabaseTest extends BaseTest {
     @Test
     public void testDeleteTwice() throws CouchbaseLiteException {
         // delete db twice
-        File path = db.getPath();
+        File path = new File(db.getPath());
         assertTrue(path.exists());
         db.delete();
         try {
@@ -1051,7 +1051,7 @@ public class DatabaseTest extends BaseTest {
         String dbName = "db";
         try {
             Database database = open(dbName);
-            File path = database.getPath();
+            File path = new File(database.getPath());
             assertNotNull(path);
             assertTrue(path.exists());
             // close db before delete
@@ -1077,7 +1077,7 @@ public class DatabaseTest extends BaseTest {
         // create db with custom directory
         Database db = openDatabase(dbName);
         try {
-            File path = db.getPath();
+            File path = new File(db.getPath());
             assertNotNull(path);
             assertTrue(path.exists());
 
@@ -1101,7 +1101,7 @@ public class DatabaseTest extends BaseTest {
 
         // create db with custom directory
         Database db = openDatabase(dbName);
-        File path = db.getPath();
+        File path = new File(db.getPath());
 
         // close db before delete
         db.close();
@@ -1175,7 +1175,7 @@ public class DatabaseTest extends BaseTest {
 
         // create db with custom directory
         Database db = openDatabase("db");
-        File path = db.getPath();
+        File path = new File(db.getPath());
 
         assertTrue(Database.exists("db", getDir()));
 
@@ -1322,7 +1322,7 @@ public class DatabaseTest extends BaseTest {
             Database.delete(dbName, dir);
 
         // Copy:
-        Database.copy(db.getPath(), dbName, config);
+        Database.copy(new File(db.getPath()), dbName, config);
 
         // Verify:
         assertTrue(Database.exists(dbName, dir));
