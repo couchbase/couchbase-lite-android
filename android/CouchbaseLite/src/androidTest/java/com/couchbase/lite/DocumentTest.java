@@ -2399,7 +2399,7 @@ public class DocumentTest extends BaseTest {
     }
 
     // TODO: this test causes native crash in case of running on Android API 19
-    // @Test
+    @Test
     public void testHashCode() throws CouchbaseLiteException {
 
         // mDoc1 and mDoc2 have exactly same data
