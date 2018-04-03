@@ -144,11 +144,11 @@ public class MigrationTest extends BaseTest {
     // if db exist, delete it
     private void deleteDB(String name, File dir) throws CouchbaseLiteException {
         // database exist, delete it
-        if (Database.exists("android-sqlite", context.getFilesDir())) {
+        if (Database.exists(name, context.getFilesDir())) {
             // sometimes, db is still in used, wait for a while. Maximum 3 sec
             for (int i = 0; i < 10; i++) {
                 try {
-                    Database.delete("android-sqlite", dir);
+                    Database.delete(name, dir);
                     break;
                 } catch (CouchbaseLiteException ex) {
                     if (ex.getCode() == CBLErrorBusy) {
