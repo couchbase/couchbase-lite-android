@@ -46,6 +46,13 @@ public class DatabaseAPITest extends BaseTest {
         super.tearDown();
     }
 
+    @Test
+    public void test1xAttachments() throws CouchbaseLiteException {
+        // # tag::1x-attachment[]
+        // TODO
+        // # end::1x-attachment[]
+    }
+
     // ### New Database
     @Test
     public void testNewDatabase() throws CouchbaseLiteException {
