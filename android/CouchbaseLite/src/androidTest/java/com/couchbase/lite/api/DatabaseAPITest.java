@@ -47,6 +47,13 @@ public class DatabaseAPITest extends BaseTest {
     }
 
     @Test
+    public void testGettingStarted() throws CouchbaseLiteException {
+        // # tag::getting-started[]
+        // TODO
+        // # end::getting-started[]
+    }
+
+    @Test
     public void test1xAttachments() throws CouchbaseLiteException {
         // # tag::1x-attachment[]
         // TODO

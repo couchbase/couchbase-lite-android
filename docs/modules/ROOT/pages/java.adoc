@@ -8,6 +8,11 @@ cannot be used in Java applications.
 Getting Started
 ~~~~~~~~~~~~~~~
 
+Android Studio
+^^^^^^^^^^^^^^
+
+Create or open an existing Android Studio project and install Couchbase Lite using the following method.
+
 * In the top-level *build.gradle* file, add the following Maven
 repository in the `allprojects` section.
 +
@@ -31,6 +36,21 @@ dependencies {
     compile 'com.couchbase.lite:couchbase-lite-android:2.0.0-DB023'
 }
 ----
+
+Starter code
+^^^^^^^^^^^^
+
+Open *MainActivity.java* in Android Studio and copy the following code in the `didStart` method. This snippet demonstrates how to run basic CRUD operations, a simple Query and running bi-directional replications with Sync Gateway.
+
+[source,java]
+----
+include::{examplesdir}/DatabaseAPITest.java[tags=getting-started]
+----
+
+Build and run. You should see the document ID and property printed to
+the console. The document was successfully persisted to the database.
+
+In the next step, you will setup Sync Gateway.
 
 Supported Versions
 ^^^^^^^^^^^^^^^^^^
