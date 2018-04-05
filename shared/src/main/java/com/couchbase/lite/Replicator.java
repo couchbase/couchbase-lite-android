@@ -353,6 +353,10 @@ public final class Replicator extends NetworkReachabilityListener {
         }
     }
 
+    public void resetCheckpoint() {
+        config.setResetCheckpoint(true);
+    }
+
     @Override
     public String toString() {
         if (desc == null)
@@ -444,6 +448,9 @@ public final class Replicator extends NetworkReachabilityListener {
         boolean push = isPush(config.getReplicatorType());
         boolean pull = isPull(config.getReplicatorType());
         boolean continuous = config.isContinuous();
+
+        // Clear the reset flag, it is a one-time thing
+        config.setResetCheckpoint(false);
 
         c4ReplListener = new C4ReplicatorListener() {
             @Override

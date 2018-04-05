@@ -67,14 +67,18 @@ public class BaseReplicatorTest extends BaseTest {
 
     protected Replicator run(final Replicator r, final int code, final String domain)
             throws InterruptedException {
-        return run(r, code, domain, false);
+        return run(r, code, domain, false, false);
     }
 
     protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain, final boolean ignoreErrorAtStopped) throws InterruptedException {
-        return run(new Replicator(config), code, domain, ignoreErrorAtStopped);
+        return run(new Replicator(config), code, domain, ignoreErrorAtStopped, false);
     }
 
-    protected Replicator run(final Replicator r, final int code, final String domain, final boolean ignoreErrorAtStopped)
+    protected Replicator run(final ReplicatorConfiguration config, final int code, final String domain, final boolean ignoreErrorAtStopped, final boolean reset) throws InterruptedException {
+        return run(new Replicator(config), code, domain, ignoreErrorAtStopped, reset);
+    }
+
+    protected Replicator run(final Replicator r, final int code, final String domain, final boolean ignoreErrorAtStopped, final boolean reset)
             throws InterruptedException {
         repl = r;
         final CountDownLatch latch = new CountDownLatch(1);
@@ -125,6 +129,10 @@ public class BaseReplicatorTest extends BaseTest {
                 }
             }
         });
+
+        if (reset)
+            repl.resetCheckpoint();
+
         repl.start();
         boolean ret = latch.await(timeout, TimeUnit.SECONDS);
         repl.removeChangeListener(token);
