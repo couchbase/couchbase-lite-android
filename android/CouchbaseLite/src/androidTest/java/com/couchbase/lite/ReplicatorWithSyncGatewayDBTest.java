@@ -564,4 +564,50 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         Replicator repl = run(config, 26, null);
         stopContinuousReplicator(repl);
     }
+
+    // https://github.com/couchbase/couchbase-lite-core/issues/447
+    @Test
+    public void testResetCheckpoint() throws CouchbaseLiteException, InterruptedException, URISyntaxException {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        URLEndpoint target = getRemoteEndpoint(DB_NAME, false);
+
+        MutableDocument doc1 = new MutableDocument("doc1");
+        doc1.setString("species", "Tiger");
+        doc1.setString("name", "Hobbes");
+        db.save(doc1);
+
+        MutableDocument doc2 = new MutableDocument("doc2");
+        doc2.setString("species", "Tiger");
+        doc2.setString("pattern", "striped");
+        db.save(doc2);
+
+        // push
+        ReplicatorConfiguration config = makeConfig(true, false, false, target);
+        run(config, 0, null);
+
+        // pull
+        config = makeConfig(false, true, false, target);
+        run(config, 0, null);
+
+        assertEquals(2L, db.getCount());
+
+        Document doc = db.getDocument("doc1");
+        db.purge(doc);
+
+        doc = db.getDocument("doc2");
+        db.purge(doc);
+
+        // "because the documents were purged"
+        assertEquals(0L, db.getCount());
+        run(config, 0, null);
+
+        // "because the documents were purged and the replicator is already past them"
+        assertEquals(0L, db.getCount());
+        run(config, 0, null, false, true);
+
+        // "because the replicator was reset"
+        assertEquals(2L, db.getCount());
+    }
 }
