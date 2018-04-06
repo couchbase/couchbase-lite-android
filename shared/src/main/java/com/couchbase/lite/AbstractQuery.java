@@ -266,10 +266,6 @@ abstract class AbstractQuery implements Query {
         this.parameters = query.parameters;
     }
 
-    C4Query getC4Query() {
-        return c4query;
-    }
-
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------

@@ -42,6 +42,7 @@ public final class ReplicatorConfiguration {
     static final String kC4ReplicatorOptionNoConflicts = "noConflicts"; // Puller rejects conflicts; bool
     static final String kC4ReplicatorCheckpointInterval = "checkpointInterval"; // How often to checkpoint, in seconds; number
     static final String kC4ReplicatorOptionRemoteDBUniqueID = "remoteDBUniqueID"; // How often to checkpoint, in seconds; number
+    static final String kC4ReplicatorResetCheckpoint = "reset"; // reset remote checkpoint
 
     // Auth dictionary keys:
     static final String kC4ReplicatorAuthType = "type"; // Auth property; string
@@ -81,6 +82,7 @@ public final class ReplicatorConfiguration {
     private byte[] pinnedServerCertificate = null;
     private List<String> channels = null;
     private List<String> documentIDs = null;
+    private boolean resetCheckpoint = false; // Reset the replicator checkpoint.
 
     //---------------------------------------------
     // Constructors
@@ -319,6 +321,10 @@ public final class ReplicatorConfiguration {
         }
         options.put(kC4ReplicatorOptionExtraHeaders, httpHeaders);
 
+        // reset checkpoint
+        if (resetCheckpoint)
+            options.put(kC4ReplicatorResetCheckpoint, true);
+
         return options;
     }
 
@@ -332,5 +338,9 @@ public final class ReplicatorConfiguration {
 
     Database getTargetDatabase() {
         return null;
+    }
+
+    void setResetCheckpoint(boolean resetCheckpoint) {
+        this.resetCheckpoint = resetCheckpoint;
     }
 }
