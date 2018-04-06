@@ -1,25 +1,43 @@
-= Couchbase
+:idprefix:
+:idseparator: -
+ifndef::env-site,env-github[]
+:toc: left
+:toclevels: 3
+endif::[]
 
-== Java (for Android) Documentation
+toc::[]
 
 ⚠ Currently, Couchbase Lite 2.0 is available for Android only. The SDK
 cannot be used in Java applications.
 
-Getting Started
-~~~~~~~~~~~~~~~
+== Getting Started
 
-Android Studio
-^^^^^^^^^^^^^^
+=== Android Studio
 
 Create or open an existing Android Studio project and install Couchbase Lite using the following method.
 
-* In the top-level *build.gradle* file, add the following Maven
+==== Couchbase Lite Community Edition
+
+* Add the following in the `dependencies` section of the
+application's *build.gradle* (the one in the *app* folder).
++
+[source,groovy]
+----
+dependencies {
+    compile 'com.couchbase.lite:couchbase-lite-android:2.0.0'
+}
+----
+
+==== Couchbase Lite Enterprise Edition
+
+* In the top-level *build.gradle* file, add the following Couchbase Maven
 repository in the `allprojects` section.
 +
 [source,groovy]
 ----
 allprojects {
     repositories {
+        google()
         jcenter()
         maven {
             url "http://mobile.maven.couchbase.com/maven2/dev/"
@@ -33,12 +51,11 @@ application's *build.gradle* (the one in the *app* folder).
 [source,groovy]
 ----
 dependencies {
-    compile 'com.couchbase.lite:couchbase-lite-android:2.0.0-DB023'
+    compile 'com.couchbase.lite:couchbase-lite-android-ee:2.0.0'
 }
 ----
 
-Starter code
-^^^^^^^^^^^^
+=== Starter code
 
 Open *MainActivity.java* in Android Studio and copy the following code in the `didStart` method. This snippet demonstrates how to run basic CRUD operations, a simple Query and running bi-directional replications with Sync Gateway.
 
@@ -50,10 +67,9 @@ include::{examplesdir}/DatabaseAPITest.java[tags=getting-started]
 Build and run. You should see the document ID and property printed to
 the console. The document was successfully persisted to the database.
 
-In the next step, you will setup Sync Gateway.
+link:../installation/sync-gateway/index.html[Installing Sync Gateway ⟶]
 
-Supported Versions
-^^^^^^^^^^^^^^^^^^
+== Supported Versions
 
 [cols=",,",options="header",]
 |==================================================
@@ -66,24 +82,21 @@ Supported Versions
 API References
 ~~~~~~~~~~~~~~
 
-http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022[Java SDK
+http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/[Java SDK
 API References]
 
-Upgrading
-~~~~~~~~~
+== Upgrading
 
-Android Studio
-^^^^^^^^^^^^^^
+=== Android Studio
 
 The API has changed in Couchbase Lite 2.0 and will require porting an application that is using Couchbase Lite 1.x API to the Couchbase Lite 2.0 API. To update an Xcode project built with Couchbase Lite 1.x:
 
 * Remove the existing Couchbase Lite dependency from the Android Studio
 project.
-* Install the Couchbase Lite 2.0 framework in your project (see the link:java.html#_frameworks[installation options]). At this point, there will be many compiler warnings. Refer to the examples on this page to learn about the new API.
+* Install the Couchbase Lite 2.0 framework in your project (see the link:java.html#getting-started[installation options]). At this point, there will be many compiler warnings. Refer to the examples on this page to learn about the new API.
 * Build & run your application.
 
-Database Upgrade
-^^^^^^^^^^^^^^^^
+=== Database Upgrade
 
 Databases that were created with Couchbase Lite 1.2 or later can be used with Couchbase Lite 2.0. Upon detecting it is a 1.x database file,
 Couchbase Lite will automatically upgrade it to 2.0. This feature is only available for the default storage type (i.e
@@ -94,11 +107,11 @@ Lite 1.x API (see the
 https://developer.couchbase.com/documentation/mobile/1.5/guides/couchbase-lite/native-api/database/index.html#step-2-enabling-encryption[1.x
 Database Guide]).
 
-===== Handling of Existing Conflicts
+==== Handling of Existing Conflicts
 
 For conflicts in the 1.x database, the automatic upgrade process copies the default winning revision to the new 2.0 database and does NOT copy any conflicting revisions. This functionality is related to the way conflicts are being handled in Couchbase Lite 2.0 (see link:swift.html#_handling_conflicts[Handling Conflicts]). Optionally, existing conflicts in the 1.x database can be resolved with the link:https://developer.couchbase.com/documentation/mobile/1.5/guides/couchbase-lite/native-api/revision/index.html[1.x API] prior to the database being upgraded to 2.0.
 
-===== Handling of Existing Attachments
+==== Handling of Existing Attachments
 
 Attachments that were persisted in the 1.x database will be copied to the 2.0 database. In Couchbase Lite 2.0, the `Attachment` API has been renamed to `Blob` API. The functionally is identical but the internal schema for attachments has changed. In 1.x they were stored under the `_attachments` field and in Couchbase Lite 2.0 they are stored anywhere in the document like other value types. The automatic upgrade functionality will not update the internal schema for attachments, so they will still be accessible under the `_attachments` field. The following example shows how to retrieve an attachment that was created in a 1.x database with the 2.0 API.
 
@@ -107,22 +120,19 @@ Attachments that were persisted in the 1.x database will be copied to the 2.0 da
 include::{examplesdir}/DatabaseAPITest.java[tags=1x-attachment]
 ----
 
-Replication
-^^^^^^^^^^^
+=== Replication Compatibility
 
 The replication protocol used in Couchbase Lite 2.0 has been re-designed from the ground up and it is not backwards compatible with the 1.x replication protocol. Therefore, to use replication with Couchbase Lite 2.x, the target Sync Gateway instance must also be upgraded to 2.x.
 
 Sync Gateway 2.x will continue to accept clients that connect through the 1.x protocol. It will automatically use the 1.x replication protocol when a Couchbase Lite 1.x client connects through "http://localhost:4984/db" and the 2.0 replication protocol when a Couchbase Lite 2.0 client connects through "ws://localhost:4984/db". This allows for a smoother transition to get all your user base onto a version of your application built with Couchbase Lite 2.x.
 
-Database
-~~~~~~~~
+== Database
 
-New Database
-^^^^^^^^^^^^
+=== New Database
 
 As the top-level entity in the API, new databases can be created using
 the `Database` class by passing in a name, configuration, or both. The
-following example creates a database using the `Database(name: String)`
+following example creates a database using the `Database(String name, DatabaseConfiguration config)`
 method.
 
 [source,java]
@@ -136,8 +146,7 @@ initializer can be used to provide specific options in the
 http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/com/couchbase/lite/DatabaseConfiguration.html[`DatabaseConfiguration`]
 object such as the database directory.
 
-Finding a Database File
-^^^^^^^^^^^^^^^^^^^^^^^
+=== Finding a Database File
 
 When the application is running on the Android emulator, you can locate
 the application's data folder and access the database file by using the
@@ -161,8 +170,7 @@ $ adb root
 $ adb pull /data/data/{APPLICATION_ID}/files/{DATABASE_NAME}.cblite2 .
 ----
 
-Logging
-^^^^^^^
+=== Logging
 
 The log messages are split into different domains (`LogDomains`) which
 can be tuned to different log levels. The following example enables
@@ -173,8 +181,7 @@ can be tuned to different log levels. The following example enables
 include::{examplesdir}/DatabaseAPITest.java[tags=logging]
 ----
 
-Loading a pre-built database
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=== Loading a pre-built database
 
 If your app needs to sync a lot of data initially, but that data is
 fairly static and won't change much, it can be a lot more efficient to
@@ -196,19 +203,17 @@ method as shown below.
 include::{examplesdir}/DatabaseAPITest.java[tags=prebuilt-database]
 ----
 
-Document
-~~~~~~~~
+== Document
 
 In Couchbase Lite, a document's body takes the form of a JSON object — a
 collection of key/value pairs where the values can be different types of
 data such as numbers, strings, arrays or even nested objects. Every
 document is identified by a document ID, which can be automatically
-generated (as a UUID) or determined by the application; the only
+generated (as a UUID) or specified programmatically; the only
 constraints are that it must be unique within the database, and it can't
 be changed.
 
-Initializers
-^^^^^^^^^^^^
+=== Initializers
 
 The following methods/initializers can be used:
 
@@ -216,8 +221,8 @@ The following methods/initializers can be used:
 document where the document ID is randomly generated by the database.
 * The `MutableDocument(withID: String)` initializer can be used to
 create a new document with a specific ID.
-* The `database.document(withID: String)` method can be used to get a
-document. If it doesn't exist in the database, it will return `nil`.
+* The `database.getDocument(String id)` method can be used to get a
+document. If it doesn't exist in the database, it will return `null`.
 This method can be used to check if a document with a given ID already
 exists in the database.
 
@@ -229,8 +234,7 @@ database.
 include::{examplesdir}/DocumentAPITest.java[tags=initializer]
 ----
 
-Mutability
-^^^^^^^^^^
+=== Mutability
 
 By default, when a document is read from the database it is immutable.
 The `document.toMutable()` method should be used to create an instance
@@ -242,10 +246,9 @@ include::{examplesdir}/DocumentAPITest.java[tags=update-document]
 ----
 
 Changes to the document are persisted to the database when the
-`saveDocument` method is called.
+`save` method is called.
 
-Typed Accessors
-^^^^^^^^^^^^^^^
+=== Typed Accessors
 
 The `Document` class now offers a set of
 http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/com/couchbase/lite/Dictionary.html[`property accessors`]
@@ -257,7 +260,7 @@ In addition, as a convenience we offer `Date` accessors. Dates are a
 common data type, but JSON doesn't natively support them, so the
 convention is to store them as strings in ISO-8601 format. The following
 example sets the date on the `createdAt` property and reads it back
-using the `document.date(forKey: String)` accessor method.
+using the `document.getDate(String key)` accessor method.
 
 [source,java]
 ----
@@ -271,8 +274,7 @@ the
 http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/com/couchbase/lite/Document.html#contains-java.lang.String-[`Document.Contains(String key)`]
 method.
 
-Batch operations
-^^^^^^^^^^^^^^^^
+=== Batch operations
 
 If you're making multiple changes to a database at once, it's faster to
 group them together. The following example persists a few documents in
@@ -290,10 +292,9 @@ see partial changes. But Couchbase Mobile is a distributed system, and
 due to the way replication works, there's no guarantee that Sync Gateway
 or other devices will receive your changes all at once.
 
-Blobs
-^^^^^
+== Blobs
 
-We've renamed "attachments" to "blobs", for clarity. The new behavior
+We've renamed "attachments" to "blobs". The new behavior
 should be clearer too: a `Blob` is now a normal object that can appear
 in a document as a property value. In other words, you just instantiate
 a `Blob` and set it as the value of a property, and then later you can
@@ -332,13 +333,12 @@ http://localhost:4984/justdoit/user.david/blob_1[localhost:4984/justdoit/user.da
 Notice that the blob identifier in the URL path is "blob_1" (not
 "avatar").
 
-Query
-~~~~~
+== Query
 
 Database queries have changed significantly. Instead of the map/reduce
-algorithm used in 1.x, they're now based on expressions, of the form
+views used in 1.x, they're now based on expressions, of the form
 "return ____ from documents where ____, ordered by ____", with semantics
-based on Couchbase Server's N1QL query language.
+based on Couchbase's N1QL query language.
 
 There are several parts to specifying a query:
 
@@ -351,65 +351,13 @@ documents.
 * GROUP BY: specifies the query criteria to group rows by.
 * ORDER BY: specifies the query criteria to sort the rows in the result.
 
-Indexing
-^^^^^^^^
-
-Before we begin querying documents, let's briefly mention the importance
-of having a query index. A query can only be fast if there's a
-pre-existing database index it can search to narrow down the set of
-documents to examine.
-
-The following example creates a new index for the `type` and `name`
-properties.
-
-[source,json]
-----
-{
-    "_id": "hotel123",
-    "type": "hotel",
-    "name": "Apple Droid"
-}
-----
-
-[source,java]
-----
-include::{examplesdir}/QueryAPITest.java[tags=query-index]
-----
-
-If there are multiple expressions, the first one will be the primary
-key, the second the secondary key, etc.
-
-*Note:* Every index has to be updated whenever a document is updated, so
-too many indexes can hurt performance. Thus, good performance depends on
-designing and creating the _right_ indexes to go along with your
-queries.
-
-SELECT statement
-^^^^^^^^^^^^^^^^
+=== SELECT statement
 
 With the SELECT statement, you can query and manipulate JSON data. With
 projections, you retrieve just the fields that you need and not the
-entire document. This is especially useful when querying for a large
-dataset as it results in shorter processing times and better
-performance.
+entire document.
 
-A SelectResult represents a single return value of the query statement.
-Documents in Couchbase Lite comprise of the document properties
-specified as a Dictionary of Key-Value pairs and associated metadata.
-The metadata consists of document Id and sequence Id associated with the
-Document. When you query for a document, the document metadata is not
-returned by default. You will need to explicitly query for the metadata.
-
-* http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/com/couchbase/lite/SelectResult.html#all--[`SelectResult.all()`]:
-Returns all properties associated with a document.
-* `SelectResult(`http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/index.html?com/couchbase/lite/Dictionary.html[`Expression`]`.property("name"))`:
-Returns the `name` property associated with a document.
-* `SelectResult.expression(`http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/index.html?com/couchbase/lite/Dictionary.html[`Meta`]`.id`)`:
-Returns the document ID.
-* `SelectResult.expression(Expression.meta().sequence)`: Returns the
-sequence ID (used in replications).
-
-You can specify a comma separated list of `SelectResult` expressions in
+A SelectResult represents a single return value of the query statement. You can specify a comma separated list of `SelectResult` expressions in
 the select statement of your query. For instance the following select
 statement queries for the document `_id` as well as the `type` and
 `name` properties of all documents in the database. In the query result,
@@ -468,20 +416,16 @@ include::{examplesdir}/QueryAPITest.java[tags=query-select-all]
 ]
 ----
 
-WHERE statement
-^^^^^^^^^^^^^^^
+=== WHERE statement
 
 Similar to SQL, you can use the where clause to filter the documents to
 be returned as part of the query. The select statement takes in an
 `Expression`. You can chain any number of Expressions in order to
 implement sophisticated filtering capabilities.
 
-Comparison
-++++++++++
+==== Comparison
 
-The `Expression`'s
-http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/com/couchbase/lite/Expression.html[comparison
-operators] can be used in the WHERE statement to specify on which
+The http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/com/couchbase/lite/Expression.html[comparison operators] can be used in the WHERE statement to specify on which
 property to match documents. In the example below, we use the `equalTo`
 operator to query documents where the `type` property equals "hotel".
 
@@ -499,8 +443,7 @@ operator to query documents where the `type` property equals "hotel".
 include::{examplesdir}/QueryAPITest.java[tags=query-where]
 ----
 
-Collection Operators
-++++++++++++++++++++
+==== Collection Operators
 
 http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/com/couchbase/lite/ArrayFunction.html[Collection
 operators] are useful to check if a given value is present in an array.
@@ -522,8 +465,7 @@ documents whose `public_likes` array property contain a value equal to
 include::{examplesdir}/QueryAPITest.java[tags=query-collection-operator]
 ----
 
-Like Operator
-+++++++++++++
+==== Like Operator
 
 The
 http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/com/couchbase/lite/Expression.html#like-com.couchbase.lite.Expression-[`like`]
@@ -543,8 +485,7 @@ MUSEUM" and so on.
 include::{examplesdir}/QueryAPITest.java[tags=query-like-operator]
 ----
 
-Wildcard Match
-++++++++++++++
+==== Wildcard Match
 
 We can use `%` sign within a `like` expression to do a wildcard match
 against zero or more characters. Using wildcards allows you to have some
@@ -579,8 +520,7 @@ The following query will return "landmark" `type` documents with the
 include::{examplesdir}/QueryAPITest.java[tags=query-like-operator-wildcard-character-match]
 ----
 
-Regex Match
-+++++++++++
+==== Regex Operator
 
 The `regex` expression can be used for case sensitive matches. Similar
 to wildcard `like` expressions, `regex` expressions based pattern
@@ -598,8 +538,7 @@ documents with name matching "Engine", "engine" and so on. Note that the
 include::{examplesdir}/QueryAPITest.java[tags=query-regex-operator]
 ----
 
-JOIN statement
-^^^^^^^^^^^^^^
+=== JOIN statement
 
 The JOIN clause enables you to create new input objects by combining two
 or more source objects.
@@ -615,8 +554,7 @@ document.
 include::{examplesdir}/QueryAPITest.java[tags=query-join]
 ----
 
-GROUP BY statement
-^^^^^^^^^^^^^^^^^^
+=== GROUP BY statement
 
 You can perform further processing on the data in your result set before
 the final projection is generated. The following example looks for the
@@ -648,8 +586,7 @@ There are 279 airports on the America/Chicago timezone located in United States 
 There are 123 airports on the America/Denver timezone located in United States and above 300 ft
 ----
 
-ORDER BY statement
-^^^^^^^^^^^^^^^^^^
+=== ORDER BY statement
 
 It is possible to sort the results of a query based on a given
 expression result. The example below returns documents of type equal to
@@ -672,8 +609,36 @@ Armagh
 Avignon
 ----
 
-Full-Text Search
-~~~~~~~~~~~~~~~~
+== Indexing
+
+Creating indexes can speed up the performance of queries. While indexes make queries faster, they also make writes slightly slower, and the Couchbase Lite database file slightly larger. As such, it is best to only create indexes when you need to optimize a specific case for better query performance.
+
+The following example creates a new index for the `type` and `name`
+properties.
+
+[source,json]
+----
+{
+"_id": "hotel123",
+"type": "hotel",
+"name": "Apple Droid"
+}
+----
+
+[source,java]
+----
+include::{examplesdir}/QueryAPITest.java[tags=query-index]
+----
+
+If there are multiple expressions, the first one will be the primary
+key, the second the secondary key, etc.
+
+*Note:* Every index has to be updated whenever a document is updated, so
+too many indexes can hurt performance. Thus, good performance depends on
+designing and creating the _right_ indexes to go along with your
+queries.
+
+== Full-Text Search
 
 To run a full-text search (FTS) query, you must have created a full-text
 index on the expression being matched. Unlike regular queries, the index
@@ -685,8 +650,7 @@ FTS index on the `name` property.
 include::{examplesdir}/FullTextSearchAPITest.java[tags=fts-index]
 ----
 
-Multiple properties to index can be specified in the
-`Index.fullTextIndex(withItems: [FullTextIndexItem])` method.
+Multiple properties to index can be specified in the index creation method.
 
 With the index created, an FTS query on the property that is being
 indexed can be constructed and ran. The full-text search criteria is
@@ -777,25 +741,21 @@ the precedence of the various operators. For example:
 -- one of the phrases "couchbase database" and "sqlite library".
 ....
 
-Ordering results
-^^^^^^^^^^^^^^^^
+=== Ordering results
 
 It's very common to sort full-text results in descending order of
 relevance. This can be a very difficult heuristic to define, but
-Couchbase Lite comes with a fairly simple ranking function you can use.
+Couchbase Lite comes with a ranking function you can use.
 In the `OrderBy` array, use a string of the form `Rank(X)`, where `X` is
 the property or expression being searched, to represent the ranking of
 the result.
 
-Replication
-~~~~~~~~~~~
+== Replication
 
 Couchbase Mobile 2.0 uses a new replication protocol based on
-WebSockets. This protocol has been designed to be fast, efficient,
-easier to implement, and symmetrical between the client and server.
+WebSockets.
 
-Compatibility
-^^^^^^^^^^^^^
+=== Compatibility
 
 ⚠️ The new protocol is *incompatible* with CouchDB-based databases. And
 since Couchbase Lite 2 only supports the new protocol, you will need to
@@ -811,8 +771,7 @@ the 1.x replication protocol when a Couchbase Lite 1.x client connects
 through "http://localhost:4984/db" and the 2.0 replication protocol when
 a Couchbase Lite 2.0 client connects through "ws://localhost:4984/db".
 
-Starting Sync Gateway
-^^^^^^^^^^^^^^^^^^^^^
+=== Starting Sync Gateway
 
 https://www.couchbase.com/downloads[Download Sync Gateway] and start it
 from the command line with the configuration file created above.
@@ -827,10 +786,9 @@ Gateway
 https://developer.couchbase.com/documentation/mobile/1.5/installation/sync-gateway/index.html[installation
 guide].
 
-Starting a Replication
-^^^^^^^^^^^^^^^^^^^^^^
+=== Starting a Replication
 
-Replication objects are now bidirectional, this means you can start a
+Replication can be bidirectional, this means you can start a
 `push`/`pull` replication with a single instance. The replication's
 parameters can be specified through the
 http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/db022/index.html?com/couchbase/lite/ReplicatorConfiguration.html[`ReplicatorConfiguration`]
@@ -857,13 +815,16 @@ explicitly enable them in the load balancer's configuration (see
 https://developer.couchbase.com/documentation/mobile/1.5/guides/sync-gateway/nginx/index.html[Load
 Balancers]).
 
-By default, the WebSocket protocol uses compression to optimize over
-speed and bandwidth. The level of compression is set on Sync Gateway and
+By default, the WebSocket protocol uses compression to optimize for
+speed and bandwidth utilization. The level of compression is set on Sync Gateway and
 can be tuned in the configuration file
 (link:../guides/sync-gateway/config-properties/index.html#2.0/replicator_compression[`replicator_compression`]).
 
-Troubleshooting
-^^^^^^^^^^^^^^^
+==== Replication Ordering
+
+To optimize for speed, the replication protocol doesn't guarantee that documents will be received in a particular order. So we don't recommend to rely on that when using the replication or database change listeners for example.
+
+=== Troubleshooting
 
 As always, when there is a problem with replication, logging is your
 friend. The following example increases the log output for activity
@@ -874,8 +835,7 @@ related to replication with Sync Gateway.
 include::{examplesdir}/ReplicationAPITest.java[tags=replication-logging]
 ----
 
-Replication Status
-^^^^^^^^^^^^^^^^^^
+=== Replication Status
 
 The `replication.Status.Activity` property can be used to check the
 status of a replication. For example, when the replication is actively
@@ -904,8 +864,7 @@ the server. The `IDLE` state is only used in continuous replications.
 |`BUSY` |The replication is actively transferring data.
 |=======================================================================
 
-Handling Network Errors
-^^^^^^^^^^^^^^^^^^^^^^^
+=== Handling Network Errors
 
 If an error occurs, the replication status will be updated with an
 `Error` which follows the standard HTTP error codes. The following
@@ -923,16 +882,19 @@ permanently. If the error is temporary (i.e waiting for the network to
 recover), a continuous replication will retry to connect indefinitely
 and if the replication is one-shot it will retry for a limited number of
 times. The following error codes are considered temporary by the
-Couchbase Lite replicator and thus will trigger a connection retry. -
-`408`: Request Timeout - `429`: Too Many Requests - `500`: Internal
-Server Error - `502`: Bad Gateway - `503`: Service Unavailable - `504`:
-Gateway Timeout - `1001`: DNS resolution error
+Couchbase Lite replicator and thus will trigger a connection retry.
 
-Handling Conflicts
-~~~~~~~~~~~~~~~~~~
+- `408`: Request Timeout
+- `429`: Too Many Requests
+- `500`: Internal Server Error
+- `502`: Bad Gateway
+- `503`: Service Unavailable
+- `504`: Gateway Timeout
+- `1001`: DNS resolution error
 
-Starting in Couchbase Lite 2.0, document conflicts must be resolved
-using automatic conflict resolution or in the application. This
+== Handling Conflicts
+
+In Couchbase Lite 2.0, document conflicts are automatically resolved. This
 functionality aims to simplify the default behavior of conflict handling
 and save disk space (conflicting revisions will no longer be stored in
 the database). There are 2 different `save` method signatures to specify
@@ -959,19 +921,17 @@ concurrency control parameter has two possible values:
 ** `lastWriteWins`: The last operation wins if there is a conflict.
 ** `failOnConflict`: The operation will fail if there is a conflict.
 
-Database Replicas
-~~~~~~~~~~~~~~~~~
+== Database Replicas
 
 Database replicas is available in the *Enterprise Edition* only
 (https://www.couchbase.com/downloads). Starting in Couchbase Lite 2.0,
 replication between two local databases is now supported. It allows a
-Couchbase Lite replicator to store data on secondary storage that can
-then be ported to a different device. It would be especially useful in
+Couchbase Lite replicator to store data on secondary storage. It would be especially useful in
 scenarios where a user's device is damaged and the data needs to be
-moved to a different device.
+moved to a different device. Note that the code below won't compile if
+you're running the *Community Edition* of Couchbase Lite.
 
-Certificate Pinning
-~~~~~~~~~~~~~~~~~~~
+== Certificate Pinning
 
 Couchbase Lite supports certificate pinning. Certificate pinning is a
 technique that can be used by applications to "pin" a host to it's
@@ -1002,3 +962,68 @@ include::{examplesdir}/ReplicationAPITest.java[tags=certificate-pinning]
 
 This example loads the certificate from the application sandbox, then
 converts it to the appropriate type to configure the replication object.
+
+== Release Notes
+
+*Enhancements*
+
+* https://github.com/couchbase/couchbase-lite-android/issues/1264[*#1264*]
+2.0 migration from Forest back to SQlite
+* https://github.com/couchbase/couchbase-lite-android/issues/1577[*#1577*]
+2.1: Eliminate CouchbaseLiteRuntimeExecption, convert it to
+CouchbaseLiteExecption
+
+*Bugs*
+
+* https://github.com/couchbase/couchbase-lite-android/issues/1217[*#1217*]
+2.0: Todo Sample bug Fix and implement remaining features
+* https://github.com/couchbase/couchbase-lite-android/issues/1234[*#1234*]
+2.0: Replicator continuous pull status completed and total number out of
+sync
+* https://github.com/couchbase/couchbase-lite-android/issues/1247[*#1247*]
+2.0: Push Replication Causing Errors
+* https://github.com/couchbase/couchbase-lite-android/issues/1273[*#1273*]
+2.0: Replicator Activity Level stays in Busy state
+* https://github.com/couchbase/couchbase-lite-android/issues/1347[*#1347*]
+2.0: How do we properly stop puller Replicator and delete database ?
+* https://github.com/couchbase/couchbase-lite-android/issues/1470[*#1470*]
+2.0: In My App with CB Lite DB020(Android), ConflictResolver is called
+endless loop during three device or much more!
+* https://github.com/couchbase/couchbase-lite-android/issues/1499[*#1499*]
+2.0: Repl Bad URL returns 19 instead of 15 on API 24 ARM emulator
+* https://github.com/couchbase/couchbase-lite-android/issues/1500[*#1500*]
+2.0: LoadTest.testUpdate() causes memory error with Android API 19 Arm
+Emulator
+* https://github.com/couchbase/couchbase-lite-android/issues/1501[*#1501*]
+2.0: ReplicatorTest > testPushDoc fails
+* https://github.com/couchbase/couchbase-lite-android/issues/1512[*#1512*]
+2.0: ReplicatorTest > testPullDoc fails
+* https://github.com/couchbase/couchbase-lite-android/issues/1581[*#1581*]
+2.0 : LiveQuery threading issue
+* https://github.com/couchbase/couchbase-lite-android/issues/1609[*#1609*]
+2.0: testSelfSignedSSLPinned() unit test failure
+* https://github.com/couchbase/couchbase-lite-android/issues/1610[*#1610*]
+Exception from the cpp layer in my android app on load tests
+* https://github.com/couchbase/couchbase-lite-android/issues/1615[*#1615*]
+2.0: NullPointerException: Attempt to invoke virtual method 'boolean
+com.couchbase.litecore.C4QueryEnumerator.next()' on a null object
+reference
+* https://github.com/couchbase/couchbase-lite-android/issues/1620[*#1620*]
+NOT operator not working for FTS
+* https://github.com/couchbase/couchbase-lite-android/issues/1630[*#1630*]
+2.0: make public Index interface
+* https://github.com/couchbase/couchbase-lite-android/issues/1651[*#1651*]
+2.0: C4DocumentTest.testPut() fails
+* https://github.com/couchbase/couchbase-lite-android/issues/1652[*#1652*]
+App crash with deleteDocument with concurrencyControl
+* https://github.com/couchbase/couchbase-lite-android/issues/1693[*#1693*]
+DB023 - Crazy amount of dbListenerTokens - makes the DB run slow
+
+*Known Issues*
+
+* https://github.com/couchbase/couchbase-lite-android/issues/1685[*#1685*]
+Replicator in Android get stuck at busy state when it goes back to
+online from offline (Genymotion)
+* https://github.com/couchbase/couchbase-lite-android/issues/1702[*#1702*]
+ValueIndexItem.expression(Expression) is implemented with CBL Android 2.0.0 release.
+This API will be available with 2.1.0 release

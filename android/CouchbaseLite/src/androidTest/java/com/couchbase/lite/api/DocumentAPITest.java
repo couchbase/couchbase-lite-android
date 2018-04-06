@@ -137,15 +137,16 @@ public class DocumentAPITest extends BaseTest {
     // ### Blobs
     @Test
     public void testBlobs() {
+        MutableDocument newTask = new MutableDocument();
+
         // # tag::blob[]
-        InputStream is = getAsset("attachment.png");
+        InputStream is = getAsset("avatar.jpg");
         try {
-            MutableDocument newTask = new MutableDocument();
-            Blob blob = new Blob("image/png", is);
-            newTask.setBlob("attachment", blob);
+            Blob blob = new Blob("image/jpeg", is);
+            newTask.setBlob("avatar", blob);
             database.save(newTask);
-            Document doc = database.getDocument(newTask.getId());
-            Blob taskBlob = doc.getBlob("attachment");
+
+            Blob taskBlob = newTask.getBlob("avatar");
             byte[] bytes = taskBlob.getContent();
         } catch (CouchbaseLiteException e) {
             Log.e(TAG, e.toString());
@@ -153,6 +154,7 @@ public class DocumentAPITest extends BaseTest {
             try {
                 is.close();
             } catch (IOException e) {
+
             }
         }
         // # end::blob[]
