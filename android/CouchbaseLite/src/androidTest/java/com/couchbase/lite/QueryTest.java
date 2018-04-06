@@ -2655,4 +2655,123 @@ public class QueryTest extends BaseTest {
             q.removeChangeListener(token);
         }
     }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1689
+    @Test
+    public void testQueryAndNLikeOperators() throws Exception {
+
+        MutableDocument mDoc1 = new MutableDocument("doc1");
+        mDoc1.setString("name", "food");
+        mDoc1.setString("description", "bar");
+        save(mDoc1);
+
+        MutableDocument mDoc2 = new MutableDocument("doc2");
+        mDoc2.setString("name", "foo");
+        mDoc2.setString("description", "unknown");
+        save(mDoc2);
+
+        MutableDocument mDoc3 = new MutableDocument("doc3");
+        mDoc3.setString("name", "water");
+        mDoc3.setString("description", "drink");
+        save(mDoc3);
+
+        MutableDocument mDoc4 = new MutableDocument("doc4");
+        mDoc4.setString("name", "chocolate");
+        mDoc4.setString("description", "bar");
+        save(mDoc4);
+
+        // LIKE operator only
+        Query q = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(db))
+                .where(Expression.property("name").like(Expression.string("%foo%")))
+                .orderBy(Ordering.expression(Meta.id));
+        ResultSet rs = q.execute();
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(1, result.count());
+                if (n == 1)
+                    assertEquals("doc1", result.getString(0));
+                else
+                    assertEquals("doc2", result.getString(0));
+
+            }
+        }, true);
+        assertEquals(2, numRows);
+
+        // EQUAL operator only
+        q = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(db))
+                .where(Expression.property("description").equalTo(Expression.string("bar")))
+                .orderBy(Ordering.expression(Meta.id));
+        rs = q.execute();
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(1, result.count());
+                if (n == 1)
+                    assertEquals("doc1", result.getString(0));
+                else
+                    assertEquals("doc4", result.getString(0));
+
+            }
+        }, true);
+        assertEquals(2, numRows);
+
+        // AND and LIKE operators
+        q = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(db))
+                .where(Expression.property("name").like(Expression.string("%foo%")).and(Expression.property("description").equalTo(Expression.string("bar"))))
+                .orderBy(Ordering.expression(Meta.id));
+        rs = q.execute();
+        numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                assertEquals(1, result.count());
+                assertEquals("doc1", result.getString(0));
+            }
+        }, true);
+        assertEquals(1, numRows);
+    }
+
+    // https://forums.couchbase.com/t/how-to-implement-an-index-join-clause-in-couchbase-lite-2-0-using-objective-c-api/16246
+    // https://github.com/couchbase/couchbase-lite-core/issues/497
+    @Test
+    public void testQueryJoinAndSelectAll() throws Exception {
+        loadNumbers(100);
+
+        final MutableDocument joinme = new MutableDocument("joinme");
+        joinme.setValue("theone", 42);
+        save(joinme);
+
+        DataSource mainDS = DataSource.database(this.db).as("main");
+        DataSource secondaryDS = DataSource.database(this.db).as("secondary");
+
+        Expression mainPropExpr = Expression.property("number1").from("main");
+        Expression secondaryExpr = Expression.property("theone").from("secondary");
+        Expression joinExpr = mainPropExpr.equalTo(secondaryExpr);
+        Join join = Join.leftJoin(secondaryDS).on(joinExpr);
+
+        SelectResult sr1 = SelectResult.all().from("main");
+        SelectResult sr2 = SelectResult.all().from("secondary");
+
+        Query q = QueryBuilder.select(sr1, sr2).from(mainDS).join(join);
+        assertNotNull(q);
+        int numRows = verifyQuery(q, new QueryResult() {
+            @Override
+            public void check(int n, Result result) throws Exception {
+                if (n == 41) {
+                    Log.e(TAG, "41: " + result.toMap().toString());
+                    assertEquals(59, result.getDictionary("main").getInt("number2"));
+                    assertNull(result.getDictionary("secondary"));
+                }
+                if (n == 42) {
+                    Log.e(TAG, "42: " + result.toMap().toString());
+                    assertEquals(58, result.getDictionary("main").getInt("number2"));
+                    assertEquals(42, result.getDictionary("secondary").getInt("theone"));
+                }
+            }
+        }, true);
+        assertEquals(101, numRows);
+    }
 }
