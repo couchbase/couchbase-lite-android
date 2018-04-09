@@ -26,23 +26,19 @@ public class DocPerfTest extends PerfTest {
     }
 
     void addRevisions(final int revisions) {
-        try {
-            db.inBatch(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        MutableDocument mDoc = new MutableDocument("doc");
-                        updateDoc(mDoc, revisions);
-                        //updateDocWithGetDocument(mDoc, revisions);
-                    } catch (CouchbaseLiteException e) {
-                        e.printStackTrace();
-                    }
-
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    MutableDocument mDoc = new MutableDocument("doc");
+                    updateDoc(mDoc, revisions);
+                    //updateDocWithGetDocument(mDoc, revisions);
+                } catch (CouchbaseLiteException e) {
+                    e.printStackTrace();
                 }
-            });
-        } catch (CouchbaseLiteException e) {
-            e.printStackTrace();
-        }
+
+            }
+        });
     }
 
     void updateDoc(MutableDocument doc, final int revisions) throws CouchbaseLiteException {

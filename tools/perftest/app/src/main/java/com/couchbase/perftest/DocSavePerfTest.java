@@ -3,7 +3,6 @@ package com.couchbase.perftest;
 import android.content.Context;
 import android.util.Log;
 
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DatabaseConfiguration;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.MutableDocument;
@@ -37,24 +36,16 @@ public class DocSavePerfTest extends PerfTest {
 
     void saveDocument(final String documentStoreName, final Map<String, Map<String, Object>> newDocs) {
         Log.w(TAG, String.format("Saving document list (%d) in document store {%s}...", newDocs.size(), documentStoreName));
-        try {
-            db.inBatch(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        for (String key : newDocs.keySet()) {
-                            String docID = getDocID(documentStoreName, key);
-                            MutableDocument doc = updateMutableDocument(docID, newDocs.get(key));
-                            db.save(doc);
-                        }
-                    } catch (CouchbaseLiteException e) {
-                        e.printStackTrace();
-                    }
+        db.inBatch(new Runnable() {
+            @Override
+            public void run() {
+                for (String key : newDocs.keySet()) {
+                    String docID = getDocID(documentStoreName, key);
+                    MutableDocument doc = updateMutableDocument(docID, newDocs.get(key));
+                    db.save(doc);
                 }
-            });
-        } catch (CouchbaseLiteException e) {
-            e.printStackTrace();
-        }
+            }
+        });
     }
 
     private String getDocID(String documentStoreName, String id) {
