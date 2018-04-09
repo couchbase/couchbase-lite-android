@@ -36,4 +36,14 @@ public final class ValueIndexItem {
     public static ValueIndexItem property(String property) {
         return new ValueIndexItem(Expression.property(property));
     }
+
+    /**
+     * Creates a value index item with the given property.
+     *
+     * @param expression The expression to index. Typically a property expression.
+     * @return The value index item
+     */
+    public static ValueIndexItem expression(Expression expression) {
+        return new ValueIndexItem(expression);
+    }
 }
