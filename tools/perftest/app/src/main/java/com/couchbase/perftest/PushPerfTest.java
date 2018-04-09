@@ -3,7 +3,6 @@ package com.couchbase.perftest;
 import android.content.Context;
 import android.util.Log;
 
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DatabaseConfiguration;
 import com.couchbase.lite.MutableDocument;
 import com.couchbase.lite.Replicator;
@@ -125,26 +124,18 @@ public class PushPerfTest extends PerfTest {
 
         final AtomicInteger atomic = new AtomicInteger(0);
         for (int j = 0; j < docs / 1000; j++) {
-            try {
-                db.inBatch(new Runnable() {
-                    @Override
-                    public void run() {
-                        for (int i = 0; i < 1000; i++) {
-                            try {
-                                String docID = String.format(Locale.ENGLISH, "doc-%08d", atomic.incrementAndGet());
-                                MutableDocument doc = new MutableDocument(docID);
-                                doc.setInt("index", atomic.get());
-                                doc.setData(map);
-                                db.save(doc);
-                            } catch (CouchbaseLiteException e) {
-                                e.printStackTrace();
-                            }
-                        }
+            db.inBatch(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i < 1000; i++) {
+                        String docID = String.format(Locale.ENGLISH, "doc-%08d", atomic.incrementAndGet());
+                        MutableDocument doc = new MutableDocument(docID);
+                        doc.setInt("index", atomic.get());
+                        doc.setData(map);
+                        db.save(doc);
                     }
-                });
-            } catch (CouchbaseLiteException e) {
-                e.printStackTrace();
-            }
+                }
+            });
         }
     }
 }
