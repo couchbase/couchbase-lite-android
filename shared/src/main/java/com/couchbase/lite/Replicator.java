@@ -353,7 +353,12 @@ public final class Replicator extends NetworkReachabilityListener {
         }
     }
 
+    /**
+     * Reset checkpoint
+     */
     public void resetCheckpoint() {
+        if (this.c4ReplStatus.getActivityLevel() != kC4Stopped)
+            throw new IllegalStateException("Replicator is not stopped. Resetting checkpoint is only allowed when the replicator is in the stopped state.");
         config.setResetCheckpoint(true);
     }
 
