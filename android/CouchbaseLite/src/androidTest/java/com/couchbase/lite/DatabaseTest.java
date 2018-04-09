@@ -1378,6 +1378,15 @@ public class DatabaseTest extends BaseTest {
         assertEquals(3, db.getIndexes().size());
         assertEquals(Arrays.asList("index1", "index2", "index3"), db.getIndexes());
 
+        // Create value index with expression() instead of property()
+        Expression fNameExpr = Expression.property("firstName");
+        Expression lNameExpr = Expression.property("lastName");
+        ValueIndexItem fNameItem2 = ValueIndexItem.expression(fNameExpr);
+        ValueIndexItem lNameItem2 = ValueIndexItem.expression(lNameExpr);
+        Index index4 = IndexBuilder.valueIndex(fNameItem2, lNameItem2);
+        db.createIndex("index4", index4);
+        assertEquals(4, db.getIndexes().size());
+
         Log.i(TAG, "db.getIndexes() -> " + db.getIndexes());
     }
 
@@ -1427,6 +1436,11 @@ public class DatabaseTest extends BaseTest {
         testCreateIndex();
 
         // Delete indexes:
+
+        db.deleteIndex("index4");
+        assertEquals(3, db.getIndexes().size());
+        assertEquals(Arrays.asList("index1", "index2", "index3"), db.getIndexes());
+
         db.deleteIndex("index1");
         assertEquals(2, db.getIndexes().size());
         assertEquals(Arrays.asList("index2", "index3"), db.getIndexes());
@@ -1446,6 +1460,7 @@ public class DatabaseTest extends BaseTest {
         db.deleteIndex("index1");
         db.deleteIndex("index2");
         db.deleteIndex("index3");
+        db.deleteIndex("index4");
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1416
