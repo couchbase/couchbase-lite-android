@@ -185,24 +185,32 @@ public class TunesPerfTest extends PerfTest {
         _importBench.start();
         _documentCount = 0;
         final AtomicLong startTransaction = new AtomicLong();
-        db.inBatch(new Runnable() {
-            @Override
-            public void run() {
-                for (Map<String, Object> track : _tracks) {
-                    String trackType = (String) track.get("Track Type");
-                    if (!trackType.equals("File") && !trackType.equals("Remote"))
-                        continue;
-                    String docID = (String) track.get("Persistent ID");
-                    if (docID == null)
-                        continue;
-                    _documentCount++;
-                    MutableDocument doc = new MutableDocument(docID);
-                    doc.setData(track);
-                    db.save(doc);
+        try {
+            db.inBatch(new Runnable() {
+                @Override
+                public void run() {
+                    for (Map<String, Object> track : _tracks) {
+                        String trackType = (String) track.get("Track Type");
+                        if (!trackType.equals("File") && !trackType.equals("Remote"))
+                            continue;
+                        String docID = (String) track.get("Persistent ID");
+                        if (docID == null)
+                            continue;
+                        _documentCount++;
+                        MutableDocument doc = new MutableDocument(docID);
+                        doc.setData(track);
+                        try {
+                            db.save(doc);
+                        } catch (CouchbaseLiteException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    startTransaction.set(System.nanoTime());
                 }
-                startTransaction.set(System.nanoTime());
-            }
-        });
+            });
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
         double commitTime = System.nanoTime() - startTransaction.longValue();
         double t = _importBench.stop();
         System.err.println(String.format("Imported %d documents in %.06f sec (import %g, commit %g)\n", _documentCount, t, t - commitTime, commitTime));
@@ -222,27 +230,31 @@ public class TunesPerfTest extends PerfTest {
         _updateArtistsBench.start();
         count = 0;
         final AtomicLong startTransaction = new AtomicLong();
-        db.inBatch(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ResultSet rs = queryAllDocuments();
-                    for (Result r : rs) {
-                        String docID = r.getString(0);
-                        MutableDocument doc = db.getDocument(docID).toMutable();
-                        String artist = doc.getString("Artist");
-                        if (artist != null && artist.startsWith("The ")) {
-                            doc.setString("Artist", artist.substring(4));
-                            db.save(doc);
-                            count++;
+        try {
+            db.inBatch(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ResultSet rs = queryAllDocuments();
+                        for (Result r : rs) {
+                            String docID = r.getString(0);
+                            MutableDocument doc = db.getDocument(docID).toMutable();
+                            String artist = doc.getString("Artist");
+                            if (artist != null && artist.startsWith("The ")) {
+                                doc.setString("Artist", artist.substring(4));
+                                db.save(doc);
+                                count++;
+                            }
                         }
+                    } catch (CouchbaseLiteException e) {
+                        e.printStackTrace();
                     }
-                } catch (CouchbaseLiteException e) {
-                    e.printStackTrace();
+                    startTransaction.set(System.nanoTime());
                 }
-                startTransaction.set(System.nanoTime());
-            }
-        });
+            });
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
 
         double commitTime = System.nanoTime() - startTransaction.longValue();
         double t = _updateArtistsBench.stop();
@@ -271,7 +283,11 @@ public class TunesPerfTest extends PerfTest {
                 //.having(null)
                 .orderBy(Ordering.expression(artist.collate(cd)));
                 //.limit(null);
-        System.err.println(String.format("EXPLAIN: %s", query.explain()));
+        try {
+            System.err.println(String.format("EXPLAIN: %s", query.explain()));
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
         bench.start();
         try {
             _artists = collectQueryResults(query);
@@ -299,7 +315,11 @@ public class TunesPerfTest extends PerfTest {
                 .orderBy(Ordering.expression(album.collate(cd)));
         //.limit(null);
 
-        System.err.println(String.format("EXPLAIN: %s", query.explain()));
+        try {
+            System.err.println(String.format("EXPLAIN: %s", query.explain()));
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
 
         bench.start();
         // Run one query per artist to find their albums. We could write a single query to get all of
@@ -325,7 +345,11 @@ public class TunesPerfTest extends PerfTest {
     protected int fullTextSearch() {
         _indexFTSBench.start();
         FullTextIndex index = IndexBuilder.fullTextIndex(FullTextIndexItem.property("Name"));
-        db.createIndex("name",index);
+        try {
+            db.createIndex("name",index);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
         _indexFTSBench.stop();
         pause();
 
@@ -338,7 +362,11 @@ public class TunesPerfTest extends PerfTest {
                 .from(DataSource.database(db))
                 .where(FullTextExpression.index("name").match("'Rock'"))
                 .orderBy(Ordering.expression(artist.collate(cd)),Ordering.expression(album.collate(cd)));
-        System.err.println(String.format("EXPLAIN: %s", query.explain()));
+        try {
+            System.err.println(String.format("EXPLAIN: %s", query.explain()));
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
         pause();
 
         _queryFTSBench.start();
@@ -362,7 +390,11 @@ public class TunesPerfTest extends PerfTest {
         Expression artist = Expression.property("Artist").collate(cd);
         Expression comp   = Expression.property("Compilation");
         ValueIndex index = IndexBuilder.valueIndex(ValueIndexItem.expression(artist), ValueIndexItem.expression(comp));
-        db.createIndex("byArtist", index);
+        try {
+            db.createIndex("byArtist", index);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
 
         double t = _indexArtistsBench.stop();
         System.err.println(String.format("Indexed artists in %.06f sec", t));

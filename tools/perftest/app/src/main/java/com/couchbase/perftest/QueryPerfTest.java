@@ -3,6 +3,7 @@ package com.couchbase.perftest;
 import android.content.Context;
 import android.util.Log;
 
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
 import com.couchbase.lite.DatabaseConfiguration;
 import com.couchbase.lite.Meta;
@@ -69,7 +70,12 @@ public class QueryPerfTest extends PerfTest {
         bench.start();
         Query q = QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(db));
-        ResultSet rs = q.execute();
+        ResultSet rs = null;
+        try {
+            rs = q.execute();
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
         for (Result r : rs) {
             count++;
         }
@@ -81,17 +87,25 @@ public class QueryPerfTest extends PerfTest {
     void createDocs(final int docs) {
         final AtomicInteger atomic = new AtomicInteger(0);
         for (int j = 0; j < docs / 1000; j++) {
-            db.inBatch(new Runnable() {
-                @Override
-                public void run() {
-                    for (int i = 0; i < 1000; i++) {
-                        String docID = String.format(Locale.ENGLISH, "doc-%08d", atomic.incrementAndGet());
-                        MutableDocument doc = new MutableDocument(docID);
-                        doc.setInt("index", atomic.get());
-                        db.save(doc);
+            try {
+                db.inBatch(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < 1000; i++) {
+                            String docID = String.format(Locale.ENGLISH, "doc-%08d", atomic.incrementAndGet());
+                            MutableDocument doc = new MutableDocument(docID);
+                            doc.setInt("index", atomic.get());
+                            try {
+                                db.save(doc);
+                            } catch (CouchbaseLiteException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
-                }
-            });
+                });
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.DatabaseConfiguration;
 
@@ -64,7 +65,11 @@ public abstract class PerfTest {
     }
 
     protected void openDB() {
-        db = new Database(dbName, dbConfig);
+        try {
+            db = new Database(dbName, dbConfig);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
     }
 
     protected void closeDB() {
@@ -73,14 +78,22 @@ public abstract class PerfTest {
 
     protected Database closeDB(Database _db) {
         if (_db != null) {
-            _db.close();
+            try {
+                _db.close();
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }
 
     protected void eraseDB() {
         closeDB();
-        Database.delete(dbName, new File(dbConfig.getDirectory()));
+        try {
+            Database.delete(dbName, new File(dbConfig.getDirectory()));
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
         openDB();
     }
 
