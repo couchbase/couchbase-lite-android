@@ -82,7 +82,6 @@ public final class ReplicatorConfiguration {
     private byte[] pinnedServerCertificate = null;
     private List<String> channels = null;
     private List<String> documentIDs = null;
-    private boolean resetCheckpoint = false; // Reset the replicator checkpoint.
 
     //---------------------------------------------
     // Constructors
@@ -321,10 +320,6 @@ public final class ReplicatorConfiguration {
         }
         options.put(kC4ReplicatorOptionExtraHeaders, httpHeaders);
 
-        // reset checkpoint
-        if (resetCheckpoint)
-            options.put(kC4ReplicatorResetCheckpoint, true);
-
         return options;
     }
 
@@ -338,9 +333,5 @@ public final class ReplicatorConfiguration {
 
     Database getTargetDatabase() {
         return null;
-    }
-
-    void setResetCheckpoint(boolean resetCheckpoint) {
-        this.resetCheckpoint = resetCheckpoint;
     }
 }

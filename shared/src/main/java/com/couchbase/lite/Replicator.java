@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorResetCheckpoint;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Continuous;
@@ -241,6 +242,7 @@ public final class Replicator extends NetworkReachabilityListener {
     private ScheduledExecutorService handler;
     private NetworkReachabilityManager reachabilityManager = null;
     private Map<String, Object> responseHeaders = null; // Do something with these (for auth)
+    private boolean resetCheckpoint = false; // Reset the replicator checkpoint.
 
     //---------------------------------------------
     // Constructors
@@ -354,12 +356,16 @@ public final class Replicator extends NetworkReachabilityListener {
     }
 
     /**
-     * Reset checkpoint
+     * Resets the local checkpoint of the replicator, meaning that it will read all
+     * changes since the beginning of time from the remote database. This can only be
+     * called when the replicator is in a stopped state.
      */
     public void resetCheckpoint() {
-        if (c4ReplStatus != null && c4ReplStatus.getActivityLevel() != kC4Stopped)
-            throw new IllegalStateException("Replicator is not stopped. Resetting checkpoint is only allowed when the replicator is in the stopped state.");
-        config.setResetCheckpoint(true);
+        synchronized (lock) {
+            if (c4ReplStatus != null && c4ReplStatus.getActivityLevel() != kC4Stopped)
+                throw new IllegalStateException("Replicator is not stopped. Resetting checkpoint is only allowed when the replicator is in the stopped state.");
+            resetCheckpoint = true;
+        }
     }
 
     @Override
@@ -436,6 +442,14 @@ public final class Replicator extends NetworkReachabilityListener {
 
         // Encode the options:
         Map<String, Object> options = config.effectiveOptions();
+
+        // Update resetCheckpoint flag if needed:
+        if (resetCheckpoint) {
+            options.put(kC4ReplicatorResetCheckpoint, true);
+            // Clear the reset flag, it is a one-time thing
+            resetCheckpoint = false;
+        }
+
         byte[] optionsFleece = null;
         if (options.size() > 0) {
             FLEncoder enc = new FLEncoder();
@@ -453,9 +467,6 @@ public final class Replicator extends NetworkReachabilityListener {
         boolean push = isPush(config.getReplicatorType());
         boolean pull = isPull(config.getReplicatorType());
         boolean continuous = config.isContinuous();
-
-        // Clear the reset flag, it is a one-time thing
-        config.setResetCheckpoint(false);
 
         c4ReplListener = new C4ReplicatorListener() {
             @Override
