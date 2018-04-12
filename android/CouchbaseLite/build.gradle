@@ -215,7 +215,7 @@ bintray {
     pkg {
         repo = 'couchbase'
         name = 'couchbase-lite-android'
-        desc = 'Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend.'
+        desc = 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.'
         userOrg = 'couchbase'
         licenses = ['Couchbase, Inc. Community Edition License Agreement']
         labels = ['couchbase lite', 'android', 'sync', 'mobile']
@@ -237,7 +237,7 @@ bintray {
 // Create the pom configuration:
 def pomConfig = {
     name "com.couchbase.lite:couchbase-lite-android"
-    description "Couchbase-Lite-Android is a lightweight embedded NoSQL database engine for Android with the built-in ability to sync to Couchbase Server on the backend."
+    description "Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine."
     url "http://developer.couchbase.com/mobile/"
     licenses {
         license {

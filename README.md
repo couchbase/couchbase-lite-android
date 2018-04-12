@@ -1,5 +1,5 @@
 
-# Couchbase Lite 2.0 (Beta)
+# Couchbase Lite 2.0
 
 **Couchbase Lite** is an embedded lightweight, document-oriented (NoSQL), syncable database engine.
 
@@ -9,29 +9,31 @@ Couchbase Lite 2.0 has a completely new set of APIs. The implementation is on to
 
 - Android 4.4+ (API 19+)
 - Supported architectures: armeabi-v7a, arm64-v8a and x86
-- Android Studio 3.0
+- Android Studio 3.+
 
 ## Installation
 
-1. In the top-level build.gradle file, add the following Maven repository in the allprojects section.
+Download the latest AAR or grab via Maven
 
-```
-allprojects {
-    repositories {
-        jcenter()
-        maven {
-            url "http://mobile.maven.couchbase.com/maven2/dev/"
-        }
-    }
-}
-```
+### Download
+- https://www.couchbase.com/downloads
 
-2. Add the following in the dependencies section of the application's build.gradle (the one in the app folder).
+### Gradle
+Add the following in the dependencies section of the application's build.gradle (the one in the app folder).
 
 ```
 dependencies {
-    compile 'com.couchbase.lite:couchbase-lite-android:2.0.0-DB023'
+    implementation 'com.couchbase.lite:couchbase-lite-android:2.0.0'
 }
+```
+
+### Maven
+```
+<dependency>
+  <groupId>com.couchbase.lite</groupId>
+  <artifactId>couchbase-lite-android</artifactId>
+  <version>2.0.0</version>
+</dependency>
 ```
 
 ## Documentation
@@ -50,6 +52,22 @@ At this point it should build without errors.
 
 - [Todo](https://github.com/couchbaselabs/mobile-training-todo/tree/feature/2.0)
 
+## ProGuard
+If you are using ProGuard you might need to add the following options:
+```
+# OkHttp3
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+# A resource is loaded with a relative path so the package of this class must be preserved.
+-keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
+
+# CBL2.x
+-keep class com.couchbase.litecore.**{ *; }
+-keep class com.couchbase.lite.**{ *; }
+
+```
 
 ## License
 
