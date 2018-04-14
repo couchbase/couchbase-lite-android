@@ -192,9 +192,9 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public void removeChangeListener(ListenerToken token) {
-        if (token == null || !(token instanceof QueryChangeListenerToken))
-            throw new IllegalArgumentException("Invalid ListenerToken is given");
-        liveQuery().removeChangeListener((QueryChangeListenerToken) token);
+        if (token == null)
+            throw new IllegalArgumentException("The given token is null");
+        liveQuery().removeChangeListener(token);
     }
 
     @Override

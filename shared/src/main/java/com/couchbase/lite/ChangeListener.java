@@ -1,7 +1,7 @@
 //
-// DatabaseChangeListener.java
+// ChangeListener.java
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2018 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,15 +17,6 @@
 //
 package com.couchbase.lite;
 
-/**
- * The listener interface for receiving Database change events.
- */
-public interface DatabaseChangeListener extends ChangeListener<DatabaseChange> {
-    /**
-     * Callback function from Database when database has change
-     *
-     * @param change the database change information
-     */
-    @Override
-    void changed(DatabaseChange change);
+interface ChangeListener<ChangeType> {
+    void changed(ChangeType change);
 }
