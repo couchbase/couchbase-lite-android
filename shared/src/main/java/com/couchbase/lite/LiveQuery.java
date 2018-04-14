@@ -19,10 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +38,7 @@ final class LiveQuery implements DatabaseChangeListener {
     // member variables
     //---------------------------------------------
 
-    private Set<QueryChangeListenerToken> queryChangeListenerTokens;
+    private ChangeNotifier<QueryChange> changeNotifier;
     private final AbstractQuery query;
     private ResultSet resultSet;
     private boolean observing;
@@ -59,7 +56,7 @@ final class LiveQuery implements DatabaseChangeListener {
             throw new IllegalArgumentException("query should not be null.");
 
         this.query = query;
-        this.queryChangeListenerTokens = Collections.synchronizedSet(new HashSet<QueryChangeListenerToken>());
+        this.changeNotifier = new ChangeNotifier<>();
         this.resultSet = null;
         this.observing = false;
         this.willUpdate = false;
@@ -121,7 +118,7 @@ final class LiveQuery implements DatabaseChangeListener {
             query.getDatabase().getActiveLiveQueries().add(this);
             // NOTE: start() method could be called during LiveQuery is running.
             // Ex) Query.setParameters() with LiveQuery.
-            if(dbListenerToken == null)
+            if (dbListenerToken == null)
                 dbListenerToken = query.getDatabase().addChangeListener(this);
             update(0);
         }
@@ -149,13 +146,11 @@ final class LiveQuery implements DatabaseChangeListener {
      * <p>
      * NOTE: this method is synchronized with Query level.
      */
-    QueryChangeListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
+    ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
         synchronized (lock) {
-            QueryChangeListenerToken token = new QueryChangeListenerToken(executor, listener);
-            queryChangeListenerTokens.add(token);
             if (!observing)
                 start();
-            return token;
+            return changeNotifier.addChangeListener(executor, listener);
         }
     }
 
@@ -164,10 +159,9 @@ final class LiveQuery implements DatabaseChangeListener {
      * <p>
      * NOTE: this method is synchronized with Query level.
      */
-    void removeChangeListener(QueryChangeListenerToken token) {
+    void removeChangeListener(ListenerToken token) {
         synchronized (lock) {
-            queryChangeListenerTokens.remove(token);
-            if (queryChangeListenerTokens.isEmpty())
+            if (changeNotifier.removeChangeListener(token) == 0)
                 stop(true);
         }
     }
@@ -226,20 +220,12 @@ final class LiveQuery implements DatabaseChangeListener {
                     if (oldResultSet != null)
                         Log.i(TAG, "%s: Changed!", this);
                     resultSet = newResultSet;
-                    sendNotification(new QueryChange(this.query, resultSet, null));
+                    changeNotifier.postChange(new QueryChange(this.query, resultSet, null));
                 } else {
                     Log.i(TAG, "%s: ...no change", this);
                 }
             } catch (CouchbaseLiteException e) {
-                sendNotification(new QueryChange(this.query, null, e));
-            }
-        }
-    }
-
-    private void sendNotification(QueryChange change) {
-        synchronized (queryChangeListenerTokens) {
-            for (QueryChangeListenerToken token : queryChangeListenerTokens) {
-                token.notify(change);
+                changeNotifier.postChange(new QueryChange(this.query, null, e));
             }
         }
     }

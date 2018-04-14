@@ -35,8 +35,6 @@ import com.couchbase.litecore.C4DatabaseChange;
 import com.couchbase.litecore.C4DatabaseObserver;
 import com.couchbase.litecore.C4DatabaseObserverListener;
 import com.couchbase.litecore.C4Document;
-import com.couchbase.litecore.C4DocumentObserver;
-import com.couchbase.litecore.C4DocumentObserverListener;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLSliceResult;
@@ -95,10 +93,9 @@ abstract class AbstractDatabase {
     protected C4Database c4db;
     protected ScheduledExecutorService postExecutor;  // to post Database/Document Change notification
     protected ScheduledExecutorService queryExecutor; // executor for LiveQuery. one per db.
-    protected Set<DatabaseChangeListenerToken> dbListenerTokens;
+    protected ChangeNotifier<DatabaseChange> dbChangeNotifier;
     protected C4DatabaseObserver c4DBObserver;
-    protected Map<String, Set<DocumentChangeListenerToken>> docListenerTokens;
-    protected Map<String, C4DocumentObserver> c4DocObservers;
+    protected Map<String, DocumentChangeNotifier> docChangeNotifiers;
     protected final SharedKeys sharedKeys;
     protected Set<Replicator> activeReplications;
     protected Set<LiveQuery> activeLiveQueries;
@@ -393,10 +390,10 @@ abstract class AbstractDatabase {
 
         synchronized (lock) {
             mustBeOpen();
-            if (token instanceof DocumentChangeListenerToken)
-                removeDocumentChangeListener((DocumentChangeListenerToken) token);
+            if (token instanceof ChangeListenerToken && ((ChangeListenerToken) token).getKey() != null)
+                removeDocumentChangeListener((ChangeListenerToken) token);
             else
-                removeDatabaseChangeListener((DatabaseChangeListenerToken) token);
+                removeDatabaseChangeListener(token);
         }
     }
 
@@ -824,9 +821,8 @@ abstract class AbstractDatabase {
         }
 
         c4DBObserver = null;
-        dbListenerTokens = new HashSet<>();
-        docListenerTokens = new HashMap<>();
-        c4DocObservers = new HashMap<>();
+        dbChangeNotifier = null;
+        docChangeNotifiers = new HashMap<>();
     }
 
     private int getDatabaseFlags() {
@@ -882,48 +878,46 @@ abstract class AbstractDatabase {
     // --- Notification: - C4DatabaseObserver/C4DocumentObserver
 
     // Database changes:
-    private DatabaseChangeListenerToken addDatabaseChangeListener(Executor executor,
-                                                                  DatabaseChangeListener listener) {
+    private ListenerToken addDatabaseChangeListener(Executor executor, DatabaseChangeListener listener) {
         // NOTE: caller method is synchronized.
-        if (dbListenerTokens.isEmpty())
+        if (dbChangeNotifier == null) {
+            dbChangeNotifier = new ChangeNotifier<>();
             registerC4DBObserver();
-        DatabaseChangeListenerToken token = new DatabaseChangeListenerToken(executor, listener);
-        dbListenerTokens.add(token);
-        return token;
+        }
+        return dbChangeNotifier.addChangeListener(executor, listener);
     }
 
-    private void removeDatabaseChangeListener(DatabaseChangeListenerToken token) {
+    private void removeDatabaseChangeListener(ListenerToken token) {
         // NOTE: caller method is synchronized.
-        dbListenerTokens.remove(token);
-        if (dbListenerTokens.isEmpty())
+        if (dbChangeNotifier.removeChangeListener(token) == 0) {
             freeC4DBObserver();
+            dbChangeNotifier = null;
+        }
     }
 
     // Document changes:
-    private DocumentChangeListenerToken addDocumentChangeListener(Executor executor,
-                                                                  DocumentChangeListener listener,
-                                                                  String docID) {
+    private ListenerToken addDocumentChangeListener(Executor executor,
+                                                    DocumentChangeListener listener,
+                                                    String docID) {
         // NOTE: caller method is synchronized.
-        if (!docListenerTokens.containsKey(docID)) {
-            Set<DocumentChangeListenerToken> listeners = new HashSet<>();
-            docListenerTokens.put(docID, listeners);
-            registerC4DocObserver(docID);
+        DocumentChangeNotifier docNotifier = docChangeNotifiers.get(docID);
+        if (docNotifier == null) {
+            docNotifier = new DocumentChangeNotifier((Database) this, docID);
+            docChangeNotifiers.put(docID, docNotifier);
         }
-        DocumentChangeListenerToken token = new DocumentChangeListenerToken(executor, listener, docID);
-        docListenerTokens.get(docID).add(token);
+        ChangeListenerToken token = docNotifier.addChangeListener(executor, listener);
+        token.setKey(docID);
         return token;
     }
 
-    private void removeDocumentChangeListener(DocumentChangeListenerToken token) {
+    private void removeDocumentChangeListener(ChangeListenerToken token) {
         // NOTE: caller method is synchronized.
-        String docID = token.getDocID();
-        if (docListenerTokens.containsKey(docID)) {
-            Set<DocumentChangeListenerToken> tokens = docListenerTokens.get(docID);
-            if (tokens.remove(token)) {
-                if (tokens.isEmpty()) {
-                    docListenerTokens.remove(docID);
-                    removeC4DocObserver(docID);
-                }
+        String docID = (String) token.getKey();
+        if (docChangeNotifiers.containsKey(docID)) {
+            DocumentChangeNotifier notifier = docChangeNotifiers.get(docID);
+            if (notifier != null && notifier.removeChangeListener(token) == 0) {
+                notifier.stop();
+                docChangeNotifiers.remove(docID);
             }
         }
     }
@@ -951,56 +945,12 @@ abstract class AbstractDatabase {
         }
     }
 
-    private void registerC4DocObserver(String docID) {
-        // prevent multiple observer for same docID.
-        if (c4DocObservers.containsKey(docID))
-            return;
-
-        C4DocumentObserver docObserver = c4db.createDocumentObserver(docID,
-                new C4DocumentObserverListener() {
-                    @Override
-                    public void callback(C4DocumentObserver observer, final String docID,
-                                         final long sequence, Object context) {
-                        if (!postExecutor.isShutdown() && !postExecutor.isTerminated()) {
-                            postExecutor.submit(new Runnable() {
-                                @Override
-                                public void run() {
-                                    postDocumentChanged(docID);
-                                }
-                            });
-                        }
-                    }
-                }, this);
-
-        c4DocObservers.put(docID, docObserver);
-    }
-
-    private void removeC4DocObserver(String docID) {
-        C4DocumentObserver docObs = c4DocObservers.get(docID);
-        if (docObs != null) {
-            docObs.free();
-        }
-        c4DocObservers.remove(docID);
-    }
-
-    private void freeC4DocObservers() {
-        if (c4DocObservers != null) {
-            for (C4DocumentObserver value : c4DocObservers.values()) {
-                if (value != null)
-                    value.free();
-            }
-            c4DocObservers.clear();
-            c4DocObservers = null;
-        }
-        if (docListenerTokens != null) {
-            docListenerTokens.clear();
-            docListenerTokens = null;
-        }
-    }
-
     private void freeC4Observers() {
         freeC4DBObserver();
-        freeC4DocObservers();
+
+        for (DocumentChangeNotifier notifier : docChangeNotifiers.values())
+            notifier.stop();
+        docChangeNotifiers.clear();
     }
 
     private void postDatabaseChanged() {
@@ -1019,8 +969,7 @@ abstract class AbstractDatabase {
                 if (c4DBChanges == null || c4DBChanges.length == 0 || external != newExternal || docIDs.size() > 1000) {
                     if (docIDs.size() > 0) {
                         DatabaseChange change = new DatabaseChange((Database) this, docIDs);
-                        for (DatabaseChangeListenerToken token : dbListenerTokens)
-                            token.notify(change);
+                        dbChangeNotifier.postChange(change);
                         docIDs = new ArrayList<>();
                     }
                 }
@@ -1028,20 +977,6 @@ abstract class AbstractDatabase {
                 for (int i = 0; i < nChanges; i++)
                     docIDs.add(c4DBChanges[i].getDocID());
             } while (nChanges > 0);
-        }
-    }
-
-    private void postDocumentChanged(final String documentID) {
-        synchronized (lock) {
-            if (!c4DocObservers.containsKey(documentID) || c4db == null)
-                return;
-
-            Set<DocumentChangeListenerToken> tokens = docListenerTokens.get(documentID);
-            if (tokens != null) {
-                DocumentChange change = new DocumentChange((Database) this, documentID);
-                for (DocumentChangeListenerToken token : tokens)
-                    token.notify(change);
-            }
         }
     }
 
