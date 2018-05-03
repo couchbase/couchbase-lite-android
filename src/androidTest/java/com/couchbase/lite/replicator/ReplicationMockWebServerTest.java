@@ -4830,7 +4830,8 @@ public class ReplicationMockWebServerTest extends LiteTestCaseWithDB {
 
     // https://github.com/couchbase/couchbase-lite-java-core/issues/1664
     // How to capture 403 pull replication errors
-    public void test403Error() throws Exception {
+    // Please enable this test once java-core is updated for both CBL android and java 1.x
+    public void disabledTest403Error() throws Exception {
         MockDispatcher dispatcher = new MockDispatcher();
         MockWebServer server = MockHelper.getMockWebServer(dispatcher);
         try {
