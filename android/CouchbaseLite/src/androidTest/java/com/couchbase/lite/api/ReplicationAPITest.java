@@ -151,4 +151,25 @@ public class ReplicationAPITest extends BaseReplicatorTest {
         config.setPinnedServerCertificate(cert);
         // # end::certificate-pinning[]
     }
+
+    // ### Reset replicator checkpoint
+
+    @Test
+    public void testReplicationResetCheckpoint() throws URISyntaxException {
+        if (!config.replicatorTestsEnabled()) return;
+
+        URI uri = new URI("ws://localhost:4984/db");
+        Endpoint endpoint = new URLEndpoint(uri);
+        ReplicatorConfiguration config = new ReplicatorConfiguration(database, endpoint);
+        config.setReplicatorType(ReplicatorConfiguration.ReplicatorType.PULL);
+        Replicator replicator = new Replicator(config);
+        replicator.start();
+
+        // # tag::replication-reset-checkpoint[]
+        replicator.resetCheckpoint();
+        replicator.start();
+        // # end::replication-reset-checkpoint[]
+
+        replicator.stop();
+    }
 }
