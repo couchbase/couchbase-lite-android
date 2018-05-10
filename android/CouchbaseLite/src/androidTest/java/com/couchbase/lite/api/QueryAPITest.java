@@ -203,7 +203,7 @@ public class QueryAPITest extends BaseTest {
     public void testIndexing() throws CouchbaseLiteException {
         // For Documentation
         {
-						// # tag::query-index[]
+            // # tag::query-index[]
             database.createIndex("TypeNameIndex",
                     IndexBuilder.valueIndex(ValueIndexItem.property("type"),
                             ValueIndexItem.property("name")));
@@ -247,7 +247,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-        		// # tag::query-select-meta[]
+            // # tag::query-select-meta[]
             Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"),
@@ -344,7 +344,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-        		// # tag::query-select-all[]
+            // # tag::query-select-all[]
             Query query = QueryBuilder
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
@@ -385,7 +385,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-        		// # tag::query-where[]
+            // # tag::query-where[]
             Query query = QueryBuilder
                     .select(SelectResult.all())
                     .from(DataSource.database(database))
@@ -428,7 +428,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-        		// # tag::query-collection-operator[]
+            // # tag::query-collection-operator[]
             Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"),
@@ -441,6 +441,22 @@ public class QueryAPITest extends BaseTest {
                 Log.i("Sample", String.format("public_likes -> %s", result.getArray("public_likes").toList()));
             // # end::query-collection-operator[]
         }
+    }
+
+    @Test
+    public void testCollectionOperatorIn() throws CouchbaseLiteException {
+        // # tag::query-collection-operator-in[]
+        Query query = QueryBuilder.select(SelectResult.all())
+                .from(DataSource.database(database))
+                .where(Expression.string("Armani").in(
+                        Expression.property("first"),
+                        Expression.property("last"),
+                        Expression.property("username")));
+        // # end::query-collection-operator-in[]
+
+        ResultSet rs = query.execute();
+        for (Result result : rs)
+            Log.i("Sample", result.toMap().toString());
     }
 
     // Pattern Matching
@@ -470,7 +486,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-        		// # tag::query-like-operator[]
+            // # tag::query-like-operator[]
             Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
@@ -481,7 +497,7 @@ public class QueryAPITest extends BaseTest {
             ResultSet rs = query.execute();
             for (Result result : rs)
                 Log.i("Sample", String.format("name -> %s", result.getString("name")));
-             // # end::query-like-operator[]
+            // # end::query-like-operator[]
         }
     }
 
@@ -512,7 +528,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-        		// # tag::query-like-operator-wildcard-match[]
+            // # tag::query-like-operator-wildcard-match[]
             Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
@@ -554,7 +570,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-        		// # tag::query-like-operator-wildcard-character-match[]
+            // # tag::query-like-operator-wildcard-character-match[]
             Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
@@ -596,7 +612,7 @@ public class QueryAPITest extends BaseTest {
         }
         // For Documentation
         {
-        		// # tag::query-regex-operator[]
+            // # tag::query-regex-operator[]
             Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("country"),
@@ -652,7 +668,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-        		// # tag::query-join[]
+            // # tag::query-join[]
             Query query = QueryBuilder.select(
                     SelectResult.expression(Expression.property("name").from("airline")),
                     SelectResult.expression(Expression.property("callsign").from("airline")),
@@ -714,7 +730,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-        		// # tag::query-groupby[]
+            // # tag::query-groupby[]
             Query query = QueryBuilder.select(
                     SelectResult.expression(Function.count(Expression.string("*"))),
                     SelectResult.property("country"),
@@ -772,7 +788,7 @@ public class QueryAPITest extends BaseTest {
 
         // For Documentation
         {
-        		// # tag::query-orderby[]
+            // # tag::query-orderby[]
             Query query = QueryBuilder
                     .select(SelectResult.expression(Meta.id),
                             SelectResult.property("name"))
