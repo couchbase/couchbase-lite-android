@@ -1,6 +1,6 @@
 name: couchbase-lite-android
 title: Couchbase Lite Java/Android
-version: '2.0'
+version: '2.1'
 start_page: ROOT:java.adoc
 nav:
 - modules/docs/nav.adoc
