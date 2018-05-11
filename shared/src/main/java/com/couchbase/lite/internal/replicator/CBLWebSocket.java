@@ -21,10 +21,12 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Socket;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
+import com.couchbase.litecore.fleece.FLValue;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
@@ -63,6 +65,8 @@ import static com.couchbase.litecore.C4Constants.C4ErrorDomain.POSIXDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrTLSCertUntrusted;
 import static com.couchbase.litecore.C4Constants.NetworkError.kC4NetErrUnknownHost;
+import static com.couchbase.litecore.C4Replicator.kC4Replicator2Scheme;
+import static com.couchbase.litecore.C4Replicator.kC4Replicator2TLSScheme;
 import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseNormal;
 import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketClosePolicyError;
 import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseProtocolError;
@@ -94,17 +98,12 @@ public final class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // constructor
     //-------------------------------------------------------------------------
-    public CBLWebSocket(long handle, URI uri, Map<String, Object> options) throws GeneralSecurityException {
+    CBLWebSocket(long handle, String scheme, String hostname, int port, String path, Map<String, Object> options) throws GeneralSecurityException, URISyntaxException {
         super(handle);
-        this.uri = uri;
+        this.uri = new URI(checkScheme(scheme), null, hostname, port, path, null, null);
         this.options = options;
         this.httpClient = setupOkHttpClient();
         this.wsListener = new CBLWebSocketListener();
-    }
-
-    public static void register() {
-        C4Socket.IMPLEMENTATION_CLASS_NAME = CBLWebSocket.class.getName();
-        registerFactory();
     }
 
     //-------------------------------------------------------------------------
@@ -176,11 +175,9 @@ public final class CBLWebSocket extends C4Socket {
     // Abstract method implementation
     //-------------------------------------------------------------------------
 
-    @Override
-    protected void start() {
-        Log.v(TAG, String.format(Locale.ENGLISH, "CBLWebSocket connecting to %s...", uri));
-        httpClient.newWebSocket(newRequest(), wsListener);
-    }
+    // TODO !!!!!
+    //@Override
+
 
     @Override
     protected void send(byte[] allocatedData) {
@@ -208,6 +205,40 @@ public final class CBLWebSocket extends C4Socket {
         if (!webSocket.close(status, message)) {
             Log.w(TAG, "CBLWebSocket.requestClose() Failed to attempt to initiate a graceful shutdown of this web socket.");
         }
+    }
+    // ---------------------------------------------------------------------------------------------
+    // Socket Factory Callbacks
+    // ---------------------------------------------------------------------------------------------
+    public static void socket_open(long socket, int socketFactoryContext, String scheme, String hostname, int port, String path, byte[] optionsFleece) {
+        Log.e(TAG, "CBLWebSocket.socket_open()");
+
+        Map<String, Object> options = null;
+        if (optionsFleece != null)
+            options = FLValue.fromData(optionsFleece).asDict();
+
+        // NOTE: OkHttp can not understand blip/blips
+        if (scheme.equalsIgnoreCase(kC4Replicator2Scheme))
+            scheme = WEBSOCKET_SCHEME;
+        else if (scheme.equalsIgnoreCase(kC4Replicator2TLSScheme))
+            scheme = WEBSOCKET_SECURE_CONNECTION_SCHEME;
+
+        CBLWebSocket c4sock;
+        try {
+            c4sock = new CBLWebSocket(socket, scheme, hostname, port, path, options);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to instantiate C4Socket: " + e);
+            e.printStackTrace();
+            return;
+        }
+
+        reverseLookupTable.put(socket, c4sock);
+
+        c4sock.start();
+    }
+
+    protected void start() {
+        Log.v(TAG, String.format(Locale.ENGLISH, "CBLWebSocket connecting to %s...", uri));
+        httpClient.newWebSocket(newRequest(), wsListener);
     }
 
     //-------------------------------------------------------------------------
@@ -468,5 +499,14 @@ public final class CBLWebSocket extends C4Socket {
         else {
             closed(handle, WebSocketDomain, 0, null);
         }
+    }
+
+    private String checkScheme(String scheme) {
+        // NOTE: OkHttp can not understand blip/blips
+        if (scheme.equalsIgnoreCase(kC4Replicator2Scheme))
+            return WEBSOCKET_SCHEME;
+        else if (scheme.equalsIgnoreCase(kC4Replicator2TLSScheme))
+            return WEBSOCKET_SECURE_CONNECTION_SCHEME;
+        return scheme;
     }
 }

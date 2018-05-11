@@ -20,6 +20,7 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.C4Base;
 import com.couchbase.litecore.C4Constants;
+import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.LiteCoreException;
 
 class CBLStatus {
@@ -61,5 +62,9 @@ class CBLStatus {
             return convertException(new LiteCoreException(_domain, _code, errMsg));
         } else
             return convertException(_domain, _code, null);
+    }
+
+    static CouchbaseLiteException convertError(C4Error c4err) {
+        return convertException(c4err.getDomain(), c4err.getCode(), c4err.getInternalInfo());
     }
 }
