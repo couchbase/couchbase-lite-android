@@ -82,8 +82,8 @@ link:../installation/sync-gateway/index.html[Installing Sync Gateway ⟶]
 API References
 ~~~~~~~~~~~~~~
 
-http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/[Java SDK
-API References]
+- http://docs.couchbase.com/mobile/2.0/couchbase-lite-java/[Java SDK API References]
+- http://docs.couchbase.com/mobile/2.1/couchbase-lite-java/db001/[Java SDK API References]
 
 == Upgrading
 
