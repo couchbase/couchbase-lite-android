@@ -1,0 +1,40 @@
+Create or open an existing Android Studio project and install Couchbase Lite using the following method.
+
+==== Couchbase Lite Community Edition
+
+* Add the following in the `dependencies` section of the
+application's *build.gradle* (the one in the *app* folder).
++
+[source,groovy]
+----
+dependencies {
+    compile 'com.couchbase.lite:couchbase-lite-android:2.0.0'
+}
+----
+
+==== Couchbase Lite Enterprise Edition
+
+* In the top-level *build.gradle* file, add the following Couchbase Maven
+repository in the `allprojects` section.
++
+[source,groovy]
+----
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        maven {
+            url "http://mobile.maven.couchbase.com/maven2/dev/"
+        }
+    }
+}
+----
+* Next, add the following in the `dependencies` section of the
+application's *build.gradle* (the one in the *app* folder).
++
+[source,groovy]
+----
+dependencies {
+    compile 'com.couchbase.lite:couchbase-lite-android-ee:2.0.0'
+}
+----
