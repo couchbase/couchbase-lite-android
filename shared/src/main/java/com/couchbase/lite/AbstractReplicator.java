@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorResetCheckpoint;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
+import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
 import static com.couchbase.litecore.C4Constants.LiteCoreError.kC4ErrorConflict;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Continuous;
 import static com.couchbase.litecore.C4ReplicatorMode.kC4Disabled;
@@ -49,6 +50,7 @@ import static com.couchbase.litecore.C4ReplicatorMode.kC4OneShot;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Connecting;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Offline;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
+import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseCustomTransient;
 import static java.util.Collections.synchronizedSet;
 
 /**
@@ -609,7 +611,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private boolean handleError(C4Error c4err) {
         // If this is a transient error, or if I'm continuous and the error might go away with a change
         // in network (i.e. network down, hostname unknown), then go offline and retry later.
-        boolean bTransient = C4Replicator.mayBeTransient(c4err);
+        boolean bTransient = C4Replicator.mayBeTransient(c4err) ||
+                (c4err.getDomain() == WebSocketDomain &&
+                        c4err.getCode() == kWebSocketCloseCustomTransient);
+
         boolean bNetworkDependent = C4Replicator.mayBeNetworkDependent(c4err);
         if (!bTransient && !(config.isContinuous() && bNetworkDependent))
             return false; // nope, this is permanent
