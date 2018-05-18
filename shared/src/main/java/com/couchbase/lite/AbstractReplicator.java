@@ -17,7 +17,6 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.replicator.CBLWebSocket;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Database;
@@ -25,6 +24,7 @@ import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4Replicator;
 import com.couchbase.litecore.C4ReplicatorListener;
 import com.couchbase.litecore.C4ReplicatorStatus;
+import com.couchbase.litecore.C4Socket;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
@@ -57,8 +57,8 @@ import static java.util.Collections.synchronizedSet;
  * or continuous. The replicator runs asynchronously, so observe the status property to
  * be notified of progress.
  */
-public final class Replicator extends NetworkReachabilityListener {
-    private static final String TAG = Log.SYNC;
+public abstract class AbstractReplicator extends NetworkReachabilityListener {
+    protected static final String TAG = Log.SYNC;
 
     /**
      * Activity level of a replicator.
@@ -101,7 +101,7 @@ public final class Replicator extends NetworkReachabilityListener {
      * Progress of a replicator. If `total` is zero, the progress is indeterminate; otherwise,
      * dividing the two will produce a fraction that can be used to draw a progress bar.
      */
-    public final class Progress {
+    public final static class Progress {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
@@ -155,7 +155,7 @@ public final class Replicator extends NetworkReachabilityListener {
     /**
      * Combined activity level and progress of a replicator.
      */
-    public final class Status {
+    public final static class Status {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
@@ -170,6 +170,13 @@ public final class Replicator extends NetworkReachabilityListener {
             this.activityLevel = activityLevel;
             this.progress = progress;
             this.error = error;
+        }
+
+        public Status(C4ReplicatorStatus c4Status) {
+            // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:
+            activityLevel = ActivityLevel.values()[c4Status.getActivityLevel()];
+            progress = new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal());
+            error = c4Status.getErrorCode() != 0 ? CBLStatus.convertError(c4Status.getC4Error()) : null;
         }
 
         //---------------------------------------------
@@ -214,7 +221,7 @@ public final class Replicator extends NetworkReachabilityListener {
 
     static {
         //Register CBLWebSocket which is C4Socket implementation
-        CBLWebSocket.register();
+        //CBLWebSocket.register();
     }
 
 
@@ -230,7 +237,7 @@ public final class Replicator extends NetworkReachabilityListener {
     //---------------------------------------------
 
     private Object lock = new Object();
-    private ReplicatorConfiguration config;
+    protected ReplicatorConfiguration config;
     private Status status;
     private Set<ReplicatorChangeListenerToken> changeListenerTokens;
     private C4Replicator c4repl;
@@ -253,7 +260,7 @@ public final class Replicator extends NetworkReachabilityListener {
      *
      * @param config
      */
-    public Replicator(ReplicatorConfiguration config) {
+    public AbstractReplicator(ReplicatorConfiguration config) {
         this.config = config.readonlyCopy();
         this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
         this.handler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -409,6 +416,12 @@ public final class Replicator extends NetworkReachabilityListener {
         super.finalize();
     }
 
+    abstract void initC4Socket(int hash);
+
+    abstract int framing();
+
+    abstract String schema();
+
     //---------------------------------------------
     // Private member methods (in class only)
     //---------------------------------------------
@@ -437,7 +450,7 @@ public final class Replicator extends NetworkReachabilityListener {
         }
         // replicate against other database
         else {
-            otherDB = config.getTargetDatabase().getC4Database();
+            otherDB = config.getTargetDatabase() != null ? config.getTargetDatabase().getC4Database() : null;
         }
 
         // Encode the options:
@@ -463,6 +476,13 @@ public final class Replicator extends NetworkReachabilityListener {
             }
         }
 
+        int hash = hashCode();
+        initC4Socket(hash);
+        int framing = framing();
+        if (schema() != null)
+            schema = schema();
+        C4Socket.socketFactoryContext.put(hash, (Replicator) this);
+
         // Push / Pull / Continuous:
         boolean push = isPush(config.getReplicatorType());
         boolean pull = isPull(config.getReplicatorType());
@@ -472,7 +492,7 @@ public final class Replicator extends NetworkReachabilityListener {
             @Override
             public void statusChanged(final C4Replicator repl, final C4ReplicatorStatus status, final Object context) {
                 Log.i(TAG, "C4ReplicatorListener.statusChanged() status -> " + status);
-                final Replicator replicator = (Replicator) context;
+                final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
                         @Override
@@ -485,7 +505,7 @@ public final class Replicator extends NetworkReachabilityListener {
 
             @Override
             public void documentError(C4Replicator repl, final boolean pushing, final String docID, final C4Error error, final boolean trans, Object context) {
-                final Replicator replicator = (Replicator) context;
+                final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
                         @Override
@@ -504,10 +524,13 @@ public final class Replicator extends NetworkReachabilityListener {
                 c4repl = db.createReplicator(schema, host, port, path, dbName, otherDB,
                         mkmode(push, continuous), mkmode(pull, continuous),
                         optionsFleece,
-                        c4ReplListener, this);
+                        c4ReplListener,
+                        this,
+                        hash,
+                        framing);
             }
             status = c4repl.getStatus();
-            config.getDatabase().getActiveReplications().add(this); // keeps me from being deallocated
+            config.getDatabase().getActiveReplications().add((Replicator) this); // keeps me from being deallocated
         } catch (LiteCoreException e) {
             status = new C4ReplicatorStatus(kC4Stopped, 0, 0, 0, e.domain, e.code, 0);
         }
@@ -568,7 +591,7 @@ public final class Replicator extends NetworkReachabilityListener {
             // Post notification
             synchronized (changeListenerTokens) {
                 // Replicator.getStatus() creates a copy of Status.
-                ReplicatorChange change = new ReplicatorChange(this, this.getStatus());
+                ReplicatorChange change = new ReplicatorChange((Replicator) this, this.getStatus());
                 for (ReplicatorChangeListenerToken token : changeListenerTokens)
                     token.notify(change);
             }

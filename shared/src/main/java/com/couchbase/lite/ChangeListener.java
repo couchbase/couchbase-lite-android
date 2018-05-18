@@ -17,6 +17,6 @@
 //
 package com.couchbase.lite;
 
-interface ChangeListener<ChangeType> {
+public interface ChangeListener<ChangeType> {
     void changed(ChangeType change);
 }
