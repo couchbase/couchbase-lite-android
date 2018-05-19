@@ -30,7 +30,7 @@ allprojects {
 
 ```
 dependencies {
-    compile 'com.couchbase.lite:couchbase-lite-android:2.0.0-DB023'
+    compile 'com.couchbase.lite:couchbase-lite-android:2.0.2'
 }
 ```
 
