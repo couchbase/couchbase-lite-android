@@ -236,6 +236,9 @@ bintray {
 
 // Create the pom configuration:
 def pomConfig = {
+    name "com.couchbase.lite:couchbase-lite-android"
+    description "Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine."
+    url "http://developer.couchbase.com/mobile/"
     licenses {
         license {
             name "Couchbase, Inc. Community Edition License Agreement"
