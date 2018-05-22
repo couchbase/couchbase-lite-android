@@ -278,6 +278,8 @@ publishing {
 
             pom.withXml {
                 def root = asNode()
+                // Workaround for description:
+                root.appendNode('description', 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.')
                 root.children().last() + pomConfig
 
                 // maven-publish workaround to include dependencies
