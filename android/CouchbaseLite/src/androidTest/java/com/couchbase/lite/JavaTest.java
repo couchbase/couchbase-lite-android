@@ -37,6 +37,7 @@ public class JavaTest extends BaseTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1453
     @Test
     public void testFLEncode() throws LiteCoreException {
+        testRoundTrip("Hello \uD83D\uDE3A World"); // 😺
         testRoundTrip(42L);
         testRoundTrip(Long.MIN_VALUE);
         testRoundTrip("Fleece");
