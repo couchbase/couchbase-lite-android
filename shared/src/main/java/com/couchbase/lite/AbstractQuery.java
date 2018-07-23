@@ -37,6 +37,13 @@ import static com.couchbase.lite.PropertyExpression.kCBLAllPropertiesName;
 
 abstract class AbstractQuery implements Query {
     //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
+    }
+
+    //---------------------------------------------
     // static variables
     //---------------------------------------------
     private static final String TAG = Log.QUERY;

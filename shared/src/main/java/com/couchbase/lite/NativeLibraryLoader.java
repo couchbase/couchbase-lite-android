@@ -21,22 +21,25 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.fleece.MValue;
 
 import java.lang.reflect.Constructor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 final class NativeLibraryLoader {
     private static final String TAG = Log.DATABASE;
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
-    NativeLibraryLoader() {
-    }
+    private static AtomicBoolean loaded = new AtomicBoolean(false);
+
+    NativeLibraryLoader() {  }
 
     static void load() {
-        if (load(LITECORE_JNI_LIBRARY))
-            Log.v(TAG, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
-        else
-            Log.e(TAG, "Cannot load native library");
-
-        initMValue();
+        if (!loaded.getAndSet(true)) {
+            if (load(LITECORE_JNI_LIBRARY))
+                Log.v(TAG, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
+            else
+                Log.e(TAG, "Cannot load native library");
+            initMValue();
+        }
     }
 
     private static boolean load(String libName) {

@@ -35,6 +35,12 @@ import java.util.List;
  * Array provides readonly access to array data.
  */
 public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
+    }
 
     //---------------------------------------------
     // member variables

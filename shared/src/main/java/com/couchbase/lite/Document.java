@@ -37,6 +37,13 @@ import static com.couchbase.litecore.C4Constants.C4RevisionFlags.kRevIsConflict;
  * Readonly version of the Document.
  */
 public class Document implements DictionaryInterface, Iterable<String> {
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
+    }
+
     private static final String TAG = Log.DATABASE;
 
     //---------------------------------------------

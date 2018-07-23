@@ -60,6 +60,13 @@ import static java.util.Collections.synchronizedSet;
  * be notified of progress.
  */
 public abstract class AbstractReplicator extends NetworkReachabilityListener {
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
+    }
+
     protected static final String TAG = Log.SYNC;
 
     /**

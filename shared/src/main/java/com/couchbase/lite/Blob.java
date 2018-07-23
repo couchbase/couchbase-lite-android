@@ -48,6 +48,13 @@ import java.util.Map;
  */
 public final class Blob implements FLEncodable {
     //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
+    }
+
+    //---------------------------------------------
     // static constant variables
     //---------------------------------------------
 

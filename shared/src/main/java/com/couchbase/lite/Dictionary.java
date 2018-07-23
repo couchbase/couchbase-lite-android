@@ -36,6 +36,12 @@ import java.util.Map;
  * Dictionary provides readonly access to dictionary data.
  */
 public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<String> {
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibraryLoader.load();
+    }
 
     //-------------------------------------------------------------------------
     // member variables
