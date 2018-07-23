@@ -37,6 +37,7 @@ public class JavaTest extends BaseTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1453
     @Test
     public void testFLEncode() throws LiteCoreException {
+        testRoundTrip("Hello \uD83D\uDE3A World"); // 😺
         testRoundTrip(42L);
         testRoundTrip(Long.MIN_VALUE);
         testRoundTrip("Fleece");
@@ -47,6 +48,20 @@ public class JavaTest extends BaseTest {
         testRoundTrip(true);
         testRoundTrip(3.14F);
         testRoundTrip(Math.PI);
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1742
+    @Test
+    public void testDecodeEmoji() throws LiteCoreException {
+        // 0000: 44 f0 9f 98…: "😺"
+        // 0006: 80 03       : &"😺" (@0000)
+
+        byte[] realUtf8Data = new byte[] { (byte)0x44, (byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBA,
+                (byte)0x00, (byte)0x80, (byte)0x03 };
+        FLValue flValue = FLValue.fromData(realUtf8Data);
+        assertNotNull(flValue);
+        Object obj = FLValue.toObject(flValue);
+        assertEquals("\uD83D\uDE3A", obj);
     }
 
     private void testRoundTrip(Object item) throws LiteCoreException {
