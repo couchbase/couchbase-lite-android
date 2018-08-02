@@ -50,7 +50,7 @@ import static com.couchbase.litecore.C4ReplicatorMode.kC4OneShot;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Connecting;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Offline;
 import static com.couchbase.litecore.C4ReplicatorStatus.C4ReplicatorActivityLevel.kC4Stopped;
-import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseCustomTransient;
+import static com.couchbase.litecore.C4WebSocketCloseCode.kWebSocketCloseUserTransient;
 import static java.util.Collections.synchronizedSet;
 
 /**
@@ -620,7 +620,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         // in network (i.e. network down, hostname unknown), then go offline and retry later.
         boolean bTransient = C4Replicator.mayBeTransient(c4err) ||
                 (c4err.getDomain() == WebSocketDomain &&
-                        c4err.getCode() == kWebSocketCloseCustomTransient);
+                        c4err.getCode() == kWebSocketCloseUserTransient);
 
         boolean bNetworkDependent = C4Replicator.mayBeNetworkDependent(c4err);
         if (!bTransient && !(config.isContinuous() && bNetworkDependent))

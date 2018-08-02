@@ -88,15 +88,17 @@ interface CBLError {
         int CBLErrorHTTPNotImplemented = 10501;         // Unimplemented server functionality
         int CBLErrorHTTPServiceUnavailable = 10503;     // Service is down temporarily(?)
 
-        int CBLErrorWebSocketBase = 11000;              // ---- WebSocket status codes start here
-        int CBLErrorWebSocketGoingAway = 11001;         // Peer has to close, e.g. because host app is quitting
-        int CBLErrorWebSocketProtocolError = 11002;     // Protocol violation: invalid framing data
-        int CBLErrorWebSocketDataError = 11003;         // Message payload cannot be handled
-        int CBLErrorWebSocketAbnormalClose = 11006;     // TCP socket closed unexpectedly
-        int CBLErrorWebSocketBadMessageFormat = 11007;  // Unparseable WebSocket message
-        int CBLErrorWebSocketPolicyError = 11008;       // Message violated unspecified policy
-        int CBLErrorWebSocketMessageTooBig = 11009;     // Message is too large for peer to handle
-        int CBLErrorWebSocketMissingExtension = 11010;  // Peer doesn't provide a necessary extension
-        int CBLErrorWebSocketCantFulfill = 11011;       // Can't fulfill request due to "unexpected condition"
+        int CBLErrorWebSocketBase = 11000;                  // ---- WebSocket status codes start here
+        int CBLErrorWebSocketGoingAway = 11001;             // Peer has to close, e.g. because host app is quitting
+        int CBLErrorWebSocketProtocolError = 11002;         // Protocol violation: invalid framing data
+        int CBLErrorWebSocketDataError = 11003;             // Message payload cannot be handled
+        int CBLErrorWebSocketAbnormalClose = 11006;         // TCP socket closed unexpectedly
+        int CBLErrorWebSocketBadMessageFormat = 11007;      // Unparseable WebSocket message
+        int CBLErrorWebSocketPolicyError = 11008;           // Message violated unspecified policy
+        int CBLErrorWebSocketMessageTooBig = 11009;         // Message is too large for peer to handle
+        int CBLErrorWebSocketMissingExtension = 11010;      // Peer doesn't provide a necessary extension
+        int CBLErrorWebSocketCantFulfill = 11011;           // Can't fulfill request due to "unexpected condition"
+        int CBLErrorWebSocketCloseUserTransient = 14001;    // Recoverable messaging error
+        int CBLErrorWebSocketCloseUserPermanent = 14002;    // Non-recoverable messaging error
     }
 }
