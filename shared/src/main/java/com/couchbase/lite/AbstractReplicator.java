@@ -1,5 +1,5 @@
 //
-// Replicator.java
+// AbstractReplicator.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //

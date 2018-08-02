@@ -1,5 +1,5 @@
 //
-// Database.java
+// AbstractDatabase.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
