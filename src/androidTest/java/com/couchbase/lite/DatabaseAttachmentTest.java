@@ -801,6 +801,23 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
         assertTrue(Arrays.equals(bytes, receivedBytes));
     }
 
+    public void testFollowWithRevpos() throws Exception {
+        Map<String, Object> attachInfo = new HashMap<String, Object>();
+        attachInfo.put("content_type", "text/plain");
+        attachInfo.put("digest", "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
+        attachInfo.put("follows", true);
+        attachInfo.put("length", 27);
+        attachInfo.put("revpos", 2);
+
+        AttachmentInternal attachment = new AttachmentInternal("attachment", attachInfo);
+        Map<String, Object> stub = attachment.asStubDictionary();
+        assertEquals(stub.get("content_type"), "text/plain");
+        assertEquals(stub.get("digest"), "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
+        assertEquals(stub.get("revpos"), 2);
+        assertEquals(stub.get("stub"), true);
+        assertNull(stub.get("follows"));
+    }
+
     private RevisionInternal putDocWithAttachment(String docID, String attachmentText, boolean compress) throws CouchbaseLiteException {
         byte[] attachmentData = attachmentText.getBytes();
         String encoding = null;
