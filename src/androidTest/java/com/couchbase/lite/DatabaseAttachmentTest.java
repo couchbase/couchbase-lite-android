@@ -811,10 +811,10 @@ public class DatabaseAttachmentTest extends LiteTestCaseWithDB {
 
         AttachmentInternal attachment = new AttachmentInternal("attachment", attachInfo);
         Map<String, Object> stub = attachment.asStubDictionary();
-        assertEquals(stub.get("content_type"), "text/plain");
-        assertEquals(stub.get("digest"), "sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=");
-        assertEquals(stub.get("revpos"), 2);
-        assertEquals(stub.get("stub"), true);
+        assertEquals("text/plain", stub.get("content_type"));
+        assertEquals("sha1-gOHUOBmIMoDCrMuGyaLWzf1hQTE=", stub.get("digest"));
+        assertEquals(2, stub.get("revpos"));
+        assertEquals(true, stub.get("stub"));
         assertNull(stub.get("follows"));
     }
 
