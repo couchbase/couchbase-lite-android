@@ -89,6 +89,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
                             Response.Builder builder = new Response.Builder()
                                     .request(request)
                                     .code(200)
+                                    .message("OK")
                                     .protocol(Protocol.HTTP_1_1)
                                     .body(ResponseBody.create(OkHttpUtils.JSON, json));
                             return builder.build();
@@ -275,6 +276,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
                     Response.Builder builder = new Response.Builder()
                             .request(request)
                             .code(200)
+                            .message("OK")
                             .protocol(Protocol.HTTP_1_1)
                             .body(ResponseBody.create(OkHttpUtils.JSON, json));
                     return builder.build();
@@ -292,6 +294,7 @@ public class ChangeTrackerTest extends LiteTestCaseWithDB {
                 Response.Builder builder = new Response.Builder()
                         .request(request)
                         .code(code)
+                        .message(message)
                         .protocol(Protocol.HTTP_1_1)
                         .body(ResponseBody.create(OkHttpUtils.TEXT, message));
                 return builder.build();

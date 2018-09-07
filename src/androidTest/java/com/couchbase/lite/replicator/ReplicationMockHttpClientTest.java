@@ -122,6 +122,7 @@ public class ReplicationMockHttpClientTest extends LiteTestCaseWithDB {
                 return new Response.Builder()
                         .request(request)
                         .code(404)
+                        .message("Not Found")
                         .protocol(Protocol.HTTP_1_1)
                         .body(ResponseBody.create(OkHttpUtils.JSON, json)).build();
             }
@@ -207,6 +208,7 @@ public class ReplicationMockHttpClientTest extends LiteTestCaseWithDB {
                 return new Response.Builder()
                         .request(request)
                         .code(200)
+                        .message("OK")
                         .protocol(Protocol.HTTP_1_1)
                         .body(ResponseBody.create(OkHttpUtils.JSON, json)).build();
             }
@@ -250,6 +252,7 @@ public class ReplicationMockHttpClientTest extends LiteTestCaseWithDB {
                 return new Response.Builder()
                         .request(request)
                         .code(200)
+                        .message("OK")
                         .protocol(Protocol.HTTP_1_1)
                         .body(ResponseBody.create(OkHttpUtils.JSON, json)).build();
             }
@@ -266,6 +269,7 @@ public class ReplicationMockHttpClientTest extends LiteTestCaseWithDB {
                 return new Response.Builder()
                         .request(request)
                         .code(200)
+                        .message("OK")
                         .protocol(Protocol.HTTP_1_1)
                         .body(ResponseBody.create(OkHttpUtils.JSON, json)).build();
             }
@@ -315,6 +319,7 @@ public class ReplicationMockHttpClientTest extends LiteTestCaseWithDB {
                     return new Response.Builder()
                             .request(request)
                             .code(415)
+                            .message("Unsupported Media Type")
                             .protocol(Protocol.HTTP_1_1)
                             .body(ResponseBody.create(OkHttpUtils.JSON, json)).build();
                 }
@@ -328,6 +333,7 @@ public class ReplicationMockHttpClientTest extends LiteTestCaseWithDB {
                     return new Response.Builder()
                             .request(request)
                             .code(200)
+                            .message("OK")
                             .protocol(Protocol.HTTP_1_1)
                             .body(ResponseBody.create(OkHttpUtils.JSON, json)).build();
                 }

@@ -116,6 +116,7 @@ public class CustomizableMockInterceptor implements Interceptor {
                 return new Response.Builder()
                         .request(request)
                         .code(200)
+                        .message("OK")
                         .protocol(Protocol.HTTP_1_1)
                         .body(ResponseBody.create(JSON, json)).build();
             }
@@ -139,6 +140,7 @@ public class CustomizableMockInterceptor implements Interceptor {
                 return new Response.Builder()
                         .request(request)
                         .code(200)
+                        .message("OK")
                         .protocol(Protocol.HTTP_1_1)
                         .body(ResponseBody.create(JSON, json)).build();
             }
@@ -153,6 +155,7 @@ public class CustomizableMockInterceptor implements Interceptor {
                 return new Response.Builder()
                         .request(request)
                         .code(404)
+                        .message("Not Found")
                         .protocol(Protocol.HTTP_1_1)
                         .body(ResponseBody.create(JSON, json)).build();
             }
@@ -219,6 +222,7 @@ public class CustomizableMockInterceptor implements Interceptor {
         return new Response.Builder()
                 .request(request)
                 .code(200)
+                .message("OK")
                 .protocol(Protocol.HTTP_1_1)
                 .body(ResponseBody.create(JSON, json)).build();
     }
@@ -253,6 +257,7 @@ public class CustomizableMockInterceptor implements Interceptor {
         return new Response.Builder()
                 .request(request)
                 .code(200)
+                .message("OK")
                 .protocol(Protocol.HTTP_1_1)
                 .body(ResponseBody.create(JSON, json)).build();
     }
