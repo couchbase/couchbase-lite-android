@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -92,6 +93,8 @@ public final class CBLWebSocket extends C4Socket {
     private URI uri = null;
     private Map<String, Object> options;
     private WebSocket webSocket = null;
+    private AtomicBoolean isRequestClose = new AtomicBoolean(false);
+
     OkHttpClient httpClient = null;
     CBLWebSocketListener wsListener = null;
 
@@ -134,7 +137,9 @@ public final class CBLWebSocket extends C4Socket {
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
             Log.v(TAG, "WebSocketListener.onClosing() code -> " + code + ", reason -> " + reason);
-            closeRequested(handle, code, reason);
+            if (!isRequestClose.get()) {
+                closeRequested(handle, code, reason);
+            }
         }
 
         @Override
@@ -175,9 +180,6 @@ public final class CBLWebSocket extends C4Socket {
     // Abstract method implementation
     //-------------------------------------------------------------------------
 
-    // TODO !!!!!
-    //@Override
-
 
     @Override
     protected void send(byte[] allocatedData) {
@@ -192,8 +194,7 @@ public final class CBLWebSocket extends C4Socket {
     }
 
     @Override
-    protected void close() {
-    }
+    protected void close() { }
 
     @Override
     protected void requestClose(int status, String message) {
@@ -202,10 +203,13 @@ public final class CBLWebSocket extends C4Socket {
             return;
         }
 
-        if (!webSocket.close(status, message)) {
+        if (webSocket.close(status, message)) {
+            isRequestClose.set(true);
+        } else {
             Log.w(TAG, "CBLWebSocket.requestClose() Failed to attempt to initiate a graceful shutdown of this web socket.");
         }
     }
+
     // ---------------------------------------------------------------------------------------------
     // Socket Factory Callbacks
     // ---------------------------------------------------------------------------------------------

@@ -228,12 +228,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     // static initializer
     //---------------------------------------------
 
-    static {
-        //Register CBLWebSocket which is C4Socket implementation
-        //CBLWebSocket.register();
-    }
-
-
     final static String[] kC4ReplicatorActivityLevelNames = {
             "stopped", "offline", "connecting", "idle", "busy"
     };
@@ -696,7 +690,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         reachabilityManager.addNetworkReachabilityListener(this);
     }
 
-    // - (void) clearRepl
     private void clearRepl() {
         if (c4repl != null) {
             c4repl.free();
