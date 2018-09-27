@@ -25,6 +25,7 @@ import com.couchbase.litecore.fleece.FLValue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
@@ -148,11 +149,6 @@ public final class CBLWebSocket extends C4Socket {
             didClose(code, reason);
         }
 
-        // NOTE: from CBLStatus.mm
-        // {kCFErrorHTTPConnectionLost,                {POSIXDomain, ECONNRESET}},
-        // {kCFURLErrorCannotConnectToHost,            {POSIXDomain, ECONNREFUSED}},
-        // {kCFURLErrorNetworkConnectionLost,          {POSIXDomain, ECONNRESET}},
-
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             Log.w(TAG, "WebSocketListener.onFailure() response -> " + response, t);
@@ -179,8 +175,6 @@ public final class CBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // Abstract method implementation
     //-------------------------------------------------------------------------
-
-
     @Override
     protected void send(byte[] allocatedData) {
         if (this.webSocket.send(ByteString.of(allocatedData, 0, allocatedData.length)))
@@ -214,8 +208,7 @@ public final class CBLWebSocket extends C4Socket {
     // Socket Factory Callbacks
     // ---------------------------------------------------------------------------------------------
     public static void socket_open(long socket, int socketFactoryContext, String scheme, String hostname, int port, String path, byte[] optionsFleece) {
-        Log.e(TAG, "CBLWebSocket.socket_open()");
-
+        Log.v(TAG, "CBLWebSocket.socket_open()");
         Map<String, Object> options = null;
         if (optionsFleece != null)
             options = FLValue.fromData(optionsFleece).asDict();
@@ -280,11 +273,8 @@ public final class CBLWebSocket extends C4Socket {
                     return new Authenticator() {
                         @Override
                         public Request authenticate(Route route, Response response) throws IOException {
-
                             // http://www.ietf.org/rfc/rfc2617.txt
-
                             Log.v(TAG, "Authenticating for response: " + response);
-
                             // If failed 3 times, give up.
                             if (responseCount(response) >= 3)
                                 return null;
@@ -297,15 +287,12 @@ public final class CBLWebSocket extends C4Socket {
                                         String credential = Credentials.basic(username, password);
                                         return response.request().newBuilder().header("Authorization", credential).build();
                                     }
-
                                     // NOTE: Not implemented Digest authentication
                                     //       https://github.com/rburgst/okhttp-digest
                                     //else if(challenge.scheme().equals("Digest")){
                                     //}
                                 }
-
                             }
-
                             return null;
                         }
                     };
@@ -343,7 +330,6 @@ public final class CBLWebSocket extends C4Socket {
         }
         return result;
     }
-
 
     private Request newRequest() {
         Request.Builder builder = new Request.Builder();
@@ -465,14 +451,12 @@ public final class CBLWebSocket extends C4Socket {
     private void didClose(Throwable error) {
         if (error == null) {
             closed(handle, WebSocketDomain, 0, null);
+            return;
         }
-        // TODO: Following codes works with only Android.
-        else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP &&
-                error.getCause() != null &&
-                error.getCause().getCause() != null &&
-                error.getCause().getCause() instanceof android.system.ErrnoException) {
-            android.system.ErrnoException e = (android.system.ErrnoException) error.getCause().getCause();
-            closed(handle, POSIXDomain, e != null ? e.errno : 0, null);
+
+        Integer errno = getAndroidExceptionErrorNumber(error);
+        if (errno != null) {
+            closed(handle, POSIXDomain, errno, null);
         }
         // TLS Certificate error
         else if (error.getCause() != null &&
@@ -502,6 +486,33 @@ public final class CBLWebSocket extends C4Socket {
         // Unknown
         else {
             closed(handle, WebSocketDomain, 0, null);
+        }
+    }
+
+    private Integer getAndroidExceptionErrorNumber(Throwable error) {
+        if (error == null)
+            return null;
+
+        // android.system.ErrnoException is available from API 21 (LOLLIPOP):
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP)
+            return null;
+
+        Throwable cause = error.getCause();
+        if (cause == null)
+            return null;
+
+        cause = cause.getCause();
+        if (cause == null)
+            return null;
+
+        Class clazz;
+        Field errno;
+        try {
+            clazz = Class.forName("android.system.ErrnoException");
+            errno = clazz.getField("errno");
+            return errno.getInt(cause);
+        } catch (Exception e) {
+            return null;
         }
     }
 
