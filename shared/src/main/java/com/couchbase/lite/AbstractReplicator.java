@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.support.NativeLibraryLoader;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;

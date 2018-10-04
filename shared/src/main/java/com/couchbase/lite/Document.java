@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.support.NativeLibraryLoader;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLDict;

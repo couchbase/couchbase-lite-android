@@ -19,21 +19,18 @@ package com.couchbase.lite;
 
 import android.content.Context;
 
-import java.io.File;
+import com.couchbase.lite.internal.support.Assets;
 
 /**
  * Configuration for opening a database.
  */
 public final class DatabaseConfiguration {
-    private static final String TEMP_DIR_NAME = "tmp";
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private boolean readonly = false;
     private Context context = null;
     private String directory = null;
-    private boolean customDir = false;
 
     //---------------------------------------------
     // Constructors
@@ -42,19 +39,17 @@ public final class DatabaseConfiguration {
     public DatabaseConfiguration(Context context) {
         if (context == null)
             throw new IllegalArgumentException("context is null");
+        setContext(context);
         this.readonly = false;
-        this.context = context;
         this.directory = context.getFilesDir().getAbsolutePath();
-        this.customDir = false;
     }
 
     public DatabaseConfiguration(DatabaseConfiguration config) {
         if (config == null)
             throw new IllegalArgumentException("config is null");
+            setContext(context);
         this.readonly = false;
-        this.context = config.context;
         this.directory = config.directory;
-        this.customDir = config.customDir;
     }
 
     //---------------------------------------------
@@ -73,7 +68,6 @@ public final class DatabaseConfiguration {
         if (readonly)
             throw new IllegalStateException("DatabaseConfiguration is readonly mode.");
         this.directory = directory;
-        this.customDir = true;
         return this;
     }
 
@@ -100,17 +94,12 @@ public final class DatabaseConfiguration {
         return context;
     }
 
-    String getTempDir() {
-        if (customDir) {
-            File cache = new File(directory, TEMP_DIR_NAME);
-            if (!cache.exists())
-                if (!cache.mkdirs())
-                    return context.getCacheDir().getAbsolutePath();
-                else if (!cache.isDirectory())
-                    return context.getCacheDir().getAbsolutePath();
-            return cache.getAbsolutePath();
-        } else {
-            return context.getCacheDir().getAbsolutePath();
-        }
+    //---------------------------------------------
+    // Private level access
+    //---------------------------------------------
+
+    private void setContext(Context context) {
+        this.context = context;
+        Assets.initialize(context);
     }
 }

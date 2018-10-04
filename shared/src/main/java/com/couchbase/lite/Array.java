@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.NativeLibraryLoader;
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.fleece.Encoder;
 import com.couchbase.litecore.fleece.FLEncodable;

@@ -15,15 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.support;
 
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.litecore.fleece.MValue;
-
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-final class NativeLibraryLoader {
+public final class NativeLibraryLoader {
     private static final String TAG = Log.DATABASE;
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
@@ -32,7 +30,7 @@ final class NativeLibraryLoader {
 
     NativeLibraryLoader() {  }
 
-    static void load() {
+    public static void load() {
         if (!loaded.getAndSet(true)) {
             if (load(LITECORE_JNI_LIBRARY))
                 Log.v(TAG, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");

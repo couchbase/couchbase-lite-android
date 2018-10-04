@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.support.NativeLibraryLoader;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
@@ -125,10 +126,8 @@ abstract class AbstractDatabase {
         this.name = name;
         this.config = config.readonlyCopy();
 
-        String tempdir = this.config.getTempDir();
-        if (tempdir != null)
-            C4.setenv("TMPDIR", tempdir, 1);
         open();
+
         this.sharedKeys = new SharedKeys(c4db);
         this.postExecutor = Executors.newSingleThreadScheduledExecutor();
         this.queryExecutor = Executors.newSingleThreadScheduledExecutor();
