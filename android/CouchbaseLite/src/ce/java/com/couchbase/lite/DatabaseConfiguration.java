@@ -18,6 +18,8 @@
 package com.couchbase.lite;
 
 import android.content.Context;
+
+import com.couchbase.lite.internal.support.NativeLibrary;
 import com.couchbase.lite.internal.utils.FileUtils;
 import java.io.File;
 
@@ -25,10 +27,15 @@ import java.io.File;
  * Configuration for opening a database.
  */
 public final class DatabaseConfiguration {
-    private static final String TEMP_DIR_NAME = "CBLTemp";
+    //---------------------------------------------
+    // Load LiteCore library and its dependencies
+    //---------------------------------------------
+    static {
+        NativeLibrary.load();
+    }
 
     //---------------------------------------------
-    // member variables
+    // Member variables
     //---------------------------------------------
     private Context context;
     private boolean readonly;
@@ -100,6 +107,6 @@ public final class DatabaseConfiguration {
         if (FileUtils.isSubDirectory(context.getFilesDir(), new File(getDirectory())))
             return context.getCacheDir();
         else
-            return new File(getDirectory(), "TEMP_DIR_NAME");
+            return new File(getDirectory());
     }
 }

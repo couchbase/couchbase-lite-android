@@ -18,7 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.support.NativeLibraryLoader;
+import com.couchbase.lite.internal.support.NativeLibrary;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.litecore.C4Query;
 import com.couchbase.litecore.C4QueryEnumerator;
@@ -41,7 +41,7 @@ abstract class AbstractQuery implements Query {
     // Load LiteCore library and its dependencies
     //---------------------------------------------
     static {
-        NativeLibraryLoader.load();
+        NativeLibrary.load();
     }
 
     //---------------------------------------------

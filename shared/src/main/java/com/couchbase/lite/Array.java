@@ -17,7 +17,7 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.support.NativeLibraryLoader;
+import com.couchbase.lite.internal.support.NativeLibrary;
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.litecore.fleece.Encoder;
 import com.couchbase.litecore.fleece.FLEncodable;
@@ -40,7 +40,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Load LiteCore library and its dependencies
     //---------------------------------------------
     static {
-        NativeLibraryLoader.load();
+        NativeLibrary.load();
     }
 
     //---------------------------------------------

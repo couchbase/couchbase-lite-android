@@ -18,7 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.support.NativeLibraryLoader;
+import com.couchbase.lite.internal.support.NativeLibrary;
 import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.fleece.FLDict;
@@ -42,7 +42,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     // Load LiteCore library and its dependencies
     //---------------------------------------------
     static {
-        NativeLibraryLoader.load();
+        NativeLibrary.load();
     }
 
     private static final String TAG = Log.DATABASE;

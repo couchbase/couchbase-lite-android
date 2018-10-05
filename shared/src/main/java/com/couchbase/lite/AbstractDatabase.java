@@ -19,11 +19,10 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Environment;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.support.NativeLibraryLoader;
+import com.couchbase.lite.internal.support.NativeLibrary;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
-import com.couchbase.litecore.C4;
 import com.couchbase.litecore.C4BlobStore;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Constants.C4DatabaseFlags;
@@ -67,8 +66,7 @@ abstract class AbstractDatabase {
     // Load LiteCore library and its dependencies
     //---------------------------------------------
     static {
-        NativeLibraryLoader.load();
-        Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
+        NativeLibrary.load();
     }
 
     //---------------------------------------------

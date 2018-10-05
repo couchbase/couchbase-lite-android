@@ -1,5 +1,5 @@
 //
-// NativeLibraryLoader.java
+// NativeLibrary.java
 //
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
@@ -17,31 +17,34 @@
 //
 package com.couchbase.lite.internal.support;
 
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.LogLevel;
 import com.couchbase.litecore.fleece.MValue;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public final class NativeLibraryLoader {
+public final class NativeLibrary {
     private static final String TAG = Log.DATABASE;
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
     private static AtomicBoolean loaded = new AtomicBoolean(false);
 
-    NativeLibraryLoader() {  }
+    NativeLibrary() {  }
 
     public static void load() {
         if (!loaded.getAndSet(true)) {
-            if (load(LITECORE_JNI_LIBRARY))
+            if (load(LITECORE_JNI_LIBRARY)) {
+                Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
                 Log.v(TAG, "Successfully load native library: 'LiteCoreJNI' and 'sqlite3'");
-            else
+            } else {
                 Log.e(TAG, "Cannot load native library");
+            }
             initMValue();
         }
     }
 
     private static boolean load(String libName) {
-        // TODO: Need to update for CBL Java.
         return loadSystemLibrary(libName);
     }
 

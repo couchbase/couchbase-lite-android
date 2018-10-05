@@ -18,7 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.support.NativeLibraryLoader;
+import com.couchbase.lite.internal.support.NativeLibrary;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;
@@ -65,7 +65,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     // Load LiteCore library and its dependencies
     //---------------------------------------------
     static {
-        NativeLibraryLoader.load();
+        NativeLibrary.load();
     }
 
     protected static final String TAG = Log.SYNC;
