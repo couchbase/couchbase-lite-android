@@ -20,8 +20,7 @@ package com.couchbase.lite.internal.utils;
 import java.io.File;
 
 public final class FileUtils {
-    private FileUtils() {
-    }
+    private FileUtils() { }
 
     public static boolean deleteRecursive(String fileOrDirectory) {
         return deleteRecursive(new File(fileOrDirectory));
@@ -34,5 +33,16 @@ public final class FileUtils {
             }
         }
         return fileOrDirectory.delete() || !fileOrDirectory.exists();
+    }
+
+    public static boolean isSubDirectory(File base, File child) {
+        base = base.getAbsoluteFile();
+        File parent = child.getAbsoluteFile();
+        while (parent != null) {
+            if (base.equals(parent))
+                return true;
+            parent = parent.getParentFile();
+        }
+        return false;
     }
 }

@@ -18,19 +18,21 @@
 package com.couchbase.lite;
 
 import android.content.Context;
-
-import com.couchbase.lite.internal.support.Assets;
+import com.couchbase.lite.internal.utils.FileUtils;
+import java.io.File;
 
 /**
  * Configuration for opening a database.
  */
 public final class DatabaseConfiguration {
+    private static final String TEMP_DIR_NAME = "CBLTemp";
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-    private boolean readonly = false;
-    private Context context = null;
-    private String directory = null;
+    private Context context;
+    private boolean readonly;
+    private String directory;
 
     //---------------------------------------------
     // Constructors
@@ -39,7 +41,7 @@ public final class DatabaseConfiguration {
     public DatabaseConfiguration(Context context) {
         if (context == null)
             throw new IllegalArgumentException("context is null");
-        setContext(context);
+        this.context = context;
         this.readonly = false;
         this.directory = context.getFilesDir().getAbsolutePath();
     }
@@ -47,7 +49,7 @@ public final class DatabaseConfiguration {
     public DatabaseConfiguration(DatabaseConfiguration config) {
         if (config == null)
             throw new IllegalArgumentException("config is null");
-            setContext(context);
+        this.context = config.context;
         this.readonly = false;
         this.directory = config.directory;
     }
@@ -94,12 +96,10 @@ public final class DatabaseConfiguration {
         return context;
     }
 
-    //---------------------------------------------
-    // Private level access
-    //---------------------------------------------
-
-    private void setContext(Context context) {
-        this.context = context;
-        Assets.initialize(context);
+    File getTempDirectory() {
+        if (FileUtils.isSubDirectory(context.getFilesDir(), new File(getDirectory())))
+            return context.getCacheDir();
+        else
+            return new File(getDirectory(), "TEMP_DIR_NAME");
     }
 }

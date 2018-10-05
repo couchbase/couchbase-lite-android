@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+import com.couchbase.lite.internal.support.Environment;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.support.NativeLibraryLoader;
 import com.couchbase.lite.internal.utils.ExecutorUtils;
@@ -601,6 +602,9 @@ abstract class AbstractDatabase {
         int encryptionAlgorithm = C4EncryptionAlgorithm.kC4EncryptionNone;
         byte[] encryptionKey = null;
 
+        // Setup the temp directory:
+        Environment.setupTempDirectory(config.getTempDirectory());
+
         try {
             C4Database.copy(fromPath,
                     toPath,
@@ -794,8 +798,11 @@ abstract class AbstractDatabase {
         if (c4db != null)
             return;
 
-        File dir = config.getDirectory() != null ? new File(config.getDirectory()) : getDefaultDirectory();
+        File dir = new File(config.getDirectory());
         setupDirectory(dir);
+
+        // Setup the temp directory:
+        Environment.setupTempDirectory(config.getTempDirectory());
 
         File dbFile = getDatabasePath(dir, this.name);
         int databaseFlags = getDatabaseFlags();
