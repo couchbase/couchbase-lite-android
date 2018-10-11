@@ -300,6 +300,64 @@ public class RouterTest extends LiteTestCaseWithDB {
         assertTrue(responseString.contains(inlineTextString));
     }
 
+    public void testPutDocMultipart() throws IOException {
+        send("PUT", "/db", Status.CREATED, null);
+
+        Map<String, Object> attachments = new HashMap<String, Object>();
+        Map<String, Object> attach = new HashMap<String, Object>();
+        attach.put("content_type", "text/plain");
+        attach.put("length", 36);
+        attach.put("follows", true);
+        attachments.put("attach", attach);
+
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("message", "hello");
+        props.put("_attachments", attachments);
+        String attachmentString = "This is the value of the attachment.";
+
+        StringBuilder body = new StringBuilder();
+        body.append("\r\n--BOUNDARY\r\n\r\n");
+        body.append(mapper.writeValueAsString(props));
+        body.append("\r\n--BOUNDARY\r\n");
+        body.append("Content-Disposition: attachment; filename=attach\r\n");
+        body.append("Content-Type: text/plain\r\n\r\n");
+        body.append(attachmentString);
+        body.append("\r\n--BOUNDARY--");
+
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Content-Type", "multipart/related; boundary=\"BOUNDARY\"");
+        sendBody("PUT", "/db/doc", body.toString(), headers, Status.CREATED, null);
+    }
+
+    public void _testPostDatabaseWithDocMultipart() throws IOException {
+        send("PUT", "/db", Status.CREATED, null);
+
+        Map<String, Object> attachments = new HashMap<String, Object>();
+        Map<String, Object> attach = new HashMap<String, Object>();
+        attach.put("content_type", "text/plain");
+        attach.put("length", 36);
+        attach.put("follows", true);
+        attachments.put("attach", attach);
+
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("message", "hello");
+        props.put("_attachments", attachments);
+        String attachmentString = "This is the value of the attachment.";
+
+        StringBuilder body = new StringBuilder();
+        body.append("\r\n--BOUNDARY\r\n\r\n");
+        body.append(mapper.writeValueAsString(props));
+        body.append("\r\n--BOUNDARY\r\n");
+        body.append("Content-Disposition: attachment; filename=attach\r\n");
+        body.append("Content-Type: text/plain\r\n\r\n");
+        body.append(attachmentString);
+        body.append("\r\n--BOUNDARY--");
+
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Content-Type", "multipart/related; boundary=\"BOUNDARY\"");
+        sendBody("POST", "/db", body.toString(), headers, Status.CREATED, null);
+    }
+
     private Map<String, Object> valueMapWithRev(String revId) {
         Map<String, Object> value = valueMapWithRevNoConflictArray(revId);
         value.put("_conflicts", new ArrayList<String>());

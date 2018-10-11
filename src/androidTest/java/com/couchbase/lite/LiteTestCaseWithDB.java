@@ -415,7 +415,11 @@ public class LiteTestCaseWithDB extends LiteTestCase {
 
             if (bodyObj != null) {
                 conn.setDoInput(true);
-                ByteArrayInputStream bais = new ByteArrayInputStream(mapper.writeValueAsBytes(bodyObj));
+                ByteArrayInputStream bais;
+                if (bodyObj instanceof String)
+                    bais = new ByteArrayInputStream(((String)bodyObj).getBytes("UTF-8"));
+                else
+                    bais = new ByteArrayInputStream(mapper.writeValueAsBytes(bodyObj));
                 conn.setRequestInputStream(bais);
             }
 
