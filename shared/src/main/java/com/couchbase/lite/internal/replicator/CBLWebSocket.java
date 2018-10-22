@@ -252,54 +252,10 @@ public final class CBLWebSocket extends C4Socket {
         // redirection
         builder.followRedirects(true).followSslRedirects(true);
 
-        // authenticator
-        Authenticator authenticator = setupAuthenticator();
-        if (authenticator != null)
-            builder.authenticator(authenticator);
-
         // trusted certificate (pinned certificate)
         setupTrustedCertificate(builder);
 
         return builder.build();
-    }
-
-    private Authenticator setupAuthenticator() {
-        if (options != null && options.containsKey(kC4ReplicatorOptionAuthentication)) {
-            Map<String, Object> auth = (Map<String, Object>) options.get(kC4ReplicatorOptionAuthentication);
-            if (auth != null) {
-                final String username = (String) auth.get(kC4ReplicatorAuthUserName);
-                final String password = (String) auth.get(kC4ReplicatorAuthPassword);
-                if (username != null && password != null) {
-                    return new Authenticator() {
-                        @Override
-                        public Request authenticate(Route route, Response response) throws IOException {
-                            // http://www.ietf.org/rfc/rfc2617.txt
-                            Log.v(TAG, "Authenticating for response: " + response);
-                            // If failed 3 times, give up.
-                            if (responseCount(response) >= 3)
-                                return null;
-
-                            List<Challenge> challenges = response.challenges();
-                            Log.v(TAG, "Challenges: " + challenges);
-                            if (challenges != null) {
-                                for (Challenge challenge : challenges) {
-                                    if (challenge.scheme().equals("Basic")) {
-                                        String credential = Credentials.basic(username, password);
-                                        return response.request().newBuilder().header("Authorization", credential).build();
-                                    }
-                                    // NOTE: Not implemented Digest authentication
-                                    //       https://github.com/rburgst/okhttp-digest
-                                    //else if(challenge.scheme().equals("Digest")){
-                                    //}
-                                }
-                            }
-                            return null;
-                        }
-                    };
-                }
-            }
-        }
-        return null;
     }
 
     private void setupTrustedCertificate(OkHttpClient.Builder builder) throws GeneralSecurityException {
@@ -357,6 +313,9 @@ public final class CBLWebSocket extends C4Socket {
             String cookieString = (String) options.get(kC4ReplicatorOptionCookies);
             if (cookieString != null)
                 builder.addHeader("Cookie", cookieString);
+
+            // Basic Auth:
+            setupAuthHeader(builder);
         }
 
         // Configure WebSocket related headers:
@@ -366,6 +325,19 @@ public final class CBLWebSocket extends C4Socket {
         }
 
         return builder.build();
+    }
+
+    private void setupAuthHeader(Request.Builder builder) {
+        if (options != null && options.containsKey(kC4ReplicatorOptionAuthentication)) {
+            Map<String, Object> auth = (Map<String, Object>) options.get(kC4ReplicatorOptionAuthentication);
+            final String type = (String) auth.get(kC4ReplicatorAuthType);
+            final String username = (String) auth.get(kC4ReplicatorAuthUserName);
+            final String password = (String) auth.get(kC4ReplicatorAuthPassword);
+            if (kC4AuthTypeBasic.equals(type) && username != null && password != null) {
+                String credential = Credentials.basic(username, password);
+                builder.header("Authorization", credential);
+            }
+        }
     }
 
     private void receivedHTTPResponse(Response response) {
