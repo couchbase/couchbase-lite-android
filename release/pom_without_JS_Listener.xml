@@ -326,4 +326,29 @@
             <url>http://files.couchbase.com/maven2/</url>
         </repository>
     </distributionManagement>
+    <description>Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.</description>
+  <name>com.couchbase.lite:couchbase-lite-android</name>
+  <url>http://developer.couchbase.com/mobile/</url>
+  <licenses>
+    <license>
+      <name>Couchbase, Inc. Community Edition License Agreement</name>
+      <url>https://www.couchbase.com/binaries/content/assets/website/legal/ce-license-agreement.pdf</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <name>Couchbase Mobile</name>
+      <email>mobile@couchbase.com</email>
+      <organization>Couchbase</organization>
+      <organizationUrl>http://www.couchbase.com</organizationUrl>
+    </developer>
+  </developers>
+  <issueManagement>
+    <system>github</system>
+    <url>https://github.com/couchbase/couchbase-lite-android/issues</url>
+  </issueManagement>
+  <scm>
+    <url>http://developer.couchbase.com/mobile/</url>
+  </scm>
 </project>
