@@ -145,13 +145,29 @@ uploadArchives {
             pom.groupId = 'com.couchbase.lite'
             pom.artifactId = 'couchbase-lite-android'
             pom.project {
+                name 'com.couchbase.lite:couchbase-lite-android'
+                description 'Couchbase Lite is an embedded lightweight, document-oriented (NoSQL), syncable database engine.'
+                url 'http://developer.couchbase.com/mobile/'
                 licenses {
                     license {
-                        name 'Couchbase Community Edition License Agreement'
-                        url 'http://www.couchbase.com/agreement/community'
+                        name 'Couchbase, Inc. Community Edition License Agreement'
+                        url 'https://www.couchbase.com/binaries/content/assets/website/legal/ce-license-agreement.pdf'
                         distribution 'repo'
                     }
                 }
+                scm {
+                    url 'http://developer.couchbase.com/mobile/'
+                    connection 'scm:git@github.com:couchbase/couchbase-lite-android.git'
+                    developerConnection 'scm:git@github.com:couchbase/couchbase-lite-android.git'
+                }
+                developers {
+                    developer {
+                        name 'Couchbase Mobile'
+                        email 'mobile@couchbase.com'
+                        organization 'Couchbase'
+                        organizationUrl 'http://www.couchbase.com'
+                    }
+               }
             }
         }
     }
