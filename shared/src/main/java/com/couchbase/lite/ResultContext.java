@@ -23,6 +23,6 @@ package com.couchbase.lite;
  */
 final class ResultContext extends DocContext {
     ResultContext(Database db) {
-        super(db);
+        super(db, null);
     }
 }

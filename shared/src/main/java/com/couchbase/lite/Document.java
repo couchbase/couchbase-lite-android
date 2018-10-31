@@ -446,7 +446,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     void updateDictionary() {
         if (_data != null) {
-            _root = new MRoot(new DocContext(_database), _data.toFLValue(), isMutable());
+            _root = new MRoot(new DocContext(_database, _c4doc), _data.toFLValue(), isMutable());
             synchronized (_database.getLock()) {
                 _dict = (Dictionary) _root.asNative();
             }
@@ -534,32 +534,14 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
-    byte[] encode() throws LiteCoreException {
+    FLSliceResult encode() throws LiteCoreException {
         encodingError = null;
-        FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
-        try {
-            encoder.setExtraInfo(this); // TODO: Need to consider better value
-            _dict.encodeTo(encoder);
-            if (encodingError != null) {
-                LiteCoreException ex = encodingError;
-                encodingError = null;
-                throw ex;
-            }
-            return encoder.finish();
-        } finally {
-            encoder.setExtraInfo(null);
-            encoder.free();
-        }
-    }
-
-    FLSliceResult encode2() throws LiteCoreException {
-        encodingError = null;
-        FLEncoder encoder = getDatabase().getC4Database().createFleeceEncoder();
+        FLEncoder encoder = getDatabase().getC4Database().getSharedFleeceEncoder();
         try {
             encoder.setExtraInfo(this);
             _dict.encodeTo(encoder);
-
             if (encodingError != null) {
+                encoder.reset();
                 LiteCoreException ex = encodingError;
                 encodingError = null;
                 throw ex;
@@ -567,7 +549,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
             return encoder.finish2();
         } finally {
             encoder.setExtraInfo(null);
-            encoder.free();
         }
     }
 

@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.fleece.AllocSlice;
 import com.couchbase.litecore.fleece.MContext;
 
@@ -26,13 +27,24 @@ import com.couchbase.litecore.fleece.MContext;
  */
 class DocContext extends MContext {
     private Database _db;
+    private C4Document _doc;
 
-    DocContext(Database db) {
+    DocContext(Database db, C4Document doc) {
         super(new AllocSlice("{}".getBytes()), db.getSharedKeys().getFLSharedKeys());
         _db = db;
+        _doc = doc;
+        if (_doc != null)
+            _doc.retain();
     }
 
     Database getDatabase() {
         return _db;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        if (_doc != null)
+            _doc.release();
+        super.finalize();
     }
 }

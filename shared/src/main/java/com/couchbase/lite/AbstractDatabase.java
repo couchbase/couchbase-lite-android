@@ -38,6 +38,7 @@ import com.couchbase.litecore.C4Document;
 import com.couchbase.litecore.LiteCoreException;
 import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.FLSliceResult;
+import com.couchbase.litecore.fleece.FLValue;
 
 import org.json.JSONException;
 
@@ -500,7 +501,8 @@ abstract class AbstractDatabase {
         synchronized (lock) {
             mustBeOpen();
             try {
-                return (List<String>) SharedKeys.valueToObject(c4db.getIndexes(), sharedKeys);
+                FLValue value = c4db.getIndexes();
+                return (List<String>) value.asObject();
             } catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
             }
@@ -1070,10 +1072,11 @@ abstract class AbstractDatabase {
                 revFlags = C4RevisionFlags.kRevDeleted;
             if (!deletion && !document.isEmpty()) {
                 // Encode properties to Fleece data:
-                body = document.encode2();
+                body = document.encode();
                 if (body == null)
                     return null;
-                if (SharedKeys.dictContainsBlobs(body, getSharedKeys()))
+
+                if (C4Document.dictContainsBlobs(body, sharedKeys.getFLSharedKeys()))
                     revFlags |= C4Constants.C4RevisionFlags.kRevHasAttachments;
             }
 
@@ -1122,7 +1125,7 @@ abstract class AbstractDatabase {
                 int mergedFlags = 0x00;
                 if (resolvedDoc != remoteDoc) {
                     // Unless the remote revision is being used as-is, we need a new revision:
-                    mergedBody = resolvedDoc.encode();
+                    mergedBody = resolvedDoc.encode().getBuf();
                     if (mergedBody == null)
                         return false;
                     if (resolvedDoc.isDeleted())

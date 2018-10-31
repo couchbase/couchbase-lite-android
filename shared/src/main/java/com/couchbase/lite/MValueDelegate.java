@@ -17,7 +17,6 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.litecore.SharedKeys;
 import com.couchbase.litecore.fleece.Encoder;
 import com.couchbase.litecore.fleece.FLConstants;
 import com.couchbase.litecore.fleece.FLDict;
@@ -46,7 +45,7 @@ final class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
                 cacheIt.set(true);
                 return mValueToDictionary(mv, parent);
             default:
-                return value.toObject(new SharedKeys(parent.getContext().getSharedKeys()));
+                return value.asObject();
         }
     }
 
@@ -64,15 +63,14 @@ final class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
     }
 
     static Object createBlob(FLDict properties, DocContext context) {
-        return new Blob(context.getDatabase(),
-                properties.toObject(new SharedKeys(context.getSharedKeys())));
+        return new Blob(context.getDatabase(), properties.asDict());
     }
 
-    static boolean isOldAttachment(FLDict flDict, FLSharedKeys sk) {
-        FLValue flDigest = flDict.getSharedKey("digest", sk);
-        FLValue flLength = flDict.getSharedKey("length", sk);
-        FLValue flStub = flDict.getSharedKey("stub", sk);
-        FLValue flRevPos = flDict.getSharedKey("revpos", sk);
+    static boolean isOldAttachment(FLDict flDict) {
+        FLValue flDigest = flDict.get("digest");
+        FLValue flLength = flDict.get("length");
+        FLValue flStub = flDict.get("stub");
+        FLValue flRevPos = flDict.get("revpos");
         return flDigest != null && flLength != null && flStub != null && flRevPos != null;
     }
 
@@ -80,15 +78,14 @@ final class MValueDelegate implements MValue.Delegate, FLConstants.FLValueType {
         FLValue value = mv.getValue();
         FLDict flDict = value.asFLDict();
         DocContext context = (DocContext) parent.getContext();
-        FLSharedKeys sk = context.getSharedKeys();
-        FLValue flType = flDict.getSharedKey(Blob.kC4ObjectTypeProperty, sk);
+        FLValue flType = flDict.get(Blob.kC4ObjectTypeProperty);
         String type = flType != null ? flType.asString() : null;
         if (type != null) {
             Object obj = createSpecialObjectOfType(type, flDict, context);
             if (obj != null)
                 return obj;
         } else {
-            if (isOldAttachment(flDict, sk))
+            if (isOldAttachment(flDict))
                 return createBlob(flDict, context);
         }
 

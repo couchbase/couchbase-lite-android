@@ -240,8 +240,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     public List<Object> toList() {
         List<Object> array = new ArrayList<>();
         for (int i = 0; i < count(); i++) {
-            SharedKeys sk = rs.getQuery().getDatabase().getSharedKeys();
-            array.add(SharedKeys.valueToObject(values.get(i), sk));
+            FLValue value = values.get(i);
+            array.add(value.asObject());
         }
         return array;
     }

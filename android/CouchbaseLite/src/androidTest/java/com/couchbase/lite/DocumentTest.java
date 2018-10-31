@@ -1753,7 +1753,8 @@ public class DocumentTest extends BaseTest {
         assertNull(db.getDocument(docID));
 
         // NOTE: doc is reserved.
-        assertEquals("Scott Tiger", doc.getValue("name"));
+        Object v = doc.getValue("name");
+        assertEquals("Scott Tiger", v);
         Map<String, Object> expected = new HashMap<>();
         expected.put("name", "Scott Tiger");
         assertEquals(expected, doc.toMap());
