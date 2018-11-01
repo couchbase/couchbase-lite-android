@@ -43,6 +43,7 @@ public final class ReplicatorConfiguration {
     static final String kC4ReplicatorCheckpointInterval = "checkpointInterval"; // How often to checkpoint, in seconds; number
     static final String kC4ReplicatorOptionRemoteDBUniqueID = "remoteDBUniqueID"; // How often to checkpoint, in seconds; number
     static final String kC4ReplicatorResetCheckpoint = "reset"; // reset remote checkpoint
+    static final String kC4ReplicatorOptionNoDeltas = "noDeltas";
 
     // Auth dictionary keys:
     static final String kC4ReplicatorAuthType = "type"; // Auth property; string
@@ -82,6 +83,7 @@ public final class ReplicatorConfiguration {
     private byte[] pinnedServerCertificate = null;
     private List<String> channels = null;
     private List<String> documentIDs = null;
+    private boolean deltaSyncEnabled = true;
 
     //---------------------------------------------
     // Constructors
@@ -98,6 +100,7 @@ public final class ReplicatorConfiguration {
         this.headers = config.headers;
         this.channels = config.channels;
         this.documentIDs = config.documentIDs;
+        this.deltaSyncEnabled = config.deltaSyncEnabled;
     }
 
     public ReplicatorConfiguration(Database database, Endpoint target) {
@@ -212,6 +215,19 @@ public final class ReplicatorConfiguration {
         return this;
     }
 
+    /**
+     * Sets boolean value to indicate the delta sync is enabled or not.
+     * The default value is true.
+     * @param enable The boolean enable.
+     * @return The self object.
+     */
+    public ReplicatorConfiguration setDeltaSyncEnabled(boolean enable){
+        if (readonly)
+            throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
+        this.deltaSyncEnabled = enable;
+        return this;
+    }
+
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -283,6 +299,13 @@ public final class ReplicatorConfiguration {
         return documentIDs;
     }
 
+    /**
+     * Return the deltaSyncEnabled flag indicating the delta sync is enabled or not.
+     */
+    public boolean isDeltaSyncEnabled() {
+        return deltaSyncEnabled;
+    }
+
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
@@ -305,6 +328,9 @@ public final class ReplicatorConfiguration {
 
         if (documentIDs != null && documentIDs.size() > 0)
             options.put(kC4ReplicatorOptionDocIDs, documentIDs);
+
+        if (deltaSyncEnabled)
+            options.put(kC4ReplicatorOptionNoDeltas, !deltaSyncEnabled);
 
         if (channels != null && channels.size() > 0)
             options.put(kC4ReplicatorOptionChannels, channels);
