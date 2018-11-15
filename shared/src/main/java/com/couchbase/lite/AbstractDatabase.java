@@ -45,6 +45,7 @@ import org.json.JSONException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -304,6 +305,62 @@ abstract class AbstractDatabase {
                 endTransaction(commit);
             }
         }
+    }
+
+    /**
+     * Purges the given document id for the document in database. This is more drastic than delete(Document),
+     * it removes all traces of the document. The purge will NOT be replicated to other databases.
+     *
+     * @param id the document ID
+     */
+    public void purge(String id) throws CouchbaseLiteException {
+        purge(getDocument(id));
+    }
+
+    /**
+     * Sets an expiration date on a document. After this time, the document
+     * will be purged from the database.
+     * @param docId The ID of the Document
+     * @param datetime Nullable expiration timestamp as a Date, set timestamp to null
+     * to remove expiration date time from doc.
+     * @throws  CouchbaseLiteException NOT FOUND error if the document doesn't exist.
+     */
+    public void setDocumentExpiration(String docId, Date datetime) throws CouchbaseLiteException, LiteCoreException {
+        if(getDocument(docId) == null) {
+            throw new CouchbaseLiteException("Cannot find the document.",
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+        }
+        synchronized (lock) {
+            try {
+                if (datetime == null) {
+                    getC4Database().setExpiration(docId, null);
+                } else {
+                    Long timestamp = datetime.getTime();
+                    getC4Database().setExpiration(docId, timestamp);
+                }
+            } catch (LiteCoreException ex) {
+                throw ex;
+            }
+        }
+    }
+
+    /**
+     * Returns the expiration time of the document. null will be returned if there is
+     * no expiration time set
+     * @param docId The ID of the Document
+     * @return Date a nullable expiration timestamp of the document or null if time not set.
+     * @throws CouchbaseLiteException NOT FOUND error if the document doesn't exist.
+     */
+    public Date getDocumentExpiration(String docId) throws CouchbaseLiteException {
+        if (getDocument(docId) == null) {
+            throw new CouchbaseLiteException("Cannot find the document.",
+                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+        }
+        Long timestamp = getC4Database().getExpiration(docId);
+        if (timestamp == 0) {
+            return null;
+        }
+        return new Date(timestamp);
     }
 
     // Batch operations:
