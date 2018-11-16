@@ -43,4 +43,14 @@ public class Meta {
      * `sequence` is greater than another's, that means it was changed more recently.
      */
     public static final MetaExpression sequence = new MetaExpression("_sequence", "sequence", null);
+
+    /**
+     * A metadata expression refering to the deleted boolean flag of the document.
+     */
+    public static final MetaExpression deleted = new MetaExpression("_deleted", "deleted", null);
+
+    /**
+     * A metadata expression refering to the expiration date of the document.
+     */
+    public static final MetaExpression expiration = new MetaExpression("_expiration", "expiration", null);
 }
