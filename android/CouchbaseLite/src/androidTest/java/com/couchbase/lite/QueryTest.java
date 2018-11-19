@@ -22,9 +22,11 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.litecore.LiteCoreException;
 
 import org.junit.Test;
 
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -118,11 +120,11 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testQueryDocumentExpiration() throws CouchbaseLiteException, LiteCoreException {
+    public void testQueryDocumentExpiration() throws CouchbaseLiteException, LiteCoreException, LiteCoreException {
         Date dto20 = new Date(System.currentTimeMillis() + 2000L);
         Date dto30 = new Date(System.currentTimeMillis() + 3000L);
         Date dto40 = new Date(System.currentTimeMillis() + 4000L);
-        Date dto60InMS = new Date(System.currentTimeMillis() + 6000L);
+        long  dto60InMS = System.currentTimeMillis() + 6000L;
 
         MutableDocument doc1a = new MutableDocument("doc1");
         MutableDocument doc1b = new MutableDocument("doc2");
@@ -139,14 +141,14 @@ public class QueryTest extends BaseTest {
         doc1c.setString("c", "string");
         save(doc1c);
 
-        assertTrue(db.setDocumentExpiration("doc1", dto20));
-        assertTrue(db.setDocumentExpiration("doc2", dto30));
-        assertTrue(db.setDocumentExpiration("doc3", dto40));
+        db.setDocumentExpiration("doc1", dto20);
+        db.setDocumentExpiration("doc2", dto30);
+        db.setDocumentExpiration("doc3", dto40);
 
         Query query = QueryBuilder.select(SR_DOCID, SR_EXPIRATION)
                 .from(DataSource.database(db))
                 .where(Meta.expiration
-                        .lessThan(Expression.long(dto60InMS)));
+                        .lessThan(Expression.longValue(dto60InMS)));
 
         assertEquals(query.execute().allResults().size(), 3);
     }
@@ -154,14 +156,14 @@ public class QueryTest extends BaseTest {
     @Test
     public void testQueryDocumentIsNotDeleted() throws CouchbaseLiteException, LiteCoreException {
         MutableDocument doc1a = new MutableDocument("doc1");
-        doc1a.SetInt("answer", 42);
-        doc1a.SetString("a", "string");
-        db.Save(doc1a);
+        doc1a.setInt("answer", 42);
+        doc1a.setString("a", "string");
+        db.save(doc1a);
 
         Query query = QueryBuilder.select(SR_DOCID, SR_DELETED)
                 .from(DataSource.database(db))
-                .where(Meta.ID.equalTo(Expression.string("doc1"))
-                        .and(Meta.deleted.equalTo(Expression.boolean(false))));
+                .where(Meta.id.equalTo(Expression.string("doc1"))
+                        .and(Meta.deleted.equalTo(Expression.booleanValue(false))));
         assertEquals(query.execute().allResults().get(0).getString(0), "doc1");
         assertFalse(query.execute().allResults().get(0).getBoolean(1));
     }
@@ -176,7 +178,7 @@ public class QueryTest extends BaseTest {
         db.delete(db.getDocument("doc1"));
         Query query = QueryBuilder.select(SR_DOCID, SR_DELETED)
                 .from(DataSource.database(db))
-                .where(Meta.deleted.equalTo(Expression.boolean(true))
+                .where(Meta.deleted.equalTo(Expression.booleanValue(true))
                     .and(Meta.id.equalTo(Expression.string("doc1"))));
         assertEquals(query.execute().allResults().size(), 1);
     }
