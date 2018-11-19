@@ -51,6 +51,8 @@ public class QueryTest extends BaseTest {
 
     private static SelectResult SR_DOCID = SelectResult.expression(Meta.id);
     private static SelectResult SR_SEQUENCE = SelectResult.expression(Meta.sequence);
+    private static SelectResult SR_DELETED = SelectResult.expression(Meta.deleted);
+    private static SelectResult SR_EXPIRATION = SelectResult.expression(Meta.expiration);
     private static SelectResult SR_ALL = SelectResult.all();
     private static SelectResult SR_NUMBER1 = SelectResult.property("number1");
 
@@ -115,6 +117,70 @@ public class QueryTest extends BaseTest {
         return documentIDs;
     }
 
+    @Test
+    public void testQueryDocumentExpiration() throws CouchbaseLiteException, LiteCoreException {
+        Date dto20 = new Date(System.currentTimeMillis() + 2000L);
+        Date dto30 = new Date(System.currentTimeMillis() + 3000L);
+        Date dto40 = new Date(System.currentTimeMillis() + 4000L);
+        Date dto60InMS = new Date(System.currentTimeMillis() + 6000L);
+
+        MutableDocument doc1a = new MutableDocument("doc1");
+        MutableDocument doc1b = new MutableDocument("doc2");
+        MutableDocument doc1c = new MutableDocument("doc3");
+        doc1a.setInt("answer", 42);
+        doc1a.setString("a", "string");
+        save(doc1a);
+
+        doc1b.setInt("answer", 42);
+        doc1b.setString("b", "string");
+        save(doc1b);
+
+        doc1c.setInt("answer", 42);
+        doc1c.setString("c", "string");
+        save(doc1c);
+
+        assertTrue(db.setDocumentExpiration("doc1", dto20));
+        assertTrue(db.setDocumentExpiration("doc2", dto30));
+        assertTrue(db.setDocumentExpiration("doc3", dto40));
+
+        Query query = QueryBuilder.select(SR_DOCID, SR_EXPIRATION)
+                .from(DataSource.database(db))
+                .where(Meta.expiration
+                        .lessThan(Expression.long(dto60InMS)));
+
+        assertEquals(query.execute().allResults().size(), 3);
+    }
+
+    @Test
+    public void testQueryDocumentIsNotDeleted() throws CouchbaseLiteException, LiteCoreException {
+        MutableDocument doc1a = new MutableDocument("doc1");
+        doc1a.SetInt("answer", 42);
+        doc1a.SetString("a", "string");
+        db.Save(doc1a);
+
+        Query query = QueryBuilder.select(SR_DOCID, SR_DELETED)
+                .from(DataSource.database(db))
+                .where(Meta.ID.equalTo(Expression.string("doc1"))
+                        .and(Meta.deleted.equalTo(Expression.boolean(false))));
+        assertEquals(query.execute().allResults().get(0).getString(0), "doc1");
+        assertFalse(query.execute().allResults().get(0).getBoolean(1));
+    }
+
+    @Test
+    public void testQueryDocumentIsDeleted() throws CouchbaseLiteException, LiteCoreException {
+        MutableDocument doc1a = new MutableDocument("doc1");
+        doc1a.setInt("answer", 42);
+        doc1a.setString("a", "string");
+        save(doc1a);
+
+        db.delete(db.getDocument("doc1"));
+        Query query = QueryBuilder.select(SR_DOCID, SR_DELETED)
+                .from(DataSource.database(db))
+                .where(Meta.deleted.equalTo(Expression.boolean(true))
+                    .and(Meta.id.equalTo(Expression.string("doc1"))));
+        assertEquals(query.execute().allResults().size(), 1);
+    }
+    
     @Test
     public void testNoWhereQuery() throws Exception {
         loadJSONResource("names_100.json");
