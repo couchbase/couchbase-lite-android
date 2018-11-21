@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -77,6 +79,8 @@ abstract class AbstractDatabase {
     protected static final String TAG = Log.DATABASE;
     protected static final String DB_EXTENSION = "cblite2";
     protected static final int MAX_CHANGES = 100;
+    // How long to wait after a database opens before expiring docs
+    protected static final long kHousekeepingDelayAfterOpening = 3;
 
     protected static final int DEFAULT_DATABASE_FLAGS
             = C4DatabaseFlags.kC4DB_Create
@@ -102,6 +106,7 @@ abstract class AbstractDatabase {
     protected Set<Replicator> activeReplications;
     protected Set<LiveQuery> activeLiveQueries;
     protected final Object lock = new Object(); // lock for thread-safety
+    protected Timer purgeTimer;
 
     //---------------------------------------------
     // Constructors
@@ -314,7 +319,21 @@ abstract class AbstractDatabase {
      * @param id the document ID
      */
     public void purge(String id) throws CouchbaseLiteException {
-        purge(getDocument(id));
+        if (id == null)
+            throw new IllegalArgumentException("document id cannot be null.");
+        synchronized (lock) {
+
+            boolean commit = false;
+            beginTransaction();
+            try {
+                getC4Database().purgeDoc(id);
+                commit = true;
+            } catch (LiteCoreException e) {
+                throw CBLStatus.convertException(e);
+            } finally {
+                endTransaction(commit);
+            }
+        }
     }
 
     /**
@@ -325,11 +344,7 @@ abstract class AbstractDatabase {
      * to remove expiration date time from doc.
      * @throws  CouchbaseLiteException NOT FOUND error if the document doesn't exist.
      */
-    public void setDocumentExpiration(String docId, Date datetime) throws CouchbaseLiteException, LiteCoreException {
-        if(getDocument(docId) == null) {
-            throw new CouchbaseLiteException("Cannot find the document.",
-                    CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
-        }
+    public void setDocumentExpiration(String docId, Date datetime) throws LiteCoreException {
         synchronized (lock) {
             try {
                 if (datetime == null) {
@@ -338,6 +353,7 @@ abstract class AbstractDatabase {
                     Long timestamp = datetime.getTime();
                     getC4Database().setExpiration(docId, timestamp);
                 }
+                scheduleDocumentExpiration(0);
             } catch (LiteCoreException ex) {
                 throw ex;
             }
@@ -503,6 +519,9 @@ abstract class AbstractDatabase {
                         "Cannot close the database.  Please remove all of the query listeners before closing the database.",
                         CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorBusy);
             }
+
+            // cancel purge timer
+            cancelPurgeTimer();
 
             // close db
             closeC4DB();
@@ -882,6 +901,8 @@ abstract class AbstractDatabase {
         c4DBObserver = null;
         dbChangeNotifier = null;
         docChangeNotifiers = new HashMap<>();
+
+        scheduleDocumentExpiration(kHousekeepingDelayAfterOpening);
     }
 
     private int getDatabaseFlags() {
@@ -1210,6 +1231,43 @@ abstract class AbstractDatabase {
         }
         if (!queryExecutor.isShutdown() && !queryExecutor.isTerminated()) {
             ExecutorUtils.shutdownAndAwaitTermination(queryExecutor, 60);
+        }
+    }
+
+    // #pragma mark - EXPIRATION:
+
+    private void scheduleDocumentExpiration(long minimumDelay) {
+        long nextExpiration = getC4Database().nextDocExpiration();
+        if (nextExpiration > 0) {
+            long delay = Math.max((nextExpiration - System.currentTimeMillis()) / 1000 + 1, minimumDelay);
+            Log.v(TAG, "Scheduling next doc expiration in %d sec", delay);
+            synchronized (lock) {
+                cancelPurgeTimer();
+                purgeTimer = new Timer();
+                purgeTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (isOpen())
+                            purgeExpiredDocuments();
+                    }
+                }, delay * 1000);
+            }
+        } else
+            Log.v(TAG, "No pending doc expirations");
+    }
+
+    private void purgeExpiredDocuments() {
+        int nPurged = getC4Database().purgeExpiredDocs();
+        Log.v(TAG, "Purged %d expired documents", nPurged);
+        scheduleDocumentExpiration(1);
+    }
+
+    private void cancelPurgeTimer() {
+        synchronized (lock) {
+            if (purgeTimer != null) {
+                purgeTimer.cancel();
+                purgeTimer = null;
+            }
         }
     }
 }
