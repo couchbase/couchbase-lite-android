@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.litecore.LiteCoreException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -34,12 +35,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1834,6 +1837,130 @@ public class DocumentTest extends BaseTest {
         // purge
         db.purge(savedDoc);
         assertNull(db.getDocument(docID));
+    }
+
+    @Test
+    public void testPurgeDocumentById() throws CouchbaseLiteException {
+        String docID = "doc1";
+        MutableDocument doc = createMutableDocument(docID);
+        doc.setValue("type", "profile");
+        doc.setValue("name", "Scott");
+
+        // Purge before save:
+        try {
+            db.purge(docID);
+            fail();
+        } catch (CouchbaseLiteException e) {
+            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
+                ;// expected
+            else
+                fail();
+        }
+        assertEquals("profile", doc.getValue("type"));
+        assertEquals("Scott", doc.getValue("name"));
+
+        //Save
+        Document savedDoc = save(doc);
+
+        // purge
+        db.purge(docID);
+        assertNull(db.getDocument(docID));
+    }
+
+    @Test
+    public void testSetAndGetExpirationFromDoc() throws CouchbaseLiteException, LiteCoreException {
+        Date dto30 = new Date(System.currentTimeMillis() + 30000L);
+        Date dto0 = new Date(System.currentTimeMillis());
+
+        MutableDocument doc1a = new MutableDocument("doc1");
+        MutableDocument doc1b = new MutableDocument("doc2");
+        MutableDocument doc1c = new MutableDocument("doc3");
+        doc1a.setInt("answer", 12);
+        doc1a.setValue("question", "What is six plus six?");
+        save(doc1a);
+
+        doc1b.setInt("answer", 22);
+        doc1b.setValue("question", "What is eleven plus eleven?");
+        save(doc1b);
+
+        doc1c.setInt("answer", 32);
+        doc1c.setValue("question", "What is twenty plus twelve?");
+        save(doc1c);
+
+        assertTrue(db.setDocumentExpiration("doc1", dto30));
+        assertTrue(db.setDocumentExpiration("doc3", dto30));
+
+        assertTrue(db.setDocumentExpiration("doc3", null));
+        Date v = db.getDocumentExpiration("doc1");
+        assertSame(v, dto30);
+        assertNull(db.getDocumentExpiration("doc2"));
+        assertNull(db.getDocumentExpiration("doc3"));
+    }
+
+    @Test
+    public void testSetExpirationFromDoc() throws CouchbaseLiteException, LiteCoreException {
+        Date dto3 = new Date(System.currentTimeMillis() + 3000L);
+        MutableDocument doc1a = new MutableDocument("doc1");
+        doc1a.setInt("answer", 12);
+        doc1a.setValue("question", "What is six plus six?");
+        save(doc1a);
+
+        assertTrue(db.setDocumentExpiration("doc1", dto3));
+
+        try {
+            Thread.sleep(4 * 1000); // sleep 4 sec
+        } catch (InterruptedException e) {
+        }
+
+        assertNull(db.getDocument("doc1"));
+    }
+
+    @Test
+    public void testSetExpirationOnNoneExistDoc()
+    {
+        Date dto30 = new Date(System.currentTimeMillis() + 30000L);
+        try {
+            db.setDocumentExpiration("not_exist", dto30);
+        }catch (CouchbaseLiteException e) {
+            assertEquals(e, CouchbaseLiteException);
+        } catch (LiteCoreException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testGetExpirationFromNoneExistDoc()
+    {
+        Date dto30 = new Date(System.currentTimeMillis() + 30000L);
+        try {
+            db.getDocumentExpiration("not_exist");
+        }catch (CouchbaseLiteException e) {
+            assertEquals(e, CouchbaseLiteException);
+        } catch (LiteCoreException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testLongExpiration() throws CouchbaseLiteException, LiteCoreException {
+        Date now = new Date(System.currentTimeMillis());
+        Calendar c = Calendar.getInstance();
+        c.setTime(now);
+        c.add(Calendar.DATE, 60);
+        Date d60Days = c.getTime();
+
+        MutableDocument doc = new MutableDocument("doc");
+        doc.setInt("answer", 42);
+        doc.setValue("question", "What is twenty-one times two?");
+        save(doc);
+
+        assertNull(db.getDocumentExpiration("doc"));
+        db.setDocumentExpiration("doc", d60Days);
+
+        Date exp = db.getDocumentExpiration("doc");
+        assertNotNull(exp);
+        long diff = exp.getTime() - now.getTime();
+        assertTrue(Math.abs(TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) - 60.0) < 1.0);
     }
 
     @Test
