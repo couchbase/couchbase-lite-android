@@ -344,16 +344,18 @@ abstract class AbstractDatabase {
      * to remove expiration date time from doc.
      * @throws  CouchbaseLiteException NOT FOUND error if the document doesn't exist.
      */
-    public void setDocumentExpiration(String docId, Date datetime) throws LiteCoreException {
+    public boolean setDocumentExpiration(String docId, Date datetime) throws LiteCoreException {
         synchronized (lock) {
+            boolean success;
             try {
                 if (datetime == null) {
-                    getC4Database().setExpiration(docId, null);
+                    success = getC4Database().setExpiration(docId, null);
                 } else {
                     Long timestamp = datetime.getTime();
-                    getC4Database().setExpiration(docId, timestamp);
+                    success = getC4Database().setExpiration(docId, timestamp);
                 }
                 scheduleDocumentExpiration(0);
+                return success;
             } catch (LiteCoreException ex) {
                 throw ex;
             }

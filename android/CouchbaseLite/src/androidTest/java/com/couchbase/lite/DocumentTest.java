@@ -1921,9 +1921,8 @@ public class DocumentTest extends BaseTest {
         Date dto30 = new Date(System.currentTimeMillis() + 30000L);
         try {
             db.setDocumentExpiration("not_exist", dto30);
-        }catch (CouchbaseLiteException e) {
-            assertEquals(e, CouchbaseLiteException);
         } catch (LiteCoreException e) {
+            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
             e.printStackTrace();
         }
     }
@@ -1935,9 +1934,7 @@ public class DocumentTest extends BaseTest {
         try {
             db.getDocumentExpiration("not_exist");
         }catch (CouchbaseLiteException e) {
-            assertEquals(e, CouchbaseLiteException);
-        } catch (LiteCoreException e) {
-            e.printStackTrace();
+            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
         }
     }
 
