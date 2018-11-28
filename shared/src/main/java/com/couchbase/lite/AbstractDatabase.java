@@ -347,6 +347,8 @@ abstract class AbstractDatabase {
     public void setDocumentExpiration(String id, Date expiration) throws CouchbaseLiteException {
         synchronized (lock) {
             try {
+                if(getC4Database().get(id, true) == null)
+                    return;
                 if (expiration == null) {
                     getC4Database().setExpiration(id, 0);
                 } else {
@@ -365,13 +367,24 @@ abstract class AbstractDatabase {
      * no expiration time set
      * @param id The ID of the Document
      * @return Date a nullable expiration timestamp of the document or null if time not set.
+     * @throws  CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public Date getDocumentExpiration(String id) throws CouchbaseLiteException {
-        long timestamp = getC4Database().getExpiration(id);
-        if (timestamp == 0) {
-            return null;
+        synchronized (lock) {
+            try {
+                if(getC4Database().get(id, true) == null) {
+                    throw new CouchbaseLiteException("Document doesn't exist in the database.",
+                            CBLError.Domain.CBLErrorDomain, CBLError.Code.CBLErrorNotFound);
+                }
+                long timestamp = getC4Database().getExpiration(id);
+                if (timestamp == 0) {
+                    return null;
+                }
+                return new Date(timestamp);
+            } catch (LiteCoreException e) {
+                throw CBLStatus.convertException(e);
+            }
         }
-        return new Date(timestamp);
     }
 
     // Batch operations:
