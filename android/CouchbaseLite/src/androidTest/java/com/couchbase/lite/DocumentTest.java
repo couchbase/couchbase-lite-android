@@ -1733,10 +1733,7 @@ public class DocumentTest extends BaseTest {
             db.delete(mDoc);
             fail();
         } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
-                ;// expected
-            else
-                fail();
+            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
         }
         assertEquals("Scott Tiger", mDoc.getString("name"));
     }
@@ -1823,10 +1820,7 @@ public class DocumentTest extends BaseTest {
             db.purge(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
-                ;// expected
-            else
-                fail();
+            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
         }
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1851,10 +1845,7 @@ public class DocumentTest extends BaseTest {
             db.purge(docID);
             fail();
         } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.CBLErrorNotFound)
-                ;// expected
-            else
-                fail();
+            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
         }
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1887,12 +1878,12 @@ public class DocumentTest extends BaseTest {
         doc1c.setValue("question", "What is twenty plus twelve?");
         save(doc1c);
 
-        assertTrue(db.setDocumentExpiration("doc1", dto30));
-        assertTrue(db.setDocumentExpiration("doc3", dto30));
+        db.setDocumentExpiration("doc1", dto30);
+        db.setDocumentExpiration("doc3", dto30);
 
-        assertTrue(db.setDocumentExpiration("doc3", null));
-        Date v = db.getDocumentExpiration("doc1");
-        assertSame(v, dto30);
+        db.setDocumentExpiration("doc3", null);
+        Date exp = db.getDocumentExpiration("doc1");
+        assertSame(exp, dto30);
         assertNull(db.getDocumentExpiration("doc2"));
         assertNull(db.getDocumentExpiration("doc3"));
     }
@@ -1905,7 +1896,7 @@ public class DocumentTest extends BaseTest {
         doc1a.setValue("question", "What is six plus six?");
         save(doc1a);
 
-        assertTrue(db.setDocumentExpiration("doc1", dto3));
+        db.setDocumentExpiration("doc1", dto3);
 
         try {
             Thread.sleep(4 * 1000); // sleep 4 sec
@@ -1916,13 +1907,41 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetExpirationOnNoneExistDoc()
-    {
+    public void testSetExpirationOnDeletedDoc() throws CouchbaseLiteException {
+        Date dto30 = new Date(System.currentTimeMillis() + 30000L);
+        MutableDocument doc1a = new MutableDocument("deleted_doc");
+        doc1a.setInt("answer", 12);
+        doc1a.setValue("question", "What is six plus six?");
+        save(doc1a);
+        db.delete(doc1a);
+        try {
+            db.setDocumentExpiration("deleted_doc", dto30);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testGetExpirationFromDeletedDoc() throws CouchbaseLiteException {
+        Date dto30 = new Date(System.currentTimeMillis() + 30000L);
+        MutableDocument doc1a = new MutableDocument("deleted_doc");
+        doc1a.setInt("answer", 12);
+        doc1a.setValue("question", "What is six plus six?");
+        save(doc1a);
+        db.delete(doc1a);
+        try {
+            db.getDocumentExpiration("deleted_doc");
+        }catch (CouchbaseLiteException e) {
+
+        }
+    }
+
+    @Test
+    public void testSetExpirationOnNoneExistDoc() throws CouchbaseLiteException {
         Date dto30 = new Date(System.currentTimeMillis() + 30000L);
         try {
             db.setDocumentExpiration("not_exist", dto30);
-        } catch (LiteCoreException e) {
-            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
+        } catch (CouchbaseLiteException e) {
             e.printStackTrace();
         }
     }
