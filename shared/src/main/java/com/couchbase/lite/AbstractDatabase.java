@@ -347,8 +347,6 @@ abstract class AbstractDatabase {
     public void setDocumentExpiration(String id, Date expiration) throws CouchbaseLiteException {
         synchronized (lock) {
             try {
-                if(getC4Database().get(id, true) == null)
-                    return;
                 if (expiration == null) {
                     getC4Database().setExpiration(id, 0);
                 } else {
