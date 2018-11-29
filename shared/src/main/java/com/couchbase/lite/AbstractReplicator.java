@@ -224,6 +224,65 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         }
     }
 
+    /**
+     * Document ended progress of a replicator.
+     */
+    public final static class DocumentReplicatedStatus {
+        //---------------------------------------------
+        // member variables
+        //---------------------------------------------
+        private boolean completed = false;
+        private boolean pushing = false;
+        private String docId = "";
+
+        //---------------------------------------------
+        // Constructors
+        //---------------------------------------------
+        private DocumentReplicatedStatus(boolean completed, boolean pushing, String docId) {
+            this.completed = completed;
+            this.pushing = pushing;
+            this.docId = docId;
+        }
+
+        //---------------------------------------------
+        // API - public methods
+        //---------------------------------------------
+
+        /**
+         * The current document replicated flag.
+         */
+        public boolean getCompletedFlag() {
+            return completed;
+        }
+
+        /**
+         * The current document replication direction flag.
+         */
+        public boolean getPushingFlag() {
+            return pushing;
+        }
+
+        /**
+         * The current document id.
+         */
+        public String getDocId() {
+            return docId;
+        }
+
+        @Override
+        public String toString() {
+            return "Document replicated Status{" +
+                    "is completed =" + completed +
+                    ", is pushing =" + pushing +
+                    ", document id =" + docId +
+                    '}';
+        }
+
+        DocumentReplicatedStatus copy() {
+            return new DocumentReplicatedStatus(completed, pushing, docId);
+        }
+    }
+
     //---------------------------------------------
     // static initializer
     //---------------------------------------------
@@ -513,13 +572,13 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             @Override
-            public void documentError(C4Replicator repl, final boolean pushing, final String docID, final C4Error error, final boolean trans, Object context) {
+            public void documentEnded(C4Replicator repl, final boolean pushing, final String docID, final C4Error error, final boolean trans, Object context) {
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
                         @Override
                         public void run() {
-                            replicator.documentError(pushing, docID, error, trans);
+                            replicator.documentEnded(pushing, docID, error, trans);
                         }
                     });
                 }
@@ -549,7 +608,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
     }
 
-    private void documentError(boolean pushing, String docID, C4Error error, boolean trans) {
+    private void documentEnded(boolean pushing, String docID, C4Error error, boolean trans) {
         if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
             // Conflict pulling a document -- the revision was added but app needs to resolve it:
             Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
@@ -563,6 +622,13 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             Log.i(TAG, "C4ReplicatorListener.documentError() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
             // TODO: Should pass error along to listener
         }
+
+        if(error.getDomain()==0 && error.getCode()==0){
+            //DocumentReplicatedStatus status = new DocumentReplicatedStatus(true, pushing, docID);
+            c4ReplListener.documentEnded(c4repl, pushing, docID,
+                    null, trans, this);
+        }
+
     }
 
     private void retry() {

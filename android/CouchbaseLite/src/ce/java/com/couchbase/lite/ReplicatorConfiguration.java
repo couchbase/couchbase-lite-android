@@ -69,6 +69,18 @@ public final class ReplicatorConfiguration {
         PULL
     }
 
+    /**
+     * An enum representing level of opt in on progress of replication
+     * OVERALL: No additional replication progress callback
+     * PER_DOCUMENT: >=1 Every document replication ended callback
+     * PER_ATTACHMENT: >=2 Every blob replication progress callback
+     */
+    enum ReplicatorProgressLevel {
+        OVERALL,
+        PER_DOCUMENT,
+        PER_ATTACHMENT
+    }
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
