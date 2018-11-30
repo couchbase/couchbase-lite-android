@@ -1248,7 +1248,7 @@ abstract class AbstractDatabase {
     private void scheduleDocumentExpiration(long minimumDelay) {
         long nextExpiration = getC4Database().nextDocExpiration();
         if (nextExpiration > 0) {
-            long delay = Math.max((nextExpiration - System.currentTimeMillis()) / 1000 + 1, minimumDelay);
+            long delay = Math.max((nextExpiration - System.currentTimeMillis()), minimumDelay);
             Log.v(TAG, "Scheduling next doc expiration in %d sec", delay);
             synchronized (lock) {
                 cancelPurgeTimer();
@@ -1259,7 +1259,7 @@ abstract class AbstractDatabase {
                         if (isOpen())
                             purgeExpiredDocuments();
                     }
-                }, delay * 1000);
+                }, delay);
             }
         } else
             Log.v(TAG, "No pending doc expirations");

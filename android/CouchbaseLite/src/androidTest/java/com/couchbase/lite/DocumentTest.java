@@ -1883,7 +1883,7 @@ public class DocumentTest extends BaseTest {
 
         db.setDocumentExpiration("doc3", null);
         Date exp = db.getDocumentExpiration("doc1");
-        assertSame(exp, dto30);
+        assertEquals(exp, dto30);
         assertNull(db.getDocumentExpiration("doc2"));
         assertNull(db.getDocumentExpiration("doc3"));
     }
@@ -1918,6 +1918,7 @@ public class DocumentTest extends BaseTest {
             db.setDocumentExpiration("deleted_doc", dto30);
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
+            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
         }
     }
 
@@ -1932,7 +1933,7 @@ public class DocumentTest extends BaseTest {
         try {
             db.getDocumentExpiration("deleted_doc");
         }catch (CouchbaseLiteException e) {
-
+            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
         }
     }
 
@@ -1943,6 +1944,7 @@ public class DocumentTest extends BaseTest {
             db.setDocumentExpiration("not_exist", dto30);
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
+            assertEquals(e.getCode(), CBLError.Code.CBLErrorNotFound);
         }
     }
 
