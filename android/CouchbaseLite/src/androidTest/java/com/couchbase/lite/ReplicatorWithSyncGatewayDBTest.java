@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -58,9 +59,11 @@ import static org.junit.Assert.fail;
  * configuration file.
  */
 public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
+
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     private static final String DB_NAME = "db";
+    private List<DocumentReplicatedUpdate> replicationEvents = new ArrayList<DocumentReplicatedUpdate>();
 
     @Before
     public void setUp() throws Exception {
@@ -609,5 +612,80 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
 
         // "because the replicator was reset"
         assertEquals(2L, db.getCount());
+    }
+
+    @Test
+    public void testReplicationListenerForDocumentEndedStatus() throws URISyntaxException, InterruptedException, CouchbaseLiteException {
+        if (!config.replicatorTestsEnabled())
+            return;
+
+        boolean ret = false;
+        MutableDocument doc1 = new MutableDocument("doc1");
+        doc1.setString("name", "Tiger");
+        db.save(doc1);
+
+        // target SG URI
+        Endpoint target = getRemoteEndpoint(DB_NAME, false);
+
+        // Push replicate from db to SG
+        ReplicatorConfiguration config = makeConfig(true, true, true, this.otherDB, target);//push n pull
+
+        repl = new Replicator(config);
+        final CountDownLatch latch = new CountDownLatch(1);
+        ListenerToken replicationListener = repl.addReplicationListener(executor, new DocumentReplicatedListener() {
+            @Override
+            public void replicated(DocumentReplicatedUpdate update) {
+                replicationEvents.add(update);
+            }
+        });
+
+        ListenerToken token = repl.addChangeListener(executor, new ReplicatorChangeListener() {
+            @Override
+            public void changed(ReplicatorChange change) {
+                Replicator.Status status = change.getStatus();
+                CouchbaseLiteException error = status.getError();
+                final String kActivityNames[] = {"stopped", "offline", "connecting", "idle", "busy"};
+                Log.i(TAG, "ReplicatorChangeListener.changed() status: %s (%d / %d), lastError = %s",
+                        kActivityNames[status.getActivityLevel().getValue()],
+                        status.getProgress().getCompleted(), status.getProgress().getTotal(),
+                        error);
+                //isContinuous
+                if (status.getActivityLevel() == Replicator.ActivityLevel.IDLE &&
+                        status.getProgress().getCompleted() == status.getProgress().getTotal()) {
+
+                    assertNull(error);
+
+                    latch.countDown();
+                }
+            }
+
+        });
+
+        repl.start();
+
+        MutableDocument doc2 = new MutableDocument("doc2");
+        doc2.setString("name", "Cat");
+        otherDB.save(doc2);
+
+        try {
+           ret  = latch.await(30, TimeUnit.SECONDS); //wait 30 sec
+        } catch (Exception e){
+            repl.stop();
+            throw e;
+        } finally{
+            assertTrue(ret);
+            repl.removeChangeListener(token);
+            repl.removeChangeListener(replicationListener);
+        }
+
+        assertEquals(replicationEvents.size(),2);
+        for (DocumentReplicatedUpdate d:replicationEvents
+             ) {
+            if(d.getStatus().getPushingFlag() == true && d.getStatus().getCompletedFlag() == true){
+                assertEquals(d.getStatus().getDocId(),"doc1");
+            } else if(d.getStatus().getCompletedFlag() == false && d.getStatus().getCompletedFlag() == true){
+                assertEquals(d.getStatus().getDocId(),"doc2");
+            }
+        }
     }
 }
