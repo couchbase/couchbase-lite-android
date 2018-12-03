@@ -1245,10 +1245,11 @@ abstract class AbstractDatabase {
 
     // #pragma mark - EXPIRATION:
 
-    private void scheduleDocumentExpiration(long minimumDelay) {
+    private void scheduleDocumentExpiration(long minimumDelay /*milliseconds*/) {
         long nextExpiration = getC4Database().nextDocExpiration();
         if (nextExpiration > 0) {
-            long delay = Math.max((nextExpiration - System.currentTimeMillis()), minimumDelay);
+            long expTime = nextExpiration - System.currentTimeMillis();
+            long delay = Math.max(expTime, minimumDelay);
             Log.v(TAG, "Scheduling next doc expiration in %d sec", delay);
             synchronized (lock) {
                 cancelPurgeTimer();
@@ -1268,7 +1269,7 @@ abstract class AbstractDatabase {
     private void purgeExpiredDocuments() {
         int nPurged = getC4Database().purgeExpiredDocs();
         Log.v(TAG, "Purged %d expired documents", nPurged);
-        scheduleDocumentExpiration(1);
+        scheduleDocumentExpiration(1000);
     }
 
     private void cancelPurgeTimer() {
