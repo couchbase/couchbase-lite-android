@@ -43,6 +43,7 @@ public final class ReplicatorConfiguration {
     static final String kC4ReplicatorCheckpointInterval = "checkpointInterval"; // How often to checkpoint, in seconds; number
     static final String kC4ReplicatorOptionRemoteDBUniqueID = "remoteDBUniqueID"; // How often to checkpoint, in seconds; number
     static final String kC4ReplicatorResetCheckpoint = "reset"; // reset remote checkpoint
+    static final String kC4ReplicatorOptionProgressLevel = "progress";  //< If >=1, notify on every doc; if >=2, on every attachment (int)
 
     // Auth dictionary keys:
     static final String kC4ReplicatorAuthType = "type"; // Auth property; string
@@ -94,6 +95,7 @@ public final class ReplicatorConfiguration {
     private byte[] pinnedServerCertificate = null;
     private List<String> channels = null;
     private List<String> documentIDs = null;
+    private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
 
     //---------------------------------------------
     // Constructors
@@ -110,6 +112,7 @@ public final class ReplicatorConfiguration {
         this.headers = config.headers;
         this.channels = config.channels;
         this.documentIDs = config.documentIDs;
+        this.progressLevel = config.progressLevel;
     }
 
     public ReplicatorConfiguration(Database database, Endpoint target) {
@@ -224,6 +227,13 @@ public final class ReplicatorConfiguration {
         return this;
     }
 
+    public ReplicatorConfiguration setProgressLevel(ReplicatorProgressLevel level){
+        if(readonly)
+            throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
+        this.progressLevel = level;
+        return this;
+    }
+
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -294,6 +304,8 @@ public final class ReplicatorConfiguration {
     public List<String> getDocumentIDs() {
         return documentIDs;
     }
+
+    public ReplicatorProgressLevel getProgressLevel() { return  progressLevel; }
 
     //---------------------------------------------
     // Package level access

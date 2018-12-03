@@ -308,6 +308,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     protected ReplicatorConfiguration config;
     private Status status;
     private Set<ReplicatorChangeListenerToken> changeListenerTokens;
+    private Set<DocumentReplicatedListenerToken> docEndedListenerTokens;
     private C4Replicator c4repl;
     private C4ReplicatorStatus c4ReplStatus;
     private C4ReplicatorListener c4ReplListener;
@@ -427,6 +428,42 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             if (token == null || !(token instanceof ReplicatorChangeListenerToken))
                 throw new IllegalArgumentException();
             changeListenerTokens.remove(token);
+        }
+    }
+
+    /**
+     * Set the given DocumentReplicatedListener to the this replicator.
+     *
+     * @param listener
+     * @return ListenerToken A token to remove the handler later
+     */
+    public ListenerToken addReplicationListener(DocumentReplicatedListener listener) {
+        return addReplicationListener(null, listener);
+    }
+
+    /**
+     * Set the given DocumentReplicatedListener to the this replicator.
+     *
+     * @param listener
+     */
+    public ListenerToken addReplicationListener(Executor executor, DocumentReplicatedListener listener) {
+        synchronized (lock) {
+            if (listener == null)
+                throw new IllegalArgumentException();
+            DocumentReplicatedListenerToken token = new DocumentReplicatedListenerToken(executor, listener);
+            docEndedListenerTokens.add(token);
+            return token;
+        }
+    }
+
+    /**
+     * Remove the given DocumentReplicatedListener from the this replicator.
+     */
+    public void removeReplicationListener(ListenerToken token) {
+        synchronized (lock) {
+            if (token == null || !(token instanceof DocumentReplicatedListenerToken))
+                throw new IllegalArgumentException();
+            docEndedListenerTokens.remove(token);
         }
     }
 
