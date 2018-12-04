@@ -87,6 +87,8 @@ abstract class AbstractDatabase {
             | C4DatabaseFlags.kC4DB_AutoCompact
             | C4DatabaseFlags.kC4DB_SharedKeys;
 
+    protected static final com.couchbase.lite.Log LOG = new com.couchbase.lite.Log();
+
     //---------------------------------------------
     // enums
     //---------------------------------------------
@@ -213,6 +215,16 @@ abstract class AbstractDatabase {
                 return null;
             }
         }
+    }
+
+    /**
+     * Gets the logging controller for the Couchbase Lite library to tweak the
+     * logging settings and add custom logging
+     *
+     * @return The logging controller
+     */
+    public static com.couchbase.lite.Log getLog() {
+        return LOG;
     }
 
     /**

@@ -17,8 +17,10 @@
 //
 package com.couchbase.lite.internal.support;
 
+import com.couchbase.lite.Database;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
+import com.couchbase.lite.Logger;
 import com.couchbase.litecore.C4Constants.C4LogDomain;
 import com.couchbase.litecore.C4Log;
 
@@ -36,8 +38,6 @@ import static com.couchbase.litecore.C4Constants.C4LogLevel.kC4LogWarning;
  * Couchbase Lite Logging API.
  */
 public final class Log {
-
-    private static Logger logger = new Logger();
 
     /**
      * A map of tags and their enabled log level
@@ -124,8 +124,8 @@ public final class Log {
      * @param msg The message you would like logged.
      */
     public static void v(String tag, String msg) {
-        if (logger != null && isLoggingEnabled(tag, VERBOSE)) {
-            logger.v(tag, msg);
+        if (isLoggingEnabled(tag, VERBOSE)) {
+            sendToLoggers(LogLevel.VERBOSE, tag, msg);
         }
     }
 
@@ -138,9 +138,7 @@ public final class Log {
      * @param tr  An exception to log
      */
     public static void v(String tag, String msg, Throwable tr) {
-        if (logger != null && isLoggingEnabled(tag, VERBOSE)) {
-            logger.v(tag, msg, tr);
-        }
+        v(tag, "Exception: %s", tr.toString());
     }
 
     /**
@@ -152,14 +150,15 @@ public final class Log {
      * @param args         Variable number of Object args to be used as params to formatString.
      */
     public static void v(String tag, String formatString, Object... args) {
-        if (logger != null && isLoggingEnabled(tag, VERBOSE)) {
+        if (isLoggingEnabled(tag, VERBOSE)) {
+            String msg;
             try {
-                logger.v(tag, String.format(Locale.ENGLISH, formatString, args));
+                msg = String.format(Locale.ENGLISH, formatString, args);
             } catch (Exception e) {
-                logger.v(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
+                msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
             }
+            sendToLoggers(LogLevel.VERBOSE, tag, msg);
         }
-
     }
 
     /**
@@ -172,12 +171,15 @@ public final class Log {
      * @param args         Variable number of Object args to be used as params to formatString.
      */
     public static void v(String tag, String formatString, Throwable tr, Object... args) {
-        if (logger != null && isLoggingEnabled(tag, VERBOSE)) {
+        if (isLoggingEnabled(tag, VERBOSE)) {
+            String msg;
             try {
-                logger.v(tag, String.format(Locale.ENGLISH, formatString, args), tr);
+                msg = String.format(formatString, args);
+                msg = String.format("%s (%s)", msg, tr.toString());
             } catch (Exception e) {
-                logger.v(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
+                msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
             }
+            sendToLoggers(LogLevel.VERBOSE, tag, msg);
         }
     }
 
@@ -189,8 +191,8 @@ public final class Log {
      * @param msg The message you would like logged.
      */
     public static void i(String tag, String msg) {
-        if (logger != null && isLoggingEnabled(tag, INFO)) {
-            logger.i(tag, msg);
+        if (isLoggingEnabled(tag, INFO)) {
+            sendToLoggers(LogLevel.INFO, tag, msg);
         }
     }
 
@@ -203,17 +205,15 @@ public final class Log {
      * @param tr  An exception to log
      */
     public static void i(String tag, String msg, Throwable tr) {
-        if (logger != null && isLoggingEnabled(tag, INFO)) {
-            logger.i(tag, msg, tr);
-        }
+        i(tag, "Exception: %s", tr.toString());
     }
 
     public static void info(String tag, String msg) {
-        logger.i(tag, msg);
+        i(tag, msg);
     }
 
     public static void info(String tag, String msg, Throwable tr) {
-        logger.i(tag, msg, tr);
+        i(tag, msg, tr);
     }
 
     /**
@@ -225,12 +225,14 @@ public final class Log {
      * @param args         Variable number of Object args to be used as params to formatString.
      */
     public static void i(String tag, String formatString, Object... args) {
-        if (logger != null && isLoggingEnabled(tag, INFO)) {
+        if (isLoggingEnabled(tag, INFO)) {
+            String msg;
             try {
-                logger.i(tag, String.format(Locale.ENGLISH, formatString, args));
+                msg = String.format(Locale.ENGLISH, formatString, args);
             } catch (Exception e) {
-                logger.i(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
+                msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
             }
+            sendToLoggers(LogLevel.INFO, tag, msg);
         }
     }
 
@@ -244,12 +246,15 @@ public final class Log {
      * @param args         Variable number of Object args to be used as params to formatString.
      */
     public static void i(String tag, String formatString, Throwable tr, Object... args) {
-        if (logger != null && isLoggingEnabled(tag, INFO)) {
+        if (isLoggingEnabled(tag, INFO)) {
+            String msg;
             try {
-                logger.i(tag, String.format(Locale.ENGLISH, formatString, args, tr));
+                msg = String.format(formatString, args);
+                msg = String.format("%s (%s)", msg, tr.toString());
             } catch (Exception e) {
-                logger.i(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
+                msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
             }
+            sendToLoggers(LogLevel.INFO, tag, msg);
         }
     }
 
@@ -261,8 +266,8 @@ public final class Log {
      * @param msg The message you would like logged.
      */
     public static void w(String tag, String msg) {
-        if (logger != null && isLoggingEnabled(tag, WARN)) {
-            logger.w(tag, msg);
+        if (isLoggingEnabled(tag, WARN)) {
+            sendToLoggers(LogLevel.WARNING, tag, msg);
         }
     }
 
@@ -274,9 +279,7 @@ public final class Log {
      * @param tr  An exception to log
      */
     public static void w(String tag, Throwable tr) {
-        if (logger != null && isLoggingEnabled(tag, WARN)) {
-            logger.w(tag, tr);
-        }
+        w(tag, "Exception: %s", tr.toString());
     }
 
     /**
@@ -288,9 +291,7 @@ public final class Log {
      * @param tr  An exception to log
      */
     public static void w(String tag, String msg, Throwable tr) {
-        if (logger != null && isLoggingEnabled(tag, WARN)) {
-            logger.w(tag, msg, tr);
-        }
+        w(tag, "%s: %s", msg, tr.toString());
     }
 
     /**
@@ -302,12 +303,14 @@ public final class Log {
      * @param args         Variable number of Object args to be used as params to formatString.
      */
     public static void w(String tag, String formatString, Object... args) {
-        if (logger != null && isLoggingEnabled(tag, WARN)) {
+        if (isLoggingEnabled(tag, WARN)) {
+            String msg;
             try {
-                logger.w(tag, String.format(Locale.ENGLISH, formatString, args));
+                msg = String.format(Locale.ENGLISH, formatString, args);
             } catch (Exception e) {
-                logger.w(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
+                msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
             }
+            sendToLoggers(LogLevel.WARNING, tag, msg);
         }
     }
 
@@ -321,12 +324,15 @@ public final class Log {
      * @param args         Variable number of Object args to be used as params to formatString.
      */
     public static void w(String tag, String formatString, Throwable tr, Object... args) {
-        if (logger != null && isLoggingEnabled(tag, WARN)) {
+        if (isLoggingEnabled(tag, WARN)) {
+            String msg;
             try {
-                logger.w(tag, String.format(Locale.ENGLISH, formatString, args), tr);
+                msg = String.format(formatString, args);
+                msg = String.format("%s (%s)", msg, tr.toString());
             } catch (Exception e) {
-                logger.w(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
+                msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
             }
+            sendToLoggers(LogLevel.WARNING, tag, msg);
         }
     }
 
@@ -338,8 +344,8 @@ public final class Log {
      * @param msg The message you would like logged.
      */
     public static void e(String tag, String msg) {
-        if (logger != null && isLoggingEnabled(tag, ERROR)) {
-            logger.e(tag, msg);
+        if (isLoggingEnabled(tag, ERROR)) {
+            sendToLoggers(LogLevel.ERROR, tag, msg);
         }
     }
 
@@ -352,9 +358,7 @@ public final class Log {
      * @param tr  An exception to log
      */
     public static void e(String tag, String msg, Throwable tr) {
-        if (logger != null && isLoggingEnabled(tag, ERROR)) {
-            logger.e(tag, msg, tr);
-        }
+        e(tag, "%s: %s", msg, tr.toString());
     }
 
     /**
@@ -367,12 +371,15 @@ public final class Log {
      * @param args         Variable number of Object args to be used as params to formatString.
      */
     public static void e(String tag, String formatString, Throwable tr, Object... args) {
-        if (logger != null && isLoggingEnabled(tag, ERROR)) {
+        if (isLoggingEnabled(tag, ERROR)) {
+            String msg;
             try {
-                logger.e(tag, String.format(Locale.ENGLISH, formatString, args), tr);
+                msg = String.format(formatString, args);
+                msg = String.format("%s (%s)", msg, tr.toString());
             } catch (Exception e) {
-                logger.e(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
+                msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
             }
+            sendToLoggers(LogLevel.ERROR, tag, msg);
         }
     }
 
@@ -385,12 +392,14 @@ public final class Log {
      * @param args         Variable number of Object args to be used as params to formatString.
      */
     public static void e(String tag, String formatString, Object... args) {
-        if (logger != null && isLoggingEnabled(tag, ERROR)) {
+        if (isLoggingEnabled(tag, ERROR)) {
+            String msg;
             try {
-                logger.e(tag, String.format(Locale.ENGLISH, formatString, args));
+                msg = String.format(Locale.ENGLISH, formatString, args);
             } catch (Exception e) {
-                logger.e(tag, String.format(Locale.ENGLISH, "Unable to format log: %s", formatString), e);
+                msg = String.format(Locale.ENGLISH, "Unable to format log: %s (%s)", formatString, e.toString());
             }
+            sendToLoggers(LogLevel.ERROR, tag, msg);
         }
     }
 
@@ -429,5 +438,29 @@ public final class Log {
         enabledTags.put(tag, logLevel);
         // LiteCore logging
         C4Log.setLevel(tag, logLevel);
+    }
+
+    private static void sendToLoggers(LogLevel level, String tag, String msg) {
+        boolean fileSucceeded = false;
+        boolean consoleSucceeded = false;
+        try {
+            LogDomain domain = LogDomain.valueOf(tag);
+            Database.getLog().getFile().log(level, domain, msg);
+            fileSucceeded = true;
+            Database.getLog().getConsole().log(level, domain, msg);
+            consoleSucceeded = false;
+            Logger custom = Database.getLog().getCustom();
+            if(custom != null) {
+                custom.log(level, domain, msg);
+            }
+        } catch(Exception e) {
+            if(fileSucceeded) {
+                Database.getLog().getFile().log(LogLevel.ERROR, LogDomain.DATABASE, e.toString());
+            }
+
+            if(consoleSucceeded) {
+                Database.getLog().getConsole().log(LogLevel.ERROR, LogDomain.DATABASE, e.toString());
+            }
+        }
     }
 }
