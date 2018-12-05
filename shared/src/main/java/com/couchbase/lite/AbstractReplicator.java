@@ -332,6 +332,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     public AbstractReplicator(ReplicatorConfiguration config) {
         this.config = config.readonlyCopy();
         this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
+        this.docEndedListenerTokens = synchronizedSet(new HashSet<DocumentReplicatedListenerToken>());
         this.handler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable target) {
