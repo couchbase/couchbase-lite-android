@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionProgressLevel;
 import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorResetCheckpoint;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
@@ -451,6 +452,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         synchronized (lock) {
             if (listener == null)
                 throw new IllegalArgumentException();
+            this.config.setProgressLevel(ReplicatorConfiguration.ReplicatorProgressLevel.PER_DOCUMENT);
             DocumentReplicatedListenerToken token = new DocumentReplicatedListenerToken(executor, listener);
             docEndedListenerTokens.add(token);
             return token;
@@ -464,6 +466,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         synchronized (lock) {
             if (token == null || !(token instanceof DocumentReplicatedListenerToken))
                 throw new IllegalArgumentException();
+            this.config.setProgressLevel(ReplicatorConfiguration.ReplicatorProgressLevel.OVERALL);
             docEndedListenerTokens.remove(token);
         }
     }
