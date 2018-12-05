@@ -3,19 +3,22 @@ package com.couchbase.lite;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Log;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class FileLogger implements Logger {
-    private LogLevel _level;
+    private LogLevel _level = LogLevel.INFO;
     private String _directory;
+    private boolean _customDirectory;
     private boolean _hasConfigChanges;
     private int _maxRotateCount = 1;
     private long _maxSize = 1024;
     private boolean _usePlaintext;
     private final HashMap<LogDomain, String> _domainObjects = new HashMap<>();
+    private static String DefaultDirectory;
 
-    public FileLogger() {
+    FileLogger() {
         setupDomainObjects();
     }
 
@@ -54,7 +57,7 @@ public final class FileLogger implements Logger {
             return;
         }
 
-        _usePlaintext = _usePlaintext;
+        _usePlaintext = usePlaintext;
         _hasConfigChanges = true;
     }
 
@@ -64,17 +67,45 @@ public final class FileLogger implements Logger {
     }
 
     public void setDirectory(String directory) {
-        _directory = directory;
+        if(directory == null) {
+            directory = DefaultDirectory;
+        }
+
+        File directoryObj = new File(directory);
+        directoryObj.mkdirs();
+
+        _directory = new File(directory, "cbl").getAbsolutePath();
+        _customDirectory = true;
         updateConfig();
     }
 
-    public void setLogLevel(LogLevel level) {
+    public void setLevel(LogLevel level) {
+        if(level == null) {
+            level = LogLevel.NONE;
+        }
+
         if(_level.equals(level)) {
             return;
         }
 
         _level = level;
         C4Log.setBinaryFileLevel(level.getValue());
+    }
+
+    void initializeDefaultDirectory(String directory) {
+        String oldDir = _directory;
+        if(DefaultDirectory != directory) {
+            DefaultDirectory = directory;
+        }
+
+        if(!_customDirectory) {
+            File directoryObj = new File(DefaultDirectory);
+            directoryObj.mkdirs();
+
+            // Don't use public setter, it will register as custom
+            _directory = new File(DefaultDirectory, "cbl").getAbsolutePath();
+            updateConfig();
+        }
     }
 
     private void setupDomainObjects() {
@@ -92,7 +123,7 @@ public final class FileLogger implements Logger {
     }
 
     @Override
-    public LogLevel getLogLevel() {
+    public LogLevel getLevel() {
         return LogLevel.values()[C4Log.getBinaryFileLevel()];
     }
 

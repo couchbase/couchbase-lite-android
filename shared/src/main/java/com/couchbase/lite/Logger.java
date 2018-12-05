@@ -1,7 +1,7 @@
 package com.couchbase.lite;
 
 public interface Logger {
-    LogLevel getLogLevel();
+    LogLevel getLevel();
 
     void log(LogLevel level, LogDomain domain, String message);
 }

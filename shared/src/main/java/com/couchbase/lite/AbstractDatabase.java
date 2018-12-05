@@ -70,6 +70,7 @@ abstract class AbstractDatabase {
     //---------------------------------------------
     static {
         NativeLibraryLoader.load();
+        LOG = new com.couchbase.lite.Log(); // Don't move this, the native library is needed
         Log.setLogLevel(LogDomain.ALL, LogLevel.WARNING);
     }
 
@@ -87,7 +88,7 @@ abstract class AbstractDatabase {
             | C4DatabaseFlags.kC4DB_AutoCompact
             | C4DatabaseFlags.kC4DB_SharedKeys;
 
-    protected static final com.couchbase.lite.Log LOG = new com.couchbase.lite.Log();
+    protected static final com.couchbase.lite.Log LOG;
 
     //---------------------------------------------
     // enums

@@ -21,5 +21,5 @@ package com.couchbase.lite;
  * Log domain. The log domains here are tentative and subject to change.
  */
 public enum LogDomain {
-    ALL, DATABASE, QUERY, REPLICATOR, NETWORK
+    ALL, COUCHBASE, DATABASE, QUERY, REPLICATOR, NETWORK
 }
