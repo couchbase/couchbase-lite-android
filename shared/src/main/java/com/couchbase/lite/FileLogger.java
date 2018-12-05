@@ -1,3 +1,20 @@
+//
+// FileLogger.java
+//
+// Copyright (c) 2018 Couchbase, Inc All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 package com.couchbase.lite;
 
 import com.couchbase.litecore.C4Constants;
@@ -74,7 +91,7 @@ public final class FileLogger implements Logger {
         File directoryObj = new File(directory);
         directoryObj.mkdirs();
 
-        _directory = new File(directory, "cbl").getAbsolutePath();
+        _directory = directory;
         _customDirectory = true;
         updateConfig();
     }
@@ -103,7 +120,7 @@ public final class FileLogger implements Logger {
             directoryObj.mkdirs();
 
             // Don't use public setter, it will register as custom
-            _directory = new File(DefaultDirectory, "cbl").getAbsolutePath();
+            _directory = directory;
             updateConfig();
         }
     }
