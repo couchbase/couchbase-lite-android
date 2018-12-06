@@ -70,18 +70,6 @@ public final class ReplicatorConfiguration {
         PULL
     }
 
-    /**
-     * An enum representing level of opt in on progress of replication
-     * OVERALL: No additional replication progress callback
-     * PER_DOCUMENT: >=1 Every document replication ended callback
-     * PER_ATTACHMENT: >=2 Every blob replication progress callback
-     */
-    enum ReplicatorProgressLevel {
-        OVERALL,
-        PER_DOCUMENT,
-        PER_ATTACHMENT
-    }
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -95,7 +83,6 @@ public final class ReplicatorConfiguration {
     private byte[] pinnedServerCertificate = null;
     private List<String> channels = null;
     private List<String> documentIDs = null;
-    private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
 
     //---------------------------------------------
     // Constructors
@@ -112,7 +99,6 @@ public final class ReplicatorConfiguration {
         this.headers = config.headers;
         this.channels = config.channels;
         this.documentIDs = config.documentIDs;
-        this.progressLevel = config.progressLevel;
     }
 
     public ReplicatorConfiguration(Database database, Endpoint target) {
@@ -227,13 +213,6 @@ public final class ReplicatorConfiguration {
         return this;
     }
 
-    public ReplicatorConfiguration setProgressLevel(ReplicatorProgressLevel level){
-        if(readonly)
-            throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
-        this.progressLevel = level;
-        return this;
-    }
-
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -305,8 +284,6 @@ public final class ReplicatorConfiguration {
         return documentIDs;
     }
 
-    public ReplicatorProgressLevel getProgressLevel() { return  progressLevel; }
-
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
@@ -332,7 +309,6 @@ public final class ReplicatorConfiguration {
 
         if (channels != null && channels.size() > 0)
             options.put(kC4ReplicatorOptionChannels, channels);
-
 
         Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:

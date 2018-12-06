@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
+import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4Replicator;
@@ -30,6 +31,7 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -103,6 +105,38 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         }
 
         int getValue() {
+            return value;
+        }
+    }
+
+    /**
+     * An enum representing level of opt in on progress of replication
+     * OVERALL: No additional replication progress callback
+     * PER_DOCUMENT: >=1 Every document replication ended callback
+     * PER_ATTACHMENT: >=2 Every blob replication progress callback
+     */
+    enum ReplicatorProgressLevel {
+        OVERALL(0),
+        PER_DOCUMENT(1),
+        PER_ATTACHMENT(2);
+
+        private final int value;
+        private static Map map = new HashMap<>();
+
+        private ReplicatorProgressLevel(int value) {
+            this.value = value;
+        }
+        static {
+            for (ReplicatorProgressLevel level : ReplicatorProgressLevel.values()) {
+                map.put(level.value, level);
+            }
+        }
+
+        public static ReplicatorProgressLevel valueOf(int level) {
+            return (ReplicatorProgressLevel) map.get(level);
+        }
+
+        public int getValue() {
             return value;
         }
     }
@@ -423,13 +457,16 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     /**
-     * Remove the given ReplicatorChangeListener from the this replicator.
+     * Remove the given ReplicatorChangeListener or DocumentReplicatedListener from the this replicator.
      */
     public void removeChangeListener(ListenerToken token) {
         synchronized (lock) {
             if (token == null || !(token instanceof ReplicatorChangeListenerToken))
                 throw new IllegalArgumentException();
             changeListenerTokens.remove(token);
+            if(docEndedListenerTokens.remove(token)==true) {
+                setProgressLevel(ReplicatorProgressLevel.OVERALL);
+            }
         }
     }
 
@@ -439,8 +476,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      * @param listener
      * @return ListenerToken A token to remove the handler later
      */
-    public ListenerToken addReplicationListener(DocumentReplicatedListener listener) {
-        return addReplicationListener(null, listener);
+    public ListenerToken addDocumentReplicationListener(DocumentReplicatedListener listener) {
+        return addDocumentReplicationListener(null, listener);
     }
 
     /**
@@ -448,26 +485,14 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      *
      * @param listener
      */
-    public ListenerToken addReplicationListener(Executor executor, DocumentReplicatedListener listener) {
+    public ListenerToken addDocumentReplicationListener(Executor executor, DocumentReplicatedListener listener) {
         synchronized (lock) {
             if (listener == null)
                 throw new IllegalArgumentException();
-            this.config.setProgressLevel(ReplicatorConfiguration.ReplicatorProgressLevel.PER_DOCUMENT);
+            setProgressLevel(ReplicatorProgressLevel.PER_DOCUMENT);
             DocumentReplicatedListenerToken token = new DocumentReplicatedListenerToken(executor, listener);
             docEndedListenerTokens.add(token);
             return token;
-        }
-    }
-
-    /**
-     * Remove the given DocumentReplicatedListener from the this replicator.
-     */
-    public void removeReplicationListener(ListenerToken token) {
-        synchronized (lock) {
-            if (token == null || !(token instanceof DocumentReplicatedListenerToken))
-                throw new IllegalArgumentException();
-            this.config.setProgressLevel(ReplicatorConfiguration.ReplicatorProgressLevel.OVERALL);
-            docEndedListenerTokens.remove(token);
         }
     }
 
@@ -613,13 +638,15 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             @Override
-            public void documentEnded(C4Replicator repl, final boolean pushing, final String docID, final C4Error error, final boolean trans, Object context) {
+            public void documentEnded(C4Replicator repl, final boolean pushing, final String docID, final String revID,
+                                      final C4Constants.C4RevisionFlags flags, final C4Error error, final boolean trans,
+                                      Object context) {
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
                         @Override
                         public void run() {
-                            replicator.documentEnded(pushing, docID, error, trans);
+                            replicator.documentEnded(pushing, docID, revID, flags, error, trans);
                         }
                     });
                 }
@@ -649,7 +676,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
     }
 
-    private void documentEnded(boolean pushing, String docID, C4Error error, boolean trans) {
+    private void documentEnded(boolean pushing, String docID, String revID, C4Constants.C4RevisionFlags flags, C4Error error, boolean trans) {
         if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
             // Conflict pulling a document -- the revision was added but app needs to resolve it:
             Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
@@ -666,7 +693,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
         if(error.getDomain()==0 && error.getCode()==0){
             //DocumentReplicatedStatus status = new DocumentReplicatedStatus(true, pushing, docID);
-            c4ReplListener.documentEnded(c4repl, pushing, docID,
+            c4ReplListener.documentEnded(c4repl, pushing, docID, revID, flags,
                     null, trans, this);
         }
 
@@ -820,6 +847,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 isPush(config.getReplicatorType()) ? ">" : "",
                 config.getDatabase(),
                 config.getTarget());
+    }
+
+    private void setProgressLevel(ReplicatorProgressLevel level)
+    {
+        config.effectiveOptions().put(kC4ReplicatorOptionProgressLevel, level.value);
     }
 
     //---------------------------------------------
