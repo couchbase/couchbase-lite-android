@@ -374,6 +374,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 return new Thread(target, "ReplicatorListenerThread");
             }
         });
+        setProgressLevel(ReplicatorProgressLevel.OVERALL);
     }
 
     //---------------------------------------------
@@ -639,7 +640,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
             @Override
             public void documentEnded(C4Replicator repl, final boolean pushing, final String docID, final String revID,
-                                      final C4Constants.C4RevisionFlags flags, final C4Error error, final boolean trans,
+                                      final int flags, final C4Error error, final boolean trans,
                                       Object context) {
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
@@ -676,7 +677,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
     }
 
-    private void documentEnded(boolean pushing, String docID, String revID, C4Constants.C4RevisionFlags flags, C4Error error, boolean trans) {
+    private void documentEnded(boolean pushing, String docID, String revID, int flags, C4Error error, boolean trans) {
         if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
             // Conflict pulling a document -- the revision was added but app needs to resolve it:
             Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
