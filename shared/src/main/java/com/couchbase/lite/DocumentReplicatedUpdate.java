@@ -1,13 +1,33 @@
 package com.couchbase.lite;
 
+/**
+ * Document replicated update of a replicator.
+ */
 public final class DocumentReplicatedUpdate {
-    private final Replicator replicator;
-    private final Replicator.DocumentReplicatedStatus status;
 
-    DocumentReplicatedUpdate(Replicator replicator, Replicator.DocumentReplicatedStatus status) {
+    //---------------------------------------------
+    // member variables
+    //---------------------------------------------
+    private final Replicator replicator;
+    private boolean completed = false;
+    private boolean isDeleted = false;
+    private boolean pushing = false;
+    private String docId = "";
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+    DocumentReplicatedUpdate(Replicator replicator, boolean completed, boolean isDeleted, boolean pushing, String docId) {
         this.replicator = replicator;
-        this.status = status;
+        this.completed = completed;
+        this.pushing = pushing;
+        this.docId = docId;
+        this.isDeleted = isDeleted;
     }
+
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
 
     /**
      * Return the source replicator object.
@@ -17,18 +37,46 @@ public final class DocumentReplicatedUpdate {
     }
 
     /**
-     * Return the replicator status.
+     * The current document replicated flag.
      */
-    public Replicator.DocumentReplicatedStatus getStatus() {
-        return status;
+    public boolean getCompletedFlag() {
+        return completed;
     }
+
+    /**
+     * The current document replication direction flag.
+     */
+    public boolean getPushingFlag() {
+        return pushing;
+    }
+
+    /**
+     * The current document id.
+     */
+    public String getDocId() {
+        return docId;
+    }
+
+    /**
+     * The current document id.
+     */
+    public boolean getIsDeleted() {
+        return isDeleted;
+    }
+
 
     @Override
     public String toString() {
         return "DocumentReplicatedUpdate{" +
                 "replicator=" + replicator +
-                ", status=" + status +
+                "is completed =" + completed +
+                ", is pushing =" + pushing +
+                ", document id =" + docId +
+                ", doc is deleted =" + isDeleted +
                 '}';
     }
-}
 
+    DocumentReplicatedUpdate copy() {
+        return new DocumentReplicatedUpdate(replicator, completed, isDeleted, pushing, docId);
+    }
+}

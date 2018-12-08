@@ -259,65 +259,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         }
     }
 
-    /**
-     * Document ended progress of a replicator.
-     */
-    public final static class DocumentReplicatedStatus {
-        //---------------------------------------------
-        // member variables
-        //---------------------------------------------
-        private boolean completed = false;
-        private boolean pushing = false;
-        private String docId = "";
-
-        //---------------------------------------------
-        // Constructors
-        //---------------------------------------------
-        private DocumentReplicatedStatus(boolean completed, boolean pushing, String docId) {
-            this.completed = completed;
-            this.pushing = pushing;
-            this.docId = docId;
-        }
-
-        //---------------------------------------------
-        // API - public methods
-        //---------------------------------------------
-
-        /**
-         * The current document replicated flag.
-         */
-        public boolean getCompletedFlag() {
-            return completed;
-        }
-
-        /**
-         * The current document replication direction flag.
-         */
-        public boolean getPushingFlag() {
-            return pushing;
-        }
-
-        /**
-         * The current document id.
-         */
-        public String getDocId() {
-            return docId;
-        }
-
-        @Override
-        public String toString() {
-            return "Document replicated Status{" +
-                    "is completed =" + completed +
-                    ", is pushing =" + pushing +
-                    ", document id =" + docId +
-                    '}';
-        }
-
-        DocumentReplicatedStatus copy() {
-            return new DocumentReplicatedStatus(completed, pushing, docId);
-        }
-    }
-
     //---------------------------------------------
     // static initializer
     //---------------------------------------------
@@ -347,6 +288,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private C4Replicator c4repl;
     private C4ReplicatorStatus c4ReplStatus;
     private C4ReplicatorListener c4ReplListener;
+    private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
     private int retryCount;
     private CouchbaseLiteException lastError;
     private String desc = null;
@@ -374,7 +316,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 return new Thread(target, "ReplicatorListenerThread");
             }
         });
-        setProgressLevel(ReplicatorProgressLevel.OVERALL);
     }
 
     //---------------------------------------------
@@ -462,9 +403,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
      */
     public void removeChangeListener(ListenerToken token) {
         synchronized (lock) {
-            if (token == null || !(token instanceof ReplicatorChangeListenerToken))
+            if (token == null || (!(token instanceof ReplicatorChangeListenerToken) && !(token instanceof DocumentReplicatedListenerToken)))
                 throw new IllegalArgumentException();
-            changeListenerTokens.remove(token);
             if(docEndedListenerTokens.remove(token)==true) {
                 setProgressLevel(ReplicatorProgressLevel.OVERALL);
             }
@@ -598,6 +538,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             resetCheckpoint = false;
         }
 
+        options.put(kC4ReplicatorOptionProgressLevel, progressLevel.value);
+
         byte[] optionsFleece = null;
         if (options.size() > 0) {
             FLEncoder enc = new FLEncoder();
@@ -687,17 +629,20 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
                 // TODO: Should pass error along to listener
             }
-        } else {
+        } else if(error.getDomain()==0 && error.getCode()==0) {
+            DocumentReplicatedUpdate update = new DocumentReplicatedUpdate((Replicator) this,true,
+                    flags == C4Constants.C4RevisionFlags.kRevDeleted, pushing, docID);
+            synchronized (docEndedListenerTokens) {
+                for (DocumentReplicatedListenerToken token : docEndedListenerTokens)
+                    token.notify(update);
+            }
+            Log.i(TAG, "C4ReplicatorListener.documentEnded() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
+
+        }
+        else {
             Log.i(TAG, "C4ReplicatorListener.documentError() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
             // TODO: Should pass error along to listener
         }
-
-        if(error.getDomain()==0 && error.getCode()==0){
-            //DocumentReplicatedStatus status = new DocumentReplicatedStatus(true, pushing, docID);
-            c4ReplListener.documentEnded(c4repl, pushing, docID, revID, flags,
-                    null, trans, this);
-        }
-
     }
 
     private void retry() {
@@ -852,7 +797,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
     private void setProgressLevel(ReplicatorProgressLevel level)
     {
-        config.effectiveOptions().put(kC4ReplicatorOptionProgressLevel, level.value);
+        progressLevel = level;
     }
 
     //---------------------------------------------
