@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+import android.icu.text.SimpleDateFormat;
 import android.icu.util.Calendar;
 import android.icu.util.GregorianCalendar;
 import android.icu.util.TimeZone;
@@ -31,6 +32,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.text.ParseException;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -116,6 +119,25 @@ public class QueryTest extends BaseTest {
             doc.setString("UTC", format + "Z");
             db.save(doc);
         }
+    }
+
+    private String LocalToUTC(String format, String dateStr) throws ParseException
+    {
+        TimeZone tz = TimeZone.getDefault();
+        SimpleDateFormat df = new SimpleDateFormat(format);
+        df.setTimeZone(tz);
+        Date date = df.parse(dateStr);
+        df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df.format(date).replace(".000", "");
+    }
+
+    private String ToLocal(long timestamp) throws ParseException
+    {
+        TimeZone tz = TimeZone.getDefault();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        df.setTimeZone(tz);
+        return df.format(new Date(timestamp)).replace(".000", "");
     }
 
     @Test
@@ -3077,29 +3099,15 @@ public class QueryTest extends BaseTest {
 
     @Test
     public void testStringToMillis() throws CouchbaseLiteException {
-        MutableDictionary entry1 = new MutableDictionary().setString("$oid", "56c20025533f4c14e4000799");
-        MutableDictionary entry2 = new MutableDictionary().setString("$oid", "56c20027533f4c14e40007af");
-        MutableArray array = new MutableArray().addDictionary(entry1).addDictionary(entry2);
-        MutableDictionary dict = new MutableDictionary().setArray("values", array);
-        MutableDocument test = new MutableDocument().setDictionary("labels", dict);
-        db.save(test);
-
-        Query testQuery = QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(db))
-                .where(ArrayExpression.any(ArrayExpression.variable("a")).in(Expression.property("labels.values"))
-                .satisfies(ArrayExpression.variable("a.$oid").equalTo(Expression.string("56c20025533f4c14e4000799"))));
-        assertEquals(1, testQuery.execute().allResults().size());
-
         createDateDocs();
 
-        SelectResult[] selections = new SelectResult[7];
+        SelectResult[] selections = new SelectResult[6];
         selections[0] = (SelectResult.expression(Function.stringToMillis(Expression.property("local"))));
         selections[1] = (SelectResult.expression(Function.stringToMillis(Expression.property("JST"))));
         selections[2] = (SelectResult.expression(Function.stringToMillis(Expression.property("JST2"))));
         selections[3] = (SelectResult.expression(Function.stringToMillis(Expression.property("PST"))));
         selections[4] = (SelectResult.expression(Function.stringToMillis(Expression.property("PST2"))));
         selections[5] = (SelectResult.expression(Function.stringToMillis(Expression.property("UTC"))));
-        selections[6] = SelectResult.property("local");
 
         ArrayList<Number> expectedJST = new ArrayList<>();
         expectedJST.add(0L);
@@ -3146,8 +3154,112 @@ public class QueryTest extends BaseTest {
                 .from(DataSource.database(db))
                 .orderBy(Ordering.property("local").ascending());
         for(Result result : q.execute()) {
-            String str = result.getString(6);
-            assertEquals((long)expectedLocal.get(i), result.getLong(0));
+            assertEquals(expectedLocal.get(i), result.getNumber(0));
+            assertEquals(expectedJST.get(i), result.getNumber(1));
+            assertEquals(expectedJST.get(i), result.getNumber(2));
+            assertEquals(expectedPST.get(i), result.getNumber(3));
+            assertEquals(expectedPST.get(i), result.getNumber(4));
+            assertEquals(expectedUTC.get(i), result.getNumber(5));
+            i++;
+        }
+    }
+
+    @Test
+    public void testStringToUTC() throws CouchbaseLiteException, ParseException {
+        createDateDocs();
+
+        SelectResult[] selections = new SelectResult[6];
+        selections[0] = (SelectResult.expression(Function.stringToUTC(Expression.property("local"))));
+        selections[1] = (SelectResult.expression(Function.stringToUTC(Expression.property("JST"))));
+        selections[2] = (SelectResult.expression(Function.stringToUTC(Expression.property("JST2"))));
+        selections[3] = (SelectResult.expression(Function.stringToUTC(Expression.property("PST"))));
+        selections[4] = (SelectResult.expression(Function.stringToUTC(Expression.property("PST2"))));
+        selections[5] = (SelectResult.expression(Function.stringToUTC(Expression.property("UTC"))));
+
+        ArrayList<String> expectedJST = new ArrayList<>();
+        expectedJST.add(null);
+        expectedJST.add("1985-10-25T16:21:00Z");
+        expectedJST.add("1985-10-25T16:21:30Z");
+        expectedJST.add("1985-10-25T16:21:30.500Z");
+        expectedJST.add("1985-10-25T16:21:30.550Z");
+        expectedJST.add("1985-10-25T16:21:30.555Z");
+
+        ArrayList<String> expectedPST = new ArrayList<>();
+        expectedPST.add(null);
+        expectedPST.add("1985-10-26T09:21:00Z");
+        expectedPST.add("1985-10-26T09:21:30Z");
+        expectedPST.add("1985-10-26T09:21:30.500Z");
+        expectedPST.add("1985-10-26T09:21:30.550Z");
+        expectedPST.add("1985-10-26T09:21:30.555Z");
+
+        ArrayList<String> expectedUTC = new ArrayList<>();
+        expectedUTC.add(null);
+        expectedUTC.add("1985-10-26T01:21:00Z");
+        expectedUTC.add("1985-10-26T01:21:30Z");
+        expectedUTC.add("1985-10-26T01:21:30.500Z");
+        expectedUTC.add("1985-10-26T01:21:30.550Z");
+        expectedUTC.add("1985-10-26T01:21:30.555Z");
+
+        ArrayList<String> expectedLocal = new ArrayList<>();
+        expectedLocal.add(LocalToUTC("yyyy-MM-dd", "1985-10-26"));
+        expectedLocal.add(LocalToUTC("yyyy-MM-dd HH:mm", "1985-10-26 01:21"));
+        expectedLocal.add(LocalToUTC("yyyy-MM-dd HH:mm:ss", "1985-10-26 01:21:30"));
+        expectedLocal.add(LocalToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.500"));
+        expectedLocal.add(LocalToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.550"));
+        expectedLocal.add(LocalToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.555"));
+
+        int i = 0;
+        Query q = QueryBuilder.select(selections)
+                .from(DataSource.database(db))
+                .orderBy(Ordering.property("local").ascending());
+        for(Result result : q.execute()) {
+            assertEquals(expectedLocal.get(i), result.getString(0));
+            assertEquals(expectedJST.get(i), result.getString(1));
+            assertEquals(expectedJST.get(i), result.getString(2));
+            assertEquals(expectedPST.get(i), result.getString(3));
+            assertEquals(expectedPST.get(i), result.getString(4));
+            assertEquals(expectedUTC.get(i), result.getString(5));
+            i++;
+        }
+    }
+
+    @Test
+    public void testMillisConversion() throws CouchbaseLiteException, ParseException {
+        ArrayList<Number> millisToUse = new ArrayList<>();
+        millisToUse.add(499132800000L);
+        millisToUse.add(499137660000L);
+        millisToUse.add(499137690000L);
+        millisToUse.add(499137690500L);
+        millisToUse.add(499137690550L);
+        millisToUse.add(499137690555L);
+
+        ArrayList<String> expectedLocal = new ArrayList<>();
+        for(Number millis : millisToUse) {
+            MutableDocument doc = new MutableDocument();
+            doc.setNumber("timestamp", millis);
+            db.save(doc);
+            expectedLocal.add(ToLocal((long)millis));
+        }
+
+        ArrayList<String> expectedUTC = new ArrayList<>();
+        expectedUTC.add("1985-10-26T00:00:00Z");
+        expectedUTC.add("1985-10-26T01:21:00Z");
+        expectedUTC.add("1985-10-26T01:21:30Z");
+        expectedUTC.add("1985-10-26T01:21:30.500Z");
+        expectedUTC.add("1985-10-26T01:21:30.550Z");
+        expectedUTC.add("1985-10-26T01:21:30.555Z");
+
+        SelectResult selections[] = new SelectResult[2];
+        selections[0] = SelectResult.expression(Function.millisToString(Expression.property("timestamp")));
+        selections[1] = SelectResult.expression(Function.millisToUTC(Expression.property("timestamp")));
+
+        int i = 0;
+        Query q = QueryBuilder.select(selections)
+                .from(DataSource.database(db))
+                .orderBy(Ordering.property("timestamp").ascending());
+        for(Result result : q.execute()) {
+            assertEquals(expectedLocal.get(i), result.getString(0));
+            assertEquals(expectedUTC.get(i), result.getString(1));
             i++;
         }
     }
