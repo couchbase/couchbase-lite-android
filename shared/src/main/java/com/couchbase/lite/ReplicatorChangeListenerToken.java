@@ -44,18 +44,18 @@ final class ReplicatorChangeListenerToken implements ListenerToken {
     }
 }
 
-final class DocumentReplicatedListenerToken implements ListenerToken {
+final class DocumentReplicationListenerToken implements ListenerToken {
     private Executor executor;
-    private final DocumentReplicatedListener listener;
+    private final DocumentReplicationListener listener;
 
-    DocumentReplicatedListenerToken(Executor executor, DocumentReplicatedListener listener) {
+    DocumentReplicationListenerToken(Executor executor, DocumentReplicationListener listener) {
         if (listener == null)
             throw new IllegalArgumentException("a listener parameter is null");
         this.executor = executor;
         this.listener = listener;
     }
 
-    void notify(final DocumentReplicatedUpdate update) {
+    void notify(final DocumentReplicationUpdate update) {
         getExecutor().execute(new Runnable() {
             @Override
             public void run() {

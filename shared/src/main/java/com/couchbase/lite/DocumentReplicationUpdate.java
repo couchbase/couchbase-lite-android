@@ -1,5 +1,5 @@
 //
-// DocumentReplicatedUpdate.java
+// DocumentReplicationUpdate.java
 //
 // Copyright (c) 2018 Couchbase, Inc All rights reserved.
 //
@@ -21,13 +21,12 @@ package com.couchbase.lite;
 /**
  * Document replicated update of a replicator.
  */
-public final class DocumentReplicatedUpdate {
+public final class DocumentReplicationUpdate {
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private final Replicator replicator;
-    private boolean completed = false;
     private boolean isDeleted = false;
     private boolean pushing = false;
     private String docId = "";
@@ -35,9 +34,8 @@ public final class DocumentReplicatedUpdate {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplicatedUpdate(Replicator replicator, boolean completed, boolean isDeleted, boolean pushing, String docId) {
+    DocumentReplicationUpdate(Replicator replicator, boolean isDeleted, boolean pushing, String docId) {
         this.replicator = replicator;
-        this.completed = completed;
         this.pushing = pushing;
         this.docId = docId;
         this.isDeleted = isDeleted;
@@ -52,13 +50,6 @@ public final class DocumentReplicatedUpdate {
      */
     public Replicator getReplicator() {
         return replicator;
-    }
-
-    /**
-     * The current document replicated flag.
-     */
-    public boolean getCompletedFlag() {
-        return completed;
     }
 
     /**
@@ -87,14 +78,13 @@ public final class DocumentReplicatedUpdate {
     public String toString() {
         return "DocumentReplicatedUpdate{" +
                 "replicator=" + replicator +
-                "is completed =" + completed +
                 ", is pushing =" + pushing +
                 ", document id =" + docId +
                 ", doc is deleted =" + isDeleted +
                 '}';
     }
 
-    DocumentReplicatedUpdate copy() {
-        return new DocumentReplicatedUpdate(replicator, completed, isDeleted, pushing, docId);
+    DocumentReplicationUpdate copy() {
+        return new DocumentReplicationUpdate(replicator, isDeleted, pushing, docId);
     }
 }

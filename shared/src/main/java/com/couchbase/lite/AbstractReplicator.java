@@ -284,7 +284,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     protected ReplicatorConfiguration config;
     private Status status;
     private Set<ReplicatorChangeListenerToken> changeListenerTokens;
-    private Set<DocumentReplicatedListenerToken> docEndedListenerTokens;
+    private Set<DocumentReplicationListenerToken> docEndedListenerTokens;
     private C4Replicator c4repl;
     private C4ReplicatorStatus c4ReplStatus;
     private C4ReplicatorListener c4ReplListener;
@@ -309,7 +309,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     public AbstractReplicator(ReplicatorConfiguration config) {
         this.config = config.readonlyCopy();
         this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
-        this.docEndedListenerTokens = synchronizedSet(new HashSet<DocumentReplicatedListenerToken>());
+        this.docEndedListenerTokens = synchronizedSet(new HashSet<DocumentReplicationListenerToken>());
         this.handler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable target) {
@@ -399,12 +399,13 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     /**
-     * Remove the given ReplicatorChangeListener or DocumentReplicatedListener from the this replicator.
+     * Remove the given ReplicatorChangeListener or DocumentReplicationListener from the this replicator.
      */
     public void removeChangeListener(ListenerToken token) {
         synchronized (lock) {
-            if (token == null || (!(token instanceof ReplicatorChangeListenerToken) && !(token instanceof DocumentReplicatedListenerToken)))
+            if (token == null || (!(token instanceof ReplicatorChangeListenerToken) && !(token instanceof DocumentReplicationListenerToken)))
                 throw new IllegalArgumentException();
+            changeListenerTokens.remove(token);
             if(docEndedListenerTokens.remove(token)==true) {
                 setProgressLevel(ReplicatorProgressLevel.OVERALL);
             }
@@ -412,26 +413,26 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     /**
-     * Set the given DocumentReplicatedListener to the this replicator.
+     * Set the given DocumentReplicationListener to the this replicator.
      *
      * @param listener
      * @return ListenerToken A token to remove the handler later
      */
-    public ListenerToken addDocumentReplicationListener(DocumentReplicatedListener listener) {
+    public ListenerToken addDocumentReplicationListener(DocumentReplicationListener listener) {
         return addDocumentReplicationListener(null, listener);
     }
 
     /**
-     * Set the given DocumentReplicatedListener to the this replicator.
+     * Set the given DocumentReplicationListener to the this replicator.
      *
      * @param listener
      */
-    public ListenerToken addDocumentReplicationListener(Executor executor, DocumentReplicatedListener listener) {
+    public ListenerToken addDocumentReplicationListener(Executor executor, DocumentReplicationListener listener) {
         synchronized (lock) {
             if (listener == null)
                 throw new IllegalArgumentException();
             setProgressLevel(ReplicatorProgressLevel.PER_DOCUMENT);
-            DocumentReplicatedListenerToken token = new DocumentReplicatedListenerToken(executor, listener);
+            DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
             docEndedListenerTokens.add(token);
             return token;
         }
@@ -630,10 +631,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 // TODO: Should pass error along to listener
             }
         } else if(error.getDomain()==0 && error.getCode()==0) {
-            DocumentReplicatedUpdate update = new DocumentReplicatedUpdate((Replicator) this,true,
+            DocumentReplicationUpdate update = new DocumentReplicationUpdate((Replicator) this,
                     flags == C4Constants.C4RevisionFlags.kRevDeleted, pushing, docID);
             synchronized (docEndedListenerTokens) {
-                for (DocumentReplicatedListenerToken token : docEndedListenerTokens)
+                for (DocumentReplicationListenerToken token : docEndedListenerTokens)
                     token.notify(update);
             }
             Log.i(TAG, "C4ReplicatorListener.documentEnded() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);

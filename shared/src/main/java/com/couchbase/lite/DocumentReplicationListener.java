@@ -1,5 +1,5 @@
 //
-// DocumentReplicatedListener.java
+// DocumentReplicationListener.java
 //
 // Copyright (c) 2018 Couchbase, Inc All rights reserved.
 //
@@ -18,11 +18,11 @@
 
 package com.couchbase.lite;
 
-public interface DocumentReplicatedListener {
+public interface DocumentReplicationListener {
     /**
      * The callback function from Replicator
      *
      * @param update the Document replicated information
      */
-    void replicated(DocumentReplicatedUpdate update);
+    void replicated(DocumentReplicationUpdate update);
 }
