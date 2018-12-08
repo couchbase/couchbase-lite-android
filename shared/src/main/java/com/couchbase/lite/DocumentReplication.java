@@ -1,5 +1,5 @@
 //
-// DocumentReplicationUpdate.java
+// DocumentReplication.java
 //
 // Copyright (c) 2018 Couchbase, Inc All rights reserved.
 //
@@ -21,7 +21,7 @@ package com.couchbase.lite;
 /**
  * Document replicated update of a replicator.
  */
-public final class DocumentReplicationUpdate {
+public final class DocumentReplication {
 
     //---------------------------------------------
     // member variables
@@ -34,7 +34,7 @@ public final class DocumentReplicationUpdate {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplicationUpdate(Replicator replicator, boolean isDeleted, boolean pushing, String docId) {
+    DocumentReplication(Replicator replicator, boolean isDeleted, boolean pushing, String docId) {
         this.replicator = replicator;
         this.pushing = pushing;
         this.docId = docId;
@@ -55,21 +55,21 @@ public final class DocumentReplicationUpdate {
     /**
      * The current document replication direction flag.
      */
-    public boolean getPushingFlag() {
+    public boolean isPush() {
         return pushing;
     }
 
     /**
      * The current document id.
      */
-    public String getDocId() {
+    public String getDocumentId() {
         return docId;
     }
 
     /**
      * The current document id.
      */
-    public boolean getIsDeleted() {
+    public boolean isDeleted() {
         return isDeleted;
     }
 
@@ -84,7 +84,7 @@ public final class DocumentReplicationUpdate {
                 '}';
     }
 
-    DocumentReplicationUpdate copy() {
-        return new DocumentReplicationUpdate(replicator, isDeleted, pushing, docId);
+    DocumentReplication copy() {
+        return new DocumentReplication(replicator, isDeleted, pushing, docId);
     }
 }

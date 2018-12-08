@@ -631,7 +631,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 // TODO: Should pass error along to listener
             }
         } else if(error.getDomain()==0 && error.getCode()==0) {
-            DocumentReplicationUpdate update = new DocumentReplicationUpdate((Replicator) this,
+            DocumentReplication update = new DocumentReplication((Replicator) this,
                     flags == C4Constants.C4RevisionFlags.kRevDeleted, pushing, docID);
             synchronized (docEndedListenerTokens) {
                 for (DocumentReplicationListenerToken token : docEndedListenerTokens)

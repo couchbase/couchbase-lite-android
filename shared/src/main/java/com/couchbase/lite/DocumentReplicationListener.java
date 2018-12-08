@@ -24,5 +24,5 @@ public interface DocumentReplicationListener {
      *
      * @param update the Document replicated information
      */
-    void replicated(DocumentReplicationUpdate update);
+    void replicated(DocumentReplication update);
 }

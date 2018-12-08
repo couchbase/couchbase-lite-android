@@ -55,7 +55,7 @@ final class DocumentReplicationListenerToken implements ListenerToken {
         this.listener = listener;
     }
 
-    void notify(final DocumentReplicationUpdate update) {
+    void notify(final DocumentReplication update) {
         getExecutor().execute(new Runnable() {
             @Override
             public void run() {
