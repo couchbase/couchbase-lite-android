@@ -18,6 +18,8 @@
 
 package com.couchbase.lite;
 
+import com.couchbase.litecore.C4Error;
+
 /**
  * Document replicated update of a replicator.
  */
@@ -30,15 +32,23 @@ public final class DocumentReplication {
     private boolean isDeleted = false;
     private boolean pushing = false;
     private String docId = "";
+    private String revId = "";
+    private int flags;
+    private C4Error error;
+    private boolean trans;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplication(Replicator replicator, boolean isDeleted, boolean pushing, String docId) {
+    DocumentReplication(Replicator replicator, boolean isDeleted, boolean pushing, String docId, String revID, int flags, C4Error error, boolean trans) {
         this.replicator = replicator;
         this.pushing = pushing;
         this.docId = docId;
         this.isDeleted = isDeleted;
+        this.revId = revID;
+        this.flags = flags;
+        this.error = error;
+        this.trans = trans;
     }
 
     //---------------------------------------------
@@ -67,24 +77,57 @@ public final class DocumentReplication {
     }
 
     /**
+     * The current document revision id.
+     */
+    public String getRevisionId() {
+        return revId;
+    }
+
+    /**
      * The current document id.
      */
     public boolean isDeleted() {
         return isDeleted;
     }
 
+    /**
+     * The current document flags.
+     */
+    public int getFlags() {
+        return flags;
+    }
+
+    /**
+     * The current document replication error.
+     */
+    public C4Error getError() {
+        return error;
+    }
+
+    /**
+     * The current document replication transient.
+     */
+    public boolean getTransient() {
+        return trans;
+    }
+
 
     @Override
     public String toString() {
-        return "DocumentReplicatedUpdate{" +
+        return "DocumentReplication {" +
                 "replicator=" + replicator +
                 ", is pushing =" + pushing +
                 ", document id =" + docId +
+                ", revision id =" + revId +
+                ", error code =" + error.getCode()+
+                ", error domain=" + error.getDomain() +
+                ", is transient=" + trans +
+                ", flags =" + flags +
                 ", doc is deleted =" + isDeleted +
                 '}';
     }
 
     DocumentReplication copy() {
-        return new DocumentReplication(replicator, isDeleted, pushing, docId);
+        return new DocumentReplication(replicator, isDeleted, pushing, docId, revId, flags, error, trans);
     }
 }

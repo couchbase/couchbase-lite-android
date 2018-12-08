@@ -406,7 +406,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             if (token == null || (!(token instanceof ReplicatorChangeListenerToken) && !(token instanceof DocumentReplicationListenerToken)))
                 throw new IllegalArgumentException();
             changeListenerTokens.remove(token);
-            if(docEndedListenerTokens.remove(token)==true) {
+            docEndedListenerTokens.remove(token);
+            if (docEndedListenerTokens.size() == 0) {
                 setProgressLevel(ReplicatorProgressLevel.OVERALL);
             }
         }
@@ -621,6 +622,9 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     private void documentEnded(boolean pushing, String docID, String revID, int flags, C4Error error, boolean trans) {
+        DocumentReplication update = new DocumentReplication((Replicator) this,
+                flags == C4Constants.C4RevisionFlags.kRevDeleted,
+                 pushing, docID, revID, flags, error, trans);
         if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
             // Conflict pulling a document -- the revision was added but app needs to resolve it:
             Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
@@ -628,22 +632,18 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 this.config.getDatabase().resolveConflictInDocument(docID);
             } catch (CouchbaseLiteException ex) {
                 Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
-                // TODO: Should pass error along to listener
             }
-        } else if(error.getDomain()==0 && error.getCode()==0) {
-            DocumentReplication update = new DocumentReplication((Replicator) this,
-                    flags == C4Constants.C4RevisionFlags.kRevDeleted, pushing, docID);
-            synchronized (docEndedListenerTokens) {
-                for (DocumentReplicationListenerToken token : docEndedListenerTokens)
-                    token.notify(update);
-            }
-            Log.i(TAG, "C4ReplicatorListener.documentEnded() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
+        }
+        notifyDocumentEnded(update);
+    }
 
+    private void notifyDocumentEnded(DocumentReplication update)
+    {
+        synchronized (docEndedListenerTokens) {
+            for (DocumentReplicationListenerToken token : docEndedListenerTokens)
+                token.notify(update);
         }
-        else {
-            Log.i(TAG, "C4ReplicatorListener.documentError() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
-            // TODO: Should pass error along to listener
-        }
+        Log.i(TAG, "C4ReplicatorListener.documentEnded() " + update.toString());
     }
 
     private void retry() {
