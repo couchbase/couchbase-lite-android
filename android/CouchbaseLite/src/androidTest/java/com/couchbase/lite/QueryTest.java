@@ -17,6 +17,9 @@
 //
 package com.couchbase.lite;
 
+import android.icu.util.Calendar;
+import android.icu.util.GregorianCalendar;
+import android.icu.util.TimeZone;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -89,6 +92,30 @@ public class QueryTest extends BaseTest {
             documentIDs[i] = "doc" + numbers[i];
         }
         return documentIDs;
+    }
+
+    private void createDateDocs() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument();
+        doc.setString("local", "1985-10-26");
+        db.save(doc);
+
+        ArrayList<String> dateTimeFormats = new ArrayList<>();
+        dateTimeFormats.add("1985-10-26 01:21");
+        dateTimeFormats.add("1985-10-26 01:21:30");
+        dateTimeFormats.add("1985-10-26 01:21:30.5");
+        dateTimeFormats.add("1985-10-26 01:21:30.55");
+        dateTimeFormats.add("1985-10-26 01:21:30.555");
+
+        for (String format : dateTimeFormats) {
+            doc = new MutableDocument();
+            doc.setString("local", format);
+            doc.setString("JST", format + "+09:00");
+            doc.setString("JST2", format + "+0900");
+            doc.setString("PST", format + "-08:00");
+            doc.setString("PST2", format + "-0800");
+            doc.setString("UTC", format + "Z");
+            db.save(doc);
+        }
     }
 
     @Test
@@ -3046,5 +3073,82 @@ public class QueryTest extends BaseTest {
 
         thrown.expect(IllegalArgumentException.class);
         Function.upper(null);
+    }
+
+    @Test
+    public void testStringToMillis() throws CouchbaseLiteException {
+        MutableDictionary entry1 = new MutableDictionary().setString("$oid", "56c20025533f4c14e4000799");
+        MutableDictionary entry2 = new MutableDictionary().setString("$oid", "56c20027533f4c14e40007af");
+        MutableArray array = new MutableArray().addDictionary(entry1).addDictionary(entry2);
+        MutableDictionary dict = new MutableDictionary().setArray("values", array);
+        MutableDocument test = new MutableDocument().setDictionary("labels", dict);
+        db.save(test);
+
+        Query testQuery = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(db))
+                .where(ArrayExpression.any(ArrayExpression.variable("a")).in(Expression.property("labels.values"))
+                .satisfies(ArrayExpression.variable("a.$oid").equalTo(Expression.string("56c20025533f4c14e4000799"))));
+        assertEquals(1, testQuery.execute().allResults().size());
+
+        createDateDocs();
+
+        SelectResult[] selections = new SelectResult[7];
+        selections[0] = (SelectResult.expression(Function.stringToMillis(Expression.property("local"))));
+        selections[1] = (SelectResult.expression(Function.stringToMillis(Expression.property("JST"))));
+        selections[2] = (SelectResult.expression(Function.stringToMillis(Expression.property("JST2"))));
+        selections[3] = (SelectResult.expression(Function.stringToMillis(Expression.property("PST"))));
+        selections[4] = (SelectResult.expression(Function.stringToMillis(Expression.property("PST2"))));
+        selections[5] = (SelectResult.expression(Function.stringToMillis(Expression.property("UTC"))));
+        selections[6] = SelectResult.property("local");
+
+        ArrayList<Number> expectedJST = new ArrayList<>();
+        expectedJST.add(0L);
+        expectedJST.add(499105260000L);
+        expectedJST.add(499105290000L);
+        expectedJST.add(499105290500L);
+        expectedJST.add(499105290550L);
+        expectedJST.add(499105290555L);
+
+        ArrayList<Number> expectedPST = new ArrayList<>();
+        expectedPST.add(0L);
+        expectedPST.add(499166460000L);
+        expectedPST.add(499166490000L);
+        expectedPST.add(499166490500L);
+        expectedPST.add(499166490550L);
+        expectedPST.add(499166490555L);
+
+        ArrayList<Number> expectedUTC = new ArrayList<>();
+        expectedUTC.add(0L);
+        expectedUTC.add(499137660000L);
+        expectedUTC.add(499137690000L);
+        expectedUTC.add(499137690500L);
+        expectedUTC.add(499137690550L);
+        expectedUTC.add(499137690555L);
+
+        Calendar calendar = new GregorianCalendar();
+        TimeZone timeZone = calendar.getTimeZone();
+        long offset = timeZone.getOffset(499132800000L);
+        ArrayList<Number> expectedLocal = new ArrayList<>();
+        expectedLocal.add(499132800000L - offset);
+
+        boolean first = true;
+        for(Number entry : expectedUTC) {
+            if(first) {
+                first = false;
+                continue;
+            }
+
+            expectedLocal.add((long)entry - offset);
+        }
+
+        int i = 0;
+        Query q = QueryBuilder.select(selections)
+                .from(DataSource.database(db))
+                .orderBy(Ordering.property("local").ascending());
+        for(Result result : q.execute()) {
+            String str = result.getString(6);
+            assertEquals((long)expectedLocal.get(i), result.getLong(0));
+            i++;
+        }
     }
 }
