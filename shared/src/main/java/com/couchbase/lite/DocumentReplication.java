@@ -30,6 +30,7 @@ public final class DocumentReplication {
     //---------------------------------------------
     private final Replicator replicator;
     private boolean isDeleted = false;
+    private boolean isAccessRemoved = false;
     private boolean pushing = false;
     private String docId = "";
     private String revId = "";
@@ -40,15 +41,14 @@ public final class DocumentReplication {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplication(Replicator replicator, boolean isDeleted, boolean pushing, String docId, String revID, int flags, C4Error error, boolean trans) {
+    DocumentReplication(Replicator replicator, boolean isDeleted, boolean pushing, String docId, String revId, int flags, C4Error error, boolean trans) {
         this.replicator = replicator;
         this.pushing = pushing;
         this.docId = docId;
         this.isDeleted = isDeleted;
-        this.revId = revID;
+        this.revId = revId;
         this.flags = flags;
         this.error = error;
-        this.trans = trans;
     }
 
     //---------------------------------------------
@@ -72,45 +72,30 @@ public final class DocumentReplication {
     /**
      * The current document id.
      */
-    public String getDocumentId() {
+    public String getDocumentID() {
         return docId;
     }
 
     /**
-     * The current document revision id.
-     */
-    public String getRevisionId() {
-        return revId;
-    }
-
-    /**
-     * The current document id.
+     * The current deleted status of the document.
      */
     public boolean isDeleted() {
         return isDeleted;
     }
 
     /**
-     * The current document flags.
+     * The current access removed status of the document.
      */
-    public int getFlags() {
-        return flags;
-    }
+    public boolean isAccessRemoved()  {
+        return isAccessRemoved;
+    } //TODO: will find a way to get this value and write unit test for it in the related PR for the ticket.
 
     /**
      * The current document replication error.
      */
-    public C4Error getError() {
-        return error;
+    public CouchbaseLiteException getError() {
+        return error.getCode() != 0 ? CBLStatus.convertError(error) : null;
     }
-
-    /**
-     * The current document replication transient.
-     */
-    public boolean getTransient() {
-        return trans;
-    }
-
 
     @Override
     public String toString() {
@@ -118,16 +103,13 @@ public final class DocumentReplication {
                 "replicator=" + replicator +
                 ", is pushing =" + pushing +
                 ", document id =" + docId +
-                ", revision id =" + revId +
                 ", error code =" + error.getCode()+
                 ", error domain=" + error.getDomain() +
-                ", is transient=" + trans +
-                ", flags =" + flags +
                 ", doc is deleted =" + isDeleted +
                 '}';
     }
 
     DocumentReplication copy() {
-        return new DocumentReplication(replicator, isDeleted, pushing, docId, revId, flags, error, trans);
+        return new DocumentReplication(replicator, isDeleted, pushing, docId, revId, flags, new C4Error(error.getDomain(), error.getCode(), error.getInternalInfo()), trans);
     }
 }

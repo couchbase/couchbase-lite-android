@@ -18,6 +18,9 @@
 
 package com.couchbase.lite;
 
+/**
+ * The listener interface for receiving Document replicated events.
+ */
 public interface DocumentReplicationListener {
     /**
      * The callback function from Replicator

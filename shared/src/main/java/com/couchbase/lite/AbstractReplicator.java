@@ -120,24 +120,14 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         PER_DOCUMENT(1),
         PER_ATTACHMENT(2);
 
-        private final int value;
-        private static Map map = new HashMap<>();
+        private int value;
 
-        private ReplicatorProgressLevel(int value) {
-            this.value = value;
-        }
-        static {
-            for (ReplicatorProgressLevel level : ReplicatorProgressLevel.values()) {
-                map.put(level.value, level);
-            }
-        }
-
-        public static ReplicatorProgressLevel valueOf(int level) {
-            return (ReplicatorProgressLevel) map.get(level);
-        }
-
-        public int getValue() {
+        int getValue() {
             return value;
+        }
+
+        ReplicatorProgressLevel(int value) {
+            this.value = value;
         }
     }
 
