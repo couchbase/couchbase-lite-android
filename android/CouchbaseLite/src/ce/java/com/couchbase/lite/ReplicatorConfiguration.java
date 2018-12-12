@@ -43,6 +43,7 @@ public final class ReplicatorConfiguration {
     static final String kC4ReplicatorCheckpointInterval = "checkpointInterval"; // How often to checkpoint, in seconds; number
     static final String kC4ReplicatorOptionRemoteDBUniqueID = "remoteDBUniqueID"; // How often to checkpoint, in seconds; number
     static final String kC4ReplicatorResetCheckpoint = "reset"; // reset remote checkpoint
+    static final String kC4ReplicatorOptionProgressLevel = "progress";  //< If >=1, notify on every doc; if >=2, on every attachment (int)
 
     // Auth dictionary keys:
     static final String kC4ReplicatorAuthType = "type"; // Auth property; string
@@ -308,7 +309,6 @@ public final class ReplicatorConfiguration {
 
         if (channels != null && channels.size() > 0)
             options.put(kC4ReplicatorOptionChannels, channels);
-
 
         Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:

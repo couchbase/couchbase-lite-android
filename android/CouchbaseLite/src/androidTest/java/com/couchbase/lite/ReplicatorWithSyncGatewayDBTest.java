@@ -58,6 +58,7 @@ import static org.junit.Assert.fail;
  * configuration file.
  */
 public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
+
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     private static final String DB_NAME = "db";

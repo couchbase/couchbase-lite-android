@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
+import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4Replicator;
@@ -30,6 +31,7 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -40,6 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorOptionProgressLevel;
 import static com.couchbase.lite.ReplicatorConfiguration.kC4ReplicatorResetCheckpoint;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.LiteCoreDomain;
 import static com.couchbase.litecore.C4Constants.C4ErrorDomain.WebSocketDomain;
@@ -103,6 +106,28 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
         int getValue() {
             return value;
+        }
+    }
+
+    /**
+     * An enum representing level of opt in on progress of replication
+     * OVERALL: No additional replication progress callback
+     * PER_DOCUMENT: >=1 Every document replication ended callback
+     * PER_ATTACHMENT: >=2 Every blob replication progress callback
+     */
+    enum ReplicatorProgressLevel {
+        OVERALL(0),
+        PER_DOCUMENT(1),
+        PER_ATTACHMENT(2);
+
+        private int value;
+
+        int getValue() {
+            return value;
+        }
+
+        ReplicatorProgressLevel(int value) {
+            this.value = value;
         }
     }
 
@@ -249,9 +274,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     protected ReplicatorConfiguration config;
     private Status status;
     private Set<ReplicatorChangeListenerToken> changeListenerTokens;
+    private Set<DocumentReplicationListenerToken> docEndedListenerTokens;
     private C4Replicator c4repl;
     private C4ReplicatorStatus c4ReplStatus;
     private C4ReplicatorListener c4ReplListener;
+    private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
     private int retryCount;
     private CouchbaseLiteException lastError;
     private String desc = null;
@@ -272,6 +299,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     public AbstractReplicator(ReplicatorConfiguration config) {
         this.config = config.readonlyCopy();
         this.changeListenerTokens = synchronizedSet(new HashSet<ReplicatorChangeListenerToken>());
+        this.docEndedListenerTokens = synchronizedSet(new HashSet<DocumentReplicationListenerToken>());
         this.handler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable target) {
@@ -361,13 +389,43 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     /**
-     * Remove the given ReplicatorChangeListener from the this replicator.
+     * Remove the given ReplicatorChangeListener or DocumentReplicationListener from the this replicator.
      */
     public void removeChangeListener(ListenerToken token) {
         synchronized (lock) {
-            if (token == null || !(token instanceof ReplicatorChangeListenerToken))
+            if (token == null || (!(token instanceof ReplicatorChangeListenerToken) && !(token instanceof DocumentReplicationListenerToken)))
                 throw new IllegalArgumentException();
             changeListenerTokens.remove(token);
+            docEndedListenerTokens.remove(token);
+            if (docEndedListenerTokens.size() == 0) {
+                setProgressLevel(ReplicatorProgressLevel.OVERALL);
+            }
+        }
+    }
+
+    /**
+     * Set the given DocumentReplicationListener to the this replicator.
+     *
+     * @param listener
+     * @return ListenerToken A token to remove the handler later
+     */
+    public ListenerToken addDocumentReplicationListener(DocumentReplicationListener listener) {
+        return addDocumentReplicationListener(null, listener);
+    }
+
+    /**
+     * Set the given DocumentReplicationListener to the this replicator.
+     *
+     * @param listener
+     */
+    public ListenerToken addDocumentReplicationListener(Executor executor, DocumentReplicationListener listener) {
+        synchronized (lock) {
+            if (listener == null)
+                throw new IllegalArgumentException();
+            setProgressLevel(ReplicatorProgressLevel.PER_DOCUMENT);
+            DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
+            docEndedListenerTokens.add(token);
+            return token;
         }
     }
 
@@ -472,6 +530,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             resetCheckpoint = false;
         }
 
+        options.put(kC4ReplicatorOptionProgressLevel, progressLevel.value);
+
         byte[] optionsFleece = null;
         if (options.size() > 0) {
             FLEncoder enc = new FLEncoder();
@@ -513,13 +573,15 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             @Override
-            public void documentError(C4Replicator repl, final boolean pushing, final String docID, final C4Error error, final boolean trans, Object context) {
+            public void documentEnded(C4Replicator repl, final boolean pushing, final String docID, final String revID,
+                                      final int flags, final C4Error error, final boolean trans,
+                                      Object context) {
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
                         @Override
                         public void run() {
-                            replicator.documentError(pushing, docID, error, trans);
+                            replicator.documentEnded(pushing, docID, revID, flags, error, trans);
                         }
                     });
                 }
@@ -549,7 +611,10 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
     }
 
-    private void documentError(boolean pushing, String docID, C4Error error, boolean trans) {
+    private void documentEnded(boolean pushing, String docID, String revID, int flags, C4Error error, boolean trans) {
+        DocumentReplication update = new DocumentReplication((Replicator) this,
+                flags == C4Constants.C4RevisionFlags.kRevDeleted,
+                 pushing, docID, revID, flags, error, trans);
         if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
             // Conflict pulling a document -- the revision was added but app needs to resolve it:
             Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
@@ -557,12 +622,18 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 this.config.getDatabase().resolveConflictInDocument(docID);
             } catch (CouchbaseLiteException ex) {
                 Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
-                // TODO: Should pass error along to listener
             }
-        } else {
-            Log.i(TAG, "C4ReplicatorListener.documentError() pushing -> %s, docID -> %s, error -> %s, trans -> %s", pushing ? "true" : false, docID, error, trans ? "true" : false);
-            // TODO: Should pass error along to listener
         }
+        notifyDocumentEnded(update);
+    }
+
+    private void notifyDocumentEnded(DocumentReplication update)
+    {
+        synchronized (docEndedListenerTokens) {
+            for (DocumentReplicationListenerToken token : docEndedListenerTokens)
+                token.notify(update);
+        }
+        Log.i(TAG, "C4ReplicatorListener.documentEnded() " + update.toString());
     }
 
     private void retry() {
@@ -713,6 +784,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 isPush(config.getReplicatorType()) ? ">" : "",
                 config.getDatabase(),
                 config.getTarget());
+    }
+
+    private void setProgressLevel(ReplicatorProgressLevel level)
+    {
+        progressLevel = level;
     }
 
     //---------------------------------------------
