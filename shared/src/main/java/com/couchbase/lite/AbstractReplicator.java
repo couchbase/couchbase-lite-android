@@ -22,11 +22,13 @@ import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Database;
 import com.couchbase.litecore.C4Error;
+import com.couchbase.litecore.C4ReplicationFilter;
 import com.couchbase.litecore.C4Replicator;
 import com.couchbase.litecore.C4ReplicatorListener;
 import com.couchbase.litecore.C4ReplicatorStatus;
 import com.couchbase.litecore.C4Socket;
 import com.couchbase.litecore.LiteCoreException;
+import com.couchbase.litecore.fleece.FLDict;
 import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
@@ -36,8 +38,12 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -278,6 +284,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private C4Replicator c4repl;
     private C4ReplicatorStatus c4ReplStatus;
     private C4ReplicatorListener c4ReplListener;
+    private C4ReplicationFilter c4ReplPushFilter;
+    private C4ReplicationFilter c4ReplPullFilter;
     private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
     private int retryCount;
     private CouchbaseLiteException lastError;
@@ -557,6 +565,22 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         boolean pull = isPull(config.getReplicatorType());
         boolean continuous = config.isContinuous();
 
+        C4ReplicationFilter filter = new C4ReplicationFilter() {
+            @Override
+            public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context)
+                throws  Exception {
+                final AbstractReplicator replicator = (AbstractReplicator) context;
+                return handler.submit(new Callable<Boolean>() {
+                    public Boolean call() {
+                        return replicator.validationFunction(docID, flags, dict, isPush);
+                    }
+                }).get();
+            }
+        };
+
+        if (config.getPushFilter() != null) c4ReplPushFilter = filter;
+        if (config.getPullFilter() != null) c4ReplPullFilter = filter;
+
         c4ReplListener = new C4ReplicatorListener() {
             @Override
             public void statusChanged(final C4Replicator repl, final C4ReplicatorStatus status, final Object context) {
@@ -596,6 +620,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                         mkmode(push, continuous), mkmode(pull, continuous),
                         optionsFleece,
                         c4ReplListener,
+                        c4ReplPushFilter,
+                        c4ReplPullFilter,
                         this,
                         hash,
                         framing);
@@ -634,6 +660,17 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 token.notify(update);
         }
         Log.i(TAG, "C4ReplicatorListener.documentEnded() " + update.toString());
+    }
+
+    private boolean validationFunction(String docID, int flags, long dict, boolean isPush) {
+        Map<String, Object> dictionary = new FLDict(dict).asDict();
+        MutableDocument document = new MutableDocument(docID, dictionary);
+        boolean isDeleted = flags == C4Constants.C4RevisionFlags.kRevDeleted;
+
+        if(isPush)
+            return config.getPushFilter().filtered(document, isDeleted);
+        else
+            return config.getPullFilter().filtered(document, isDeleted);
     }
 
     private void retry() {
