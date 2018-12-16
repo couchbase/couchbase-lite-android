@@ -323,8 +323,8 @@ public final class ReplicatorConfiguration {
     public ReplicationFilter getPushFilter() { return pushFilter; }
 
     /**
-     * Gets a filter closure for validating whether the documents can be pushed
-     * to the remote endpoint.
+     * Gets a filter closure for validating whether the documents can be pulled from the
+     * remote endpoint. Only documents for which the closure returns true are replicated.
      */
     public ReplicationFilter getPullFilter() { return pullFilter; }
 
