@@ -630,8 +630,16 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     private void documentEnded(boolean pushing, String docID, String revID, int flags, C4Error error, boolean trans) {
-        DocumentReplication update = new DocumentReplication((Replicator) this,
-                flags == C4Constants.C4RevisionFlags.kRevDeleted,
+        boolean isAccessRemoved = false;
+        boolean isDeleted = false;
+        try {
+            isAccessRemoved = config.getDatabase().c4db.get(docID, false).accessRemoved();
+            isDeleted = config.getDatabase().c4db.get(docID, false).deleted();
+        } catch (LiteCoreException e) {
+            Log.e(TAG, "C4Document does not exist: docID ->%s", docID);
+        }
+
+        DocumentReplication update = new DocumentReplication((Replicator) this, isDeleted, isAccessRemoved,
                  pushing, docID, revID, flags, error, trans);
         if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
             // Conflict pulling a document -- the revision was added but app needs to resolve it:

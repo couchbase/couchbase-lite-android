@@ -41,11 +41,12 @@ public final class DocumentReplication {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplication(Replicator replicator, boolean isDeleted, boolean pushing, String docId, String revId, int flags, C4Error error, boolean trans) {
+    DocumentReplication(Replicator replicator, boolean isDeleted, boolean isAccessRemoved, boolean pushing, String docId, String revId, int flags, C4Error error, boolean trans) {
         this.replicator = replicator;
         this.pushing = pushing;
         this.docId = docId;
         this.isDeleted = isDeleted;
+        this.isAccessRemoved = isAccessRemoved;
         this.revId = revId;
         this.flags = flags;
         this.error = error;
@@ -88,7 +89,7 @@ public final class DocumentReplication {
      */
     public boolean isAccessRemoved()  {
         return isAccessRemoved;
-    } //TODO: will find a way to get this value and write unit test for it in the related PR for the ticket.
+    }
 
     /**
      * The current document replication error.
@@ -106,10 +107,11 @@ public final class DocumentReplication {
                 ", error code =" + error.getCode()+
                 ", error domain=" + error.getDomain() +
                 ", doc is deleted =" + isDeleted +
+                ", doc is isAccessRemoved =" + isAccessRemoved +
                 '}';
     }
 
     DocumentReplication copy() {
-        return new DocumentReplication(replicator, isDeleted, pushing, docId, revId, flags, new C4Error(error.getDomain(), error.getCode(), error.getInternalInfo()), trans);
+        return new DocumentReplication(replicator, isDeleted, isAccessRemoved, pushing, docId, revId, flags, new C4Error(error.getDomain(), error.getCode(), error.getInternalInfo()), trans);
     }
 }
