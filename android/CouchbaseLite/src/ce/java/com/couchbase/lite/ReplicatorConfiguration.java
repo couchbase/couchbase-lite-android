@@ -218,7 +218,7 @@ public final class ReplicatorConfiguration {
     }
 
     /**
-     * Sets a filter closure for validating whether the documents can be pushed
+     * Sets a filter object for validating whether the documents can be pushed
      * to the remote endpoint.
      *
      * @param pushFilter The filter to filter the document to be pushed.
@@ -232,7 +232,7 @@ public final class ReplicatorConfiguration {
     }
 
     /**
-     * Sets a filter closure for validating whether the documents can be pulled from the
+     * Sets a filter object for validating whether the documents can be pulled from the
      * remote endpoint. Only documents for which the closure returns true are replicated.
      *
      * @param pullFilter The filter to filter the document to be pulled.
