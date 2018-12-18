@@ -567,14 +567,9 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
         C4ReplicationFilter filter = new C4ReplicationFilter() {
             @Override
-            public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context)
-                throws  Exception {
+            public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
                 final AbstractReplicator replicator = (AbstractReplicator) context;
-                return handler.submit(new Callable<Boolean>() {
-                    public Boolean call() {
-                        return replicator.validationFunction(docID, flags, dict, isPush);
-                    }
-                }).get();
+                return replicator.validationFunction(docID, flags, dict, isPush);
             }
         };
 
