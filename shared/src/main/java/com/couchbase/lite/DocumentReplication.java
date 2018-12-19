@@ -50,6 +50,7 @@ public final class DocumentReplication {
         this.revId = revId;
         this.flags = flags;
         this.error = error;
+        this.trans = trans;
     }
 
     //---------------------------------------------
