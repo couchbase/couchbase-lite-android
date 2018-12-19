@@ -120,15 +120,31 @@ public class QueryTest extends BaseTest {
     }
 
     @Test
-    public void testQueryDocumentExpiration() throws CouchbaseLiteException, LiteCoreException, LiteCoreException {
+    public void testQueryDocumentExpiration() throws CouchbaseLiteException, Exception {
+        Date dto5 = new Date(System.currentTimeMillis() + 500L);
+        Date dto10 = new Date(System.currentTimeMillis() + 2000L);
         Date dto20 = new Date(System.currentTimeMillis() + 2000L);
         Date dto30 = new Date(System.currentTimeMillis() + 3000L);
         Date dto40 = new Date(System.currentTimeMillis() + 4000L);
         long  dto60InMS = System.currentTimeMillis() + 6000L;
 
+        MutableDocument doc1 = new MutableDocument("doc");
+        MutableDocument doc10 = new MutableDocument("doc10");
         MutableDocument doc1a = new MutableDocument("doc1");
         MutableDocument doc1b = new MutableDocument("doc2");
         MutableDocument doc1c = new MutableDocument("doc3");
+
+        doc1.setInt("answer", 42);
+        doc1.setString("notHere", "string");
+        save(doc1);
+
+        doc10.setInt("answer", 42);
+        doc10.setString("notHere", "string");
+        save(doc10);
+
+        db.setDocumentExpiration("doc10", dto10); //deleted doc
+        db.delete(doc10);
+
         doc1a.setInt("answer", 42);
         doc1a.setString("a", "string");
         save(doc1a);
@@ -141,9 +157,12 @@ public class QueryTest extends BaseTest {
         doc1c.setString("c", "string");
         save(doc1c);
 
+        db.setDocumentExpiration("doc", dto5); //expired doc
         db.setDocumentExpiration("doc1", dto20);
         db.setDocumentExpiration("doc2", dto30);
         db.setDocumentExpiration("doc3", dto40);
+
+        Thread.sleep(1000);
 
         Query query = QueryBuilder.select(SR_DOCID, SR_EXPIRATION)
                 .from(DataSource.database(db))
