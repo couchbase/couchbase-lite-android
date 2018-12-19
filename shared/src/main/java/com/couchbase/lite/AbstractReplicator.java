@@ -21,6 +21,7 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.litecore.C4Constants;
 import com.couchbase.litecore.C4Database;
+import com.couchbase.litecore.C4DocumentEnded;
 import com.couchbase.litecore.C4Error;
 import com.couchbase.litecore.C4ReplicationFilter;
 import com.couchbase.litecore.C4Replicator;
@@ -589,15 +590,15 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             @Override
-            public void documentEnded(C4Replicator repl, final boolean pushing, final String docID, final String revID,
-                                      final int flags, final C4Error error, final boolean trans,
+            public void documentEnded(C4Replicator repl, final boolean pushing,
+                                      final C4DocumentEnded[] documents,
                                       Object context) {
                 final AbstractReplicator replicator = (AbstractReplicator) context;
                 if (repl == replicator.c4repl) {
                     handler.execute(new Runnable() {
                         @Override
                         public void run() {
-                            replicator.documentEnded(pushing, docID, revID, flags, error, trans);
+                            replicator.documentEnded(pushing, documents);
                         }
                     });
                 }
@@ -629,27 +630,36 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         c4ReplListener.statusChanged(c4repl, c4ReplStatus, this);
     }
 
-    private void documentEnded(boolean pushing, String docID, String revID, int flags, C4Error error, boolean trans) {
-        boolean isAccessRemoved = false;
-        boolean isDeleted = false;
-        try {
-            isAccessRemoved = config.getDatabase().c4db.get(docID, false).accessRemoved();
-            isDeleted = config.getDatabase().c4db.get(docID, false).deleted();
-        } catch (LiteCoreException e) {
-            Log.e(TAG, "C4Document does not exist: docID ->%s", docID);
+    private void documentEnded(boolean pushing, C4DocumentEnded[] documents) {
+        ReplicatedDocument[] docs = new ReplicatedDocument[documents.length];
+        for (int i=0; i< documents.length; i++) {
+            C4DocumentEnded c4document = documents[i];
+            boolean isAccessRemoved = false;
+            boolean isDeleted = false;
+            try {
+                isAccessRemoved = config.getDatabase().c4db.get(c4document.getDocID(), false).accessRemoved();
+                isDeleted = config.getDatabase().c4db.get(c4document.getDocID(), false).deleted();
+            } catch (LiteCoreException e) {
+                Log.e(TAG, "C4Document does not exist: docID ->%s", c4document.getDocID());
+            }
+
+            if (!pushing && c4document.getErrorDomain() == LiteCoreDomain && c4document.getErrorCode() == kC4ErrorConflict) {
+                // Conflict pulling a document -- the revision was added but app needs to resolve it:
+                Log.i(TAG, "%s: pulled conflicting version of '%s'", this, c4document.getDocID());
+                try {
+                    this.config.getDatabase().resolveConflictInDocument(c4document.getDocID());
+                } catch (CouchbaseLiteException ex) {
+                    Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, c4document.getDocID());
+                }
+            }
+
+            ReplicatedDocument document = new ReplicatedDocument(isDeleted, isAccessRemoved, pushing,
+                    c4document.getDocID(), c4document.getRevID(), c4document.getC4Error(), c4document.errorIsTransient());
+
+            docs[i] = document;
         }
 
-        DocumentReplication update = new DocumentReplication((Replicator) this, isDeleted, isAccessRemoved,
-                 pushing, docID, revID, flags, error, trans);
-        if (!pushing && error.getDomain() == LiteCoreDomain && error.getCode() == kC4ErrorConflict) {
-            // Conflict pulling a document -- the revision was added but app needs to resolve it:
-            Log.i(TAG, "%s: pulled conflicting version of '%s'", this, docID);
-            try {
-                this.config.getDatabase().resolveConflictInDocument(docID);
-            } catch (CouchbaseLiteException ex) {
-                Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, docID);
-            }
-        }
+        DocumentReplication update = new DocumentReplication((Replicator) this, docs);
         notifyDocumentEnded(update);
     }
 

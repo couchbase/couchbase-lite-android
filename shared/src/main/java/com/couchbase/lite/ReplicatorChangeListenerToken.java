@@ -59,7 +59,7 @@ final class DocumentReplicationListenerToken implements ListenerToken {
         getExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                listener.replicated(update);
+                listener.replication(update);
             }
         });
     }

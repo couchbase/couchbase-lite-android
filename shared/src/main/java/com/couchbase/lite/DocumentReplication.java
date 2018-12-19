@@ -24,33 +24,18 @@ import com.couchbase.litecore.C4Error;
  * Document replicated update of a replicator.
  */
 public final class DocumentReplication {
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private final Replicator replicator;
-    private boolean isDeleted = false;
-    private boolean isAccessRemoved = false;
-    private boolean pushing = false;
-    private String docId = "";
-    private String revId = "";
-    private int flags;
-    private C4Error error;
-    private boolean trans;
+    private ReplicatedDocument[] documents;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplication(Replicator replicator, boolean isDeleted, boolean isAccessRemoved, boolean pushing, String docId, String revId, int flags, C4Error error, boolean trans) {
+    DocumentReplication(Replicator replicator, ReplicatedDocument[] documents) {
         this.replicator = replicator;
-        this.pushing = pushing;
-        this.docId = docId;
-        this.isDeleted = isDeleted;
-        this.isAccessRemoved = isAccessRemoved;
-        this.revId = revId;
-        this.flags = flags;
-        this.error = error;
-        this.trans = trans;
+        this.documents = documents;
     }
 
     //---------------------------------------------
@@ -64,55 +49,12 @@ public final class DocumentReplication {
         return replicator;
     }
 
-    /**
-     * The current document replication direction flag.
-     */
-    public boolean isPush() {
-        return pushing;
-    }
-
-    /**
-     * The current document id.
-     */
-    public String getDocumentID() {
-        return docId;
-    }
-
-    /**
-     * The current deleted status of the document.
-     */
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
-    /**
-     * The current access removed status of the document.
-     */
-    public boolean isAccessRemoved()  {
-        return isAccessRemoved;
-    }
-
-    /**
-     * The current document replication error.
-     */
-    public CouchbaseLiteException getError() {
-        return error.getCode() != 0 ? CBLStatus.convertError(error) : null;
-    }
-
-    @Override
-    public String toString() {
-        return "DocumentReplication {" +
-                "replicator=" + replicator +
-                ", is pushing =" + pushing +
-                ", document id =" + docId +
-                ", error code =" + error.getCode()+
-                ", error domain=" + error.getDomain() +
-                ", doc is deleted =" + isDeleted +
-                ", doc is isAccessRemoved =" + isAccessRemoved +
-                '}';
-    }
+    public ReplicatedDocument[] getDocuments() { return documents; }
 
     DocumentReplication copy() {
-        return new DocumentReplication(replicator, isDeleted, isAccessRemoved, pushing, docId, revId, flags, new C4Error(error.getDomain(), error.getCode(), error.getInternalInfo()), trans);
+        return new DocumentReplication(replicator, documents);
     }
 }
+
+
+
