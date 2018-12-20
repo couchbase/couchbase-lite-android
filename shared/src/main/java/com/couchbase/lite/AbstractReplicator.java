@@ -632,8 +632,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
     private void documentEnded(boolean pushing, C4DocumentEnded[] documents) {
         ReplicatedDocument[] docs = new ReplicatedDocument[documents.length];
-        for (int i=0; i< documents.length; i++) {
-            C4DocumentEnded c4document = documents[i];
+        int i = 0;
+        for (C4DocumentEnded c4document: documents) {
             boolean isAccessRemoved = false;
             boolean isDeleted = false;
             try {
@@ -657,6 +657,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     c4document.getDocID(), c4document.getRevID(), c4document.getC4Error(), c4document.errorIsTransient());
 
             docs[i] = document;
+            i++;
         }
 
         DocumentReplication update = new DocumentReplication((Replicator) this, docs);
