@@ -27,7 +27,6 @@ public final class ReplicatedDocument {
     //---------------------------------------------
     private boolean isDeleted = false;
     private boolean isAccessRemoved = false;
-    private boolean pushing = false;
     private String id = "";
     private String revId = "";
     private C4Error error;
@@ -36,8 +35,7 @@ public final class ReplicatedDocument {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    ReplicatedDocument(boolean isDeleted, boolean isAccessRemoved, boolean pushing, String id, String revId, C4Error error, boolean trans) {
-        this.pushing = pushing;
+    ReplicatedDocument(boolean isDeleted, boolean isAccessRemoved, String id, String revId, C4Error error, boolean trans) {
         this.id = id;
         this.isDeleted = isDeleted;
         this.isAccessRemoved = isAccessRemoved;
@@ -49,13 +47,6 @@ public final class ReplicatedDocument {
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
-
-    /**
-     * The current document replication direction flag.
-     */
-    public boolean isPush() {
-        return pushing;
-    }
 
     /**
      * The current document id.
@@ -88,7 +79,6 @@ public final class ReplicatedDocument {
     @Override
     public String toString() {
         return "DocumentReplication {" +
-                ", is pushing =" + pushing +
                 ", document id =" + id +
                 ", error code =" + error.getCode()+
                 ", error domain=" + error.getDomain() +
@@ -98,7 +88,7 @@ public final class ReplicatedDocument {
     }
 
     ReplicatedDocument copy() {
-        return new ReplicatedDocument(isDeleted, isAccessRemoved, pushing, id, revId, new C4Error(error.getDomain(), error.getCode(), error.getInternalInfo()), trans);
+        return new ReplicatedDocument(isDeleted, isAccessRemoved, id, revId, new C4Error(error.getDomain(), error.getCode(), error.getInternalInfo()), trans);
     }
 }
 

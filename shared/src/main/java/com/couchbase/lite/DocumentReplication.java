@@ -28,13 +28,15 @@ public final class DocumentReplication {
     // member variables
     //---------------------------------------------
     private final Replicator replicator;
+    private boolean pushing = false;
     private ReplicatedDocument[] documents;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplication(Replicator replicator, ReplicatedDocument[] documents) {
+    DocumentReplication(Replicator replicator, boolean isPush, ReplicatedDocument[] documents) {
         this.replicator = replicator;
+        this.pushing = isPush;
         this.documents = documents;
     }
 
@@ -49,10 +51,17 @@ public final class DocumentReplication {
         return replicator;
     }
 
+    /**
+     * The current document replication direction flag.
+     */
+    public boolean isPush() {
+        return pushing;
+    }
+
     public ReplicatedDocument[] getDocuments() { return documents; }
 
     DocumentReplication copy() {
-        return new DocumentReplication(replicator, documents);
+        return new DocumentReplication(replicator, pushing, documents);
     }
 }
 

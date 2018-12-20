@@ -653,14 +653,14 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 }
             }
 
-            ReplicatedDocument document = new ReplicatedDocument(isDeleted, isAccessRemoved, pushing,
-                    c4document.getDocID(), c4document.getRevID(), c4document.getC4Error(), c4document.errorIsTransient());
+            ReplicatedDocument document = new ReplicatedDocument(isDeleted, isAccessRemoved, c4document.getDocID(),
+                    c4document.getRevID(), c4document.getC4Error(), c4document.errorIsTransient());
 
             docs[i] = document;
             i++;
         }
 
-        DocumentReplication update = new DocumentReplication((Replicator) this, docs);
+        DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
         notifyDocumentEnded(update);
     }
 
