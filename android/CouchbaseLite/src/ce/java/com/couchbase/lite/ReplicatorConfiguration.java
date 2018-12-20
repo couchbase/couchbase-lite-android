@@ -233,7 +233,7 @@ public final class ReplicatorConfiguration {
 
     /**
      * Sets a filter object for validating whether the documents can be pulled from the
-     * remote endpoint. Only documents for which the closure returns true are replicated.
+     * remote endpoint. Only documents for which the object returns true are replicated.
      *
      * @param pullFilter The filter to filter the document to be pulled.
      * @return The self object.
@@ -317,14 +317,14 @@ public final class ReplicatorConfiguration {
     }
 
     /**
-     * Gets a filter closure for validating whether the documents can be pushed
+     * Gets a filter object for validating whether the documents can be pushed
      * to the remote endpoint.
      */
     public ReplicationFilter getPushFilter() { return pushFilter; }
 
     /**
-     * Gets a filter closure for validating whether the documents can be pulled from the
-     * remote endpoint. Only documents for which the closure returns true are replicated.
+     * Gets a filter object for validating whether the documents can be pulled from the
+     * remote endpoint. Only documents for which the object returns true are replicated.
      */
     public ReplicationFilter getPullFilter() { return pullFilter; }
 

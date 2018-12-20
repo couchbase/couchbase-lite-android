@@ -33,17 +33,12 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -565,16 +560,18 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         boolean pull = isPull(config.getReplicatorType());
         boolean continuous = config.isContinuous();
 
-        C4ReplicationFilter filter = new C4ReplicationFilter() {
-            @Override
-            public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
-                final AbstractReplicator replicator = (AbstractReplicator) context;
-                return replicator.validationFunction(docID, flags, dict, isPush);
-            }
-        };
+        if (config.getPushFilter() != null || config.getPullFilter() != null) {
+            C4ReplicationFilter filter = new C4ReplicationFilter() {
+                @Override
+                public boolean validationFunction(final String docID, final int flags, final long dict, final boolean isPush, final Object context) {
+                    final AbstractReplicator replicator = (AbstractReplicator) context;
+                    return replicator.validationFunction(docID, flags, dict, isPush);
+                }
+            };
 
-        if (config.getPushFilter() != null) c4ReplPushFilter = filter;
-        if (config.getPullFilter() != null) c4ReplPullFilter = filter;
+            if (config.getPushFilter() != null) c4ReplPushFilter = filter;
+            if (config.getPullFilter() != null) c4ReplPullFilter = filter;
+        }
 
         c4ReplListener = new C4ReplicatorListener() {
             @Override
