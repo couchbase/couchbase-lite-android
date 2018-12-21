@@ -34,7 +34,9 @@ import com.couchbase.litecore.fleece.FLEncoder;
 import com.couchbase.litecore.fleece.FLValue;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -631,13 +633,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     private void documentEnded(boolean pushing, C4DocumentEnded[] documents) {
-        ReplicatedDocument[] docs = new ReplicatedDocument[documents.length];
-        int i = 0;
+        List<ReplicatedDocument> docs = new ArrayList<ReplicatedDocument>();
         for (C4DocumentEnded c4document: documents) {
             boolean isAccessRemoved = false;
             boolean isDeleted = false;
-            boolean clearError = false;
-            C4Error error = new C4Error(0,0,0);
+            C4Error error = c4document.getC4Error();;
             try {
                 isAccessRemoved = config.getDatabase().c4db.get(c4document.getDocID(), false).accessRemoved();
                 isDeleted = config.getDatabase().c4db.get(c4document.getDocID(), false).deleted();
@@ -653,14 +653,14 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                 } catch (CouchbaseLiteException ex) {
                     Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, c4document.getDocID());
                 } finally {
-                    clearError = true;
+                    //conflict resolved, clear error
+                    error = new C4Error(0,0,0);
                 }
             }
-            if(!clearError) { error = c4document.getC4Error(); }
+
             ReplicatedDocument document = new ReplicatedDocument(isDeleted, isAccessRemoved, c4document.getDocID(),
                     c4document.getRevID(), error, c4document.errorIsTransient());
-            docs[i] = document;
-            i++;
+            docs.add(document);
         }
 
         DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);

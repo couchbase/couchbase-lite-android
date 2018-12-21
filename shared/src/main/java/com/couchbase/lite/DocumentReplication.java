@@ -20,6 +20,8 @@ package com.couchbase.lite;
 
 import com.couchbase.litecore.C4Error;
 
+import java.util.List;
+
 /**
  * Document replicated update of a replicator.
  */
@@ -29,12 +31,12 @@ public final class DocumentReplication {
     //---------------------------------------------
     private final Replicator replicator;
     private boolean pushing = false;
-    private ReplicatedDocument[] documents;
+    private List<ReplicatedDocument> documents;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplication(Replicator replicator, boolean isPush, ReplicatedDocument[] documents) {
+    DocumentReplication(Replicator replicator, boolean isPush, List<ReplicatedDocument> documents) {
         this.replicator = replicator;
         this.pushing = isPush;
         this.documents = documents;
@@ -58,7 +60,7 @@ public final class DocumentReplication {
         return pushing;
     }
 
-    public ReplicatedDocument[] getDocuments() { return documents; }
+    public List<ReplicatedDocument> getDocuments() { return documents; }
 }
 
 
