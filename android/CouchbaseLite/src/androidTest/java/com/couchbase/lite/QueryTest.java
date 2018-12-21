@@ -142,7 +142,7 @@ public class QueryTest extends BaseTest {
         save(doc10);
 
         db.setDocumentExpiration("doc10", dto20); //deleted doc
-        db.delete(doc20);
+        db.delete(doc10);
 
         doc1.setInt("answer", 42);
         doc1.setString("a", "string");
