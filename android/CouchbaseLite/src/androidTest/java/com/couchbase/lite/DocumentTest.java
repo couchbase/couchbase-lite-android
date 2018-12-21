@@ -1889,19 +1889,25 @@ public class DocumentTest extends BaseTest {
     }
 
     @Test
-    public void testSetExpirationFromDoc() throws CouchbaseLiteException, LiteCoreException {
+    public void testSetExpirationOnDoc() throws Exception {
         Date dto3 = new Date(System.currentTimeMillis() + 3000L);
-        MutableDocument doc1a = new MutableDocument("doc1");
-        doc1a.setInt("answer", 12);
-        doc1a.setValue("question", "What is six plus six?");
-        save(doc1a);
+        MutableDocument doc1 = new MutableDocument("doc1");
+        doc1.setInt("answer", 12);
+        doc1.setValue("question", "What is six plus six?");
+        save(doc1);
+
+        MutableDocument doc2 = new MutableDocument("doc2");
+        doc2.setInt("answer", 12);
+        doc2.setValue("question", "What is six plus six?");
+        save(doc2);
+
+        db.setDocumentExpiration("doc2", new Date(System.currentTimeMillis()));//expire now
+        Thread.sleep(500);
+        assertNull(db.getDocument("doc2"));
 
         db.setDocumentExpiration("doc1", dto3);
 
-        try {
-            Thread.sleep(4 * 1000); // sleep 4 sec
-        } catch (InterruptedException e) {
-        }
+        Thread.sleep(3 * 1000); // sleep 4 sec
 
         assertNull(db.getDocument("doc1"));
     }
