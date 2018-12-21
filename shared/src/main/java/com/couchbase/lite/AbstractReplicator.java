@@ -636,6 +636,8 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         for (C4DocumentEnded c4document: documents) {
             boolean isAccessRemoved = false;
             boolean isDeleted = false;
+            boolean clearError = false;
+            C4Error error = new C4Error();
             try {
                 isAccessRemoved = config.getDatabase().c4db.get(c4document.getDocID(), false).accessRemoved();
                 isDeleted = config.getDatabase().c4db.get(c4document.getDocID(), false).deleted();
@@ -650,12 +652,13 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     this.config.getDatabase().resolveConflictInDocument(c4document.getDocID());
                 } catch (CouchbaseLiteException ex) {
                     Log.e(TAG, "Failed to resolveConflict: docID -> %s", ex, c4document.getDocID());
+                } finally {
+                    clearError = true;
                 }
             }
-
+            if(!clearError) { error = c4document.getError(); }
             ReplicatedDocument document = new ReplicatedDocument(isDeleted, isAccessRemoved, c4document.getDocID(),
-                    c4document.getRevID(), c4document.getC4Error(), c4document.errorIsTransient());
-
+                    c4document.getRevID(), error, c4document.errorIsTransient());
             docs[i] = document;
             i++;
         }
