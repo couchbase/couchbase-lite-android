@@ -59,10 +59,6 @@ public final class DocumentReplication {
     }
 
     public ReplicatedDocument[] getDocuments() { return documents; }
-
-    DocumentReplication copy() {
-        return new DocumentReplication(replicator, pushing, documents);
-    }
 }
 
 
