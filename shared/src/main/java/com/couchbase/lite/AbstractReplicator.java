@@ -637,7 +637,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             boolean isAccessRemoved = false;
             boolean isDeleted = false;
             boolean clearError = false;
-            C4Error error = new C4Error();
+            C4Error error = new C4Error(0,0,0);
             try {
                 isAccessRemoved = config.getDatabase().c4db.get(c4document.getDocID(), false).accessRemoved();
                 isDeleted = config.getDatabase().c4db.get(c4document.getDocID(), false).deleted();
@@ -656,7 +656,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
                     clearError = true;
                 }
             }
-            if(!clearError) { error = c4document.getError(); }
+            if(!clearError) { error = c4document.getC4Error(); }
             ReplicatedDocument document = new ReplicatedDocument(isDeleted, isAccessRemoved, c4document.getDocID(),
                     c4document.getRevID(), error, c4document.errorIsTransient());
             docs[i] = document;
