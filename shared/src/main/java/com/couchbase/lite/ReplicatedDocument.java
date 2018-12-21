@@ -75,13 +75,6 @@ public final class ReplicatedDocument {
     public CouchbaseLiteException getError() {
         return error.getCode() != 0 ? CBLStatus.convertError(error) : null;
     }
-   
-    /**
-     * The clear document replication error.
-     */
-    public ReplicatedDocument clearError() {
-        return new ReplicatedDocument(isAccessRemoved, isDeleted, id, revId, new C4Error(), trans);
-    }
 
     @Override
     public String toString() {
