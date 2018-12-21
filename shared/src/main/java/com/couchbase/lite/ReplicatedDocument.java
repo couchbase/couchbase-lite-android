@@ -75,20 +75,23 @@ public final class ReplicatedDocument {
     public CouchbaseLiteException getError() {
         return error.getCode() != 0 ? CBLStatus.convertError(error) : null;
     }
+   
+    /**
+     * The clear document replication error.
+     */
+    public ReplicatedDocument clearError() {
+        return new ReplicatedDocument(isAccessRemoved, isDeleted, id, revId, new C4Error(), trans);
+    }
 
     @Override
     public String toString() {
-        return "DocumentReplication {" +
+        return "ReplicatedDocument {" +
                 ", document id =" + id +
                 ", error code =" + error.getCode()+
                 ", error domain=" + error.getDomain() +
                 ", doc is deleted =" + isDeleted +
                 ", doc is isAccessRemoved =" + isAccessRemoved +
                 '}';
-    }
-
-    ReplicatedDocument copy() {
-        return new ReplicatedDocument(isDeleted, isAccessRemoved, id, revId, new C4Error(error.getDomain(), error.getCode(), error.getInternalInfo()), trans);
     }
 }
 
