@@ -83,6 +83,8 @@ public final class ReplicatorConfiguration {
     private byte[] pinnedServerCertificate = null;
     private List<String> channels = null;
     private List<String> documentIDs = null;
+    private ReplicationFilter pushFilter = null;
+    private ReplicationFilter pullFilter = null;
 
     //---------------------------------------------
     // Constructors
@@ -99,6 +101,8 @@ public final class ReplicatorConfiguration {
         this.headers = config.headers;
         this.channels = config.channels;
         this.documentIDs = config.documentIDs;
+        this.pullFilter = config.pullFilter;
+        this.pushFilter = config.pushFilter;
     }
 
     public ReplicatorConfiguration(Database database, Endpoint target) {
@@ -109,7 +113,7 @@ public final class ReplicatorConfiguration {
     }
 
     //---------------------------------------------
-    // Getters
+    // Setters
     //---------------------------------------------
 
     /**
@@ -213,6 +217,34 @@ public final class ReplicatorConfiguration {
         return this;
     }
 
+    /**
+     * Sets a filter object for validating whether the documents can be pushed
+     * to the remote endpoint.
+     *
+     * @param pushFilter The filter to filter the document to be pushed.
+     * @return The self object.
+     */
+    public ReplicatorConfiguration setPushFilter(ReplicationFilter pushFilter){
+        if(readonly)
+            throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
+        this.pushFilter = pushFilter;
+        return this;
+    }
+
+    /**
+     * Sets a filter object for validating whether the documents can be pulled from the
+     * remote endpoint. Only documents for which the object returns true are replicated.
+     *
+     * @param pullFilter The filter to filter the document to be pulled.
+     * @return The self object.
+     */
+    public ReplicatorConfiguration setPullFilter(ReplicationFilter pullFilter){
+        if(readonly)
+            throw new IllegalStateException("ReplicatorConfiguration is readonly mode.");
+        this.pullFilter = pullFilter;
+        return this;
+    }
+
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -283,6 +315,18 @@ public final class ReplicatorConfiguration {
     public List<String> getDocumentIDs() {
         return documentIDs;
     }
+
+    /**
+     * Gets a filter object for validating whether the documents can be pushed
+     * to the remote endpoint.
+     */
+    public ReplicationFilter getPushFilter() { return pushFilter; }
+
+    /**
+     * Gets a filter object for validating whether the documents can be pulled from the
+     * remote endpoint. Only documents for which the object returns true are replicated.
+     */
+    public ReplicationFilter getPullFilter() { return pullFilter; }
 
     //---------------------------------------------
     // Package level access
