@@ -122,40 +122,39 @@ public class QueryTest extends BaseTest {
     @Test
     public void testQueryDocumentExpiration() throws CouchbaseLiteException, Exception {
         Date dto5 = new Date(System.currentTimeMillis() + 500L);
-        Date dto10 = new Date(System.currentTimeMillis() + 2000L);
         Date dto20 = new Date(System.currentTimeMillis() + 2000L);
         Date dto30 = new Date(System.currentTimeMillis() + 3000L);
         Date dto40 = new Date(System.currentTimeMillis() + 4000L);
         long  dto60InMS = System.currentTimeMillis() + 6000L;
 
-        MutableDocument doc1 = new MutableDocument("doc");
+        MutableDocument doc = new MutableDocument("doc");
         MutableDocument doc10 = new MutableDocument("doc10");
-        MutableDocument doc1a = new MutableDocument("doc1");
-        MutableDocument doc1b = new MutableDocument("doc2");
-        MutableDocument doc1c = new MutableDocument("doc3");
+        MutableDocument doc1 = new MutableDocument("doc1");
+        MutableDocument doc2 = new MutableDocument("doc2");
+        MutableDocument doc3 = new MutableDocument("doc3");
 
-        doc1.setInt("answer", 42);
-        doc1.setString("notHere", "string");
-        save(doc1);
+        doc.setInt("answer", 42);
+        doc.setString("notHere", "string");
+        save(doc);
 
         doc10.setInt("answer", 42);
         doc10.setString("notHere", "string");
         save(doc10);
 
-        db.setDocumentExpiration("doc10", dto10); //deleted doc
-        db.delete(doc10);
+        db.setDocumentExpiration("doc10", dto20); //deleted doc
+        db.delete(doc20);
 
-        doc1a.setInt("answer", 42);
-        doc1a.setString("a", "string");
-        save(doc1a);
+        doc1.setInt("answer", 42);
+        doc1.setString("a", "string");
+        save(doc1);
 
-        doc1b.setInt("answer", 42);
-        doc1b.setString("b", "string");
-        save(doc1b);
+        doc2.setInt("answer", 42);
+        doc2.setString("b", "string");
+        save(doc2);
 
-        doc1c.setInt("answer", 42);
-        doc1c.setString("c", "string");
-        save(doc1c);
+        doc3.setInt("answer", 42);
+        doc3.setString("c", "string");
+        save(doc3);
 
         db.setDocumentExpiration("doc", dto5); //expired doc
         db.setDocumentExpiration("doc1", dto20);
